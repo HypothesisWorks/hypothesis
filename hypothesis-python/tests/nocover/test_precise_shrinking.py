@@ -59,6 +59,11 @@ from hypothesis.internal.conjecture.shrinker import sort_key
 
 T = TypeVar("T")
 
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="using internals for testing in a way crosshair doesn't support",
+)
+
 
 def safe_draw(data, strategy):
     """Set up just enough of the Hypothesis machinery to use draw on

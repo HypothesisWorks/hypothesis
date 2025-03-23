@@ -181,7 +181,7 @@ def test_copying_synchronizes(r1, method_call):
     assert getattr(r1, method)(*args, **kwargs) == getattr(r2, method)(*args, **kwargs)
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_seeding_to_different_values_does_not_synchronize(use_true_random):
     @given(
@@ -197,7 +197,7 @@ def test_seeding_to_different_values_does_not_synchronize(use_true_random):
         test()
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_unrelated_calls_desynchronizes(use_true_random):
     @given(

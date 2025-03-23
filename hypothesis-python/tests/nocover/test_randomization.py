@@ -8,13 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from random import Random
+
 import pytest
 
 from hypothesis import (
     HealthCheck,
     Verbosity,
     core,
-    find,
     given,
     settings,
     strategies as st,
@@ -23,13 +24,30 @@ from hypothesis import (
 from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="we do not yet pass backends the global random seed, so they are not deterministic",
+)
 def test_seeds_off_internal_random():
-    s = settings(phases=no_shrink, database=None)
-    r = core._hypothesis_global_random.getstate()
-    x = find(st.integers(), lambda x: True, settings=s)
-    core._hypothesis_global_random.setstate(r)
-    y = find(st.integers(), lambda x: True, settings=s)
-    assert x == y
+    choices1 = []
+    choices2 = []
+
+    @given(st.integers())
+    def f1(n):
+        choices1.append(n)
+
+    @given(st.integers())
+    def f2(n):
+        choices2.append(n)
+
+    core._hypothesis_global_random = Random(0)
+    state = core._hypothesis_global_random.getstate()
+    f1()
+
+    core._hypothesis_global_random.setstate(state)
+    f2()
+
+    assert choices1 == choices2
 
 
 @xfail_on_crosshair(Why.nested_given)

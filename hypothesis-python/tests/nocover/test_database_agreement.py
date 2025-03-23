@@ -12,7 +12,9 @@ import os
 import shutil
 import tempfile
 
-from hypothesis import strategies as st
+import pytest
+
+from hypothesis import settings, strategies as st
 from hypothesis.database import (
     BackgroundWriteDatabase,
     DirectoryBasedExampleDatabase,
@@ -28,7 +30,6 @@ class DatabaseComparison(RuleBasedStateMachine):
         exampledir = os.path.join(self.tempd, "examples")
 
         self.dbs = [
-            DirectoryBasedExampleDatabase(exampledir),
             InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
             BackgroundWriteDatabase(InMemoryExampleDatabase()),
@@ -75,4 +76,6 @@ class DatabaseComparison(RuleBasedStateMachine):
         shutil.rmtree(self.tempd)
 
 
-TestDBs = DatabaseComparison.TestCase
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="isn't threadsafe")
+def test_database_equivalence():
+    DatabaseComparison.TestCase().runTest()

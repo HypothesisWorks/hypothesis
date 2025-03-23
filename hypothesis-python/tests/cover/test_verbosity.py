@@ -63,7 +63,7 @@ def test_includes_progress_in_verbose_mode():
     assert "Trying example: " in out
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_prints_initial_attempts_on_find():
     with capture_verbosity() as o:
 

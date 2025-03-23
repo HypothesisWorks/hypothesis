@@ -132,7 +132,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python ; echo tests/$GROUP)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -v "_py312" | xargs)
         else
           ./build.sh
         fi
