@@ -1136,7 +1136,8 @@ class ConjectureData:
                 )
                 raise
             if TESTCASE_CALLBACKS:
-                self._observability_args[key] = to_jsonable(v)
+                avoid = self.provider.avoid_realization
+                self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
             return v
         finally:
             self.stop_span()
