@@ -83,6 +83,9 @@ def test_targeting_can_be_disabled():
     assert score(enabled=True) > score(enabled=False)
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair", reason="takes ~15 minutes"
+)
 def test_issue_2395_regression():
     @given(d=st.floats().filter(lambda x: abs(x) < 1000))
     @settings(max_examples=1000, database=None)

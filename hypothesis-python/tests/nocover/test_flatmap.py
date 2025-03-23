@@ -85,6 +85,7 @@ def test_flatmap_has_original_strategy_repr():
     assert repr(ints) in repr(ints_up)
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~6 mins")
 def test_mixed_list_flatmap():
     s = lists(booleans().flatmap(lambda b: booleans() if b else text()))
 
