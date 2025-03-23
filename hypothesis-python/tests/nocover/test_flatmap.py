@@ -26,6 +26,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.debug import find_any, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -47,15 +48,13 @@ def test_in_order(x):
     assert x[0] < x[1]
 
 
+# crosshair just generates increasingly-long lists of [0.0]
+@xfail_on_crosshair(Why.undiscovered)
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = floats(0, 1).flatmap(lambda x: lists(just(x)))
-
     track = []
 
-    db = ExampleDatabase()
-
-    @given(constant_float_lists)
-    @settings(database=db)
+    @given(floats(0, 1).flatmap(lambda x: lists(just(x))))
+    @settings(database=ExampleDatabase())
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)
@@ -98,6 +97,7 @@ def test_mixed_list_flatmap():
     assert set(result) == {False, ""}
 
 
+@xfail_on_crosshair(Why.undiscovered)  # for n >= 8 at least
 @pytest.mark.parametrize("n", range(1, 10))
 def test_can_shrink_through_a_binding(n):
     bool_lists = integers(0, 100).flatmap(
@@ -106,6 +106,7 @@ def test_can_shrink_through_a_binding(n):
     assert minimal(bool_lists, lambda x: x.count(True) >= n) == [True] * n
 
 
+@xfail_on_crosshair(Why.undiscovered)  # for n >= 8 at least
 @pytest.mark.parametrize("n", range(1, 10))
 def test_can_delete_in_middle_of_a_binding(n):
     bool_lists = integers(1, 100).flatmap(
