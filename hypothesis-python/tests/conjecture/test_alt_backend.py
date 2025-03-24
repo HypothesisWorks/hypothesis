@@ -444,7 +444,7 @@ def test_realization_with_verbosity(verbosity):
 
         with capture_out() as out:
             test_function()
-        assert "Trying example: <symbolics>" in out.getvalue()
+        assert "Trying example: test_function(\n    f=<symbolic>,\n)" in out.getvalue()
 
 
 @pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])

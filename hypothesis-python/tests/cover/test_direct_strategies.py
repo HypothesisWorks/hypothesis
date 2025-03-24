@@ -23,6 +23,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
 
 from tests.common.debug import check_can_generate_examples, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
 # parameters print consistently across multiple worker processes with different
@@ -437,6 +438,7 @@ def test_decimals():
     assert minimal(st.decimals(), lambda f: f.is_finite() and f >= 1) == 1
 
 
+@xfail_on_crosshair(Why.undiscovered)
 def test_non_float_decimal():
     minimal(st.decimals(), lambda d: d.is_finite() and decimal.Decimal(float(d)) != d)
 

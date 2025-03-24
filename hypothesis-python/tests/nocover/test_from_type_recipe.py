@@ -8,7 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given, strategies as st
+import pytest
+
+from hypothesis import given, settings, strategies as st
 from hypothesis.strategies._internal.types import _global_type_lookup
 
 from tests.common.debug import find_any
@@ -32,6 +34,7 @@ def everything_except(excluded_types):
     )
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~250s")
 @given(
     excluded_types=st.lists(
         st.sampled_from(TYPES), min_size=1, max_size=3, unique=True

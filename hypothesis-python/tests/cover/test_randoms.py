@@ -26,6 +26,7 @@ from hypothesis.strategies._internal.random import (
 )
 
 from tests.common.debug import assert_all_examples, find_any
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def test_implements_all_random_methods():
@@ -180,6 +181,7 @@ def test_copying_synchronizes(r1, method_call):
     assert getattr(r1, method)(*args, **kwargs) == getattr(r2, method)(*args, **kwargs)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_seeding_to_different_values_does_not_synchronize(use_true_random):
     @given(
@@ -195,6 +197,7 @@ def test_seeding_to_different_values_does_not_synchronize(use_true_random):
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_unrelated_calls_desynchronizes(use_true_random):
     @given(
@@ -325,6 +328,7 @@ def test_randbytes_have_right_length(rnd, n):
     assert len(rnd.randbytes(n)) == n
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes hours")
 @given(any_random)
 def test_can_manage_very_long_ranges_with_step(rnd):
     i = rnd.randrange(0, 2**256, 3)

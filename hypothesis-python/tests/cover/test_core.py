@@ -19,10 +19,11 @@ from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 
 
 def test_stops_after_max_examples_if_satisfying():
-    tracker = []
+    count = 0
 
     def track(x):
-        tracker.append(x)
+        nonlocal count
+        count += 1
         return False
 
     max_examples = 100
@@ -30,7 +31,7 @@ def test_stops_after_max_examples_if_satisfying():
     with pytest.raises(NoSuchExample):
         find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
-    assert len(tracker) == max_examples
+    assert count == max_examples
 
 
 def test_stops_after_ten_times_max_examples_if_not_satisfying():

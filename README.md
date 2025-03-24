@@ -44,4 +44,4 @@ To install Hypothesis:
 pip install hypothesis
 ```
 
-There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/packaging.html#other-python-libraries).
+There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).

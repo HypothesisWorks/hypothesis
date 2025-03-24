@@ -11,7 +11,7 @@
 """
 This file tests for our ability to make precise shrinks.
 
-Terminology: A shrink is *precise* if there is a single example (draw call) that
+Terminology: A shrink is *precise* if there is a single span (draw call) that
 it replaces, without leaving any of the data before or after that draw call changed.
 Otherwise, it is sloppy.
 
@@ -58,6 +58,11 @@ from hypothesis.internal.conjecture.engine import (
 from hypothesis.internal.conjecture.shrinker import sort_key
 
 T = TypeVar("T")
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="using internals for testing in a way crosshair doesn't support",
+)
 
 
 def safe_draw(data, strategy):
