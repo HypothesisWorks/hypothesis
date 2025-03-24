@@ -94,6 +94,13 @@ def warns_or_raises(request):
         return pytest.warns
 
 
+# crosshair needs actual time for its path timeouts; load it before patching
+try:
+    import hypothesis_crosshair_provider.crosshair_provider  # noqa: F401
+except ImportError:
+    pass
+
+
 @pytest.fixture(scope="function", autouse=True)
 def _consistently_increment_time(monkeypatch):
     """Rather than rely on real system time we monkey patch time.time so that
