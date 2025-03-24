@@ -114,7 +114,8 @@ def test_use_of_global_random_is_deprecated_in_interactive_draws():
 
 
 def test_jsonable():
-    assert isinstance(to_jsonable(object()), str)
+    assert to_jsonable(object(), avoid_realization=True) == "<symbolic>"
+    assert isinstance(to_jsonable(object(), avoid_realization=False), str)
 
 
 @dataclasses.dataclass()
@@ -130,36 +131,39 @@ class AttrsClass:
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
-    assert to_jsonable(obj) == {"x": {"a": [42]}}
+    assert to_jsonable(obj, avoid_realization=False) == {"x": {"a": [42]}}
 
 
 def test_jsonable_attrs():
     obj = AttrsClass(n=10)
-    assert to_jsonable(obj) == {"n": 10}
+    assert to_jsonable(obj, avoid_realization=False) == {"n": 10}
 
 
 def test_jsonable_namedtuple():
     Obj = namedtuple("Obj", ("x"))
     obj = Obj(10)
-    assert to_jsonable(obj) == {"x": 10}
+    assert to_jsonable(obj, avoid_realization=False) == {"x": 10}
 
 
 def test_jsonable_small_ints_are_ints():
     n = 2**62
-    assert isinstance(to_jsonable(n), int)
-    assert to_jsonable(n) == n
+    for avoid in (True, False):
+        assert isinstance(to_jsonable(n, avoid_realization=avoid), int)
+        assert to_jsonable(n, avoid_realization=avoid) == n
 
 
 def test_jsonable_large_ints_are_floats():
     n = 2**63
-    assert isinstance(to_jsonable(n), float)
-    assert to_jsonable(n) == float(n)
+    assert isinstance(to_jsonable(n, avoid_realization=False), float)
+    assert to_jsonable(n, avoid_realization=False) == float(n)
+    assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
 
 
 def test_jsonable_very_large_ints():
     # previously caused OverflowError when casting to float.
     n = 2**1024
-    assert to_jsonable(n) == sys.float_info.max
+    assert to_jsonable(n, avoid_realization=False) == sys.float_info.max
+    assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
 
 
 @dataclasses.dataclass()
@@ -172,4 +176,5 @@ class HasCustomJsonFormat:
 
 def test_jsonable_override():
     obj = HasCustomJsonFormat("expected")
-    assert to_jsonable(obj) == "surprise!"
+    assert to_jsonable(obj, avoid_realization=False) == "surprise!"
+    assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
