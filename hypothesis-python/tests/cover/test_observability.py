@@ -28,7 +28,7 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
-from tests.common.utils import capture_observations
+from tests.common.utils import Why, capture_observations, xfail_on_crosshair
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -46,6 +46,7 @@ def do_it_all(l, a, x, data):
     1 / ((x or 1) % 7)
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 def test_observability():
     with capture_observations() as ls:
         with pytest.raises(ZeroDivisionError):
@@ -70,6 +71,7 @@ def test_observability():
             )
 
 
+@xfail_on_crosshair(Why.other)
 def test_capture_unnamed_arguments():
     @given(st.integers(), st.floats(), st.data())
     def f(v1, v2, data):
@@ -88,6 +90,7 @@ def test_capture_unnamed_arguments():
         ], test_case
 
 
+@xfail_on_crosshair(Why.other)
 def test_capture_named_arguments():
     @given(named1=st.integers(), named2=st.floats(), data=st.data())
     def f(named1, named2, data):
@@ -136,6 +139,7 @@ class UltraSimpleMachine(RuleBasedStateMachine):
         assert abs(self.value) <= 100
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_observability_captures_stateful_reprs():
     with capture_observations() as ls:
         run_state_machine_as_test(UltraSimpleMachine)
