@@ -99,6 +99,10 @@ def test_efficient_dicts_with_sampled_keys(x):
     assert set(x) == set(range(50))
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~10 mins and raises Unsatisfiable",
+)
 @given(
     st.lists(
         st.tuples(st.sampled_from(range(20)), st.builds(list)),

@@ -11,7 +11,9 @@
 import string
 from encodings.aliases import aliases
 
-from hypothesis import given, strategies as st
+import pytest
+
+from hypothesis import given, settings, strategies as st
 
 IDENTIFIER_CHARS = string.ascii_letters + string.digits + "_"
 
@@ -47,6 +49,7 @@ lots_of_encodings = sorted(x for x in set(aliases).union(aliases.values()) if _e
 assert len(lots_of_encodings) > 100  # sanity-check
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes 2000s")
 @given(data=st.data(), codec=st.sampled_from(lots_of_encodings))
 def test_can_constrain_characters_to_codec(data, codec):
     s = data.draw(st.text(st.characters(codec=codec), min_size=100))

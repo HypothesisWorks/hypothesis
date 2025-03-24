@@ -15,7 +15,7 @@ import operator
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import bit_count
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
@@ -130,6 +130,7 @@ def test_flags_minimizes_bit_count():
     )
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~10 mins")
 def test_flags_finds_all_bits_set():
     assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))
 

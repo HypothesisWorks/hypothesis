@@ -104,6 +104,7 @@ def test_matching(category, predicate, invert, is_unicode):
     _test_matching_pattern(category, isvalidchar=pred, is_unicode=is_unicode)
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~30s each")
 @pytest.mark.parametrize(
     "pattern",
     [
@@ -190,6 +191,7 @@ def test_any_with_dotall_generate_newline_binary(pattern):
     find_any(st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10**6))
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~30s each")
 @pytest.mark.parametrize(
     "pattern",
     ["\\d", "[\\d]", "[^\\D]", "\\w", "[\\w]", "[^\\W]", "\\s", "[\\s]", "[^\\S]"],
