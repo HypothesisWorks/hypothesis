@@ -16,6 +16,8 @@ from hypothesis import example, given, strategies as st, target
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 @example(0.0, "this covers the branch where context.data is None")
 @given(
@@ -100,6 +102,7 @@ def test_cannot_target_same_label_twice(_):
         target(1.0, label="label")
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(st.none())
 def test_cannot_target_default_label_twice(_):
     target(0.0)

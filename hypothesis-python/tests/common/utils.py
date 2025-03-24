@@ -257,6 +257,7 @@ class Why(enum.Enum):
     # Some are crosshair issues, some hypothesis issues, others truly ok-to-xfail tests.
     symbolic_outside_context = "CrosshairInternal error (using value outside context)"
     nested_given = "nested @given decorators don't work with crosshair"
+    undiscovered = "crosshair may not find the failing input"
     other = "reasons not elsewhere categorized"
 
 
@@ -269,7 +270,7 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
 
     current_backend = settings.get_profile(settings._current_profile).backend
     kw = {
-        "strict": strict,
+        "strict": strict and why != Why.undiscovered,
         "reason": f"Expected failure due to: {why.value}",
         "condition": current_backend == "crosshair",
     }

@@ -20,7 +20,7 @@ from hypothesis.internal.floats import float_to_int
 from hypothesis.strategies import data, floats, lists
 
 from tests.common.debug import find_any
-from tests.common.utils import fails
+from tests.common.utils import Why, fails, xfail_on_crosshair
 
 TRY_HARDER = settings(
     max_examples=1000, suppress_health_check=[HealthCheck.filter_too_much]
@@ -93,6 +93,7 @@ def test_is_not_int(x):
     assert x != int(x)
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(floats())
 @TRY_HARDER
@@ -128,6 +129,7 @@ def test_floats_are_in_range(x, y, data):
     assert x <= t <= y
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize("neg", [False, True])
 @pytest.mark.parametrize("snan", [False, True])
 def test_can_find_negative_and_signaling_nans(neg, snan):

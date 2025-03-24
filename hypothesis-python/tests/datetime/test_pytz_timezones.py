@@ -104,6 +104,7 @@ def test_time_bounds_must_be_naive(name, val):
         times(**{name: val}).validate()
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize(
     "bound",
     [

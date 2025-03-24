@@ -141,6 +141,7 @@ def stupid_sampled_sets(draw):
     return result
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(stupid_sampled_sets())
 def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
     # This deliberately exercises the standard filtering logic without going
