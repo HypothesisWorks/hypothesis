@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.3:
+
+--------------------
+6.130.3 - 2025-03-24
+--------------------
+
+This patch improves the interaction between the :pypi:`hypothesis-crosshair`
+:ref:`backend <alternative-backends>` and :ref:`our observability tools <observability>`.
+
 .. _v6.130.2:
 
 --------------------
