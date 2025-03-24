@@ -75,7 +75,6 @@ def pytest_addoption(parser):
     parser.addoption("--hypothesis-update-outputs", action="store_true")
     parser.addoption("--hypothesis-benchmark-shrinks", type=str, choices=["new", "old"])
     parser.addoption("--hypothesis-benchmark-output", type=str)
-    parser.addoption("--hypothesis-learn-to-normalize", action="store_true")
 
     # New in pytest 6, so we add a shim on old versions to avoid missing-arg errors
     arg = "--durations-min"
