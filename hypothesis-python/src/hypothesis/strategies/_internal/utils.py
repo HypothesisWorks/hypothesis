@@ -165,7 +165,7 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     known types.
     """
     if isinstance(obj, (str, int, float, bool, type(None))):
-        if isinstance(obj, int) and abs(obj) >= 2**63:
+        if isinstance(obj, int) and not isinstance(obj, bool) and abs(obj) >= 2**63:
             # Silently clamp very large ints to max_float, to avoid OverflowError when
             # casting to float.  (but avoid adding more constraints to symbolic values)
             if avoid_realization:

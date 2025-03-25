@@ -8,10 +8,17 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import crosshair
 import pytest
+from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
-from hypothesis import Verbosity, given, settings, strategies as st
+from hypothesis import Phase, Verbosity, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
+from hypothesis.internal.intervalsets import IntervalSet
+
+from tests.common.utils import capture_observations
+from tests.conjecture.common import float_kw, integer_kw, string_kw
 
 
 @pytest.mark.parametrize("verbosity", list(Verbosity))
@@ -54,3 +61,111 @@ def test_hypothesis_realizes_on_fatal_error():
 
     with pytest.raises(BaseException, match="marker"):
         f()
+
+
+def count_choices_for(choice_type, kwargs):
+    # returns the number of choices that crosshair makes for this draw, before
+    # hypothesis ever has a chance to interact with it.
+    provider = CrossHairPrimitiveProvider()
+    with provider.per_test_case_context_manager():
+        assert len(crosshair.statespace.context_statespace().choices_made) == 0
+        getattr(provider, f"draw_{choice_type}")(**kwargs)
+        return len(crosshair.statespace.context_statespace().choices_made)
+
+
+@pytest.mark.parametrize(
+    "strategy, expected_choices",
+    [
+        (st.integers(), lambda: count_choices_for("integer", integer_kw())),
+        (st.floats(), lambda: count_choices_for("float", float_kw())),
+        (
+            st.binary(),
+            lambda: count_choices_for(
+                "bytes", {"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE}
+            ),
+        ),
+        # crosshair's symbolic mapping implementation performs an `is` check under
+        # certain circumstances, which adds a choice to the symbolic bool when we
+        # execute test(*args, **kwargs), since kwargs is a symbolic mapping
+        # containing the symbolic boolean.
+        #
+        # I think this only affects bool since no other crosshair type has an
+        # override for `is`.
+        (st.booleans(), lambda: count_choices_for("boolean", {}) + 1),
+        (
+            st.text(),
+            lambda: count_choices_for(
+                "string", string_kw(IntervalSet.from_string("a"))
+            ),
+        ),
+    ],
+)
+def test_no_path_constraints_are_added_to_symbolic_values(strategy, expected_choices):
+    # check that we don't interact with returned symbolics from the crosshair
+    # provider in a way that would add decisions to crosshair's state space (ie
+    # add path constraints).
+
+    expected_choices = expected_choices()
+
+    # limit to one example to prevent crosshair from raising e.g.
+    # BackendCannotProceed(scope="verified") and switching to the hypothesis
+    # provider
+    @given(strategy)
+    @settings(
+        backend="crosshair", database=None, phases={Phase.generate}, max_examples=1
+    )
+    def f(value):
+        # if this test ever fails, we will replay it without crosshair, in which
+        # case the statespace is None.
+        statespace = crosshair.statespace.optional_context_statespace()
+        assert statespace is not None, "this test failed under crosshair"
+        assert len(statespace.choices_made) == expected_choices
+
+    f()
+
+
+@pytest.mark.parametrize(
+    "strategy, extra_observability",
+    [
+        # we add an additional path constraint to ints in to_jsonable.
+        (st.integers(), 1),
+        (st.text(), 0),
+        (st.booleans(), 0),
+        (st.floats(), 0),
+        (st.binary(), 0),
+    ],
+)
+def test_observability_and_verbosity_dont_add_choices(strategy, extra_observability):
+    choices = {}
+
+    @given(strategy)
+    @settings(backend="crosshair", database=None, max_examples=1)
+    def f_normal(value):
+        choices["normal"] = len(crosshair.statespace.context_statespace().choices_made)
+
+    @given(strategy)
+    @settings(backend="crosshair", database=None, max_examples=1)
+    def f_observability(value):
+        choices["observability"] = len(
+            crosshair.statespace.context_statespace().choices_made
+        )
+
+    @given(strategy)
+    @settings(
+        backend="crosshair", database=None, max_examples=1, verbosity=Verbosity.debug
+    )
+    def f_verbosity(value):
+        choices["verbosity"] = len(
+            crosshair.statespace.context_statespace().choices_made
+        )
+
+    f_normal()
+    f_verbosity()
+    with capture_observations():
+        f_observability()
+
+    assert (
+        choices["normal"]
+        == (choices["observability"] - extra_observability)
+        == choices["verbosity"]
+    )
