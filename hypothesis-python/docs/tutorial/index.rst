@@ -14,4 +14,3 @@ An introduction to Hypothesis for new developers. You may instead want to start 
    examples
    map-and-flatmap
    adding-notes
-   stateful

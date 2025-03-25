@@ -49,7 +49,7 @@ redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
     "database": "reference/api.html#database",
-    "stateful": "reference/api.html#stateful-tests",
+    # "stateful": "reference/api.html#stateful-tests",
     "reproducing": "reference/api.html",
     "ghostwriter": "reference/integrations.html#ghostwriter",
     "django": "reference/strategies.html#django",

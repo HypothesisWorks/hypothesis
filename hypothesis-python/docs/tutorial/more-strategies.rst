@@ -119,12 +119,12 @@ Another scenario where |st.composite| is useful is when generating a value that 
 .. code-block:: python
 
     @st.composite
-    def ordered_integer_pairs(draw):
+    def ordered_pairs(draw):
         n1 = draw(st.integers())
         n2 = draw(st.integers(min_value=n1))
         return (n1, n2)
 
-    @given(ordered_integer_pairs())
+    @given(ordered_pairs())
     def test_pairs_are_ordered(pair):
         n1, n2 = pair
         assert n1 <= n2
@@ -132,7 +132,7 @@ Another scenario where |st.composite| is useful is when generating a value that 
 
 .. note::
 
-    We could also have written this particular strategy as ``st.tuples(st.integers(), st.integers()).map(sorted)`` (see the :doc:`.map() and .flatmap() tutorial </tutorial/map-and-flatmap>`). Some prefer this form of inline composition, while others prefer defining well-named helper strategies with |st.composite|. Our suggestion is simply that you prioritize ease of understanding in either case.
+    We could also have written this particular strategy as ``st.tuples(st.integers(), st.integers()).map(sorted)`` (see :doc:`the tutorial on .map() <map-and-flatmap>`). Some prefer this inline approach, while others prefer defining well-named helper functions with |st.composite|. Our suggestion is simply that you prioritize ease of understanding when choosing which to use.
 
 |st.data|
 ---------

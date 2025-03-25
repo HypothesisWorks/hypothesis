@@ -64,7 +64,7 @@ To define a setting profile, use |settings.register_profile|:
 
     settings.register_profile("my_profile_name", max_examples=200)
 
-You can place this code in any file which pytest loads during test collection. This includes any of your test files, an ``__init__.py`` file in your test directory, or — if using pytest — a ``conftest.py`` file.
+You can place this code in any file which gets loaded before your tests get run. This includes an ``__init__.py`` file in the test directory or any of the test files themselves. If using pytest, the standard location to place this code is in a ``confest.py`` file (though an ``__init__.py`` or test file will also work).
 
 You can register as many profiles as you want. A profile does not take effect until loaded with |settings.load_profile|:
 

@@ -120,13 +120,13 @@ You can do this using the |st.composite| strategy. |st.composite| lets you defin
 .. code-block:: python
 
     @st.composite
-    def integer_pairs(draw):
+    def ordered_pairs(draw):
         n1 = draw(st.integers())
         n2 = draw(st.integers(min_value=n1))
         return (n1, n2)
 
-    @given(integer_pairs())
-    def test_integer_pairs(pair):
+    @given(ordered_pairs())
+    def test_pairs_are_ordered(pair):
         n1, n2 = pair
         assert n1 <= n2
 
@@ -134,9 +134,37 @@ In more complex cases, you might need to interleave generation and test code. In
 
 .. code-block:: python
 
-    @given(st.data())
-    def test_integer_pairs(data):
-        n1 = data.draw(st.integers())
-        assert isinstance(n1, int)
-        n2 = data.draw(st.integers(min_value=n1))
-        assert n1 <= n2
+    @given(st.data(), st.text(min_size=1))
+    def test_string_characters_are_substrings(data, string):
+        assert isinstance(string, str)
+        index = data.draw(st.integers(0, len(string) - 1))
+        assert string[index] in string
+
+Combining Hypothesis with pytest
+--------------------------------
+
+Hypothesis works with pytest features, like :ref:`pytest:pytest.mark.parametrize ref`:
+
+.. code-block:: python
+
+    import pytest
+    from hypothesis import given, strategies as st
+
+    @pytest.mark.parametrize("operation", [reversed, sorted])
+    @given(st.lists(st.integers()))
+    def test_list_operation_preserves_length(operation, lst):
+        assert len(lst) == len(list(operation(lst)))
+
+Hypothesis also works with pytest fixtures:
+
+.. code-block:: python
+
+    import pytest
+
+    @pytest.fixture(scope="session")
+    def shared_mapping():
+        return {n: 0 for n in range(101)}
+
+    @given(st.integers(0, 100))
+    def test_shared_mapping_keys(shared_mapping, n):
+        assert n in shared_mapping

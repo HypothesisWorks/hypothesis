@@ -62,6 +62,7 @@ check out some of the
   quickstart
   tutorial/index
   reference/index
+  stateful
   Type hints <typing>
   Extras <extras>
   supported
