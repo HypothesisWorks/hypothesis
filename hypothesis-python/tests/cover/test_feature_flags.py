@@ -54,7 +54,7 @@ def test_eval_featureflags_repr():
 
 @given(st.data())
 def test_repr_can_be_evalled(data):
-    flags = data.draw(FeatureFlags())
+    flags = data.draw(FeatureStrategy())
     features = data.draw(st.lists(st.text(), unique=True))
 
     for f in features:
