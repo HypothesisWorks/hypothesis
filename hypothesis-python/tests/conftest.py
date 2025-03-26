@@ -11,10 +11,10 @@
 import gc
 import inspect
 import json
+import os
 import random
 import sys
 import time as time_module
-from collections import defaultdict
 from functools import wraps
 from pathlib import Path
 
@@ -61,9 +61,6 @@ def pytest_configure(config):
         # be enough: https://github.com/pytest-dev/pytest-xdist/issues/271.
         # Need a lockfile or equivalent.
 
-        assert not hasattr(
-            config, "workerinput"
-        ), "--hypothesis-benchmark-shrinks does not currently support xdist. Run without -n"
         assert config.getoption(
             "--hypothesis-benchmark-output"
         ), "must specify shrinking output file"
@@ -222,12 +219,18 @@ def pytest_runtest_call(item):
         )
 
 
-shrink_calls = defaultdict(list)
-shrink_time = defaultdict(list)
 timer = time_module.process_time
 
 
-def _benchmark_shrinks(item):
+def _worker_path(session: pytest.Session) -> Path:
+    return (
+        Path(session.config.getoption("--hypothesis-benchmark-output")).parent
+        # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#envvar-PYTEST_XDIST_WORKER
+        / f"shrinking_results_{os.environ['PYTEST_XDIST_WORKER']}.json"
+    )
+
+
+def _benchmark_shrinks(item: pytest.Function) -> None:
     from hypothesis.internal.conjecture.shrinker import Shrinker
 
     # this isn't perfect, but it is cheap!
@@ -235,14 +238,16 @@ def _benchmark_shrinks(item):
         pytest.skip("(probably) does not call minimal()")
 
     actual_shrink = Shrinker.shrink
+    shrink_calls = []
+    shrink_time = []
 
     def shrink(self, *args, **kwargs):
+        nonlocal shrink_calls
+        nonlocal shrink_time
         start_t = timer()
         result = actual_shrink(self, *args, **kwargs)
-        # remove leading hypothesis-python/tests/...
-        nodeid = item.nodeid.rsplit("/", 1)[1]
-        shrink_calls[nodeid].append(self.engine.call_count - self.initial_calls)
-        shrink_time[nodeid].append(timer() - start_t)
+        shrink_calls.append(self.engine.call_count - self.initial_calls)
+        shrink_time.append(timer() - start_t)
         return result
 
     monkeypatch = MonkeyPatch()
@@ -256,15 +261,39 @@ def _benchmark_shrinks(item):
 
     monkeypatch.undo()
 
+    # remove leading hypothesis-python/tests/...
+    nodeid = item.nodeid.rsplit("/", 1)[1]
+
+    results_p = _worker_path(item.session)
+    if not results_p.exists():
+        results_p.write_text(json.dumps({"calls": {}, "time": {}}))
+
+    data = json.loads(results_p.read_text())
+    data["calls"][nodeid] = shrink_calls
+    data["time"][nodeid] = shrink_time
+    results_p.write_text(json.dumps(data))
+
 
 def pytest_sessionfinish(session, exitstatus):
     if not (mode := session.config.getoption("--hypothesis-benchmark-shrinks")):
         return
-    p = Path(session.config.getoption("--hypothesis-benchmark-output"))
-    results = {mode: {"calls": shrink_calls, "time": shrink_time}}
-    if not p.exists():
-        p.write_text(json.dumps(results))
+    # only run on the controller process, not the workers
+    if hasattr(session.config, "workerinput"):
+        return
+
+    results = {"calls": {}, "time": {}}
+    output_p = Path(session.config.getoption("--hypothesis-benchmark-output"))
+    for p in output_p.parent.iterdir():
+        if p.name.startswith("shrinking_results_"):
+            worker_results = json.loads(p.read_text())
+            results["calls"] |= worker_results["calls"]
+            results["time"] |= worker_results["time"]
+            p.unlink()
+
+    results = {mode: results}
+    if not output_p.exists():
+        output_p.write_text(json.dumps(results))
     else:
-        data = json.loads(p.read_text())
+        data = json.loads(output_p.read_text())
         data[mode] = results[mode]
-        p.write_text(json.dumps(data))
+        output_p.write_text(json.dumps(data))
