@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Hypothesis is library for *property-based testing*. In a property-based test, you write something which should hold for all inputs of a certain type, and then let Hypothesis generate and check random inputs of that type. This randomized testing can catch bugs that manually constructed inputs may not have found.
+Hypothesis is a library for *property-based testing*. In a property-based test, you write something which should hold for all inputs of a certain type, and then let Hypothesis generate and check random inputs of that type. This randomized testing can catch bugs that manually constructed inputs may not have found.
 
 Install Hypothesis
 ------------------
@@ -29,10 +29,10 @@ This asks Hypothesis for random integers, and checks that we are in fact getting
 
 We can run this test in one of two ways:
 
-* By letting a test runner (such as ``pytest``) pick up on it.
 * By explicitly calling it.
+* By letting a test runner (such as ``pytest``) pick up on it.
 
-Let's do the latter for now, and add a print statement so we can see what's going on:
+Let's do the former for now, and add a print statement so we can see what's going on:
 
 .. code-block:: python
 
@@ -68,8 +68,8 @@ Concretely, when you run a Hypothesis test, Hypothesis will:
 
 Let's take a closer look at the two things from Hypothesis we used to write this test: the |st.integers| strategy, and the |@given| decorator.
 
-Strategies
-----------
+Writing strategies
+------------------
 
 A *strategy* tells Hypothesis what type of inputs to generate. When we said "Hypothesis generates 100 random inputs", what we really meant was "Hypothesis generates 100 random inputs, using the |st.integers| strategy".
 
@@ -130,10 +130,10 @@ And now this test passes without issues.
   Hypothesis provides many different strategies. If you want to generate a standard Python type, Hypothesis almost certainly has a strategy for it. See the :ref:`strategies reference <strategies>` for a complete list.
 
 
-``.example``
-~~~~~~~~~~~~
+Exploring interactively with ``.example()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use the ``.example`` method to get an idea of the kinds of things a strategy will generate:
+You can use the ``.example()`` method to get an idea of the kinds of things a strategy will generate:
 
 .. code-block:: pycon
 
@@ -142,15 +142,18 @@ You can use the ``.example`` method to get an idea of the kinds of things a stra
 
 .. warning::
 
-  ``.example`` is intended for interactive use only (i.e., in a :term:`REPL <python:REPL>`). It is not intended to be used inside tests.
+  ``.example()`` is intended for interactive use only (i.e., in a :term:`REPL <python:REPL>`). It is not intended to be used inside tests.
 
 
-|@given|
---------
+Defining a test with |@given|
+-----------------------------
 
-Now that we've talked about strategies, let's talk about how to pass them to a test using |@given|. |@given| is the standard entrypoint into Hypothesis, which converts the decorated function into a property-based test.
+The standard use for a strategy is to pass it to a property-based test. The standard way to define a property-based test in Hypothesis is with the |@given| decorator.
 
-In order to talk about how to pass things to |@given|, let's start again with our really simple example:
+Let's talk about how to define a property-based test
+Now that we've talked about strategies, let's talk about how to define a property-based test so we can use the strategy. The standard way to define a property-based test in Hypothesis is with the |@given| decorator.
+
+Let's start again with our really simple example:
 
 .. code-block:: python
 

@@ -200,6 +200,11 @@ rst_prolog = """
 .. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
 .. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
 
+.. |Verbosity.verbose| replace:: :obj:`Verbosity.verbose <hypothesis.Verbosity.verbose>`
+.. |Verbosity.debug| replace:: :obj:`Verbosity.debug <hypothesis.Verbosity.debug>`
+.. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
+.. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
+
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
