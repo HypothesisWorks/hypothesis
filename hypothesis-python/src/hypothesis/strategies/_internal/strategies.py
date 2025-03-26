@@ -28,6 +28,7 @@ from typing import (
     overload,
 )
 
+from hypothesis import strategies as st
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
@@ -689,10 +690,16 @@ class OneOfStrategy(SearchStrategy[Ex]):
     """
 
     def __init__(self, strategies: Sequence[SearchStrategy[Ex]]):
+        from hypothesis.strategies._internal.featureflags import FeatureStrategy
+
         super().__init__()
         self.original_strategies = tuple(strategies)
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
+        self.enabled_branches_strategy = st.shared(
+            FeatureStrategy(self.original_strategies),
+            key=("one_of swarm testing", self.original_strategies),
+        )
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
@@ -739,9 +746,10 @@ class OneOfStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
+        feature_flags = data.draw(self.enabled_branches_strategy)
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
-                lambda s: s.available(data)
+                lambda s: s.available(data) and feature_flags.is_enabled(s)
             )
         )
         return data.draw(strategy)
