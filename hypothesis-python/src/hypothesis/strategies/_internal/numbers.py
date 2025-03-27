@@ -15,6 +15,7 @@ from typing import Literal, Optional, Union
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
@@ -64,7 +65,7 @@ class IntegersStrategy(SearchStrategy[int]):
             return f"integers(max_value={self.end})"
         return f"integers({self.start}, {self.end})"
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> int:
         # For bounded integers, make the bounds and near-bounds more likely.
         weights = None
         if (
@@ -141,7 +142,7 @@ def integers(
     return IntegersStrategy(min_value, max_value)
 
 
-class FloatStrategy(SearchStrategy):
+class FloatStrategy(SearchStrategy[float]):
     """A strategy for floating point numbers."""
 
     def __init__(
@@ -179,7 +180,7 @@ class FloatStrategy(SearchStrategy):
             f"{self.allow_nan=}, {self.smallest_nonzero_magnitude=})"
         ).replace("self.", "")
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> float:
         return data.draw_float(
             min_value=self.min_value,
             max_value=self.max_value,
@@ -500,7 +501,7 @@ def floats(
 
     if width < 64:
 
-        def downcast(x):
+        def downcast(x: float) -> float:
             try:
                 return float_of(x, width)
             except OverflowError:  # pragma: no cover
@@ -510,10 +511,10 @@ def floats(
     return result
 
 
-class NanStrategy(SearchStrategy):
+class NanStrategy(SearchStrategy[float]):
     """Strategy for sampling the space of nan float values."""
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> float:
         # Nans must have all exponent bits and the first mantissa bit set, so
         # we generate by taking 64 random bits and setting the required ones.
         sign_bit = int(data.draw_boolean()) << 63
