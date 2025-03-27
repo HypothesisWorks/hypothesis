@@ -29,7 +29,7 @@ class HypothesisRandom(Random, abc.ABC):
     """A subclass of Random designed to expose the seed it was initially
     provided with."""
 
-    def __init__(self, note_method_calls: bool) -> None:
+    def __init__(self, *, note_method_calls: bool) -> None:
         self._note_method_calls = note_method_calls
 
     def __deepcopy__(self, table):
@@ -179,7 +179,7 @@ def normalize_zero(f: float) -> float:
 class ArtificialRandom(HypothesisRandom):
     VERSION = 10**6
 
-    def __init__(self, note_method_calls: bool, data: ConjectureData) -> None:
+    def __init__(self, *, note_method_calls: bool, data: ConjectureData) -> None:
         super().__init__(note_method_calls=note_method_calls)
         self.__data = data
         self.__state = RandomState()
@@ -397,7 +397,7 @@ def convert_kwargs(name, kwargs):
 
 class TrueRandom(HypothesisRandom):
     def __init__(self, seed, note_method_calls):
-        super().__init__(note_method_calls)
+        super().__init__(note_method_calls=note_method_calls)
         self.__seed = seed
         self.__random = Random(seed)
 
@@ -433,7 +433,7 @@ class TrueRandom(HypothesisRandom):
 
 
 class RandomStrategy(SearchStrategy[HypothesisRandom]):
-    def __init__(self, note_method_calls: bool, use_true_random: bool) -> None:
+    def __init__(self, *, note_method_calls: bool, use_true_random: bool) -> None:
         self.__note_method_calls = note_method_calls
         self.__use_true_random = use_true_random
 

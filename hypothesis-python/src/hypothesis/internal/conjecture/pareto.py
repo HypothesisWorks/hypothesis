@@ -11,7 +11,7 @@
 from collections.abc import Iterator
 from enum import Enum
 from random import Random
-from typing import TYPE_CHECKING, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from sortedcontainers import SortedList
 
@@ -154,7 +154,7 @@ class ParetoFront:
 
         assert not isinstance(data, _Overrun)
         data = data.as_result()
-        data = cast(ConjectureResult, data)
+        assert not isinstance(data, _Overrun)
 
         if not self.front:
             self.front.add(data)
