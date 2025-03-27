@@ -32,7 +32,7 @@ def test_resolves_dtype_type(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@pytest.mark.parametrize("typ", [np.object_, np.void])
+@pytest.mark.parametrize("typ", [np.object_])
 def test_does_not_resolve_nonscalar_types(typ):
     # Comparing the objects directly fails on Windows,
     # so compare their reprs instead.
@@ -42,7 +42,9 @@ def test_does_not_resolve_nonscalar_types(typ):
 @pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
 def test_resolves_and_varies_numpy_scalar_type(typ):
     # Check that we find an instance that is not equal to the default
-    x = find_any(from_type(typ), lambda x: x != type(x)())
+    # (except for void, which does not have a default)
+    cond = lambda _: True if typ is np.void else lambda x: x != type(x)()
+    x = find_any(from_type(typ), cond)
     assert isinstance(x, typ)
 
 
