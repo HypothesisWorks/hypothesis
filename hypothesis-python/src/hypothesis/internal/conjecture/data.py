@@ -11,7 +11,7 @@
 import math
 import time
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from enum import IntEnum
 from functools import cached_property
 from random import Random
@@ -704,6 +704,7 @@ class ConjectureData:
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]
         ] = None
+        self._shared_strategy_draws: dict[Hashable, Any] = {}
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None
