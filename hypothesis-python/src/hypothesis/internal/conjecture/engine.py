@@ -653,7 +653,7 @@ class ConjectureRunner:
 
         self.record_for_health_check(data)
 
-    def on_pareto_evict(self, data: ConjectureData) -> None:
+    def on_pareto_evict(self, data: ConjectureResult) -> None:
         self.settings.database.delete(self.pareto_key, choices_to_bytes(data.choices))
 
     def generate_novel_prefix(self) -> tuple[ChoiceT, ...]:
