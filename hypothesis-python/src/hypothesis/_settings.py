@@ -581,10 +581,31 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
 @unique
 class Verbosity(IntEnum):
+    """Verbosity levels for |@settings|."""
+
     quiet = 0
+    """
+    Hypothesis will not print any output, not even the final falsifying example.
+    """
+
     normal = 1
+    """
+    Standard verbosity. Hypothesis will print the falsifying example, alongside
+    any notes made with |note| (only for the falsfying example).
+    """
+
     verbose = 2
+    """
+    Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
+    will print each example as it tries it, as well as any notes made with |note|
+    for every example. Hypothesis will also print shrinking attempts.
+    """
+
     debug = 3
+    """
+    Even more verbosity. Useful for debugging Hypothesis internals. You probably
+    don't want this.
+    """
 
     def __repr__(self) -> str:
         return f"Verbosity.{self.name}"

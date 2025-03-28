@@ -340,6 +340,13 @@ examples.
 Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. autoclass:: hypothesis.Verbosity
+    :members: quiet,normal,verbose,debug
+
+    .. documenting all members runs into https://stackoverflow.com/a/78657325
+    .. and the fix there didn't work for me
+    .. TODO python 3.13: remove this?
+
 To see what's going on while Hypothesis runs your tests, you can turn
 up the verbosity setting.
 

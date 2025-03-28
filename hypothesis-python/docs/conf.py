@@ -49,7 +49,7 @@ redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
     "database": "reference/api.html#database",
-    "stateful": "reference/api.html#stateful-tests",
+    # "stateful": "reference/api.html#stateful-tests",
     "reproducing": "reference/api.html",
     "ghostwriter": "reference/integrations.html#ghostwriter",
     "django": "reference/strategies.html#django",
@@ -63,7 +63,7 @@ redirects = {
     # these pages were removed without replacement
     # "support": "index.html",
     # "manifesto": "index.html",
-    # "examples": "index.html",
+    "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
 
@@ -200,6 +200,11 @@ rst_prolog = """
 .. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
 .. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
 
+.. |Verbosity.verbose| replace:: :obj:`Verbosity.verbose <hypothesis.Verbosity.verbose>`
+.. |Verbosity.debug| replace:: :obj:`Verbosity.debug <hypothesis.Verbosity.debug>`
+.. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
+.. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
+
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
@@ -234,8 +239,11 @@ rst_prolog = """
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |strategy.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |strategy.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
