@@ -8,16 +8,27 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Iterator
 from enum import Enum
+from random import Random
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from sortedcontainers import SortedList
 
 from hypothesis.internal.conjecture.choice import choices_key
-from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    ConjectureResult,
+    Status,
+    _Overrun,
+)
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.shrinker import sort_key
 
 NO_SCORE = float("-inf")
+
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 
 class DominanceRelation(Enum):
@@ -27,7 +38,7 @@ class DominanceRelation(Enum):
     RIGHT_DOMINATES = 3
 
 
-def dominance(left, right):
+def dominance(left: ConjectureResult, right: ConjectureResult) -> DominanceRelation:
     """Returns the dominance relation between ``left`` and ``right``, according
     to the rules that one ConjectureResult dominates another if and only if it
     is better in every way.
@@ -125,21 +136,25 @@ class ParetoFront:
     see how much of a problem this is in practice before we try that.
     """
 
-    def __init__(self, random):
+    def __init__(self, random: Random) -> None:
         self.__random = random
-        self.__eviction_listeners = []
+        self.__eviction_listeners: list[Callable[[ConjectureResult], None]] = []
 
-        self.front = SortedList(key=lambda d: sort_key(d.nodes))
-        self.__pending = None
+        self.front: SortedList[ConjectureResult] = SortedList(
+            key=lambda d: sort_key(d.nodes)
+        )
+        self.__pending: Optional[ConjectureResult] = None
 
-    def add(self, data):
+    def add(self, data: Union[ConjectureData, ConjectureResult, _Overrun]) -> bool:
         """Attempts to add ``data`` to the pareto front. Returns True if
         ``data`` is now in the front, including if data is already in the
         collection, and False otherwise"""
         if data.status < Status.VALID:
             return False
 
+        assert not isinstance(data, _Overrun)
         data = data.as_result()
+        assert not isinstance(data, _Overrun)
 
         if not self.front:
             self.front.add(data)
@@ -166,7 +181,7 @@ class ParetoFront:
             # We track which values we are going to remove and remove them all
             # at the end so the shape of the front doesn't change while we're
             # using it.
-            to_remove = []
+            to_remove: list[ConjectureResult] = []
 
             # We now iteratively sample elements from the approximate pareto
             # front to check whether they should be retained. When the set of
@@ -238,26 +253,26 @@ class ParetoFront:
         finally:
             self.__pending = None
 
-    def on_evict(self, f):
+    def on_evict(self, f: Callable[[ConjectureResult], None]) -> None:
         """Register a listener function that will be called with data when it
         gets removed from the front because something else dominates it."""
         self.__eviction_listeners.append(f)
 
-    def __contains__(self, data):
+    def __contains__(self, data: object) -> bool:
         return isinstance(data, (ConjectureData, ConjectureResult)) and (
             data.as_result() in self.front
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ConjectureResult]:
         return iter(self.front)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> ConjectureResult:
         return self.front[i]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.front)
 
-    def __remove(self, data):
+    def __remove(self, data: ConjectureResult) -> None:
         try:
             self.front.remove(data)
         except ValueError:
@@ -277,11 +292,12 @@ class ParetoOptimiser:
     grow more powerful over time.
     """
 
-    def __init__(self, engine):
+    def __init__(self, engine: "ConjectureRunner") -> None:
         self.__engine = engine
-        self.front = self.__engine.pareto_front
+        assert self.__engine.pareto_front is not None
+        self.front: ParetoFront = self.__engine.pareto_front
 
-    def run(self):
+    def run(self) -> None:
         seen = set()
 
         # We iterate backwards through the pareto front, using the shrinker to

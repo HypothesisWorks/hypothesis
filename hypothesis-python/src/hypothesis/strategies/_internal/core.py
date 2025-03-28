@@ -79,6 +79,7 @@ from hypothesis.internal.compat import (
     get_type_hints,
     is_typed_named_tuple,
 )
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -2199,7 +2200,7 @@ class DataObject:
     # Note that "only exists" here really means "is only exported to users",
     # but we want to treat it as "semi-stable", not document it as "public API".
 
-    def __init__(self, data):
+    def __init__(self, data: ConjectureData) -> None:
         self.count = 0
         self.conjecture_data = data
 
