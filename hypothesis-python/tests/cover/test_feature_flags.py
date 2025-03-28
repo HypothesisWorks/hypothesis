@@ -13,26 +13,22 @@ from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureSt
 
 from tests.common.debug import find_any, minimal
 
-STRAT = FeatureStrategy()
-
 
 def test_can_all_be_enabled():
-    find_any(STRAT, lambda x: all(x.is_enabled(i) for i in range(100)))
+    find_any(FeatureStrategy(), lambda x: all(x.is_enabled(i) for i in range(100)))
 
 
 def test_minimizes_open():
     features = range(10)
-
-    flags = minimal(STRAT, lambda x: [x.is_enabled(i) for i in features])
-
+    flags = minimal(FeatureStrategy(), lambda x: [x.is_enabled(i) for i in features])
     assert all(flags.is_enabled(i) for i in features)
 
 
 def test_minimizes_individual_features_to_open():
     features = list(range(10))
-
     flags = minimal(
-        STRAT, lambda x: sum(x.is_enabled(i) for i in features) < len(features)
+        FeatureStrategy(),
+        lambda x: sum(x.is_enabled(i) for i in features) < len(features),
     )
 
     assert all(flags.is_enabled(i) for i in features[:-1])
@@ -40,15 +36,11 @@ def test_minimizes_individual_features_to_open():
 
 
 def test_marks_unknown_features_as_enabled():
-    x = find_any(STRAT, lambda v: True)
-
-    assert x.is_enabled("fish")
+    assert find_any(FeatureStrategy(), lambda v: True).is_enabled("fish")
 
 
 def test_by_default_all_enabled():
-    f = FeatureFlags()
-
-    assert f.is_enabled("foo")
+    assert FeatureFlags().is_enabled("foo")
 
 
 def test_eval_featureflags_repr():
@@ -62,20 +54,17 @@ def test_eval_featureflags_repr():
 
 @given(st.data())
 def test_repr_can_be_evalled(data):
-    flags = data.draw(STRAT)
-
+    flags = data.draw(FeatureStrategy())
     features = data.draw(st.lists(st.text(), unique=True))
 
     for f in features:
         flags.is_enabled(f)
 
     flags2 = eval(repr(flags))
-
     for f in features:
         assert flags2.is_enabled(f) == flags.is_enabled(f)
 
     more_features = data.draw(st.lists(st.text().filter(lambda s: s not in features)))
-
     for f in more_features:
         assert flags2.is_enabled(f)
 
