@@ -127,7 +127,7 @@ all = ["black>=19.10b0", "click>=7.0", "crosshair-tool>=0.0.84", "django>=4.2", 
 version = {attr = "hypothesis.version.__version__"}
 
 [tool.setuptools.package-data]
-hypothesis = ["py.typed", "vendor/tlds-alpha-by-domain.txt"]
+hypothesis = ["vendor/tlds-alpha-by-domain.txt"]
 
 [project.scripts]
 hypothesis = "hypothesis.extra.cli:main"
