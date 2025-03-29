@@ -312,5 +312,4 @@ jobs:
         GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: |
-        cp README.md hypothesis-python/
         TASK=${{ matrix.task }} ./build.sh
