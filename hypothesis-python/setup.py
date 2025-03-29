@@ -133,7 +133,9 @@ setuptools.setup(
         "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],
     },
-    long_description=local_file("README.md").read_text(encoding="utf-8"),
+    long_description=(Path(__file__).parent.parent / "README.md").read_text(
+        encoding="utf-8"
+    ),
     long_description_content_type="text/markdown",
     keywords="python testing fuzzing property-based-testing",
 )
