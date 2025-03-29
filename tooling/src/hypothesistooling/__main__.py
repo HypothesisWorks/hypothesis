@@ -252,7 +252,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/setup.py",
+            "hypothesis-python/pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -288,8 +288,8 @@ def update_python_versions():
     # (plus some special cases for the `t` suffix for free-threading builds)
     stable = re.compile(r".*3\.\d+.\d+t?$")
     min_minor_version = re.search(
-        r'python_requires=">= ?3.(\d+)"',
-        Path("hypothesis-python/setup.py").read_text(encoding="utf-8"),
+        r'requires-python = ">= ?3.(\d+)"',
+        Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
@@ -350,14 +350,14 @@ def update_django_versions():
     thisfile.write_text(after, encoding="utf-8")
     pip_tool("shed", str(thisfile))
 
-    # Update the minimum version in setup.py
-    setup_py = hp.BASE_DIR / "setup.py"
+    # Update the minimum version in pyproject.toml
+    pyproject_toml = hp.BASE_DIR / "pyproject.toml"
     content = re.sub(
         r"django>=\d+\.\d+",
         f"django>={min(versions, key=float)}",
-        setup_py.read_text(encoding="utf-8"),
+        pyproject_toml.read_text(encoding="utf-8"),
     )
-    setup_py.write_text(content, encoding="utf-8")
+    pyproject_toml.write_text(content, encoding="utf-8")
 
     # Automatically sync ci_version with the version in build.sh
     tox_ini = hp.BASE_DIR / "tox.ini"
@@ -417,13 +417,13 @@ def update_vendored_files():
     # Always require the most recent version of tzdata - we don't need to worry about
     # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
     # Our crosshair extra is research-grade, so we require latest versions there too.
-    setup = pathlib.Path(hp.BASE_DIR, "setup.py")
-    new = setup.read_text(encoding="utf-8")
+    pyproject_toml = pathlib.Path(hp.BASE_DIR, "pyproject.toml")
+    new = pyproject_toml.read_text(encoding="utf-8")
     for pkgname in ("tzdata", "crosshair-tool", "hypothesis-crosshair"):
         pkg_url = f"https://pypi.org/pypi/{pkgname}/json"
         pkg_version = requests.get(pkg_url).json()["info"]["version"]
         new = re.sub(rf"{pkgname}>=([a-z0-9.]+)", f"{pkgname}>={pkg_version}", new)
-    setup.write_text(new, encoding="utf-8")
+    pyproject_toml.write_text(new, encoding="utf-8")
 
 
 def has_diff(file_or_directory):
@@ -496,7 +496,7 @@ def run_tox(task, version, *args):
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
 # When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
+# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
     "3.9": "3.9.21",
     "3.10": "3.10.16",

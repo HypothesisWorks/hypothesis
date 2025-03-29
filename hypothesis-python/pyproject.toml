@@ -11,7 +11,7 @@ authors = [
     { name = "David R. MacIver and Zac Hatfield-Dodds", email = "david@drmaciver.com" }
 ]
 description = "A library for property-based testing"
-# Do not change. This is automatically updated by update_changelog_and_version
+# Avoid changing this by hand. This is automatically updated by update_changelog_and_version
 readme = {"text" = """<div align="center">
   <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
 </div>
@@ -61,7 +61,7 @@ pip install hypothesis
 There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).
 """, "content-type" = "text/markdown"}
 license = "MPL-2.0"
-requires-python = ">=3.9"
+requires-python = ">= 3.9"
 keywords = ["python", "testing", "fuzzing", "property-based-testing"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -120,7 +120,7 @@ zoneinfo = ["tzdata>=2025.1; sys_platform == 'win32' or sys_platform == 'emscrip
 # might be zoneinfo or pytz depending on version and configuration.
 django = ["django>=4.2"]
 watchdog = ["watchdog>=4.0.0"]
-# Do not change. This is automatically updated by update_changelog_and_version
+# Avoid changing this by hand. This is automatically updated by update_changelog_and_version
 all = ["black>=19.10b0", "click>=7.0", "crosshair-tool>=0.0.84", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.20", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.1; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
 [tool.setuptools.dynamic]
