@@ -59,7 +59,7 @@ pip install hypothesis
 ```
 
 There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).
-"""}
+""", "content-type" = "text/markdown"}
 license = "MPL-2.0"
 requires-python = ">=3.9"
 keywords = ["python", "testing", "fuzzing", "property-based-testing"]
