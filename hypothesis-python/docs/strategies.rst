@@ -177,7 +177,7 @@ package that does all the Hypothesis-related setup work:
 
 and then declare this as your ``"hypothesis"`` entry point:
 
-.. code-block:: python
+.. code-block:: toml
 
     # pyproject.toml
 
