@@ -63,7 +63,7 @@ extras = {
     "crosshair": ["hypothesis-crosshair>=0.0.20", "crosshair-tool>=0.0.84"],
     # zoneinfo is an odd one: every dependency is platform-conditional.
     "zoneinfo": [
-        "tzdata>=2025.1 ; sys_platform == 'win32' or sys_platform == 'emscripten'",
+        "tzdata>=2025.2 ; sys_platform == 'win32' or sys_platform == 'emscripten'",
     ],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions

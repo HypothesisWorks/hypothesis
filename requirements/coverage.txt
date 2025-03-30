@@ -28,7 +28,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.27.0
+fakeredis==2.28.0
     # via -r requirements/coverage.in
 iniconfig==2.1.0
     # via pytest
@@ -73,7 +73,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -92,12 +92,12 @@ tomli==2.2.1
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   -r requirements/coverage.in
     #   black
     #   fakeredis
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 watchdog==6.0.0
     # via -r requirements/coverage.in

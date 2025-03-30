@@ -200,7 +200,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
-pyflakes==3.2.0
+pyflakes==3.3.0
     # via autoflake
 pygments==2.18.0
     # via
@@ -216,7 +216,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.397
+pyright==1.1.398
     # via -r requirements/tools.in
 pytest==8.3.5
     # via
@@ -228,7 +228,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-pytz==2025.1
+pytz==2025.2
     # via feedgenerator
 pyupgrade==3.19.1
     # via shed
@@ -321,7 +321,7 @@ tomli==2.2.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.24.2
+tox==4.25.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -329,19 +329,19 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.1.0
     # via -r requirements/tools.in
-types-cffi==1.17.0.20250319
+types-cffi==1.17.0.20250326
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2025.1.0.20250318
+types-pytz==2025.2.0.20250326
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==76.0.0.20250313
+types-setuptools==78.1.0.20250329
     # via types-cffi
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   -r requirements/tools.in
     #   anyio
@@ -375,7 +375,7 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==25.0.1
     # via pip-tools
-setuptools==77.0.3
+setuptools==78.1.0
     # via
     #   pip-tools
     #   types-setuptools
