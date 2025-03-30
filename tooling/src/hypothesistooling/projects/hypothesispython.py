@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import json
 import os
 import re
 import shutil
@@ -15,6 +16,7 @@ import subprocess
 import sys
 
 import requests
+import tomli
 
 import hypothesistooling as tools
 from hypothesistooling import releasemanagement as rm
@@ -84,7 +86,9 @@ def build_docs(*, builder="html", only=()):
 
 CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$", flags=re.MULTILINE)
 CHANGELOG_BORDER = re.compile(r"^-+$", flags=re.MULTILINE)
-CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.M)
+CHANGELOG_HEADER = re.compile(
+    r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.MULTILINE
+)
 
 
 def update_changelog_and_version():
@@ -155,6 +159,35 @@ def update_changelog_and_version():
                 with open(fname, "w", encoding="utf-8") as f:
                     f.write(contents.replace(before, after))
 
+    update_pyproject_toml()
+
+
+def update_pyproject_toml():
+    # manually write back these changes using regex instead of pulling in a
+    # toml dependency for writing. tomli doesn't support writing, and
+    # tomli-w doesn't support writing with comments.
+    toml_p = HYPOTHESIS_PYTHON / "pyproject.toml"
+    toml_data = tomli.loads(toml_p.read_text())
+    extras = toml_data["project"]["optional-dependencies"]
+    readme = (tools.ROOT / "README.md").read_text()
+    content = toml_p.read_text()
+    content = re.sub(
+        r'readme = {"text" = """.*""", "content-type" = "text/markdown"}',
+        f'readme = {{"text" = """{readme}""", "content-type" = "text/markdown"}}',
+        content,
+        flags=re.DOTALL,
+    )
+
+    all_extras = sorted(set(sum(extras.values(), [])))
+    all_extras = json.dumps(all_extras).replace("\n", "\\n")
+    content = re.sub(
+        r"^all = \[.*\]$",
+        f"all = {all_extras}",
+        content,
+        flags=re.MULTILINE,
+    )
+    toml_p.write_text(content)
+
 
 CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changes.rst"
 DIST = HYPOTHESIS_PYTHON / "dist"
@@ -167,9 +200,7 @@ def changelog():
 def build_distribution():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
-    subprocess.check_output(
-        [sys.executable, "setup.py", "sdist", "bdist_wheel", "--dist-dir", DIST]
-    )
+    subprocess.check_output([sys.executable, "-m", "build", "--outdir", DIST])
 
 
 def upload_distribution():

@@ -36,7 +36,7 @@ $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
 
 pip install ".[lark]"
-pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
 pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/

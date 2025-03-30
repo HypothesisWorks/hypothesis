@@ -28,4 +28,5 @@ types-pytz
 types-redis
 typing-extensions
 watchdog # for typing
+build
 -r test.in

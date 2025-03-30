@@ -31,7 +31,9 @@ black==25.1.0
 blinker==1.9.0
     # via pelican
 build==1.2.2.post1
-    # via pip-tools
+    # via
+    #   -r requirements/tools.in
+    #   pip-tools
 cachetools==5.5.2
     # via tox
 certifi==2025.1.31

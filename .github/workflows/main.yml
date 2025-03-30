@@ -257,8 +257,8 @@ jobs:
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
         run: |
-          pip install --upgrade setuptools pip wheel
-          python hypothesis-python/setup.py bdist_wheel
+          pip install --upgrade setuptools pip wheel build
+          python -m build --wheel hypothesis-python --outdir dist/
           pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
 
           rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
@@ -312,5 +312,4 @@ jobs:
         GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: |
-        cp README.md hypothesis-python/
         TASK=${{ matrix.task }} ./build.sh

@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./brand/dragonfly-rainbow.svg" width="300">
+  <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
 </div>
 
 # Hypothesis
