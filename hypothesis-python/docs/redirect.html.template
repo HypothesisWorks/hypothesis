@@ -29,7 +29,10 @@
       if (redirect) {
         window.location.replace(redirect);
       } else if (window.location.hash) {
-        window.location.replace(target + window.location.hash);
+        // if both the requested url and the redirect target have a hash, prefer the requested url hash.
+        // This makes a redirect config of {"settings": "api.html#settings"} redirect settings.html#health-checks
+        // to api.html#health-checks instead of api.html#settings.
+        window.location.replace(target.split('#')[0] + window.location.hash);
       } else {
         window.location.replace(target);
       }

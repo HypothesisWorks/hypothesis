@@ -55,6 +55,7 @@ redirects = {
     "django": "reference/strategies.html#django",
     "numpy": "reference/strategies.html#numpy",
     "observability": "reference/integrations.html#observability",
+    "settings": "reference/api.html#settings",
     # TODO enable when we actually rename them
     # "extras": "extensions.html",
     # "supported": "compatibility.html",
