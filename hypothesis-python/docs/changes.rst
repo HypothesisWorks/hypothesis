@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.6:
+
+--------------------
+6.130.6 - 2025-03-31
+--------------------
+
+Update the documentation link in |HealthCheck| error messages to their new location in the documentation.
+
 .. _v6.130.5:
 
 --------------------
