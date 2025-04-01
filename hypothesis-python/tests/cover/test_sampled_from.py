@@ -101,7 +101,7 @@ def test_efficient_dicts_with_sampled_keys(x):
 
 @pytest.mark.skipif(
     settings._current_profile == "crosshair",
-    reason="takes ~10 mins and raises Unsatisfiable",
+    reason="takes ~10 mins and raises Unsatisfiable; first barrier is symbolic subscripting https://github.com/pschanely/CrossHair/issues/332",
 )
 @given(
     st.lists(

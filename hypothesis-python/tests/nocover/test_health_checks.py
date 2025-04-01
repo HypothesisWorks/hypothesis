@@ -20,7 +20,9 @@ from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
-pytestmark = pytest.mark.skipif(settings._current_profile == "crosshair", reason="slow")
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair", reason="slow - large number of symbolics"
+)
 
 large_strategy = st.binary(min_size=7000, max_size=7000)
 too_large_strategy = st.tuples(large_strategy, large_strategy)
