@@ -6,7 +6,29 @@
     </noscript>
     <script>
       var target = "${to_uri}";
-      if (window.location.hash) {
+
+      var manualRedirects = {
+        "details.html#thread-safety-policy": "supported.html#thread-safety-policy",
+        "details.html#hypothesis.given": "reference/api.html#hypothesis.given",
+        "details.html#targeted-example-generation": "reference/api.html#targeted-property-based-testing",
+        "details.html#custom-function-execution": "reference/api.html#custom-function-execution",
+        // TODO_DOCS when we figure out a home for this page
+        // "details.html#type-annotations-in-hypothesis": ""
+        "details.html#the-hypothesis-pytest-plugin": "reference/integrations.html#the-hypothesis-pytest-plugin",
+        "details.html#use-with-external-fuzzers": "reference/api.html#use-with-external-fuzzers",
+        "details.html#making-assumptions": "reference/api.html#hypothesis.assume",
+        "details.html#hypothesis.event": "reference/api.html#hypothesis.event",
+        "details.html#hypothesis.assume": "reference/api.html#hypothesis.assume",
+        "details.html#hypothesis.given": "reference/api.html#hypothesis.given",
+        "details.html#hypothesis.target": "reference/api.html#hypothesis.target",
+        "details.html#hypothesis.register_random": "reference/strategies.html#hypothesis.register_random",
+        "details.html#hypothesis.strategies.SearchStrategy": "reference/strategies.html#hypothesis.strategies.SearchStrategy",
+      };
+      var redirect = manualRedirects[window.location.pathname.split('/').pop() + window.location.hash];
+
+      if (redirect) {
+        window.location.replace(redirect);
+      } else if (window.location.hash) {
         window.location.replace(target + window.location.hash);
       } else {
         window.location.replace(target);

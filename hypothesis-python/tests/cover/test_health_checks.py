@@ -26,7 +26,7 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-from tests.common.utils import no_shrink
+from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 
 HEALTH_CHECK_SETTINGS = settings(
     max_examples=11, database=None, suppress_health_check=()
@@ -235,6 +235,7 @@ def test_triply_nested_given_raises_healthcheck():
         f()
 
 
+@xfail_on_crosshair(Why.nested_given)
 def test_can_suppress_nested_given():
     @given(st.integers())
     @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
@@ -269,6 +270,7 @@ def test_cant_suppress_nested_given_on_inner():
         f()
 
 
+@xfail_on_crosshair(Why.nested_given)
 def test_suppress_triply_nested_given():
     # both suppressions are necessary here
     @given(st.integers())

@@ -213,6 +213,30 @@ class DiscardObserver(DataObserver):
         raise ContainsDiscard
 
 
+def realize_choices(data: ConjectureData) -> None:
+    for node in data.nodes:
+        value = data.provider.realize(node.value)
+        expected_type = {
+            "string": str,
+            "float": float,
+            "integer": int,
+            "boolean": bool,
+            "bytes": bytes,
+        }[node.type]
+        if type(value) is not expected_type:
+            raise HypothesisException(
+                f"expected {expected_type} from "
+                f"{data.provider.realize.__qualname__}, got {type(value)}"
+            )
+
+        kwargs = cast(
+            ChoiceKwargsT,
+            {k: data.provider.realize(v) for k, v in node.kwargs.items()},
+        )
+        node.value = value
+        node.kwargs = kwargs
+
+
 class ConjectureRunner:
     def __init__(
         self,
@@ -470,6 +494,9 @@ class ConjectureRunner:
             data.freeze()
             return
         except BaseException:
+            data.freeze()
+            if self.settings.backend != "hypothesis":
+                realize_choices(data)
             self.save_choices(data.choices)
             raise
         finally:
@@ -489,31 +516,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    for node in data.nodes:
-                        value = data.provider.realize(node.value)
-                        expected_type = {
-                            "string": str,
-                            "float": float,
-                            "integer": int,
-                            "boolean": bool,
-                            "bytes": bytes,
-                        }[node.type]
-                        if type(value) is not expected_type:
-                            raise HypothesisException(
-                                f"expected {expected_type} from "
-                                f"{data.provider.realize.__qualname__}, "
-                                f"got {type(value)}"
-                            )
-
-                        kwargs = cast(
-                            ChoiceKwargsT,
-                            {
-                                k: data.provider.realize(v)
-                                for k, v in node.kwargs.items()
-                            },
-                        )
-                        node.value = value
-                        node.kwargs = kwargs
+                    realize_choices(data)
 
                 self._cache(data)
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
@@ -650,7 +653,7 @@ class ConjectureRunner:
 
         self.record_for_health_check(data)
 
-    def on_pareto_evict(self, data: ConjectureData) -> None:
+    def on_pareto_evict(self, data: ConjectureResult) -> None:
         self.settings.database.delete(self.pareto_key, choices_to_bytes(data.choices))
 
     def generate_novel_prefix(self) -> tuple[ChoiceT, ...]:

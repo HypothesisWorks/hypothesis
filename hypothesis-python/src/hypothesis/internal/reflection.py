@@ -23,12 +23,13 @@ import types
 import warnings
 from collections.abc import MutableMapping, Sequence
 from functools import partial, wraps
+from inspect import Parameter, Signature
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
@@ -43,7 +44,7 @@ READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
 LAMBDA_SOURCE_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
 
 
-def is_mock(obj):
+def is_mock(obj: object) -> bool:
     """Determine if the given argument is a mock type."""
 
     # We want to be able to detect these when dealing with various test
@@ -118,7 +119,7 @@ def function_digest(function: Any) -> bytes:
     return hasher.digest()
 
 
-def check_signature(sig: inspect.Signature) -> None:
+def check_signature(sig: Signature) -> None:
     # Backport from Python 3.11; see https://github.com/python/cpython/pull/92065
     for p in sig.parameters.values():
         if iskeyword(p.name) and p.kind is not p.POSITIONAL_ONLY:
@@ -132,17 +133,19 @@ def check_signature(sig: inspect.Signature) -> None:
 
 def get_signature(
     target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
-) -> inspect.Signature:
+) -> Signature:
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
     patches = getattr(target, "patchings", None)
     if isinstance(patches, list) and all(isinstance(p, PatchType) for p in patches):
-        P = inspect.Parameter
-        return inspect.Signature(
-            [P("args", P.VAR_POSITIONAL), P("keywargs", P.VAR_KEYWORD)]
+        return Signature(
+            [
+                Parameter("args", Parameter.VAR_POSITIONAL),
+                Parameter("keywargs", Parameter.VAR_KEYWORD),
+            ]
         )
 
-    if isinstance(getattr(target, "__signature__", None), inspect.Signature):
+    if isinstance(getattr(target, "__signature__", None), Signature):
         # This special case covers unusual codegen like Pydantic models
         sig = target.__signature__
         check_signature(sig)
@@ -152,7 +155,7 @@ def get_signature(
             selfy = next(iter(sig.parameters.values()))
             if (
                 selfy.name == "self"
-                and selfy.default is inspect.Parameter.empty
+                and selfy.default is Parameter.empty
                 and selfy.kind.name.startswith("POSITIONAL_")
             ):
                 return sig.replace(
@@ -172,10 +175,10 @@ def get_signature(
     return sig
 
 
-def arg_is_required(param):
-    return param.default is inspect.Parameter.empty and param.kind in (
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        inspect.Parameter.KEYWORD_ONLY,
+def arg_is_required(param: Parameter) -> bool:
+    return param.default is Parameter.empty and param.kind in (
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.KEYWORD_ONLY,
     )
 
 
@@ -204,7 +207,9 @@ def required_args(target, args=(), kwargs=()):
     }
 
 
-def convert_keyword_arguments(function, args, kwargs):
+def convert_keyword_arguments(
+    function: Any, args: Sequence[object], kwargs: dict[str, object]
+) -> tuple[tuple[object, ...], dict[str, object]]:
     """Returns a pair of a tuple and a dictionary which would be equivalent
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
@@ -238,24 +243,22 @@ def convert_positional_arguments(
     return tuple(new_args), new_kwargs
 
 
-def ast_arguments_matches_signature(args, sig):
-    assert isinstance(args, ast.arguments)
-    assert isinstance(sig, inspect.Signature)
-    expected = []
+def ast_arguments_matches_signature(args: ast.arguments, sig: Signature) -> bool:
+    expected: list[tuple[str, int]] = []
     for node in args.posonlyargs:
-        expected.append((node.arg, inspect.Parameter.POSITIONAL_ONLY))
+        expected.append((node.arg, Parameter.POSITIONAL_ONLY))
     for node in args.args:
-        expected.append((node.arg, inspect.Parameter.POSITIONAL_OR_KEYWORD))
+        expected.append((node.arg, Parameter.POSITIONAL_OR_KEYWORD))
     if args.vararg is not None:
-        expected.append((args.vararg.arg, inspect.Parameter.VAR_POSITIONAL))
+        expected.append((args.vararg.arg, Parameter.VAR_POSITIONAL))
     for node in args.kwonlyargs:
-        expected.append((node.arg, inspect.Parameter.KEYWORD_ONLY))
+        expected.append((node.arg, Parameter.KEYWORD_ONLY))
     if args.kwarg is not None:
-        expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
+        expected.append((args.kwarg.arg, Parameter.VAR_KEYWORD))
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
 
 
-def is_first_param_referenced_in_function(f):
+def is_first_param_referenced_in_function(f: Any) -> bool:
     """Is the given name referenced within f?"""
     try:
         tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
@@ -301,7 +304,7 @@ def _extract_lambda_source(f):
     # The answer is that we add this at runtime, in new_given_signature(),
     # and we do support strange choices as applying @given() to a lambda.
     sig = inspect.signature(f)
-    assert sig.return_annotation in (inspect.Parameter.empty, None), sig
+    assert sig.return_annotation in (Parameter.empty, None), sig
 
     # Using pytest-xdist on Python 3.13, there's an entry in the linecache for
     # file "<string>", which then returns nonsense to getsource.  Discard it.
@@ -459,7 +462,7 @@ def get_pretty_function_description(f: object) -> str:
     return name
 
 
-def nicerepr(v):
+def nicerepr(v: Any) -> str:
     if inspect.isfunction(v):
         return get_pretty_function_description(v)
     elif isinstance(v, type):
@@ -500,15 +503,15 @@ def repr_call(
     return rep + "(" + ", ".join(bits) + ")"
 
 
-def check_valid_identifier(identifier):
+def check_valid_identifier(identifier: str) -> None:
     if not identifier.isidentifier():
         raise ValueError(f"{identifier!r} is not a valid python identifier")
 
 
-eval_cache: dict = {}
+eval_cache: dict[str, ModuleType] = {}
 
 
-def source_exec_as_module(source):
+def source_exec_as_module(source: str) -> ModuleType:
     try:
         return eval_cache[source]
     except KeyError:
@@ -532,7 +535,9 @@ def accept({funcname}):
 """.lstrip()
 
 
-def get_varargs(sig, kind=inspect.Parameter.VAR_POSITIONAL):
+def get_varargs(
+    sig: Signature, kind: int = Parameter.VAR_POSITIONAL
+) -> Optional[Parameter]:
     for p in sig.parameters.values():
         if p.kind is kind:
             return p
@@ -583,7 +588,7 @@ def define_function_signature(name, docstring, signature):
         for p in signature.parameters.values():
             if p.kind is p.KEYWORD_ONLY:
                 invocation_parts.append(f"{p.name}={p.name}")
-        varkw = get_varargs(signature, kind=inspect.Parameter.VAR_KEYWORD)
+        varkw = get_varargs(signature, kind=Parameter.VAR_KEYWORD)
         if varkw:
             invocation_parts.append("**" + varkw.name)
 

@@ -659,6 +659,7 @@ def test_database_listener_memory():
 
 
 @skipif_emscripten
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ages")
 def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),

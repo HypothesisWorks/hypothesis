@@ -83,12 +83,15 @@ jobs:
           # - check-py39-pandas12
           # - check-py39-pandas11
           ## `-cover` is too slow under crosshair; use a custom split
-          # - check-crosshair-custom-cover/test_[a-d]*
-          # - check-crosshair-custom-cover/test_[e-i]*
-          # - check-crosshair-custom-cover/test_[j-r]*
-          # - check-crosshair-custom-cover/test_[s-z]*
-          # - check-crosshair-custom-pytest/test_*
-          # - check-crosshair-nocover
+          - check-crosshair-custom-cover/test_[a-d]*
+          - check-crosshair-custom-cover/test_[e-i]*
+          - check-crosshair-custom-cover/test_[j-r]*
+          - check-crosshair-custom-cover/test_[s-z]*
+          - check-crosshair-custom-pytest/test_*
+          - check-crosshair-custom-nocover/test_[a-d]*
+          - check-crosshair-custom-nocover/test_[e-i]*
+          - check-crosshair-custom-nocover/test_[j-r]*
+          - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
           - check-py39-oldestnumpy
           - check-numpy-nightly
@@ -129,7 +132,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python ; echo tests/$GROUP)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -v "_py312" | xargs)
         else
           ./build.sh
         fi
@@ -254,8 +257,8 @@ jobs:
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
         run: |
-          pip install --upgrade setuptools pip wheel
-          python hypothesis-python/setup.py bdist_wheel
+          pip install --upgrade setuptools pip wheel build
+          python -m build --wheel hypothesis-python --outdir dist/
           pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
 
           rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
@@ -309,5 +312,4 @@ jobs:
         GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: |
-        cp README.md hypothesis-python/
         TASK=${{ matrix.task }} ./build.sh

@@ -45,11 +45,10 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 Hypothesis has *optional* dependencies on the following libraries:
 
-.. literalinclude:: ../setup.py
-   :prepend: extras_require = {
-   :start-after: extras = {
-   :end-before: }
-   :append: }
+.. literalinclude:: ../pyproject.toml
+   :prepend: [project.optional-dependencies]
+   :start-after: [project.optional-dependencies]
+   :end-before: # Avoid changing this by hand
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.

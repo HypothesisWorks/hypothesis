@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./brand/dragonfly-rainbow.svg" width="300">
+  <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
 </div>
 
 # Hypothesis
@@ -44,4 +44,4 @@ To install Hypothesis:
 pip install hypothesis
 ```
 
-There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/packaging.html#other-python-libraries).
+There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).

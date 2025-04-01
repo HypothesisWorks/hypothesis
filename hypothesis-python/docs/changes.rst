@@ -18,6 +18,40 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.5:
+
+--------------------
+6.130.5 - 2025-03-28
+--------------------
+
+Improve our internal type hints.
+
+.. _v6.130.4:
+
+--------------------
+6.130.4 - 2025-03-25
+--------------------
+
+Improve an additional interaction between the :pypi:`hypothesis-crosshair`
+:ref:`backend <alternative-backends>` and :ref:`our observability tools <observability>`.
+
+.. _v6.130.3:
+
+--------------------
+6.130.3 - 2025-03-24
+--------------------
+
+This patch improves the interaction between the :pypi:`hypothesis-crosshair`
+:ref:`backend <alternative-backends>` and :ref:`our observability tools <observability>`.
+
+.. _v6.130.2:
+
+--------------------
+6.130.2 - 2025-03-22
+--------------------
+
+Fix an issue with realizing symbolic values provided by :ref:`alternative backends <alternative-backends>` when Hypothesis encounters an internal error in its engine.
+
 .. _v6.130.1:
 
 --------------------

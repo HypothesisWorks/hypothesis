@@ -74,7 +74,11 @@ def _process_benchmark_data(data):
     for node_id in old_calls:
         old = old_calls[node_id]
         new = new_calls[node_id]
-        if set(old) | set(new) == {0} or len(old) != len(new):
+        if (
+            set(old) | set(new) == {0}
+            or len(old) != len(new)
+            or len(old) == len(new) == 0
+        ):
             print(f"skipping {node_id}")
             continue
 

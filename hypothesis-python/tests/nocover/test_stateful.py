@@ -23,6 +23,8 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
+from tests.common.utils import Why
+
 
 def run_to_notes(TestClass):
     TestCase = TestClass.TestCase
@@ -204,6 +206,10 @@ with_cheap_bad_machines = pytest.mark.parametrize(
     "machine", bad_machines, ids=[t.__name__ for t in bad_machines]
 )
 def test_bad_machines_fail(machine):
+    if machine is CanSwarm and Settings._current_profile == "crosshair":
+        # and also takes 10 minutes, on top of not finding the failure
+        pytest.xfail(reason=str(Why.undiscovered))
+
     test_class = machine.TestCase
     try:
         test_class().runTest()

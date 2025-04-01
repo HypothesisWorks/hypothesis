@@ -34,7 +34,7 @@ def test_python_versions_are_tested_in_ci(version):
 def test_python_versions_are_in_trove_classifiers():
     got_classifiers = {
         line.strip(' ",\n')
-        for line in Path("hypothesis-python/setup.py")
+        for line in Path("hypothesis-python/pyproject.toml")
         .read_text(encoding="utf-8")
         .splitlines()
         if "Programming Language :: Python :: 3." in line

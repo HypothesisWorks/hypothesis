@@ -648,7 +648,7 @@ def _imports_for_strategy(strategy):
         for f in strategy.flat_conditions:
             imports |= _imports_for_object(f)
     if isinstance(strategy, FlatMapStrategy):
-        imports |= _imports_for_strategy(strategy.flatmapped_strategy)
+        imports |= _imports_for_strategy(strategy.base)
         imports |= _imports_for_object(strategy.expand)
 
     # recurse through one_of to handle e.g. from_type(Optional[Foo])
