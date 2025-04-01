@@ -11,24 +11,24 @@ async-timeout==5.0.1
 attrs==24.1.0
     # via
     #   -r requirements/test.in
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
 black==25.1.0
     # via -r requirements/coverage.in
 click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.7.1
+coverage[toml]==7.8.0
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.27.0
+fakeredis==2.28.0
     # via -r requirements/coverage.in
 iniconfig==2.1.0
     # via pytest
@@ -65,7 +65,7 @@ pytest==8.3.5
     #   -r requirements/test.in
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==6.0.0
+pytest-cov==6.1.0
     # via -r requirements/coverage.in
 pytest-xdist==3.6.1
     # via -r requirements/test.in
@@ -73,7 +73,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -86,18 +86,18 @@ six==1.17.0
 sortedcontainers==2.4.0
     # via
     #   fakeredis
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
 tomli==2.2.1
     # via
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   -r requirements/coverage.in
     #   black
     #   fakeredis
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 watchdog==6.0.0
     # via -r requirements/coverage.in
