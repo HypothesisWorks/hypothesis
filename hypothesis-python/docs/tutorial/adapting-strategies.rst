@@ -68,27 +68,6 @@ The |assume| function skips test cases where some condition evaluates to ``True`
         # b will be nonzero here
         assert abs(a % b) < abs(b)
 
-|assume| vs early-returning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-One other way we could have avoided the divide-by-zero error inside the test function is to early-return when ``b == 0``:
-
-.. code-block:: python
-
-    from hypothesis import assume, given, strategies as st
-
-    @given(st.integers(), st.integers())
-    def test_remainder_magnitude(a, b):
-        if b == 0:
-            return
-        assert abs(a % b) < abs(b)
-
-While this would have avoided the divide-by-zero, early-returning is not the same as using |assume|. With |assume|, Hypothesis knows that a test case has been filtered out, and will not count it towards the |max_examples| limit. In contrast, early-returns are counted as a valid example. In more complicted cases, this could end up testing your code less than you expect, because many test cases get discarded without Hypothesis knowing about it.
-
-In addition, |assume| lets you skip the test case at any point in the test, even inside arbitrarily deep nestings of functions.
-
-You should always use |assume| rather than early-returning. |assume| is more idiomatic and allows Hypothesis more insight into your test.
-
 |assume| vs |strategy.filter|
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,3 +112,24 @@ And then notice that the ``b != 0`` condition can be moved into the strategy def
         assert (a // b) * b == a
 
 However, the ``a % b == 0`` condition has to stay as an |assume|, because it expresses a more complicated relationship between ``a`` and ``b``.
+
+|assume| vs early-returning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One other way we could have avoided the divide-by-zero error inside the test function is to early-return when ``b == 0``:
+
+.. code-block:: python
+
+    from hypothesis import assume, given, strategies as st
+
+    @given(st.integers(), st.integers())
+    def test_remainder_magnitude(a, b):
+        if b == 0:
+            return
+        assert abs(a % b) < abs(b)
+
+While this would have avoided the divide-by-zero, early-returning is not the same as using |assume|. With |assume|, Hypothesis knows that a test case has been filtered out, and will not count it towards the |max_examples| limit. In contrast, early-returns are counted as a valid example. In more complicted cases, this could end up testing your code less than you expect, because many test cases get discarded without Hypothesis knowing about it.
+
+In addition, |assume| lets you skip the test case at any point in the test, even inside arbitrarily deep nestings of functions.
+
+You should always use |assume| rather than early-returning. |assume| is more idiomatic and allows Hypothesis more insight into your test.
