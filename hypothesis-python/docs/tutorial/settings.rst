@@ -6,7 +6,7 @@ This page discusses how to configure the behavior of a single Hypothesis test, o
 Configuring a single test
 -------------------------
 
-Hypothesis lets you configue the default behavior of a test using the |@settings| decorator. You can use settings to configure how many examples Hypothesis generates, how Hypothesis replays failing examples, and the verbosity level of the test, among others.
+Hypothesis lets you configure the default behavior of a test using the |@settings| decorator. You can use settings to configure how many examples Hypothesis generates, how Hypothesis replays failing examples, and the verbosity level of the test, among others.
 
 Using |@settings| on a single test looks like this:
 
