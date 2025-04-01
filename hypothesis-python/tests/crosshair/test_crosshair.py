@@ -18,7 +18,7 @@ from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.utils import capture_observations
-from tests.conjecture.common import float_kw, integer_kw, string_kw
+from tests.conjecture.common import float_constr, integer_constr, string_constr
 
 
 @pytest.mark.parametrize("verbosity", list(Verbosity))
@@ -63,21 +63,21 @@ def test_hypothesis_realizes_on_fatal_error():
         f()
 
 
-def count_choices_for(choice_type, kwargs):
+def count_choices_for(choice_type, constraints):
     # returns the number of choices that crosshair makes for this draw, before
     # hypothesis ever has a chance to interact with it.
     provider = CrossHairPrimitiveProvider()
     with provider.per_test_case_context_manager():
         assert len(crosshair.statespace.context_statespace().choices_made) == 0
-        getattr(provider, f"draw_{choice_type}")(**kwargs)
+        getattr(provider, f"draw_{choice_type}")(**constraints)
         return len(crosshair.statespace.context_statespace().choices_made)
 
 
 @pytest.mark.parametrize(
     "strategy, expected_choices",
     [
-        (st.integers(), lambda: count_choices_for("integer", integer_kw())),
-        (st.floats(), lambda: count_choices_for("float", float_kw())),
+        (st.integers(), lambda: count_choices_for("integer", integer_constr())),
+        (st.floats(), lambda: count_choices_for("float", float_constr())),
         (
             st.binary(),
             lambda: count_choices_for(
@@ -95,7 +95,7 @@ def count_choices_for(choice_type, kwargs):
         (
             st.text(),
             lambda: count_choices_for(
-                "string", string_kw(IntervalSet.from_string("a"))
+                "string", string_constr(IntervalSet.from_string("a"))
             ),
         ),
     ],
