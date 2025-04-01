@@ -221,11 +221,11 @@ class ListStrategy(SearchStrategy[list[Ex]]):
             new.min_size = 1
             return new
 
-        kwargs, pred = get_integer_predicate_bounds(condition)
-        if kwargs.get("len") and ("min_value" in kwargs or "max_value" in kwargs):
+        constraints, pred = get_integer_predicate_bounds(condition)
+        if constraints.get("len") and ("min_value" in constraints or "max_value" in constraints):
             new = copy.copy(self)
-            new.min_size = max(self.min_size, kwargs.get("min_value", self.min_size))
-            new.max_size = min(self.max_size, kwargs.get("max_value", self.max_size))
+            new.min_size = max(self.min_size, constraints.get("min_value", self.min_size))
+            new.max_size = min(self.max_size, constraints.get("max_value", self.max_size))
             # Unsatisfiable filters are easiest to understand without rewriting.
             if new.min_size > new.max_size:
                 return SearchStrategy.filter(self, condition)

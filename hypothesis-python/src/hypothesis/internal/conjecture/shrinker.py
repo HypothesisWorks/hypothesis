@@ -81,7 +81,7 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
     """
     return (
         len(nodes),
-        tuple(choice_to_index(node.value, node.kwargs) for node in nodes),
+        tuple(choice_to_index(node.value, node.constraints) for node in nodes),
     )
 
 
@@ -394,7 +394,7 @@ class Shrinker:
 
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
-        if any(not choice_permitted(node.value, node.kwargs) for node in nodes):
+        if any(not choice_permitted(node.value, node.constraints) for node in nodes):
             return (False, None)
 
         result = self.engine.cached_test_function(
@@ -531,7 +531,7 @@ class Shrinker:
                 for i in range(start, end):
                     node = nodes[i]
                     if not node.was_forced:
-                        value = draw_choice(node.type, node.kwargs, random=self.random)
+                        value = draw_choice(node.type, node.constraints, random=self.random)
                         node = node.copy(with_value=value)
                     replacement.append(node.value)
 
@@ -682,7 +682,7 @@ class Shrinker:
                 node.type == "integer"
                 and not node.was_forced
                 and node.value <= 10
-                and node.kwargs["min_value"] == 0
+                and node.constraints["min_value"] == 0
             ):
                 assert isinstance(node.value, int)
 
@@ -713,7 +713,7 @@ class Shrinker:
                             if (
                                 zero_node.type != orig_node.type
                                 or not choice_permitted(
-                                    orig_node.value, zero_node.kwargs
+                                    orig_node.value, zero_node.constraints
                                 )
                             ):
                                 changed_shape = True
@@ -982,7 +982,7 @@ class Shrinker:
         if not changed:
             return
 
-        ints = [abs(node.value - node.kwargs["shrink_towards"]) for node in changed]
+        ints = [abs(node.value - node.constraints["shrink_towards"]) for node in changed]
         offset = min(ints)
         assert offset > 0
 
@@ -995,7 +995,7 @@ class Shrinker:
             return (
                 node.index,
                 node.index + 1,
-                [node.copy(with_value=node.kwargs["shrink_towards"] + n)],
+                [node.copy(with_value=node.constraints["shrink_towards"] + n)],
             )
 
         def consider(n, sign):
@@ -1036,7 +1036,7 @@ class Shrinker:
         if len(prev_nodes) != len(new_nodes) or any(
             n1.type != n2.type for n1, n2 in zip(prev_nodes, new_nodes)
         ):
-            # should we check kwargs are equal as well?
+            # should we check constraints are equal as well?
             self.__all_changed_nodes = set()
         else:
             assert len(prev_nodes) == len(new_nodes)
@@ -1118,7 +1118,7 @@ class Shrinker:
             # min_size than our attempt had for the draw_string node.
             #
             # We'll now try realigning this tree by:
-            # * replacing the kwargs in our attempt with what test_function tried
+            # * replacing the constraints in our attempt with what test_function tried
             #   to draw in practice
             # * truncating the value of that node to match min_size
             #
@@ -1130,7 +1130,7 @@ class Shrinker:
             # case of this function of preserving from the right instead of
             # preserving from the left. see test_can_shrink_variable_string_draws.
 
-            (index, attempt_choice_type, attempt_kwargs, _attempt_forced) = (
+            (index, attempt_choice_type, attempt_constraints, _attempt_forced) = (
                 attempt.misaligned_at
             )
             node = self.nodes[index]
@@ -1142,7 +1142,7 @@ class Shrinker:
             if node.type in {"string", "bytes"}:
                 # if the size *increased*, we would have to guess what to pad with
                 # in order to try fixing up this attempt. Just give up.
-                if node.kwargs["min_size"] <= attempt_kwargs["min_size"]:
+                if node.constraints["min_size"] <= attempt_constraints["min_size"]:
                     # attempts which increase min_size tend to overrun rather than
                     # be misaligned, making a covering case difficult.
                     return False  # pragma: no cover
@@ -1152,9 +1152,9 @@ class Shrinker:
                     initial_attempt[: node.index]
                     + [
                         initial_attempt[node.index].copy(
-                            with_kwargs=attempt_kwargs,
+                            with_constraints=attempt_constraints,
                             with_value=initial_attempt[node.index].value[
-                                : attempt_kwargs["min_size"]
+                                : attempt_constraints["min_size"]
                             ],
                         )
                     ]
@@ -1372,7 +1372,7 @@ class Shrinker:
         # unconditionally. In reality, it's acceptable for us to transition node2
         # from trivial to nontrivial, because the shrink ordering is dominated by
         # the complexity of the earlier node1. What matters is minimizing node1.
-        shrink_towards = node1.kwargs["shrink_towards"]
+        shrink_towards = node1.constraints["shrink_towards"]
 
         def consider(n):
             return self.consider_new_nodes(
@@ -1426,7 +1426,7 @@ class Shrinker:
         duplicated_characters = set(node1.value) & set(node2.value)
         # deterministic ordering
         char = chooser.choose(sorted(duplicated_characters))
-        intervals = node1.kwargs["intervals"]
+        intervals = node1.constraints["intervals"]
 
         def copy_node(node, n):
             # replace all duplicate characters in each string. This might miss
@@ -1451,20 +1451,20 @@ class Shrinker:
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type
         value = nodes[0].value
-        # unlike choice_type and value, kwargs are *not* guaranteed to be equal among all
-        # passed nodes. We arbitrarily use the kwargs of the first node. I think
+        # unlike choice_type and value, constraints are *not* guaranteed to be equal among all
+        # passed nodes. We arbitrarily use the constraints of the first node. I think
         # this is unsound (= leads to us trying shrinks that could not have been
         # generated), but those get discarded at test-time, and this enables useful
-        # slips where kwargs are not equal but are close enough that doing the
+        # slips where constraints are not equal but are close enough that doing the
         # same operation on both basically just works.
-        kwargs = nodes[0].kwargs
+        constraints = nodes[0].constraints
         assert all(
             node.type == choice_type and choice_equal(node.value, value)
             for node in nodes
         )
 
         if choice_type == "integer":
-            shrink_towards = kwargs["shrink_towards"]
+            shrink_towards = constraints["shrink_towards"]
             # try shrinking from both sides towards shrink_towards.
             # we're starting from n = abs(shrink_towards - value). Because the
             # shrinker will not check its starting value, we need to try
@@ -1497,14 +1497,14 @@ class Shrinker:
             Bytes.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
-                min_size=kwargs["min_size"],
+                min_size=constraints["min_size"],
             )
         elif choice_type == "string":
             String.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
-                intervals=kwargs["intervals"],
-                min_size=kwargs["min_size"],
+                intervals=constraints["intervals"],
+                min_size=constraints["min_size"],
             )
         else:
             raise NotImplementedError
@@ -1523,7 +1523,7 @@ class Shrinker:
                     node
                     if node.was_forced
                     else node.copy(
-                        with_value=choice_from_index(0, node.type, node.kwargs)
+                        with_value=choice_from_index(0, node.type, node.constraints)
                     )
                 )
                 for node in nodes[ex.start : ex.end]

@@ -24,7 +24,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 
-from tests.conjecture.common import float_kw, float_kwargs
+from tests.conjecture.common import float_constr, float_constraints
 
 
 def test_can_handle_straddling_zero():
@@ -50,35 +50,35 @@ def test_next_float_equal(func, val):
 
 
 # exponent comparisons:
-@example(float_kw(1, float_info.max), 0)
-@example(float_kw(1, float_info.max), 1)
-@example(float_kw(1, float_info.max), 10)
-@example(float_kw(1, float_info.max), float_info.max)
-@example(float_kw(1, float_info.max), math.inf)
+@example(float_constr(1, float_info.max), 0)
+@example(float_constr(1, float_info.max), 1)
+@example(float_constr(1, float_info.max), 10)
+@example(float_constr(1, float_info.max), float_info.max)
+@example(float_constr(1, float_info.max), math.inf)
 # mantissa comparisons:
-@example(float_kw(100.0001, 100.0003), 100.0001)
-@example(float_kw(100.0001, 100.0003), 100.0002)
-@example(float_kw(100.0001, 100.0003), 100.0003)
-@example(float_kw(100.0001, 100.0003, allow_nan=False), math.nan)
-@example(float_kw(0, 10, allow_nan=False), math.nan)
-@example(float_kw(0, 10, allow_nan=True), math.nan)
+@example(float_constr(100.0001, 100.0003), 100.0001)
+@example(float_constr(100.0001, 100.0003), 100.0002)
+@example(float_constr(100.0001, 100.0003), 100.0003)
+@example(float_constr(100.0001, 100.0003, allow_nan=False), math.nan)
+@example(float_constr(0, 10, allow_nan=False), math.nan)
+@example(float_constr(0, 10, allow_nan=True), math.nan)
 # the branch coverage of resampling in the "out of range of smallest magnitude" case
 # relies on randomness from the mantissa. try a few different values.
-@example(float_kw(-4, -1, smallest_nonzero_magnitude=4), 4)
-@example(float_kw(-4, -1, smallest_nonzero_magnitude=4), 5)
-@example(float_kw(-4, -1, smallest_nonzero_magnitude=4), 6)
-@example(float_kw(1, 4, smallest_nonzero_magnitude=4), -4)
-@example(float_kw(1, 4, smallest_nonzero_magnitude=4), -5)
-@example(float_kw(1, 4, smallest_nonzero_magnitude=4), -6)
-@example(float_kw(-5e-324, -0.0), 3.0)
-@example(float_kw(0.0, 0.0), -0.0)
-@example(float_kw(-0.0, -0.0), 0.0)
-@given(float_kwargs(), st.floats())
-def test_float_clamper(kwargs, input_value):
-    min_value = kwargs["min_value"]
-    max_value = kwargs["max_value"]
-    allow_nan = kwargs["allow_nan"]
-    smallest_nonzero_magnitude = kwargs["smallest_nonzero_magnitude"]
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 4)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 5)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 6)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -4)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -5)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -6)
+@example(float_constr(-5e-324, -0.0), 3.0)
+@example(float_constr(0.0, 0.0), -0.0)
+@example(float_constr(-0.0, -0.0), 0.0)
+@given(float_constraints(), st.floats())
+def test_float_clamper(constraints, input_value):
+    min_value = constraints["min_value"]
+    max_value = constraints["max_value"]
+    allow_nan = constraints["allow_nan"]
+    smallest_nonzero_magnitude = constraints["smallest_nonzero_magnitude"]
     clamper = make_float_clamper(
         min_value,
         max_value,

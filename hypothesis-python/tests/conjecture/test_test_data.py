@@ -191,10 +191,10 @@ def test_can_observe_draws():
         def __init__(self):
             self.log = []
 
-        def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict):
+        def draw_boolean(self, value: bool, *, was_forced: bool, constraints: dict):
             self.log.append(("draw_boolean", value, was_forced))
 
-        def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict):
+        def draw_integer(self, value: int, *, was_forced: bool, constraints: dict):
             self.log.append(("draw_integer", value, was_forced))
 
         def conclude_test(self, *args):

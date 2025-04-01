@@ -36,7 +36,7 @@ from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
 from hypothesis.internal.conjecture.choice import (
     ChoiceKeyT,
-    ChoiceKwargsT,
+    ChoiceConstraintsT,
     ChoiceNode,
     ChoiceT,
     ChoiceTemplate,
@@ -229,12 +229,12 @@ def realize_choices(data: ConjectureData) -> None:
                 f"{data.provider.realize.__qualname__}, got {type(value)}"
             )
 
-        kwargs = cast(
-            ChoiceKwargsT,
-            {k: data.provider.realize(v) for k, v in node.kwargs.items()},
+        constraints = cast(
+            ChoiceConstraintsT,
+            {k: data.provider.realize(v) for k, v in node.constraints.items()},
         )
         node.value = value
-        node.kwargs = kwargs
+        node.constraints = constraints
 
 
 class ConjectureRunner:

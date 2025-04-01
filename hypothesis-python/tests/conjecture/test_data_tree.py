@@ -28,11 +28,11 @@ from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
-    boolean_kwargs,
+    boolean_constraints,
     fresh_data,
-    integer_kwargs,
+    integer_constraints,
     interesting_origin,
-    kwargs_strategy,
+    constraints_strategy,
     nodes,
     run_to_nodes,
 )
@@ -148,7 +148,7 @@ def test_stores_the_tree_flat_until_needed():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.kwargs) == 10
+    assert len(root.constraints) == 10
     assert len(root.values) == 10
     assert root.transition.status == Status.INTERESTING
 
@@ -162,7 +162,7 @@ def test_split_in_the_middle():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.kwargs) == len(root.values) == 1
+    assert len(root.constraints) == len(root.values) == 1
     assert list(root.transition.children[0].values) == [2]
     assert list(root.transition.children[1].values) == [3]
 
@@ -406,18 +406,18 @@ def test_low_probabilities_are_still_explored():
 
 
 def _test_observed_draws_are_recorded_in_tree(choice_type):
-    @given(kwargs_strategy(choice_type))
-    def test(kwargs):
+    @given(constraints_strategy(choice_type))
+    def test(constraints):
         # we currently split pseudo-choices with a single child into their
         # own transition, which clashes with our asserts below. If we ever
         # change this (say, by not writing pseudo choices to the ir at all),
         # this restriction can be relaxed.
-        assume(compute_max_children(choice_type, kwargs) > 1)
+        assume(compute_max_children(choice_type, constraints) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
         draw_func = getattr(data, f"draw_{choice_type}")
-        draw_func(**kwargs)
+        draw_func(**constraints)
 
         assert tree.root.transition is None
         assert tree.root.choice_types == [choice_type]
@@ -426,18 +426,18 @@ def _test_observed_draws_are_recorded_in_tree(choice_type):
 
 
 def _test_non_observed_draws_are_not_recorded_in_tree(choice_type):
-    @given(kwargs_strategy(choice_type))
-    def test(kwargs):
-        assume(compute_max_children(choice_type, kwargs) > 1)
+    @given(constraints_strategy(choice_type))
+    def test(constraints):
+        assume(compute_max_children(choice_type, constraints) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
         draw_func = getattr(data, f"draw_{choice_type}")
-        draw_func(**kwargs, observe=False)
+        draw_func(**constraints, observe=False)
 
         root = tree.root
         assert root.transition is None
-        assert root.kwargs == root.values == root.choice_types == []
+        assert root.constraints == root.values == root.choice_types == []
 
     test()
 
@@ -515,44 +515,44 @@ def test_can_generate_hard_floats():
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
 
 
-@given(boolean_kwargs(), integer_kwargs())
-def test_datatree_repr(bool_kwargs, int_kwargs):
+@given(boolean_constraints(), integer_constraints())
+def test_datatree_repr(bool_constraints, int_constraints):
     tree = DataTree()
 
     origin = interesting_origin()
 
     observer = tree.new_observer()
-    observer.draw_boolean(True, was_forced=False, kwargs=bool_kwargs)
+    observer.draw_boolean(True, was_forced=False, constraints=bool_constraints)
     observer.conclude_test(Status.INVALID, interesting_origin=None)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(42, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(42, was_forced=False, constraints=int_constraints)
     observer.conclude_test(Status.VALID, interesting_origin=None)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(0, was_forced=False, kwargs=int_kwargs)
-    observer.draw_boolean(False, was_forced=True, kwargs=bool_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(0, was_forced=False, constraints=int_constraints)
+    observer.draw_boolean(False, was_forced=True, constraints=bool_constraints)
     observer.conclude_test(Status.INTERESTING, interesting_origin=origin)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(5, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(5, was_forced=False, constraints=int_constraints)
 
     assert (
         pretty.pretty(tree)
         == textwrap.dedent(
             f"""
-        boolean True {bool_kwargs}
+        boolean True {bool_constraints}
           Conclusion (Status.INVALID)
-        boolean False {bool_kwargs}
-          integer 42 {int_kwargs}
+        boolean False {bool_constraints}
+          integer 42 {int_constraints}
             Conclusion (Status.VALID)
-          integer 0 {int_kwargs}
-            boolean False [forced] {bool_kwargs}
+          integer 0 {int_constraints}
+            boolean False [forced] {bool_constraints}
               Conclusion (Status.INTERESTING, {origin})
-          integer 5 {int_kwargs}
+          integer 5 {int_constraints}
             unknown
         """
         ).strip()
@@ -560,7 +560,7 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
 
 
 def _draw(data, node, *, forced=None):
-    return getattr(data, f"draw_{node.type}")(**node.kwargs, forced=forced)
+    return getattr(data, f"draw_{node.type}")(**node.constraints, forced=forced)
 
 
 @given(nodes(was_forced=True, choice_types=["float"]))
@@ -568,7 +568,7 @@ def test_simulate_forced_floats(node):
     tree = DataTree()
 
     data = ConjectureData.for_choices([node.value], observer=tree.new_observer())
-    data.draw_float(**node.kwargs, forced=node.value)
+    data.draw_float(**node.constraints, forced=node.value)
     with pytest.raises(StopTest):
         data.conclude_test(Status.VALID)
 

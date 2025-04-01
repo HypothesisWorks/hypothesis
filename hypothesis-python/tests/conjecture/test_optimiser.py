@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplet
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, integer_kw, nodes
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, integer_constr, nodes
 
 
 def test_optimises_to_maximum():
@@ -28,7 +28,6 @@ def test_optimises_to_maximum():
 
         def test(data):
             data.target_observations["m"] = data.draw_integer(0, 2**8 - 1)
-
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.cached_test_function((0,))
 
@@ -230,7 +229,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     ChoiceNode(
         type="bytes",
         value=b"\xb1",
-        kwargs={"min_size": 1, "max_size": 1},
+        constraints={"min_size": 1, "max_size": 1},
         was_forced=False,
     )
 )
@@ -238,7 +237,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     ChoiceNode(
         type="string",
         value="aaaa",
-        kwargs={
+        constraints={
             "min_size": 0,
             "max_size": 10,
             "intervals": IntervalSet.from_string("abcd"),
@@ -247,10 +246,10 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     )
 )
 @example(
-    ChoiceNode(type="integer", value=1, kwargs=integer_kw(0, 200), was_forced=False)
+    ChoiceNode(type="integer", value=1, constraints=integer_constr(0, 200), was_forced=False)
 )
 def test_optimising_all_nodes(node):
-    assume(compute_max_children(node.type, node.kwargs) > 50)
+    assume(compute_max_children(node.type, node.constraints) > 50)
     size_function = {
         "integer": lambda n: n,
         "float": lambda f: f if math.isfinite(f) else 0,
@@ -261,7 +260,7 @@ def test_optimising_all_nodes(node):
     with deterministic_PRNG():
 
         def test(data):
-            v = getattr(data, f"draw_{node.type}")(**node.kwargs)
+            v = getattr(data, f"draw_{node.type}")(**node.constraints)
             data.target_observations["v"] = size_function[node.type](v)
 
         runner = ConjectureRunner(

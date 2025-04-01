@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
-from tests.conjecture.common import choice_types_kwargs, fresh_data
+from tests.conjecture.common import choice_types_constraints, fresh_data
 
 
 @given(st.data())
@@ -130,26 +130,26 @@ def test_forced_many(data):
         {"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan},
     )
 )
-@given(choice_types_kwargs(use_forced=True))
-def test_forced_values(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
+@given(choice_types_constraints(use_forced=True))
+def test_forced_values(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
 
     if choice_type == "float":
         # TODO intentionally avoid triggering a bug with forcing nan values
         # while both min and max value have the opposite sign.
         # Once we fix the aforementioned bug we can remove this intentional
         # weakening of the test.
-        assume(not math.isnan(kwargs["forced"]))
+        assume(not math.isnan(constraints["forced"]))
 
-    forced = kwargs["forced"]
+    forced = constraints["forced"]
     data = fresh_data()
-    assert choice_equal(getattr(data, f"draw_{choice_type}")(**kwargs), forced)
+    assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)
 
     # now make sure the written buffer reproduces the forced value, even without
     # specifying forced=.
-    del kwargs["forced"]
+    del constraints["forced"]
     data = ConjectureData.for_choices(data.choices)
-    assert choice_equal(getattr(data, f"draw_{choice_type}")(**kwargs), forced)
+    assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

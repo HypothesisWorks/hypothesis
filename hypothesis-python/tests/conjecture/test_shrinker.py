@@ -28,7 +28,7 @@ from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 from tests.conjecture.common import (
     SOME_LABEL,
-    float_kw,
+    float_constr,
     interesting_origin,
     ir,
     nodes,
@@ -593,13 +593,13 @@ numeric_nodes = nodes(choice_types=["integer", "float"])
     ChoiceNode(
         type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
-        kwargs=float_kw(),
+        constraints=float_constr(),
         was_forced=False,
     ),
     ChoiceNode(
         type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
-        kwargs=float_kw(),
+        constraints=float_constr(),
         was_forced=False,
     ),
     0,
@@ -610,15 +610,15 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     # avoid exhausting the tree while generating, which causes @shrinking_from's
     # runner to raise
     assume(
-        compute_max_children(node1.type, node1.kwargs)
-        + compute_max_children(node2.type, node2.kwargs)
+        compute_max_children(node1.type, node1.constraints)
+        + compute_max_children(node2.type, node2.constraints)
         > 2
     )
 
     @shrinking_from([node1.value, node2.value])
     def shrinker(data: ConjectureData):
-        v1 = getattr(data, f"draw_{node1.type}")(**node1.kwargs)
-        v2 = getattr(data, f"draw_{node2.type}")(**node2.kwargs)
+        v1 = getattr(data, f"draw_{node1.type}")(**node1.constraints)
+        v2 = getattr(data, f"draw_{node2.type}")(**node2.constraints)
         if v1 + v2 > stop:
             data.mark_interesting()
 

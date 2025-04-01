@@ -29,18 +29,18 @@ from hypothesis.errors import (
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture.choice import (
-    BooleanKWargs,
-    BytesKWargs,
-    ChoiceKwargsT,
+    BooleanConstraints,
+    BytesConstraints,
+    ChoiceConstraintsT,
     ChoiceNode,
     ChoiceT,
     ChoiceTemplate,
     ChoiceTypeT,
-    FloatKWargs,
-    IntegerKWargs,
-    StringKWargs,
+    FloatConstraints,
+    IntegerConstraints,
+    StringConstraints,
     choice_from_index,
-    choice_kwargs_key,
+    choice_constraints_key,
     choice_permitted,
     choices_size,
 )
@@ -89,8 +89,8 @@ def __getattr__(name: str) -> Any:
 
 T = TypeVar("T")
 TargetObservations = dict[str, Union[int, float]]
-# index, choice_type, kwargs, forced value
-MisalignedAt: "TypeAlias" = tuple[int, ChoiceTypeT, ChoiceKwargsT, Optional[ChoiceT]]
+# index, choice_type, constraints, forced value
+MisalignedAt: "TypeAlias" = tuple[int, ChoiceTypeT, ChoiceConstraintsT, Optional[ChoiceT]]
 
 TOP_LABEL = calc_label_from_name("top")
 
@@ -135,7 +135,7 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 
 # This cache can be quite hot and so we prefer LRUCache over LRUReusedCache for
 # performance. We lose scan resistance, but that's probably fine here.
-POOLED_KWARGS_CACHE = LRUCache(4096)
+POOLED_CONSTRAINTS_CACHE = LRUCache(4096)
 
 
 class Span:
@@ -544,27 +544,27 @@ class DataObserver:
         """Mark this part of the tree as not worth re-exploring."""
 
     def draw_integer(
-        self, value: int, *, kwargs: IntegerKWargs, was_forced: bool
+        self, value: int, *, constraints: IntegerConstraints, was_forced: bool
     ) -> None:
         pass
 
     def draw_float(
-        self, value: float, *, kwargs: FloatKWargs, was_forced: bool
+        self, value: float, *, constraints: FloatConstraints, was_forced: bool
     ) -> None:
         pass
 
     def draw_string(
-        self, value: str, *, kwargs: StringKWargs, was_forced: bool
+        self, value: str, *, constraints: StringConstraints, was_forced: bool
     ) -> None:
         pass
 
     def draw_bytes(
-        self, value: bytes, *, kwargs: BytesKWargs, was_forced: bool
+        self, value: bytes, *, constraints: BytesConstraints, was_forced: bool
     ) -> None:
         pass
 
     def draw_boolean(
-        self, value: bool, *, kwargs: BooleanKWargs, was_forced: bool
+        self, value: bool, *, constraints: BooleanConstraints, was_forced: bool
     ) -> None:
         pass
 
@@ -735,7 +735,7 @@ class ConjectureData:
     #
     # `observe` formalizes this. The choice will only be written to the choice
     # sequence if observe is True.
-    def _draw(self, choice_type, kwargs, *, observe, forced):
+    def _draw(self, choice_type, constraints, *, observe, forced):
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
@@ -747,9 +747,9 @@ class ConjectureData:
             self.mark_overrun()
 
         if observe and self.prefix is not None and self.index < len(self.prefix):
-            value = self._pop_choice(choice_type, kwargs, forced=forced)
+            value = self._pop_choice(choice_type, constraints, forced=forced)
         elif forced is None:
-            value = getattr(self.provider, f"draw_{choice_type}")(**kwargs)
+            value = getattr(self.provider, f"draw_{choice_type}")(**constraints)
 
         if forced is not None:
             value = forced
@@ -780,7 +780,7 @@ class ConjectureData:
         if observe:
             was_forced = forced is not None
             getattr(self.observer, f"draw_{choice_type}")(
-                value, kwargs=kwargs, was_forced=was_forced
+                value, constraints=constraints, was_forced=was_forced
             )
             size = 0 if self.provider.avoid_realization else choices_size([value])
             if self.length + size > self.max_length:
@@ -792,7 +792,7 @@ class ConjectureData:
             node = ChoiceNode(
                 type=choice_type,
                 value=value,
-                kwargs=kwargs,
+                constraints=constraints,
                 was_forced=was_forced,
                 index=len(self.nodes),
             )
@@ -830,7 +830,7 @@ class ConjectureData:
         if forced is not None and max_value is not None:
             assert forced <= max_value
 
-        kwargs: IntegerKWargs = self._pooled_kwargs(
+        constraints: IntegerConstraints = self._pooled_constraints(
             "integer",
             {
                 "min_value": min_value,
@@ -839,7 +839,7 @@ class ConjectureData:
                 "shrink_towards": shrink_towards,
             },
         )
-        return self._draw("integer", kwargs, observe=observe, forced=forced)
+        return self._draw("integer", constraints, observe=observe, forced=forced)
 
     def draw_float(
         self,
@@ -865,7 +865,7 @@ class ConjectureData:
                 sign_aware_lte(min_value, forced) and sign_aware_lte(forced, max_value)
             )
 
-        kwargs: FloatKWargs = self._pooled_kwargs(
+        constraints: FloatConstraints = self._pooled_constraints(
             "float",
             {
                 "min_value": min_value,
@@ -874,7 +874,7 @@ class ConjectureData:
                 "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
             },
         )
-        return self._draw("float", kwargs, observe=observe, forced=forced)
+        return self._draw("float", constraints, observe=observe, forced=forced)
 
     def draw_string(
         self,
@@ -890,7 +890,7 @@ class ConjectureData:
         if len(intervals) == 0:
             assert min_size == 0
 
-        kwargs: StringKWargs = self._pooled_kwargs(
+        constraints: StringConstraints = self._pooled_constraints(
             "string",
             {
                 "intervals": intervals,
@@ -898,7 +898,7 @@ class ConjectureData:
                 "max_size": max_size,
             },
         )
-        return self._draw("string", kwargs, observe=observe, forced=forced)
+        return self._draw("string", constraints, observe=observe, forced=forced)
 
     def draw_bytes(
         self,
@@ -911,10 +911,10 @@ class ConjectureData:
         assert forced is None or min_size <= len(forced) <= max_size
         assert min_size >= 0
 
-        kwargs: BytesKWargs = self._pooled_kwargs(
+        constraints: BytesConstraints = self._pooled_constraints(
             "bytes", {"min_size": min_size, "max_size": max_size}
         )
-        return self._draw("bytes", kwargs, observe=observe, forced=forced)
+        return self._draw("bytes", constraints, observe=observe, forced=forced)
 
     def draw_boolean(
         self,
@@ -926,26 +926,26 @@ class ConjectureData:
         assert (forced is not True) or p > 0
         assert (forced is not False) or p < 1
 
-        kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
-        return self._draw("boolean", kwargs, observe=observe, forced=forced)
+        constraints: BooleanConstraints = self._pooled_constraints("boolean", {"p": p})
+        return self._draw("boolean", constraints, observe=observe, forced=forced)
 
-    def _pooled_kwargs(self, choice_type, kwargs):
+    def _pooled_constraints(self, choice_type, constraints):
         """Memoize common dictionary objects to reduce memory pressure."""
         # caching runs afoul of nondeterminism checks
         if self.provider.avoid_realization:
-            return kwargs
+            return constraints
 
-        key = (choice_type, *choice_kwargs_key(choice_type, kwargs))
+        key = (choice_type, *choice_constraints_key(choice_type, constraints))
         try:
-            return POOLED_KWARGS_CACHE[key]
+            return POOLED_CONSTRAINTS_CACHE[key]
         except KeyError:
-            POOLED_KWARGS_CACHE[key] = kwargs
-            return kwargs
+            POOLED_CONSTRAINTS_CACHE[key] = constraints
+            return constraints
 
     def _pop_choice(
         self,
         choice_type: ChoiceTypeT,
-        kwargs: ChoiceKwargsT,
+        constraints: ChoiceConstraintsT,
         *,
         forced: Optional[ChoiceT],
     ) -> ChoiceT:
@@ -967,13 +967,13 @@ class ConjectureData:
                     choice = forced
                 elif isinstance(self.provider, HypothesisProvider):
                     try:
-                        choice = choice_from_index(0, choice_type, kwargs)
+                        choice = choice_from_index(0, choice_type, constraints)
                     except ChoiceTooLarge:
                         self.mark_overrun()
                 else:
                     # give alternative backends control over ChoiceTemplate draws
                     # as well
-                    choice = getattr(self.provider, f"draw_{choice_type}")(**kwargs)
+                    choice = getattr(self.provider, f"draw_{choice_type}")(**constraints)
             else:
                 raise NotImplementedError
 
@@ -993,7 +993,7 @@ class ConjectureData:
         }[type(choice)]
         # If we're trying to:
         # * draw a different ir type at the same location
-        # * draw the same ir type with a different kwargs, which does not permit
+        # * draw the same ir type with a different constraints, which does not permit
         #   the current value
         #
         # then we call this a misalignment, because the choice sequence has
@@ -1001,16 +1001,16 @@ class ConjectureData:
         #
         #   one_of(integers(0, 100), integers(101, 200))
         #
-        # where the choice sequence [0, 100] has kwargs {min_value: 0, max_value: 100}
-        # at index 1, but [0, 101] has kwargs {min_value: 101, max_value: 200} at
+        # where the choice sequence [0, 100] has constraints {min_value: 0, max_value: 100}
+        # at index 1, but [0, 101] has constraints {min_value: 101, max_value: 200} at
         # index 1 (which does not permit any of the values 0-100).
         #
         # When the choice sequence becomes misaligned, we generate a new value of the
-        # type and kwargs the strategy expects.
-        if node_choice_type != choice_type or not choice_permitted(choice, kwargs):
+        # type and constraints the strategy expects.
+        if node_choice_type != choice_type or not choice_permitted(choice, constraints):
             # only track first misalignment for now.
             if self.misaligned_at is None:
-                self.misaligned_at = (self.index, choice_type, kwargs, forced)
+                self.misaligned_at = (self.index, choice_type, constraints, forced)
             try:
                 # Fill in any misalignments with index 0 choices. An alternative to
                 # this is using the index of the misaligned choice instead
@@ -1028,7 +1028,7 @@ class ConjectureData:
                 # slipping to high-complexity values are common. Though arguably
                 # we may want to expand a bit beyond *just* the simplest choice.
                 # (we could for example consider sampling choices from index 0-10).
-                choice = choice_from_index(0, choice_type, kwargs)
+                choice = choice_from_index(0, choice_type, constraints)
             except ChoiceTooLarge:
                 # should really never happen with a 0-index choice, but let's be safe.
                 self.mark_overrun()
@@ -1266,6 +1266,6 @@ class ConjectureData:
         self.conclude_test(Status.OVERRUN)
 
 
-def draw_choice(choice_type, kwargs, *, random):
+def draw_choice(choice_type, constraints, *, random):
     cd = ConjectureData(random=random)
-    return getattr(cd.provider, f"draw_{choice_type}")(**kwargs)
+    return getattr(cd.provider, f"draw_{choice_type}")(**constraints)

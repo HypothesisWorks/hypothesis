@@ -30,8 +30,8 @@ from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
-    StringKWargs,
-    choice_kwargs_key,
+    StringConstraints,
+    choice_constraints_key,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
@@ -235,7 +235,7 @@ class PrimitiveProvider(abc.ABC):
     #
     # Setting this to True disables some hypothesis features, such as
     # DataTree-based deduplication, and some internal optimizations, such as
-    # caching kwargs. Only enable this if it is necessary for your backend.
+    # caching constraints. Only enable this if it is necessary for your backend.
     avoid_realization = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
@@ -683,16 +683,16 @@ class HypothesisProvider(PrimitiveProvider):
         min_size: int,
         max_size: int,
     ) -> tuple[Optional[Sampler], list[str]]:
-        kwargs: StringKWargs = {
+        constraints: StringConstraints = {
             "intervals": intervals,
             "min_size": min_size,
             "max_size": max_size,
         }
-        key = choice_kwargs_key("string", kwargs)
+        key = choice_constraints_key("string", constraints)
         if key in STRING_SAMPLER_CACHE:
             return STRING_SAMPLER_CACHE[key]
 
-        nasty_strings = [s for s in NASTY_STRINGS if choice_permitted(s, kwargs)]
+        nasty_strings = [s for s in NASTY_STRINGS if choice_permitted(s, constraints)]
         sampler = (
             Sampler([1 / len(nasty_strings)] * len(nasty_strings), observe=False)
             if nasty_strings

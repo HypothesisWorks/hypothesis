@@ -50,13 +50,13 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
-    choice_types_kwargs,
+    choice_types_constraints,
     clamped_shrink_towards,
     draw_value,
-    float_kw,
+    float_constr,
     fresh_data,
-    integer_kw,
-    integer_kwargs,
+    integer_constr,
+    integer_constraints,
     nodes,
 )
 
@@ -64,17 +64,17 @@ from tests.conjecture.common import (
 # we max out at 128 bit integers in the *unbounded* case, but someone may
 # specify a bound with a larger magnitude. Ensure we calculate max children for
 # those cases correctly.
-@example(("integer", integer_kw(max_value=-(2**200))))
-@example(("integer", integer_kw(min_value=2**200)))
-@example(("integer", integer_kw(-(2**200), 2**200)))
-@given(choice_types_kwargs())
-def test_compute_max_children_is_positive(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
-    assert compute_max_children(choice_type, kwargs) >= 0
+@example(("integer", integer_constr(max_value=-(2**200))))
+@example(("integer", integer_constr(min_value=2**200)))
+@example(("integer", integer_constr(-(2**200), 2**200)))
+@given(choice_types_constraints())
+def test_compute_max_children_is_positive(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    assert compute_max_children(choice_type, constraints) >= 0
 
 
 @pytest.mark.parametrize(
-    "choice_type, kwargs, count_children",
+    "choice_type, constraints, count_children",
     [
         ("integer", {"min_value": 1, "max_value": 2, "weights": {1: 0.1, 2: 0.1}}, 2),
         # only possibility is the empty string
@@ -150,26 +150,26 @@ def test_compute_max_children_is_positive(choice_type_and_kwargs):
         ("boolean", {"p": 0.5}, 2),
         ("boolean", {"p": 0.001}, 2),
         ("boolean", {"p": 0.999}, 2),
-        ("float", float_kw(0.0, 0.0), 1),
-        ("float", float_kw(-0.0, -0.0), 1),
-        ("float", float_kw(-0.0, 0.0), 2),
-        ("float", float_kw(next_down(-0.0), next_up(0.0)), 4),
+        ("float", float_constr(0.0, 0.0), 1),
+        ("float", float_constr(-0.0, -0.0), 1),
+        ("float", float_constr(-0.0, 0.0), 2),
+        ("float", float_constr(next_down(-0.0), next_up(0.0)), 4),
         (
             "float",
-            float_kw(
+            float_constr(
                 next_down(next_down(-0.0)),
                 next_up(next_up(0.0)),
                 smallest_nonzero_magnitude=next_up(SMALLEST_SUBNORMAL),
             ),
             4,
         ),
-        ("float", float_kw(smallest_nonzero_magnitude=next_down(math.inf)), 6),
-        ("float", float_kw(1, 10, smallest_nonzero_magnitude=11.0), 0),
-        ("float", float_kw(-3, -2, smallest_nonzero_magnitude=4.0), 0),
+        ("float", float_constr(smallest_nonzero_magnitude=next_down(math.inf)), 6),
+        ("float", float_constr(1, 10, smallest_nonzero_magnitude=11.0), 0),
+        ("float", float_constr(-3, -2, smallest_nonzero_magnitude=4.0), 0),
     ],
 )
-def test_compute_max_children(choice_type, kwargs, count_children):
-    assert compute_max_children(choice_type, kwargs) == count_children
+def test_compute_max_children(choice_type, constraints, count_children):
+    assert compute_max_children(choice_type, constraints) == count_children
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
@@ -197,17 +197,17 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     )
 )
 # all combinations of float signs
-@example(("float", float_kw(next_down(-0.0), -0.0)))
-@example(("float", float_kw(next_down(-0.0), next_up(0.0))))
-@example(("float", float_kw(0.0, next_up(0.0))))
+@example(("float", float_constr(next_down(-0.0), -0.0)))
+@example(("float", float_constr(next_down(-0.0), next_up(0.0))))
+@example(("float", float_constr(0.0, next_up(0.0))))
 # using a smallest_nonzero_magnitude which happens to filter out everything
-@example(("float", float_kw(1.0, 2.0, smallest_nonzero_magnitude=3.0)))
-@example(("integer", integer_kw(1, 2, weights={1: 0.2, 2: 0.4})))
-@given(choice_types_kwargs())
+@example(("float", float_constr(1.0, 2.0, smallest_nonzero_magnitude=3.0)))
+@example(("integer", integer_constr(1, 2, weights={1: 0.2, 2: 0.4})))
+@given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_compute_max_children_and_all_children_agree(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
-    max_children = compute_max_children(choice_type, kwargs)
+def test_compute_max_children_and_all_children_agree(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    max_children = compute_max_children(choice_type, constraints)
 
     # avoid slowdowns / OOM when reifying extremely large all_children generators.
     # We also hard cap at MAX_CHILDREN_EFFECTIVELY_INFINITE, because max_children
@@ -215,7 +215,7 @@ def test_compute_max_children_and_all_children_agree(choice_type_and_kwargs):
     # all_children.
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
-    assert len(list(all_children(choice_type, kwargs))) == max_children
+    assert len(list(all_children(choice_type, constraints))) == max_children
 
 
 # it's very hard to test that unbounded integer ranges agree with
@@ -224,10 +224,10 @@ def test_compute_max_children_and_all_children_agree(choice_type_and_kwargs):
 # element is what we expect.
 
 
-@given(integer_kwargs())
-def test_compute_max_children_unbounded_integer_ranges(kwargs):
-    expected = clamped_shrink_towards(kwargs)
-    first = next(all_children("integer", kwargs))
+@given(integer_constraints())
+def test_compute_max_children_unbounded_integer_ranges(constraints):
+    expected = clamped_shrink_towards(constraints)
+    first = next(all_children("integer", constraints))
     assert expected == first, (expected, first)
 
 
@@ -247,18 +247,18 @@ def test_nodes(random):
     data.freeze()
     expected_tree_nodes = (
         ChoiceNode(
-            type="float", value=5.0, kwargs=float_kw(-10.0, 10.0), was_forced=True
+            type="float", value=5.0, constraints=float_constr(-10.0, 10.0), was_forced=True
         ),
         ChoiceNode(
             type="boolean",
             value=True,
-            kwargs={"p": 0.5},
+            constraints={"p": 0.5},
             was_forced=True,
         ),
         ChoiceNode(
             type="string",
             value="abbcccdddd",
-            kwargs={
+            constraints={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
                 "max_size": COLLECTION_DEFAULT_MAX_SIZE,
@@ -268,11 +268,11 @@ def test_nodes(random):
         ChoiceNode(
             type="bytes",
             value=bytes(8),
-            kwargs={"min_size": 8, "max_size": 8},
+            constraints={"min_size": 8, "max_size": 8},
             was_forced=True,
         ),
         ChoiceNode(
-            type="integer", value=50, kwargs=integer_kw(0, 100), was_forced=True
+            type="integer", value=50, constraints=integer_constr(0, 100), was_forced=True
         ),
     )
     assert data.nodes == expected_tree_nodes
@@ -283,7 +283,7 @@ def test_copy_choice_node(node):
     assert node == node
 
     assume(not node.was_forced)
-    new_value = draw_value(node.type, node.kwargs)
+    new_value = draw_value(node.type, node.constraints)
     # if we drew the same value as before, the node should still be equal
     assert (node.copy(with_value=new_value) == node) is (
         choice_equal(new_value, node.value)
@@ -323,31 +323,31 @@ def test_data_with_changed_forced_value(node):
     data = ConjectureData.for_choices([node.value])
 
     draw_func = getattr(data, f"draw_{node.type}")
-    kwargs = deepcopy(node.kwargs)
-    kwargs["forced"] = draw_value(node.type, node.kwargs)
-    assume(not choice_equal(kwargs["forced"], node.value))
+    constraints = deepcopy(node.constraints)
+    constraints["forced"] = draw_value(node.type, node.constraints)
+    assume(not choice_equal(constraints["forced"], node.value))
 
-    assert choice_equal(draw_func(**kwargs), kwargs["forced"])
+    assert choice_equal(draw_func(**constraints), constraints["forced"])
 
 
 # ensure we hit bare-minimum coverage for all ir types.
-@example(ChoiceNode(type="float", value=0.0, kwargs=float_kw(), was_forced=True))
+@example(ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=True))
 @example(
     ChoiceNode(
         type="boolean",
         value=False,
-        kwargs={"p": 0.5},
+        constraints={"p": 0.5},
         was_forced=True,
     )
 )
 @example(
-    ChoiceNode(type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=True)
+    ChoiceNode(type="integer", value=50, constraints=integer_constr(50, 100), was_forced=True)
 )
 @example(
     ChoiceNode(
         type="string",
         value="aaaa",
-        kwargs={
+        constraints={
             "intervals": IntervalSet.from_string("bcda"),
             "min_size": 4,
             "max_size": COLLECTION_DEFAULT_MAX_SIZE,
@@ -359,7 +359,7 @@ def test_data_with_changed_forced_value(node):
     ChoiceNode(
         type="bytes",
         value=bytes(8),
-        kwargs={"min_size": 8, "max_size": 8},
+        constraints={"min_size": 8, "max_size": 8},
         was_forced=True,
     )
 )
@@ -372,42 +372,42 @@ def test_data_with_same_forced_value_is_valid(node):
     data = ConjectureData.for_choices([node.value])
     draw_func = getattr(data, f"draw_{node.type}")
 
-    kwargs = deepcopy(node.kwargs)
-    kwargs["forced"] = node.value
-    assert choice_equal(draw_func(**kwargs), kwargs["forced"])
+    constraints = deepcopy(node.constraints)
+    constraints["forced"] = node.value
+    assert choice_equal(draw_func(**constraints), constraints["forced"])
 
 
-@given(choice_types_kwargs())
+@given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_all_children_are_permitted_values(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
-    max_children = compute_max_children(choice_type, kwargs)
+def test_all_children_are_permitted_values(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    max_children = compute_max_children(choice_type, constraints)
 
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
 
     # test that all_children -> choice_permitted (but not necessarily the converse.)
-    for value in all_children(choice_type, kwargs):
-        assert choice_permitted(value, kwargs), value
+    for value in all_children(choice_type, constraints):
+        assert choice_permitted(value, constraints), value
 
 
 @pytest.mark.parametrize(
-    "value, kwargs, permitted",
+    "value, constraints, permitted",
     [
-        (0, integer_kw(1, 2), False),
-        (2, integer_kw(0, 1), False),
-        (10, integer_kw(0, 20), True),
-        (int(2**128 / 2) - 1, integer_kw(), True),
-        (int(2**128 / 2), integer_kw(), True),
-        (math.nan, float_kw(0.0, 0.0), True),
-        (math.nan, float_kw(0.0, 0.0, allow_nan=False), False),
-        (2.0, float_kw(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
+        (0, integer_constr(1, 2), False),
+        (2, integer_constr(0, 1), False),
+        (10, integer_constr(0, 20), True),
+        (int(2**128 / 2) - 1, integer_constr(), True),
+        (int(2**128 / 2), integer_constr(), True),
+        (math.nan, float_constr(0.0, 0.0), True),
+        (math.nan, float_constr(0.0, 0.0, allow_nan=False), False),
+        (2.0, float_constr(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
         (
             -2.0,
-            float_kw(-3.0, -1.0, smallest_nonzero_magnitude=2.5),
+            float_constr(-3.0, -1.0, smallest_nonzero_magnitude=2.5),
             False,
         ),
-        (1.0, float_kw(1.0, 1.0), True),
+        (1.0, float_constr(1.0, 1.0), True),
         (
             "abcd",
             {
@@ -448,8 +448,8 @@ def test_all_children_are_permitted_values(choice_type_and_kwargs):
         (False, {"p": 0.5}, True),
     ],
 )
-def test_choice_permitted(value, kwargs, permitted):
-    assert choice_permitted(value, kwargs) == permitted
+def test_choice_permitted(value, constraints, permitted):
+    assert choice_permitted(value, constraints) == permitted
 
 
 @given(nodes(was_forced=True))
@@ -461,19 +461,19 @@ def test_forced_nodes_are_trivial(node):
     "node",
     [
         ChoiceNode(
-            type="float", value=5.0, kwargs=float_kw(5.0, 10.0), was_forced=False
+            type="float", value=5.0, constraints=float_constr(5.0, 10.0), was_forced=False
         ),
         ChoiceNode(
-            type="float", value=0.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
+            type="float", value=0.0, constraints=float_constr(-5.0, 5.0), was_forced=False
         ),
-        ChoiceNode(type="float", value=0.0, kwargs=float_kw(), was_forced=False),
-        ChoiceNode(type="boolean", value=False, kwargs={"p": 0.5}, was_forced=False),
-        ChoiceNode(type="boolean", value=True, kwargs={"p": 1.0}, was_forced=False),
-        ChoiceNode(type="boolean", value=False, kwargs={"p": 0.0}, was_forced=False),
+        ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=False),
+        ChoiceNode(type="boolean", value=False, constraints={"p": 0.5}, was_forced=False),
+        ChoiceNode(type="boolean", value=True, constraints={"p": 1.0}, was_forced=False),
+        ChoiceNode(type="boolean", value=False, constraints={"p": 0.0}, was_forced=False),
         ChoiceNode(
             type="string",
             value="",
-            kwargs={
+            constraints={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
                 "max_size": COLLECTION_DEFAULT_MAX_SIZE,
@@ -483,7 +483,7 @@ def test_forced_nodes_are_trivial(node):
         ChoiceNode(
             type="string",
             value="aaaa",
-            kwargs={
+            constraints={
                 "intervals": IntervalSet.from_string("bcda"),
                 "min_size": 4,
                 "max_size": COLLECTION_DEFAULT_MAX_SIZE,
@@ -493,56 +493,56 @@ def test_forced_nodes_are_trivial(node):
         ChoiceNode(
             type="bytes",
             value=bytes(8),
-            kwargs={"min_size": 8, "max_size": 8},
+            constraints={"min_size": 8, "max_size": 8},
             was_forced=False,
         ),
         ChoiceNode(
             type="bytes",
             value=bytes(2),
-            kwargs={"min_size": 2, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
+            constraints={"min_size": 2, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
         ChoiceNode(
-            type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=False
+            type="integer", value=50, constraints=integer_constr(50, 100), was_forced=False
         ),
         ChoiceNode(
-            type="integer", value=0, kwargs=integer_kw(-10, 10), was_forced=False
+            type="integer", value=0, constraints=integer_constr(-10, 10), was_forced=False
         ),
         ChoiceNode(
             type="integer",
             value=2,
-            kwargs=integer_kw(-10, 10, shrink_towards=2),
+            constraints=integer_constr(-10, 10, shrink_towards=2),
             was_forced=False,
         ),
         ChoiceNode(
             type="integer",
             value=-10,
-            kwargs=integer_kw(-10, 10, shrink_towards=-12),
+            constraints=integer_constr(-10, 10, shrink_towards=-12),
             was_forced=False,
         ),
         ChoiceNode(
             type="integer",
             value=10,
-            kwargs=integer_kw(-10, 10, shrink_towards=12),
+            constraints=integer_constr(-10, 10, shrink_towards=12),
             was_forced=False,
         ),
-        ChoiceNode(type="integer", value=0, kwargs=integer_kw(), was_forced=False),
+        ChoiceNode(type="integer", value=0, constraints=integer_constr(), was_forced=False),
         ChoiceNode(
             type="integer",
             value=1,
-            kwargs=integer_kw(min_value=-10, shrink_towards=1),
-            was_forced=False,
-        ),
-        ChoiceNode(
-            type="integer",
-            value=1,
-            kwargs=integer_kw(max_value=10, shrink_towards=1),
+            constraints=integer_constr(min_value=-10, shrink_towards=1),
             was_forced=False,
         ),
         ChoiceNode(
             type="integer",
             value=1,
-            kwargs={
+            constraints=integer_constr(max_value=10, shrink_towards=1),
+            was_forced=False,
+        ),
+        ChoiceNode(
+            type="integer",
+            value=1,
+            constraints={
                 "min_value": None,
                 "max_value": None,
                 "weights": None,
@@ -558,7 +558,7 @@ def test_trivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.constraints)
 
     # if we're trivial, then shrinking should produce the same value.
     assert choice_equal(minimal(values()), node.value)
@@ -568,18 +568,18 @@ def test_trivial_nodes(node):
     "node",
     [
         ChoiceNode(
-            type="float", value=6.0, kwargs=float_kw(5.0, 10.0), was_forced=False
+            type="float", value=6.0, constraints=float_constr(5.0, 10.0), was_forced=False
         ),
         ChoiceNode(
-            type="float", value=-5.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
+            type="float", value=-5.0, constraints=float_constr(-5.0, 5.0), was_forced=False
         ),
-        ChoiceNode(type="float", value=1.0, kwargs=float_kw(), was_forced=False),
-        ChoiceNode(type="boolean", value=True, kwargs={"p": 0.5}, was_forced=False),
-        ChoiceNode(type="boolean", value=True, kwargs={"p": 0.99}, was_forced=False),
+        ChoiceNode(type="float", value=1.0, constraints=float_constr(), was_forced=False),
+        ChoiceNode(type="boolean", value=True, constraints={"p": 0.5}, was_forced=False),
+        ChoiceNode(type="boolean", value=True, constraints={"p": 0.99}, was_forced=False),
         ChoiceNode(
             type="string",
             value="d",
-            kwargs={
+            constraints={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 1,
                 "max_size": COLLECTION_DEFAULT_MAX_SIZE,
@@ -589,25 +589,25 @@ def test_trivial_nodes(node):
         ChoiceNode(
             type="bytes",
             value=b"\x01",
-            kwargs={"min_size": 1, "max_size": 1},
+            constraints={"min_size": 1, "max_size": 1},
             was_forced=False,
         ),
         ChoiceNode(
             type="bytes",
             value=bytes(1),
-            kwargs={"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
+            constraints={"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
         ChoiceNode(
             type="bytes",
             value=bytes(2),
-            kwargs={"min_size": 1, "max_size": 10},
+            constraints={"min_size": 1, "max_size": 10},
             was_forced=False,
         ),
         ChoiceNode(
-            type="integer", value=-10, kwargs=integer_kw(-10, 10), was_forced=False
+            type="integer", value=-10, constraints=integer_constr(-10, 10), was_forced=False
         ),
-        ChoiceNode(type="integer", value=42, kwargs=integer_kw(), was_forced=False),
+        ChoiceNode(type="integer", value=42, constraints=integer_constr(), was_forced=False),
     ],
 )
 def test_nontrivial_nodes(node):
@@ -616,7 +616,7 @@ def test_nontrivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.constraints)
 
     # if we're nontrivial, then shrinking should produce something different.
     assert not choice_equal(minimal(values()), node.value)
@@ -628,31 +628,31 @@ def test_nontrivial_nodes(node):
         ChoiceNode(
             type="float",
             value=1.5,
-            kwargs=float_kw(1.1, 1.6),
+            constraints=float_constr(1.1, 1.6),
             was_forced=False,
         ),
         ChoiceNode(
             type="float",
             value=float(math.floor(sys.float_info.max)),
-            kwargs=float_kw(sys.float_info.max - 1, math.inf),
+            constraints=float_constr(sys.float_info.max - 1, math.inf),
             was_forced=False,
         ),
         ChoiceNode(
             type="float",
             value=float(math.ceil(-sys.float_info.max)),
-            kwargs=float_kw(-math.inf, -sys.float_info.max + 1),
+            constraints=float_constr(-math.inf, -sys.float_info.max + 1),
             was_forced=False,
         ),
         ChoiceNode(
             type="float",
             value=math.inf,
-            kwargs=float_kw(math.inf, math.inf),
+            constraints=float_constr(math.inf, math.inf),
             was_forced=False,
         ),
         ChoiceNode(
             type="float",
             value=-math.inf,
-            kwargs=float_kw(-math.inf, -math.inf),
+            constraints=float_constr(-math.inf, -math.inf),
             was_forced=False,
         ),
     ],
@@ -665,7 +665,7 @@ def test_conservative_nontrivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.constraints)
 
     assert choice_equal(minimal(values()), node.value)
 
@@ -711,138 +711,138 @@ def test_node_template_simplest_is_actually_trivial(node):
     # TODO_IR node.trivial is sound but not complete for floats.
     assume(node.type != "float")
     data = ConjectureData.for_choices((ChoiceTemplate("simplest", count=1),))
-    getattr(data, f"draw_{node.type}")(**node.kwargs)
+    getattr(data, f"draw_{node.type}")(**node.constraints)
     assert len(data.nodes) == 1
     assert data.nodes[0].trivial
 
 
-@given(choice_types_kwargs())
+@given(choice_types_constraints())
 @example(("boolean", {"p": 0}))
 @example(("boolean", {"p": 1}))
-def test_choice_indices_are_positive(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
-    v = draw_value(choice_type, kwargs)
-    assert choice_to_index(v, kwargs) >= 0
+def test_choice_indices_are_positive(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    v = draw_value(choice_type, constraints)
+    assert choice_to_index(v, constraints) >= 0
 
 
-@given(integer_kwargs())
-def test_shrink_towards_has_index_0(kwargs):
-    shrink_towards = clamped_shrink_towards(kwargs)
+@given(integer_constraints())
+def test_shrink_towards_has_index_0(constraints):
+    shrink_towards = clamped_shrink_towards(constraints)
     note({"clamped_shrink_towards": shrink_towards})
-    assert choice_to_index(shrink_towards, kwargs) == 0
-    assert choice_from_index(0, "integer", kwargs) == shrink_towards
+    assert choice_to_index(shrink_towards, constraints) == 0
+    assert choice_from_index(0, "integer", constraints) == shrink_towards
 
 
-@given(choice_types_kwargs())
-def test_choice_to_index_injective(choice_type_and_kwargs):
+@given(choice_types_constraints())
+def test_choice_to_index_injective(choice_type_and_constraints):
     # ir ordering should be injective both ways.
-    (choice_type, kwargs) = choice_type_and_kwargs
+    (choice_type, constraints) = choice_type_and_constraints
     # ...except for floats, which are hard to order bijectively.
     assume(choice_type != "float")
     # cap to 10k so this test finishes in a reasonable amount of time
-    cap = min(compute_max_children(choice_type, kwargs), 10_000)
+    cap = min(compute_max_children(choice_type, constraints), 10_000)
 
     indices = set()
-    for i, choice in enumerate(all_children(choice_type, kwargs)):
+    for i, choice in enumerate(all_children(choice_type, constraints)):
         if i >= cap:
             break
-        index = choice_to_index(choice, kwargs)
+        index = choice_to_index(choice, constraints)
         assert index not in indices
         indices.add(index)
 
 
-@given(choice_types_kwargs())
+@given(choice_types_constraints())
 @example(
     (
         "string",
         {"min_size": 0, "max_size": 10, "intervals": IntervalSet.from_string("a")},
     )
 )
-def test_choice_from_value_injective(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
+def test_choice_from_value_injective(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
     assume(choice_type != "float")
-    cap = min(compute_max_children(choice_type, kwargs), 10_000)
+    cap = min(compute_max_children(choice_type, constraints), 10_000)
 
     choices = set()
     for index in range(cap):
-        choice = choice_from_index(index, choice_type, kwargs)
+        choice = choice_from_index(index, choice_type, constraints)
         assert choice not in choices
         choices.add(choice)
 
 
-@given(choice_types_kwargs())
-def test_choice_index_and_value_are_inverses(choice_type_and_kwargs):
-    (choice_type, kwargs) = choice_type_and_kwargs
-    v = draw_value(choice_type, kwargs)
-    index = choice_to_index(v, kwargs)
+@given(choice_types_constraints())
+def test_choice_index_and_value_are_inverses(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    v = draw_value(choice_type, constraints)
+    index = choice_to_index(v, constraints)
     note({"v": v, "index": index})
-    choice_equal(choice_from_index(index, choice_type, kwargs), v)
+    choice_equal(choice_from_index(index, choice_type, constraints), v)
 
 
 @pytest.mark.parametrize(
-    "choice_type, kwargs, choices",
+    "choice_type, constraints, choices",
     [
         ("boolean", {"p": 1}, [True]),
         ("boolean", {"p": 0}, [False]),
-        ("integer", integer_kw(min_value=1, shrink_towards=4), range(1, 10)),
-        ("integer", integer_kw(max_value=5, shrink_towards=2), range(-10, 5 + 1)),
-        ("integer", integer_kw(max_value=5), range(-10, 5 + 1)),
-        ("integer", integer_kw(min_value=0, shrink_towards=1), range(10)),
-        ("integer", integer_kw(-5, 5, shrink_towards=3), range(-5, 5 + 1)),
-        ("integer", integer_kw(-5, 5, shrink_towards=-3), range(-5, 5 + 1)),
+        ("integer", integer_constr(min_value=1, shrink_towards=4), range(1, 10)),
+        ("integer", integer_constr(max_value=5, shrink_towards=2), range(-10, 5 + 1)),
+        ("integer", integer_constr(max_value=5), range(-10, 5 + 1)),
+        ("integer", integer_constr(min_value=0, shrink_towards=1), range(10)),
+        ("integer", integer_constr(-5, 5, shrink_towards=3), range(-5, 5 + 1)),
+        ("integer", integer_constr(-5, 5, shrink_towards=-3), range(-5, 5 + 1)),
         (
             "float",
-            float_kw(1.0, next_up(next_up(1.0))),
+            float_constr(1.0, next_up(next_up(1.0))),
             [1.0, next_up(1.0), next_up(next_up(1.0))],
         ),
         (
             "float",
-            float_kw(next_down(-0.0), next_up(0.0)),
+            float_constr(next_down(-0.0), next_up(0.0)),
             [next_down(-0.0), -0.0, 0.0, next_up(0.0)],
         ),
     ],
 )
-def test_choice_index_and_value_are_inverses_explicit(choice_type, kwargs, choices):
+def test_choice_index_and_value_are_inverses_explicit(choice_type, constraints, choices):
     for choice in choices:
-        index = choice_to_index(choice, kwargs)
-        assert choice_equal(choice_from_index(index, choice_type, kwargs), choice)
+        index = choice_to_index(choice, constraints)
+        assert choice_equal(choice_from_index(index, choice_type, constraints), choice)
 
 
 @pytest.mark.parametrize(
-    "kwargs, choices",
+    "constraints, choices",
     [
         # unbounded
-        (integer_kw(), (0, 1, -1, 2, -2, 3, -3)),
-        (integer_kw(shrink_towards=2), (2, 3, 1, 4, 0, 5, -1, 6, -2)),
+        (integer_constr(), (0, 1, -1, 2, -2, 3, -3)),
+        (integer_constr(shrink_towards=2), (2, 3, 1, 4, 0, 5, -1, 6, -2)),
         # semibounded (below)
-        (integer_kw(min_value=3), (3, 4, 5, 6, 7)),
-        (integer_kw(min_value=3, shrink_towards=5), (5, 6, 4, 7, 3, 8, 9)),
-        (integer_kw(min_value=-3), (0, 1, -1, 2, -2, 3, -3, 4, 5, 6)),
-        (integer_kw(min_value=-3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3, 4)),
+        (integer_constr(min_value=3), (3, 4, 5, 6, 7)),
+        (integer_constr(min_value=3, shrink_towards=5), (5, 6, 4, 7, 3, 8, 9)),
+        (integer_constr(min_value=-3), (0, 1, -1, 2, -2, 3, -3, 4, 5, 6)),
+        (integer_constr(min_value=-3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3, 4)),
         # semibounded (above)
-        (integer_kw(max_value=3), (0, 1, -1, 2, -2, 3, -3, -4, -5, -6)),
-        (integer_kw(max_value=3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3, -4)),
-        (integer_kw(max_value=-3), (-3, -4, -5, -6, -7)),
-        (integer_kw(max_value=-3, shrink_towards=-5), (-5, -4, -6, -3, -7, -8, -9)),
+        (integer_constr(max_value=3), (0, 1, -1, 2, -2, 3, -3, -4, -5, -6)),
+        (integer_constr(max_value=3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3, -4)),
+        (integer_constr(max_value=-3), (-3, -4, -5, -6, -7)),
+        (integer_constr(max_value=-3, shrink_towards=-5), (-5, -4, -6, -3, -7, -8, -9)),
         # bounded
-        (integer_kw(-3, 3), (0, 1, -1, 2, -2, 3, -3)),
-        (integer_kw(-3, 3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3)),
-        (integer_kw(-3, 3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3)),
+        (integer_constr(-3, 3), (0, 1, -1, 2, -2, 3, -3)),
+        (integer_constr(-3, 3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3)),
+        (integer_constr(-3, 3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3)),
     ],
     ids=repr,
 )
-def test_integer_choice_index(kwargs, choices):
+def test_integer_choice_index(constraints, choices):
     # explicit test which checks that the order of `choices` matches the index
     # order.
     for i, choice in enumerate(choices):
-        assert choice_to_index(choice, kwargs) == i
+        assert choice_to_index(choice, constraints) == i
 
 
 @given(st.lists(nodes()))
 def test_drawing_directly_matches_for_choices(nodes):
     data = ConjectureData.for_choices([n.value for n in nodes])
     for node in nodes:
-        value = getattr(data, f"draw_{node.type}")(**node.kwargs)
+        value = getattr(data, f"draw_{node.type}")(**node.constraints)
         assert choice_equal(node.value, value)
 
 

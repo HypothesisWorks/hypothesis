@@ -35,38 +35,38 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
 
-class IntegerKWargs(TypedDict):
+class IntegerConstraints(TypedDict):
     min_value: Optional[int]
     max_value: Optional[int]
     weights: Optional[dict[int, float]]
     shrink_towards: int
 
 
-class FloatKWargs(TypedDict):
+class FloatConstraints(TypedDict):
     min_value: float
     max_value: float
     allow_nan: bool
     smallest_nonzero_magnitude: float
 
 
-class StringKWargs(TypedDict):
+class StringConstraints(TypedDict):
     intervals: IntervalSet
     min_size: int
     max_size: int
 
 
-class BytesKWargs(TypedDict):
+class BytesConstraints(TypedDict):
     min_size: int
     max_size: int
 
 
-class BooleanKWargs(TypedDict):
+class BooleanConstraints(TypedDict):
     p: float
 
 
 ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
-ChoiceKwargsT: "TypeAlias" = Union[
-    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
+ChoiceConstraintsT: "TypeAlias" = Union[
+    IntegerConstraints, FloatConstraints, StringConstraints, BytesConstraints, BooleanConstraints
 ]
 ChoiceTypeT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
 ChoiceKeyT: "TypeAlias" = Union[
@@ -88,7 +88,7 @@ class ChoiceTemplate:
 class ChoiceNode:
     type: ChoiceTypeT = attr.ib()
     value: ChoiceT = attr.ib()
-    kwargs: ChoiceKwargsT = attr.ib()
+    constraints: ChoiceConstraintsT = attr.ib()
     was_forced: bool = attr.ib()
     index: Optional[int] = attr.ib(default=None)
 
@@ -96,7 +96,7 @@ class ChoiceNode:
         self,
         *,
         with_value: Optional[ChoiceT] = None,
-        with_kwargs: Optional[ChoiceKwargsT] = None,
+        with_constraints: Optional[ChoiceConstraintsT] = None,
     ) -> "ChoiceNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.
@@ -108,7 +108,7 @@ class ChoiceNode:
         return ChoiceNode(
             type=self.type,
             value=self.value if with_value is None else with_value,
-            kwargs=self.kwargs if with_kwargs is None else with_kwargs,
+            constraints=self.constraints if with_constraints is None else with_constraints,
             was_forced=self.was_forced,
         )
 
@@ -124,12 +124,12 @@ class ChoiceNode:
             return True
 
         if self.type != "float":
-            zero_value = choice_from_index(0, self.type, self.kwargs)
+            zero_value = choice_from_index(0, self.type, self.constraints)
             return choice_equal(self.value, zero_value)
         else:
-            kwargs = cast(FloatKWargs, self.kwargs)
-            min_value = kwargs["min_value"]
-            max_value = kwargs["max_value"]
+            constraints = cast(FloatConstraints, self.constraints)
+            min_value = constraints["min_value"]
+            max_value = constraints["max_value"]
             shrink_towards = 0.0
 
             if min_value == -math.inf and max_value == math.inf:
@@ -159,7 +159,7 @@ class ChoiceNode:
         return (
             self.type == other.type
             and choice_equal(self.value, other.value)
-            and choice_kwargs_equal(self.type, self.kwargs, other.kwargs)
+            and choice_constraints_equal(self.type, self.constraints, other.constraints)
             and self.was_forced == other.was_forced
         )
 
@@ -168,14 +168,14 @@ class ChoiceNode:
             (
                 self.type,
                 choice_key(self.value),
-                choice_kwargs_key(self.type, self.kwargs),
+                choice_constraints_key(self.type, self.constraints),
                 self.was_forced,
             )
         )
 
     def __repr__(self) -> str:
         forced_marker = " [forced]" if self.was_forced else ""
-        return f"{self.type} {self.value!r}{forced_marker} {self.kwargs!r}"
+        return f"{self.type} {self.value!r}{forced_marker} {self.constraints!r}"
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -305,12 +305,12 @@ def zigzag_value(index: int, *, shrink_towards: int) -> int:
     return shrink_towards + n
 
 
-def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
+def choice_to_index(choice: ChoiceT, constraints: ChoiceConstraintsT) -> int:
     # This function takes a choice in the choice sequence and returns the
     # complexity index of that choice from among its possible values, where 0
     # is the simplest.
     #
-    # Note that the index of a choice depends on its kwargs. The simplest value
+    # Note that the index of a choice depends on its constraints. The simplest value
     # (at index 0) for {"min_value": None, "max_value": None} is 0, while for
     # {"min_value": 1, "max_value": None} the simplest value is 1.
     #
@@ -333,10 +333,10 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
         # the most common case where 0 is first (a = 0). We deviate from this only
         # rarely, e.g. for datetimes, where we generally want year 2000 to be
         # simpler than year 0.
-        kwargs = cast(IntegerKWargs, kwargs)
-        shrink_towards = kwargs["shrink_towards"]
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
+        constraints = cast(IntegerConstraints, constraints)
+        shrink_towards = constraints["shrink_towards"]
+        min_value = constraints["min_value"]
+        max_value = constraints["max_value"]
 
         if min_value is not None:
             shrink_towards = max(min_value, shrink_towards)
@@ -374,8 +374,8 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
 
             assert min_value is not None
             assert max_value is not None
-            assert kwargs["weights"] is None or all(
-                w > 0 for w in kwargs["weights"].values()
+            assert constraints["weights"] is None or all(
+                w > 0 for w in constraints["weights"].values()
             ), "technically possible but really annoying to support zero weights"
 
             # check which side gets exhausted first
@@ -392,27 +392,27 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
                     return zigzag_index(choice, shrink_towards=shrink_towards)
                 return max_value - choice
     elif isinstance(choice, bool):
-        kwargs = cast(BooleanKWargs, kwargs)
+        constraints = cast(BooleanConstraints, constraints)
         # Ordered by [False, True].
-        p = kwargs["p"]
+        p = constraints["p"]
         if not (2 ** (-64) < p < (1 - 2 ** (-64))):
             # only one option is possible, so whatever it is is first.
             return 0
         return int(choice)
     elif isinstance(choice, bytes):
-        kwargs = cast(BytesKWargs, kwargs)
+        constraints = cast(BytesConstraints, constraints)
         return collection_index(
             list(choice),
-            min_size=kwargs["min_size"],
+            min_size=constraints["min_size"],
             alphabet_size=2**8,
             to_order=identity,
         )
     elif isinstance(choice, str):
-        kwargs = cast(StringKWargs, kwargs)
-        intervals = kwargs["intervals"]
+        constraints = cast(StringConstraints, constraints)
+        intervals = constraints["intervals"]
         return collection_index(
             choice,
-            min_size=kwargs["min_size"],
+            min_size=constraints["min_size"],
             alphabet_size=len(intervals),
             to_order=intervals.index_from_char_in_shrink_order,
         )
@@ -424,14 +424,14 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
 
 
 def choice_from_index(
-    index: int, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT
+    index: int, choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
 ) -> ChoiceT:
     assert index >= 0
     if choice_type == "integer":
-        kwargs = cast(IntegerKWargs, kwargs)
-        shrink_towards = kwargs["shrink_towards"]
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
+        constraints = cast(IntegerConstraints, constraints)
+        shrink_towards = constraints["shrink_towards"]
+        min_value = constraints["min_value"]
+        max_value = constraints["max_value"]
 
         if min_value is not None:
             shrink_towards = max(min_value, shrink_towards)
@@ -455,8 +455,8 @@ def choice_from_index(
             # case: bounded
             assert min_value is not None
             assert max_value is not None
-            assert kwargs["weights"] is None or all(
-                w > 0 for w in kwargs["weights"].values()
+            assert constraints["weights"] is None or all(
+                w > 0 for w in constraints["weights"].values()
             ), "possible but really annoying to support zero weights"
 
             if (shrink_towards - min_value) < (max_value - shrink_towards):
@@ -470,9 +470,9 @@ def choice_from_index(
                     return zigzag_value(index, shrink_towards=shrink_towards)
                 return max_value - index
     elif choice_type == "boolean":
-        kwargs = cast(BooleanKWargs, kwargs)
+        constraints = cast(BooleanConstraints, constraints)
         # Ordered by [False, True].
-        p = kwargs["p"]
+        p = constraints["p"]
         only = None
         if p <= 2 ** (-64):
             only = False
@@ -486,72 +486,72 @@ def choice_from_index(
             return only
         return bool(index)
     elif choice_type == "bytes":
-        kwargs = cast(BytesKWargs, kwargs)
+        constraints = cast(BytesConstraints, constraints)
         value_b = collection_value(
-            index, min_size=kwargs["min_size"], alphabet_size=2**8, from_order=identity
+            index, min_size=constraints["min_size"], alphabet_size=2**8, from_order=identity
         )
         return bytes(value_b)
     elif choice_type == "string":
-        kwargs = cast(StringKWargs, kwargs)
-        intervals = kwargs["intervals"]
+        constraints = cast(StringConstraints, constraints)
+        intervals = constraints["intervals"]
         # _s because mypy is unhappy with reusing different-typed names in branches,
         # even if the branches are disjoint.
         value_s = collection_value(
             index,
-            min_size=kwargs["min_size"],
+            min_size=constraints["min_size"],
             alphabet_size=len(intervals),
             from_order=intervals.char_in_shrink_order,
         )
         return "".join(value_s)
     elif choice_type == "float":
-        kwargs = cast(FloatKWargs, kwargs)
+        constraints = cast(FloatConstraints, constraints)
         sign = -1 if index >> 64 else 1
         result = sign * lex_to_float(index & ((1 << 64) - 1))
 
         clamper = make_float_clamper(
-            min_value=kwargs["min_value"],
-            max_value=kwargs["max_value"],
-            smallest_nonzero_magnitude=kwargs["smallest_nonzero_magnitude"],
-            allow_nan=kwargs["allow_nan"],
+            min_value=constraints["min_value"],
+            max_value=constraints["max_value"],
+            smallest_nonzero_magnitude=constraints["smallest_nonzero_magnitude"],
+            allow_nan=constraints["allow_nan"],
         )
         return clamper(result)
     else:
         raise NotImplementedError
 
 
-def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
+def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
     if isinstance(choice, int) and not isinstance(choice, bool):
-        kwargs = cast(IntegerKWargs, kwargs)
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
+        constraints = cast(IntegerConstraints, constraints)
+        min_value = constraints["min_value"]
+        max_value = constraints["max_value"]
         if min_value is not None and choice < min_value:
             return False
         return not (max_value is not None and choice > max_value)
     elif isinstance(choice, float):
-        kwargs = cast(FloatKWargs, kwargs)
+        constraints = cast(FloatConstraints, constraints)
         if math.isnan(choice):
-            return kwargs["allow_nan"]
+            return constraints["allow_nan"]
         return (
-            sign_aware_lte(kwargs["min_value"], choice)
-            and sign_aware_lte(choice, kwargs["max_value"])
-        ) and not (0 < abs(choice) < kwargs["smallest_nonzero_magnitude"])
+            sign_aware_lte(constraints["min_value"], choice)
+            and sign_aware_lte(choice, constraints["max_value"])
+        ) and not (0 < abs(choice) < constraints["smallest_nonzero_magnitude"])
     elif isinstance(choice, str):
-        kwargs = cast(StringKWargs, kwargs)
-        if len(choice) < kwargs["min_size"]:
+        constraints = cast(StringConstraints, constraints)
+        if len(choice) < constraints["min_size"]:
             return False
-        if kwargs["max_size"] is not None and len(choice) > kwargs["max_size"]:
+        if constraints["max_size"] is not None and len(choice) > constraints["max_size"]:
             return False
-        return all(ord(c) in kwargs["intervals"] for c in choice)
+        return all(ord(c) in constraints["intervals"] for c in choice)
     elif isinstance(choice, bytes):
-        kwargs = cast(BytesKWargs, kwargs)
-        if len(choice) < kwargs["min_size"]:
+        constraints = cast(BytesConstraints, constraints)
+        if len(choice) < constraints["min_size"]:
             return False
-        return kwargs["max_size"] is None or len(choice) <= kwargs["max_size"]
+        return constraints["max_size"] is None or len(choice) <= constraints["max_size"]
     elif isinstance(choice, bool):
-        kwargs = cast(BooleanKWargs, kwargs)
-        if kwargs["p"] <= 0:
+        constraints = cast(BooleanConstraints, constraints)
+        if constraints["p"] <= 0:
             return choice is False
-        if kwargs["p"] >= 1:
+        if constraints["p"] >= 1:
             return choice is True
         return True
     else:
@@ -578,30 +578,30 @@ def choice_equal(choice1: ChoiceT, choice2: ChoiceT) -> bool:
     return choice_key(choice1) == choice_key(choice2)
 
 
-def choice_kwargs_equal(
-    choice_type: ChoiceTypeT, kwargs1: ChoiceKwargsT, kwargs2: ChoiceKwargsT
+def choice_constraints_equal(
+    choice_type: ChoiceTypeT, constraints1: ChoiceConstraintsT, constraints2: ChoiceConstraintsT
 ) -> bool:
-    return choice_kwargs_key(choice_type, kwargs1) == choice_kwargs_key(
-        choice_type, kwargs2
+    return choice_constraints_key(choice_type, constraints1) == choice_constraints_key(
+        choice_type, constraints2
     )
 
 
-def choice_kwargs_key(choice_type, kwargs):
+def choice_constraints_key(choice_type, constraints):
     if choice_type == "float":
         return (
-            float_to_int(kwargs["min_value"]),
-            float_to_int(kwargs["max_value"]),
-            kwargs["allow_nan"],
-            kwargs["smallest_nonzero_magnitude"],
+            float_to_int(constraints["min_value"]),
+            float_to_int(constraints["max_value"]),
+            constraints["allow_nan"],
+            constraints["smallest_nonzero_magnitude"],
         )
     if choice_type == "integer":
         return (
-            kwargs["min_value"],
-            kwargs["max_value"],
-            None if kwargs["weights"] is None else tuple(kwargs["weights"]),
-            kwargs["shrink_towards"],
+            constraints["min_value"],
+            constraints["max_value"],
+            None if constraints["weights"] is None else tuple(constraints["weights"]),
+            constraints["shrink_towards"],
         )
-    return tuple(kwargs[key] for key in sorted(kwargs))
+    return tuple(constraints[key] for key in sorted(constraints))
 
 
 def choices_size(choices: Iterable[ChoiceT]) -> int:

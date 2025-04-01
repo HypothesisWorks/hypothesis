@@ -255,7 +255,7 @@ def test_backend_can_shrink_floats():
 @given(nodes())
 def test_new_conjecture_data_with_backend(node):
     def test(data):
-        getattr(data, f"draw_{node.type}")(**node.kwargs)
+        getattr(data, f"draw_{node.type}")(**node.constraints)
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))
@@ -264,19 +264,19 @@ def test_new_conjecture_data_with_backend(node):
 
 # trivial provider for tests which don't care about drawn distributions.
 class TrivialProvider(PrimitiveProvider):
-    def draw_integer(self, *args, **kwargs):
+    def draw_integer(self, *args, **constraints):
         return 1
 
-    def draw_boolean(self, *args, **kwargs):
+    def draw_boolean(self, *args, **constraints):
         return True
 
-    def draw_float(self, *args, **kwargs):
+    def draw_float(self, *args, **constraints):
         return 1.0
 
-    def draw_bytes(self, *args, **kwargs):
+    def draw_bytes(self, *args, **constraints):
         return b""
 
-    def draw_string(self, *args, **kwargs):
+    def draw_string(self, *args, **constraints):
         return ""
 
 
@@ -509,7 +509,7 @@ class FallibleProvider(TrivialProvider):
         super().__init__(conjecturedata)
         self._it = itertools.cycle([1, 1, 1, "discard_test_case", "other"])
 
-    def draw_integer(self, *args, **kwargs):
+    def draw_integer(self, *args, **constraints):
         x = next(self._it)
         if isinstance(x, str):
             raise BackendCannotProceed(x)
@@ -554,7 +554,7 @@ class ExhaustibleProvider(TrivialProvider):
         super().__init__(conjecturedata)
         self._calls = 0
 
-    def draw_integer(self, *args, **kwargs):
+    def draw_integer(self, *args, **constraints):
         self._calls += 1
         if self._calls > 20:
             # This is complete nonsense of course, so we'll see Hypothesis complain
