@@ -7,10 +7,10 @@
 attrs==24.1.0
     # via
     #   -r requirements/test.in
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
@@ -31,6 +31,6 @@ pytest==8.3.5
 pytest-xdist==3.6.1
     # via -r requirements/test.in
 sortedcontainers==2.4.0
-    # via hypothesis (hypothesis-python/setup.py)
+    # via hypothesis (hypothesis-python/pyproject.toml)
 tomli==2.2.1
     # via pytest
