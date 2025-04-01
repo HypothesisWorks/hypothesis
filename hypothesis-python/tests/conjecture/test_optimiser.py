@@ -20,7 +20,12 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplet
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, integer_constr, nodes
+from tests.conjecture.common import (
+    TEST_SETTINGS,
+    buffer_size_limit,
+    integer_constr,
+    nodes,
+)
 
 
 def test_optimises_to_maximum():
@@ -28,6 +33,7 @@ def test_optimises_to_maximum():
 
         def test(data):
             data.target_observations["m"] = data.draw_integer(0, 2**8 - 1)
+
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.cached_test_function((0,))
 
@@ -246,7 +252,9 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     )
 )
 @example(
-    ChoiceNode(type="integer", value=1, constraints=integer_constr(0, 200), was_forced=False)
+    ChoiceNode(
+        type="integer", value=1, constraints=integer_constr(0, 200), was_forced=False
+    )
 )
 def test_optimising_all_nodes(node):
     assume(compute_max_children(node.type, node.constraints) > 50)

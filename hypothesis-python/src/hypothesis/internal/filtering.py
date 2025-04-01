@@ -316,7 +316,8 @@ def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         min_value = constraints["min_value"]
         constraints["min_value"] = float(constraints["min_value"])
         if min_value < constraints["min_value"] or (
-            min_value == constraints["min_value"] and constraints.get("exclude_min", False)
+            min_value == constraints["min_value"]
+            and constraints.get("exclude_min", False)
         ):
             constraints["min_value"] = next_up(constraints["min_value"])
 
@@ -324,11 +325,14 @@ def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         max_value = constraints["max_value"]
         constraints["max_value"] = float(constraints["max_value"])
         if max_value > constraints["max_value"] or (
-            max_value == constraints["max_value"] and constraints.get("exclude_max", False)
+            max_value == constraints["max_value"]
+            and constraints.get("exclude_max", False)
         ):
             constraints["max_value"] = next_down(constraints["max_value"])
 
-    constraints = {k: v for k, v in constraints.items() if k in {"min_value", "max_value"}}
+    constraints = {
+        k: v for k, v in constraints.items() if k in {"min_value", "max_value"}
+    }
     return ConstructivePredicate(constraints, predicate)
 
 

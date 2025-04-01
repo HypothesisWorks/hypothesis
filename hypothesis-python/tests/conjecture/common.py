@@ -302,7 +302,9 @@ def bytes_constraints(draw, *, use_min_size=None, use_max_size=None, use_forced=
 
 
 @st.composite
-def float_constraints(draw, *, use_min_value=None, use_max_value=None, use_forced=False):
+def float_constraints(
+    draw, *, use_min_value=None, use_max_value=None, use_forced=False
+):
     if use_min_value is None:
         use_min_value = draw(st.booleans())
     if use_max_value is None:
@@ -378,7 +380,8 @@ def choice_types_constraints(strategy_constraints=None, *, use_forced=False):
     options = ["boolean", "integer", "float", "bytes", "string"]
     return st.one_of(
         st.tuples(
-            st.just(name), constraints_strategy(name, strategy_constraints, use_forced=use_forced)
+            st.just(name),
+            constraints_strategy(name, strategy_constraints, use_forced=use_forced),
         )
         for name in options
     )

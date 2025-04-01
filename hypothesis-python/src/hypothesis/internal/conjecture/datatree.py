@@ -81,7 +81,11 @@ class Killed:
 
 
 def _node_pretty(
-    choice_type: ChoiceTypeT, value: ChoiceT, constraints: ChoiceConstraintsT, *, forced: bool
+    choice_type: ChoiceTypeT,
+    value: ChoiceT,
+    constraints: ChoiceConstraintsT,
+    *,
+    forced: bool,
 ) -> str:
     forced_marker = " [forced]" if forced else ""
     return f"{choice_type} {value!r}{forced_marker} {constraints}"
@@ -107,7 +111,9 @@ class Branch:
         for i, (value, child) in enumerate(self.children.items()):
             if i > 0:
                 p.break_()
-            p.text(_node_pretty(self.choice_type, value, self.constraints, forced=False))
+            p.text(
+                _node_pretty(self.choice_type, value, self.constraints, forced=False)
+            )
             with p.indent(2):
                 p.break_()
                 p.pretty(child)
@@ -179,7 +185,9 @@ def _count_distinct_strings(*, alphabet_size: int, min_size: int, max_size: int)
     return sum(alphabet_size**k for k in range(min_size, max_size + 1))
 
 
-def compute_max_children(choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT) -> int:
+def compute_max_children(
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
+) -> int:
     if choice_type == "integer":
         constraints = cast(IntegerConstraints, constraints)
         min_value = constraints["min_value"]
@@ -208,7 +216,9 @@ def compute_max_children(choice_type: ChoiceTypeT, constraints: ChoiceConstraint
     elif choice_type == "bytes":
         constraints = cast(BytesConstraints, constraints)
         return _count_distinct_strings(
-            alphabet_size=2**8, min_size=constraints["min_size"], max_size=constraints["max_size"]
+            alphabet_size=2**8,
+            min_size=constraints["min_size"],
+            max_size=constraints["max_size"],
         )
     elif choice_type == "string":
         constraints = cast(StringConstraints, constraints)
@@ -518,7 +528,9 @@ class TreeNode:
                 if i > 0:
                     p.break_()
                 p.text(
-                    _node_pretty(choice_type, value, constraints, forced=i in self.forced)
+                    _node_pretty(
+                        choice_type, value, constraints, forced=i in self.forced
+                    )
                 )
             indent += 2
 
@@ -708,7 +720,11 @@ class DataTree:
         while True:
             assert not current_node.is_exhausted
             for i, (choice_type, constraints, value) in enumerate(
-                zip(current_node.choice_types, current_node.constraints, current_node.values)
+                zip(
+                    current_node.choice_types,
+                    current_node.constraints,
+                    current_node.values,
+                )
             ):
                 if i in current_node.forced:
                     append_choice(choice_type, value)
@@ -728,7 +744,10 @@ class DataTree:
                                 continue
                         else:
                             node_value = self._draw_from_cache(
-                                choice_type, constraints, key=id(current_node), random=random
+                                choice_type,
+                                constraints,
+                                key=id(current_node),
+                                random=random,
                             )
 
                         if node_value != value:
@@ -736,7 +755,10 @@ class DataTree:
                             break
                         attempts += 1
                         self._reject_child(
-                            choice_type, constraints, child=node_value, key=id(current_node)
+                            choice_type,
+                            constraints,
+                            child=node_value,
+                            key=id(current_node),
                         )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
@@ -855,7 +877,11 @@ class DataTree:
         return TreeRecordingObserver(self)
 
     def _draw(
-        self, choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT, *, random: Random
+        self,
+        choice_type: ChoiceTypeT,
+        constraints: ChoiceConstraintsT,
+        *,
+        random: Random,
     ) -> ChoiceT:
         from hypothesis.internal.conjecture.data import draw_choice
 
@@ -968,7 +994,9 @@ class TreeRecordingObserver(DataObserver):
     def draw_integer(
         self, value: int, *, was_forced: bool, constraints: IntegerConstraints
     ) -> None:
-        self.draw_value("integer", value, was_forced=was_forced, constraints=constraints)
+        self.draw_value(
+            "integer", value, was_forced=was_forced, constraints=constraints
+        )
 
     def draw_float(
         self, value: float, *, was_forced: bool, constraints: FloatConstraints
@@ -988,7 +1016,9 @@ class TreeRecordingObserver(DataObserver):
     def draw_boolean(
         self, value: bool, *, was_forced: bool, constraints: BooleanConstraints
     ) -> None:
-        self.draw_value("boolean", value, was_forced=was_forced, constraints=constraints)
+        self.draw_value(
+            "boolean", value, was_forced=was_forced, constraints=constraints
+        )
 
     def draw_value(
         self,
@@ -1007,7 +1037,10 @@ class TreeRecordingObserver(DataObserver):
 
         assert len(node.constraints) == len(node.values) == len(node.choice_types)
         if i < len(node.values):
-            if choice_type != node.choice_types[i] or constraints != node.constraints[i]:
+            if (
+                choice_type != node.choice_types[i]
+                or constraints != node.constraints[i]
+            ):
                 raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
@@ -1049,7 +1082,10 @@ class TreeRecordingObserver(DataObserver):
                 # An alternative is not writing such choices to the tree at
                 # all, and thus guaranteeing that each node has at least 2 max
                 # children.
-                if compute_max_children(choice_type, constraints) == 1 and not was_forced:
+                if (
+                    compute_max_children(choice_type, constraints) == 1
+                    and not was_forced
+                ):
                     node.split_at(i)
                     assert isinstance(node.transition, Branch)
                     self.__current_node = node.transition.children[value]

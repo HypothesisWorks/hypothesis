@@ -29,10 +29,10 @@ from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
     boolean_constraints,
+    constraints_strategy,
     fresh_data,
     integer_constraints,
     interesting_origin,
-    constraints_strategy,
     nodes,
     run_to_nodes,
 )

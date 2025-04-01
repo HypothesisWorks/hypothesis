@@ -247,7 +247,10 @@ def test_nodes(random):
     data.freeze()
     expected_tree_nodes = (
         ChoiceNode(
-            type="float", value=5.0, constraints=float_constr(-10.0, 10.0), was_forced=True
+            type="float",
+            value=5.0,
+            constraints=float_constr(-10.0, 10.0),
+            was_forced=True,
         ),
         ChoiceNode(
             type="boolean",
@@ -272,7 +275,10 @@ def test_nodes(random):
             was_forced=True,
         ),
         ChoiceNode(
-            type="integer", value=50, constraints=integer_constr(0, 100), was_forced=True
+            type="integer",
+            value=50,
+            constraints=integer_constr(0, 100),
+            was_forced=True,
         ),
     )
     assert data.nodes == expected_tree_nodes
@@ -331,7 +337,9 @@ def test_data_with_changed_forced_value(node):
 
 
 # ensure we hit bare-minimum coverage for all ir types.
-@example(ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=True))
+@example(
+    ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=True)
+)
 @example(
     ChoiceNode(
         type="boolean",
@@ -341,7 +349,9 @@ def test_data_with_changed_forced_value(node):
     )
 )
 @example(
-    ChoiceNode(type="integer", value=50, constraints=integer_constr(50, 100), was_forced=True)
+    ChoiceNode(
+        type="integer", value=50, constraints=integer_constr(50, 100), was_forced=True
+    )
 )
 @example(
     ChoiceNode(
@@ -461,15 +471,29 @@ def test_forced_nodes_are_trivial(node):
     "node",
     [
         ChoiceNode(
-            type="float", value=5.0, constraints=float_constr(5.0, 10.0), was_forced=False
+            type="float",
+            value=5.0,
+            constraints=float_constr(5.0, 10.0),
+            was_forced=False,
         ),
         ChoiceNode(
-            type="float", value=0.0, constraints=float_constr(-5.0, 5.0), was_forced=False
+            type="float",
+            value=0.0,
+            constraints=float_constr(-5.0, 5.0),
+            was_forced=False,
         ),
-        ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=False),
-        ChoiceNode(type="boolean", value=False, constraints={"p": 0.5}, was_forced=False),
-        ChoiceNode(type="boolean", value=True, constraints={"p": 1.0}, was_forced=False),
-        ChoiceNode(type="boolean", value=False, constraints={"p": 0.0}, was_forced=False),
+        ChoiceNode(
+            type="float", value=0.0, constraints=float_constr(), was_forced=False
+        ),
+        ChoiceNode(
+            type="boolean", value=False, constraints={"p": 0.5}, was_forced=False
+        ),
+        ChoiceNode(
+            type="boolean", value=True, constraints={"p": 1.0}, was_forced=False
+        ),
+        ChoiceNode(
+            type="boolean", value=False, constraints={"p": 0.0}, was_forced=False
+        ),
         ChoiceNode(
             type="string",
             value="",
@@ -503,10 +527,16 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         ChoiceNode(
-            type="integer", value=50, constraints=integer_constr(50, 100), was_forced=False
+            type="integer",
+            value=50,
+            constraints=integer_constr(50, 100),
+            was_forced=False,
         ),
         ChoiceNode(
-            type="integer", value=0, constraints=integer_constr(-10, 10), was_forced=False
+            type="integer",
+            value=0,
+            constraints=integer_constr(-10, 10),
+            was_forced=False,
         ),
         ChoiceNode(
             type="integer",
@@ -526,7 +556,9 @@ def test_forced_nodes_are_trivial(node):
             constraints=integer_constr(-10, 10, shrink_towards=12),
             was_forced=False,
         ),
-        ChoiceNode(type="integer", value=0, constraints=integer_constr(), was_forced=False),
+        ChoiceNode(
+            type="integer", value=0, constraints=integer_constr(), was_forced=False
+        ),
         ChoiceNode(
             type="integer",
             value=1,
@@ -568,14 +600,26 @@ def test_trivial_nodes(node):
     "node",
     [
         ChoiceNode(
-            type="float", value=6.0, constraints=float_constr(5.0, 10.0), was_forced=False
+            type="float",
+            value=6.0,
+            constraints=float_constr(5.0, 10.0),
+            was_forced=False,
         ),
         ChoiceNode(
-            type="float", value=-5.0, constraints=float_constr(-5.0, 5.0), was_forced=False
+            type="float",
+            value=-5.0,
+            constraints=float_constr(-5.0, 5.0),
+            was_forced=False,
         ),
-        ChoiceNode(type="float", value=1.0, constraints=float_constr(), was_forced=False),
-        ChoiceNode(type="boolean", value=True, constraints={"p": 0.5}, was_forced=False),
-        ChoiceNode(type="boolean", value=True, constraints={"p": 0.99}, was_forced=False),
+        ChoiceNode(
+            type="float", value=1.0, constraints=float_constr(), was_forced=False
+        ),
+        ChoiceNode(
+            type="boolean", value=True, constraints={"p": 0.5}, was_forced=False
+        ),
+        ChoiceNode(
+            type="boolean", value=True, constraints={"p": 0.99}, was_forced=False
+        ),
         ChoiceNode(
             type="string",
             value="d",
@@ -605,9 +649,14 @@ def test_trivial_nodes(node):
             was_forced=False,
         ),
         ChoiceNode(
-            type="integer", value=-10, constraints=integer_constr(-10, 10), was_forced=False
+            type="integer",
+            value=-10,
+            constraints=integer_constr(-10, 10),
+            was_forced=False,
         ),
-        ChoiceNode(type="integer", value=42, constraints=integer_constr(), was_forced=False),
+        ChoiceNode(
+            type="integer", value=42, constraints=integer_constr(), was_forced=False
+        ),
     ],
 )
 def test_nontrivial_nodes(node):
@@ -802,7 +851,9 @@ def test_choice_index_and_value_are_inverses(choice_type_and_constraints):
         ),
     ],
 )
-def test_choice_index_and_value_are_inverses_explicit(choice_type, constraints, choices):
+def test_choice_index_and_value_are_inverses_explicit(
+    choice_type, constraints, choices
+):
     for choice in choices:
         index = choice_to_index(choice, constraints)
         assert choice_equal(choice_from_index(index, choice_type, constraints), choice)

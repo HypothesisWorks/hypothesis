@@ -531,7 +531,9 @@ class Shrinker:
                 for i in range(start, end):
                     node = nodes[i]
                     if not node.was_forced:
-                        value = draw_choice(node.type, node.constraints, random=self.random)
+                        value = draw_choice(
+                            node.type, node.constraints, random=self.random
+                        )
                         node = node.copy(with_value=value)
                     replacement.append(node.value)
 
@@ -982,7 +984,9 @@ class Shrinker:
         if not changed:
             return
 
-        ints = [abs(node.value - node.constraints["shrink_towards"]) for node in changed]
+        ints = [
+            abs(node.value - node.constraints["shrink_towards"]) for node in changed
+        ]
         offset = min(ints)
         assert offset > 0
 

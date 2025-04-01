@@ -39,8 +39,8 @@ from hypothesis.internal.conjecture.choice import (
     FloatConstraints,
     IntegerConstraints,
     StringConstraints,
-    choice_from_index,
     choice_constraints_key,
+    choice_from_index,
     choice_permitted,
     choices_size,
 )
@@ -90,7 +90,9 @@ def __getattr__(name: str) -> Any:
 T = TypeVar("T")
 TargetObservations = dict[str, Union[int, float]]
 # index, choice_type, constraints, forced value
-MisalignedAt: "TypeAlias" = tuple[int, ChoiceTypeT, ChoiceConstraintsT, Optional[ChoiceT]]
+MisalignedAt: "TypeAlias" = tuple[
+    int, ChoiceTypeT, ChoiceConstraintsT, Optional[ChoiceT]
+]
 
 TOP_LABEL = calc_label_from_name("top")
 
@@ -973,7 +975,9 @@ class ConjectureData:
                 else:
                     # give alternative backends control over ChoiceTemplate draws
                     # as well
-                    choice = getattr(self.provider, f"draw_{choice_type}")(**constraints)
+                    choice = getattr(self.provider, f"draw_{choice_type}")(
+                        **constraints
+                    )
             else:
                 raise NotImplementedError
 

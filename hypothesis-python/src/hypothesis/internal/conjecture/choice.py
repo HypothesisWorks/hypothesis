@@ -66,7 +66,11 @@ class BooleanConstraints(TypedDict):
 
 ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
 ChoiceConstraintsT: "TypeAlias" = Union[
-    IntegerConstraints, FloatConstraints, StringConstraints, BytesConstraints, BooleanConstraints
+    IntegerConstraints,
+    FloatConstraints,
+    StringConstraints,
+    BytesConstraints,
+    BooleanConstraints,
 ]
 ChoiceTypeT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
 ChoiceKeyT: "TypeAlias" = Union[
@@ -108,7 +112,9 @@ class ChoiceNode:
         return ChoiceNode(
             type=self.type,
             value=self.value if with_value is None else with_value,
-            constraints=self.constraints if with_constraints is None else with_constraints,
+            constraints=(
+                self.constraints if with_constraints is None else with_constraints
+            ),
             was_forced=self.was_forced,
         )
 
@@ -488,7 +494,10 @@ def choice_from_index(
     elif choice_type == "bytes":
         constraints = cast(BytesConstraints, constraints)
         value_b = collection_value(
-            index, min_size=constraints["min_size"], alphabet_size=2**8, from_order=identity
+            index,
+            min_size=constraints["min_size"],
+            alphabet_size=2**8,
+            from_order=identity,
         )
         return bytes(value_b)
     elif choice_type == "string":
@@ -539,7 +548,10 @@ def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
         constraints = cast(StringConstraints, constraints)
         if len(choice) < constraints["min_size"]:
             return False
-        if constraints["max_size"] is not None and len(choice) > constraints["max_size"]:
+        if (
+            constraints["max_size"] is not None
+            and len(choice) > constraints["max_size"]
+        ):
             return False
         return all(ord(c) in constraints["intervals"] for c in choice)
     elif isinstance(choice, bytes):
@@ -579,7 +591,9 @@ def choice_equal(choice1: ChoiceT, choice2: ChoiceT) -> bool:
 
 
 def choice_constraints_equal(
-    choice_type: ChoiceTypeT, constraints1: ChoiceConstraintsT, constraints2: ChoiceConstraintsT
+    choice_type: ChoiceTypeT,
+    constraints1: ChoiceConstraintsT,
+    constraints2: ChoiceConstraintsT,
 ) -> bool:
     return choice_constraints_key(choice_type, constraints1) == choice_constraints_key(
         choice_type, constraints2

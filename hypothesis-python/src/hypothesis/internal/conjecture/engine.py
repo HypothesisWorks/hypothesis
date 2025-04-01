@@ -35,8 +35,8 @@ from hypothesis.errors import (
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
 from hypothesis.internal.conjecture.choice import (
-    ChoiceKeyT,
     ChoiceConstraintsT,
+    ChoiceKeyT,
     ChoiceNode,
     ChoiceT,
     ChoiceTemplate,
