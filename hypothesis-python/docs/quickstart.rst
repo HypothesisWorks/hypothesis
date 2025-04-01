@@ -76,26 +76,33 @@ This test will clearly fail, which can be confirmed by running ``pytest example.
     E       )
 
 
-|@given| arguments
-------------------
+Arguments to |@given|
+---------------------
 
-You can pass multiple arguments to |@given|, or add keyword arguments:
+You can pass multiple arguments to |@given|:
 
 .. code-block:: python
 
-    @given(st.integers(), st.text(), b1=st.booleans(), b2=st.booleans())
+    @given(st.integers(), st.text())
     def test_integers(n, s, b1, b2):
         assert isinstance(n, int)
         assert isinstance(s, str)
-        assert isinstance(b1, bool)
-        assert isinstance(b2, bool)
+
+Or use keyword arguments:
+
+.. code-block:: python
+
+    @given(n=st.integers(), s=st.text())
+    def test_integers(n, s):
+        assert isinstance(n, int)
+        assert isinstance(s, str)
 
 .. note::
 
     See |@given| for details about how |@given| handles different types of arguments.
 
-|assume|
---------
+Filtering inside a test
+-----------------------
 
 Sometimes, you need to remove invalid cases from your test. You can do this dynamically using |assume|, which takes a boolean and discards any test cases that evaluate to ``False``.
 
@@ -108,7 +115,7 @@ Sometimes, you need to remove invalid cases from your test. You can do this dyna
 
 .. note::
 
-    You can learn more in the :doc:`tutorial/assume-and-filter` tutorial page.
+    You can learn more in the :doc:`/tutorial/adapting-strategies` tutorial page.
 
 Dependent generation
 --------------------

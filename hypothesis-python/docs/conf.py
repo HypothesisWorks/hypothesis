@@ -209,6 +209,7 @@ rst_prolog = """
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
 .. |st.booleans| replace:: :func:`~hypothesis.strategies.booleans`
+.. |st.none| replace:: :func:`~hypothesis.strategies.none`
 .. |st.composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
 .. |st.data| replace:: :func:`~hypothesis.strategies.data`
 .. |st.one_of| replace:: :func:`~hypothesis.strategies.one_of`
@@ -222,6 +223,7 @@ rst_prolog = """
 .. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
 .. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
 .. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.sampled_from| replace:: :func:`~hypothesis.strategies.sampled_from`
 .. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`

@@ -1,14 +1,14 @@
-Settings
-========
+Configuring test settings
+=========================
 
-Hypothesis has default behavior for each property-based test. Sometimes, you need to adjust this behavior. The |@settings| decorator lets you adjust the behavior of a single test. Alternatively, settings profiles let you adjust test behavior across your test suite.
+This page discusses how to configure the behavior of a single Hypothesis test, or of an entire test suite.
 
-Among others, settings can control how many examples Hypothesis generates, how Hypothesis replays failing examples from the local database, and the verbosity level of the test.
+Configuring a single test
+-------------------------
 
-Changing the settings of a test
--------------------------------
+Hypothesis lets you configue the default behavior of a test using the |@settings| decorator. You can use settings to configure how many examples Hypothesis generates, how Hypothesis replays failing examples, and the verbosity level of the test, among others.
 
-Using the |@settings| decorator on a single test looks like this:
+Using |@settings| on a single test looks like this:
 
 .. code-block:: python
 
@@ -46,12 +46,12 @@ The default is 100 examples.
 Other settings options
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Here are a few of the more commonly-used setting values:
+Here are a few of the more commonly used setting values:
 
-* |settings.derandomize|, to make Hypothesis deterministic
-* |settings.database|, to control how and if Hypothesis replays failing examples
-* |settings.verbosity|, to print debug information
-* |settings.phases|, to control which phases of Hypothesis run (database replay, generation, shrinking, etc)
+* |settings.derandomize| makes Hypothesis deterministic.
+* |settings.database| controls how and if Hypothesis replays failing examples.
+* |settings.verbosity| to print debug information.
+* |settings.phases| controls which phases of Hypothesis run, like replaying from the database or generating new inputs.
 
 .. note::
 
@@ -61,7 +61,7 @@ Here are a few of the more commonly-used setting values:
 Changing settings across your test suite
 ----------------------------------------
 
-If you want to change the value of a setting for all tests, you can use a settings profile.
+Alternatively, you can configure test behavior across your test suite using a settings profile.
 
 To create a settings profile, use |settings.register_profile|:
 
@@ -73,7 +73,7 @@ To create a settings profile, use |settings.register_profile|:
 
 You can place this code in any file which gets loaded before your tests get run. This includes an ``__init__.py`` file in the test directory or any of the test files themselves. If using pytest, the standard location to place this code is in a ``confest.py`` file (though an ``__init__.py`` or test file will also work).
 
-Note that a profile does not take effect until loaded with |settings.load_profile|:
+Note that registering a new profile will not affect tests until loaded with |settings.load_profile|:
 
 .. code-block:: python
 
@@ -84,9 +84,9 @@ Note that a profile does not take effect until loaded with |settings.load_profil
     # any tests executed before loading this profile will still use the
     # default of 100 examples.
 
-    settings.load_profile("myprofile")
+    settings.load_profile("my_profile_name")
 
     # any tests executed after this point will use your profile of
     # 200 examples.
 
-You can register as many profiles as you want. The default profile created by Hypothesis is called ``"default"``, and is loaded by default. You can load it at any time using ``settings.load_profile("default")``, if for instance you want to revert a custom profile you had previously loaded.
+There is no limit to the number of settings profiles you can create. Hypothesis creates a profile called ``"default"``, which is loaded by default. You can also explicitly load it at any time using ``settings.load_profile("default")``, if for instance you want to revert a custom profile you had previously loaded.
