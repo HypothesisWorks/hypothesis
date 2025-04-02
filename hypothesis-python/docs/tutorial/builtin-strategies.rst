@@ -19,3 +19,7 @@ Here is a selection of strategies provided by Hypothesis that may be useful to k
 - |st.just|. Generates the exact value passed to it. ``st.just("a")`` generates the exact string ``"a"``. This is useful when something expects to be passed a strategy. For instance, ``st.lists(st.integers() | st.just("a"))`` generates lists whose elements are either integers or the string ``"a"``.
 - |st.sampled_from|. Generates a random value from a list. ``st.sampled_from(["a", 1, True])`` is equivalent to ``st.just("a") | st.just(1) | st.just(True)``.
 - |st.none|. Generates ``None``. Useful for parameters that can be optional, like ``st.integers() | st.none()``.
+
+.. seealso::
+
+    See the :doc:`strategies reference </reference/strategies>` for full documentation on the strategies provided by Hypothesis.
