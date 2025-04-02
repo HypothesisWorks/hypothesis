@@ -77,3 +77,15 @@ Prefer |@example| over the database for correctness
 While the local database is useful for local development, we don't recommend relying on it for the correctness of your tests. If a test fails with a particularly interesting input, and you want to make sure your test works for this input in the future, we recommend explicitly adding it to your test with |@example|.
 
 The reason is that entries in the database may be invalidated at any time by Hypothesis, because the internal format is not necessarily stable across versions. Additionally, the local database is generally not checked into version control, so failures are not shared between developers, unlike with an explicit |@example|.
+
+Replaying examples from CI logs
+-------------------------------
+
+If your test fails in a CI job, Hypothesis will automatically print an |@reproduce_failure| decorator containing an opaque blob, which you can add to your local test to reproduce the failure:
+
+.. code-block:: none
+
+    You can reproduce this example by temporarily adding @reproduce_failure('6.130.5', b'AELnLA==') as a decorator on your test case
+    Falsifying example: test(
+        i=-6356,
+    )

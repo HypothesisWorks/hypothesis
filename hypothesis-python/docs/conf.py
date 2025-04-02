@@ -247,6 +247,8 @@ rst_prolog = """
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 
+.. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
+
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
 .. |bool| replace:: :obj:`python:bool`
