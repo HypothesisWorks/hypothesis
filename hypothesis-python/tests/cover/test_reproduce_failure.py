@@ -175,7 +175,6 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
     assert "@reproduce_failure" not in o.getvalue()
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
     @settings(phases=no_shrink, print_blob=False)
     @given(st.data())

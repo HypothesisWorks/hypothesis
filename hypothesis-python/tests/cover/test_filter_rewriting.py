@@ -32,7 +32,7 @@ from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedS
 from hypothesis.strategies._internal.strings import BytesStrategy, TextStrategy
 
 from tests.common.debug import check_can_generate_examples
-from tests.common.utils import Why, fails_with, xfail_on_crosshair
+from tests.common.utils import fails_with
 
 A_FEW = 15  # speed up massively-parametrized tests
 
@@ -182,7 +182,6 @@ def test_rewrite_unsatisfiable_filter(s, pred):
     assert s.filter(pred).is_empty
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize(
     "pred",
     [

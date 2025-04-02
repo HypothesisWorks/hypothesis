@@ -48,8 +48,9 @@ def test_in_order(x):
     assert x[0] < x[1]
 
 
-# crosshair just generates increasingly-long lists of [0.0]
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(
+    Why.undiscovered
+)  # (SampledFromStrategy.calc_label() hashes a symbolic float)
 def test_flatmap_retrieve_from_db():
     track = []
 
