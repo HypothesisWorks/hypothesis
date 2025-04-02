@@ -22,7 +22,10 @@ def byte_order(draw):
     return ls[:n]
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes 300s")
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes 300s; may get faster after https://github.com/pschanely/CrossHair/issues/332",
+)
 @example({0}, [1])
 @given(st.sets(st.integers(0, 255)), byte_order())
 # This test doesn't even use targeting at all, but for some reason the
