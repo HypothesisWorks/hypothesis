@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.7:
+
+--------------------
+6.130.7 - 2025-04-02
+--------------------
+
+Rename internal variables for clarity.
+
 .. _v6.130.6:
 
 --------------------
