@@ -539,7 +539,7 @@ def _database_conforms_to_listener_api(
     #   the exact value of a deleted key in "delete" events. The directory database
     #   notably does not support this, and passes None instead.
 
-    @settings(parent_settings)
+    @settings(parent_settings, settings(suppress_health_check=[HealthCheck.too_slow]))
     class TestDatabaseListener(RuleBasedStateMachine):
         # this tests that if we call .delete, .save, or .move in a database, and
         # that operation changes the state of the database, any registered listeners
@@ -664,7 +664,6 @@ def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
         flush=lambda db: db._join(),
-        parent_settings=settings(suppress_health_check=[HealthCheck.too_slow]),
     )
 
 
