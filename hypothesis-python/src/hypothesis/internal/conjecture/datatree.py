@@ -23,14 +23,14 @@ from hypothesis.errors import (
 )
 from hypothesis.internal import floats as flt
 from hypothesis.internal.conjecture.choice import (
-    BooleanKWargs,
-    BytesKWargs,
-    ChoiceKwargsT,
+    BooleanConstraints,
+    BytesConstraints,
+    ChoiceConstraintsT,
     ChoiceT,
     ChoiceTypeT,
-    FloatKWargs,
-    IntegerKWargs,
-    StringKWargs,
+    FloatConstraints,
+    IntegerConstraints,
+    StringConstraints,
     choice_from_index,
 )
 from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
@@ -81,10 +81,14 @@ class Killed:
 
 
 def _node_pretty(
-    choice_type: ChoiceTypeT, value: ChoiceT, kwargs: ChoiceKwargsT, *, forced: bool
+    choice_type: ChoiceTypeT,
+    value: ChoiceT,
+    constraints: ChoiceConstraintsT,
+    *,
+    forced: bool,
 ) -> str:
     forced_marker = " [forced]" if forced else ""
-    return f"{choice_type} {value!r}{forced_marker} {kwargs}"
+    return f"{choice_type} {value!r}{forced_marker} {constraints}"
 
 
 @attr.s(slots=True)
@@ -92,13 +96,13 @@ class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
-    kwargs: ChoiceKwargsT = attr.ib()
+    constraints: ChoiceConstraintsT = attr.ib()
     choice_type: ChoiceTypeT = attr.ib()
     children: dict[ChoiceT, "TreeNode"] = attr.ib(repr=False)
 
     @property
     def max_children(self) -> int:
-        max_children = compute_max_children(self.choice_type, self.kwargs)
+        max_children = compute_max_children(self.choice_type, self.constraints)
         assert max_children > 0
         return max_children
 
@@ -107,7 +111,9 @@ class Branch:
         for i, (value, child) in enumerate(self.children.items()):
             if i > 0:
                 p.break_()
-            p.text(_node_pretty(self.choice_type, value, self.kwargs, forced=False))
+            p.text(
+                _node_pretty(self.choice_type, value, self.constraints, forced=False)
+            )
             with p.indent(2):
                 p.break_()
                 p.pretty(child)
@@ -179,11 +185,13 @@ def _count_distinct_strings(*, alphabet_size: int, min_size: int, max_size: int)
     return sum(alphabet_size**k for k in range(min_size, max_size + 1))
 
 
-def compute_max_children(choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT) -> int:
+def compute_max_children(
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
+) -> int:
     if choice_type == "integer":
-        kwargs = cast(IntegerKWargs, kwargs)
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
+        constraints = cast(IntegerConstraints, constraints)
+        min_value = constraints["min_value"]
+        max_value = constraints["max_value"]
 
         if min_value is None and max_value is None:
             # full 128 bit range.
@@ -199,22 +207,24 @@ def compute_max_children(choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT) -> int
         assert (min_value is None) ^ (max_value is None)
         return 2**127
     elif choice_type == "boolean":
-        kwargs = cast(BooleanKWargs, kwargs)
-        p = kwargs["p"]
+        constraints = cast(BooleanConstraints, constraints)
+        p = constraints["p"]
         # probabilities of 0 or 1 (or effectively 0 or 1) only have one choice.
         if p <= 2 ** (-64) or p >= (1 - 2 ** (-64)):
             return 1
         return 2
     elif choice_type == "bytes":
-        kwargs = cast(BytesKWargs, kwargs)
+        constraints = cast(BytesConstraints, constraints)
         return _count_distinct_strings(
-            alphabet_size=2**8, min_size=kwargs["min_size"], max_size=kwargs["max_size"]
+            alphabet_size=2**8,
+            min_size=constraints["min_size"],
+            max_size=constraints["max_size"],
         )
     elif choice_type == "string":
-        kwargs = cast(StringKWargs, kwargs)
-        min_size = kwargs["min_size"]
-        max_size = kwargs["max_size"]
-        intervals = kwargs["intervals"]
+        constraints = cast(StringConstraints, constraints)
+        min_size = constraints["min_size"]
+        max_size = constraints["max_size"]
+        intervals = constraints["intervals"]
 
         if len(intervals) == 0:
             # Special-case the empty alphabet to avoid an error in math.log(0).
@@ -230,10 +240,10 @@ def compute_max_children(choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT) -> int
             alphabet_size=len(intervals), min_size=min_size, max_size=max_size
         )
     elif choice_type == "float":
-        kwargs = cast(FloatKWargs, kwargs)
-        min_value_f = kwargs["min_value"]
-        max_value_f = kwargs["max_value"]
-        smallest_nonzero_magnitude = kwargs["smallest_nonzero_magnitude"]
+        constraints = cast(FloatConstraints, constraints)
+        min_value_f = constraints["min_value"]
+        max_value_f = constraints["max_value"]
+        smallest_nonzero_magnitude = constraints["smallest_nonzero_magnitude"]
 
         count = count_between_floats(min_value_f, max_value_f)
 
@@ -266,7 +276,7 @@ def compute_max_children(choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT) -> int
 
 # In theory, this is a strict superset of the functionality of compute_max_children;
 #
-#   assert len(all_children(choice_type, kwargs)) == compute_max_children(choice_type, kwargs)
+#   assert len(all_children(choice_type, constraints)) == compute_max_children(choice_type, constraints)
 #
 # In practice, we maintain two distinct implementations for efficiency and space
 # reasons. If you just need the number of children, it is cheaper to use
@@ -278,13 +288,13 @@ def _floats_between(a: float, b: float) -> Generator[float, None, None]:
 
 
 def all_children(
-    choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
 ) -> Generator[ChoiceT, None, None]:
     if choice_type != "float":
-        for index in range(compute_max_children(choice_type, kwargs)):
-            yield choice_from_index(index, choice_type, kwargs)
+        for index in range(compute_max_children(choice_type, constraints)):
+            yield choice_from_index(index, choice_type, constraints)
     else:
-        kwargs = cast(FloatKWargs, kwargs)
+        constraints = cast(FloatConstraints, constraints)
         # the float ordering is not injective (because of resampling
         # out-of-bounds values), so using choice_from_index would result in
         # duplicates. This violates invariants in datatree about being able
@@ -292,9 +302,9 @@ def all_children(
         #
         # We instead maintain a separate implementation for floats.
         # TODO_IR write a better (bijective) ordering for floats and remove this!
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
-        smallest_nonzero_magnitude = kwargs["smallest_nonzero_magnitude"]
+        min_value = constraints["min_value"]
+        max_value = constraints["max_value"]
+        smallest_nonzero_magnitude = constraints["smallest_nonzero_magnitude"]
 
         # handle zeroes separately so smallest_nonzero_magnitude can think of
         # itself as a complete interval (instead of a hole at ±0).
@@ -331,7 +341,7 @@ class TreeNode:
 
     Conceptually, you can unfold a single TreeNode storing n values in its lists
     into a sequence of n nodes, each a child of the last. In other words,
-    (kwargs[i], values[i], choice_types[i]) corresponds to the single node at index
+    (constraints[i], values[i], choice_types[i]) corresponds to the single node at index
     i.
 
     Note that if a TreeNode represents a choice (i.e. the nodes cannot be compacted
@@ -384,9 +394,9 @@ class TreeNode:
                   └───┘      └───┘
     """
 
-    # The kwargs, value, and choice_types of the nodes stored here. These always
+    # The constraints, value, and choice_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    kwargs: list[ChoiceKwargsT] = attr.ib(factory=list)
+    constraints: list[ChoiceConstraintsT] = attr.ib(factory=list)
     values: list[ChoiceT] = attr.ib(factory=list)
     choice_types: list[ChoiceTypeT] = attr.ib(factory=list)
 
@@ -446,12 +456,12 @@ class TreeNode:
 
         child = TreeNode(
             choice_types=self.choice_types[i + 1 :],
-            kwargs=self.kwargs[i + 1 :],
+            constraints=self.constraints[i + 1 :],
             values=self.values[i + 1 :],
             transition=self.transition,
         )
         self.transition = Branch(
-            kwargs=self.kwargs[i],
+            constraints=self.constraints[i],
             choice_type=self.choice_types[i],
             children={key: child},
         )
@@ -461,8 +471,8 @@ class TreeNode:
         child.check_exhausted()
         del self.choice_types[i:]
         del self.values[i:]
-        del self.kwargs[i:]
-        assert len(self.values) == len(self.kwargs) == len(self.choice_types) == i
+        del self.constraints[i:]
+        assert len(self.values) == len(self.constraints) == len(self.choice_types) == i
 
     def check_exhausted(self) -> bool:
         """
@@ -511,14 +521,16 @@ class TreeNode:
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         indent = 0
-        for i, (choice_type, kwargs, value) in enumerate(
-            zip(self.choice_types, self.kwargs, self.values)
+        for i, (choice_type, constraints, value) in enumerate(
+            zip(self.choice_types, self.constraints, self.values)
         ):
             with p.indent(indent):
                 if i > 0:
                     p.break_()
                 p.text(
-                    _node_pretty(choice_type, value, kwargs, forced=i in self.forced)
+                    _node_pretty(
+                        choice_type, value, constraints, forced=i in self.forced
+                    )
                 )
             indent += 2
 
@@ -656,15 +668,15 @@ class DataTree:
     intuition. In practice, there are some implementation details to be aware
     of.
 
-    - In draw nodes, we store the kwargs used in addition to the value drawn.
+    - In draw nodes, we store the constraints used in addition to the value drawn.
       E.g. the node corresponding to data.draw_float(min_value=1.0, max_value=1.5)
       would store {"min_value": 1.0, "max_value": 1.5, ...} (default values for
-      other kwargs omitted).
+      other constraints omitted).
 
-      The kwargs parameters have the potential to change both the range of
+      The constraints parameters have the potential to change both the range of
       possible outputs of a node, and the probability distribution within that
       range, so we need to use these when drawing in DataTree as well. We draw
-      values using these kwargs when (1) generating a novel value for a node
+      values using these constraints when (1) generating a novel value for a node
       and (2) choosing a random child when traversing the tree.
 
     - For space efficiency, rather than tracking the full tree structure, we
@@ -707,8 +719,12 @@ class DataTree:
         current_node = self.root
         while True:
             assert not current_node.is_exhausted
-            for i, (choice_type, kwargs, value) in enumerate(
-                zip(current_node.choice_types, current_node.kwargs, current_node.values)
+            for i, (choice_type, constraints, value) in enumerate(
+                zip(
+                    current_node.choice_types,
+                    current_node.constraints,
+                    current_node.values,
+                )
             ):
                 if i in current_node.forced:
                     append_choice(choice_type, value)
@@ -718,7 +734,7 @@ class DataTree:
                         if attempts <= 10:
                             try:
                                 node_value = self._draw(
-                                    choice_type, kwargs, random=random
+                                    choice_type, constraints, random=random
                                 )
                             except StopTest:  # pragma: no cover
                                 # it is possible that drawing from a fresh data can
@@ -728,7 +744,10 @@ class DataTree:
                                 continue
                         else:
                             node_value = self._draw_from_cache(
-                                choice_type, kwargs, key=id(current_node), random=random
+                                choice_type,
+                                constraints,
+                                key=id(current_node),
+                                random=random,
                             )
 
                         if node_value != value:
@@ -736,7 +755,10 @@ class DataTree:
                             break
                         attempts += 1
                         self._reject_child(
-                            choice_type, kwargs, child=node_value, key=id(current_node)
+                            choice_type,
+                            constraints,
+                            child=node_value,
+                            key=id(current_node),
                         )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
@@ -753,7 +775,7 @@ class DataTree:
                     if attempts <= 10:
                         try:
                             node_value = self._draw(
-                                branch.choice_type, branch.kwargs, random=random
+                                branch.choice_type, branch.constraints, random=random
                             )
                         except StopTest:  # pragma: no cover
                             attempts += 1
@@ -761,7 +783,7 @@ class DataTree:
                     else:
                         node_value = self._draw_from_cache(
                             branch.choice_type,
-                            branch.kwargs,
+                            branch.constraints,
                             key=id(branch),
                             random=random,
                         )
@@ -777,7 +799,7 @@ class DataTree:
                     attempts += 1
                     self._reject_child(
                         branch.choice_type,
-                        branch.kwargs,
+                        branch.constraints,
                         child=node_value,
                         key=id(branch),
                     )
@@ -810,12 +832,12 @@ class DataTree:
         tree. This will likely change in future."""
         node = self.root
 
-        def draw(choice_type, kwargs, *, forced=None, convert_forced=True):
+        def draw(choice_type, constraints, *, forced=None, convert_forced=True):
             if choice_type == "float" and forced is not None and convert_forced:
                 forced = int_to_float(forced)
 
             draw_func = getattr(data, f"draw_{choice_type}")
-            value = draw_func(**kwargs, forced=forced)
+            value = draw_func(**constraints, forced=forced)
 
             if choice_type == "float":
                 value = float_to_int(value)
@@ -823,12 +845,12 @@ class DataTree:
 
         try:
             while True:
-                for i, (choice_type, kwargs, previous) in enumerate(
-                    zip(node.choice_types, node.kwargs, node.values)
+                for i, (choice_type, constraints, previous) in enumerate(
+                    zip(node.choice_types, node.constraints, node.values)
                 ):
                     v = draw(
                         choice_type,
-                        kwargs,
+                        constraints,
                         forced=previous if i in node.forced else None,
                     )
                     if v != previous:
@@ -839,7 +861,7 @@ class DataTree:
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour
                 elif isinstance(node.transition, Branch):
-                    v = draw(node.transition.choice_type, node.transition.kwargs)
+                    v = draw(node.transition.choice_type, node.transition.constraints)
                     try:
                         node = node.transition.children[v]
                     except KeyError as err:
@@ -855,11 +877,15 @@ class DataTree:
         return TreeRecordingObserver(self)
 
     def _draw(
-        self, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT, *, random: Random
+        self,
+        choice_type: ChoiceTypeT,
+        constraints: ChoiceConstraintsT,
+        *,
+        random: Random,
     ) -> ChoiceT:
         from hypothesis.internal.conjecture.data import draw_choice
 
-        value = draw_choice(choice_type, kwargs, random=random)
+        value = draw_choice(choice_type, constraints, random=random)
         # using floats as keys into branch.children breaks things, because
         # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
         # in fact distinct child branches.
@@ -873,7 +899,7 @@ class DataTree:
         return value
 
     def _get_children_cache(
-        self, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT, *, key: ChoiceT
+        self, choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT, *, key: ChoiceT
     ) -> ChildrenCacheValueT:
         # cache the state of the children generator per node/branch (passed as
         # `key` here), such that we track which children we've already tried
@@ -885,7 +911,7 @@ class DataTree:
         # with. Whenever we need to top up this list, we will draw a new value
         # from the generator.
         if key not in self._children_cache:
-            generator = all_children(choice_type, kwargs)
+            generator = all_children(choice_type, constraints)
             children: list[ChoiceT] = []
             rejected: set[ChoiceT] = set()
             self._children_cache[key] = (generator, children, rejected)
@@ -895,13 +921,13 @@ class DataTree:
     def _draw_from_cache(
         self,
         choice_type: ChoiceTypeT,
-        kwargs: ChoiceKwargsT,
+        constraints: ChoiceConstraintsT,
         *,
         key: ChoiceT,
         random: Random,
     ) -> ChoiceT:
         (generator, children, rejected) = self._get_children_cache(
-            choice_type, kwargs, key=key
+            choice_type, constraints, key=key
         )
         # Keep a stock of 100 potentially-valid children at all times.
         # This number is chosen to balance memory/speed vs randomness. Ideally
@@ -925,13 +951,13 @@ class DataTree:
     def _reject_child(
         self,
         choice_type: ChoiceTypeT,
-        kwargs: ChoiceKwargsT,
+        constraints: ChoiceConstraintsT,
         *,
         child: ChoiceT,
         key: ChoiceT,
     ) -> None:
         (_generator, children, rejected) = self._get_children_cache(
-            choice_type, kwargs, key=key
+            choice_type, constraints, key=key
         )
         rejected.add(child)
         # we remove a child from the list of possible children *only* when it is
@@ -966,29 +992,33 @@ class TreeRecordingObserver(DataObserver):
         self.killed: bool = False
 
     def draw_integer(
-        self, value: int, *, was_forced: bool, kwargs: IntegerKWargs
+        self, value: int, *, was_forced: bool, constraints: IntegerConstraints
     ) -> None:
-        self.draw_value("integer", value, was_forced=was_forced, kwargs=kwargs)
+        self.draw_value(
+            "integer", value, was_forced=was_forced, constraints=constraints
+        )
 
     def draw_float(
-        self, value: float, *, was_forced: bool, kwargs: FloatKWargs
+        self, value: float, *, was_forced: bool, constraints: FloatConstraints
     ) -> None:
-        self.draw_value("float", value, was_forced=was_forced, kwargs=kwargs)
+        self.draw_value("float", value, was_forced=was_forced, constraints=constraints)
 
     def draw_string(
-        self, value: str, *, was_forced: bool, kwargs: StringKWargs
+        self, value: str, *, was_forced: bool, constraints: StringConstraints
     ) -> None:
-        self.draw_value("string", value, was_forced=was_forced, kwargs=kwargs)
+        self.draw_value("string", value, was_forced=was_forced, constraints=constraints)
 
     def draw_bytes(
-        self, value: bytes, *, was_forced: bool, kwargs: BytesKWargs
+        self, value: bytes, *, was_forced: bool, constraints: BytesConstraints
     ) -> None:
-        self.draw_value("bytes", value, was_forced=was_forced, kwargs=kwargs)
+        self.draw_value("bytes", value, was_forced=was_forced, constraints=constraints)
 
     def draw_boolean(
-        self, value: bool, *, was_forced: bool, kwargs: BooleanKWargs
+        self, value: bool, *, was_forced: bool, constraints: BooleanConstraints
     ) -> None:
-        self.draw_value("boolean", value, was_forced=was_forced, kwargs=kwargs)
+        self.draw_value(
+            "boolean", value, was_forced=was_forced, constraints=constraints
+        )
 
     def draw_value(
         self,
@@ -996,7 +1026,7 @@ class TreeRecordingObserver(DataObserver):
         value: ChoiceT,
         *,
         was_forced: bool,
-        kwargs: ChoiceKwargsT,
+        constraints: ChoiceConstraintsT,
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
@@ -1005,9 +1035,12 @@ class TreeRecordingObserver(DataObserver):
         if isinstance(value, float):
             value = float_to_int(value)
 
-        assert len(node.kwargs) == len(node.values) == len(node.choice_types)
+        assert len(node.constraints) == len(node.values) == len(node.choice_types)
         if i < len(node.values):
-            if choice_type != node.choice_types[i] or kwargs != node.kwargs[i]:
+            if (
+                choice_type != node.choice_types[i]
+                or constraints != node.constraints[i]
+            ):
                 raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
@@ -1029,7 +1062,7 @@ class TreeRecordingObserver(DataObserver):
             trans = node.transition
             if trans is None:
                 node.choice_types.append(choice_type)
-                node.kwargs.append(kwargs)
+                node.constraints.append(constraints)
                 node.values.append(value)
                 if was_forced:
                     node.mark_forced(i)
@@ -1049,7 +1082,10 @@ class TreeRecordingObserver(DataObserver):
                 # An alternative is not writing such choices to the tree at
                 # all, and thus guaranteeing that each node has at least 2 max
                 # children.
-                if compute_max_children(choice_type, kwargs) == 1 and not was_forced:
+                if (
+                    compute_max_children(choice_type, constraints) == 1
+                    and not was_forced
+                ):
                     node.split_at(i)
                     assert isinstance(node.transition, Branch)
                     self.__current_node = node.transition.children[value]
@@ -1061,7 +1097,7 @@ class TreeRecordingObserver(DataObserver):
                 raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             else:
                 assert isinstance(trans, Branch), trans
-                if choice_type != trans.choice_type or kwargs != trans.kwargs:
+                if choice_type != trans.choice_type or constraints != trans.constraints:
                     raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
                 try:
                     self.__current_node = trans.children[value]

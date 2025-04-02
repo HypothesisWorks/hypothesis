@@ -1539,12 +1539,12 @@ def test_too_slow_report():
 
 
 def _draw(cd, node):
-    return getattr(cd, f"draw_{node.type}")(**node.kwargs)
+    return getattr(cd, f"draw_{node.type}")(**node.constraints)
 
 
 @given(nodes(was_forced=False))
 def test_overruns_with_extend_are_not_cached(node):
-    assume(compute_max_children(node.type, node.kwargs) > 100)
+    assume(compute_max_children(node.type, node.constraints) > 100)
 
     def test(cd):
         _draw(cd, node)

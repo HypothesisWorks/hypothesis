@@ -143,12 +143,12 @@ def fresh_data(*, random=None, observer=None) -> ConjectureData:
     return ConjectureData(random=random, observer=observer)
 
 
-def clamped_shrink_towards(kwargs):
-    v = kwargs["shrink_towards"]
-    if kwargs["min_value"] is not None:
-        v = max(kwargs["min_value"], v)
-    if kwargs["max_value"] is not None:
-        v = min(kwargs["max_value"], v)
+def clamped_shrink_towards(constraints):
+    v = constraints["shrink_towards"]
+    if constraints["min_value"] is not None:
+        v = max(constraints["min_value"], v)
+    if constraints["max_value"] is not None:
+        v = min(constraints["max_value"], v)
     return v
 
 
@@ -175,7 +175,7 @@ def integer_weights(draw, min_value=None, max_value=None):
 
 
 @st.composite
-def integer_kwargs(
+def integer_constraints(
     draw,
     *,
     use_min_value=None,
@@ -242,7 +242,7 @@ def integer_kwargs(
 
 
 @st.composite
-def _collection_kwargs(draw, *, forced, use_min_size=None, use_max_size=None):
+def _collection_constraints(draw, *, forced, use_min_size=None, use_max_size=None):
     min_size = 0
     max_size = COLLECTION_DEFAULT_MAX_SIZE
     # collections are quite expensive in entropy. cap to avoid overruns.
@@ -271,38 +271,40 @@ def _collection_kwargs(draw, *, forced, use_min_size=None, use_max_size=None):
 
 
 @st.composite
-def string_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
+def string_constraints(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
     interval_set = draw(intervals())
     forced = (
         draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )
-    kwargs = draw(
-        _collection_kwargs(
+    constraints = draw(
+        _collection_constraints(
             forced=forced, use_min_size=use_min_size, use_max_size=use_max_size
         )
     )
     # if the intervalset is empty, then the min size must be zero, because the
     # only valid value is the empty string.
     if len(interval_set) == 0:
-        kwargs["min_size"] = 0
+        constraints["min_size"] = 0
 
-    return {"intervals": interval_set, "forced": forced, **kwargs}
+    return {"intervals": interval_set, "forced": forced, **constraints}
 
 
 @st.composite
-def bytes_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
+def bytes_constraints(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
     forced = draw(st.binary()) if use_forced else None
 
-    kwargs = draw(
-        _collection_kwargs(
+    constraints = draw(
+        _collection_constraints(
             forced=forced, use_min_size=use_min_size, use_max_size=use_max_size
         )
     )
-    return {"forced": forced, **kwargs}
+    return {"forced": forced, **constraints}
 
 
 @st.composite
-def float_kwargs(draw, *, use_min_value=None, use_max_value=None, use_forced=False):
+def float_constraints(
+    draw, *, use_min_value=None, use_max_value=None, use_forced=False
+):
     if use_min_value is None:
         use_min_value = draw(st.booleans())
     if use_max_value is None:
@@ -353,7 +355,7 @@ def float_kwargs(draw, *, use_min_value=None, use_max_value=None, use_forced=Fal
 
 
 @st.composite
-def boolean_kwargs(draw, *, use_forced=False):
+def boolean_constraints(draw, *, use_forced=False):
     forced = draw(st.booleans()) if use_forced else None
     # avoid invalid forced combinations
     p = draw(st.floats(0, 1, exclude_min=forced is True, exclude_max=forced is False))
@@ -361,59 +363,60 @@ def boolean_kwargs(draw, *, use_forced=False):
     return {"p": p, "forced": forced}
 
 
-def kwargs_strategy(choice_type, strategy_kwargs=None, *, use_forced=False):
+def constraints_strategy(choice_type, strategy_constraints=None, *, use_forced=False):
     strategy = {
-        "boolean": boolean_kwargs,
-        "integer": integer_kwargs,
-        "float": float_kwargs,
-        "bytes": bytes_kwargs,
-        "string": string_kwargs,
+        "boolean": boolean_constraints,
+        "integer": integer_constraints,
+        "float": float_constraints,
+        "bytes": bytes_constraints,
+        "string": string_constraints,
     }[choice_type]
-    if strategy_kwargs is None:
-        strategy_kwargs = {}
-    return strategy(**strategy_kwargs.get(choice_type, {}), use_forced=use_forced)
+    if strategy_constraints is None:
+        strategy_constraints = {}
+    return strategy(**strategy_constraints.get(choice_type, {}), use_forced=use_forced)
 
 
-def choice_types_kwargs(strategy_kwargs=None, *, use_forced=False):
+def choice_types_constraints(strategy_constraints=None, *, use_forced=False):
     options = ["boolean", "integer", "float", "bytes", "string"]
     return st.one_of(
         st.tuples(
-            st.just(name), kwargs_strategy(name, strategy_kwargs, use_forced=use_forced)
+            st.just(name),
+            constraints_strategy(name, strategy_constraints, use_forced=use_forced),
         )
         for name in options
     )
 
 
-def draw_value(choice_type, kwargs):
+def draw_value(choice_type, constraints):
     data = fresh_data()
-    return getattr(data, f"draw_{choice_type}")(**kwargs)
+    return getattr(data, f"draw_{choice_type}")(**constraints)
 
 
 @st.composite
 def nodes(draw, *, was_forced=None, choice_types=None):
     if choice_types is None:
-        (choice_type, kwargs) = draw(choice_types_kwargs())
+        (choice_type, constraints) = draw(choice_types_constraints())
     else:
         choice_type = draw(st.sampled_from(choice_types))
-        kwargs = draw(kwargs_strategy(choice_type))
-    # ir nodes don't include forced in their kwargs. see was_forced attribute
-    del kwargs["forced"]
-    value = draw_value(choice_type, kwargs)
+        constraints = draw(constraints_strategy(choice_type))
+    # ir nodes don't include forced in their constraints. see was_forced attribute
+    del constraints["forced"]
+    value = draw_value(choice_type, constraints)
     was_forced = draw(st.booleans()) if was_forced is None else was_forced
 
     return ChoiceNode(
-        type=choice_type, value=value, kwargs=kwargs, was_forced=was_forced
+        type=choice_type, value=value, constraints=constraints, was_forced=was_forced
     )
 
 
 def ir(*values: list[ChoiceT]) -> list[ChoiceNode]:
     """
     For inline-creating an ir node or list of ir nodes, where you don't care about the
-    kwargs. This uses maximally-permissable kwargs and infers the choice_type you meant
+    constraints. This uses maximally-permissable constraints and infers the choice_type you meant
     based on the type of the value.
 
-    You can optionally pass (value, kwargs) to as an element in order to override
-    the default kwargs for that element.
+    You can optionally pass (value, constraints) to as an element in order to override
+    the default constraints for that element.
     """
     mapping = {
         float: (
@@ -447,19 +450,19 @@ def ir(*values: list[ChoiceT]) -> list[ChoiceNode]:
     }
     nodes = []
     for value in values:
-        override_kwargs = {}
+        override_constraints = {}
         if isinstance(value, tuple):
-            (value, override_kwargs) = value
-            if override_kwargs is None:
-                override_kwargs = {}
+            (value, override_constraints) = value
+            if override_constraints is None:
+                override_constraints = {}
 
-        (choice_type, kwargs) = mapping[type(value)]
+        (choice_type, constraints) = mapping[type(value)]
 
         nodes.append(
             ChoiceNode(
                 type=choice_type,
                 value=value,
-                kwargs=kwargs | override_kwargs,
+                constraints=constraints | override_constraints,
                 was_forced=False,
             )
         )
@@ -467,7 +470,7 @@ def ir(*values: list[ChoiceT]) -> list[ChoiceNode]:
     return tuple(nodes)
 
 
-def float_kw(
+def float_constr(
     min_value=-math.inf,
     max_value=math.inf,
     *,
@@ -482,7 +485,7 @@ def float_kw(
     }
 
 
-def integer_kw(min_value=None, max_value=None, *, weights=None, shrink_towards=0):
+def integer_constr(min_value=None, max_value=None, *, weights=None, shrink_towards=0):
     return {
         "min_value": min_value,
         "max_value": max_value,
@@ -491,7 +494,7 @@ def integer_kw(min_value=None, max_value=None, *, weights=None, shrink_towards=0
     }
 
 
-def string_kw(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE):
+def string_constr(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE):
     return {"intervals": intervals, "min_size": min_size, "max_size": max_size}
 
 

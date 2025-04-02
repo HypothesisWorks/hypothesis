@@ -157,7 +157,7 @@ class Optimiser:
                     size = max(len(node.value), bits_to_bytes(v.bit_length()))
                     new_choice = int_to_bytes(v, size)
 
-                if not choice_permitted(new_choice, node.kwargs):
+                if not choice_permitted(new_choice, node.constraints):
                     return False
 
                 for _ in range(3):
