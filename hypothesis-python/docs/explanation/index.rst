@@ -1,7 +1,7 @@
 Explanations
 ============
 
-Conceptual explanations about Hypothesis. Some of these pages go into detail about Hypothesis internals, for those who are curious about that kind of thing.
+These explanation pages are oriented towards deepening your understanding of Hypothesis. Some discuss the design philosophy of Hypothesis, while others go into detail about its internals.
 
 .. toctree::
    :maxdepth: 1
