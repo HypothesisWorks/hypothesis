@@ -6,7 +6,7 @@ This page describes how to write a custom strategy, for when the built-in strate
 Writing helper functions
 ------------------------
 
-Sometimes you might find it useful to write helper functions, to more concisely express a common pattern for your project. For example, it's much easier to read (and write) response=json() than to have the whole implementation inline:
+Sometimes you might find it useful to write helper functions, to more concisely express a common pattern for your project. For example, it's much easier to write (and read!) ``response=json()`` than to have the whole implementation inline:
 
 .. code-block:: python
 

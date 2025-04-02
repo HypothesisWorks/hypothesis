@@ -22,4 +22,4 @@ Here is a selection of strategies provided by Hypothesis that may be useful to k
 
 .. seealso::
 
-    See the :doc:`strategies reference </reference/strategies>` for a full list of strategies provided by Hypothesis.
+    See the :doc:`strategies API reference </reference/strategies>` for a full list of strategies provided by Hypothesis.
