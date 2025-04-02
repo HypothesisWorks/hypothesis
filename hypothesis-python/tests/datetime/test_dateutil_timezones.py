@@ -109,7 +109,6 @@ def test_dateutil_exists_our_not_exists_are_inverse(value):
     assert datetime_does_not_exist(value) == (not tz.datetime_exists(value))
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_datetimes_can_exclude_imaginary():
     find_any(
         datetimes(**DAY_WITH_IMAGINARY_HOUR_KWARGS, allow_imaginary=True),
@@ -121,7 +120,7 @@ def test_datetimes_can_exclude_imaginary():
     )
 
 
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(Why.other)
 @fails_with(FailedHealthCheck)
 @given(
     datetimes(
