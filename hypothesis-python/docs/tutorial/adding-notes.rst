@@ -32,4 +32,4 @@ Sometimes you want to add some additional information to a failure, such as the 
 
 .. note::
 
-    |event| is a similar function which tells Hypothesis to report the number of times an event happened with some value, rather than a static note.
+    |event| is a similar function which tells Hypothesis to count the number of test cases which reported each distinct value you pass, for inclusion in :ref:`test statistics <statistics>` and :ref:`observability reports <observability>`.

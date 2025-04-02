@@ -48,7 +48,7 @@ Other settings options
 
 Here are a few of the more commonly used setting values:
 
-* |settings.derandomize| makes Hypothesis deterministic.
+* |settings.derandomize| makes Hypothesis deterministic. (`Two kinds of testing <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ discusses when and why you might want that).
 * |settings.database| controls how and if Hypothesis replays failing examples.
 * |settings.verbosity| to print debug information.
 * |settings.phases| controls which phases of Hypothesis run, like replaying from the database or generating new inputs.
@@ -61,7 +61,7 @@ Here are a few of the more commonly used setting values:
 Changing settings across your test suite
 ----------------------------------------
 
-Alternatively, you can configure test behavior across your test suite using a settings profile.
+In addition to configuring individual test functions with |@settings|, you can configure test behavior across your test suite using a settings profile.
 
 To create a settings profile, use |settings.register_profile|:
 
@@ -73,7 +73,7 @@ To create a settings profile, use |settings.register_profile|:
 
 You can place this code in any file which gets loaded before your tests get run. This includes an ``__init__.py`` file in the test directory or any of the test files themselves. If using pytest, the standard location to place this code is in a ``confest.py`` file (though an ``__init__.py`` or test file will also work).
 
-Note that registering a new profile will not affect tests until loaded with |settings.load_profile|:
+Note that registering a new profile will not affect tests until it is loaded with |settings.load_profile|:
 
 .. code-block:: python
 

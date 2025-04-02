@@ -104,7 +104,15 @@ Or use keyword arguments:
 Filtering inside a test
 -----------------------
 
-Sometimes, you need to remove invalid cases from your test. You can do this dynamically using |assume|, which takes a boolean and discards any test cases that evaluate to ``False``.
+Sometimes, you need to remove invalid cases from your test. The best way to do this is with |strategy.filter|:
+
+.. code-block:: python
+
+    @given(st.integers().filter(lambda n: n % 2 == 0))
+    def test_integers(n):
+        assert n % 2 == 0
+
+For more complicated conditions, you can use |assume|, which tells Hypothesis to discard any test case with a false-y argument:
 
 .. code-block:: python
 
@@ -115,7 +123,7 @@ Sometimes, you need to remove invalid cases from your test. You can do this dyna
 
 .. note::
 
-    You can learn more in the :doc:`/tutorial/adapting-strategies` tutorial page.
+    You can learn more about |strategy.filter| and |assume| in the :doc:`/tutorial/adapting-strategies` tutorial page.
 
 Dependent generation
 --------------------

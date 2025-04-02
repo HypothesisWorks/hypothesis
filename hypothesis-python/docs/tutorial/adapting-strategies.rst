@@ -36,7 +36,7 @@ For instance, suppose we have written a simple test involving the modulo operato
 
 Hypothesis will quickly report a failure for this test: ``ZeroDivisionError: integer modulo by zero``. Just like division, modulo isn't defined for 0. The case of ``b == 0`` isn't interesting for the test, and we would like to get rid of it.
 
-One way to do this is with the |strategy.filter| method:
+The best way to do this is with the |strategy.filter| method:
 
 .. code-block:: python
 
@@ -125,11 +125,10 @@ One other way we could have avoided the divide-by-zero error inside the test fun
     @given(st.integers(), st.integers())
     def test_remainder_magnitude(a, b):
         if b == 0:
+            # bad plan - test "passes" without checking anything!
             return
         assert abs(a % b) < abs(b)
 
-While this would have avoided the divide-by-zero, early-returning is not the same as using |assume|. With |assume|, Hypothesis knows that a test case has been filtered out, and will not count it towards the |max_examples| limit. In contrast, early-returns are counted as a valid example. In more complicted cases, this could end up testing your code less than you expect, because many test cases get discarded without Hypothesis knowing about it.
+While this would have avoided the divide-by-zero, early-returning is not the same as using |assume|. With |assume|, Hypothesis knows that a test case has been filtered out, and will not count it towards the |max_examples| limit. In contrast, early-returns are counted as a passing test, even though the assertions didn't run! In more complicted cases, this could end up testing your code less than you expect, because many test cases get discarded without Hypothesis knowing about it.
 
 In addition, |assume| lets you skip the test case at any point in the test, even inside arbitrarily deep nestings of functions.
-
-You should always use |assume| rather than early-returning. |assume| is more idiomatic and allows Hypothesis more insight into your test.
