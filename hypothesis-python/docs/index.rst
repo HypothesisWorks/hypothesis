@@ -60,10 +60,11 @@ check out some of the
   :caption: Hypothesis
 
   quickstart
+  tutorial/index
   reference/index
+  stateful
   Type hints <typing>
   Extras <extras>
-  Examples <examples>
   supported
   changes
 

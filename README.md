@@ -10,30 +10,30 @@
 * [Contributing](https://github.com/HypothesisWorks/hypothesis/blob/master/CONTRIBUTING.rst)
 * [Community](https://hypothesis.readthedocs.io/en/latest/community.html)
 
-Hypothesis is the property-based testing library for Python. A property-based test asserts something for *all* inputs, and lets Hypothesis generate them — including inputs you may not have thought of.
+Hypothesis is the property-based testing library for Python. With Hypothesis, you write tests which should pass for all inputs in whatever range you describe, and let Hypothesis randomly choose which of those inputs to check - including edge cases you might not have thought about. For example:
 
 ```python
 from hypothesis import given, strategies as st
 
 
-@given(st.lists(st.integers() | st.floats()))
+@given(st.lists(st.integers()))
 def test_matches_builtin(ls):
     assert sorted(ls) == my_sort(ls)
 ```
 
-Additionally, when a property fails, Hypothesis doesn't just report any failing example — it reports the simplest possible one. This makes property-based tests a powerful tool for debugging, as well as testing.
+This randomized testing can catch bugs and edge cases that you didn't think of and wouldn't have found. In addition, when Hypothesis does find a bug, it doesn't just report any failing example — it reports the simplest possible one. This makes property-based tests a powerful tool for debugging, as well as testing.
 
 For instance,
 
 ```python
 def my_sort(ls):
-    return list(reversed(sorted(ls, reverse=True)))
+    return sorted(set(ls))
 ```
 
-fails with:
+fails with the simplest possible failing example:
 
 ```
-Falsifying example: test_matches_builtin(ls=[0, math.nan])
+Falsifying example: test_matches_builtin(ls=[0, 0])
 ```
 
 ### Installation
