@@ -190,13 +190,14 @@ When to use Hypothesis and property-based testing
 
 Property-based testing is a powerful *addition* to unit testing. It is not always a replacement.
 
-Sometimes, the biggest barrier to using property-based testing is finding a property in your code to test. As a starting point, we recommend looking through your existing unit tests for hardcoded inputs whose specific value does not actually matter. Can this value be abstracted into a generic strategy? If so, congratulations — replacing explicit values with a generic strategy is all you need to start writing a property-based test.
+If you're having trouble coming up with a property in your code to test, we recommend trying the following:
 
-There is also an easy property that is always available: "the code does not crash when called with inputs of the proper type". You would be surprised how often simply calling your code with random inputs finds bugs!
+* Look for round-trip properties: encode/decode, serialize/deserialize, etc. These property-based tests tend to be both powerful and easy to write.
+* Look for ``@pytest.mark.parametrize`` in your existing tests. This is sometimes a good hint you can replace the parametrization with a strategy. For instance, ``@pytest.mark.parametrize("n", range(0, 100))`` could be replaced by ``@given(st.integers(0, 100 - 1))``.
+* Simply call your code with random inputs (of the correct shape) from Hypothesis! You might be surprised how often this finds crashes. This can be especially valuable for projects with a single entrypoint interface to a lot of underlying code.
 
 Other examples of properties include:
 
-* Serializing and then deserializing returns the value you started with.
 * An optimized implementation is equivalent to a slower, but clearly correct, implementation.
 * A sequence of transactions in a financial system always "balances"; money never gets lost.
 * The derivative of a polynomial of order ``n`` has order ``n - 1``.

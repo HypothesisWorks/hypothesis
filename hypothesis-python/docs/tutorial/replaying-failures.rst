@@ -74,9 +74,13 @@ Hypothesis will print ``Falsifying explicit example: test_something_with_integer
 Prefer |@example| over the database for correctness
 ---------------------------------------------------
 
-While the local database is useful for local development, we don't recommend relying on it for the correctness of your tests. If a test fails with a particularly interesting input, and you want to make sure your test works for this input in the future, we recommend explicitly adding it to your test with |@example|.
+While the database is useful for local development, we don't recommend relying on it for the correctness of your tests. If a test fails with a particularly interesting input, and you want to make sure your test works for this input in the future, we recommend explicitly adding it to your test with |@example|.
 
-The reason is that entries in the database may be invalidated at any time by Hypothesis, because the internal format is not necessarily stable across versions. Additionally, the local database is generally not checked into version control, so failures are not shared between developers, unlike with an explicit |@example|.
+The reason is that entries in the database may be invalidated at any time by Hypothesis, because the internal format is not necessarily stable across versions. Additionally, the database is generally not checked into version control, so failures are not shared between developers, unlike with an explicit |@example|.
+
+.. note::
+
+    If you *do* want to share the database between developers, the |RedisExampleDatabase| can be particularly useful.
 
 Replaying examples from CI logs
 -------------------------------
