@@ -11,12 +11,16 @@ When a test fails, Hypothesis saves the failure to a database in the local ``.hy
 .. code-block:: python
 
     import time
+
     from hypothesis import strategies as st
+
 
     @given(st.integers())
     def f(n):
         assert n < 50
         time.sleep(0.1)
+
+
     f()
 
 As it fails, Hypothesis saves the failing example to the local database. As a result, the next time you run this same code, ``f`` will fail instantly, because Hypothesis retries the failing example first.
@@ -29,13 +33,17 @@ You can disable the local database with |@settings|:
 .. code-block:: python
 
     import time
+
     from hypothesis import settings, strategies as st
+
 
     @given(st.integers())
     @settings(database=None)
     def f(n):
         assert n < 50
         time.sleep(0.1)
+
+
     f()
 
 How to always try a specific input
@@ -53,6 +61,8 @@ For instance, suppose we are testing something using integers, but want to make 
     @given(st.integers())
     def test_something_with_integers(n):
         pass
+
+
     test_something_with_integers()
 
 Hypothesis runs all explicit examples first, in the |Phase.explicit| phase, before generating additional random examples in the |Phase.generate| phase.

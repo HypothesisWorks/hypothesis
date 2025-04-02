@@ -212,28 +212,6 @@ def format():
     pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
 
-    # We are often particular about spacing in documentation for e.g. tutorial
-    # examples, and don't want to accept shed changes which are purely newlines.
-    # we'll revert any such changes here by checking if the entire diff is only
-    # blank lines, and reverting it if so.
-    #
-    # This is currently a bit jank, because it's all-or-nothing: if a single file
-    # has changes, any whitespace-only changes will not get reverted.
-    if doc_files_to_format:
-        full_diff = subprocess.check_output(
-            ["git", "diff", "--", *doc_files_to_format],
-        )
-        no_ws_diff = subprocess.check_output(
-            ["git", "diff", "--ignore-blank-lines", "--", *doc_files_to_format],
-        )
-        if not no_ws_diff:
-            subprocess.run(
-                ["git", "apply", "--reverse"],
-                input=full_diff,
-                capture_output=True,
-                check=True,
-            )
-
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
 

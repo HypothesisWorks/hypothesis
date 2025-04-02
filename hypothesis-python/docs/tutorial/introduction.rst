@@ -21,6 +21,7 @@ Hypothesis tests are defined using two things; |@given|, and a *strategy*, which
 
     from hypothesis import given, strategies as st
 
+
     @given(st.integers())
     def test_is_integer(n):
         assert isinstance(n, int)
@@ -33,10 +34,12 @@ We can run this test by calling it:
 
     from hypothesis import given, strategies as st
 
+
     @given(st.integers())
     def test_is_integer(n):
         print(f"called with {n}")
         assert isinstance(n, int)
+
 
     test_is_integer()
 
@@ -61,6 +64,7 @@ Suppose we have implemented a simple selection sort:
   # contents of example.py
   from hypothesis import given, strategies as st
 
+
   def selection_sort(lst):
       result = []
       while lst:
@@ -75,10 +79,12 @@ and want to make sure it's correct. We can write the following test by combining
 
   ...
 
+
   @given(st.lists(st.integers()))
   def test_sort_correct(lst):
       print(f"called with {lst}")
       assert selection_sort(lst.copy()) == sorted(lst)
+
 
   test_sort_correct()
 
@@ -138,6 +144,7 @@ If we wanted to pass multiple arguments to a test, we can do this by passing mul
 .. code-block:: python
 
     from hypothesis import given, strategies as st
+
 
     @given(st.integers(), st.lists(st.floats()))
     def test_multiple_arguments(n, lst):
