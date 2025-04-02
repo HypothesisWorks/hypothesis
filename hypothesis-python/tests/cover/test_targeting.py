@@ -102,7 +102,7 @@ def test_cannot_target_same_label_twice(_):
         target(1.0, label="label")
 
 
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(Why.other)
 @given(st.none())
 def test_cannot_target_default_label_twice(_):
     target(0.0)

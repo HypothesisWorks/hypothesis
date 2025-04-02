@@ -89,13 +89,13 @@ class IntegersStrategy(SearchStrategy[int]):
             return self
         if condition in [math.isinf, math.isnan]:
             return nothing()
-        kwargs, pred = get_integer_predicate_bounds(condition)
+        constraints, pred = get_integer_predicate_bounds(condition)
 
         start, end = self.start, self.end
-        if "min_value" in kwargs:
-            start = max(kwargs["min_value"], -math.inf if start is None else start)
-        if "max_value" in kwargs:
-            end = min(kwargs["max_value"], math.inf if end is None else end)
+        if "min_value" in constraints:
+            start = max(constraints["min_value"], -math.inf if start is None else start)
+        if "max_value" in constraints:
+            end = min(constraints["max_value"], math.inf if end is None else end)
 
         if start != self.start or end != self.end:
             if start is not None and end is not None and start > end:
@@ -210,11 +210,11 @@ class FloatStrategy(SearchStrategy[float]):
                 return nothing()
             return NanStrategy()
 
-        kwargs, pred = get_float_predicate_bounds(condition)
-        if not kwargs:
+        constraints, pred = get_float_predicate_bounds(condition)
+        if not constraints:
             return super().filter(pred)
-        min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
-        max_bound = min(kwargs.get("max_value", math.inf), self.max_value)
+        min_bound = max(constraints.get("min_value", -math.inf), self.min_value)
+        max_bound = min(constraints.get("max_value", math.inf), self.max_value)
 
         # Adjustments for allow_subnormal=False, if any need to be made
         if -self.smallest_nonzero_magnitude < min_bound < 0:

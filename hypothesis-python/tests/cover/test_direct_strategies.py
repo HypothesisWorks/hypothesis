@@ -438,7 +438,9 @@ def test_decimals():
     assert minimal(st.decimals(), lambda f: f.is_finite() and f >= 1) == 1
 
 
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(
+    Why.undiscovered
+)  # (SampledFromStrategy.calc_label() hashes a symbolic int)
 def test_non_float_decimal():
     minimal(st.decimals(), lambda d: d.is_finite() and decimal.Decimal(float(d)) != d)
 

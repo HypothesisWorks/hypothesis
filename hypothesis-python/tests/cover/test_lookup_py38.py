@@ -126,7 +126,10 @@ class Node:
     right: typing.Union["Node", int]
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~11 mins")
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~11 mins; datastructure explosion: https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(st.builds(Node))
 def test_can_resolve_recursive_dataclass(val):
     assert isinstance(val, Node)

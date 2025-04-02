@@ -28,6 +28,7 @@ Some packages provide strategies directly:
 * :pypi:`hypothesis-bio` - strategies for bioinformatics data, such as DNA, codons, FASTA, and FASTQ formats.
 * :pypi:`hypothesis-rdkit` - strategies to generate RDKit molecules and representations such as SMILES and mol blocks
 * :pypi:`hypothesmith` - strategy to generate syntatically-valid Python code.
+* :pypi:`hypothesis-torch` - strategy to generate various `Pytorch <https://pytorch.org/>`_ structures (including tensors and modules).
 
 Others provide a function to infer a strategy from some other schema:
 

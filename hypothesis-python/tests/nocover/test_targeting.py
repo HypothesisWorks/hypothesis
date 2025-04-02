@@ -87,7 +87,8 @@ def test_targeting_can_be_disabled():
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair", reason="takes ~15 minutes"
+    settings._current_profile == "crosshair",
+    reason="takes ~15 minutes, mostly just unrolling the rejection sampling loop",
 )
 def test_issue_2395_regression():
     @given(d=st.floats().filter(lambda x: abs(x) < 1000))

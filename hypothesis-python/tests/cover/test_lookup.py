@@ -52,7 +52,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
+from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
 BUILTIN_TYPES = tuple(
@@ -619,7 +619,10 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~19 mins")
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(tree=st.builds(Tree))
 def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
@@ -876,7 +879,6 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert issubclass(type(value), protocol)
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize("restrict_custom_strategy", [True, False])
 def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
     restrict_custom_strategy,
@@ -983,7 +985,7 @@ def test_no_byteswarning(_):
 
 @pytest.mark.skipif(
     settings._current_profile == "crosshair",
-    reason="Crosshair doesn't generate the Decimal('snan'), so this runs for hours",
+    reason="Crosshair is too much slower at hashing values",
 )
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.

@@ -1285,7 +1285,6 @@ state.teardown()
     )
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
@@ -1333,7 +1332,10 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
         assert data
 
 
-@pytest.mark.skipif(Settings._current_profile == "crosshair", reason="takes hours")
+@pytest.mark.skipif(
+    Settings._current_profile == "crosshair",
+    reason="takes hours; too much symbolic data",
+)
 def test_lots_of_entropy():
     run_state_machine_as_test(LotsOfEntropyPerStepMachine)
 

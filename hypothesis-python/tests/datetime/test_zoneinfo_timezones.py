@@ -17,14 +17,12 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import assert_no_examples, find_any, minimal
-from tests.common.utils import Why, xfail_on_crosshair
 
 
 def test_utc_is_minimal():
     assert minimal(st.timezones()) is zoneinfo.ZoneInfo("UTC")
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_can_generate_non_utc():
     find_any(
         st.datetimes(timezones=st.timezones()).filter(lambda d: d.tzinfo.key != "UTC")

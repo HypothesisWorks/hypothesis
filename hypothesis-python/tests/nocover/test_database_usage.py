@@ -32,7 +32,6 @@ def has_a_non_zero_byte(x):
     return any(bytes(x))
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_saves_incremental_steps_in_database():
     key = b"a database key"
     database = InMemoryExampleDatabase()
