@@ -95,7 +95,7 @@ dependencies = [
 [project.urls]
 homepage = "https://hypothesis.works"
 source = "https://github.com/HypothesisWorks/hypothesis"
-changelog = "https://hypothesis.readthedocs.io/en/latest/changes.html"
+changelog = "https://hypothesis.readthedocs.io/en/latest/changelog.html"
 documentation = "https://hypothesis.readthedocs.io"
 issues = "https://github.com/HypothesisWorks/hypothesis/issues"
 
