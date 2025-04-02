@@ -39,10 +39,9 @@ If you have a test which is very expensive or very cheap to run, you can change 
 
 The default is 100 examples.
 
-.. TODO_DOCS
-.. .. note::
+.. note::
 
-..     See :doc:`../explanation/example-count` for details on how |max_examples| interacts with other parts of Hypothesis.
+    See :doc:`../explanation/example-count` for details on how |max_examples| interacts with other parts of Hypothesis.
 
 
 Other settings options

@@ -61,6 +61,7 @@ check out some of the
 
   quickstart
   tutorial/index
+  explanation/index
   reference/index
   stateful
   Type hints <typing>
