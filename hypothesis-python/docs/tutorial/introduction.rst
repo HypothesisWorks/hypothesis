@@ -94,7 +94,7 @@ This test is a good start. But ``selection_sort`` should be able to sort lists w
   # changes to example.py
   @given(st.lists(st.integers() | st.floats()))
   def test_sort_correct(lst):
-      ...
+      pass
 
 The pipe operator ``|`` takes two strategies, and returns a new strategy which generates values from either of its strategies. So the strategy ``integers() | floats()`` can generate either an integer, or a float.
 
@@ -114,7 +114,7 @@ The issue is that sorting in the presence of ``nan`` is not well defined. As a r
   # changes to example.py
   @given(st.lists(st.integers() | st.floats(allow_nan=False)))
   def test_sort_correct(lst):
-      ...
+      pass
 
 And now this test passes without issues.
 
@@ -155,7 +155,7 @@ We can also pass strategies using keyword arguments:
 
     @given(lst=st.lists(st.floats()), n=st.integers())  #  <-- changed
     def test_multiple_arguments(n, lst):
-        ...
+        pass
 
 Note that even though we changed the order the parameters to |@given| appear, we also explicitly told it which parameters to pass to by using keyword arguments, so the meaning of the test hasn't changed.
 

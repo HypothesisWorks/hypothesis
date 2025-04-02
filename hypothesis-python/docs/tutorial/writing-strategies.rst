@@ -44,8 +44,8 @@ Let's see this new strategy in action:
 
 .. code-block:: python
 
-    from hypothesis import strategies as st, given
     import pytest
+    from hypothesis import given, strategies as st
 
     @st.composite
     def sums_to_one(draw):
@@ -70,8 +70,8 @@ For instance, suppose we wanted to generalize our ``sums_to_one`` function to ``
 
 .. code-block:: python
 
-    from hypothesis import strategies as st, given, assume
     import pytest
+    from hypothesis import assume, given, strategies as st
 
     @st.composite
     def sums_to_n(draw, n=1):  #  <-- changed
@@ -87,8 +87,8 @@ And we could just as easily have made ``n`` a keyword-only argument instead:
 
 .. code-block:: python
 
-    from hypothesis import strategies as st, given, assume
     import pytest
+    from hypothesis import assume, given, strategies as st
 
     @st.composite
     def sums_to_n(draw, *, n=1):  #  <-- changed
@@ -138,8 +138,8 @@ For instance, here's how we would write our earlier |st.composite| example using
 
 .. code-block:: python
 
-    from hypothesis import strategies as st, given
     import pytest
+    from hypothesis import given, strategies as st
 
     @given(st.data())
     def test(data):

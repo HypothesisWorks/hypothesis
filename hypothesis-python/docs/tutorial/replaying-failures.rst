@@ -10,8 +10,8 @@ When a test fails, Hypothesis saves the failure to a database in the local ``.hy
 
 .. code-block:: python
 
-    from hypothesis import strategies as st
     import time
+    from hypothesis import strategies as st
 
     @given(st.integers())
     def f(n):
@@ -28,8 +28,8 @@ You can disable the local database with |@settings|:
 
 .. code-block:: python
 
-    from hypothesis import strategies as st, settings
     import time
+    from hypothesis import settings, strategies as st
 
     @given(st.integers())
     @settings(database=None)
