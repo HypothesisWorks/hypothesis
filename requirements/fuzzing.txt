@@ -14,7 +14,7 @@ attrs==24.1.0
     # via
     #   -r requirements/test.in
     #   hypothesis
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   outcome
     #   trio
 black==25.1.0
@@ -27,7 +27,7 @@ click==8.1.8
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.7.1
+coverage[toml]==7.8.0
     # via
     #   hypofuzz
     #   pytest-cov
@@ -38,7 +38,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   anyio
     #   hypercorn
     #   hypothesis
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   pytest
     #   taskgroup
     #   trio
@@ -60,7 +60,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.3.3
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.130.2
+hypothesis[cli,watchdog]==6.130.6
     # via hypofuzz
 idna==3.10
     # via
@@ -116,7 +116,7 @@ pytest==8.3.5
     #   hypofuzz
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==6.0.0
+pytest-cov==6.1.0
     # via -r requirements/coverage.in
 pytest-xdist==3.6.1
     # via -r requirements/test.in
@@ -124,7 +124,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -132,7 +132,7 @@ pyyaml==6.0.2
     # via libcst
 redis==5.2.1
     # via fakeredis
-rich==13.9.4
+rich==14.0.0
     # via hypothesis
 six==1.17.0
     # via python-dateutil
@@ -144,7 +144,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
 starlette==0.46.1
     # via hypofuzz
@@ -158,7 +158,7 @@ tomli==2.2.1
     #   pytest
 trio==0.29.0
     # via hypofuzz
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   -r requirements/coverage.in
     #   anyio
@@ -167,7 +167,7 @@ typing-extensions==4.12.2
     #   hypercorn
     #   rich
     #   taskgroup
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 watchdog==6.0.0
     # via

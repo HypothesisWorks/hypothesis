@@ -20,7 +20,10 @@ from tests.common import utils
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722
 
-pytestmark = pytest.mark.skipif(settings._current_profile == "crosshair", reason="slow")
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="slow with recursive strustures: https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 
 
 @given(st.data())

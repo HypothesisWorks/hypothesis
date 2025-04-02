@@ -619,7 +619,10 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~19 mins")
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(tree=st.builds(Tree))
 def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
@@ -983,7 +986,7 @@ def test_no_byteswarning(_):
 
 @pytest.mark.skipif(
     settings._current_profile == "crosshair",
-    reason="Crosshair doesn't generate the Decimal('snan'), so this runs for hours",
+    reason="Crosshair is too much slower at hashing values",
 )
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.

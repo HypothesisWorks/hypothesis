@@ -16,6 +16,7 @@ from hypothesis import Phase, Verbosity, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.vendor.pretty import pretty
 
 from tests.common.utils import capture_observations
 from tests.conjecture.common import float_constr, integer_constr, string_constr
@@ -84,14 +85,7 @@ def count_choices_for(choice_type, constraints):
                 "bytes", {"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE}
             ),
         ),
-        # crosshair's symbolic mapping implementation performs an `is` check under
-        # certain circumstances, which adds a choice to the symbolic bool when we
-        # execute test(*args, **kwargs), since kwargs is a symbolic mapping
-        # containing the symbolic boolean.
-        #
-        # I think this only affects bool since no other crosshair type has an
-        # override for `is`.
-        (st.booleans(), lambda: count_choices_for("boolean", {}) + 1),
+        (st.booleans(), lambda: count_choices_for("boolean", {})),
         (
             st.text(),
             lambda: count_choices_for(
@@ -99,6 +93,7 @@ def count_choices_for(choice_type, constraints):
             ),
         ),
     ],
+    ids=pretty,
 )
 def test_no_path_constraints_are_added_to_symbolic_values(strategy, expected_choices):
     # check that we don't interact with returned symbolics from the crosshair
