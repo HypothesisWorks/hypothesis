@@ -80,7 +80,7 @@ The reason is that entries in the database may be invalidated at any time by Hyp
 
 .. note::
 
-    If you *do* want to share the database between developers, the |RedisExampleDatabase| can be particularly useful.
+    If you *do* want to share the database between developers, using a database like |RedisExampleDatabase| might be helpful.
 
 Replaying examples from CI logs
 -------------------------------

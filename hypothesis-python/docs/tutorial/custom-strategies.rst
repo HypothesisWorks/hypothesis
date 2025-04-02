@@ -3,6 +3,22 @@ Custom strategies
 
 This page describes how to write a custom strategy, for when the built-in strategies don't quite fit your needs.
 
+Writing helper functions
+------------------------
+
+Sometimes you might find it useful to write helper functions, to more concisely express a common pattern for your project. For example, it's much easier to read (and write) response=json() than to have the whole implementation inline:
+
+.. code-block:: python
+
+    def json(*, finite_only=True):
+        """Helper function to describe JSON objects, with optional inf and nan."""
+        numbers = st.floats(allow_infinity=not finite_only, allow_nan=not finite_only)
+        return st.recursive(
+            st.none() | st.booleans() | st.integers() | numbers | st.text(),
+            extend=lambda xs: st.lists(xs) | st.dictionaries(st.text(), xs),
+        )
+
+
 Writing your own strategy
 -------------------------
 
