@@ -34,7 +34,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
@@ -99,6 +99,10 @@ def test_efficient_dicts_with_sampled_keys(x):
     assert set(x) == set(range(50))
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~10 mins and raises Unsatisfiable",
+)
 @given(
     st.lists(
         st.tuples(st.sampled_from(range(20)), st.builds(list)),
@@ -137,6 +141,7 @@ def stupid_sampled_sets(draw):
     return result
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(stupid_sampled_sets())
 def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
     # This deliberately exercises the standard filtering logic without going

@@ -340,6 +340,13 @@ examples.
 Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. autoclass:: hypothesis.Verbosity
+    :members: quiet,normal,verbose,debug
+
+    .. documenting all members runs into https://stackoverflow.com/a/78657325
+    .. and the fix there didn't work for me
+    .. TODO python 3.13: remove this?
+
 To see what's going on while Hypothesis runs your tests, you can turn
 up the verbosity setting.
 
@@ -608,8 +615,6 @@ Running state machines
 .. autofunction:: hypothesis.stateful.run_state_machine_as_test
 
 If you want to bypass the TestCase infrastructure you can invoke these manually. The stateful module exposes the function ``run_state_machine_as_test``, which takes an arbitrary function returning a RuleBasedStateMachine and an optional settings parameter and does the same as the class based runTest provided.
-
-This is not recommended as it bypasses some important internal functions, including reporting of statistics such as runtimes and :func:`~hypothesis.event` calls.  It was originally added to support custom ``__init__`` methods, but you can now use :func:`~hypothesis.stateful.initialize` rules instead.
 
 
 .. _reproducing-failures:

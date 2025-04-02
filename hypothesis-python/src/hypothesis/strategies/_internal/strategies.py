@@ -386,7 +386,7 @@ class SearchStrategy(Generic[Ex]):
         """
         from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 
-        return FlatMapStrategy(expand=expand, strategy=self)
+        return FlatMapStrategy(self, expand=expand)
 
     # Note that we previously had condition extracted to a type alias as
     # PredicateT. However, that was only useful when not specifying a relationship

@@ -132,9 +132,9 @@ test is using Hypothesis:
 
 .. _entry-points:
 
---------------------------------------------------
-Hypothesis integration via setuptools entry points
---------------------------------------------------
+---------------------------------------
+Hypothesis integration via entry points
+---------------------------------------
 
 If you would like to ship Hypothesis strategies for a custom type - either as
 part of the upstream library, or as a third-party extension, there's a catch:
@@ -148,9 +148,9 @@ either
 - the user has to call a 'register the strategies' helper that you provide
   before running their tests
 
-`Entry points <https://amir.rachum.com/blog/2017/07/28/python-entry-points/>`__
+`Entry points <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`__
 are Python's standard way of automating the latter: when you register a
-``"hypothesis"`` entry point in your ``setup.py``, we'll import and run it
+``"hypothesis"`` entry point in your ``pyproject.toml``, we'll import and run it
 automatically when *hypothesis* is imported.  Nothing happens unless Hypothesis
 is already in use, and it's totally seamless for downstream users!
 
@@ -173,17 +173,19 @@ package that does all the Hypothesis-related setup work:
 
         st.register_type_strategy(MyCustomType, st.integers(min_value=0))
 
-and then tell ``setuptools`` that this is your ``"hypothesis"`` entry point:
+and then declare this as your ``"hypothesis"`` entry point:
 
-.. code-block:: python
+.. code-block:: toml
 
-    # setup.py
+    # pyproject.toml
 
     # You can list a module to import by dotted name
-    entry_points = {"hypothesis": ["_ = mymodule.a_submodule"]}
+    [project.entry-points.hypothesis]
+    _ = "mymodule.a_submodule"
 
-    # Or name a specific function too, and Hypothesis will call it for you
-    entry_points = {"hypothesis": ["_ = mymodule:_hypothesis_setup_hook"]}
+    # Or name a specific function, and Hypothesis will call it for you
+    [project.entry-points.hypothesis]
+    _ = "mymodule:_hypothesis_setup_hook"
 
 And that's all it takes!
 

@@ -48,7 +48,7 @@ redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
     "database": "reference/api.html#database",
-    "stateful": "reference/api.html#stateful-tests",
+    # "stateful": "reference/api.html#stateful-tests",
     "reproducing": "reference/api.html",
     "ghostwriter": "reference/integrations.html#ghostwriter",
     "django": "reference/strategies.html#django",
@@ -197,10 +197,16 @@ rst_prolog = """
 .. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
 .. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
 
+.. |Verbosity.verbose| replace:: :obj:`Verbosity.verbose <hypothesis.Verbosity.verbose>`
+.. |Verbosity.debug| replace:: :obj:`Verbosity.debug <hypothesis.Verbosity.debug>`
+.. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
+.. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
+
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
 .. |st.booleans| replace:: :func:`~hypothesis.strategies.booleans`
+.. |st.none| replace:: :func:`~hypothesis.strategies.none`
 .. |st.composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
 .. |st.data| replace:: :func:`~hypothesis.strategies.data`
 .. |st.one_of| replace:: :func:`~hypothesis.strategies.one_of`
@@ -214,6 +220,7 @@ rst_prolog = """
 .. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
 .. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
 .. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.sampled_from| replace:: :func:`~hypothesis.strategies.sampled_from`
 .. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
@@ -231,8 +238,20 @@ rst_prolog = """
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |strategy.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |strategy.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+
+.. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
+
+.. |RedisExampleDatabase| replace:: :class:`~hypothesis.extra.redis.RedisExampleDatabase`
+.. |InMemoryExampleDatabase| replace:: :class:`~hypothesis.database.InMemoryExampleDatabase`
+.. |ReadOnlyDatabase| replace:: :class:`~hypothesis.database.ReadOnlyDatabase`
+.. |MultiplexedDatabase| replace:: :class:`~hypothesis.database.MultiplexedDatabase`
+.. |GitHubArtifactDatabase| replace:: :class:`~hypothesis.database.GitHubArtifactDatabase`
+.. |BackgroundWriteDatabase| replace:: :class:`~hypothesis.database.BackgroundWriteDatabase`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`

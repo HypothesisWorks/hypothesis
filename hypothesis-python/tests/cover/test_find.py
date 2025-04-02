@@ -12,7 +12,10 @@ from random import Random
 
 from hypothesis import Phase, find, settings, strategies as st
 
+from tests.common.utils import Why, xfail_on_crosshair
 
+
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_find_uses_provided_random():
     prev = None
 

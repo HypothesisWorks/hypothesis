@@ -12,10 +12,12 @@ import sys
 import threading
 import warnings
 
+import pytest
+
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import flaky
+from tests.common.utils import Why, flaky, xfail_on_crosshair
 
 
 def test_can_generate_with_large_branching():
@@ -77,6 +79,7 @@ def test_drawing_many_near_boundary():
     assert len(ls) == size
 
 
+@xfail_on_crosshair(Why.undiscovered)
 def test_can_use_recursive_data_in_sets():
     nested_sets = st.recursive(st.booleans(), st.frozensets, max_leaves=3)
     find_any(nested_sets, settings=settings(deadline=None))
@@ -115,6 +118,7 @@ def test_can_form_sets_of_recursive_data():
     assert len(xs) == size
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="not threadsafe")
 def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(
         st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20

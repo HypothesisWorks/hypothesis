@@ -20,13 +20,14 @@ from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
 
-from tests.common.utils import no_shrink
+from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 
 
 class Nope(Exception):
     pass
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_fails_only_once_is_flaky():
     first_call = True
 
@@ -44,6 +45,7 @@ def test_fails_only_once_is_flaky():
     assert isinstance(exceptions[0], Nope)
 
 
+@xfail_on_crosshair(Why.other)
 def test_fails_differently_is_flaky():
     call_count = 0
 
@@ -93,6 +95,7 @@ def rude_fn(x):
     assert list(map(type, exceptions[0].exceptions)) == [Nope]
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
@@ -131,6 +134,7 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     assert isinstance(exceptions[0], ZeroDivisionError)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_does_not_attempt_to_shrink_flaky_errors():
     values = []
 
@@ -162,6 +166,7 @@ def single_bool_lists(draw):
     return result
 
 
+@xfail_on_crosshair(Why.nested_given)
 @example([True, False, False, False], [3], None)
 @example([False, True, False, False], [3], None)
 @example([False, False, True, False], [3], None)

@@ -447,6 +447,7 @@ class RepresentationPrinter:
         force_split: Optional[bool] = None,
         arg_slices: Optional[dict[str, tuple[int, int]]] = None,
         leading_comment: Optional[str] = None,
+        avoid_realization: bool = False,
     ) -> None:
         """Helper function to represent a function call.
 
@@ -494,7 +495,10 @@ class RepresentationPrinter:
                     self.breakable(" " if i else "")
                 if k:
                     self.text(f"{k}=")
-                self.pretty(v)
+                if avoid_realization:
+                    self.text("<symbolic>")
+                else:
+                    self.pretty(v)
                 if force_split or i + 1 < len(all_args):
                     self.text(",")
                 comment = None

@@ -28,5 +28,5 @@ types-pytz
 types-redis
 typing-extensions
 watchdog # for typing
-sphinx-reredirects
+build
 -r test.in

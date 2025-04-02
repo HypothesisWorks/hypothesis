@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
 
 
@@ -17,6 +19,7 @@ def test_single_example(n):
     pass
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="hangs/crashes")
 @settings(
     max_examples=1,
     database=None,
