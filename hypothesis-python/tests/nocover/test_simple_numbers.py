@@ -117,6 +117,8 @@ def test_can_minimal_infinite_negative_float():
     assert minimal(floats(), lambda x: x < -sys.float_info.max)
 
 
+# Flakey under CrossHair; see https://github.com/pschanely/hypothesis-crosshair/issues/28
+@xfail_on_crosshair(Why.undiscovered)
 def test_can_minimal_float_on_boundary_of_representable():
     minimal(floats(), lambda x: x + 1 == x and not math.isinf(x))
 
