@@ -6,7 +6,7 @@ This is a trickier question than you might expect. The short answer is "exactly 
 - Less than |max_examples| times, if Hypothesis exhausts the search space early.
 - More than |max_examples| times, if Hypothesis retries some examples because either:
 
-  - They failed an |assume| or ``.filter`` condition, or
+  - They failed an |assume| or |strategy.filter| condition, or
   - They were too large to continue generating.
 
 - Either less or more than |max_examples| times, if Hypothesis finds a failing example.
@@ -23,10 +23,13 @@ If Hypothesis detects that there are no more examples left to try, it may stop g
     from hypothesis import given, strategies as st
 
     calls = 0
+
+
     @given(st.integers(0, 19))
     def test_function(n):
         global calls
         calls += 1
+
 
     test_function()
     assert calls == 20
@@ -50,6 +53,7 @@ If an example fails to satisfy an |assume| or |strategy.filter| condition, Hypot
 
     from hypothesis import assume, given, strategies as st
 
+
     @given(st.integers())
     def test_function(n):
         assume(n % 2 == 0)
@@ -70,7 +74,7 @@ The specific value of the size limit is an undocumented implementation detail. T
 Failing examples
 ----------------
 
-If Hypothesis finds a failing example, it stops generation early, and may call the test function additional times during the |Phase.shrink| and |Phase.explain| phases. Sometimes, Hypothesis determines that the initial failing example was already as simple as possible, in which case these phases will not result in additional test executions.
+If Hypothesis finds a failing example, it stops generation early, and may call the test function additional times during the |Phase.shrink| and |Phase.explain| phases. Sometimes, Hypothesis determines that the initial failing example was already as simple as possible, in which case |Phase.shrink| will not result in additional test executions (but |Phase.explain| might).
 
 Regardless of whether Hypothesis runs the test during the shrinking and explain phases, it will always run the minimal failing example one additional time to check for flakiness. For instance, the following trivial test runs with ``n=0`` *twice*, even though it only uses the |Phase.generate| phase:
 
@@ -78,11 +82,13 @@ Regardless of whether Hypothesis runs the test during the shrinking and explain 
 
     from hypothesis import Phase, given, settings, strategies as st
 
+
     @given(st.integers())
     @settings(phases=[Phase.generate])
     def test_function(n):
         print(f"called with {n}")
         assert n != 0
+
 
     test_function()
 
