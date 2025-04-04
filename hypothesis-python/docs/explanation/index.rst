@@ -1,7 +1,7 @@
 Explanations
 ============
 
-These explanation pages are oriented towards deepening your understanding of Hypothesis. Some discuss the design philosophy of Hypothesis, while others go into detail about its internals.
+These explanation pages are oriented towards deepening your understanding of Hypothesis, including its design philosophy.
 
 .. toctree::
    :maxdepth: 1

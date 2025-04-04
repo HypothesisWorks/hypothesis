@@ -39,10 +39,10 @@ The search space tracking in Hypothesis is good, but not perfect. We treat this 
 
     Search space tracking uses the :doc:`choice sequence <choice-sequence>` to determine uniqueness of inputs.
 
-|assume| and ``.filter``
-------------------------
+|assume| and |strategy.filter|
+------------------------------
 
-If an example fails to satisfy an |assume| or ``.filter`` condition, Hypothesis will retry generating that example and will not count it towards the |max_examples| limit. For instance:
+If an example fails to satisfy an |assume| or |strategy.filter| condition, Hypothesis will retry generating that example and will not count it towards the |max_examples| limit. For instance:
 
 .. code-block:: python
 
@@ -54,7 +54,9 @@ If an example fails to satisfy an |assume| or ``.filter`` condition, Hypothesis 
 
 will run roughly 200 times, since half of the examples are discarded from the |assume|.
 
-Note that even if your code does not explicitly use |assume| or ``.filter``, a builtin strategy may still use them and cause retries. We try to directly satisfy conditions where possible instead of relying on rejection sampling, so this should be relatively uncommon.
+Note that while failing an |assume| triggers an immediate retry of the entire example, Hypothesis will try several times in the same example to satisfy a |strategy.filter| condition. This makes expressing the same condition using |strategy.filter| more efficient than |assume|.
+
+Also note that even if your code does not explicitly use |assume| or |strategy.filter|, a builtin strategy may still use them and cause retries. We try to directly satisfy conditions where possible instead of relying on rejection sampling, so this should be relatively uncommon.
 
 Examples which are too large
 ----------------------------
@@ -68,7 +70,7 @@ Failing examples
 
 If Hypothesis finds a failing example, it stops generation early, and may call the test function additional times during the |Phase.shrink| and |Phase.explain| phases. Sometimes, Hypothesis determines that the initial failing example was already as simple as possible, in which case these phases will not result in additional test executions.
 
-Regardless of whether Hypothesis runs the test during the shrinking and explain phases, it will always run the minimal failing example one additional time to check for flakiness. For instance, the following trivial test runs with ``n=0`` *twice*, even though we're only running the |Phase.generate| phase:
+Regardless of whether Hypothesis runs the test during the shrinking and explain phases, it will always run the minimal failing example one additional time to check for flakiness. For instance, the following trivial test runs with ``n=0`` *twice*, even though it only uses the |Phase.generate| phase:
 
 .. code-block:: python
 
