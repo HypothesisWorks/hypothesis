@@ -71,8 +71,12 @@ New developers should **start here**, or with the more condensed :doc:`quickstar
 
 .. rst-class:: column column2 top-right
 
-:doc:`How-to guides <how-to/index>`
------------------------------------
+.. TODO_DOCS
+
+.. :doc:`How-to guides <how-to/index>`
+
+How-to guides
+-------------
 
 Practical guides for experienced developers.
 
@@ -115,7 +119,6 @@ Technical API reference.
   :caption: Community
 
   development
-  manifesto
   usage
   strategies
   packaging

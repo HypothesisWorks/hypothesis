@@ -63,7 +63,7 @@ redirects = {
     # "strategies": "extensions.html",
     # these pages were removed without replacement
     # "support": "index.html",
-    # "manifesto": "index.html",
+    "manifesto": "index.html",
     "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
