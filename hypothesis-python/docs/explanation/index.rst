@@ -6,7 +6,5 @@ These explanation pages are oriented towards deepening your understanding of Hyp
 .. toctree::
    :maxdepth: 1
 
-   choice-sequence
-   shrinking
    domain
    example-count

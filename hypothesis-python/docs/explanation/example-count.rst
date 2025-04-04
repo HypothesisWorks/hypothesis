@@ -35,9 +35,11 @@ This runs ``test_function`` 20 times, not 100, since there are only 20 unique in
 
 The search space tracking in Hypothesis is good, but not perfect. We treat this more as a bonus than something to strive for.
 
-.. note::
+.. TODO_DOCS
 
-    Search space tracking uses the :doc:`choice sequence <choice-sequence>` to determine uniqueness of inputs.
+.. .. note::
+
+..     Search space tracking uses the :doc:`choice sequence <choice-sequence>` to determine uniqueness of inputs.
 
 |assume| and |strategy.filter|
 ------------------------------
