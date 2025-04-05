@@ -26,8 +26,8 @@ Hypothesis provides type hints for all standard strategies:
         all_integers = draw(st.booleans())
         return st.integers() if all_integers else st.floats()
 
-|SearchStrategy| is covariant
------------------------------
+Type variance of |SearchStrategy|
+---------------------------------
 
 |SearchStrategy| is generic in the type of examples it generates. It is covariant, meaning that if ``B < A`` then ``SearchStrategy[B] < SearchStrategy[A]``. In other words:
 
