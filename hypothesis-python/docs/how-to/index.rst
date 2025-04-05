@@ -7,4 +7,3 @@ Practical guides for applying Hypothesis in specific scenarios. Each guide addre
    :maxdepth: 1
 
    suppress-healthchecks
-   strategies-that-shrink
