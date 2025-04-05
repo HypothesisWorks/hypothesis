@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import sysconfig
 import types
 from collections import defaultdict
 from collections.abc import Iterable
@@ -27,12 +28,10 @@ from hypothesis.internal.escalation import is_hypothesis_file
 
 if TYPE_CHECKING:
     from typing import TypeAlias
-else:
-    TypeAlias = object
 
-Location: TypeAlias = tuple[str, int]
-Branch: TypeAlias = tuple[Optional[Location], Location]
-Trace: TypeAlias = set[Branch]
+Location: "TypeAlias" = tuple[str, int]
+Branch: "TypeAlias" = tuple[Optional[Location], Location]
+Trace: "TypeAlias" = set[Branch]
 
 
 @lru_cache(maxsize=None)
@@ -215,18 +214,39 @@ def get_explaining_locations(traces):
     }
 
 
-LIB_DIR = str(Path(sys.executable).parent / "lib")
+# see e.g. https://docs.python.org/3/library/sysconfig.html#posix-user
+# for examples of these path schemes
+STDLIB_DIRS = [
+    Path(sysconfig.get_path("platstdlib")).resolve(),
+    Path(sysconfig.get_path("stdlib")).resolve(),
+]
+SITE_PACKAGES_DIRS = [
+    Path(sysconfig.get_path("purelib")).resolve(),
+    Path(sysconfig.get_path("platlib")).resolve(),
+]
+
 EXPLANATION_STUB = (
     "Explanation:",
     "    These lines were always and only run by failing examples:",
 )
 
 
-def make_report(explanations, cap_lines_at=5):
+# show local files first, then site-packages, then stdlib
+def _sort_key(fname, lineno):
+    fname = Path(fname).resolve()
+    if any(fname.is_relative_to(p) for p in STDLIB_DIRS):
+        return (2, fname, lineno)
+    if any(fname.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+        return (1, fname, lineno)
+    return (0, fname, lineno)
+
+
+def make_report(explanations, *, cap_lines_at=5):
     report = defaultdict(list)
     for origin, locations in explanations.items():
+        locations = list(locations)
+        locations.sort(key=lambda v: _sort_key(v[0], v[1]))
         report_lines = [f"        {fname}:{lineno}" for fname, lineno in locations]
-        report_lines.sort(key=lambda line: (line.startswith(LIB_DIR), line))
         if len(report_lines) > cap_lines_at + 1:
             msg = "        (and {} more with settings.verbosity >= verbose)"
             report_lines[cap_lines_at:] = [msg.format(len(report_lines[cap_lines_at:]))]
