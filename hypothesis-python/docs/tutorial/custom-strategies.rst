@@ -18,7 +18,6 @@ Sometimes you might find it useful to write helper functions, to more concisely 
             extend=lambda xs: st.lists(xs) | st.dictionaries(st.text(), xs),
         )
 
-
 Writing your own strategy
 -------------------------
 
@@ -31,7 +30,6 @@ One way to define a new strategy is using the |st.composite| decorator. |st.comp
 .. code-block:: python
 
     from hypothesis import strategies as st
-
 
     @st.composite
     def sums_to_one(draw):
@@ -48,12 +46,10 @@ Let's see this new strategy in action:
 
     from hypothesis import given, strategies as st
 
-
     @st.composite
     def sums_to_one(draw):
         lst = draw(st.lists(st.floats(0.001, 1), min_size=1))
         return [f / sum(lst) for f in lst]
-
 
     @given(sums_to_one())
     def test(lst):
@@ -77,13 +73,11 @@ For instance, suppose we wanted to generalize our ``sums_to_one`` function to ``
 
     from hypothesis import assume, given, strategies as st
 
-
     @st.composite
     def sums_to_n(draw, n=1):  #  <-- changed
         lst = draw(st.lists(st.floats(0, 1), min_size=1))
         assume(sum(lst) > 0)
         return [f / sum(lst) * n for f in lst]  #  <-- changed
-
 
     @given(sums_to_n(10))
     def test(lst):
@@ -97,13 +91,11 @@ And we could just as easily have made ``n`` a keyword-only argument instead:
 
     from hypothesis import assume, given, strategies as st
 
-
     @st.composite
     def sums_to_n(draw, *, n=1):  #  <-- changed
         lst = draw(st.lists(st.floats(0, 1), min_size=1))
         assume(sum(lst) > 0)
         return [f / sum(lst) * n for f in lst]
-
 
     @given(sums_to_n(n=10))  #  <-- changed
     def test(lst):
@@ -122,12 +114,10 @@ Another scenario where |st.composite| is useful is when generating a value that 
         n2 = draw(st.integers(min_value=n1))
         return (n1, n2)
 
-
     @given(ordered_pairs())
     def test_pairs_are_ordered(pair):
         n1, n2 = pair
         assert n1 <= n2
-
 
 .. note::
 
@@ -151,7 +141,6 @@ For instance, here's how we would write our earlier |st.composite| example using
     import pytest
 
     from hypothesis import given, strategies as st
-
 
     @given(st.data())
     def test(data):

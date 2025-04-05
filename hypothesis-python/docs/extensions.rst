@@ -162,12 +162,10 @@ package that does all the Hypothesis-related setup work:
 
     # mymodule.py
 
-
     class MyCustomType:
         def __init__(self, x: int):
             assert x >= 0, f"got {x}, but only positive numbers are allowed"
             self.x = x
-
 
     def _hypothesis_setup_hook():
         import hypothesis.strategies as st
@@ -274,7 +272,6 @@ generate examples with SMT via the :pypi:`hypothesis-crosshair` backend:
 .. code-block:: python
 
     from hypothesis import given, settings, strategies as st
-
 
     @settings(backend="crosshair")  # pip install hypothesis[crosshair]
     @given(st.integers())
