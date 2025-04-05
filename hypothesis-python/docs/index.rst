@@ -105,7 +105,6 @@ Technical API reference.
   explanation/index
   reference/index
   stateful
-  Type hints <typing>
   Extras <extras>
   compatibility
   changelog
