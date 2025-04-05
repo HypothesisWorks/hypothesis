@@ -28,7 +28,6 @@ For instance, suppose we have written a simple test involving the modulo operato
 
     from hypothesis import given, strategies as st
 
-
     @given(st.integers(), st.integers())
     def test_remainder_magnitude(a, b):
         # the remainder after division is always less than
@@ -42,7 +41,6 @@ The best way to do this is with the |strategy.filter| method:
 .. code-block:: python
 
     from hypothesis import assume, given, strategies as st
-
 
     @given(st.integers(), st.integers().filter(lambda n: n != 0))
     def test_remainder_magnitude(a, b):
@@ -64,7 +62,6 @@ The |assume| function skips test cases where some condition evaluates to ``True`
 
     from hypothesis import assume, given, strategies as st
 
-
     @given(st.integers(), st.integers())
     def test_remainder_magnitude(a, b):
         assume(b != 0)
@@ -84,7 +81,6 @@ Here's an example of a test where we want to filter out two different types of e
 
     from hypothesis import assume, given, strategies as st
 
-
     @given(st.integers(), st.integers())
     def test_floor_division_lossless_when_b_divides_a(a, b):
         # we want to assume that:
@@ -98,7 +94,6 @@ We could start by using |assume| for both:
 
     from hypothesis import assume, given, strategies as st
 
-
     @given(st.integers(), st.integers())
     def test_floor_division_lossless_when_b_divides_a(a, b):
         assume(b != 0)
@@ -110,7 +105,6 @@ And then notice that the ``b != 0`` condition can be moved into the strategy def
 .. code-block:: python
 
     from hypothesis import assume, given, strategies as st
-
 
     @given(st.integers(), st.integers().filter(lambda n: n != 0))
     def test_floor_division_lossless_when_b_divides_a(a, b):
@@ -127,7 +121,6 @@ One other way we could have avoided the divide-by-zero error inside the test fun
 .. code-block:: python
 
     from hypothesis import assume, given, strategies as st
-
 
     @given(st.integers(), st.integers())
     def test_remainder_magnitude(a, b):

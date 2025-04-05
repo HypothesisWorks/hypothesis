@@ -40,7 +40,6 @@ The following rule based state machine example is a simplified version of a test
   from hypothesis.database import DirectoryBasedExampleDatabase
   from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
-
   class DatabaseComparison(RuleBasedStateMachine):
       def __init__(self):
           super().__init__()
@@ -75,7 +74,6 @@ The following rule based state machine example is a simplified version of a test
 
       def teardown(self):
           shutil.rmtree(self.tempd)
-
 
   TestDBComparison = DatabaseComparison.TestCase
 
@@ -141,7 +139,6 @@ Initializes are typically useful to populate bundles:
 
     name_strategy = st.text(min_size=1).filter(lambda x: "/" not in x)
 
-
     class NumberModifier(RuleBasedStateMachine):
         folders = Bundle("folders")
         files = Bundle("files")
@@ -169,7 +166,6 @@ While it's possible to use :func:`~hypothesis.assume` in RuleBasedStateMachine r
 
     from hypothesis.stateful import RuleBasedStateMachine, precondition, rule
 
-
     class NumberModifier(RuleBasedStateMachine):
         num = 0
 
@@ -181,7 +177,6 @@ While it's possible to use :func:`~hypothesis.assume` in RuleBasedStateMachine r
         @rule()
         def divide_with_one(self):
             self.num = 1 / self.num
-
 
 By using :func:`~hypothesis.stateful.precondition` here instead of :func:`~hypothesis.assume`, Hypothesis can filter the inapplicable rules before running them. This makes it much more likely that a useful sequence of steps will be generated.
 
@@ -196,7 +191,6 @@ Often there are invariants that you want to ensure are met after every step in a
 
     from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
-
     class NumberModifier(RuleBasedStateMachine):
         num = 0
 
@@ -209,7 +203,6 @@ Often there are invariants that you want to ensure are met after every step in a
         @invariant()
         def divide_with_one(self):
             assert self.num % 2 == 0
-
 
     NumberTest = NumberModifier.TestCase
 

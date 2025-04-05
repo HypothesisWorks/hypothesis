@@ -14,7 +14,6 @@ Using |@settings| on a single test looks like this:
 
     from hypothesis import given, settings, strategies as st
 
-
     @given(st.integers())
     @settings(max_examples=200)
     def runs_200_times_instead_of_100(n):
@@ -30,7 +29,6 @@ If you have a test which is very expensive or very cheap to run, you can change 
 .. code-block:: python
 
     from hypothesis import given, settings, strategies as st
-
 
     @given(st.integers())
     @settings(max_examples=5)

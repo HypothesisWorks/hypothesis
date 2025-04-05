@@ -23,31 +23,25 @@ For example, all of the following are valid uses:
   def a(x, y):
       pass
 
-
   @given(integers())
   def b(x, y):
       pass
-
 
   @given(y=integers())
   def c(x, y):
       pass
 
-
   @given(x=integers())
   def d(x, y):
       pass
-
 
   @given(x=integers(), y=integers())
   def e(x, **kwargs):
       pass
 
-
   @given(x=integers(), y=integers())
   def f(x, *args, **kwargs):
       pass
-
 
   class SomeTest(TestCase):
       @given(integers())
@@ -62,21 +56,17 @@ The following are not:
   def g(x, y):
       pass
 
-
   @given(integers())
   def h(x, *args):
       pass
-
 
   @given(integers(), x=integers())
   def i(x, y):
       pass
 
-
   @given()
   def j(x, y):
       pass
-
 
 The rules for determining what are valid uses of ``given`` are as follows:
 
@@ -113,12 +103,10 @@ no strategy was passed to |st.builds|, |st.from_type| is used to fill them in. Y
     def test(a: int):
         pass
 
-
     # is equivalent to
     @given(a=from_type(int))
     def test(a):
         pass
-
 
 ``@given(...)`` can also be specified to fill all arguments from their type annotations.
 
@@ -128,12 +116,10 @@ no strategy was passed to |st.builds|, |st.from_type| is used to fill them in. Y
     def test(a: int, b: str):
         pass
 
-
     # is equivalent to
     @given(a=..., b=...)
     def test(a, b):
         pass
-
 
 Limitations
 ^^^^^^^^^^^
@@ -176,9 +162,7 @@ styles will work as expected:
   def test_some_code(x):
       pass
 
-
   from unittest import TestCase
-
 
   class TestThings(TestCase):
       @given(text())
@@ -211,7 +195,6 @@ You can mark custom events in a test using |event|:
 .. code:: python
 
   from hypothesis import event, given, strategies as st
-
 
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
@@ -251,7 +234,6 @@ This is not *always* a good idea - for example calculating the search metric mig
 .. code-block:: python
 
   from hypothesis import given, strategies as st, target
-
 
   @given(st.floats(0, 1e100), st.floats(0, 1e100), st.floats(0, 1e100))
   def test_associativity_with_target(a, b, c):
@@ -656,7 +638,6 @@ same examples each time they are executed, thanks to ``@seed()``:
     @given(x=...)
     def test(x): ...
 
-
     @seed(6789)
     class MyModel(RuleBasedStateMachine): ...
 
@@ -823,10 +804,8 @@ the |strategy.flatmap| function as follows:
 
   from hypothesis.strategies import just, lists
 
-
   def generate_with_shops(company):
       return lists(from_model(Shop, company=just(company))).map(lambda _: company)
-
 
   company_with_shops_strategy = from_model(Company).flatmap(generate_with_shops)
 
@@ -908,7 +887,6 @@ address your sub-fields appropriately:
 
   from_form(CustomerForm, birth_date_time_0=just("2018-05-19"))
 
-
 .. _fuzz_one_input:
 
 Use with external fuzzers
@@ -925,7 +903,6 @@ Sometimes, you might want to point a traditional fuzzer such as `python-afl <htt
 
     @given(st.text())
     def test_foo(s): ...
-
 
     # This is a traditional fuzz target - call it with a bytestring,
     # or a binary IO object, and it runs the test once.
@@ -984,7 +961,6 @@ You define executors by defining a method ``execute_example`` on a class. Any te
 
     from unittest import TestCase
 
-
     class TestTryReallyHard(TestCase):
         @given(integers())
         def test_something(self, i):
@@ -1002,7 +978,6 @@ An executor must be able to handle being passed a function which returns None, o
 
     from unittest import TestCase
 
-
     class TestRunTwice(TestCase):
         def execute_example(self, f):
             return f()()
@@ -1013,14 +988,12 @@ and should be rewritten as:
 
     from unittest import TestCase
 
-
     class TestRunTwice(TestCase):
         def execute_example(self, f):
             result = f()
             if callable(result):
                 result = result()
             return result
-
 
 An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying :func:`@given <hypothesis.given>`.
 
@@ -1029,7 +1002,6 @@ An alternative hook is provided for use by test runner extensions such as :pypi:
     @given(x=integers())
     @pytest.mark.trio
     async def test(x): ...
-
 
     # Illustrative code, inside the pytest-trio plugin
     test.hypothesis.inner_test = lambda x: trio.run(test, x)

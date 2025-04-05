@@ -24,12 +24,10 @@ If Hypothesis detects that there are no more examples left to try, it may stop g
 
     calls = 0
 
-
     @given(st.integers(0, 19))
     def test_function(n):
         global calls
         calls += 1
-
 
     test_function()
     assert calls == 20
@@ -52,7 +50,6 @@ If an example fails to satisfy an |assume| or |strategy.filter| condition, Hypot
 .. code-block:: python
 
     from hypothesis import assume, given, strategies as st
-
 
     @given(st.integers())
     def test_function(n):
@@ -82,13 +79,11 @@ Regardless of whether Hypothesis runs the test during the shrinking and explain 
 
     from hypothesis import Phase, given, settings, strategies as st
 
-
     @given(st.integers())
     @settings(phases=[Phase.generate])
     def test_function(n):
         print(f"called with {n}")
         assert n != 0
-
 
     test_function()
 
