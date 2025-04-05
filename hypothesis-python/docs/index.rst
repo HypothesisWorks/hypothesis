@@ -71,16 +71,10 @@ New developers should **start here**, or with the more condensed :doc:`quickstar
 
 .. rst-class:: column column2 top-right
 
-.. TODO_DOCS
+:doc:`How-to guides <how-to/index>`
+-----------------------------------
 
-.. :doc:`How-to guides <how-to/index>`
-
-How-to guides
--------------
-
-Practical guides for experienced developers.
-
-(coming soon!)
+Practical guides for experienced users.
 
 .. rst-class:: column column2 bottom-left
 
@@ -105,6 +99,7 @@ Technical API reference.
 
   quickstart
   tutorial/index
+  how-to/index
   explanation/index
   reference/index
   stateful
