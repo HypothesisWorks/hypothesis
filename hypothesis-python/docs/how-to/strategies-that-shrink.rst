@@ -1,9 +1,11 @@
-How to write strategies that shrink well
-========================================
+Write strategies that shrink well
+=================================
 
-.. note::
+.. TODO_DOCS
 
-    It may also be helpful to read the :doc:`shrinking explanation </explanation/shrinking>` page (but we will not assume knowledge of it in this how-to guide).
+.. .. note::
+
+..     It may also be helpful to read the :doc:`shrinking explanation </explanation/shrinking>` page (but we will not assume knowledge of it in this how-to guide).
 
 The Hypothesis shrinker is world-class, but is *not* magic. Some ways of writing strategies will shrink better than others. By "shrinks better" and "shrinks well", we mean both that Hypothesis spends less time shrinking, and that it finds simpler failing example more often.
 
@@ -11,7 +13,7 @@ Keep the following tips in mind for writing strategies that shrink well:
 
 * If a value depends on another value, generate them near each other.
 * Place simpler strategies first in |st.one_of|.
-* Structure generation so that deleting (one or more) consecutive choices is a shrink.
+* Structure generation so that deleting (one or more) consecutive choices shrinks the example.
 
 Read on for more detail about each of these.
 

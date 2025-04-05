@@ -34,13 +34,6 @@ In Hypothesis, inputs for *any* strategy, no matter how complicated, are represe
 
 The current primitives of the choice sequence are |int|, |bool|, |float|, |str|, and |bytes|.
 
-.. Parameters
-.. ----------
-
-.. If |st.lists| worked exactly as described above, it would produce a pretty poor distribution of inputs. A random boolean is ``False`` half of the time, so the probability of generating large lists is vanishingly low, because choosing a single ``False`` would end the list.
-
-.. Instead, the choice sequence is augmented with a set of parameters for each primitive choice. One of these parameters is a probability ``p`` for booleans. This ``p`` is a value between 0 and 1 which controls the probability of a choosing a ``True`` value.
-
-.. These parameters also support things like integer ranges.
+In addition to the choice sequence, Hypothesis also tracks spans of related choices. For instance, the boolean choice in |st.lists| to decide to add a new element, and the following choices to actually add that element, are marked as belonging to the same span. Tracking spans turns the choice sequence from a flat list into a tree structure. This tree view of the choice sequence — as well as spans in general — are used to give more information about the test case structure to shrinking and mutation during generation.
 
 .. [#grammar] For those familiar with grammars, each strategy corresponds to a grammar, and generation corresponds to following production rules of this grammar. In general, strategies form a context free grammar. The exceptions are |st.data| and |st.composite|. When those strategies are used, the grammar could be fully recursively enumerable, because the parsing behavior is determined by arbitrary python code.
