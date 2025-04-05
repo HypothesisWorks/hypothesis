@@ -13,7 +13,7 @@ Keep the following tips in mind for writing strategies that shrink well:
 
 * If a value depends on another value, generate them near each other.
 * Place simpler strategies first in |st.one_of|.
-* Structure generation so that deleting (one or more) consecutive choices is a shrink.
+* Structure generation so that deleting (one or more) consecutive choices shrinks the example.
 
 Read on for more detail about each of these.
 
