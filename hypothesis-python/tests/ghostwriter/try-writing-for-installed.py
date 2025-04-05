@@ -19,10 +19,10 @@ Some have import-time side effects or errors so we skip them; others
 just have such weird semantics that we don't _want_ to support them.
 """
 
-import distutils.sysconfig as sysconfig
 import multiprocessing
 import os
 import subprocess
+import sysconfig
 
 skip = (
     "idlelib curses antigravity pip prompt_toolkit IPython .popen_ django. .test. "
