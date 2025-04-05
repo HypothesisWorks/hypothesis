@@ -67,20 +67,14 @@ You should start with the :doc:`tutorials <tutorial/index>`, or the more condens
 :doc:`Tutorials <tutorial/index>`
 ----------------------------------
 
-New developers should **start here**, or with the more condensed :doc:`quickstart <quickstart>`.
+New developers should start here, or with the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: column column2 top-right
 
-.. TODO_DOCS
-
-.. :doc:`How-to guides <how-to/index>`
-
-How-to guides
--------------
+:doc:`How-to guides <how-to/index>`
+-----------------------------------
 
 Practical guides for experienced developers.
-
-(coming soon!)
 
 .. rst-class:: column column2 bottom-left
 
@@ -99,29 +93,27 @@ Technical API reference.
 .. rst-class:: clearfix row
 
 .. toctree::
-  :maxdepth: 1
-  :hidden:
-  :caption: Hypothesis
+    :maxdepth: 1
+    :hidden:
 
-  quickstart
-  tutorial/index
-  explanation/index
-  reference/index
-  stateful
-  Type hints <typing>
-  Extras <extras>
-  supported
-  changes
+    quickstart
+    tutorial/index
+    how-to/index
+    explanation/index
+    reference/index
+    Extras <extras>
+    Type hints <typing>
+    changelog
 
 .. toctree::
-  :maxdepth: 1
-  :hidden:
-  :caption: Community
+    :maxdepth: 1
+    :hidden:
+    :caption: About Hypothesis
 
-  development
-  usage
-  strategies
-  packaging
-  community
-  support
-  endorsements
+    compatibility
+    development
+    usage
+    extensions
+    packaging
+    community
+    endorsements

@@ -19,7 +19,7 @@ You can use this strategy to make :func:`~hypothesis.strategies.datetimes`
 and :func:`~hypothesis.strategies.times` produce timezone-aware values.
 
 .. tip::
-    Consider using the stdlib :mod:`zoneinfo` module, via
+    Consider using the stdlib :mod:`zoneinfo` module instead, via
     :func:`st.timezones() <hypothesis.strategies.timezones>`.
 """
 
