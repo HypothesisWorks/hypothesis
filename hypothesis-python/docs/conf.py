@@ -59,7 +59,7 @@ redirects = {
     # TODO enable when we actually rename them
     # "extras": "extensions.html",
     # "supported": "compatibility.html",
-    # "changes": "changelog.html",
+    "changes": "changelog.html",
     # "strategies": "extensions.html",
     # these pages were removed without replacement
     # "support": "index.html",

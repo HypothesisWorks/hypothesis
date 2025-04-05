@@ -189,7 +189,7 @@ def update_pyproject_toml():
     toml_p.write_text(content)
 
 
-CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changes.rst"
+CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
 DIST = HYPOTHESIS_PYTHON / "dist"
 
 
@@ -220,7 +220,7 @@ def upload_distribution():
 
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
-    build_docs(builder="text", only=["docs/changes.rst"])
+    build_docs(builder="text", only=["docs/changelog.rst"])
     textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
@@ -229,7 +229,7 @@ def upload_distribution():
     changelog_body = (
         "".join(lines[entries[0] + 2 : entries[1]]).strip()
         + "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
-        f"(https://hypothesis.readthedocs.io/en/latest/changes.html#v{anchor})*"
+        f"(https://hypothesis.readthedocs.io/en/latest/changelog.html#v{anchor})*"
     )
 
     # Create a GitHub release, to trigger Zenodo DOI minting.  See

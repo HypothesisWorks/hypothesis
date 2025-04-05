@@ -36,5 +36,5 @@ which should:
   contribution, don't forget to add yourself to AUTHORS.rst!
 
 After the PR is merged, the contents of this file (except the first line)
-are automatically added to ``docs/changes.rst``. More examples can be found
+are automatically added to ``docs/changelog.rst``. More examples can be found
 in that file.
