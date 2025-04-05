@@ -107,7 +107,7 @@ Technical API reference.
   stateful
   Type hints <typing>
   Extras <extras>
-  supported
+  compatibility
   changelog
 
 .. toctree::
@@ -120,5 +120,4 @@ Technical API reference.
   extensions
   packaging
   community
-  support
   endorsements
