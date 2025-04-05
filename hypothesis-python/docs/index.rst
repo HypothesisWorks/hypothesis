@@ -120,7 +120,7 @@ Technical API reference.
 
   development
   usage
-  strategies
+  extensions
   packaging
   community
   support
