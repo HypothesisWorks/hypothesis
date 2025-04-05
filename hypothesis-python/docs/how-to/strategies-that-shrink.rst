@@ -1,5 +1,5 @@
-How to write strategies that shrink well
-========================================
+Write strategies that shrink well
+=================================
 
 .. TODO_DOCS
 

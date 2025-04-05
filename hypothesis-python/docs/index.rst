@@ -76,7 +76,7 @@ New users should start here, or with the more condensed :doc:`quickstart <quicks
 :doc:`How-to guides <how-to/index>`
 -----------------------------------
 
-Practical guides for experienced users.
+Practical guides for applying Hypothesis in specific scenarios.
 
 .. rst-class:: column column2 bottom-left
 
