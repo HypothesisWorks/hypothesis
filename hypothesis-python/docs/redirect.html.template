@@ -12,8 +12,7 @@
         "details.html#hypothesis.given": "reference/api.html#hypothesis.given",
         "details.html#targeted-example-generation": "reference/api.html#targeted-property-based-testing",
         "details.html#custom-function-execution": "reference/api.html#custom-function-execution",
-        // TODO_DOCS when we figure out a home for this page
-        // "details.html#type-annotations-in-hypothesis": ""
+        "details.html#type-annotations-in-hypothesis": "how-to/type-strategies.html",
         "details.html#the-hypothesis-pytest-plugin": "reference/integrations.html#the-hypothesis-pytest-plugin",
         "details.html#use-with-external-fuzzers": "reference/api.html#use-with-external-fuzzers",
         "details.html#making-assumptions": "reference/api.html#hypothesis.assume",
