@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.8:
+
+--------------------
+6.130.8 - 2025-04-02
+--------------------
+
+Improves the documentation of |settings.Verbosity| objects.
+
 .. _v6.130.7:
 
 --------------------

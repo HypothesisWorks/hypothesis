@@ -40,6 +40,48 @@
         }
     </style>
 
+.. raw:: html
+
+     <!-- adapted from https://docs.django-cms.org/en/release-4.1.x/, with thanks -->
+
+    <style>
+        .row {
+           clear: both;
+        }
+
+        .column img {border: 1px solid gray;}
+
+        @media only screen and (min-width: 1000px) {
+
+            .column {
+                padding-left: 5px;
+                padding-right: 5px;
+                float: left;
+            }
+
+            .column2  {
+                width: calc(50% - 11px);
+                position: relative;
+            }
+            .column2:before {
+                padding-top: 61.8%;
+                content: "";
+                display: block;
+                float: left;
+            }
+            .top-left {
+                border-right: 1px solid var(--color-background-border);
+                border-bottom: 1px solid var(--color-background-border);
+            }
+            .top-right {
+                border-bottom: 1px solid var(--color-background-border);
+            }
+            .bottom-left {
+                border-right: 1px solid var(--color-background-border);
+            }
+        }
+    </style>
+
 Welcome to Hypothesis!
 ======================
 
