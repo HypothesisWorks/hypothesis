@@ -1,7 +1,7 @@
 Quickstart
 ==========
 
-This is a lightning introduction to the most important features of Hypothesis; enough to get you started writing tests. The :doc:`tutorials <tutorial/index>` introduce these features (and more) in greater detail.
+This is a lightning introduction to the most important features of Hypothesis; enough to get you started writing tests. The :doc:`tutorial <tutorial/index>` introduces these features (and more) in greater detail.
 
 Install Hypothesis
 ------------------
