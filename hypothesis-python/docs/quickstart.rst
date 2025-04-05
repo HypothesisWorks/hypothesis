@@ -170,59 +170,6 @@ Hypothesis works with pytest features, like :ref:`pytest:pytest.mark.parametrize
 
     from hypothesis import given, strategies as st
 
-    @given(st.integers(0, 200))
-    def test_integers(n):
-        assert n < 50
-
-
-This test will clearly fail, which can be confirmed by running ``pytest example.py``:
-
-.. code-block:: none
-
-    $ pytest example.py
-
-        ...
-
-        @given(st.integers())
-        def test_integers(n):
-    >       assert n < 50
-    E       assert 50 < 50
-    E       Falsifying example: test_integers(
-    E           n=50,
-    E       )
-
-
-|@given| parameters
--------------------
-
-You can pass multiple parameters to |@given|:
-
-.. code-block:: python
-
-    @given(st.integers(), st.text())
-    def test_integers(n, s):
-        assert isinstance(n, int)
-        assert isinstance(s, str)
-
-.. As well as keyword arguments:
-
-.. .. code-block:: python
-
-..     @given(n=st.integers(), s=st.text())
-..     def test_integers(n, s):
-..         assert isinstance(n, int)
-..         assert isinstance(s, str)
-
-.. note::
-
-    See |@given| for details about how |@given| handles different types of parameters.
-
-|assume|
---------
-
-Sometimes, you need to remove invalid cases from your test. You can do this dynamically using |assume|, which takes a boolean and discards any test cases that evaluate to ``False``.
-
-.. code-block:: python
 
     @pytest.mark.parametrize("operation", [reversed, sorted])
     @given(st.lists(st.integers()))

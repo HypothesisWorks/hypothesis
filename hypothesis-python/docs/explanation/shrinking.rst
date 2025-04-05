@@ -24,11 +24,14 @@ One core shrinking pass attempts to minimize each individual choice in the :doc:
 
     from hypothesis import given, settings, strategies as st
 
+
     @given(st.integers())
     @settings(report_multiple_bugs=False, database=None)
     def f(n):
         print(n, "<-- failure" if n >= 100 else "")
         assert n < 100
+
+
     f()
 
 Here's my output — yours will be different, but follow a similar general pattern:
@@ -75,11 +78,14 @@ Another core shrinking pass tries deleting choices from the choice sequence. Her
 
     from hypothesis import given, settings, strategies as st
 
+
     @given(st.lists(st.integers()))
     @settings(report_multiple_bugs=False, database=None)
     def f(lst):
         print(lst, "<-- failure" if len(lst) > 1 else "")
         assert len(lst) <= 1
+
+
     f()
 
 Here's my output, where we can see this pass removing list elements which are not relevant to the failure:
@@ -108,12 +114,15 @@ These two passes (reducing individual choices and removing choices) form the cor
 
     from hypothesis import given, settings, strategies as st
 
+
     @given(st.integers(), st.integers())
     @settings(report_multiple_bugs=False, database=None)
     def f(n1, n2):
         print(n1, n2, "<-- failure" if n1 >= 5 and n1 + n2 >= 50 else "")
         if n1 >= 5:
             assert n1 + n2 < 50
+
+
     f()
 
 Here's a portion of the output, focusing on when this shrinking pass gets ran:

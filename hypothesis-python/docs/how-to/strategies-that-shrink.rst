@@ -58,6 +58,7 @@ This also applies to |@composite| and |st.data|:
         s = draw(st.text())
         return (n, s)
 
+
     @given(values())
     def f(v):
         (n, s) = v
@@ -72,6 +73,7 @@ This also applies to |@composite| and |st.data|:
         v1 = draw(st.booleans())
         v2 = draw(st.binary())
         return (n, s)
+
 
     @given(values())
     def f(value):

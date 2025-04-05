@@ -13,6 +13,7 @@ The best way to understand the choice sequence is to examine how Hypothesis gene
 
     from hypothesis import strategies as st
 
+
     @given(st.lists(st.integers() | st.floats()))
     def test_list(l):
         print(f"called with {l}")

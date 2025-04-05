@@ -1,15 +1,13 @@
 Adding notes
 ============
 
-Normally the output of a failing test will look something like:
+When a test fails, Hypothesis will normally print output that looks like this:
 
 .. code::
 
     Falsifying example: test_a_thing(x=1, y="foo")
 
-With the ``repr`` of each keyword argument being printed.
-
-Sometimes this isn't enough, either because you have a value with a ``__repr__()`` method that isn't very descriptive or because you need to see the output of some intermediate steps of your test. That's where |note| comes in:
+Sometimes you want to add some additional information to a failure, such as the output of some intermediate step in your test. The |note| function lets you do this:
 
 .. code-block:: pycon
 
@@ -30,4 +28,8 @@ Sometimes this isn't enough, either because you have a value with a ``__repr__()
     Shuffle: [1, 0]
     ls != ls2
 
-The note is printed for the minimal failing example of the test in order to include any additional information you might need in your test.
+|note| is like a print statement that gets attached to the falsifying example reported by Hypothesis. It's also reported by :ref:`observability <observability>`, and shown for all examples (if |settings.verbosity| is set to |Verbosity.verbose| or higher).
+
+.. note::
+
+    |event| is a similar function which tells Hypothesis to count the number of test cases which reported each distinct value you pass, for inclusion in :ref:`test statistics <statistics>` and :ref:`observability reports <observability>`.

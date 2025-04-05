@@ -10,10 +10,9 @@ While |HealthCheck| can be useful to proactively identify issues, you may not ca
     from hypothesis import HealthCheck, settings
 
     settings.register_profile(
-        "myprofile",
-        suppress_health_check=[HealthCheck.filter_too_much]
+        "my_profile", suppress_health_check=[HealthCheck.filter_too_much]
     )
-    settings.load_profile("myprofile")
+    settings.load_profile("my_profile")
 
 This profile in particular suppresses the |HealthCheck.filter_too_much| health check for all tests. The exception is if a test has a |@settings| which explicitly sets a different value for ``suppress_health_check``, in which case the profile value will be overridden by the local settings value.
 
@@ -26,10 +25,7 @@ If you really want to suppress *all* health checks, you can:
 
     from hypothesis import HealthCheck, settings
 
-    settings.register_profile(
-        "myprofile",
-        suppress_health_check=list(HealthCheck)
-    )
-    settings.load_profile("myprofile")
+    settings.register_profile("my_profile", suppress_health_check=list(HealthCheck))
+    settings.load_profile("my_profile")
 
 However, we strongly recommend that you suppress health checks as you encounter them, rather than using a blanket suppression. Several health checks check for subtle interactions that may save you hours of debugging, such as |HealthCheck.function_scoped_fixture| and |HealthCheck.differing_executors|.
