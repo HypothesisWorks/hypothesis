@@ -13,7 +13,7 @@ import sys
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, note, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import make_report
 
@@ -130,10 +130,15 @@ def test_report_sort(random):
     report_lines = report["origin1"][2:]
     report_lines = [line.strip() for line in report_lines]
 
-    assert report_lines == [
+    expected_lines = [
         f"{__file__}:10",
         f"{pytest.__file__}:123",
         f"{pytest.__file__}:124",
         f"{json.__file__}:42",
         f"{json.__file__}:43",
     ]
+
+    note(f"actual lines: {report_lines}")
+    note(f"expected lines: {expected_lines}")
+
+    assert report_lines == expected_lines
