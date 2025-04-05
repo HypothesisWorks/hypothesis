@@ -111,7 +111,7 @@ Technical API reference.
   Type hints <typing>
   Extras <extras>
   supported
-  changes
+  changelog
 
 .. toctree::
   :maxdepth: 1
@@ -120,7 +120,7 @@ Technical API reference.
 
   development
   usage
-  strategies
+  extensions
   packaging
   community
   support
