@@ -90,9 +90,10 @@ In terms of what's actually *known* to work:
   and this is verified as part of the CI.
 * :pypi:`pytest` fixtures work in the usual way for tests that have been decorated
   with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
-  each argument that will be supplied by a fixture.  However, each fixture
-  will run once for the whole function, not once per example.  Decorating a
-  fixture function with :func:`@given <hypothesis.given>` is meaningless.
+  each argument that will be supplied by a fixture.  However, function-scoped fixtures
+  will run only once for the whole function, not per example. To proactively warn you about
+  this case, we raise |HealthCheck.function_scoped_fixture|, unless suppressed with
+  |settings.suppress_health_check|.
 * The :func:`python:unittest.mock.patch` decorator works with
   :func:`@given <hypothesis.given>`, but we recommend using it as a context
   manager within the decorated test to ensure that the mock is per-test-case

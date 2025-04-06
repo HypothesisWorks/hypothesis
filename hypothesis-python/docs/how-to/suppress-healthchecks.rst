@@ -23,7 +23,7 @@ I want to suppress all health checks!
 
     We strongly recommend that you suppress health checks as you encounter them, rather than using a blanket suppression. Several health checks check for subtle interactions that may save you hours of debugging, such as |HealthCheck.function_scoped_fixture| and |HealthCheck.differing_executors|.
 
-If you really want to suppress *all* health checks, you can:
+If you really want to suppress *all* health checks, for instance to speed up interactive prototyping, you can:
 
 .. code-block:: python
 
