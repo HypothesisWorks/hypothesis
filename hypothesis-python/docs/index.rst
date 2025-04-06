@@ -56,29 +56,25 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
     test_sort_correct()
 
-You should start with the :doc:`tutorials <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
+You should start with the :doc:`tutorial <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: clearfix row
 
 .. rst-class:: column column2 top-left
 
-:doc:`Tutorials <tutorial/index>`
-----------------------------------
+:doc:`Tutorial <tutorial/index>`
+---------------------------------
 
-New developers should **start here**, or with the more condensed :doc:`quickstart <quickstart>`.
+An introduction to Hypothesis.
+
+New users should start here, or with the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: column column2 top-right
 
-.. TODO_DOCS
+:doc:`How-to guides <how-to/index>`
+-----------------------------------
 
-.. :doc:`How-to guides <how-to/index>`
-
-How-to guides
--------------
-
-Practical guides for experienced developers.
-
-(coming soon!)
+Practical guides for applying Hypothesis in specific scenarios.
 
 .. rst-class:: column column2 bottom-left
 
@@ -103,12 +99,12 @@ Technical API reference.
 
   quickstart
   tutorial/index
+  how-to/index
   explanation/index
   reference/index
   stateful
-  Type hints <typing>
   Extras <extras>
-  supported
+  compatibility
   changelog
 
 .. toctree::
@@ -121,5 +117,4 @@ Technical API reference.
   extensions
   packaging
   community
-  support
   endorsements
