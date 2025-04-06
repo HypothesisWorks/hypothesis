@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.9:
+
+--------------------
+6.130.9 - 2025-04-06
+--------------------
+
+When reporting the always-failing, never-passing lines from the |Phase.explain| phase, we now sort the reported lines so that local code shows up first, then third-party library code, then standard library code.
+
 .. _v6.130.8:
 
 --------------------
