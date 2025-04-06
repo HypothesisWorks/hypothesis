@@ -65,7 +65,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-django==5.1.7
+django==5.2
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -258,7 +258,7 @@ rich==14.0.0
     # via
     #   pelican
     #   twine
-ruff==0.11.2
+ruff==0.11.4
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -343,7 +343,7 @@ types-redis==4.6.0.20241004
     # via -r requirements/tools.in
 types-setuptools==78.1.0.20250329
     # via types-cffi
-typing-extensions==4.13.0
+typing-extensions==4.13.1
     # via
     #   -r requirements/tools.in
     #   anyio
