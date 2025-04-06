@@ -127,9 +127,9 @@ def test_report_sort(random):
         (json.__file__, 42),
     ]
     random.shuffle(lines)
-    explanations = {"origin1": lines}
+    explanations = {"origin": lines}
     report = make_report(explanations)
-    report_lines = report["origin1"][2:]
+    report_lines = report["origin"][2:]
     report_lines = [line.strip() for line in report_lines]
 
     expected_lines = [

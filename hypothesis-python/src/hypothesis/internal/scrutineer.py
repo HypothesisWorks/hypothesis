@@ -232,13 +232,15 @@ EXPLANATION_STUB = (
 
 
 # show local files first, then site-packages, then stdlib
-def _sort_key(fname, lineno):
-    fname = Path(fname).resolve()
-    if any(fname.is_relative_to(p) for p in STDLIB_DIRS):
-        return (2, fname, lineno)
-    if any(fname.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
-        return (1, fname, lineno)
-    return (0, fname, lineno)
+def _sort_key(path, lineno):
+    path = Path(path).resolve()
+    # site-packages may be a subdir of stdlib or platlib, so it's important to
+    # check is_relative_to for this before the stdlib.
+    if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+        return (1, path, lineno)
+    if any(path.is_relative_to(p) for p in STDLIB_DIRS):
+        return (2, path, lineno)
+    return (0, path, lineno)
 
 
 def make_report(explanations, *, cap_lines_at=5):
