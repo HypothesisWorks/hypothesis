@@ -26,7 +26,7 @@ from hypothesis._settings import (
     note_deprecation,
     settings,
 )
-from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -107,7 +107,7 @@ def test_can_not_set_verbosity_to_non_verbosity():
         settings(verbosity="kittens")
 
 
-@pytest.mark.parametrize("db", [None, ExampleDatabase()])
+@pytest.mark.parametrize("db", [None, InMemoryExampleDatabase()])
 def test_inherits_an_empty_database(db):
     with local_settings(settings(database=InMemoryExampleDatabase())):
         assert settings.default.database is not None
@@ -118,7 +118,7 @@ def test_inherits_an_empty_database(db):
         assert t.database is db
 
 
-@pytest.mark.parametrize("db", [None, ExampleDatabase()])
+@pytest.mark.parametrize("db", [None, InMemoryExampleDatabase()])
 def test_can_assign_database(db):
     x = settings(database=db)
     assert x.database is db
@@ -195,7 +195,7 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
-@pytest.mark.parametrize("db", [None, ExampleDatabase(":memory:")])
+@pytest.mark.parametrize("db", [None, InMemoryExampleDatabase()])
 @pytest.mark.parametrize("bad_db", [":memory:", ".hypothesis/examples"])
 def test_database_type_must_be_ExampleDatabase(db, bad_db):
     with local_settings(settings(database=db)):
@@ -444,7 +444,7 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
 
 def test_derandomise_with_explicit_database_is_invalid():
     with pytest.raises(InvalidArgument):
-        settings(derandomize=True, database=ExampleDatabase(":memory:"))
+        settings(derandomize=True, database=InMemoryExampleDatabase())
 
 
 @pytest.mark.parametrize(

@@ -39,12 +39,13 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
+    _db_for_path,
     _pack_uleb128,
     _unpack_uleb128,
     choices_from_bytes,
     choices_to_bytes,
 )
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import HypothesisDeprecationWarning, HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.stateful import (
@@ -58,7 +59,7 @@ from hypothesis.stateful import (
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import skipif_emscripten
+from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
 from tests.conjecture.common import ir, nodes
 
 
@@ -86,13 +87,15 @@ def test_can_delete_keys():
 
 
 def test_default_database_is_in_memory():
-    assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
 
 
 def test_default_on_disk_database_is_dir(tmp_path):
-    assert isinstance(
-        ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
-    )
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(
+            ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
+        )
 
 
 def test_does_not_error_when_fetching_when_not_exist(tmp_path):
@@ -103,7 +106,7 @@ def test_does_not_error_when_fetching_when_not_exist(tmp_path):
 @pytest.fixture(scope="function", params=["memory", "directory"])
 def exampledatabase(request, tmp_path):
     if request.param == "memory":
-        return ExampleDatabase()
+        return InMemoryExampleDatabase()
     assert request.param == "directory"
     return DirectoryBasedExampleDatabase(tmp_path / "examples")
 
@@ -468,7 +471,7 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
         if WINDOWS
         else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
     ):
-        database = ExampleDatabase(not_set)
+        database = _db_for_path(not_set)
     database.save(b"fizz", b"buzz")
 
 
@@ -784,3 +787,18 @@ def test_start_end_listening():
 
     db.clear_listeners()
     assert db.ends == 1
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_path(tmp_path):
+    ExampleDatabase(tmp_path)
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_memory():
+    ExampleDatabase(":memory:")
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_no_args():
+    ExampleDatabase()

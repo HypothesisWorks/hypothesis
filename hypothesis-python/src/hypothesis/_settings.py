@@ -73,9 +73,9 @@ class settingsProperty:
                 # you can change the storage directory and it will be reflected
                 # in the default database.
                 if self.name == "database" and result is not_set:
-                    from hypothesis.database import ExampleDatabase
+                    from hypothesis.database import _db_for_path
 
-                    result = ExampleDatabase(not_set)
+                    result = _db_for_path(not_set)
                 assert result is not not_set
                 return result
             except KeyError:

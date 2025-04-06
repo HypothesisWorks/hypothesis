@@ -38,6 +38,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
+from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.conjecture.choice import ChoiceT
@@ -112,6 +113,15 @@ def _db_for_path(
 class _EDMeta(abc.ABCMeta):
     def __call__(self, *args: Any, **kwargs: Any) -> "ExampleDatabase":
         if self is ExampleDatabase:
+            note_deprecation(
+                "Creating a database using the abstract ExampleDatabase() class "
+                "is deprecated. Prefer using a concrete subclass, like "
+                "InMemoryExampleDatabase() or DirectoryBasedExampleDatabase(path). "
+                'In particular, the special string ExampleDatabase(":memory:") '
+                "should be replaced by InMemoryExampleDatabase().",
+                since="RELEASEDAY",
+                has_codemod=False,
+            )
             return _db_for_path(*args, **kwargs)
         return super().__call__(*args, **kwargs)
 
