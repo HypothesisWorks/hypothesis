@@ -199,11 +199,9 @@ For example if you ran the following with ``--hypothesis-show-statistics``:
 
   from hypothesis import given, strategies as st
 
-
   @given(st.integers())
   def test_integers(i):
       pass
-
 
 You would see:
 
@@ -221,7 +219,6 @@ In some cases (such as filtered and recursive strategies) you will see events me
 .. code-block:: python
 
   from hypothesis import given, strategies as st
-
 
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
