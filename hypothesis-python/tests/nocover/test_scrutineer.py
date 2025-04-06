@@ -8,12 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import json
 import sys
+import sysconfig
 
 import pytest
 
+from hypothesis import given, note, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import make_report
+from hypothesis.vendor import pretty
 
 # We skip tracing for explanations under PyPy, where it has a large performance
 # impact, or if there is already a trace function (e.g. coverage or a debugger)
@@ -105,3 +109,39 @@ def test(x):
 def test_skips_uninformative_locations(testdir):
     pytest_stdout, _ = get_reports(NO_SHOW_CONTEXTLIB, testdir=testdir)
     assert "Explanation:" not in pytest_stdout
+
+
+@given(st.randoms())
+@settings(max_examples=5)
+def test_report_sort(random):
+    # show local files first, then site-packages, then stdlib
+
+    lines = [
+        # local
+        (__file__, 10),
+        # site-packages
+        (pytest.__file__, 123),
+        (pytest.__file__, 124),
+        # stdlib
+        (json.__file__, 43),
+        (json.__file__, 42),
+    ]
+    random.shuffle(lines)
+    explanations = {"origin": lines}
+    report = make_report(explanations)
+    report_lines = report["origin"][2:]
+    report_lines = [line.strip() for line in report_lines]
+
+    expected_lines = [
+        f"{__file__}:10",
+        f"{pytest.__file__}:123",
+        f"{pytest.__file__}:124",
+        f"{json.__file__}:42",
+        f"{json.__file__}:43",
+    ]
+
+    note(f"sysconfig.get_paths(): {pretty.pretty(sysconfig.get_paths())}")
+    note(f"actual lines: {pretty.pretty(report_lines)}")
+    note(f"expected lines: {pretty.pretty(expected_lines)}")
+
+    assert report_lines == expected_lines
