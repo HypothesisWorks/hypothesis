@@ -2156,10 +2156,8 @@ Previously, this did nothing at all.
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         settings = settings(max_examples=10000)
 
-
     # the old way still works, but it's more verbose.
     MyStateMachine.TestCase.settings = settings(max_examples=10000)
-
 
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         pass
@@ -2182,7 +2180,6 @@ This has never had any effect, and it should be used as a decorator instead:
         """This doesn't do anything, and is now an error!"""
 
         settings = settings(derandomize=True)
-
 
     @settings(derandomize=True)
     class GoodMachine(RuleBasedStateMachine):
@@ -4381,7 +4378,6 @@ with constraints on some arguments (:issue:`3026`):
             assert value > 0
             self.value = value
             self.next_node = next_node
-
 
     st.register_type_strategy(
         RecursiveClass, st.builds(RecursiveClass, value=st.integers(min_value=1))
@@ -11232,7 +11228,6 @@ For example, consider the following test:
     import hypothesis.strategies as st
     from hypothesis import given
 
-
     @given(st.text(), st.text())
     def test_non_equal(x, y):
         assert x != y
@@ -11271,7 +11266,6 @@ For example, consider the following test:
 
     import hypothesis.strategies as st
     from hypothesis import given
-
 
     @given(st.integers(), st.integers())
     def test_does_not_exceed_100(m, n):

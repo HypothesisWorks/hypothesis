@@ -14,12 +14,10 @@ When a test fails, Hypothesis saves the failure to a database in the local ``.hy
 
     from hypothesis import strategies as st
 
-
     @given(st.integers())
     def f(n):
         assert n < 50
         time.sleep(0.1)
-
 
     f()
 
@@ -36,13 +34,11 @@ You can disable the local database with |@settings|:
 
     from hypothesis import settings, strategies as st
 
-
     @given(st.integers())
     @settings(database=None)
     def f(n):
         assert n < 50
         time.sleep(0.1)
-
 
     f()
 
@@ -61,7 +57,6 @@ For instance, suppose we are testing something using integers, but want to make 
     @given(st.integers())
     def test_something_with_integers(n):
         pass
-
 
     test_something_with_integers()
 
