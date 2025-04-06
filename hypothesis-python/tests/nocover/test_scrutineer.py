@@ -10,12 +10,14 @@
 
 import json
 import sys
+import sysconfig
 
 import pytest
 
 from hypothesis import given, note, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import make_report
+from hypothesis.vendor import pretty
 
 # We skip tracing for explanations under PyPy, where it has a large performance
 # impact, or if there is already a trace function (e.g. coverage or a debugger)
@@ -138,7 +140,8 @@ def test_report_sort(random):
         f"{json.__file__}:43",
     ]
 
-    note(f"actual lines: {report_lines}")
-    note(f"expected lines: {expected_lines}")
+    note(f"sysconfig.get_paths(): {pretty.pretty(sysconfig.get_paths())}")
+    note(f"actual lines: {pretty.pretty(report_lines)}")
+    note(f"expected lines: {pretty.pretty(expected_lines)}")
 
     assert report_lines == expected_lines
