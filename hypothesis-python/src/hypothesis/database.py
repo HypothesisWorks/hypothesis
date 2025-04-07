@@ -119,7 +119,7 @@ class _EDMeta(abc.ABCMeta):
                 "InMemoryExampleDatabase() or DirectoryBasedExampleDatabase(path). "
                 'In particular, the special string ExampleDatabase(":memory:") '
                 "should be replaced by InMemoryExampleDatabase().",
-                since="RELEASEDAY",
+                since="2025-04-07",
                 has_codemod=False,
             )
             return _db_for_path(*args, **kwargs)

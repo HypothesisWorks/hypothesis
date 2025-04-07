@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.10:
+
+---------------------
+6.130.10 - 2025-04-07
+---------------------
+
+This patch deprecates creating a database using the abstract ``ExampleDatabase()`` class. Use one of the following instead:
+
+* Replace ``ExampleDatabase(":memory:")`` with |InMemoryExampleDatabase|.
+* Replace ``ExampleDatabase("/path/to/dir")`` with |DirectoryBasedExampleDatabase|.
+* Replace ``ExampleDatabase()`` with either |InMemoryExampleDatabase| or |DirectoryBasedExampleDatabase|, depending on your needs. Previously, Hypothesis interpreted ``ExampleDatabase()`` as a |DirectoryBasedExampleDatabase| in the default ``.hypothesis`` directory, with a fallback to |InMemoryExampleDatabase| if that location was not available.
+
 .. _v6.130.9:
 
 --------------------
