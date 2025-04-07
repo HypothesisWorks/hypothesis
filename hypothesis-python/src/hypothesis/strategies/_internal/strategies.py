@@ -564,14 +564,31 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         )
 
     def calc_label(self) -> int:
-        return combine_labels(
-            self.class_label,
-            *(
-                (calc_label_from_hash(self.elements),)
-                if is_hashable(self.elements)
-                else ()
-            ),
-        )
+        labels = [self.class_label]
+        for element in self.elements:
+            if not is_hashable(element):
+                continue
+
+            # strategy.label is effectively an under-approximation of structural
+            # equality (i.e., some strategies may have the same label when they are not
+            # structurally identical). More importantly for calculating the
+            # SampledFromStrategy label, we might have hash(s1) != hash(s2) even
+            # when s1 and s2 are structurally identical. For instance:
+            #
+            #   s1 = st.sampled_from([st.none()])
+            #   s2 = st.sampled_from([st.none()])
+            #   assert hash(s1) != hash(s2)
+            #
+            # (see also test cases in test_labels.py).
+            #
+            # We therefore use the labels of any component strategies when calculating
+            # our label, and only use the hash if it is not a strategy.
+            labels.append(
+                element.label
+                if isinstance(element, SearchStrategy)
+                else calc_label_from_hash(element)
+            )
+        return combine_labels(*labels)
 
     def calc_has_reusable_values(self, recur: RecurT) -> bool:
         # Because our custom .map/.filter implementations skip the normal

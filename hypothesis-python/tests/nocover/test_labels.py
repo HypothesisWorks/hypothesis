@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import strategies as st
 
 
@@ -47,3 +49,18 @@ def test_lists_label_by_element():
 def test_label_of_deferred_strategy_is_well_defined():
     recursive = st.deferred(lambda: st.lists(recursive))
     recursive.label
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        lambda: [st.none()],
+        lambda: [st.integers()],
+        lambda: [st.lists(st.floats())],
+        lambda: [st.none(), st.integers(), st.lists(st.floats())],
+    ],
+)
+def test_sampled_from_label_with_strategies_does_not_change(strategy):
+    s1 = st.sampled_from(strategy())
+    s2 = st.sampled_from(strategy())
+    assert s1.label == s2.label
