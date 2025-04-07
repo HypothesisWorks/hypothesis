@@ -73,9 +73,9 @@ class settingsProperty:
                 # you can change the storage directory and it will be reflected
                 # in the default database.
                 if self.name == "database" and result is not_set:
-                    from hypothesis.database import ExampleDatabase
+                    from hypothesis.database import _db_for_path
 
-                    result = ExampleDatabase(not_set)
+                    result = _db_for_path(not_set)
                 assert result is not not_set
                 return result
             except KeyError:
@@ -440,8 +440,7 @@ def _validate_database(db: "ExampleDatabase") -> "ExampleDatabase":
         return db
     raise InvalidArgument(
         "Arguments to the database setting must be None or an instance of "
-        f"ExampleDatabase.  Try passing database=ExampleDatabase({db!r}), or "
-        "construct and use one of the specific subclasses in "
+        "ExampleDatabase. Try using one of the specific subclasses in "
         "hypothesis.database"
     )
 

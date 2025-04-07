@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import (
-    ExampleDatabase,
+    DirectoryBasedExampleDatabase,
     GitHubArtifactDatabase,
     InMemoryExampleDatabase,
     ReadOnlyDatabase,
@@ -165,7 +165,7 @@ def test_does_not_use_database_when_seed_is_forced(monkeypatch):
 def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     path = tmp_path_factory.mktemp("hypothesis") / "examples"
     assert not path.exists()
-    database = ExampleDatabase(path)
+    database = DirectoryBasedExampleDatabase(path)
     assert not list(database.fetch(key))
     assert not path.exists()
     database.save(key, value)
