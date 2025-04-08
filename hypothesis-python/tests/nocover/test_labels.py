@@ -64,3 +64,8 @@ def test_sampled_from_label_with_strategies_does_not_change(strategy):
     s1 = st.sampled_from(strategy())
     s2 = st.sampled_from(strategy())
     assert s1.label == s2.label
+
+
+def test_label_of_enormous_sampled_range():
+    # this should not take forever.
+    st.sampled_from(range(2**50)).label
