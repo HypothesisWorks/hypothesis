@@ -252,6 +252,8 @@ jobs:
           version: ${{ env.EMSCRIPTEN_VERSION }}
       - name: Build
         run: |
+          # TODO remove https://github.com/pyodide/pyodide/issues/5585
+          pip install -U wheel==0.45.1
           pip install pyodide-build==$PYODIDE_VERSION
           cd hypothesis-python/
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
