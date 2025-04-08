@@ -131,7 +131,8 @@ def test_constants_from_running_file(tmp_path):
             3,
             4
         }, actual
-        """
+        """,
         ),
+        encoding="utf-8",
     )
     subprocess.check_call([sys.executable, str(p)])
