@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.11:
+
+---------------------
+6.130.11 - 2025-04-08
+---------------------
+
+Fix the caching behavior of |st.sampled_from|, which in rare cases led to failing an internal assertion (:issue:`4339`).
+
 .. _v6.130.10:
 
 ---------------------
