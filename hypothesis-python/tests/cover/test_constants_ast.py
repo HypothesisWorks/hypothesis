@@ -12,11 +12,12 @@ import ast
 import subprocess
 import sys
 import textwrap
+from types import ModuleType
 
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.internal.constants_ast import constants_from_ast
+from hypothesis.internal.constants_ast import _module_ast, constants_from_ast
 
 
 @pytest.mark.parametrize(
@@ -36,6 +37,9 @@ from hypothesis.internal.constants_ast import constants_from_ast
         ("a = (1, (2, 3), frozenset([4, 5]))", {1, 2, 3, 4, 5}),
         ("a = {'b': 1}", {"b", 1}),
         ("a = [1]", {1}),
+        ("a = +42", {42}),
+        ("a = 1 + 2", {1, 2}),
+        ("a = ~ 42", {42}),
         # the following cases are ignored:
         # * booleans
         # * f-strings
@@ -45,6 +49,7 @@ from hypothesis.internal.constants_ast import constants_from_ast
         #   even if they were)
         ("a = True", set()),
         ("a = False", set()),
+        ("a = not False", set()),
         ('a = f"test {x}"', set()),
         (f'a = "{"b" * 100}"', set()),
         ('a = ""', set()),
@@ -136,3 +141,9 @@ def test_constants_from_running_file(tmp_path):
         encoding="utf-8",
     )
     subprocess.check_call([sys.executable, str(p)])
+
+
+def test_constants_from_bad_module():
+    # covering test for the except branch
+    module = ModuleType("nonexistent")
+    assert _module_ast(module) is None

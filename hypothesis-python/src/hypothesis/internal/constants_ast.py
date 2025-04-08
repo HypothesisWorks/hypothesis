@@ -100,7 +100,7 @@ def local_modules() -> tuple[ModuleType, ...]:
     for module in sys.modules.values():
         if not hasattr(module, "__file__"):
             continue
-        if module.__file__ is None:
+        if module.__file__ is None:  # pragma: no cover
             continue
 
         if ModuleLocation.from_path(module.__file__) is not ModuleLocation.LOCAL:
@@ -117,11 +117,14 @@ def local_constants():
         # by local_modules. However, if it is installed as an editable package
         # with pip install -e, then we will pick up on it. Just hardcode an
         # ignore here.
-        if is_hypothesis_file(module.__file__):
+
+        # this is actually covered by test_constants_from_running_file, but
+        # not in the same process.
+        if is_hypothesis_file(module.__file__):  # pragma: no cover
             continue
 
         tree = _module_ast(module)
-        if tree is None:
+        if tree is None:  # pragma: no cover
             continue
         constants |= constants_from_ast(tree)
 
