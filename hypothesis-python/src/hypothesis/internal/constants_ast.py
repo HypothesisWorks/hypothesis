@@ -66,8 +66,6 @@ class ConstantVisitor(NodeVisitor):
             return set()
         if isinstance(value, (int, float, bytes, str)):
             return {value}
-        if isinstance(value, (tuple, frozenset)):
-            return set.union(*[cls._unfold_constant(c) for c in value])
         # I don't kow what case could go here, but am also not confident there
         # isn't one.
         return set()  # pragma: no cover
