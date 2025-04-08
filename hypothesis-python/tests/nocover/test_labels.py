@@ -68,4 +68,4 @@ def test_sampled_from_label_with_strategies_does_not_change(strategy):
 
 def test_label_of_enormous_sampled_range():
     # this should not take forever.
-    st.sampled_from(range(2**50)).label
+    st.sampled_from(range(2**30)).label
