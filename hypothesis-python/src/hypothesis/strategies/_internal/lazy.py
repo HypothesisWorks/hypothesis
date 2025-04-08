@@ -104,6 +104,9 @@ class LazyStrategy(SearchStrategy[Ex]):
                     return False
         return True
 
+    def calc_label(self) -> int:
+        return self.wrapped_strategy.label
+
     @property
     def wrapped_strategy(self) -> SearchStrategy[Ex]:
         if self.__wrapped_strategy is None:
@@ -176,7 +179,3 @@ class LazyStrategy(SearchStrategy[Ex]):
 
     def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)
-
-    @property
-    def label(self) -> int:
-        return self.wrapped_strategy.label
