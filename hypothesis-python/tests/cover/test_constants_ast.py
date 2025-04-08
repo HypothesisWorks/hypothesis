@@ -25,29 +25,32 @@ from hypothesis.internal.constants_ast import constants_from_ast
         (
             """
             a1 = 42
-            a3 = True
-            a6 = 3.14
-            a2 = 'test1'
-            a7 = b'test2'
-            a4 = (1, 2)
-            a5 = frozenset([3])
+            a2 = 3.14
+            a3 = 'test1'
+            a4 = b'test2'
+            a5 = (1, 2)
+            a6 = frozenset([3])
             """,
-            {42, "test1", True, 2, 3, 3.14, b"test2"},
+            {42, 3.14, "test1", b"test2", 1, 2, 3},
         ),
         ("a = (1, (2, 3), frozenset([4, 5]))", {1, 2, 3, 4, 5}),
         ("a = {'b': 1}", {"b", 1}),
         ("a = [1]", {1}),
         # the following cases are ignored:
+        # * booleans
         # * f-strings
         # * long strings
         # * pure-whitespace strings
         # * math.inf and math.nan (not constants, but we don't want to collect them
         #   even if they were)
+        ("a = True", set()),
+        ("a = False", set()),
         ('a = f"test {x}"', set()),
         (f'a = "{"b" * 100}"', set()),
         ('a = ""', set()),
         ('a = " "', set()),
         ('a = "\\n    \\n  \\n"', set()),
+        ("a = 1e999", set()),
         ("a = math.inf", set()),
         ("a = math.nan", set()),
     ],
@@ -66,7 +69,6 @@ def test_parses_negatives(n):
 constants = st.one_of(
     st.integers(),
     st.floats(allow_nan=False, allow_infinity=False),
-    st.booleans(),
     st.binary(),
     # constants_from_ast ignores the following strings:
     # * empty strings

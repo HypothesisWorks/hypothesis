@@ -17,6 +17,7 @@ import sysconfig
 import types
 from collections import defaultdict
 from collections.abc import Iterable
+from enum import IntEnum
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
@@ -231,23 +232,27 @@ EXPLANATION_STUB = (
 )
 
 
-# 0 = local
-# 1 = site-packages
-# 2 = stdlib
-def _path_type(path):
-    path = Path(path).resolve()
-    # site-packages may be a subdir of stdlib or platlib, so it's important to
-    # check is_relative_to for this before the stdlib.
-    if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
-        return 1
-    if any(path.is_relative_to(p) for p in STDLIB_DIRS):
-        return 2
-    return 0
+class ModuleLocation(IntEnum):
+    LOCAL = 0
+    SITE_PACKAGES = 1
+    STDLIB = 2
+
+    @lru_cache(1024)
+    @staticmethod
+    def from_path(path: str) -> "ModuleLocation":
+        path = Path(path).resolve()
+        # site-packages may be a subdir of stdlib or platlib, so it's important to
+        # check is_relative_to for this before the stdlib.
+        if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+            return ModuleLocation.SITE_PACKAGES
+        if any(path.is_relative_to(p) for p in STDLIB_DIRS):
+            return ModuleLocation.STDLIB
+        return ModuleLocation.LOCAL
 
 
 # show local files first, then site-packages, then stdlib
-def _sort_key(path, lineno):
-    return (_path_type(path), path, lineno)
+def _sort_key(path: str, lineno: int) -> tuple[int, str, int]:
+    return (ModuleLocation.from_path(path), path, lineno)
 
 
 def make_report(explanations, *, cap_lines_at=5):
