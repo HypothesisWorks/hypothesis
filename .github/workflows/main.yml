@@ -223,17 +223,17 @@ jobs:
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
-  # See https://pyodide.org/en/stable/development/building-and-testing-packages.html#testing-packages-against-pyodide
+  # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
     runs-on: ubuntu-latest
     env:
-      NODE_VERSION: 18
-      # Note that the versions below must be updated in sync; we've automated
-      # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.27.3
+      NODE_VERSION: 22
+      # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
+      # The versions of pyodide-build and the Pyodide runtime may differ.
+      PYODIDE_VERSION: 0.27.5
+      PYODIDE_BUILD_VERSION: 0.30.0
       PYTHON_VERSION: 3.12.7
-      EMSCRIPTEN_VERSION: 3.1.58
     steps:
       - uses: actions/checkout@v3
         with:
@@ -246,17 +246,10 @@ jobs:
         uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Set up Emscripten
-        uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
-        with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-      - name: Build
+      - name: Install pyodide-build and Pyodide cross-build environment
         run: |
-          # TODO remove https://github.com/pyodide/pyodide/issues/5585
-          pip install -U wheel==0.45.1
-          pip install pyodide-build==$PYODIDE_VERSION
-          cd hypothesis-python/
-          CFLAGS=-g2 LDFLAGS=-g2 pyodide build
+          pip install pyodide-build==$PYODIDE_BUILD_VERSION
+          pyodide xbuildenv install $PYODIDE_VERSION
       - name: Set up Pyodide venv and install dependencies
         run: |
           pip install --upgrade setuptools pip wheel==0.45.1 build

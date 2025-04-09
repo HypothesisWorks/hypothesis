@@ -403,31 +403,65 @@ def update_django_versions():
 
 
 def update_pyodide_versions():
+
+    def version_tuple(v: str) -> tuple[int, int, int]:
+        return tuple(int(x) for x in v.split("."))  # type: ignore
+
     vers_re = r"(\d+\.\d+\.\d+)"
-    all_versions = re.findall(
+    all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
         requests.get("https://pypi.org/simple/pyodide-build/").text,
     )
-    for pyodide_version in sorted(
+    pyodide_build_version = max(
         # Don't just pick the most recent version; find the highest stable version.
-        set(all_versions),
-        key=lambda version: tuple(int(x) for x in version.split(".")),
-        reverse=True,
-    ):
-        makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
-        match = re.search(
-            rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
-            requests.get(makefile_url).text,
+        set(all_pyodide_build_versions),
+        key=version_tuple,
+    )
+
+    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
+    cross_build_environments_data = requests.get(cross_build_environments_url).json()
+
+    # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
+    # with the pyodide-build version we found
+    stable_releases = [
+        release
+        for release in cross_build_environments_data["releases"].values()
+        if re.fullmatch(vers_re, release["version"])
+    ]
+
+    compatible_releases = []
+    for release in stable_releases:  # sufficiently large values
+        min_build_version = release.get("min_pyodide_build_version", "0.0.0")
+        max_build_version = release.get("max_pyodide_build_version", "999.999.999")
+
+        # Perform version comparisons to avoid getting an incompatible pyodide-build version
+        # with the Pyodide runtime
+        if (
+            version_tuple(min_build_version)
+            <= version_tuple(pyodide_build_version)
+            <= version_tuple(max_build_version)
+        ):
+            compatible_releases.append(release)
+
+    if not compatible_releases:
+        raise RuntimeError(
+            f"No compatible Pyodide release found for pyodide-build {pyodide_build_version}"
         )
-        if match is not None:
-            python_version, emscripten_version = match.groups()
-            break
+
+    pyodide_release = max(
+        compatible_releases,
+        key=lambda release: version_tuple(release["version"]),
+    )
+
+    pyodide_version = pyodide_release["version"]
+    python_version = pyodide_release["python_version"]
+
     ci_file = tools.ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
     for name, var in [
         ("PYODIDE", pyodide_version),
+        ("PYODIDE_BUILD", pyodide_build_version),
         ("PYTHON", python_version),
-        ("EMSCRIPTEN", emscripten_version),
     ]:
         config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
     ci_file.write_text(config, encoding="utf-8")
