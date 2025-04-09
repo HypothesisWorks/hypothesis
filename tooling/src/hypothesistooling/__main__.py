@@ -422,9 +422,7 @@ def update_pyodide_versions():
     stable_releases = [
         release
         for release in cross_build_environments_data["releases"].values()
-        if "a" not in release["version"]
-        and "b" not in release["version"]
-        and "rc" not in release["version"]
+        if re.fullmatch(vers_re, release["version"])
     ]
 
     compatible_releases = []
