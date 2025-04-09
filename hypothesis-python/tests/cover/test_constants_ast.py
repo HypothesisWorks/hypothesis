@@ -42,22 +42,26 @@ from hypothesis.internal.constants_ast import _module_ast, constants_from_ast
         ("a = ~ 42", {42}),
         # the following cases are ignored:
         # * booleans
+        # * math.inf and math.nan (not constants, but we don't want to collect them
+        #   even if they were)
         # * f-strings
         # * long strings
         # * pure-whitespace strings
-        # * math.inf and math.nan (not constants, but we don't want to collect them
-        #   even if they were)
+        # * standalone string expressions (strings not assigned to a variable).
+        #   This covers docstrings of all kinds.
         ("a = True", set()),
         ("a = False", set()),
         ("a = not False", set()),
+        ("a = 1e999", set()),
+        ("a = math.inf", set()),
+        ("a = math.nan", set()),
         ('a = f"test {x}"', set()),
         (f'a = "{"b" * 100}"', set()),
         ('a = ""', set()),
         ('a = " "', set()),
         ('a = "\\n    \\n  \\n"', set()),
-        ("a = 1e999", set()),
-        ("a = math.inf", set()),
-        ("a = math.nan", set()),
+        ("'test'", set()),
+        ("'test with \\n newlines'", set()),
     ],
 )
 def test_constants_from_ast(source, expected):

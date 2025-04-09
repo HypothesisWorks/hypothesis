@@ -232,26 +232,22 @@ EXPLANATION_STUB = (
 )
 
 
-@lru_cache(1024)
-def _module_location_from_path(path: str) -> "ModuleLocation":
-    path = Path(path).resolve()
-    # site-packages may be a subdir of stdlib or platlib, so it's important to
-    # check is_relative_to for this before the stdlib.
-    if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
-        return ModuleLocation.SITE_PACKAGES
-    if any(path.is_relative_to(p) for p in STDLIB_DIRS):
-        return ModuleLocation.STDLIB
-    return ModuleLocation.LOCAL
-
-
 class ModuleLocation(IntEnum):
     LOCAL = 0
     SITE_PACKAGES = 1
     STDLIB = 2
 
-    @staticmethod
-    def from_path(path: str) -> "ModuleLocation":
-        return _module_location_from_path(path)
+    @classmethod
+    @lru_cache(1024)
+    def from_path(cls, path: str) -> "ModuleLocation":
+        path = Path(path).resolve()
+        # site-packages may be a subdir of stdlib or platlib, so it's important to
+        # check is_relative_to for this before the stdlib.
+        if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+            return cls.SITE_PACKAGES
+        if any(path.is_relative_to(p) for p in STDLIB_DIRS):
+            return cls.STDLIB
+        return cls.LOCAL
 
 
 # show local files first, then site-packages, then stdlib

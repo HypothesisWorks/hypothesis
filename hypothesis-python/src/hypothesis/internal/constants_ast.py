@@ -12,7 +12,7 @@ import ast
 import inspect
 import math
 import sys
-from ast import AST, Constant, NodeVisitor, UnaryOp, USub
+from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
 from functools import lru_cache
 from types import ModuleType
 from typing import TYPE_CHECKING, Optional, Union
@@ -31,16 +31,25 @@ class ConstantVisitor(NodeVisitor):
         super().__init__()
         self.constants: set[ConstantT] = set()
 
-    def _add_constant(self, constant):
+    def _add_constant(self, constant: object) -> None:
         self.constants |= self._unfold_constant(constant)
 
-    # the code `a = -1` is actually a combination of a USub unary op, and the
-    # constant 1.
-    def visit_UnaryOp(self, node):
-        assert isinstance(node, UnaryOp)
-        if isinstance(node.op, USub) and isinstance(node.operand, Constant):
-            self._add_constant(-1 * node.operand.value)
-            # don't recurse on this node, or else we would add the positive variant
+    def visit_UnaryOp(self, node: UnaryOp) -> None:
+        # `a = -1` is actually a combination of a USub and the constant 1.
+        if (
+            isinstance(node.op, USub)
+            and isinstance(node.operand, Constant)
+            and isinstance(node.operand.value, (int, float))
+            and not isinstance(node.operand.value, bool)
+        ):
+            self._add_constant(-node.operand.value)
+            # don't recurse on this node to avoid adding the positive variant
+            return
+
+        self.generic_visit(node)
+
+    def visit_Expr(self, node: Expr) -> None:
+        if isinstance(node.value, Constant) and isinstance(node.value.value, str):
             return
 
         self.generic_visit(node)
@@ -55,9 +64,7 @@ class ConstantVisitor(NodeVisitor):
         if isinstance(value, str) and (
             len(value) > 20 or value.isspace() or value == ""
         ):
-            # discard long strings, which are likely to be docstrings.
-            # TODO we should always ignore strings directly after a FunctionDef
-            # node, regardless of length
+            # discard long strings, which are unlikely to be useful.
             return set()
         if isinstance(value, bool):
             return set()
