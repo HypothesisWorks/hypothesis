@@ -540,10 +540,11 @@ def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
         constraints = cast(FloatConstraints, constraints)
         if math.isnan(choice):
             return constraints["allow_nan"]
-        return (
-            sign_aware_lte(constraints["min_value"], choice)
-            and sign_aware_lte(choice, constraints["max_value"])
-        ) and not (0 < abs(choice) < constraints["smallest_nonzero_magnitude"])
+        if 0 < abs(choice) < constraints["smallest_nonzero_magnitude"]:
+            return False
+        return sign_aware_lte(constraints["min_value"], choice) and sign_aware_lte(
+            choice, constraints["max_value"]
+        )
     elif isinstance(choice, str):
         constraints = cast(StringConstraints, constraints)
         if len(choice) < constraints["min_size"]:

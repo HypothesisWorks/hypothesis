@@ -217,14 +217,14 @@ def get_explaining_locations(traces):
 
 # see e.g. https://docs.python.org/3/library/sysconfig.html#posix-user
 # for examples of these path schemes
-STDLIB_DIRS = [
+STDLIB_DIRS = {
     Path(sysconfig.get_path("platstdlib")).resolve(),
     Path(sysconfig.get_path("stdlib")).resolve(),
-]
-SITE_PACKAGES_DIRS = [
+}
+SITE_PACKAGES_DIRS = {
     Path(sysconfig.get_path("purelib")).resolve(),
     Path(sysconfig.get_path("platlib")).resolve(),
-]
+}
 
 EXPLANATION_STUB = (
     "Explanation:",

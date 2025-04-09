@@ -23,7 +23,7 @@ from hypothesis.internal.scrutineer import ModuleLocation
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-ConstantT: "TypeAlias" = Union[int, float, bool, bytes, str]
+ConstantT: "TypeAlias" = Union[int, float, bytes, str]
 
 
 class ConstantVisitor(NodeVisitor):
@@ -103,12 +103,20 @@ def _module_ast(module: ModuleType) -> Optional[AST]:
 def local_modules() -> tuple[ModuleType, ...]:
     modules = []
     for module in sys.modules.values():
-        if not hasattr(module, "__file__"):
-            continue
-        if module.__file__ is None:  # pragma: no cover
-            continue
-
-        if ModuleLocation.from_path(module.__file__) is not ModuleLocation.LOCAL:
+        if (
+            not hasattr(module, "__file__")
+            or module.__file__ is None
+            # Skip expensive path lookup for stdlib modules.
+            # This will cause false negatives if a user names their module the
+            # same as a stdlib module.
+            #
+            # sys.stdlib_module_names is new in 3.10
+            or (
+                sys.version_info >= (3, 10)
+                and module.__name__ in sys.stdlib_module_names
+            )
+            or ModuleLocation.from_path(module.__file__) is not ModuleLocation.LOCAL
+        ):
             continue
 
         modules.append(module)

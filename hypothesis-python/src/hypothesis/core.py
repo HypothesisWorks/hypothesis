@@ -1010,16 +1010,18 @@ class StateForActualGivenExecution:
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
-        with local_settings(self.settings):
-            with deterministic_PRNG():
-                with BuildContext(data, is_final=is_final) as context:
-                    # providers may throw in per_case_context_fn, and we'd like
-                    # `result` to still be set in these cases.
-                    result = None
-                    with data.provider.per_test_case_context_manager():
-                        # Run the test function once, via the executor hook.
-                        # In most cases this will delegate straight to `run(data)`.
-                        result = self.test_runner(data, run)
+        with (
+            local_settings(self.settings),
+            deterministic_PRNG(),
+            BuildContext(data, is_final=is_final) as context,
+        ):
+            # providers may throw in per_case_context_fn, and we'd like
+            # `result` to still be set in these cases.
+            result = None
+            with data.provider.per_test_case_context_manager():
+                # Run the test function once, via the executor hook.
+                # In most cases this will delegate straight to `run(data)`.
+                result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.
