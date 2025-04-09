@@ -251,6 +251,10 @@ jobs:
         uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
         with:
           version: ${{ env.EMSCRIPTEN_VERSION }}
+      - name: Install pyodide-build and Pyodide cross-build environment
+        run: |
+          pip install pyodide-build==$PYODIDE_BUILD_VERSION
+          pyodide xbuildenv install $PYODIDE_VERSION
       - name: Build
         run: |
           cd hypothesis-python/
