@@ -229,9 +229,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: 18
-      # Note that the versions below must be updated in sync; we've automated
-      # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.27.3
+      # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
+      # The versions of pyodide-build and the Pyodide runtime may differ.
+      PYODIDE_VERSION: 0.27.5
+      PYODIDE_BUILD_VERSION: 0.30.0
       PYTHON_VERSION: 3.12.7
       EMSCRIPTEN_VERSION: 3.1.58
     steps:
@@ -252,9 +253,6 @@ jobs:
           version: ${{ env.EMSCRIPTEN_VERSION }}
       - name: Build
         run: |
-          # TODO remove https://github.com/pyodide/pyodide/issues/5585
-          pip install -U wheel==0.45.1
-          pip install pyodide-build==$PYODIDE_VERSION
           cd hypothesis-python/
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
