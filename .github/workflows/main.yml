@@ -223,7 +223,7 @@ jobs:
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
-  # See https://pyodide.org/en/stable/development/building-and-testing-packages.html#testing-packages-against-pyodide
+  # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
     runs-on: ubuntu-latest
