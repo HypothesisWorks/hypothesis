@@ -19,6 +19,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.internal.constants_ast import _module_ast, constants_from_ast
 
+from tests.common.utils import skipif_emscripten
+
 
 @pytest.mark.parametrize(
     "source, expected",
@@ -99,6 +101,7 @@ def test_frozenset_constants(value):
     assert set(constants_from_ast(tree)) == set(value)
 
 
+@skipif_emscripten
 def test_constants_from_running_file(tmp_path):
     p = tmp_path / "test_constants.py"
     p.write_text(
