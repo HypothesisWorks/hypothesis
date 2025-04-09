@@ -403,6 +403,10 @@ def update_django_versions():
 
 
 def update_pyodide_versions():
+
+    def version_tuple(v: str) -> tuple[int, int, int]:
+        return tuple(int(x) for x in v.split("."))  # type: ignore
+
     vers_re = r"(\d+\.\d+\.\d+)"
     all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
@@ -426,41 +430,17 @@ def update_pyodide_versions():
     ]
 
     compatible_releases = []
-    build_parts = [int(x) for x in pyodide_build_version.split(".")]
-
     for release in stable_releases:  # sufficiently large values
         min_build_version = release.get("min_pyodide_build_version", "0.0.0")
         max_build_version = release.get("max_pyodide_build_version", "999.999.999")
 
-        min_parts = [int(x) for x in min_build_version.split(".")]
-        max_parts = [int(x) for x in max_build_version.split(".")]
-
         # Perform version comparisons to avoid getting an incompatible pyodide-build version
-        # with the pyodide runtime
-        min_check = False
+        # with the Pyodide runtime
         if (
-            build_parts[0] > min_parts[0]
-            or (build_parts[0] == min_parts[0] and build_parts[1] > min_parts[1])
-            or (
-                build_parts[0] == min_parts[0]
-                and build_parts[1] == min_parts[1]
-                and build_parts[2] >= min_parts[2]
-            )
+            version_tuple(min_build_version)
+            <= version_tuple(pyodide_build_version)
+            <= version_tuple(max_build_version)
         ):
-            min_check = True
-        max_check = False
-        if (
-            build_parts[0] < max_parts[0]
-            or (build_parts[0] == max_parts[0] and build_parts[1] < max_parts[1])
-            or (
-                build_parts[0] == max_parts[0]
-                and build_parts[1] == max_parts[1]
-                and build_parts[2] <= max_parts[2]
-            )
-        ):
-            max_check = True
-
-        if min_check and max_check:
             compatible_releases.append(release)
 
     if not compatible_releases:
