@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.12:
+
+---------------------
+6.130.12 - 2025-04-09
+---------------------
+
+Lays some groundwork for future work on collecting interesting literals from the code being tested, for increased bug-finding power (:issue:`3127`). There is no user-visible change (yet!)
+
 .. _v6.130.11:
 
 ---------------------
