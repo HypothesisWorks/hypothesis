@@ -455,7 +455,6 @@ def update_pyodide_versions():
 
     pyodide_version = pyodide_release["version"]
     python_version = pyodide_release["python_version"]
-    emscripten_version = pyodide_release["emscripten_version"]
 
     ci_file = tools.ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
@@ -463,7 +462,6 @@ def update_pyodide_versions():
         ("PYODIDE", pyodide_version),
         ("PYODIDE_BUILD", pyodide_build_version),
         ("PYTHON", python_version),
-        ("EMSCRIPTEN", emscripten_version),
     ]:
         config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
     ci_file.write_text(config, encoding="utf-8")
