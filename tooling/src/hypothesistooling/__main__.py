@@ -408,12 +408,11 @@ def update_pyodide_versions():
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
         requests.get("https://pypi.org/simple/pyodide-build/").text,
     )
-    pyodide_build_version = sorted(
+    pyodide_build_version = max(
         # Don't just pick the most recent version; find the highest stable version.
         set(all_pyodide_build_versions),
-        key=lambda version: tuple(int(x) for x in version.split(".")),
-        reverse=True,
-    )[0]
+        key=version_tuple,
+    )
 
     cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
     cross_build_environments_data = requests.get(cross_build_environments_url).json()
@@ -471,11 +470,10 @@ def update_pyodide_versions():
             f"No compatible Pyodide release found for pyodide-build {pyodide_build_version}"
         )
 
-    pyodide_release = sorted(
+    pyodide_release = max(
         compatible_releases,
-        key=lambda release: tuple(int(x) for x in release["version"].split(".")),
-        reverse=True,
-    )[0]
+        key=lambda release: version_tuple(release["version"]),
+    )
 
     pyodide_version = pyodide_release["version"]
     python_version = pyodide_release["python_version"]
