@@ -27,7 +27,7 @@ from hypothesis import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.core import encode_failure
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
@@ -434,7 +434,7 @@ def test_settings_attribute_is_validated():
 
 
 def test_saves_failing_example_in_database():
-    db = ExampleDatabase(":memory:")
+    db = InMemoryExampleDatabase()
     ss = Settings(
         database=db, max_examples=1000, suppress_health_check=list(HealthCheck)
     )

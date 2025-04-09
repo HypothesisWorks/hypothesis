@@ -190,6 +190,7 @@ def update_pyproject_toml():
 
 
 CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
+CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
 DIST = HYPOTHESIS_PYTHON / "dist"
 
 
@@ -231,6 +232,7 @@ def upload_distribution():
     changelog_body = (
         "".join(lines[entries[0] + 2 : entries[1]]).strip()
         + "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
+        f"(https://hypothesis.readthedocs.io/en/latest/changelog.html#v{anchor})*"
         f"(https://hypothesis.readthedocs.io/en/latest/changelog.html#v{anchor})*"
     )
 

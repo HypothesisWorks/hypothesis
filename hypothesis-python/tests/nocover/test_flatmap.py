@@ -13,7 +13,7 @@ from collections import Counter
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -55,7 +55,7 @@ def test_flatmap_retrieve_from_db():
     track = []
 
     @given(floats(0, 1).flatmap(lambda x: lists(just(x))))
-    @settings(database=ExampleDatabase())
+    @settings(database=InMemoryExampleDatabase())
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)

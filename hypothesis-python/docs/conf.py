@@ -246,12 +246,14 @@ rst_prolog = """
 
 .. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
 
-.. |RedisExampleDatabase| replace:: :class:`~hypothesis.extra.redis.RedisExampleDatabase`
+.. |ExampleDatabase| replace:: :class:`~hypothesis.database.ExampleDatabase`
+.. |DirectoryBasedExampleDatabase| replace:: :class:`~hypothesis.database.DirectoryBasedExampleDatabase`
 .. |InMemoryExampleDatabase| replace:: :class:`~hypothesis.database.InMemoryExampleDatabase`
 .. |ReadOnlyDatabase| replace:: :class:`~hypothesis.database.ReadOnlyDatabase`
 .. |MultiplexedDatabase| replace:: :class:`~hypothesis.database.MultiplexedDatabase`
 .. |GitHubArtifactDatabase| replace:: :class:`~hypothesis.database.GitHubArtifactDatabase`
 .. |BackgroundWriteDatabase| replace:: :class:`~hypothesis.database.BackgroundWriteDatabase`
+.. |RedisExampleDatabase| replace:: :class:`~hypothesis.extra.redis.RedisExampleDatabase`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`

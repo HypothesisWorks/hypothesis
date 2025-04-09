@@ -144,6 +144,33 @@ HEADER = """
 # obtain one at https://mozilla.org/MPL/2.0/.
 """.strip()
 
+# this pattern is copied from shed
+# https://github.com/Zac-HD/shed/blob/6471da71c5b5cc443443ef5ed072799db275e7c0/src/shed/__init__.py#L297
+rst_pattern = re.compile(
+    r"(?P<before>"
+    r"^(?P<indent> *)\.\. "
+    r"(?P<block>jupyter-execute::|"
+    r"invisible-code-block: python|"  # magic rst comment for Sybil doctests
+    r"(code|code-block|sourcecode|ipython):: (python|py|sage|python3|py3|numpy))\n"
+    r"((?P=indent) +:.*\n)*"
+    r"\n*"
+    r")"
+    r"(?P<code>(^((?P=indent) +.*)?\n)+)",
+    flags=re.MULTILINE,
+)
+
+
+def remove_consecutive_newlines_in_rst(path):
+    # replace 2+ empty lines in `.. code-block:: python` blocks with just one empty
+    # line
+    path = Path(path)
+    content = path.read_text()
+    processed_content = rst_pattern.sub(
+        lambda m: m["before"] + re.sub(r"\n{3,}", "\n\n", m["code"]), content
+    )
+    if processed_content != content:
+        path.write_text(processed_content)
+
 
 @task()
 def format():
@@ -211,6 +238,9 @@ def format():
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
+
+    for f in doc_files_to_format:
+        remove_consecutive_newlines_in_rst(f)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -326,8 +356,8 @@ def update_python_versions():
 
 DJANGO_VERSIONS = {
     "4.2": "4.2.20",
-    "5.0": "5.0.13",
-    "5.1": "5.1.7",
+    "5.1": "5.1.8",
+    "5.2": "5.2",
 }
 
 

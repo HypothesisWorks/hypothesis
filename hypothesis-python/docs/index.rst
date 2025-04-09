@@ -49,28 +49,30 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
     from hypothesis import given, strategies as st
 
-
     @given(st.lists(st.integers() | st.floats()))
     def test_sort_correct(lst):
         # lst is a random list of numbers
         assert my_sort(lst) == sorted(lst)
 
-
     test_sort_correct()
 
-You should start with the :doc:`tutorials <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
+You should start with the :doc:`tutorial <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: clearfix row
 
 .. rst-class:: column column2 top-left
 
-:doc:`Tutorials <tutorial/index>`
-----------------------------------
+:doc:`Tutorial <tutorial/index>`
+---------------------------------
+
+An introduction to Hypothesis.
 
 New developers should start here, or with the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: column column2 top-right
 
+:doc:`How-to guides <how-to/index>`
+-----------------------------------
 :doc:`How-to guides <how-to/index>`
 -----------------------------------
 

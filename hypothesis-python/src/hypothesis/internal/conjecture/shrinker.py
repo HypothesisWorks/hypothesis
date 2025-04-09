@@ -540,7 +540,6 @@ class Shrinker:
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
                 result = self.engine.cached_test_function(attempt, extend="full")
 
-                # Turns out this was a variable-length part, so grab the infix...
                 if result.status is Status.OVERRUN:
                     continue  # pragma: no cover  # flakily covered
                 result = cast(ConjectureResult, result)
@@ -548,20 +547,23 @@ class Shrinker:
                     len(attempt) == len(result.choices)
                     and endswith(result.nodes, nodes[end:])
                 ):
-                    for ex, res in zip(shrink_target.spans, result.spans):
-                        assert ex.start == res.start
-                        assert ex.start <= start
-                        assert ex.label == res.label
-                        if start == ex.start and end == ex.end:
-                            res_end = res.end
+                    # Turns out this was a variable-length part, so grab the infix...
+                    for span1, span2 in zip(shrink_target.spans, result.spans):
+                        assert span1.start == span2.start
+                        assert span1.start <= start
+                        assert span1.label == span2.label
+                        if span1.start == start and span1.end == end:
+                            result_end = span2.end
                             break
                     else:
                         raise NotImplementedError("Expected matching prefixes")
 
                     attempt = (
-                        choices[:start] + result.choices[start:res_end] + choices[end:]
+                        choices[:start]
+                        + result.choices[start:result_end]
+                        + choices[end:]
                     )
-                    chunks[(start, end)].append(result.choices[start:res_end])
+                    chunks[(start, end)].append(result.choices[start:result_end])
                     result = self.engine.cached_test_function(attempt)
 
                     if result.status is Status.OVERRUN:

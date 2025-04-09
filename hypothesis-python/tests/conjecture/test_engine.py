@@ -26,7 +26,6 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.database import (
-    ExampleDatabase,
     InMemoryExampleDatabase,
     choices_from_bytes,
     choices_to_bytes,
@@ -85,7 +84,7 @@ def test_deletable_draws():
 
 def test_can_load_data_from_a_corpus():
     key = b"hi there"
-    db = ExampleDatabase()
+    db = InMemoryExampleDatabase()
     value = b"=\xc3\xe4l\x81\xe1\xc2H\xc9\xfb\x1a\xb6bM\xa8\x7f"
     db.save(key, choices_to_bytes([value]))
 
@@ -223,7 +222,7 @@ def test_can_navigate_to_a_valid_example():
 def test_stops_after_max_examples_when_reading():
     key = b"key"
 
-    db = ExampleDatabase(":memory:")
+    db = InMemoryExampleDatabase()
     for i in range(10):
         db.save(key, bytes([i]))
 

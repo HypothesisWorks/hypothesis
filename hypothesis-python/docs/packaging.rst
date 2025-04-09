@@ -6,6 +6,7 @@ Downstream packagers often want to package Hypothesis. Here are some guidelines.
 
 The primary guideline is this: If you are not prepared to keep up with the Hypothesis release schedule,
 don't. You will be doing your users a disservice.
+don't. You will be doing your users a disservice.
 
 Hypothesis has a very frequent release schedule. It's rare that it goes a week without a release,
 and there are often multiple releases in a week.

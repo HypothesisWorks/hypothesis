@@ -1,7 +1,7 @@
 Quickstart
 ==========
 
-This is a lightning introduction to the most important features of Hypothesis; enough to get you started writing tests. The :doc:`tutorials <tutorial/index>` introduce these features (and more) in greater detail.
+This is a lightning introduction to the most important features of Hypothesis; enough to get you started writing tests. The :doc:`tutorial <tutorial/index>` introduces these features (and more) in greater detail.
 
 Install Hypothesis
 ------------------
@@ -21,12 +21,10 @@ Create a new file called ``example.py``, containing a simple test:
     # contents of example.py
     from hypothesis import given, strategies as st
 
-
     @given(st.integers())
     def test_integers(n):
         print(f"called with {n}")
         assert isinstance(n, int)
-
 
     test_integers()
 
@@ -56,11 +54,9 @@ A Hypothesis test is still a regular python function, which means pytest or unit
     # contents of example.py
     from hypothesis import given, strategies as st
 
-
     @given(st.integers(0, 200))
     def test_integers(n):
         assert n < 50
-
 
 This test will clearly fail, which can be confirmed by running ``pytest example.py``:
 
@@ -143,7 +139,6 @@ You can do this using the |st.composite| strategy. |st.composite| lets you defin
         n2 = draw(st.integers(min_value=n1))
         return (n1, n2)
 
-
     @given(ordered_pairs())
     def test_pairs_are_ordered(pair):
         n1, n2 = pair
@@ -170,7 +165,6 @@ Hypothesis works with pytest features, like :ref:`pytest:pytest.mark.parametrize
 
     from hypothesis import given, strategies as st
 
-
     @pytest.mark.parametrize("operation", [reversed, sorted])
     @given(st.lists(st.integers()))
     def test_list_operation_preserves_length(operation, lst):
@@ -182,11 +176,9 @@ Hypothesis also works with pytest fixtures:
 
     import pytest
 
-
     @pytest.fixture(scope="session")
     def shared_mapping():
         return {n: 0 for n in range(101)}
-
 
     @given(st.integers(0, 100))
     def test_shared_mapping_keys(shared_mapping, n):

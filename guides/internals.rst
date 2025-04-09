@@ -148,7 +148,6 @@ example:
             ):
                 i += 1
 
-
 The more natural way to write this in Python would be:
 
 .. code-block:: python

@@ -18,6 +18,34 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.11:
+
+---------------------
+6.130.11 - 2025-04-08
+---------------------
+
+Fix the caching behavior of |st.sampled_from|, which in rare cases led to failing an internal assertion (:issue:`4339`).
+
+.. _v6.130.10:
+
+---------------------
+6.130.10 - 2025-04-07
+---------------------
+
+This patch deprecates creating a database using the abstract ``ExampleDatabase()`` class. Use one of the following instead:
+
+* Replace ``ExampleDatabase(":memory:")`` with |InMemoryExampleDatabase|.
+* Replace ``ExampleDatabase("/path/to/dir")`` with |DirectoryBasedExampleDatabase|.
+* Replace ``ExampleDatabase()`` with either |InMemoryExampleDatabase| or |DirectoryBasedExampleDatabase|, depending on your needs. Previously, Hypothesis interpreted ``ExampleDatabase()`` as a |DirectoryBasedExampleDatabase| in the default ``.hypothesis`` directory, with a fallback to |InMemoryExampleDatabase| if that location was not available.
+
+.. _v6.130.9:
+
+--------------------
+6.130.9 - 2025-04-06
+--------------------
+
+When reporting the always-failing, never-passing lines from the |Phase.explain| phase, we now sort the reported lines so that local code shows up first, then third-party library code, then standard library code.
+
 .. _v6.130.8:
 
 --------------------
@@ -2160,10 +2188,8 @@ Previously, this did nothing at all.
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         settings = settings(max_examples=10000)
 
-
     # the old way still works, but it's more verbose.
     MyStateMachine.TestCase.settings = settings(max_examples=10000)
-
 
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         pass
@@ -2186,7 +2212,6 @@ This has never had any effect, and it should be used as a decorator instead:
         """This doesn't do anything, and is now an error!"""
 
         settings = settings(derandomize=True)
-
 
     @settings(derandomize=True)
     class GoodMachine(RuleBasedStateMachine):
@@ -4387,7 +4412,6 @@ with constraints on some arguments (:issue:`3026`):
             assert value > 0
             self.value = value
             self.next_node = next_node
-
 
     st.register_type_strategy(
         RecursiveClass, st.builds(RecursiveClass, value=st.integers(min_value=1))
@@ -11238,7 +11262,6 @@ For example, consider the following test:
     import hypothesis.strategies as st
     from hypothesis import given
 
-
     @given(st.text(), st.text())
     def test_non_equal(x, y):
         assert x != y
@@ -11277,7 +11300,6 @@ For example, consider the following test:
 
     import hypothesis.strategies as st
     from hypothesis import given
-
 
     @given(st.integers(), st.integers())
     def test_does_not_exceed_100(m, n):
@@ -11420,8 +11442,7 @@ instances of ``int`` when passed ``long``, or vice-versa.
 -------------------
 
 This release adds :PEP:`484` type hints to Hypothesis on a provisional
-basis, using the comment-based syntax for Python 2 compatibility.  You
-can :doc:`read more about our type hints here <typing>`.
+basis, using the comment-based syntax for Python 2 compatibility.
 
 It *also* adds the ``py.typed`` marker specified in :PEP:`561`.
 After you ``pip install hypothesis``, :pypi:`mypy` 0.590 or later
