@@ -21,11 +21,11 @@ from pathlib import Path
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
+from hypothesis import is_hypothesis_test
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import junkdrawer
-from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run

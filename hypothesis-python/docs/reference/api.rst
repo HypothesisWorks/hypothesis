@@ -1013,3 +1013,10 @@ For authors of test runners however, assigning to the ``inner_test`` attribute o
     and ``**kwargs`` expected by the original test.
 
 If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.
+
+Detecting Hypothesis tests
+--------------------------
+
+To determine whether a test has been defined with Hypothesis or not, use |is_hypothesis_test|:
+
+.. autofunction:: hypothesis.is_hypothesis_test

@@ -8,8 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given
-from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis import given, is_hypothesis_test
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
 

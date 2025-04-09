@@ -259,6 +259,8 @@ rst_prolog = """
 .. |BackgroundWriteDatabase| replace:: :class:`~hypothesis.database.BackgroundWriteDatabase`
 .. |RedisExampleDatabase| replace:: :class:`~hypothesis.extra.redis.RedisExampleDatabase`
 
+.. |is_hypothesis_test| replace:: :func:`~hypothesis.is_hypothesis_test`
+
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
 .. |bool| replace:: :obj:`python:bool`
