@@ -259,7 +259,7 @@ jobs:
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
         run: |
-          pip install --upgrade setuptools pip wheel build
+          pip install --upgrade setuptools pip wheel==0.45.1 build
           python -m build --wheel hypothesis-python --outdir dist/
           pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
 
