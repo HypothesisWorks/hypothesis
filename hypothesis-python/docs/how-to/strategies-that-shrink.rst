@@ -36,7 +36,6 @@ For example:
     def f(n, v1, v2, s):
         assert n != len(s)
 
-
     # good
     @given(
         st.integers(),
@@ -60,12 +59,10 @@ This also applies to |@composite| and |st.data|:
         s = draw(st.text())
         return (n, s)
 
-
     @given(values())
     def f(v):
         (n, s) = v
         assert n != len(s)
-
 
     # good
     @st.composite
@@ -76,12 +73,10 @@ This also applies to |@composite| and |st.data|:
         v2 = draw(st.binary())
         return (n, s)
 
-
     @given(values())
     def f(value):
         (n, s) = value
         assert n != len(s)
-
 
 Place simpler strategies first in |st.one_of|
 ---------------------------------------------

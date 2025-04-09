@@ -67,16 +67,14 @@ You should start with the :doc:`tutorial <tutorial/index>`, or the more condense
 
 An introduction to Hypothesis.
 
-New developers should start here, or with the more condensed :doc:`quickstart <quickstart>`.
+New users should start here, or with the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: column column2 top-right
 
 :doc:`How-to guides <how-to/index>`
 -----------------------------------
-:doc:`How-to guides <how-to/index>`
------------------------------------
 
-Practical guides for experienced developers.
+Practical guides for applying Hypothesis in specific scenarios.
 
 .. rst-class:: column column2 bottom-left
 
