@@ -221,7 +221,9 @@ def upload_distribution():
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])
-    textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
+    textfile = os.path.join(
+        HYPOTHESIS_PYTHON, "docs", "_build", "text", "changelog.txt"
+    )
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
