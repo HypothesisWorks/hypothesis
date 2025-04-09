@@ -139,41 +139,30 @@ assert width_smallest_normals[64] == float_info.min
 mantissa_mask = (1 << 52) - 1
 
 
-def float_permitted(
-    f: float,
-    *,
-    min_value: float,
-    max_value: float,
-    allow_nan: bool,
-    smallest_nonzero_magnitude: float,
-) -> bool:
-    if math.isnan(f):
-        return allow_nan
-    if 0 < abs(f) < smallest_nonzero_magnitude:
-        return False
-    return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
-
-
 def make_float_clamper(
     min_value: float,
     max_value: float,
     *,
-    smallest_nonzero_magnitude: float,
     allow_nan: bool,
+    smallest_nonzero_magnitude: float,
 ) -> Callable[[float], float]:
     """
     Return a function that clamps positive floats into the given bounds.
     """
+    from hypothesis.internal.conjecture.choice import choice_permitted
+
     assert sign_aware_lte(min_value, max_value)
     range_size = min(max_value - min_value, float_info.max)
 
     def float_clamper(f: float) -> float:
-        if float_permitted(
+        if choice_permitted(
             f,
-            min_value=min_value,
-            max_value=max_value,
-            allow_nan=allow_nan,
-            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+            {
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+            },
         ):
             return f
         # Outside bounds; pick a new value, sampled from the allowed range,

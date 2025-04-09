@@ -14,10 +14,9 @@ from sys import float_info
 import pytest
 
 from hypothesis import example, given, strategies as st
-from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis.internal.conjecture.choice import choice_equal, choice_permitted
 from hypothesis.internal.floats import (
     count_between_floats,
-    float_permitted,
     make_float_clamper,
     next_down,
     next_up,
@@ -96,11 +95,13 @@ def test_float_clamper(constraints, input_value):
 
     # if input_value was permitted in the first place, then the clamped value should
     # be the same as the input value.
-    if float_permitted(
+    if choice_permitted(
         input_value,
-        min_value=min_value,
-        max_value=max_value,
-        allow_nan=allow_nan,
-        smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+        {
+            "min_value": min_value,
+            "max_value": max_value,
+            "allow_nan": allow_nan,
+            "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+        },
     ):
         assert choice_equal(input_value, clamped)
