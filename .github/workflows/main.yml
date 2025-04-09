@@ -255,10 +255,6 @@ jobs:
         run: |
           pip install pyodide-build==$PYODIDE_BUILD_VERSION
           pyodide xbuildenv install $PYODIDE_VERSION
-      - name: Build
-        run: |
-          cd hypothesis-python/
-          CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
         run: |
           pip install --upgrade setuptools pip wheel==0.45.1 build
