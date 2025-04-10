@@ -30,7 +30,7 @@ class ConstantsT(TypedDict):
     integer: set[int]
     # we store floats in either their float or float_to_int form in different
     # places.
-    float: set[float] | set[int]
+    float: Union[set[float], set[int]]
     bytes: set[bytes]
     string: set[str]
 
