@@ -286,10 +286,9 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
 
 
 @pytest.mark.parametrize("a", list(itertools.product(*([common_strategies[1:]] * 2))))
-@pytest.mark.parametrize("block_falsey", [False, True])
 @pytest.mark.parametrize("allow_sloppy", [False, True])
 @pytest.mark.parametrize("seed", [0, 2452, 99085240570])
-def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
+def test_always_shrinks_to_none(a, seed, allow_sloppy):
     combined_strategy = st.one_of(st.none(), *a)
 
     result, value = find_random(combined_strategy, lambda x: x is not None)
