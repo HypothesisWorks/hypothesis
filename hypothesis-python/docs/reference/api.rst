@@ -1020,3 +1020,5 @@ Detecting Hypothesis tests
 To determine whether a test has been defined with Hypothesis or not, use |is_hypothesis_test|:
 
 .. autofunction:: hypothesis.is_hypothesis_test
+
+If you're working with :pypi:`pytest`, our :ref:`pytest plugin <pytest-plugin>` automatically adds the ``@pytest.mark.hypothesis`` mark to all Hypothesis tests. You can use ``node.get_closest_marker("hypothesis")`` or similar methods to detect the existence of this mark.
