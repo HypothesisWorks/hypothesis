@@ -13,21 +13,26 @@ import inspect
 import math
 import sys
 from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
-from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, TypedDict, Union
 
-from hypothesis.internal.conjecture.choice import ChoiceTypeT
 from hypothesis.internal.escalation import is_hypothesis_file
-from hypothesis.internal.scrutineer import ModuleLocation
 
 if TYPE_CHECKING:
     from typing import TypeAlias
 
 ConstantT: "TypeAlias" = Union[int, float, bytes, str]
-ConstantsT: "TypeAlias" = dict[ChoiceTypeT, set[ConstantT]]
+
+
+class ConstantsT(TypedDict):
+    integer: set[int]
+    # we store floats in either their float or float_to_int form in different
+    # places.
+    float: set[float] | set[int]
+    bytes: set[bytes]
+    string: set[str]
 
 
 class ConstantVisitor(NodeVisitor):
@@ -108,53 +113,53 @@ def _module_ast(module: ModuleType) -> Optional[AST]:
     return tree
 
 
-def local_modules() -> tuple[ModuleType, ...]:
-    modules = []
-    for module in sys.modules.values():
-        if (
-            not hasattr(module, "__file__")
-            or module.__file__ is None
-            # Skip expensive path lookup for stdlib modules.
-            # This will cause false negatives if a user names their module the
-            # same as a stdlib module.
-            #
-            # sys.stdlib_module_names is new in 3.10
-            or (
-                sys.version_info >= (3, 10)
-                and module.__name__ in sys.stdlib_module_names
-            )
-            or ModuleLocation.from_path(module.__file__) is not ModuleLocation.LOCAL
-        ):
-            continue
+@lru_cache(4096)
+def _is_local_module_file(path: str) -> bool:
+    from hypothesis.internal.scrutineer import ModuleLocation
 
+    return (
+        # Skip expensive path lookup for stdlib modules.
+        # This will cause false negatives if a user names their module the
+        # same as a stdlib module.
+        #
+        # sys.stdlib_module_names is new in 3.10
+        (sys.version_info >= (3, 10) and path not in sys.stdlib_module_names)
+        and ModuleLocation.from_path(path) is ModuleLocation.LOCAL
         # normally, hypothesis is a third-party library and is not returned
         # by local_modules. However, if it is installed as an editable package
         # with pip install -e, then we will pick up on it. Just hardcode an
         # ignore here.
+        and not is_hypothesis_file(path)
+        # avoid collecting constants from test files
+        and not ("test" in (p := Path(path)).parts or "tests" in p.parts)
+    )
 
-        # this is actually covered by test_constants_from_running_file, but
-        # not in the same process.
-        if is_hypothesis_file(module.__file__):  # pragma: no cover
-            continue
 
-        # avoid collecting constants from test files/files
-        p = Path(module.__file__)
-        if "test" in p.parts or "tests" in p.parts:
-            continue
-
-        modules.append(module)
-    return tuple(modules)
+def local_modules() -> tuple[ModuleType, ...]:
+    return tuple(
+        module
+        for module in sys.modules.values()
+        if (
+            getattr(module, "__file__", None) is not None
+            and _is_local_module_file(module.__file__)
+        )
+    )
 
 
 def local_constants() -> ConstantsT:
-    constants = set()
+    constants: set[ConstantT] = set()
     for module in local_modules():
         tree = _module_ast(module)
         if tree is None:  # pragma: no cover
             continue
         constants |= constants_from_ast(tree)
 
-    local_constants = defaultdict(set)
+    local_constants: ConstantsT = {
+        "integer": set(),
+        "float": set(),
+        "bytes": set(),
+        "string": set(),
+    }
     for value in constants:
         choice_type = {
             int: "integer",
@@ -162,6 +167,6 @@ def local_constants() -> ConstantsT:
             bytes: "bytes",
             str: "string",
         }[type(value)]
-        local_constants[choice_type].add(value)
+        local_constants[choice_type].add(value)  # type: ignore # hard to type
 
-    return dict(local_constants)
+    return local_constants
