@@ -27,21 +27,24 @@ from tests.common.utils import skipif_emscripten
     [
         (
             """
-            a1 = 42
+            a1 = 142
             a2 = 3.14
             a3 = 'test1'
             a4 = b'test2'
-            a5 = (1, 2)
-            a6 = frozenset([3])
+            a5 = (101, 102)
+            a6 = frozenset([103])
             """,
-            {42, 3.14, "test1", b"test2", 1, 2, 3},
+            {142, 3.14, 101, 102, 103, "test1", b"test2"},
         ),
-        ("a = (1, (2, 3), frozenset([4, 5]))", {1, 2, 3, 4, 5}),
-        ("a = {'b': 1}", {"b", 1}),
-        ("a = [1]", {1}),
-        ("a = +42", {42}),
-        ("a = 1 + 2", {1, 2}),
-        ("a = ~ 42", {42}),
+        (
+            "a = (101, (102, 103), frozenset([104, 105]))",
+            {101, 102, 103, 104, 105},
+        ),
+        ("a = {'b': 101}", {"b", 101}),
+        ("a = [101]", {101}),
+        ("a = +142", {142}),
+        ("a = 101 + 102", {101, 102}),
+        ("a = ~ 142", {142}),
         # the following cases are ignored:
         # * booleans
         # * math.inf and math.nan (not constants, but we don't want to collect them
@@ -51,6 +54,7 @@ from tests.common.utils import skipif_emscripten
         # * pure-whitespace strings
         # * standalone string expressions (strings not assigned to a variable).
         #   This covers docstrings of all kinds.
+        # * small integers
         ("a = True", set()),
         ("a = False", set()),
         ("a = not False", set()),
@@ -64,6 +68,8 @@ from tests.common.utils import skipif_emscripten
         ('a = "\\n    \\n  \\n"', set()),
         ("'test'", set()),
         ("'test with \\n newlines'", set()),
+        ("a = 10", set()),
+        ("a = -1", set()),
     ],
 )
 def test_constants_from_ast(source, expected):
@@ -72,16 +78,18 @@ def test_constants_from_ast(source, expected):
     assert constants_from_ast(tree) == expected
 
 
-@given(st.integers(max_value=-1))
+@given(st.integers(max_value=-101))
 def test_parses_negatives(n):
     assert constants_from_ast(ast.parse(f"a = {n}")) == {n}
 
 
 constants = st.one_of(
-    st.integers(),
+    # constants_from_ast skips small integers
+    st.integers(max_value=-101),
+    st.integers(min_value=101),
     st.floats(allow_nan=False, allow_infinity=False),
     st.binary(),
-    # constants_from_ast ignores the following strings:
+    # constants_from_ast skips the following strings:
     # * empty strings
     # * long strings
     # * strings which are entirely spaces
@@ -123,25 +131,19 @@ def test_constants_from_running_file(tmp_path):
                 del sys.modules[module]
 
         # local
-        a = 42
+        a = 142
         b = "test1"
         c = True
         d = 3.14
         e = b"test2"
-        f = (1, 2)
-        g = frozenset([3, 4])
+        f = (101, 102)
+        g = frozenset([103, 104])
         actual = local_constants()
         assert actual == {
-            "hypofuzz",
-            42,
-            "test1",
-            True,
-            3.14,
-            b"test2",
-            1,
-            2,
-            3,
-            4
+            'string': {'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz'},
+            'float': {3.14},
+            'bytes': {b'test2'},
+            "integer": {142, 101, 102, 103, 104}
         }, actual
         """,
         ),

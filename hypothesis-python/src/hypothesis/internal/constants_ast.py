@@ -13,10 +13,13 @@ import inspect
 import math
 import sys
 from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
+from collections import defaultdict
 from functools import lru_cache
+from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Optional, Union
 
+from hypothesis.internal.conjecture.choice import ChoiceTypeT
 from hypothesis.internal.escalation import is_hypothesis_file
 from hypothesis.internal.scrutineer import ModuleLocation
 
@@ -24,6 +27,7 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
 ConstantT: "TypeAlias" = Union[int, float, bytes, str]
+ConstantsT: "TypeAlias" = dict[ChoiceTypeT, set[ConstantT]]
 
 
 class ConstantVisitor(NodeVisitor):
@@ -31,8 +35,28 @@ class ConstantVisitor(NodeVisitor):
         super().__init__()
         self.constants: set[ConstantT] = set()
 
-    def _add_constant(self, constant: object) -> None:
-        self.constants |= self._unfold_constant(constant)
+    def _add_constant(self, value: object) -> None:
+        if isinstance(value, str) and (
+            len(value) > 20 or value.isspace() or value == ""
+        ):
+            # discard long strings, which are unlikely to be useful.
+            return
+        if isinstance(value, bool):
+            return
+        if isinstance(value, float) and math.isinf(value):
+            # we already upweight inf.
+            return
+        if isinstance(value, int) and -100 < value < 100:
+            # we already upweight small integers.
+            return
+
+        if isinstance(value, (int, float, bytes, str)):
+            self.constants.add(value)
+            return
+
+        # I don't kow what case could go here, but am also not confident there
+        # isn't one.
+        return  # pragma: no cover
 
     def visit_UnaryOp(self, node: UnaryOp) -> None:
         # `a = -1` is actually a combination of a USub and the constant 1.
@@ -58,24 +82,6 @@ class ConstantVisitor(NodeVisitor):
         # dont recurse on JoinedStr, i.e. f strings. Constants that appear *only*
         # in f strings are unlikely to be helpful.
         return
-
-    @classmethod
-    def _unfold_constant(cls, value: object) -> set[ConstantT]:
-        if isinstance(value, str) and (
-            len(value) > 20 or value.isspace() or value == ""
-        ):
-            # discard long strings, which are unlikely to be useful.
-            return set()
-        if isinstance(value, bool):
-            return set()
-        if isinstance(value, float) and math.isinf(value):
-            # we already upweight inf.
-            return set()
-        if isinstance(value, (int, float, bytes, str)):
-            return {value}
-        # I don't kow what case could go here, but am also not confident there
-        # isn't one.
-        return set()  # pragma: no cover
 
     def visit_Constant(self, node):
         self._add_constant(node.value)
@@ -119,13 +125,6 @@ def local_modules() -> tuple[ModuleType, ...]:
         ):
             continue
 
-        modules.append(module)
-    return tuple(modules)
-
-
-def local_constants():
-    constants = set()
-    for module in local_modules():
         # normally, hypothesis is a third-party library and is not returned
         # by local_modules. However, if it is installed as an editable package
         # with pip install -e, then we will pick up on it. Just hardcode an
@@ -136,9 +135,31 @@ def local_constants():
         if is_hypothesis_file(module.__file__):  # pragma: no cover
             continue
 
+        # avoid collecting constants from test files/files
+        p = Path(module.__file__)
+        if "test" in p.parts or "tests" in p.parts:
+            continue
+
+        modules.append(module)
+    return tuple(modules)
+
+
+def local_constants() -> ConstantsT:
+    constants = set()
+    for module in local_modules():
         tree = _module_ast(module)
         if tree is None:  # pragma: no cover
             continue
         constants |= constants_from_ast(tree)
 
-    return constants
+    local_constants = defaultdict(set)
+    for value in constants:
+        choice_type = {
+            int: "integer",
+            float: "float",
+            bytes: "bytes",
+            str: "string",
+        }[type(value)]
+        local_constants[choice_type].add(value)
+
+    return dict(local_constants)
