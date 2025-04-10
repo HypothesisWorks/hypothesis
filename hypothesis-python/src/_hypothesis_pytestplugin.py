@@ -203,8 +203,7 @@ else:
             yield
             return
 
-        from hypothesis import core
-        from hypothesis.internal.detection import is_hypothesis_test
+        from hypothesis import core, is_hypothesis_test
 
         # See https://github.com/pytest-dev/pytest/issues/9159
         core.pytest_shows_exceptiongroups = (
@@ -415,7 +414,7 @@ else:
         if "hypothesis" not in sys.modules:
             return
 
-        from hypothesis.internal.detection import is_hypothesis_test
+        from hypothesis import is_hypothesis_test
 
         for item in items:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
@@ -433,7 +432,7 @@ else:
 
     def _ban_given_call(self, function):
         if "hypothesis" in sys.modules:
-            from hypothesis.internal.detection import is_hypothesis_test
+            from hypothesis import is_hypothesis_test
 
             if is_hypothesis_test(function):
                 raise RuntimeError(

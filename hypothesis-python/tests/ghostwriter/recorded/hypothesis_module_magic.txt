@@ -43,6 +43,11 @@ def test_fuzz_find(
     )
 
 
+@given(f=st.from_type(object))
+def test_fuzz_is_hypothesis_test(f: object) -> None:
+    hypothesis.is_hypothesis_test(f=f)
+
+
 @given(value=st.from_type(object))
 def test_fuzz_note(value: object) -> None:
     hypothesis.note(value=value)
