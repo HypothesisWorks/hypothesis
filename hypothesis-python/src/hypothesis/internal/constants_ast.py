@@ -41,6 +41,8 @@ class ConstantVisitor(NodeVisitor):
         ):
             # discard long strings, which are unlikely to be useful.
             return
+        if isinstance(value, bytes) and value == b"":
+            return
         if isinstance(value, bool):
             return
         if isinstance(value, float) and math.isinf(value):

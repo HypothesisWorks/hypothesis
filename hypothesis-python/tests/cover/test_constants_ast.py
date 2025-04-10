@@ -55,6 +55,7 @@ from tests.common.utils import skipif_emscripten
         # * standalone string expressions (strings not assigned to a variable).
         #   This covers docstrings of all kinds.
         # * small integers
+        # * the empty bytestring b""
         ("a = True", set()),
         ("a = False", set()),
         ("a = not False", set()),
@@ -70,6 +71,7 @@ from tests.common.utils import skipif_emscripten
         ("'test with \\n newlines'", set()),
         ("a = 10", set()),
         ("a = -1", set()),
+        ("a = b''", set()),
     ],
 )
 def test_constants_from_ast(source, expected):
@@ -88,7 +90,8 @@ constants = st.one_of(
     st.integers(max_value=-101),
     st.integers(min_value=101),
     st.floats(allow_nan=False, allow_infinity=False),
-    st.binary(),
+    # constants_from_ast skips b""
+    st.binary(min_size=1),
     # constants_from_ast skips the following strings:
     # * empty strings
     # * long strings
