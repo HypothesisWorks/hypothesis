@@ -57,9 +57,7 @@ def run():
             phases=list(Phase),  # Dogfooding the explain phase
         ),
     )
-
     settings.register_profile("speedy", settings(max_examples=5))
-
     settings.register_profile("debug", settings(verbosity=Verbosity.debug))
 
     if "crosshair" in AVAILABLE_PROVIDERS:

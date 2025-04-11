@@ -58,6 +58,157 @@ all_settings: dict[str, "Setting"] = {}
 T = TypeVar("T")
 
 
+@unique
+class Verbosity(IntEnum):
+    """Verbosity levels for |@settings|."""
+
+    quiet = 0
+    """
+    Hypothesis will not print any output, not even the final falsifying example.
+    """
+
+    normal = 1
+    """
+    Standard verbosity. Hypothesis will print the falsifying example, alongside
+    any notes made with |note| (only for the falsfying example).
+    """
+
+    verbose = 2
+    """
+    Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
+    will print each example as it tries it, as well as any notes made with |note|
+    for every example. Hypothesis will also print shrinking attempts.
+    """
+
+    debug = 3
+    """
+    Even more verbosity. Useful for debugging Hypothesis internals. You probably
+    don't want this.
+    """
+
+    def __repr__(self) -> str:
+        return f"Verbosity.{self.name}"
+
+
+@unique
+class Phase(IntEnum):
+    """Phases for |@settings|."""
+
+    explicit = 0  #: controls whether explicit examples are run.
+    reuse = 1  #: controls whether previous examples will be reused.
+    generate = 2  #: controls whether new examples will be generated.
+    target = 3  #: controls whether examples will be mutated for targeting.
+    shrink = 4  #: controls whether examples will be shrunk.
+    explain = 5  #: controls whether Hypothesis attempts to explain test failures.
+
+    def __repr__(self) -> str:
+        return f"Phase.{self.name}"
+
+
+class HealthCheckMeta(EnumMeta):
+    def __iter__(self):
+        deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
+        return iter(x for x in super().__iter__() if x not in deprecated)
+
+
+@unique
+class HealthCheck(Enum, metaclass=HealthCheckMeta):
+    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
+
+    Each member of this enum is a type of health check to suppress.
+    """
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
+
+    @classmethod
+    def all(cls) -> list["HealthCheck"]:
+        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
+        note_deprecation(
+            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
+            since="2023-04-16",
+            has_codemod=True,
+            stacklevel=1,
+        )
+        return list(HealthCheck)
+
+    data_too_large = 1
+    """Checks if too many examples are aborted for being too large.
+
+    This is measured by the number of random choices that Hypothesis makes
+    in order to generate something, not the size of the generated object.
+    For example, choosing a 100MB object from a predefined list would take
+    only a few bits, while generating 10KB of JSON from scratch might trigger
+    this health check.
+    """
+
+    filter_too_much = 2
+    """Check for when the test is filtering out too many examples, either
+    through use of :func:`~hypothesis.assume()` or |strategy.filter|,
+    or occasionally for Hypothesis internal reasons."""
+
+    too_slow = 3
+    """Check for when your data generation is extremely slow and likely to hurt
+    testing."""
+
+    return_value = 5
+    """Deprecated; we always error if a test returns a non-None value."""
+
+    large_base_example = 7
+    """Checks if the natural example to shrink towards is very large."""
+
+    not_a_test_method = 8
+    """Deprecated; we always error if :func:`@given <hypothesis.given>` is applied
+    to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
+
+    function_scoped_fixture = 9
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
+    with a pytest function-scoped fixture. Function-scoped fixtures run once
+    for the whole function, not once per example, and this is usually not what
+    you want.
+
+    Because of this limitation, tests that need to set up or reset
+    state for every example need to do so manually within the test itself,
+    typically using an appropriate context manager.
+
+    Suppress this health check only in the rare case that you are using a
+    function-scoped fixture that does not need to be reset between individual
+    examples, but for some reason you cannot use a wider fixture scope
+    (e.g. session scope, module scope, class scope).
+
+    This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
+    which is enabled by default when running Hypothesis inside pytest."""
+
+    differing_executors = 10
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
+    which is executed by different :ref:`executors<custom-function-execution>`.
+    If your test function is defined as a method on a class, that class will be
+    your executor, and subclasses executing an inherited test is a common way
+    for things to go wrong.
+
+    The correct fix is often to bring the executor instance under the control
+    of hypothesis by explicit parametrization over, or sampling from,
+    subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
+    specified on leaf subclasses."""
+
+    nested_given = 11
+    """Checks if :func:`@given <hypothesis.given>` is used inside another
+    :func:`@given <hypothesis.given>`. This results in quadratic generation and
+    shrinking behavior, and can usually be expressed more cleanly by using
+    :func:`~hypothesis.strategies.data` to replace the inner
+    :func:`@given <hypothesis.given>`.
+
+    Nesting @given can be appropriate if you set appropriate limits for the
+    quadratic behavior and cannot easily reexpress the inner function with
+    :func:`~hypothesis.strategies.data`. To suppress this health check, set
+    ``suppress_health_check=[HealthCheck.nested_given]`` on the outer
+    :func:`@given <hypothesis.given>`. Setting it on the inner
+    :func:`@given <hypothesis.given>` has no effect. If you have more than one
+    level of nesting, add a suppression for this health check to every
+    :func:`@given <hypothesis.given>` except the innermost one.
+    """
+
+
 class settingsProperty:
     def __init__(self, name: str, *, show_default: bool) -> None:
         self.name = name
@@ -134,6 +285,9 @@ class settingsMeta(type):
             )
         super().__setattr__(name, value)
 
+    def __repr__(cls):
+        return "hypothesis.settings"
+
 
 class settings(metaclass=settingsMeta):
     """A settings object configures options including verbosity, runtime controls,
@@ -145,7 +299,6 @@ class settings(metaclass=settingsMeta):
 
     __definitions_are_locked = False
     _profiles: ClassVar[dict[str, "settings"]] = {}
-    __module__ = "hypothesis"
     _current_profile = None
 
     def __getattr__(self, name):
@@ -459,155 +612,6 @@ example database implementations, and how to define custom implementations.
 """,
     validator=_validate_database,
 )
-
-
-@unique
-class Phase(IntEnum):
-    explicit = 0  #: controls whether explicit examples are run.
-    reuse = 1  #: controls whether previous examples will be reused.
-    generate = 2  #: controls whether new examples will be generated.
-    target = 3  #: controls whether examples will be mutated for targeting.
-    shrink = 4  #: controls whether examples will be shrunk.
-    explain = 5  #: controls whether Hypothesis attempts to explain test failures.
-
-    def __repr__(self) -> str:
-        return f"Phase.{self.name}"
-
-
-class HealthCheckMeta(EnumMeta):
-    def __iter__(self):
-        deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
-        return iter(x for x in super().__iter__() if x not in deprecated)
-
-
-@unique
-class HealthCheck(Enum, metaclass=HealthCheckMeta):
-    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
-
-    Each member of this enum is a type of health check to suppress.
-    """
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.{self.name}"
-
-    @classmethod
-    def all(cls) -> list["HealthCheck"]:
-        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
-        note_deprecation(
-            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
-            since="2023-04-16",
-            has_codemod=True,
-            stacklevel=1,
-        )
-        return list(HealthCheck)
-
-    data_too_large = 1
-    """Checks if too many examples are aborted for being too large.
-
-    This is measured by the number of random choices that Hypothesis makes
-    in order to generate something, not the size of the generated object.
-    For example, choosing a 100MB object from a predefined list would take
-    only a few bits, while generating 10KB of JSON from scratch might trigger
-    this health check.
-    """
-
-    filter_too_much = 2
-    """Check for when the test is filtering out too many examples, either
-    through use of :func:`~hypothesis.assume()` or |strategy.filter|,
-    or occasionally for Hypothesis internal reasons."""
-
-    too_slow = 3
-    """Check for when your data generation is extremely slow and likely to hurt
-    testing."""
-
-    return_value = 5
-    """Deprecated; we always error if a test returns a non-None value."""
-
-    large_base_example = 7
-    """Checks if the natural example to shrink towards is very large."""
-
-    not_a_test_method = 8
-    """Deprecated; we always error if :func:`@given <hypothesis.given>` is applied
-    to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
-
-    function_scoped_fixture = 9
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    with a pytest function-scoped fixture. Function-scoped fixtures run once
-    for the whole function, not once per example, and this is usually not what
-    you want.
-
-    Because of this limitation, tests that need to set up or reset
-    state for every example need to do so manually within the test itself,
-    typically using an appropriate context manager.
-
-    Suppress this health check only in the rare case that you are using a
-    function-scoped fixture that does not need to be reset between individual
-    examples, but for some reason you cannot use a wider fixture scope
-    (e.g. session scope, module scope, class scope).
-
-    This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
-    which is enabled by default when running Hypothesis inside pytest."""
-
-    differing_executors = 10
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    which is executed by different :ref:`executors<custom-function-execution>`.
-    If your test function is defined as a method on a class, that class will be
-    your executor, and subclasses executing an inherited test is a common way
-    for things to go wrong.
-
-    The correct fix is often to bring the executor instance under the control
-    of hypothesis by explicit parametrization over, or sampling from,
-    subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
-    specified on leaf subclasses."""
-
-    nested_given = 11
-    """Checks if :func:`@given <hypothesis.given>` is used inside another
-    :func:`@given <hypothesis.given>`. This results in quadratic generation and
-    shrinking behavior, and can usually be expressed more cleanly by using
-    :func:`~hypothesis.strategies.data` to replace the inner
-    :func:`@given <hypothesis.given>`.
-
-    Nesting @given can be appropriate if you set appropriate limits for the
-    quadratic behavior and cannot easily reexpress the inner function with
-    :func:`~hypothesis.strategies.data`. To suppress this health check, set
-    ``suppress_health_check=[HealthCheck.nested_given]`` on the outer
-    :func:`@given <hypothesis.given>`. Setting it on the inner
-    :func:`@given <hypothesis.given>` has no effect. If you have more than one
-    level of nesting, add a suppression for this health check to every
-    :func:`@given <hypothesis.given>` except the innermost one.
-    """
-
-
-@unique
-class Verbosity(IntEnum):
-    """Verbosity levels for |@settings|."""
-
-    quiet = 0
-    """
-    Hypothesis will not print any output, not even the final falsifying example.
-    """
-
-    normal = 1
-    """
-    Standard verbosity. Hypothesis will print the falsifying example, alongside
-    any notes made with |note| (only for the falsfying example).
-    """
-
-    verbose = 2
-    """
-    Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
-    will print each example as it tries it, as well as any notes made with |note|
-    for every example. Hypothesis will also print shrinking attempts.
-    """
-
-    debug = 3
-    """
-    Even more verbosity. Useful for debugging Hypothesis internals. You probably
-    don't want this.
-    """
-
-    def __repr__(self) -> str:
-        return f"Verbosity.{self.name}"
 
 
 settings._define_setting(
