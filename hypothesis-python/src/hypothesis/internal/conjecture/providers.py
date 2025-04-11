@@ -365,6 +365,22 @@ class PrimitiveProvider(abc.ABC):
         """
 
 
+def _permitted_constants(
+    constants: Any,
+    *,
+    choice_type: ChoiceTypeT,
+    constraints: ChoiceConstraintsT,
+) -> tuple["ConstantT", ...]:
+    return tuple(
+        value
+        for value in constants
+        if choice_permitted(
+            int_to_float(value) if choice_type == "float" else value,
+            constraints,
+        )
+    )
+
+
 class HypothesisProvider(PrimitiveProvider):
     lifetime = "test_case"
 
@@ -380,6 +396,7 @@ class HypothesisProvider(PrimitiveProvider):
         *,
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
+        assert self._random is not None
         assert choice_type != "boolean"
 
         key = (choice_type, choice_constraints_key(choice_type, constraints))
@@ -395,24 +412,34 @@ class HypothesisProvider(PrimitiveProvider):
                 local_constants = {
                     float_to_int(f) for f in cast(set[float], local_constants)
                 }
-
-            CONSTANTS_CACHE[key] = tuple(
-                value
-                for value in local_constants | global_constants
-                if choice_permitted(
-                    int_to_float(value) if choice_type == "float" else value,
-                    constraints,
-                )
+            CONSTANTS_CACHE[key] = (
+                _permitted_constants(
+                    global_constants,
+                    choice_type=choice_type,
+                    constraints=constraints,
+                ),
+                _permitted_constants(
+                    local_constants,
+                    choice_type=choice_type,
+                    constraints=constraints,
+                ),
             )
 
-        constants = CONSTANTS_CACHE[key]
-        if not constants:
+        # split constants into two pools, so we still have a good chance to draw
+        # global constants even if there are many local constants.
+        (global_constants, local_constants) = CONSTANTS_CACHE[key]
+        constants_lists = ([global_constants] if global_constants else []) + (
+            [local_constants] if local_constants else []
+        )
+        if not constants_lists or self._random.random() > p:
             return None
 
-        assert self._random is not None
-        if self._random.random() > p:
-            return None
-
+        # At this point, we've decided to use a constant. Now we select which pool
+        # to draw that constant from.
+        #
+        # Note that this approach has a different probability distribution than
+        # attempting a random.random for both global_constants and local_constants.
+        constants = self._random.choice(constants_lists)
         value = self._random.choice(constants)
         if choice_type == "float":
             value = int_to_float(value)
