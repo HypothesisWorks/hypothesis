@@ -402,11 +402,11 @@ def update_django_versions():
     tox_ini.write_text(content, encoding="utf-8")
 
 
-def version_tuple(v: str) -> tuple[int, int, int]:
-    return tuple(int(x) for x in v.split("."))  # type: ignore
-
-
 def update_pyodide_versions():
+
+    def version_tuple(v: str) -> tuple[int, int, int]:
+        return tuple(int(x) for x in v.split("."))  # type: ignore
+
     vers_re = r"(\d+\.\d+\.\d+)"
     all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases

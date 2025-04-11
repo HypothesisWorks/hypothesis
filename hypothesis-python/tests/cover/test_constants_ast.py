@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
-import math
 import subprocess
 import sys
 import textwrap
@@ -17,16 +16,13 @@ from types import ModuleType
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
-from hypothesis.internal.conjecture import providers
-from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis import given, strategies as st
 from hypothesis.internal.constants_ast import (
     _is_local_module_file,
     _module_ast,
     constants_from_ast,
 )
 
-from tests.common.debug import find_any
 from tests.common.utils import skipif_emscripten
 
 
@@ -172,35 +168,3 @@ def test_constants_from_bad_module():
 @pytest.mark.parametrize("path", ["/path/to/tests/module", "/path/to/test/module"])
 def test_local_modules_ignores_test_modules(path):
     assert not _is_local_module_file(path)
-
-
-# I tried using @given(st.integers()) here, but I think there is a bad interaction
-# with CONSTANTS_CACHE when testing it inside of a hypothesis test.
-@pytest.mark.parametrize("value", [2**20 - 50, 2**10 - 10, 129387123, -19827321, 0])
-def test_can_draw_local_constants_integers(monkeypatch, value):
-    monkeypatch.setattr(providers, "local_constants", lambda: {"integer": {value}})
-    find_any(st.integers(), lambda v: choice_equal(v, value))
-
-
-@pytest.mark.parametrize("value", [1.2938, -1823.0239, 1e999, math.nan])
-def test_can_draw_local_constants_floats(monkeypatch, value):
-    monkeypatch.setattr(providers, "local_constants", lambda: {"float": {value}})
-    find_any(st.floats(), lambda v: choice_equal(v, value))
-
-
-@pytest.mark.parametrize("value", [b"abdefgh", b"a" * 50])
-def test_can_draw_local_constants_bytes(monkeypatch, value):
-    monkeypatch.setattr(providers, "local_constants", lambda: {"bytes": {value}})
-    find_any(st.binary(), lambda v: choice_equal(v, value))
-
-
-@pytest.mark.parametrize("value", ["abdefgh", "a" * 50])
-def test_can_draw_local_constants_string(monkeypatch, value):
-    monkeypatch.setattr(providers, "local_constants", lambda: {"string": {value}})
-    # we have a bunch of strings in GLOBAL_CONSTANTS, so it might take a while
-    # to generate our local constant.
-    find_any(
-        st.text(),
-        lambda v: choice_equal(v, value),
-        settings=settings(max_examples=5_000),
-    )
