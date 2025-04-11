@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.0:
+
+--------------------
+6.131.0 - 2025-04-10
+--------------------
+
+Add |is_hypothesis_test|, for third-party libraries which want to determine whether a test has been defined with Hypothesis.
+
+.. _v6.130.13:
+
+---------------------
+6.130.13 - 2025-04-09
+---------------------
+
+Refactor some internals.
+
 .. _v6.130.12:
 
 ---------------------
