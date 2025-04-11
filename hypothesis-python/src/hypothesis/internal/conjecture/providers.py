@@ -543,7 +543,7 @@ class HypothesisProvider(PrimitiveProvider):
             if choice_permitted(f, constraints)
         ]
 
-        if weird_floats and self._random.random() < 0.04:
+        if weird_floats and self._random.random() < 0.05:
             return self._random.choice(weird_floats)
 
         clamper = make_float_clamper(
