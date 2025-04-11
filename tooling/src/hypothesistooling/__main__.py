@@ -402,11 +402,11 @@ def update_django_versions():
     tox_ini.write_text(content, encoding="utf-8")
 
 
+def version_tuple(v: str) -> tuple[int, int, int]:
+    return tuple(int(x) for x in v.split("."))  # type: ignore
+
+
 def update_pyodide_versions():
-
-    def version_tuple(v: str) -> tuple[int, int, int]:
-        return tuple(int(x) for x in v.split("."))  # type: ignore
-
     vers_re = r"(\d+\.\d+\.\d+)"
     all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
@@ -467,6 +467,38 @@ def update_pyodide_versions():
     ci_file.write_text(config, encoding="utf-8")
 
 
+def update_crosshair_versions():
+    vers_re = r"(\d+\.\d+\.\d+)"
+    latest_crosshair = max(
+        re.findall(
+            f"crosshair_tool-{vers_re}.tar.gz",
+            requests.get("https://pypi.org/simple/crosshair-tool/").text,
+        ),
+        key=version_tuple,
+    )
+    latest_hypothesis_crosshair = max(
+        re.findall(
+            f"hypothesis_crosshair-{vers_re}.tar.gz",
+            requests.get("https://pypi.org/simple/hypothesis-crosshair/").text,
+        ),
+        key=version_tuple,
+    )
+
+    tox_ini = hp.BASE_DIR / "tox.ini"
+    content = tox_ini.read_text(encoding="utf-8")
+    content = re.sub(
+        "pip install crosshair-tool==(.*)",
+        f"pip install crosshair-tool=={latest_crosshair}",
+        content,
+    )
+    content = re.sub(
+        "pip install hypothesis-crosshair==(.*)",
+        f"pip install hypothesis-crosshair=={latest_hypothesis_crosshair}",
+        content,
+    )
+    tox_ini.write_text(content, encoding="utf-8")
+
+
 def update_vendored_files():
     vendor = pathlib.Path(hp.PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -507,6 +539,7 @@ def upgrade_requirements():
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
+    update_crosshair_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
 
