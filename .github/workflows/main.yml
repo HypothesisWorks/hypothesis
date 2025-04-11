@@ -191,6 +191,7 @@ jobs:
         pip install --upgrade setuptools pip wheel
         pip install -r requirements/coverage.txt
         pip install -r requirements/crosshair.txt
+        pip install hypothesis-python/
     - name: Run tests
       run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
