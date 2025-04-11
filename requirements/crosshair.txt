@@ -4,8 +4,9 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==25.3.0
+attrs==24.1.0
     # via
+    #   -r requirements/crosshair.in
     #   cattrs
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)

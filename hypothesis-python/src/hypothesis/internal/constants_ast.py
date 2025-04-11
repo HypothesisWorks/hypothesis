@@ -123,7 +123,7 @@ def _is_local_module_file(path: str) -> bool:
         # same as a stdlib module.
         #
         # sys.stdlib_module_names is new in 3.10
-        (sys.version_info >= (3, 10) and path not in sys.stdlib_module_names)
+        not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
         and ModuleLocation.from_path(path) is ModuleLocation.LOCAL
         # normally, hypothesis is a third-party library and is not returned
         # by local_modules. However, if it is installed as an editable package
