@@ -256,116 +256,11 @@ Settings
     :members:
     :exclude-members: register_profile, get_profile, load_profile
 
-.. _phases:
-
-Controlling what runs
-~~~~~~~~~~~~~~~~~~~~~
-
-Hypothesis divides tests into logically distinct phases.
-
-- |Phase.explicit|: Running explicit examples from |@example|.
-- |Phase.reuse|: Running examples from the database which previously failed.
-- |Phase.generate|: Generating new random examples.
-- |Phase.target|: Mutating examples for :ref:`targeted property-based testing <targeted>`.
-
-  - Requires |Phase.generate|.
-
-- |Phase.shrink|: Shrinking failing examples.
-- |Phase.explain|: Attempting to explain why a failure occurred.
-
-  - Requires |Phase.shrink|.
-
-.. note::
-
-   The explain phase has two parts, each of which is best-effort - if Hypothesis can't
-   find a useful explanation, we'll just print the minimal failing example.
-
-   Following the first failure, Hypothesis will (:ref:`usually <phases>`) track which
-   lines of code are always run on failing but never on passing inputs. On 3.12+, this uses
-   :mod:`sys.monitoring`, while 3.11 and earlier uses :func:`python:sys.settrace`. For python 3.11
-   and earlier, we therefore automatically disable the explain phase on PyPy, or if you are using
-   :pypi:`coverage` or a debugger. If there are no clearly suspicious lines of code,
-   :pep:`we refuse the temptation to guess <20>`.
-
-   After shrinking to a minimal failing example, Hypothesis will try to find parts of
-   the example -- e.g. separate args to :func:`@given() <hypothesis.given>` -- which
-   can vary freely without changing the result of that minimal failing example.
-   If the automated experiments run without finding a passing variation, we leave a
-   comment in the final report:
-
-   .. code-block:: python
-
-       test_x_divided_by_y(
-           x=0,  # or any other generated value
-           y=0,
-       )
-
-   Just remember that the *lack* of an explanation sometimes just means that Hypothesis
-   couldn't efficiently find one, not that no explanation (or simpler failing example)
-   exists.
-
-
-The phases setting provides you with fine grained control over which of these run,
-with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
-
 .. autoclass:: hypothesis.Phase
-   :members:
-
-The phases argument accepts a collection with any subset of these. e.g.
-``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
-and shrink them, but will not run explicit examples or reuse previous failures,
-while ``settings(phases=[Phase.explicit])`` will only run the explicit
-examples.
-
-.. _verbose-output:
-
-Seeing intermediate result
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+    :members:
 
 .. autoclass:: hypothesis.Verbosity
-    :members: quiet,normal,verbose,debug
-
-    .. documenting all members runs into https://stackoverflow.com/a/78657325
-    .. and the fix there didn't work for me
-    .. TODO python 3.13: remove this?
-
-To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting.
-
-.. code-block:: pycon
-
-    >>> from hypothesis import find, settings, Verbosity
-    >>> from hypothesis.strategies import lists, integers
-    >>> @given(lists(integers()))
-    ... @settings(verbosity=Verbosity.verbose)
-    ... def f(x):
-    ...     assert not any(x)
-    ... f()
-    Trying example: []
-    Falsifying example: [-1198601713, -67, 116, -29578]
-    Shrunk example to [-1198601713]
-    Shrunk example to [-1198601600]
-    Shrunk example to [-1191228800]
-    Shrunk example to [-8421504]
-    Shrunk example to [-32896]
-    Shrunk example to [-128]
-    Shrunk example to [64]
-    Shrunk example to [32]
-    Shrunk example to [16]
-    Shrunk example to [8]
-    Shrunk example to [4]
-    Shrunk example to [3]
-    Shrunk example to [2]
-    Shrunk example to [1]
-    [1]
-
-The four levels are quiet, normal, verbose and debug. normal is the default,
-while in quiet mode Hypothesis will not print anything out, not even the final
-falsifying example. debug is basically verbose but a bit more so. You probably
-don't want it.
-
-If you are using :pypi:`pytest`, you may also need to
-:doc:`disable output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`.
+    :members:
 
 Building settings objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~

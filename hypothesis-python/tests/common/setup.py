@@ -11,8 +11,14 @@
 import os
 from warnings import filterwarnings
 
-from hypothesis import HealthCheck, Phase, Verbosity, settings
-from hypothesis._settings import CI, is_in_ci, not_set
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    _settings as settings_module,
+    settings,
+)
+from hypothesis._settings import CI, default as default_settings, is_in_ci, not_set
 from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
@@ -37,29 +43,26 @@ def run():
     )
 
     # We do a smoke test here before we mess around with settings.
-    x = settings()
+    for setting_name in settings_module.all_settings:
+        # database value is dynamically calculated
+        if setting_name == "database":
+            continue
 
-    from hypothesis import _settings as settings_module
-
-    for s in settings_module.all_settings.values():
-        v = getattr(x, s.name)
-        # Check if it has a dynamically defined default and if so skip comparison.
-        if getattr(settings, s.name).show_default:
-            assert v == s.default or (
-                is_in_ci() and v == getattr(CI, s.name)
-            ), f"({v!r} == x.{s.name}) != (s.{s.name} == {s.default!r})"
+        value = getattr(settings(), setting_name)
+        default_value = getattr(default_settings, setting_name)
+        assert value == default_value or (
+            is_in_ci() and value == getattr(CI, setting_name)
+        ), f"({value!r} == x.{setting_name}) != (s.{setting_name} == {default_value!r})"
 
     settings.register_profile(
         "default",
         settings(
-            settings.get_profile("default"),
+            default_settings,
             max_examples=20 if IN_COVERAGE_TESTS else not_set,
             phases=list(Phase),  # Dogfooding the explain phase
         ),
     )
-
     settings.register_profile("speedy", settings(max_examples=5))
-
     settings.register_profile("debug", settings(verbosity=Verbosity.debug))
 
     if "crosshair" in AVAILABLE_PROVIDERS:

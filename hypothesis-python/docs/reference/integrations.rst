@@ -97,8 +97,8 @@ is to let you answer questions you didn't think of in advance.  In slogan form,
   *Debugging should be a data analysis problem.*
 
 By default, Hypothesis only reports the minimal failing example... but sometimes you might
-want to know something about *all* the examples.  Printing them to the terminal with
-:ref:`verbose output <verbose-output>` might be nice, but isn't always enough.
+want to know something about *all* the examples.  Printing them to the terminal by increasing
+|Verbosity| might be nice, but isn't always enough.
 This feature gives you an analysis-ready dataframe with useful columns and one row
 per test case, with columns from arguments to code coverage to pass/fail status.
 
@@ -171,9 +171,9 @@ Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`, wh
 
 - ``pytest --hypothesis-show-statistics`` can be used to :ref:`display test and data generation statistics <statistics>`.
 - ``pytest --hypothesis-profile=<profile name>`` can be used to :ref:`load a settings profile <settings_profiles>`.
-- ``pytest --hypothesis-verbosity=<level name>`` can be used to :ref:`override the current verbosity level <verbose-output>`.
+- ``pytest --hypothesis-verbosity=<level name>`` can be used to override the current |Verbosity| setting.
 - ``pytest --hypothesis-seed=<an int>`` can be used to :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
-- ``pytest --hypothesis-explain`` can be used to :ref:`temporarily enable the explain phase <phases>`.
+- ``pytest --hypothesis-explain`` can be used to temporarily enable |Phase.explain|.
 
 Finally, all tests that are defined with Hypothesis automatically have ``@pytest.mark.hypothesis`` applied to them.  See :ref:`here for information on working with markers <pytest:mark examples>`.
 

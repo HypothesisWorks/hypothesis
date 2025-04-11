@@ -194,6 +194,7 @@ rst_prolog = """
 <hypothesis.HealthCheck.differing_executors>`
 .. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
 
+.. |Phase| replace:: :obj:`Phase <hypothesis.Phase>`
 .. |Phase.explicit| replace:: :obj:`Phase.explicit <hypothesis.Phase.explicit>`
 .. |Phase.reuse| replace:: :obj:`Phase.reuse <hypothesis.Phase.reuse>`
 .. |Phase.generate| replace:: :obj:`Phase.generate <hypothesis.Phase.generate>`
@@ -201,6 +202,7 @@ rst_prolog = """
 .. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
 .. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
 
+.. |Verbosity| replace:: :obj:`~hypothesis.Verbosity`
 .. |Verbosity.verbose| replace:: :obj:`Verbosity.verbose <hypothesis.Verbosity.verbose>`
 .. |Verbosity.debug| replace:: :obj:`Verbosity.debug <hypothesis.Verbosity.debug>`
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
