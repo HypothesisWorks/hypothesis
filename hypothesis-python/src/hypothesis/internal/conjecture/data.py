@@ -861,6 +861,16 @@ class ConjectureData:
         assert not math.isnan(min_value)
         assert not math.isnan(max_value)
 
+        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
+            raise FloatingPointError(
+                "Got allow_subnormal=True, but we can't represent subnormal floats "
+                "right now, in violation of the IEEE-754 floating-point "
+                "specification.  This is usually because something was compiled with "
+                "-ffast-math or a similar option, which sets global processor state.  "
+                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
+
         if forced is not None:
             assert allow_nan or not math.isnan(forced)
             assert math.isnan(forced) or (

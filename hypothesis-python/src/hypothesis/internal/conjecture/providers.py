@@ -18,23 +18,25 @@ from sys import float_info
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypedDict,
     TypeVar,
     Union,
+    cast,
 )
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
-    StringConstraints,
+    ChoiceConstraintsT,
+    ChoiceTypeT,
+    FloatConstraints,
     choice_constraints_key,
     choice_permitted,
 )
-from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
+from hypothesis.internal.conjecture.floats import lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes
 from hypothesis.internal.conjecture.utils import (
     INT_SIZES,
@@ -42,13 +44,14 @@ from hypothesis.internal.conjecture.utils import (
     Sampler,
     many,
 )
+from hypothesis.internal.constants_ast import local_constants
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
+    int_to_float,
     make_float_clamper,
     next_down,
     next_up,
-    sign_aware_lte,
 )
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -56,6 +59,7 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from hypothesis.internal.conjecture.data import ConjectureData
+    from hypothesis.internal.constants_ast import ConstantsT, ConstantT
 
 T = TypeVar("T")
 _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
@@ -77,9 +81,9 @@ AVAILABLE_PROVIDERS = {
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
-STRING_SAMPLER_CACHE = LRUCache(64)
+CONSTANTS_CACHE = LRUCache(1024)
 
-NASTY_FLOATS = sorted(
+_constant_floats = (
     [
         0.0,
         0.5,
@@ -94,7 +98,7 @@ NASTY_FLOATS = sorted(
         float_info.min,
         float_info.max,
         3.402823466e38,
-        9007199254740992,
+        9007199254740992.0,
         1 - 10e-6,
         2 + 10e-6,
         1.192092896e-07,
@@ -102,96 +106,111 @@ NASTY_FLOATS = sorted(
     ]
     + [2.0**-n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
     + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
-    + [math.inf, math.nan] * 5
-    + [SIGNALING_NAN],
-    key=float_to_lex,
+    + [math.inf, math.nan, SIGNALING_NAN]
 )
-NASTY_FLOATS = list(map(float, NASTY_FLOATS))
-NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+_constant_floats.extend([-x for x in _constant_floats])
+assert all(isinstance(f, float) for f in _constant_floats)
 
-NASTY_STRINGS = sorted(
-    [
-        # strings which can be interpreted as code / logic
-        "undefined",
-        "null",
-        "NULL",
-        "nil",
-        "NIL",
-        "true",
-        "false",
-        "True",
-        "False",
-        "TRUE",
-        "FALSE",
-        "None",
-        "none",
-        "if",
-        "then",
-        "else",
-        # strings which can be interpreted as a number
-        "0",
-        "1e100",
-        "0..0",
-        "0/0",
-        "1/0",
-        "+0.0",
-        "Infinity",
-        "-Infinity",
-        "Inf",
-        "INF",
-        "NaN",
-        "9" * 30,
-        # common ascii characters
-        ",./;'[]\\-=<>?:\"{}|_+!@#$%^&*()`~",
-        # common unicode characters
-        "Ω≈ç√∫˜µ≤≥÷åß∂ƒ©˙∆˚¬…æœ∑´®†¥¨ˆøπ“‘¡™£¢∞§¶•ªº–≠¸˛Ç◊ı˜Â¯˘¿ÅÍÎÏ˝ÓÔÒÚÆ☃Œ„´‰ˇÁ¨ˆØ∏”’`⁄€‹›ﬁﬂ‡°·‚—±",
-        # characters which increase in length when lowercased
-        "Ⱥ",
-        "Ⱦ",
-        # ligatures
-        "æœÆŒﬀʤʨß"
-        # emoticons
-        "(╯°□°）╯︵ ┻━┻)",
-        # emojis
-        "😍",
-        "🇺🇸",
-        # emoji modifiers
-        "🏻"  # U+1F3FB Light Skin Tone,
-        "👍🏻",  # 👍 followed by U+1F3FB
-        # RTL text
-        "الكل في المجمو عة",
-        # Ogham text, which contains the only character in the Space Separators
-        # unicode category (Zs) that isn't visually blank:  .  # noqa: RUF003
-        "᚛ᚄᚓᚐᚋᚒᚄ ᚑᚄᚂᚑᚏᚅ᚜",
-        # readable variations on text (bolt/italic/script)
-        "𝐓𝐡𝐞 𝐪𝐮𝐢𝐜𝐤 𝐛𝐫𝐨𝐰𝐧 𝐟𝐨𝐱 𝐣𝐮𝐦𝐩𝐬 𝐨𝐯𝐞𝐫 𝐭𝐡𝐞 𝐥𝐚𝐳𝐲 𝐝𝐨𝐠",
-        "𝕿𝖍𝖊 𝖖𝖚𝖎𝖈𝖐 𝖇𝖗𝖔𝖜𝖓 𝖋𝖔𝖝 𝖏𝖚𝖒𝖕𝖘 𝖔𝖛𝖊𝖗 𝖙𝖍𝖊 𝖑𝖆𝖟𝖞 𝖉𝖔𝖌",
-        "𝑻𝒉𝒆 𝒒𝒖𝒊𝒄𝒌 𝒃𝒓𝒐𝒘𝒏 𝒇𝒐𝒙 𝒋𝒖𝒎𝒑𝒔 𝒐𝒗𝒆𝒓 𝒕𝒉𝒆 𝒍𝒂𝒛𝒚 𝒅𝒐𝒈",
-        "𝓣𝓱𝓮 𝓺𝓾𝓲𝓬𝓴 𝓫𝓻𝓸𝔀𝓷 𝓯𝓸𝔁 𝓳𝓾𝓶𝓹𝓼 𝓸𝓿𝓮𝓻 𝓽𝓱𝓮 𝓵𝓪𝔃𝔂 𝓭𝓸𝓰",
-        "𝕋𝕙𝕖 𝕢𝕦𝕚𝕔𝕜 𝕓𝕣𝕠𝕨𝕟 𝕗𝕠𝕩 𝕛𝕦𝕞𝕡𝕤 𝕠𝕧𝕖𝕣 𝕥𝕙𝕖 𝕝𝕒𝕫𝕪 𝕕𝕠𝕘",
-        # upsidown text
-        "ʇǝɯɐ ʇᴉs ɹolop ɯnsdᴉ ɯǝɹo˥",
-        # reserved strings in windows
-        "NUL",
-        "COM1",
-        "LPT1",
-        # scunthorpe problem
-        "Scunthorpe",
-        # zalgo text
-        "Ṱ̺̺̕o͞ ̷i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤ ̖t̝͕̳̣̻̪͞h̼͓̲̦̳̘̲e͇̣̰̦̬͎ ̢̼̻̱̘h͚͎͙̜̣̲ͅi̦̲̣̰̤v̻͍e̺̭̳̪̰-m̢iͅn̖̺̞̲̯̰d̵̼̟͙̩̼̘̳ ̞̥̱̳̭r̛̗̘e͙p͠r̼̞̻̭̗e̺̠̣͟s̘͇̳͍̝͉e͉̥̯̞̲͚̬͜ǹ̬͎͎̟̖͇̤t͍̬̤͓̼̭͘ͅi̪̱n͠g̴͉ ͏͉ͅc̬̟h͡a̫̻̯͘o̫̟̖͍̙̝͉s̗̦̲.̨̹͈̣",
-        #
-        # examples from https://faultlore.com/blah/text-hates-you/
-        "मनीष منش",
-        "पन्ह पन्ह त्र र्च कृकृ ड्ड न्हृे إلا بسم الله",
-        "lorem لا بسم الله ipsum 你好1234你好",
-    ],
-    key=len,
-)
+_constant_strings = {
+    # strings which can be interpreted as code / logic
+    "undefined",
+    "null",
+    "NULL",
+    "nil",
+    "NIL",
+    "true",
+    "false",
+    "True",
+    "False",
+    "TRUE",
+    "FALSE",
+    "None",
+    "none",
+    "if",
+    "then",
+    "else",
+    # strings which can be interpreted as a number
+    "0",
+    "1e100",
+    "0..0",
+    "0/0",
+    "1/0",
+    "+0.0",
+    "Infinity",
+    "-Infinity",
+    "Inf",
+    "INF",
+    "NaN",
+    "9" * 30,
+    # common ascii characters
+    ",./;'[]\\-=<>?:\"{}|_+!@#$%^&*()`~",
+    # common unicode characters
+    "Ω≈ç√∫˜µ≤≥÷åß∂ƒ©˙∆˚¬…æœ∑´®†¥¨ˆøπ“‘¡™£¢∞§¶•ªº–≠¸˛Ç◊ı˜Â¯˘¿ÅÍÎÏ˝ÓÔÒÚÆ☃Œ„´‰ˇÁ¨ˆØ∏”’`⁄€‹›ﬁﬂ‡°·‚—±",
+    # characters which increase in length when lowercased
+    "Ⱥ",
+    "Ⱦ",
+    # ligatures
+    "æœÆŒﬀʤʨß"
+    # emoticons
+    "(╯°□°）╯︵ ┻━┻)",
+    # emojis
+    "😍",
+    "🇺🇸",
+    # emoji modifiers
+    "🏻"  # U+1F3FB Light Skin Tone,
+    "👍🏻",  # 👍 followed by U+1F3FB
+    # RTL text
+    "الكل في المجمو عة",
+    # Ogham text, which contains the only character in the Space Separators
+    # unicode category (Zs) that isn't visually blank:  .  # noqa: RUF003
+    "᚛ᚄᚓᚐᚋᚒᚄ ᚑᚄᚂᚑᚏᚅ᚜",
+    # readable variations on text (bolt/italic/script)
+    "𝐓𝐡𝐞 𝐪𝐮𝐢𝐜𝐤 𝐛𝐫𝐨𝐰𝐧 𝐟𝐨𝐱 𝐣𝐮𝐦𝐩𝐬 𝐨𝐯𝐞𝐫 𝐭𝐡𝐞 𝐥𝐚𝐳𝐲 𝐝𝐨𝐠",
+    "𝕿𝖍𝖊 𝖖𝖚𝖎𝖈𝖐 𝖇𝖗𝖔𝖜𝖓 𝖋𝖔𝖝 𝖏𝖚𝖒𝖕𝖘 𝖔𝖛𝖊𝖗 𝖙𝖍𝖊 𝖑𝖆𝖟𝖞 𝖉𝖔𝖌",
+    "𝑻𝒉𝒆 𝒒𝒖𝒊𝒄𝒌 𝒃𝒓𝒐𝒘𝒏 𝒇𝒐𝒙 𝒋𝒖𝒎𝒑𝒔 𝒐𝒗𝒆𝒓 𝒕𝒉𝒆 𝒍𝒂𝒛𝒚 𝒅𝒐𝒈",
+    "𝓣𝓱𝓮 𝓺𝓾𝓲𝓬𝓴 𝓫𝓻𝓸𝔀𝓷 𝓯𝓸𝔁 𝓳𝓾𝓶𝓹𝓼 𝓸𝓿𝓮𝓻 𝓽𝓱𝓮 𝓵𝓪𝔃𝔂 𝓭𝓸𝓰",
+    "𝕋𝕙𝕖 𝕢𝕦𝕚𝕔𝕜 𝕓𝕣𝕠𝕨𝕟 𝕗𝕠𝕩 𝕛𝕦𝕞𝕡𝕤 𝕠𝕧𝕖𝕣 𝕥𝕙𝕖 𝕝𝕒𝕫𝕪 𝕕𝕠𝕘",
+    # upsidown text
+    "ʇǝɯɐ ʇᴉs ɹolop ɯnsdᴉ ɯǝɹo˥",
+    # reserved strings in windows
+    "NUL",
+    "COM1",
+    "LPT1",
+    # scunthorpe problem
+    "Scunthorpe",
+    # zalgo text
+    "Ṱ̺̺̕o͞ ̷i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤ ̖t̝͕̳̣̻̪͞h̼͓̲̦̳̘̲e͇̣̰̦̬͎ ̢̼̻̱̘h͚͎͙̜̣̲ͅi̦̲̣̰̤v̻͍e̺̭̳̪̰-m̢iͅn̖̺̞̲̯̰d̵̼̟͙̩̼̘̳ ̞̥̱̳̭r̛̗̘e͙p͠r̼̞̻̭̗e̺̠̣͟s̘͇̳͍̝͉e͉̥̯̞̲͚̬͜ǹ̬͎͎̟̖͇̤t͍̬̤͓̼̭͘ͅi̪̱n͠g̴͉ ͏͉ͅc̬̟h͡a̫̻̯͘o̫̟̖͍̙̝͉s̗̦̲.̨̹͈̣",
+    #
+    # examples from https://faultlore.com/blah/text-hates-you/
+    "मनीष منش",
+    "पन्ह पन्ह त्र र्च कृकृ ड्ड न्हृे إلا بسم الله",
+    "lorem لا بسم الله ipsum 你好1234你好",
+}
 
-# Masks for masking off the first byte of an n-bit buffer.
-# The appropriate mask is stored at position n % 8.
-BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
-BYTE_MASKS[0] = 255
+
+GLOBAL_CONSTANTS: "ConstantsT" = {
+    "float": {float_to_int(f) for f in _constant_floats},
+    "string": set(_constant_strings),
+    "integer": set(),
+    "bytes": set(),
+}
+
+
+_local_constants_hash: Optional[int] = None
+
+
+def _get_local_constants():
+    global _local_constants_hash
+
+    constants = local_constants()
+    constants_hash = hash(tuple((k, tuple(v)) for k, v in constants.items()))
+    # if we've added new constants since the last time we checked, invalidate
+    # the cache.
+    if constants_hash != _local_constants_hash:
+        CONSTANTS_CACHE.cache.clear()
+        _local_constants_hash = constants_hash
+
+    return constants
 
 
 class _BackendInfoMsg(TypedDict):
@@ -303,10 +322,6 @@ class PrimitiveProvider(abc.ABC):
         max_value: float = math.inf,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
-        # TODO: consider supporting these float widths at the IR level in the
-        # future.
-        # width: Literal[16, 32, 64] = 64,
-        # exclude_min and exclude_max handled higher up,
     ) -> float:
         raise NotImplementedError
 
@@ -350,12 +365,85 @@ class PrimitiveProvider(abc.ABC):
         """
 
 
+def _permitted_constants(
+    constants: Any,
+    *,
+    choice_type: ChoiceTypeT,
+    constraints: ChoiceConstraintsT,
+) -> tuple["ConstantT", ...]:
+    return tuple(
+        value
+        for value in constants
+        if choice_permitted(
+            int_to_float(value) if choice_type == "float" else value,
+            constraints,
+        )
+    )
+
+
 class HypothesisProvider(PrimitiveProvider):
     lifetime = "test_case"
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
+        self.local_constants = _get_local_constants()
         self._random = None if self._cd is None else self._cd._random
+
+    def _maybe_draw_constant(
+        self,
+        choice_type: ChoiceTypeT,
+        constraints: ChoiceConstraintsT,
+        *,
+        p: float = 0.05,
+    ) -> Optional["ConstantT"]:
+        assert self._random is not None
+        assert choice_type != "boolean"
+
+        key = (choice_type, choice_constraints_key(choice_type, constraints))
+        if key not in CONSTANTS_CACHE:
+            global_constants = GLOBAL_CONSTANTS[choice_type]
+            local_constants = self.local_constants[choice_type]
+
+            if choice_type == "float":
+                # to avoid collisions between e.g. 0.0 and -0.0 in the constants
+                # set, we store global constant floats in their float_to_int
+                # form. Convert the local constants to the same format before
+                # unioning.
+                local_constants = {
+                    float_to_int(f) for f in cast(set[float], local_constants)
+                }
+            CONSTANTS_CACHE[key] = (
+                _permitted_constants(
+                    global_constants,
+                    choice_type=choice_type,
+                    constraints=constraints,
+                ),
+                _permitted_constants(
+                    local_constants,
+                    choice_type=choice_type,
+                    constraints=constraints,
+                ),
+            )
+
+        # split constants into two pools, so we still have a good chance to draw
+        # global constants even if there are many local constants.
+        (global_constants, local_constants) = CONSTANTS_CACHE[key]
+        constants_lists = ([global_constants] if global_constants else []) + (
+            [local_constants] if local_constants else []
+        )
+        if not constants_lists or self._random.random() > p:
+            return None
+
+        # At this point, we've decided to use a constant. Now we select which pool
+        # to draw that constant from.
+        #
+        # Note that this approach has a different probability distribution than
+        # attempting a random.random for both global_constants and local_constants.
+        constants = self._random.choice(constants_lists)
+        value = self._random.choice(constants)
+        if choice_type == "float":
+            value = int_to_float(value)
+        return value
 
     def draw_boolean(
         self,
@@ -379,6 +467,19 @@ class HypothesisProvider(PrimitiveProvider):
         shrink_towards: int = 0,
     ) -> int:
         assert self._cd is not None
+        if (
+            constant := self._maybe_draw_constant(
+                "integer",
+                {
+                    "min_value": min_value,
+                    "max_value": max_value,
+                    "weights": weights,
+                    "shrink_towards": shrink_towards,
+                },
+            )
+        ) is not None:
+            assert isinstance(constant, int)
+            return constant
 
         center = 0
         if min_value is not None:
@@ -436,39 +537,59 @@ class HypothesisProvider(PrimitiveProvider):
         max_value: float = math.inf,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
-        # TODO: consider supporting these float widths at the IR level in the
-        # future.
-        # width: Literal[16, 32, 64] = 64,
-        # exclude_min and exclude_max handled higher up,
     ) -> float:
-        (
-            sampler,
-            clamper,
-            nasty_floats,
-        ) = self._draw_float_init_logic(
-            min_value=min_value,
-            max_value=max_value,
-            allow_nan=allow_nan,
+        assert self._random is not None
+
+        constraints: FloatConstraints = {
+            "min_value": min_value,
+            "max_value": max_value,
+            "allow_nan": allow_nan,
+            "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+        }
+        if (
+            constant := self._maybe_draw_constant("float", constraints, p=0.15)
+        ) is not None:
+            assert isinstance(constant, float)
+            return constant
+
+        # on top of the probability to draw a constant float, we independently
+        # upweight math.inf, -math.inf, math.nan, and boundary values.
+        weird_floats = [
+            f
+            for f in [
+                math.inf,
+                -math.inf,
+                math.nan,
+                min_value,
+                next_up(min_value),
+                min_value + 1,
+                max_value - 1,
+                next_down(max_value),
+                max_value,
+            ]
+            if choice_permitted(f, constraints)
+        ]
+
+        if weird_floats and self._random.random() < 0.05:
+            return self._random.choice(weird_floats)
+
+        clamper = make_float_clamper(
+            min_value,
+            max_value,
             smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+            allow_nan=allow_nan,
         )
 
-        assert self._cd is not None
-
-        while True:
-            i = sampler.sample(self._cd) if sampler else 0
-            if i == 0:
-                result = self._draw_float()
-                if allow_nan and math.isnan(result):
-                    clamped = result  # pragma: no cover
-                else:
-                    clamped = clamper(result)
-                if float_to_int(clamped) != float_to_int(result) and not (
-                    math.isnan(result) and allow_nan
-                ):
-                    result = clamped
-            else:
-                result = nasty_floats[i - 1]
-            return result
+        result = self._draw_float()
+        if allow_nan and math.isnan(result):
+            clamped = result  # pragma: no cover
+        else:
+            clamped = clamper(result)
+        if float_to_int(clamped) != float_to_int(result) and not (
+            math.isnan(result) and allow_nan
+        ):
+            result = clamped
+        return result
 
     def draw_string(
         self,
@@ -483,14 +604,14 @@ class HypothesisProvider(PrimitiveProvider):
         if len(intervals) == 0:
             return ""
 
-        sampler, nasty_strings = self._draw_string_sampler(
-            intervals=intervals,
-            min_size=min_size,
-            max_size=max_size,
-        )
-
-        if sampler is not None and self.draw_boolean(p=0.05):
-            return nasty_strings[sampler.sample(self._cd)]
+        if (
+            constant := self._maybe_draw_constant(
+                "string",
+                {"intervals": intervals, "min_size": min_size, "max_size": max_size},
+            )
+        ) is not None:
+            assert isinstance(constant, str)
+            return constant
 
         average_size = min(
             max(min_size * 2, min_size + 5),
@@ -525,6 +646,14 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> bytes:
         assert self._cd is not None
         assert self._random is not None
+
+        if (
+            constant := self._maybe_draw_constant(
+                "bytes", {"min_size": min_size, "max_size": max_size}
+            )
+        ) is not None:
+            assert isinstance(constant, bytes)
+            return constant
 
         buf = bytearray()
         average_size = min(
@@ -589,118 +718,11 @@ class HypothesisProvider(PrimitiveProvider):
 
         return self._random.randint(lower, upper)
 
-    @classmethod
-    def _draw_float_init_logic(
-        cls,
-        *,
-        min_value: float,
-        max_value: float,
-        allow_nan: bool,
-        smallest_nonzero_magnitude: float,
-    ) -> tuple[
-        Optional[Sampler],
-        Callable[[float], float],
-        list[float],
-    ]:
-        """
-        Caches initialization logic for draw_float, as an alternative to
-        computing this for *every* float draw.
-        """
-        # float_to_int allows us to distinguish between e.g. -0.0 and 0.0,
-        # even in light of hash(-0.0) == hash(0.0) and -0.0 == 0.0.
-        key = (
-            float_to_int(min_value),
-            float_to_int(max_value),
-            allow_nan,
-            float_to_int(smallest_nonzero_magnitude),
-        )
-        if key in FLOAT_INIT_LOGIC_CACHE:
-            return FLOAT_INIT_LOGIC_CACHE[key]
 
-        result = cls._compute_draw_float_init_logic(
-            min_value=min_value,
-            max_value=max_value,
-            allow_nan=allow_nan,
-            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
-        )
-        FLOAT_INIT_LOGIC_CACHE[key] = result
-        return result
-
-    @staticmethod
-    def _compute_draw_float_init_logic(
-        *,
-        min_value: float,
-        max_value: float,
-        allow_nan: bool,
-        smallest_nonzero_magnitude: float,
-    ) -> tuple[
-        Optional[Sampler],
-        Callable[[float], float],
-        list[float],
-    ]:
-        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
-            raise FloatingPointError(
-                "Got allow_subnormal=True, but we can't represent subnormal floats "
-                "right now, in violation of the IEEE-754 floating-point "
-                "specification.  This is usually because something was compiled with "
-                "-ffast-math or a similar option, which sets global processor state.  "
-                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
-                "writeup - and good luck!"
-            )
-
-        def permitted(f: float) -> bool:
-            if math.isnan(f):
-                return allow_nan
-            if 0 < abs(f) < smallest_nonzero_magnitude:
-                return False
-            return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
-
-        boundary_values = [
-            min_value,
-            next_up(min_value),
-            min_value + 1,
-            max_value - 1,
-            next_down(max_value),
-            max_value,
-        ]
-        nasty_floats = [f for f in NASTY_FLOATS + boundary_values if permitted(f)]
-        weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
-        sampler = Sampler(weights, observe=False) if nasty_floats else None
-
-        clamper = make_float_clamper(
-            min_value,
-            max_value,
-            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
-            allow_nan=allow_nan,
-        )
-        return (sampler, clamper, nasty_floats)
-
-    @classmethod
-    def _draw_string_sampler(
-        cls,
-        *,
-        intervals: IntervalSet,
-        min_size: int,
-        max_size: int,
-    ) -> tuple[Optional[Sampler], list[str]]:
-        constraints: StringConstraints = {
-            "intervals": intervals,
-            "min_size": min_size,
-            "max_size": max_size,
-        }
-        key = choice_constraints_key("string", constraints)
-        if key in STRING_SAMPLER_CACHE:
-            return STRING_SAMPLER_CACHE[key]
-
-        nasty_strings = [s for s in NASTY_STRINGS if choice_permitted(s, constraints)]
-        sampler = (
-            Sampler([1 / len(nasty_strings)] * len(nasty_strings), observe=False)
-            if nasty_strings
-            else None
-        )
-        result = (sampler, nasty_strings)
-        STRING_SAMPLER_CACHE[key] = result
-        return result
+# Masks for masking off the first byte of an n-bit buffer.
+# The appropriate mask is stored at position n % 8.
+BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
+BYTE_MASKS[0] = 255
 
 
 class BytestringProvider(PrimitiveProvider):

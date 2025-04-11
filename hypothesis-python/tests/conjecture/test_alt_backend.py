@@ -282,7 +282,7 @@ class TrivialProvider(PrimitiveProvider):
 
 class InvalidLifetime(TrivialProvider):
 
-    lifetime = "forever and a day!"
+    lifetime = "forever and a day"
 
 
 def test_invalid_lifetime():
@@ -350,8 +350,8 @@ def test_case_lifetime():
         # we create a new provider each time we *try* to generate an input to the
         # test function, but this could be filtered out, discarded as duplicate,
         # etc. We also sometimes try predetermined inputs to the test function,
-        # such as the zero buffer, which does not entail creating providers.
-        # These two facts combined mean that the number of inits could be
+        # such as ChoiceTemplate(type="simplest"), which does not entail creating
+        # providers. These two facts combined mean that the number of inits could be
         # anywhere reasonably close to the number of function calls.
         assert (
             test_function_count - 10

@@ -57,6 +57,7 @@ def test_negation_is_self_inverse(x):
 
 @fails
 @given(lists(floats()))
+@TRY_HARDER
 def test_is_not_nan(xs):
     assert not any(math.isnan(x) for x in xs)
 
