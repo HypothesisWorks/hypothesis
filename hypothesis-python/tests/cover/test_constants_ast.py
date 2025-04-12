@@ -118,7 +118,7 @@ def test_frozenset_constants(value):
 
 @skipif_emscripten
 def test_constants_from_running_file(tmp_path):
-    p = tmp_path / "test_constants.py"
+    p = tmp_path / "my_constants.py"
     p.write_text(
         textwrap.dedent(
             """
@@ -165,6 +165,14 @@ def test_constants_from_bad_module():
     assert _module_ast(module) is None
 
 
-@pytest.mark.parametrize("path", ["/path/to/tests/module", "/path/to/test/module"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/path/to/tests/module",
+        "/path/to/test/module",
+        "/a/test_file.py",
+        "/a/file_test.py",
+    ],
+)
 def test_local_modules_ignores_test_modules(path):
     assert not _is_local_module_file(path)

@@ -28,9 +28,7 @@ ConstantT: "TypeAlias" = Union[int, float, bytes, str]
 
 class ConstantsT(TypedDict):
     integer: set[int]
-    # we store floats in either their float or float_to_int form in different
-    # places.
-    float: Union[set[float], set[int]]
+    float: set[float]
     bytes: set[bytes]
     string: set[str]
 
@@ -131,7 +129,12 @@ def _is_local_module_file(path: str) -> bool:
         # ignore here.
         and not is_hypothesis_file(path)
         # avoid collecting constants from test files
-        and not ("test" in (p := Path(path)).parts or "tests" in p.parts)
+        and not (
+            "test" in (p := Path(path)).parts
+            or "tests" in p.parts
+            or p.stem.startswith("test_")
+            or p.stem.endswith("_test")
+        )
     )
 
 

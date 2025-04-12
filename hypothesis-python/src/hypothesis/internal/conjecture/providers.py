@@ -23,7 +23,6 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
-    cast,
 )
 
 from hypothesis.errors import HypothesisWarning
@@ -48,7 +47,6 @@ from hypothesis.internal.constants_ast import local_constants
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
-    int_to_float,
     make_float_clamper,
     next_down,
     next_up,
@@ -81,11 +79,11 @@ AVAILABLE_PROVIDERS = {
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
+# cache the choice_permitted constants for a particular set of constraints.
 CONSTANTS_CACHE = LRUCache(1024)
 
 _constant_floats = (
     [
-        0.0,
         0.5,
         1.1,
         1.5,
@@ -106,7 +104,6 @@ _constant_floats = (
     ]
     + [2.0**-n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
     + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
-    + [math.inf, math.nan, SIGNALING_NAN]
 )
 _constant_floats.extend([-x for x in _constant_floats])
 assert all(isinstance(f, float) for f in _constant_floats)
@@ -189,7 +186,7 @@ _constant_strings = {
 
 
 GLOBAL_CONSTANTS: "ConstantsT" = {
-    "float": {float_to_int(f) for f in _constant_floats},
+    "float": set(_constant_floats),
     "string": set(_constant_strings),
     "integer": set(),
     "bytes": set(),
@@ -365,22 +362,6 @@ class PrimitiveProvider(abc.ABC):
         """
 
 
-def _permitted_constants(
-    constants: Any,
-    *,
-    choice_type: ChoiceTypeT,
-    constraints: ChoiceConstraintsT,
-) -> tuple["ConstantT", ...]:
-    return tuple(
-        value
-        for value in constants
-        if choice_permitted(
-            int_to_float(value) if choice_type == "float" else value,
-            constraints,
-        )
-    )
-
-
 class HypothesisProvider(PrimitiveProvider):
     lifetime = "test_case"
 
@@ -399,29 +380,23 @@ class HypothesisProvider(PrimitiveProvider):
         assert self._random is not None
         assert choice_type != "boolean"
 
+        # check whether we even want a constant before spending time computing
+        # and caching the allowed constants.
+        if self._random.random() > p:
+            return None
+
         key = (choice_type, choice_constraints_key(choice_type, constraints))
         if key not in CONSTANTS_CACHE:
-            global_constants = GLOBAL_CONSTANTS[choice_type]
-            local_constants = self.local_constants[choice_type]
-
-            if choice_type == "float":
-                # to avoid collisions between e.g. 0.0 and -0.0 in the constants
-                # set, we store global constant floats in their float_to_int
-                # form. Convert the local constants to the same format before
-                # unioning.
-                local_constants = {
-                    float_to_int(f) for f in cast(set[float], local_constants)
-                }
             CONSTANTS_CACHE[key] = (
-                _permitted_constants(
-                    global_constants,
-                    choice_type=choice_type,
-                    constraints=constraints,
+                tuple(
+                    choice
+                    for choice in GLOBAL_CONSTANTS[choice_type]
+                    if choice_permitted(choice, constraints)
                 ),
-                _permitted_constants(
-                    local_constants,
-                    choice_type=choice_type,
-                    constraints=constraints,
+                tuple(
+                    xchoice
+                    for xchoice in self.local_constants[choice_type]
+                    if choice_permitted(xchoice, constraints)
                 ),
             )
 
@@ -431,7 +406,7 @@ class HypothesisProvider(PrimitiveProvider):
         constants_lists = ([global_constants] if global_constants else []) + (
             [local_constants] if local_constants else []
         )
-        if not constants_lists or self._random.random() > p:
+        if not constants_lists:
             return None
 
         # At this point, we've decided to use a constant. Now we select which pool
@@ -440,10 +415,7 @@ class HypothesisProvider(PrimitiveProvider):
         # Note that this approach has a different probability distribution than
         # attempting a random.random for both global_constants and local_constants.
         constants = self._random.choice(constants_lists)
-        value = self._random.choice(constants)
-        if choice_type == "float":
-            value = int_to_float(value)
-        return value
+        return self._random.choice(constants)
 
     def draw_boolean(
         self,
@@ -553,13 +525,16 @@ class HypothesisProvider(PrimitiveProvider):
             return constant
 
         # on top of the probability to draw a constant float, we independently
-        # upweight math.inf, -math.inf, math.nan, and boundary values.
+        # upweight 0.0/-0.0, math.inf, -math.inf, nans, and boundary values.
         weird_floats = [
             f
             for f in [
+                0.0,
+                -0.0,
                 math.inf,
                 -math.inf,
                 math.nan,
+                SIGNALING_NAN,
                 min_value,
                 next_up(min_value),
                 min_value + 1,
