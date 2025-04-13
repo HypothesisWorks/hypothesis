@@ -106,7 +106,7 @@ importlib-metadata==8.6.1
     # via keyring
 iniconfig==2.1.0
     # via pytest
-ipython==8.34.0
+ipython==8.35.0
     # via -r requirements/tools.in
 isort==6.0.1
     # via shed
@@ -136,7 +136,7 @@ libcst==1.7.0
     # via
     #   -r requirements/tools.in
     #   shed
-markdown==3.7
+markdown==3.8
     # via pelican
 markdown-it-py==3.0.0
     # via rich
@@ -218,7 +218,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.398
+pyright==1.1.399
     # via -r requirements/tools.in
 pytest==8.3.5
     # via
@@ -258,7 +258,7 @@ rich==14.0.0
     # via
     #   pelican
     #   twine
-ruff==0.11.4
+ruff==0.11.5
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -343,7 +343,7 @@ types-redis==4.6.0.20241004
     # via -r requirements/tools.in
 types-setuptools==78.1.0.20250329
     # via types-cffi
-typing-extensions==4.13.1
+typing-extensions==4.13.2
     # via
     #   -r requirements/tools.in
     #   anyio
@@ -357,7 +357,7 @@ typing-extensions==4.13.1
     #   tox
 unidecode==1.3.8
     # via pelican
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   requests
     #   twine
@@ -365,7 +365,7 @@ virtualenv==20.30.0
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
-watchfiles==1.0.4
+watchfiles==1.0.5
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit

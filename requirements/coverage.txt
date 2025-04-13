@@ -92,7 +92,7 @@ tomli==2.2.1
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.13.1
+typing-extensions==4.13.2
     # via
     #   -r requirements/coverage.in
     #   black
