@@ -401,7 +401,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             ]
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
-                    output_names = [f"({name},)" for name in chain(*names_per_target)]
+                    output_names = [f"{name}," for name in chain(*names_per_target)]
                     output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
                     # We prefer the per-result ordering - otherwise we get interleaved
