@@ -21,6 +21,7 @@ from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache
 from io import StringIO
+from itertools import chain
 from time import perf_counter
 from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
 from unittest import TestCase
@@ -390,15 +391,38 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     def _repr_step(self, rule, data, result):
         output_assignment = ""
         if rule.targets:
+            number_of_results = (
+                len(result.values) if isinstance(result, MultipleResults) else 1
+            )
+            number_of_last_names = len(rule.targets) * number_of_results
+            last_names = self._last_names(number_of_last_names)
+            # Combine common target(s), with some zip magic to retain ordering
+            # of results within a common target. The reason for this complexity
+            # is that otherwise a repeated target with multiple result gets
+            # interleaved ordering - a_0, a_2, a_4, a_1, a_3, a_5 for example
+            # - and once we "fix" that by merging repeated targets it's more
+            # consistent to do the same merging for single results.
+            target_names_mapping = {}
+            for i, target in enumerate(rule.targets):
+                target_names_mapping.setdefault(target, []).append(
+                    last_names[i :: len(rule.targets)]
+                )
+            names_per_target = [
+                sum(zip(*name_lists), start=())  # transpose and flatten
+                for name_lists in target_names_mapping.values()
+            ]
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
-                    output_assignment = f"({self._last_names(1)[0]},) = "
+                    output_names = [f"({name},)" for name in chain(*names_per_target)]
+                    output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
-                    number_of_last_names = len(rule.targets) * len(result.values)
-                    output_names = self._last_names(number_of_last_names)
-                    output_assignment = ", ".join(output_names) + " = "
+                    output_names = [", ".join(names) for names in names_per_target]
+                    # Note special curly-bracket notation, it is meant to signal that this case
+                    # (only) does not have strict ordering of the result-to-target mapping
+                    output_assignment = "{" + "; ".join(output_names) + "} = "
             else:
-                output_assignment = self._last_names(1)[0] + " = "
+                output_names = chain(*names_per_target)
+                output_assignment = " = ".join(output_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
         return f"{output_assignment}state.{rule.function.__name__}({args})"
 

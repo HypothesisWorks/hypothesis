@@ -1248,6 +1248,45 @@ state.teardown()
     )
 
 
+@pytest.mark.parametrize(
+    "returned,repr_",
+    [
+        ("ret1", "a_0 = a_1 = b_0 = "),
+        (multiple(), ""),
+        (multiple("ret1"), "(a_0,) = (a_1,) = (b_0,) = "),
+        (multiple("ret1", "ret2"), "{a_0, a_1, a_2, a_3; b_0, b_1} = "),
+    ],
+)
+def test_multiple_targets_repr(returned, repr_):
+    class Machine(RuleBasedStateMachine):
+        a = Bundle("a")
+        b = Bundle("b")
+
+        @initialize(targets=(a, b, a))
+        def initialize(self):
+            return returned
+
+        @rule()
+        def fail_fast(self):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == f"""
+Falsifying example:
+state = Machine()
+{repr_}state.initialize()
+state.fail_fast()
+state.teardown()
+""".strip()
+    )
+
+
 def test_multiple_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
@@ -1278,7 +1317,7 @@ def test_multiple_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
+{a_0, a_1, a_2; b_0, b_1, b_2} = state.initialize()
 state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
@@ -1318,7 +1357,7 @@ def test_multiple_common_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, a_2, b_1, a_3, a_4, b_2, a_5 = state.initialize()
+{a_0, a_1, a_2, a_3, a_4, a_5; b_0, b_1, b_2} = state.initialize()
 state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
