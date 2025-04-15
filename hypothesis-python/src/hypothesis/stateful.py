@@ -399,22 +399,25 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             names_per_target = [
                 last_names[i :: len(rule.targets)] for i in range(len(rule.targets))
             ]
-            # We prefer the # per-result ordering - otherwise we get interleaved ordering
-            # for duplicate targets when there are >1 results. Note "per-target" and
-            # "per-result" is only true in the abstract, the actual value ordering may
-            # differ.
-            names_per_result = list(zip(*names_per_target))  # transpose
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
-                    output_names = [f"({name},)" for name in chain(*names_per_result)]
+                    output_names = [f"({name},)" for name in chain(*names_per_target)]
                     output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
+                    # We prefer the per-result ordering - otherwise we get interleaved
+                    # ordering for duplicate targets when there are >1 results.
+                    # Note: "per-target" and "per-result" is only true in the abstract,
+                    # the actual value ordering may differ.
+                    names_per_result = list(zip(*names_per_target))  # transposed
                     output_names = [", ".join(names) for names in names_per_result]
-                    # Note special curly-bracket notation, it is meant to signal that this case
-                    # (only) does not have strict ordering of the result-to-target mapping
-                    output_assignment = "{" + "; ".join(output_names) + "} = "
+                    if len(rule.targets) == 1:
+                        output_assignment = ", ".join(output_names) + " = "
+                    else:
+                        # Note special curly-bracket notation, it is meant to signal that this case
+                        # (only) does not have strict ordering of the result-to-target mapping
+                        output_assignment = "{" + "; ".join(output_names) + "} = "
             else:
-                output_names = chain(*names_per_result)
+                output_names = chain(*names_per_target)
                 output_assignment = " = ".join(output_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
         return f"{output_assignment}state.{rule.function.__name__}({args})"
