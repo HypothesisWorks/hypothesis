@@ -1249,58 +1249,24 @@ state.teardown()
 
 
 @pytest.mark.parametrize(
-    "initial,repr_",
+    "bundle_names,initial,repr_",
     [
-        ("ret1", "a_0 = b_0 = a_1 = "),
-        (multiple(), ""),
-        (multiple("ret1"), "a_0, = b_0, = a_1, = "),
-        (multiple("ret1", "ret2"), "{a_0, b_0, a_1, a_2, b_1, a_3} = "),
+        ("a", "ret1", "a_0 = "),
+        ("aba", "ret1", "a_0 = b_0 = a_1 = "),
+        ("a", multiple(), ""),
+        ("aba", multiple(), ""),
+        ("a", multiple("ret1"), "a_0, = "),
+        ("aba", multiple("ret1"), "a_0, = b_0, = a_1, = "),
+        ("a", multiple("ret1", "ret2"), "a_0, a_1 = "),
+        ("aba", multiple("ret1", "ret2"), "{a_0, b_0, a_1, a_2, b_1, a_3} = "),
     ],
 )
-def test_multiple_targets_repr(initial, repr_):
+def test_targets_repr(bundle_names, initial, repr_):
+    bundles = {name: Bundle(name) for name in bundle_names}
+
     class Machine(RuleBasedStateMachine):
-        a = Bundle("a")
-        b = Bundle("b")
 
-        @initialize(targets=(a, b, a))
-        def initialize(self):
-            return initial
-
-        @rule()
-        def fail_fast(self):
-            raise AssertionError
-
-    Machine.TestCase.settings = NO_BLOB_SETTINGS
-    with pytest.raises(AssertionError) as err:
-        run_state_machine_as_test(Machine)
-
-    result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == f"""
-Falsifying example:
-state = Machine()
-{repr_}state.initialize()
-state.fail_fast()
-state.teardown()
-""".strip()
-    )
-
-
-@pytest.mark.parametrize(
-    "initial,repr_",
-    [
-        ("ret1", "a_0 = "),
-        (multiple(), ""),
-        (multiple("ret1"), "a_0, = "),
-        (multiple("ret1", "ret2"), "a_0, a_1 = "),
-    ],
-)
-def test_single_target_repr(initial, repr_):
-    class Machine(RuleBasedStateMachine):
-        a = Bundle("a")
-
-        @initialize(target=a)
+        @initialize(targets=[bundles[name] for name in bundle_names])
         def initialize(self):
             return initial
 
