@@ -408,14 +408,13 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                     # ordering for duplicate targets when there are >1 results.
                     # Note: "per-target" and "per-result" is only true in the abstract,
                     # the actual value ordering may differ.
-                    names_per_result = list(zip(*names_per_target))  # transposed
-                    output_names = [", ".join(names) for names in names_per_result]
+                    output_names = sum(zip(*names_per_target), ())  # transpose&flatten
                     if len(rule.targets) == 1:
                         output_assignment = ", ".join(output_names) + " = "
                     else:
                         # Note special curly-bracket notation, it is meant to signal that this case
                         # (only) does not have strict ordering of the result-to-target mapping
-                        output_assignment = "{" + "; ".join(output_names) + "} = "
+                        output_assignment = "{" + ", ".join(output_names) + "} = "
             else:
                 output_names = chain(*names_per_target)
                 output_assignment = " = ".join(output_names) + " = "
