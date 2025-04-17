@@ -25,6 +25,8 @@ from typing import (
     Union,
 )
 
+from sortedcontainers import SortedSet
+
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
@@ -185,11 +187,13 @@ _constant_strings = {
 }
 
 
+# we don't actually care what order the constants are sorted in, just that the
+# ordering is deterministic.
 GLOBAL_CONSTANTS: "ConstantsT" = {
-    "float": set(_constant_floats),
-    "string": set(_constant_strings),
-    "integer": set(),
-    "bytes": set(),
+    "float": SortedSet(_constant_floats, key=float_to_int),
+    "string": SortedSet(_constant_strings),
+    "integer": SortedSet(),
+    "bytes": SortedSet(),
 }
 
 

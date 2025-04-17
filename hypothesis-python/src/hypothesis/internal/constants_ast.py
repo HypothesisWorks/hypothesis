@@ -16,9 +16,12 @@ from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, AbstractSet, Optional, TypedDict, Union
+
+from sortedcontainers import SortedSet
 
 from hypothesis.internal.escalation import is_hypothesis_file
+from hypothesis.internal.floats import float_to_int
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -27,10 +30,10 @@ ConstantT: "TypeAlias" = Union[int, float, bytes, str]
 
 
 class ConstantsT(TypedDict):
-    integer: set[int]
-    float: set[float]
-    bytes: set[bytes]
-    string: set[str]
+    integer: AbstractSet[int]
+    float: AbstractSet[float]
+    bytes: AbstractSet[bytes]
+    string: AbstractSet[str]
 
 
 class ConstantVisitor(NodeVisitor):
@@ -94,7 +97,7 @@ class ConstantVisitor(NodeVisitor):
 
 
 @lru_cache(1024)
-def constants_from_ast(tree: AST) -> set[ConstantT]:
+def constants_from_ast(tree: AST) -> AbstractSet[ConstantT]:
     visitor = ConstantVisitor()
     visitor.visit(tree)
     return visitor.constants
@@ -158,10 +161,10 @@ def local_constants() -> ConstantsT:
         constants |= constants_from_ast(tree)
 
     local_constants: ConstantsT = {
-        "integer": set(),
-        "float": set(),
-        "bytes": set(),
-        "string": set(),
+        "integer": SortedSet(),
+        "float": SortedSet(key=float_to_int),
+        "bytes": SortedSet(),
+        "string": SortedSet(),
     }
     for value in constants:
         choice_type = {
