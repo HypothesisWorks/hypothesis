@@ -264,8 +264,9 @@ def _collection_constraints(draw, *, forced, use_min_size=None, use_max_size=Non
                 min_value=min_size if forced is None else max(min_size, len(forced))
             )
         )
-        # cap to some reasonable max size to avoid overruns.
-        max_size = min(max_size, min_size + 100)
+        if forced is None:
+            # cap to some reasonable max size to avoid overruns.
+            max_size = min(max_size, min_size + 100)
 
     return {"min_size": min_size, "max_size": max_size}
 

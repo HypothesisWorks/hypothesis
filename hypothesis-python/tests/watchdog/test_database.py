@@ -184,3 +184,24 @@ def test_database_listener_directory_move(tmp_path):
             ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
         }
     )
+
+
+def test_still_listens_if_directory_did_not_exist(tmp_path):
+    # if we start listening on a nonexistent path, we will create that path and
+    # still listen for events
+    events = []
+
+    def listener(event):
+        events.append(event)
+
+    p = tmp_path / "does_not_exist_yet"
+    db = DirectoryBasedExampleDatabase(p)
+    assert not p.exists()
+
+    db.add_listener(listener)
+    assert p.exists()
+
+    assert not events
+    db.save(b"k1", b"v1")
+    time_sleep(0.2)
+    assert len(events) == 1

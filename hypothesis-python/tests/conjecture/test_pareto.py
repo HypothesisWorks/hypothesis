@@ -76,12 +76,13 @@ def test_database_contains_only_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["1"] = data.draw(st.integers(0, 2**4 - 1))
-            data.draw(st.integers(0, 2**64 - 1))
-            data.target_observations["2"] = data.draw(st.integers(0, 2**8 - 1))
+            data.target_observations["1"] = data.draw(st.integers(0, 5))
+            data.draw(st.integers())
+            data.target_observations["2"] = data.draw(st.integers(0, 100))
+
+            assert len(set(db.fetch(b"stuff.pareto"))) == len(runner.pareto_front)
 
         db = InMemoryExampleDatabase()
-
         runner = ConjectureRunner(
             test,
             settings=settings(
@@ -89,20 +90,16 @@ def test_database_contains_only_pareto_front():
             ),
             database_key=b"stuff",
         )
-
         runner.run()
 
         assert len(runner.pareto_front) <= 500
-
         for v in runner.pareto_front:
             assert v.status >= Status.VALID
 
-        assert len(db.data) == 1
-
-        (values,) = db.data.values()
-        values = set(values)
-
-        assert len(values) == len(runner.pareto_front)
+        values = set(db.fetch(b"stuff.pareto"))
+        assert len(values) == len(runner.pareto_front), {
+            choices_to_bytes(data.choices) for data in runner.pareto_front
+        }.symmetric_difference(values)
 
         for data in runner.pareto_front:
             assert choices_to_bytes(data.choices) in values

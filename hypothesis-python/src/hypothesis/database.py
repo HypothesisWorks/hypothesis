@@ -511,6 +511,12 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 _broadcast_change(("delete", (k1, value)))
                 _broadcast_change(("save", (k2, value)))
 
+        # If we add a listener to a DirectoryBasedExampleDatabase whose database
+        # directory doesn't yet exist, the watchdog observer will not fire any
+        # events, even after the directory gets created.
+        #
+        # Ensure the directory exists before starting the observer.
+        self.path.mkdir(exist_ok=True, parents=True)
         self._observer = Observer()
         self._observer.schedule(
             Handler(),

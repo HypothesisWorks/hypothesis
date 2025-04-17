@@ -29,7 +29,7 @@ from tests.common.utils import Why
 def run_to_notes(TestClass):
     TestCase = TestClass.TestCase
     # don't add explain phase notes to the error
-    TestCase.settings = Settings(phases=set(Phase) - {Phase.explain})
+    TestCase.settings = Settings(phases=set(Phase) - {Phase.explain}, max_examples=500)
     try:
         TestCase().runTest()
     except AssertionError as err:
