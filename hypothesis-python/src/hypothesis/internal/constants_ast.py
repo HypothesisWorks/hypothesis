@@ -142,6 +142,17 @@ def _is_local_module_file(path: str) -> bool:
 
 
 def local_modules() -> tuple[ModuleType, ...]:
+    if sys.platform == "emscripten":  # pragma: no cover
+        # pyodide builds bundle the stdlib in a nonstandard location, like
+        # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
+        # the stdlib as local code and slowing down on emscripten, instead return
+        # that nothing is local.
+        #
+        # pyodide may provide some way to distinguish stdlib/third-party/local
+        # code. I haven't looked into it. If they do, we should correctly implement
+        # ModuleLocation for pyodide instead of this.
+        return ()
+
     return tuple(
         module
         for module in sys.modules.values()
