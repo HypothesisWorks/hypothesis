@@ -13,7 +13,7 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, example, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -133,14 +133,6 @@ def test_forced_many(data):
 @given(choice_types_constraints(use_forced=True))
 def test_forced_values(choice_type_and_constraints):
     (choice_type, constraints) = choice_type_and_constraints
-
-    if choice_type == "float":
-        # TODO intentionally avoid triggering a bug with forcing nan values
-        # while both min and max value have the opposite sign.
-        # Once we fix the aforementioned bug we can remove this intentional
-        # weakening of the test.
-        assume(not math.isnan(constraints["forced"]))
-
     forced = constraints["forced"]
     data = fresh_data()
     assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)
