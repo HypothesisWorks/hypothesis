@@ -398,9 +398,9 @@ class HypothesisProvider(PrimitiveProvider):
                     if choice_permitted(choice, constraints)
                 ),
                 tuple(
-                    xchoice
-                    for xchoice in self.local_constants[choice_type]
-                    if choice_permitted(xchoice, constraints)
+                    choice
+                    for choice in self.local_constants[choice_type]
+                    if choice_permitted(choice, constraints)
                 ),
             )
 
@@ -538,7 +538,9 @@ class HypothesisProvider(PrimitiveProvider):
                 math.inf,
                 -math.inf,
                 math.nan,
+                -math.nan,
                 SIGNALING_NAN,
+                -SIGNALING_NAN,
                 min_value,
                 next_up(min_value),
                 min_value + 1,
