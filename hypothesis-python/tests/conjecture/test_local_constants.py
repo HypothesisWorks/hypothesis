@@ -28,7 +28,7 @@ def test_can_draw_local_constants_integers(monkeypatch, value):
     find_any(st.integers(), lambda v: choice_equal(v, value))
 
 
-@xfail_on_crosshair(Why.undiscovered)  # exact float match is hard for smt
+@xfail_on_crosshair(Why.undiscovered)  # I think float_to_int is difficult for crosshair
 @pytest.mark.parametrize("value", [1.2938, -1823.0239, 1e999, math.nan])
 def test_can_draw_local_constants_floats(monkeypatch, value):
     monkeypatch.setattr(providers, "local_constants", lambda: {"float": {value}})
