@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.4:
+
+--------------------
+6.131.4 - 2025-04-18
+--------------------
+
+Internal refactoring of the |@settings| object, with no user-visible change.
+
 .. _v6.131.3:
 
 --------------------
