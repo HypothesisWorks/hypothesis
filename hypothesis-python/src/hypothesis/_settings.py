@@ -63,7 +63,7 @@ all_settings: list[str] = [
 
 @unique
 class Verbosity(IntEnum):
-    """Verbosity levels for |@settings|."""
+    """Options for the |settings.verbosity| argument to |@settings|."""
 
     quiet = 0
     """
@@ -95,14 +95,40 @@ class Verbosity(IntEnum):
 
 @unique
 class Phase(IntEnum):
-    """Phases for |@settings|."""
+    """Options for the |settings.phases| argument to |@settings|."""
 
-    explicit = 0  #: controls whether explicit examples are run.
-    reuse = 1  #: controls whether previous examples will be reused.
-    generate = 2  #: controls whether new examples will be generated.
-    target = 3  #: controls whether examples will be mutated for targeting.
-    shrink = 4  #: controls whether examples will be shrunk.
-    explain = 5  #: controls whether Hypothesis attempts to explain test failures.
+    explicit = 0
+    """
+    Controls whether explicit examples are run.
+    """
+
+    reuse = 1
+    """
+    Controls whether previous examples will be reused.
+    """
+
+    generate = 2
+    """
+    Controls whether new examples will be generated.
+    """
+
+    target = 3
+    """
+    Controls whether examples will be mutated for targeting.
+    """
+
+    shrink = 4
+    """
+    Controls whether examples will be shrunk.
+    """
+
+    explain = 5
+    """
+    Controls whether Hypothesis attempts to explain test failures.
+
+    The explain phase has two parts, each of which is best-effort - if Hypothesis
+    can't find a useful explanation, we'll just print the minimal failing example.
+    """
 
     def __repr__(self) -> str:
         return f"Phase.{self.name}"
@@ -118,7 +144,7 @@ class HealthCheckMeta(EnumMeta):
 class HealthCheck(Enum, metaclass=HealthCheckMeta):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
-    Each member of this enum is a type of health check to suppress.
+    Each member of this enum is a specific health check to suppress.
     """
 
     def __repr__(self) -> str:
@@ -240,8 +266,8 @@ def _validate_max_examples(max_examples: int) -> int:
     check_type(int, max_examples, name="max_examples")
     if max_examples < 1:
         raise InvalidArgument(
-            f"max_examples={max_examples!r} should be at least one. You can disable "
-            "example generation with the `phases` setting instead."
+            f"max_examples={max_examples!r} must be at least one. If you want "
+            "to disable generation entirely, use phases=[Phase.explicit] instead."
         )
     return max_examples
 
@@ -255,8 +281,7 @@ def _validate_database(
         return database
     raise InvalidArgument(
         "Arguments to the database setting must be None or an instance of "
-        f"ExampleDatabase.  Try passing database=ExampleDatabase({database!r}), or "
-        "construct and use one of the specific subclasses in "
+        "ExampleDatabase. Use one of the database classes in "
         "hypothesis.database"
     )
 
@@ -499,6 +524,8 @@ class settings(metaclass=settingsMeta):
         If you are running more than 100k examples for a test, consider using our
         :ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
         shines when given minutes or hours to run.
+
+        The default max examples is ``100``.
         """
         return self._max_examples
 
@@ -515,7 +542,7 @@ class settings(metaclass=settingsMeta):
         quick deterministic tests on every commit, and a longer non-deterministic
         nightly testing run.
 
-        By default when running on CI, this will be set to True.
+        The default is ``False``. If running on CI, the default is ``True`` instead.
         """
         return self._derandomize
 
@@ -523,10 +550,10 @@ class settings(metaclass=settingsMeta):
     def database(self):
         """
         An instance of |ExampleDatabase| that will be
-        used to save examples to and load previous examples from. May be ``None``
-        in which case no storage will be used.
+        used to save examples to and load previous examples from. If ``None``,
+        no storage will be used.
 
-        See the :ref:`example database documentation <database>` for a list of built-in
+        See the :ref:`database documentation <database>` for a list of built-in
         example database implementations, and how to define custom implementations.
         """
         from hypothesis.database import _db_for_path
@@ -561,7 +588,7 @@ class settings(metaclass=settingsMeta):
 
         .. code-block:: pycon
 
-            >>> from hypothesis import find, settings, Verbosity
+            >>> from hypothesis import settings, Verbosity
             >>> from hypothesis.strategies import lists, integers
             >>> @given(lists(integers()))
             ... @settings(verbosity=Verbosity.verbose)
@@ -571,29 +598,22 @@ class settings(metaclass=settingsMeta):
             Trying example: []
             Falsifying example: [-1198601713, -67, 116, -29578]
             Shrunk example to [-1198601713]
-            Shrunk example to [-1198601600]
-            Shrunk example to [-1191228800]
-            Shrunk example to [-8421504]
             Shrunk example to [-32896]
             Shrunk example to [-128]
-            Shrunk example to [64]
             Shrunk example to [32]
-            Shrunk example to [16]
-            Shrunk example to [8]
-            Shrunk example to [4]
             Shrunk example to [3]
-            Shrunk example to [2]
             Shrunk example to [1]
             [1]
 
-        The four levels are quiet, normal, verbose and debug. normal is the default,
-        while in quiet mode Hypothesis will not print anything out, not even the final
-        falsifying example. debug is basically verbose but a bit more so. You probably
-        don't want it.
+        The four levels are |Verbosity.quiet|, |Verbosity.normal|,
+        |Verbosity.verbose|, and |Verbosity.debug|. |Verbosity.normal| is the
+        default. For |Verbosity.quiet|, Hypothesis will not print anything out,
+        not even the final falsifying example. |Verbosity.debug| is basically
+        |Verbosity.verbose| but a bit more so. You probably don't want it.
 
-        If you are using :pypi:`pytest`, you may also need to
-        :doc:`disable output capturing for passing
-        tests <pytest:how-to/capture-stdout-stderr>`.
+        If you are using :pypi:`pytest`, you may also need to :doc:`disable
+        output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`
+        to see verbose output as tests run.
         """
         return self._verbosity
 
@@ -608,20 +628,10 @@ class settings(metaclass=settingsMeta):
         - |Phase.reuse|: Running examples from the database which previously failed.
         - |Phase.generate|: Generating new random examples.
         - |Phase.target|: Mutating examples for :ref:`targeted property-based
-          testing <targeted>`.
-
-        - Requires |Phase.generate|.
-
+          testing <targeted>`. Requires |Phase.generate|.
         - |Phase.shrink|: Shrinking failing examples.
         - |Phase.explain|: Attempting to explain why a failure occurred.
-
-        - Requires |Phase.shrink|.
-
-        .. note::
-
-            The explain phase has two parts, each of which is best-effort - if
-            Hypothesis can't find a useful explanation, we'll just print the
-            minimal failing example.
+          Requires |Phase.shrink|.
 
         Following the first failure, Hypothesis will (usually, depending on
         which |Phase| is enabled) track which lines of code are always run on
@@ -665,7 +675,13 @@ class settings(metaclass=settingsMeta):
     @property
     def stateful_step_count(self):
         """
-        Number of steps to run a stateful program for before giving up on it breaking.
+        The maximum number of times to call an additional |@rule| method in
+        :ref:`stateful testing <stateful>` before we give up on finding a bug.
+
+        Note that this setting is effectively multiplicative with max_examples,
+        as each example will run for a maximum of ``stateful_step_count`` steps.
+
+        The default stateful step count is ``50``.
         """
         return self._stateful_step_count
 
@@ -676,6 +692,8 @@ class settings(metaclass=settingsMeta):
         bugs in a single run.  Reporting all of them at once is usually very useful,
         but replacing the exceptions can occasionally clash with debuggers.
         If disabled, only the exception with the smallest minimal example is raised.
+
+        The default value is ``True``.
         """
         return self._report_multiple_bugs
 
@@ -689,16 +707,15 @@ class settings(metaclass=settingsMeta):
     @property
     def deadline(self):
         """
-        If set, a duration (as timedelta, or integer or float number of
-        milliseconds) that each individual example (i.e. each time your test
-        function is called, not the whole decorated test) within a test is not
-        allowed to exceed. Tests which take longer than that may be converted into
-        errors (but will not necessarily be if close to the deadline, to allow some
-        variability in test run time).
+        The maximum allowed duration of an individual test case, in milliseconds.
+        You can pass an integer, float, or timedelta. If ``None``, the deadline
+        is disabled entirely.
 
-        Set this to ``None`` to disable this behaviour entirely.
+        We treat the deadline as a soft limit in some cases, where that would
+        avoid flakiness due to timing variability.
 
-        By default when running on CI, this will be set to None.
+        The default deadline is 200 milliseconds. If running on CI, the default is
+        ``None`` instead.
         """
         return self._deadline
 
@@ -708,6 +725,8 @@ class settings(metaclass=settingsMeta):
         If set to ``True``, Hypothesis will print code for failing examples that
         can be used with :func:`@reproduce_failure <hypothesis.reproduce_failure>`
         to reproduce the failing example.
+
+        The default value is ``False``. If running on CI, the default is ``True`` instead.
         """
         return self._print_blob
 

@@ -250,6 +250,8 @@ rst_prolog = """
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 
+.. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
+
 .. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
 
 .. |ExampleDatabase| replace:: :class:`~hypothesis.database.ExampleDatabase`
