@@ -156,7 +156,7 @@ def local_modules() -> tuple[ModuleType, ...]:
     # Prevents a `RuntimeError` that can occur when looping over `sys.modules`
     # if it's simultaneously modified as a side effect of code in another thread.
     # See: https://docs.python.org/3/library/sys.html#sys.modules
-    modules = tuple(sys.modules.values())
+    modules = sys.modules.copy().values()
 
     return tuple(
         module
