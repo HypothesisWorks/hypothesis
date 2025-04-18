@@ -13,6 +13,7 @@ import contextlib
 import math
 import warnings
 from collections.abc import Iterable
+from functools import cached_property
 from random import Random
 from sys import float_info
 from time import perf_counter
@@ -413,9 +414,11 @@ class HypothesisProvider(PrimitiveProvider):
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
         self._random = None if self._cd is None else self._cd._random
-        self.local_constants = (
-            None if self._random is None else _get_local_constants(self._random)
-        )
+
+    @cached_property
+    def _local_constants(self):
+        assert self._random is not None
+        return _get_local_constants(self._random)
 
     def _maybe_draw_constant(
         self,
@@ -425,7 +428,7 @@ class HypothesisProvider(PrimitiveProvider):
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
         assert self._random is not None
-        assert self.local_constants is not None
+        assert self._local_constants is not None
         assert choice_type != "boolean"
 
         # check whether we even want a constant before spending time computing
@@ -443,7 +446,7 @@ class HypothesisProvider(PrimitiveProvider):
                 ),
                 tuple(
                     choice
-                    for choice in self.local_constants[choice_type]
+                    for choice in self._local_constants[choice_type]
                     if choice_permitted(choice, constraints)
                 ),
             )
