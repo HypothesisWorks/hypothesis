@@ -153,9 +153,14 @@ def local_modules() -> tuple[ModuleType, ...]:
         # ModuleLocation for pyodide instead of this.
         return ()
 
+    # Prevents a `RuntimeError` that can occur when looping over `sys.modules`
+    # if it's simultaneously modified as a side effect of code in another thread.
+    # See: https://docs.python.org/3/library/sys.html#sys.modules
+    modules = sys.modules.copy().values()
+
     return tuple(
         module
-        for module in sys.modules.values()
+        for module in modules
         if (
             getattr(module, "__file__", None) is not None
             and _is_local_module_file(module.__file__)
