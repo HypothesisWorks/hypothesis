@@ -98,17 +98,17 @@ def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
     try:
         source = inspect.getsource(module)
         tree = ast.parse(source)
+        visitor = ConstantVisitor()
+        visitor.visit(tree)
     except Exception:
+        # A bunch of things can go wrong here.
+        # * `module` may have a missing or wrong source location
+        # * ast.parse may fail on the source code
+        # * NodeVisitor may hit a RecursionError (see many related issues on
+        #   e.g. libcst https://github.com/Instagram/LibCST/issues?q=recursion),
+        #   or a MemoryError (`"[1, " * 200 + "]" * 200`)
         return set()
 
-    visitor = ConstantVisitor()
-    try:
-        visitor.visit(tree)
-    except RecursionError:  # pragma: no cover
-        # NodeVisitor has a recursive structure, and so deeply nested expressions
-        # can hit the recursion limit. See the many related issues on e.g. libcst:
-        # https://github.com/Instagram/LibCST/issues?q=recursion
-        pass
     return visitor.constants
 
 

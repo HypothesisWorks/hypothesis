@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import inspect
 import subprocess
 import sys
 import textwrap
@@ -190,3 +191,15 @@ def test_constants_from_bad_module():
 )
 def test_local_modules_ignores_test_modules(path):
     assert not _is_local_module_file(path)
+
+
+def test_ignores_ast_parse_error(tmp_path):
+    p = tmp_path / "errors_on_parse.py"
+    p.write_text("[1, " * 200 + "]" * 200)
+    module = ModuleType("<test_constants_from_module_large_string>")
+    module.__file__ = str(p)
+
+    with pytest.raises(MemoryError):
+        ast.parse(inspect.getsource(module))
+
+    assert constants_from_module(module) == set()
