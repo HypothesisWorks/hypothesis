@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.5:
+
+--------------------
+6.131.5 - 2025-04-18
+--------------------
+
+Fix a rare case where database entries were kept after they were no longer needed when using |Phase.target|.
+
 .. _v6.131.4:
 
 --------------------
