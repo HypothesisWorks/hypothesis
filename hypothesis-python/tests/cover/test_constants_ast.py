@@ -196,10 +196,19 @@ def test_local_modules_ignores_test_modules(path):
 def test_ignores_ast_parse_error(tmp_path):
     p = tmp_path / "errors_on_parse.py"
     p.write_text("[1, " * 200 + "]" * 200, encoding="utf-8")
-    module = ModuleType("<test_constants_from_module_large_string>")
+    module = ModuleType("<test_ignores_ast_parse_error>")
     module.__file__ = str(p)
 
+    source = inspect.getsource(module)
     with pytest.raises(MemoryError):
-        ast.parse(inspect.getsource(module))
+        ast.parse(source)
 
     assert constants_from_module(module) == set()
+
+
+@given(st.sets(constants))
+def test_constant_visitor_roundtrips_string(constants):
+    # our files in storage_directory("constants") rely on this roundtrip
+    visitor = ConstantVisitor()
+    visitor.visit(ast.parse(str(constants)))
+    assert visitor.constants == constants

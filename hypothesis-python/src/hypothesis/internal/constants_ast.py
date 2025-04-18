@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import hashlib
 import inspect
 import math
 import sys
@@ -18,6 +19,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, AbstractSet, TypedDict, Union
 
+import hypothesis
+from hypothesis.configuration import storage_directory
 from hypothesis.internal.escalation import is_hypothesis_file
 
 if TYPE_CHECKING:
@@ -93,16 +96,13 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-@lru_cache(4096)
-def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
+def _constants_from_source(source: str) -> AbstractSet[ConstantT]:
     try:
-        source = inspect.getsource(module)
         tree = ast.parse(source)
         visitor = ConstantVisitor()
         visitor.visit(tree)
     except Exception:
         # A bunch of things can go wrong here.
-        # * `module` may have a missing or wrong source location
         # * ast.parse may fail on the source code
         # * NodeVisitor may hit a RecursionError (see many related issues on
         #   e.g. libcst https://github.com/Instagram/LibCST/issues?q=recursion),
@@ -110,6 +110,54 @@ def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
         return set()
 
     return visitor.constants
+
+
+@lru_cache(4096)
+def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
+    try:
+        module_file = inspect.getsourcefile(module)
+    except Exception:
+        return set()
+
+    if module_file is None:
+        return set()
+
+    try:
+        source_bytes = Path(module_file).read_bytes()
+    except Exception:
+        return set()
+
+    constants_p = (
+        storage_directory("constants") / hashlib.sha1(source_bytes).hexdigest()[:16]
+    )
+    if constants_p.exists():
+        try:
+            source = constants_p.read_text()
+        except Exception:
+            # if there's a problem reading the cached constants, fall back to
+            # standard computation
+            pass
+        else:
+            return _constants_from_source(source)
+
+    try:
+        source = inspect.getsource(module)
+    except Exception:
+        return set()
+
+    constants = _constants_from_source(source)
+    try:
+        constants_p.parent.mkdir(parents=True, exist_ok=True)
+        constants_p.write_text(
+            f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
+            + str(constants),
+            encoding="utf-8",
+        )
+    except Exception:
+        # e.g. read-only filesystem
+        pass
+
+    return constants
 
 
 @lru_cache(4096)

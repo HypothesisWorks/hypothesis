@@ -16,12 +16,10 @@ from collections.abc import Iterable
 from functools import cached_property
 from random import Random
 from sys import float_info
-from time import perf_counter
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Final,
     Literal,
     Optional,
     TypedDict,
@@ -209,32 +207,13 @@ _local_constants: "ConstantsT" = {
 }
 # modules that we've already seen and processed for local constants.
 _local_modules: set[ModuleType] = set()
-# time taken while parsing local constants
-_local_constants_time: float = 0
-# ast parsing is expensive. Stop parsing local files if we've spent more time than
-# this parsing local constants (in seconds).
-_local_constants_time_limit: Final[float] = 0.1
 
 
 def _get_local_constants(random: Random) -> "ConstantsT":
-    global _local_constants_time
-    if _local_constants_time > _local_constants_time_limit:  # pragma: no cover
-        return _local_constants
-
     new_constants: set[ConstantT] = set()
     new_modules = list(local_modules() - _local_modules)
-    # explicitly randomize iteration order, so we see all of the constants some
-    # of the time even if we give up due to the time limit.
-    #
-    # It's a set, so the iteration order would be randomized anyway, but I don't
-    # want to rely on that.
-    random.shuffle(new_modules)
     for new_module in new_modules:
-        if _local_constants_time > _local_constants_time_limit:  # pragma: no cover
-            break
-        start = perf_counter()
         new_constants |= constants_from_module(new_module)
-        _local_constants_time += perf_counter() - start
 
     for constant in new_constants:
         choice_type = {
