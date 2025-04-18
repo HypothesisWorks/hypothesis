@@ -15,6 +15,7 @@ import warnings
 from collections.abc import Iterable
 from random import Random
 from sys import float_info
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -45,7 +46,7 @@ from hypothesis.internal.conjecture.utils import (
     Sampler,
     many,
 )
-from hypothesis.internal.constants_ast import local_constants
+from hypothesis.internal.constants_ast import constants_from_module, local_modules
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -197,21 +198,38 @@ GLOBAL_CONSTANTS: "ConstantsT" = {
 }
 
 
-_local_constants_hash: Optional[int] = None
+_local_constants: "ConstantsT" = {
+    "integer": SortedSet(),
+    "float": SortedSet(key=float_to_int),
+    "bytes": SortedSet(),
+    "string": SortedSet(),
+}
+# modules that we've already seen and processed for local constants.
+_local_modules: set[ModuleType] = set()
 
 
 def _get_local_constants():
-    global _local_constants_hash
+    new_constants: set[ConstantT] = set()
+    new_modules = local_modules() - _local_modules
+    for new_module in new_modules:
+        new_constants |= constants_from_module(new_module)
 
-    constants = local_constants()
-    constants_hash = hash(tuple((k, tuple(v)) for k, v in constants.items()))
-    # if we've added new constants since the last time we checked, invalidate
-    # the cache.
-    if constants_hash != _local_constants_hash:
-        CONSTANTS_CACHE.cache.clear()
-        _local_constants_hash = constants_hash
+    for constant in new_constants:
+        choice_type = {
+            int: "integer",
+            float: "float",
+            bytes: "bytes",
+            str: "string",
+        }[type(constant)]
+        # if we add any new constant, invalidate the constant cache for permitted values.
+        # A more efficient approach is invalidating just the keys with this
+        # choice_type.
+        if constant not in _local_constants[choice_type]:
+            CONSTANTS_CACHE.cache.clear()
+        _local_constants[choice_type].add(constant)
 
-    return constants
+    _local_modules.update(new_modules)
+    return _local_constants
 
 
 class _BackendInfoMsg(TypedDict):

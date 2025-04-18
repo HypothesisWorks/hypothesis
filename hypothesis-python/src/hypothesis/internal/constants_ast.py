@@ -12,16 +12,13 @@ import ast
 import inspect
 import math
 import sys
-from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
+from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, AbstractSet, Optional, TypedDict, Union
-
-from sortedcontainers import SortedSet
+from typing import TYPE_CHECKING, AbstractSet, TypedDict, Union
 
 from hypothesis.internal.escalation import is_hypothesis_file
-from hypothesis.internal.floats import float_to_int
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -96,22 +93,17 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-@lru_cache(1024)
-def constants_from_ast(tree: AST) -> AbstractSet[ConstantT]:
-    visitor = ConstantVisitor()
-    visitor.visit(tree)
-    return visitor.constants
-
-
-@lru_cache(1024)
-def _module_ast(module: ModuleType) -> Optional[AST]:
+@lru_cache(4096)
+def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
     try:
         source = inspect.getsource(module)
         tree = ast.parse(source)
     except Exception:
-        return None
+        return set()
 
-    return tree
+    visitor = ConstantVisitor()
+    visitor.visit(tree)
+    return visitor.constants
 
 
 @lru_cache(4096)
@@ -141,7 +133,7 @@ def _is_local_module_file(path: str) -> bool:
     )
 
 
-def local_modules() -> tuple[ModuleType, ...]:
+def local_modules() -> set[ModuleType]:
     if sys.platform == "emscripten":  # pragma: no cover
         # pyodide builds bundle the stdlib in a nonstandard location, like
         # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
@@ -153,42 +145,13 @@ def local_modules() -> tuple[ModuleType, ...]:
         # ModuleLocation for pyodide instead of this.
         return ()
 
-    # Prevents a `RuntimeError` that can occur when looping over `sys.modules`
-    # if it's simultaneously modified as a side effect of code in another thread.
-    # See: https://docs.python.org/3/library/sys.html#sys.modules
-    modules = sys.modules.copy().values()
-
-    return tuple(
+    return {
         module
-        for module in modules
+        # copy to avoid a RuntimeError if another thread imports a module while
+        # we're iterating.
+        for module in sys.modules.copy().values()
         if (
             getattr(module, "__file__", None) is not None
             and _is_local_module_file(module.__file__)
         )
-    )
-
-
-def local_constants() -> ConstantsT:
-    constants: set[ConstantT] = set()
-    for module in local_modules():
-        tree = _module_ast(module)
-        if tree is None:  # pragma: no cover
-            continue
-        constants |= constants_from_ast(tree)
-
-    local_constants: ConstantsT = {
-        "integer": SortedSet(),
-        "float": SortedSet(key=float_to_int),
-        "bytes": SortedSet(),
-        "string": SortedSet(),
     }
-    for value in constants:
-        choice_type = {
-            int: "integer",
-            float: "float",
-            bytes: "bytes",
-            str: "string",
-        }[type(value)]
-        local_constants[choice_type].add(value)  # type: ignore # hard to type
-
-    return local_constants
