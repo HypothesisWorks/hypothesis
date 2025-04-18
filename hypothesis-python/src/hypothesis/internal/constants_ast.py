@@ -102,7 +102,13 @@ def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
         return set()
 
     visitor = ConstantVisitor()
-    visitor.visit(tree)
+    try:
+        visitor.visit(tree)
+    except RecursionError:  # pragma: no cover
+        # NodeVisitor has a recursive structure, and so deeply nested expressions
+        # can hit the recursion limit. See the many related issues on e.g. libcst:
+        # https://github.com/Instagram/LibCST/issues?q=recursion
+        pass
     return visitor.constants
 
 
