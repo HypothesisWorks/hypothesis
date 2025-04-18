@@ -18,6 +18,7 @@ from types import ModuleType
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     ConstantVisitor,
     _is_local_module_file,
@@ -193,6 +194,7 @@ def test_local_modules_ignores_test_modules(path):
     assert not _is_local_module_file(path)
 
 
+@pytest.mark.skipif(PYPY, reason="no memory error on pypy")
 def test_ignores_ast_parse_error(tmp_path):
     p = tmp_path / "errors_on_parse.py"
     p.write_text("[1, " * 200 + "]" * 200, encoding="utf-8")
