@@ -282,7 +282,7 @@ def test_multiple_variables_printed_single_element():
         run_state_machine_as_test(ProducesMultiple)
 
     assignment_line = err.value.__notes__[2]
-    assert assignment_line == "(b_0,) = state.populate_bundle()"
+    assert assignment_line == "b_0, = state.populate_bundle()"
 
     state = ProducesMultiple()
     (v1,) = state.populate_bundle()
@@ -1248,6 +1248,49 @@ state.teardown()
     )
 
 
+@pytest.mark.parametrize(
+    "bundle_names,initial,repr_",
+    [
+        ("a", "ret1", "a_0 = "),
+        ("aba", "ret1", "a_0 = b_0 = a_1 = "),
+        ("a", multiple(), ""),
+        ("aba", multiple(), ""),
+        ("a", multiple("ret1"), "a_0, = "),
+        ("aba", multiple("ret1"), "a_0, = b_0, = a_1, = "),
+        ("a", multiple("ret1", "ret2"), "a_0, a_1 = "),
+        ("aba", multiple("ret1", "ret2"), "{a_0, b_0, a_1, a_2, b_1, a_3} = "),
+    ],
+)
+def test_targets_repr(bundle_names, initial, repr_):
+    bundles = {name: Bundle(name) for name in bundle_names}
+
+    class Machine(RuleBasedStateMachine):
+
+        @initialize(targets=[bundles[name] for name in bundle_names])
+        def initialize(self):
+            return initial
+
+        @rule()
+        def fail_fast(self):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == f"""
+Falsifying example:
+state = Machine()
+{repr_}state.initialize()
+state.fail_fast()
+state.teardown()
+""".strip()
+    )
+
+
 def test_multiple_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
@@ -1278,7 +1321,7 @@ def test_multiple_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
+{a_0, b_0, a_1, b_1, a_2, b_2} = state.initialize()
 state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
@@ -1318,7 +1361,7 @@ def test_multiple_common_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, a_2, b_1, a_3, a_4, b_2, a_5 = state.initialize()
+{a_0, b_0, a_1, a_2, b_1, a_3, a_4, b_2, a_5} = state.initialize()
 state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()

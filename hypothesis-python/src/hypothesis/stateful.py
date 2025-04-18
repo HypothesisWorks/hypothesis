@@ -21,6 +21,7 @@ from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache
 from io import StringIO
+from itertools import chain
 from time import perf_counter
 from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
 from unittest import TestCase
@@ -390,15 +391,33 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     def _repr_step(self, rule, data, result):
         output_assignment = ""
         if rule.targets:
+            number_of_results = (
+                len(result.values) if isinstance(result, MultipleResults) else 1
+            )
+            number_of_last_names = len(rule.targets) * number_of_results
+            last_names = self._last_names(number_of_last_names)
+            names_per_target = [
+                last_names[i :: len(rule.targets)] for i in range(len(rule.targets))
+            ]
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
-                    output_assignment = f"({self._last_names(1)[0]},) = "
+                    output_names = [f"{name}," for name in chain(*names_per_target)]
+                    output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
-                    number_of_last_names = len(rule.targets) * len(result.values)
-                    output_names = self._last_names(number_of_last_names)
-                    output_assignment = ", ".join(output_names) + " = "
+                    # We prefer the per-result ordering - otherwise we get interleaved
+                    # ordering for duplicate targets when there are >1 results.
+                    # Note: "per-target" and "per-result" is only true in the abstract,
+                    # the actual value ordering may differ.
+                    output_names = sum(zip(*names_per_target), ())  # transpose&flatten
+                    if len(rule.targets) == 1:
+                        output_assignment = ", ".join(output_names) + " = "
+                    else:
+                        # Note special curly-bracket notation, it is meant to signal that this case
+                        # (only) does not have strict ordering of the result-to-target mapping
+                        output_assignment = "{" + ", ".join(output_names) + "} = "
             else:
-                output_assignment = self._last_names(1)[0] + " = "
+                output_names = chain(*names_per_target)
+                output_assignment = " = ".join(output_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
         return f"{output_assignment}state.{rule.function.__name__}({args})"
 
