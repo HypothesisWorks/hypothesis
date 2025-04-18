@@ -12,6 +12,7 @@ import datetime
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from unittest import TestCase
 
 import pytest
@@ -30,7 +31,6 @@ from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
-    InvalidState,
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
@@ -43,12 +43,16 @@ from tests.common.utils import (
     validate_deprecation,
 )
 
-
-def test_has_docstrings():
-    assert settings.verbosity.__doc__
-
-
 original_default = settings.get_profile("default").max_examples
+
+
+@contextmanager
+def temp_register_profile(name, parent, **kwargs):
+    try:
+        settings.register_profile(name, parent, **kwargs)
+        yield
+    finally:
+        settings._profiles.pop(name)
 
 
 def setup_function(fn):
@@ -170,17 +174,6 @@ def test_load_non_existent_profile():
         settings.get_profile("nonsense")
 
 
-def test_cannot_delete_a_setting():
-    x = settings()
-    with pytest.raises(AttributeError):
-        del x.max_examples
-    x.max_examples
-
-    x = settings()
-    with pytest.raises(AttributeError):
-        del x.foo
-
-
 def test_cannot_set_settings():
     x = settings()
     with pytest.raises(AttributeError):
@@ -203,11 +196,6 @@ def test_database_type_must_be_ExampleDatabase(db, bad_db):
         with pytest.raises(InvalidArgument):
             settings(database=bad_db)
         assert settings.database is settings_property_db
-
-
-def test_cannot_define_settings_once_locked():
-    with pytest.raises(InvalidState):
-        settings._define_setting("hi", "there", default=4)
 
 
 def test_cannot_assign_default():
@@ -595,3 +583,10 @@ def test_will_automatically_pick_up_changes_to_ci_profile_in_ci():
         text=True,
         encoding="utf-8",
     )
+
+
+def test_register_profile_avoids_intermediate_profiles():
+    parent = settings()
+    s = settings(parent, max_examples=10)
+    with temp_register_profile("for_intermediate_test", s):
+        assert settings.get_profile("for_intermediate_test")._fallback is parent

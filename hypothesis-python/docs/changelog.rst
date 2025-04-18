@@ -336,7 +336,7 @@ Fix a type-hinting regression from :ref:`version 6.125.1 <v6.125.1>`, where we w
 6.127.6 - 2025-03-04
 --------------------
 
-This patch tweaks the performance of the :ref:`target phase <phases>`, avoiding aborting some test cases when it would be better to finish generating them.
+This patch tweaks the performance of |Phase.target|, avoiding aborting some test cases when it would be better to finish generating them.
 
 .. _v6.127.5:
 
@@ -559,7 +559,7 @@ Improves one of our shrinking passes for integers which require a constant relat
 6.123.14 - 2025-01-11
 ---------------------
 
-Avoid realizing symbolic values from :ref:`alternative-backends` when :obj:`~hypothesis.settings.verbosity` is ``verbose`` or higher.
+Avoid realizing symbolic values from :ref:`alternative-backends` when |Verbosity| is ``verbose`` or higher.
 
 .. _v6.123.13:
 
@@ -800,7 +800,7 @@ This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated 
 6.119.3 - 2024-11-17
 --------------------
 
-Hypothesis collects coverage information during the ``shrink`` and ``explain`` :ref:`phases <phases>` in order to show a more informative error message. On 3.12+, this uses :mod:`sys.monitoring`. This patch improves the performance of coverage collection on 3.12+ by disabling events we don't need.
+Hypothesis collects coverage information during the |Phase.shrink| and |Phase.explain| phases in order to show a more informative error message. On 3.12+, this uses :mod:`sys.monitoring`. This patch improves the performance of coverage collection on 3.12+ by disabling events we don't need.
 
 .. _v6.119.2:
 
@@ -893,7 +893,7 @@ This patch adds more type hints to internal Hypothesis code.
 6.118.2 - 2024-11-09
 --------------------
 
-This patch migrates the :obj:`~hypothesis.Phase.explain` :ref:`phase <phases>` to our IR layer (:issue:`3921`). This should improve both its speed and precision.
+This patch migrates the |Phase.explain| phase to our IR layer (:issue:`3921`). This should improve both its speed and precision.
 
 .. _v6.118.1:
 
@@ -1957,7 +1957,7 @@ as well continue running the test!
 Because we now finish running a few more examples for affected tests, this
 might be a slight slowdown - but correspondingly more likely to find a bug.
 
-We've also applied similar tricks to the :ref:`target phase <phases>`, where
+We've also applied similar tricks to the |Phase.target| phase, where
 they are a pure performance improvement for affected tests.
 
 .. _v6.97.1:
@@ -2425,7 +2425,7 @@ one provided by an xfailed example.
 6.86.0 - 2023-09-17
 -------------------
 
-This release enables the :obj:`~hypothesis.Phase.explain` :ref:`phase <phases>`
+This release enables the |Phase.explain| phase
 by default.  We hope it helps you to understand *why* your failing tests have
 failed!
 
@@ -2925,9 +2925,9 @@ with versions before 1.20, which were broken by a mistake in Hypothesis 6.72.4
 6.73.0 - 2023-04-25
 -------------------
 
-This release upgrades the :ref:`explain phase <phases>` (:issue:`3411`).
+This release upgrades the |Phase.explain| phase (:issue:`3411`).
 
-* Following the first failure, Hypothesis will (:ref:`usually <phases>`) track which
+* Following the first failure, Hypothesis will (usually, depending on the enabled |Phase|) track which
   lines of code were executed by passing and failing examples, and report where they
   diverged - with some heuristics to drop unhelpful reports.  This is an existing
   feature, now upgraded and newly enabled by default.
@@ -3461,7 +3461,7 @@ This patch updates our autoformatting tools, improving our code style without an
 -------------------
 
 This patch fixes some type annotations for Python 3.9 and earlier (:issue:`3397`),
-and teaches :ref:`explain mode <phases>` about certain locations it should not
+and teaches the |Phase.explain| phase about certain locations it should not
 bother reporting (:issue:`3439`).
 
 .. _v6.54.3:
@@ -4980,7 +4980,7 @@ There is no user-visible change.
 6.14.0 - 2021-06-09
 -------------------
 
-The :ref:`explain phase <phases>` now requires shrinking to be enabled,
+The |Phase.explain| phase now requires shrinking to be enabled,
 and will be automatically skipped for deadline-exceeded errors.
 
 .. _v6.13.14:
@@ -5413,7 +5413,7 @@ meant to be allowed (:issue:`2681`).
 6.5.0 - 2021-03-07
 ------------------
 
-This release adds :ref:`the explain phase <phases>`, in which Hypothesis
+This release adds |Phase.explain|, in which Hypothesis
 attempts to explain *why* your test failed by pointing to suspicious lines
 of code (i.e. those which were always, and only, run on failing inputs).
 We plan to include "generalising" failing examples in this phase in a
@@ -11849,7 +11849,7 @@ documentation, by explaining that example shrinking is tracked at the level
 of the underlying bytestream rather than the output value.
 
 The output from ``find()`` in verbose mode has also been
-adjusted - see :ref:`the example session <verbose-output>` - to avoid
+adjusted - see the example session for |Verbosity| - to avoid
 duplicating lines when the example repr is constant, even if the underlying
 representation has been shrunken.
 
@@ -13601,7 +13601,7 @@ Thanks to Alex Willmer for these.
 3.17.0 - 2017-08-07
 -------------------
 
-This release documents :ref:`the previously undocumented phases feature <phases>`,
+This release documents the previously undocumented phases feature in |Phase|,
 making it part of the public API. It also updates how the example
 database is used. Principally:
 

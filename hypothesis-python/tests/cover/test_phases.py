@@ -11,7 +11,6 @@
 import pytest
 
 from hypothesis import Phase, example, given, settings, strategies as st
-from hypothesis._settings import all_settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 
@@ -48,7 +47,7 @@ def test_sorts_and_dedupes_phases(arg, expected):
 
 
 def test_phases_default_to_all():
-    assert all_settings["phases"].default == tuple(Phase)
+    assert settings().phases == tuple(Phase)
 
 
 def test_does_not_reuse_saved_examples_if_reuse_not_in_phases():
