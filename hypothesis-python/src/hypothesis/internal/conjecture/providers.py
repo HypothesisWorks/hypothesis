@@ -217,7 +217,7 @@ _local_constants_time_limit: Final[float] = 0.1
 
 def _get_local_constants(random: Random) -> "ConstantsT":
     global _local_constants_time
-    if _local_constants_time > _local_constants_time_limit:
+    if _local_constants_time > _local_constants_time_limit:  # pragma: no cover
         return _local_constants
 
     new_constants: set[ConstantT] = set()
@@ -229,7 +229,7 @@ def _get_local_constants(random: Random) -> "ConstantsT":
     # want to rely on that.
     random.shuffle(new_modules)
     for new_module in new_modules:
-        if _local_constants_time > _local_constants_time_limit:
+        if _local_constants_time > _local_constants_time_limit:  # pragma: no cover
             break
         start = perf_counter()
         new_constants |= constants_from_module(new_module)
@@ -245,7 +245,9 @@ def _get_local_constants(random: Random) -> "ConstantsT":
         # if we add any new constant, invalidate the constant cache for permitted values.
         # A more efficient approach would be invalidating just the keys with this
         # choice_type.
-        if constant not in _local_constants[choice_type]:  # type: ignore # hard to type
+        if (
+            constant not in _local_constants[choice_type]  # type: ignore
+        ):  # pragma: no branch
             CONSTANTS_CACHE.cache.clear()
         _local_constants[choice_type].add(constant)  # type: ignore
 

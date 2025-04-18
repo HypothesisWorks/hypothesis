@@ -12,7 +12,8 @@ import math
 
 import pytest
 
-from hypothesis import settings, strategies as st
+from hypothesis import given, settings, strategies as st
+from hypothesis.internal import constants_ast
 from hypothesis.internal.conjecture import providers
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.conjecture.providers import CONSTANTS_CACHE
@@ -66,3 +67,18 @@ def test_can_draw_local_constants_string(monkeypatch, value):
         lambda v: choice_equal(v, value),
         settings=settings(max_examples=5_000),
     )
+
+
+def test_actual_collection(monkeypatch):
+    # covering test for doing some real work collecting constants. We'll fake
+    # hypothesis as being the "local" module, just to get some real constant
+    # collection going.
+    monkeypatch.setattr(
+        constants_ast, "_is_local_module_file", lambda f: "hypothesis" in f
+    )
+
+    @given(st.integers())
+    def f(n):
+        pass
+
+    f()
