@@ -15,10 +15,12 @@ import warnings
 from collections.abc import Iterable
 from random import Random
 from sys import float_info
+from time import perf_counter
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     Literal,
     Optional,
     TypedDict,
@@ -206,13 +208,32 @@ _local_constants: "ConstantsT" = {
 }
 # modules that we've already seen and processed for local constants.
 _local_modules: set[ModuleType] = set()
+# time taken while parsing local constants
+_local_constants_time: float = 0
+# ast parsing is expensive. Stop parsing local files if we've spent more time than
+# this parsing local constants (in seconds).
+_local_constants_time_limit: Final[float] = 0.1
 
 
-def _get_local_constants():
+def _get_local_constants(random: Random) -> "ConstantsT":
+    global _local_constants_time
+    if _local_constants_time > _local_constants_time_limit:
+        return _local_constants
+
     new_constants: set[ConstantT] = set()
-    new_modules = local_modules() - _local_modules
+    new_modules = list(local_modules() - _local_modules)
+    # explicitly randomize iteration order, so we see all of the constants some
+    # of the time even if we give up due to the time limit.
+    #
+    # It's a set, so the iteration order would be randomized anyway, but I don't
+    # want to rely on that.
+    random.shuffle(new_modules)
     for new_module in new_modules:
+        if _local_constants_time > _local_constants_time_limit:
+            break
+        start = perf_counter()
         new_constants |= constants_from_module(new_module)
+        _local_constants_time += perf_counter() - start
 
     for constant in new_constants:
         choice_type = {
@@ -222,11 +243,11 @@ def _get_local_constants():
             str: "string",
         }[type(constant)]
         # if we add any new constant, invalidate the constant cache for permitted values.
-        # A more efficient approach is invalidating just the keys with this
+        # A more efficient approach would be invalidating just the keys with this
         # choice_type.
-        if constant not in _local_constants[choice_type]:
+        if constant not in _local_constants[choice_type]:  # type: ignore # hard to type
             CONSTANTS_CACHE.cache.clear()
-        _local_constants[choice_type].add(constant)
+        _local_constants[choice_type].add(constant)  # type: ignore
 
     _local_modules.update(new_modules)
     return _local_constants
@@ -389,8 +410,10 @@ class HypothesisProvider(PrimitiveProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
-        self.local_constants = _get_local_constants()
         self._random = None if self._cd is None else self._cd._random
+        self.local_constants = (
+            None if self._random is None else _get_local_constants(self._random)
+        )
 
     def _maybe_draw_constant(
         self,
@@ -400,6 +423,7 @@ class HypothesisProvider(PrimitiveProvider):
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
         assert self._random is not None
+        assert self.local_constants is not None
         assert choice_type != "boolean"
 
         # check whether we even want a constant before spending time computing

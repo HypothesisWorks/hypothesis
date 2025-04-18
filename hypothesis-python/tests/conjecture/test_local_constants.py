@@ -28,7 +28,9 @@ def test_can_draw_local_constants_integers(monkeypatch, value):
     # _get_local_constants normally invalidates this cache for us, but we're
     # monkeypatching it.
     CONSTANTS_CACHE.cache.clear()
-    monkeypatch.setattr(providers, "_get_local_constants", lambda: {"integer": {value}})
+    monkeypatch.setattr(
+        providers, "_get_local_constants", lambda random: {"integer": {value}}
+    )
     find_any(st.integers(), lambda v: choice_equal(v, value))
 
 
@@ -36,21 +38,27 @@ def test_can_draw_local_constants_integers(monkeypatch, value):
 @pytest.mark.parametrize("value", [1.2938, -1823.0239, 1e999, math.nan])
 def test_can_draw_local_constants_floats(monkeypatch, value):
     CONSTANTS_CACHE.cache.clear()
-    monkeypatch.setattr(providers, "_get_local_constants", lambda: {"float": {value}})
+    monkeypatch.setattr(
+        providers, "_get_local_constants", lambda random: {"float": {value}}
+    )
     find_any(st.floats(), lambda v: choice_equal(v, value))
 
 
 @pytest.mark.parametrize("value", [b"abdefgh", b"a" * 50])
 def test_can_draw_local_constants_bytes(monkeypatch, value):
     CONSTANTS_CACHE.cache.clear()
-    monkeypatch.setattr(providers, "_get_local_constants", lambda: {"bytes": {value}})
+    monkeypatch.setattr(
+        providers, "_get_local_constants", lambda random: {"bytes": {value}}
+    )
     find_any(st.binary(), lambda v: choice_equal(v, value))
 
 
 @pytest.mark.parametrize("value", ["abdefgh", "a" * 50])
 def test_can_draw_local_constants_string(monkeypatch, value):
     CONSTANTS_CACHE.cache.clear()
-    monkeypatch.setattr(providers, "_get_local_constants", lambda: {"string": {value}})
+    monkeypatch.setattr(
+        providers, "_get_local_constants", lambda random: {"string": {value}}
+    )
     # we have a bunch of strings in GLOBAL_CONSTANTS, so it might take a while
     # to generate our local constant.
     find_any(
