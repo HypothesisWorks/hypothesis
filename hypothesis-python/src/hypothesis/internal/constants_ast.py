@@ -143,7 +143,7 @@ def local_modules() -> set[ModuleType]:
         # pyodide may provide some way to distinguish stdlib/third-party/local
         # code. I haven't looked into it. If they do, we should correctly implement
         # ModuleLocation for pyodide instead of this.
-        return ()
+        return set()
 
     return {
         module
