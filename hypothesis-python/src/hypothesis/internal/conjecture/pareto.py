@@ -337,10 +337,7 @@ class ParetoOptimiser:
                     # must be dominated in the front - either ``destination`` is in
                     # the front, or it was not added to it because it was
                     # dominated by something in it.
-                    try:
-                        self.front._remove(source)
-                    except ValueError:
-                        pass
+                    self.front._remove(source)
                     return True
                 return False
 
