@@ -26,6 +26,7 @@ import sys
 from collections.abc import Sequence
 from typing import Optional, Union
 
+import black
 import numpy
 import numpy.typing
 import pytest
@@ -319,7 +320,14 @@ def test_ghostwriter_example_outputs(update_recorded_outputs, data):
 
 
 def test_ghostwriter_on_hypothesis(update_recorded_outputs):
-    actual = ghostwriter.magic(hypothesis).replace("Strategy[+Ex]", "Strategy")
+    actual = (
+        ghostwriter.magic(hypothesis)
+        .replace("Strategy[+Ex]", "Strategy")
+        .replace("hypothesis._settings.settings", "hypothesis.settings")
+    )
+    # hypothesis._settings.settings wraps the line before replacement, and doesn't
+    # after replacement
+    actual = black.format_str(actual, mode=black.FileMode())
     expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
     if sys.version_info[:2] == (3, 10):
         assert actual == expected
