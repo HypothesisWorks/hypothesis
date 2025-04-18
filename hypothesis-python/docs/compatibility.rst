@@ -114,6 +114,9 @@ The supported versions of optional packages, for strategies in ``hypothesis.extr
 are listed in the documentation for that extra.  Our general goal is to support
 all versions that are supported upstream.
 
+
+.. _thread-safety-policy:
+
 --------------------
 Thread-Safety Policy
 --------------------
