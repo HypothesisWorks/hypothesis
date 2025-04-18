@@ -248,7 +248,7 @@ class ParetoFront:
                 i -= 1
 
             for v in to_remove:
-                self.__remove(v)
+                self._remove(v)
             return data in self.front
         finally:
             self.__pending = None
@@ -272,7 +272,7 @@ class ParetoFront:
     def __len__(self) -> int:
         return len(self.front)
 
-    def __remove(self, data: ConjectureResult) -> None:
+    def _remove(self, data: ConjectureResult) -> None:
         try:
             self.front.remove(data)
         except ValueError:
@@ -337,10 +337,7 @@ class ParetoOptimiser:
                     # must be dominated in the front - either ``destination`` is in
                     # the front, or it was not added to it because it was
                     # dominated by something in it.
-                    try:
-                        self.front.front.remove(source)
-                    except ValueError:
-                        pass
+                    self.front._remove(source)
                     return True
                 return False
 
