@@ -376,3 +376,33 @@ test_long_duplicates_strings = define_test(
 test_can_produce_nasty_strings = define_test(
     text(), lambda s: s in {"NaN", "Inf", "undefined"}, p=0.01
 )
+
+oneof_strategy = lists(integers() | floats() | text() | tuples(integers()))
+
+test_oneof_produces_all_types = define_test(
+    oneof_strategy,
+    lambda v: len({type(x) for x in v}) == 4,
+    condition=lambda v: len(v) > 5,
+    p=0.8,
+)
+
+test_oneof_produces_three_types = define_test(
+    oneof_strategy,
+    lambda v: len({type(x) for x in v}) == 3,
+    condition=lambda v: len(v) > 5,
+    p=0.8,
+)
+
+test_oneof_produces_two_types = define_test(
+    oneof_strategy,
+    lambda v: len({type(x) for x in v}) == 2,
+    condition=lambda v: len(v) > 5,
+    p=0.8,
+)
+
+test_oneof_produces_one_type = define_test(
+    oneof_strategy,
+    lambda v: len({type(x) for x in v}) == 1,
+    condition=lambda v: len(v) > 5,
+    p=0.8,
+)
