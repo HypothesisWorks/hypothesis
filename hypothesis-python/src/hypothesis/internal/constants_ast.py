@@ -96,11 +96,33 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def _constants_from_source(source: str) -> AbstractSet[ConstantT]:
+def _constants_from_source(source: Union[str, bytes]) -> AbstractSet[ConstantT]:
+    tree = ast.parse(source)
+    visitor = ConstantVisitor()
+    visitor.visit(tree)
+    return visitor.constants
+
+
+@lru_cache(4096)
+def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
     try:
-        tree = ast.parse(source)
-        visitor = ConstantVisitor()
-        visitor.visit(tree)
+        module_file = inspect.getsourcefile(module)
+        # use type: ignore because we know this might error
+        source_bytes = Path(module_file).read_bytes()  # type: ignore
+    except Exception:
+        return set()
+
+    source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
+    cache_p = storage_directory("constants") / source_hash
+    try:
+        return _constants_from_source(cache_p.read_bytes())
+    except Exception:
+        # if the cached location doesn't exist, or it does exist but there was
+        # a problem reading it, fall back to standard computation of the constants
+        pass
+
+    try:
+        constants = _constants_from_source(source_bytes)
     except Exception:
         # A bunch of things can go wrong here.
         # * ast.parse may fail on the source code
@@ -109,52 +131,17 @@ def _constants_from_source(source: str) -> AbstractSet[ConstantT]:
         #   or a MemoryError (`"[1, " * 200 + "]" * 200`)
         return set()
 
-    return visitor.constants
-
-
-@lru_cache(4096)
-def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
     try:
-        module_file = inspect.getsourcefile(module)
-    except Exception:
-        return set()
-
-    if module_file is None:
-        return set()
-
-    try:
-        source_bytes = Path(module_file).read_bytes()
-    except Exception:
-        return set()
-
-    constants_p = (
-        storage_directory("constants") / hashlib.sha1(source_bytes).hexdigest()[:16]
-    )
-    if constants_p.exists():
-        try:
-            source = constants_p.read_text()
-        except Exception:
-            # if there's a problem reading the cached constants, fall back to
-            # standard computation
-            pass
-        else:
-            return _constants_from_source(source)
-
-    try:
-        source = inspect.getsource(module)
-    except Exception:
-        return set()
-
-    constants = _constants_from_source(source)
-    try:
-        constants_p.parent.mkdir(parents=True, exist_ok=True)
-        constants_p.write_text(
+        cache_p.parent.mkdir(parents=True, exist_ok=True)
+        cache_p.write_text(
             f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
-            + str(constants),
+            # somewhat arbitrary sort order. The cache file doesn't *have* to be
+            # stable... but it is aesthetically pleasing, and means we could rely
+            # on it in the future!
+            + str(sorted(constants, key=lambda v: (str(type(v)), v))),
             encoding="utf-8",
         )
-    except Exception:
-        # e.g. read-only filesystem
+    except Exception:  # pragma: no cover
         pass
 
     return constants

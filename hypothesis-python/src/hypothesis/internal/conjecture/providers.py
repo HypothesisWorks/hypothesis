@@ -209,7 +209,7 @@ _local_constants: "ConstantsT" = {
 _local_modules: set[ModuleType] = set()
 
 
-def _get_local_constants(random: Random) -> "ConstantsT":
+def _get_local_constants() -> "ConstantsT":
     new_constants: set[ConstantT] = set()
     new_modules = list(local_modules() - _local_modules)
     for new_module in new_modules:
@@ -396,8 +396,8 @@ class HypothesisProvider(PrimitiveProvider):
 
     @cached_property
     def _local_constants(self):
-        assert self._random is not None
-        return _get_local_constants(self._random)
+        # defer computation of local constants until/if we need it
+        return _get_local_constants()
 
     def _maybe_draw_constant(
         self,
