@@ -9,19 +9,19 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import hashlib
 import inspect
 import math
 import sys
-from ast import AST, Constant, Expr, NodeVisitor, UnaryOp, USub
+from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, AbstractSet, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, AbstractSet, TypedDict, Union
 
-from sortedcontainers import SortedSet
-
+import hypothesis
+from hypothesis.configuration import storage_directory
 from hypothesis.internal.escalation import is_hypothesis_file
-from hypothesis.internal.floats import float_to_int
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -96,22 +96,55 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-@lru_cache(1024)
-def constants_from_ast(tree: AST) -> AbstractSet[ConstantT]:
+def _constants_from_source(source: Union[str, bytes]) -> AbstractSet[ConstantT]:
+    tree = ast.parse(source)
     visitor = ConstantVisitor()
     visitor.visit(tree)
     return visitor.constants
 
 
-@lru_cache(1024)
-def _module_ast(module: ModuleType) -> Optional[AST]:
+@lru_cache(4096)
+def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
     try:
-        source = inspect.getsource(module)
-        tree = ast.parse(source)
+        module_file = inspect.getsourcefile(module)
+        # use type: ignore because we know this might error
+        source_bytes = Path(module_file).read_bytes()  # type: ignore
     except Exception:
-        return None
+        return set()
 
-    return tree
+    source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
+    cache_p = storage_directory("constants") / source_hash
+    try:
+        return _constants_from_source(cache_p.read_bytes())
+    except Exception:
+        # if the cached location doesn't exist, or it does exist but there was
+        # a problem reading it, fall back to standard computation of the constants
+        pass
+
+    try:
+        constants = _constants_from_source(source_bytes)
+    except Exception:
+        # A bunch of things can go wrong here.
+        # * ast.parse may fail on the source code
+        # * NodeVisitor may hit a RecursionError (see many related issues on
+        #   e.g. libcst https://github.com/Instagram/LibCST/issues?q=recursion),
+        #   or a MemoryError (`"[1, " * 200 + "]" * 200`)
+        return set()
+
+    try:
+        cache_p.parent.mkdir(parents=True, exist_ok=True)
+        cache_p.write_text(
+            f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
+            # somewhat arbitrary sort order. The cache file doesn't *have* to be
+            # stable... but it is aesthetically pleasing, and means we could rely
+            # on it in the future!
+            + str(sorted(constants, key=lambda v: (str(type(v)), v))),
+            encoding="utf-8",
+        )
+    except Exception:  # pragma: no cover
+        pass
+
+    return constants
 
 
 @lru_cache(4096)
@@ -141,7 +174,7 @@ def _is_local_module_file(path: str) -> bool:
     )
 
 
-def local_modules() -> tuple[ModuleType, ...]:
+def local_modules() -> set[ModuleType]:
     if sys.platform == "emscripten":  # pragma: no cover
         # pyodide builds bundle the stdlib in a nonstandard location, like
         # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
@@ -151,44 +184,15 @@ def local_modules() -> tuple[ModuleType, ...]:
         # pyodide may provide some way to distinguish stdlib/third-party/local
         # code. I haven't looked into it. If they do, we should correctly implement
         # ModuleLocation for pyodide instead of this.
-        return ()
+        return set()
 
-    # Prevents a `RuntimeError` that can occur when looping over `sys.modules`
-    # if it's simultaneously modified as a side effect of code in another thread.
-    # See: https://docs.python.org/3/library/sys.html#sys.modules
-    modules = sys.modules.copy().values()
-
-    return tuple(
+    return {
         module
-        for module in modules
+        # copy to avoid a RuntimeError if another thread imports a module while
+        # we're iterating.
+        for module in sys.modules.copy().values()
         if (
             getattr(module, "__file__", None) is not None
             and _is_local_module_file(module.__file__)
         )
-    )
-
-
-def local_constants() -> ConstantsT:
-    constants: set[ConstantT] = set()
-    for module in local_modules():
-        tree = _module_ast(module)
-        if tree is None:  # pragma: no cover
-            continue
-        constants |= constants_from_ast(tree)
-
-    local_constants: ConstantsT = {
-        "integer": SortedSet(),
-        "float": SortedSet(key=float_to_int),
-        "bytes": SortedSet(),
-        "string": SortedSet(),
     }
-    for value in constants:
-        choice_type = {
-            int: "integer",
-            float: "float",
-            bytes: "bytes",
-            str: "string",
-        }[type(value)]
-        local_constants[choice_type].add(value)  # type: ignore # hard to type
-
-    return local_constants

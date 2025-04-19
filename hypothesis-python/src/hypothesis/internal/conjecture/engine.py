@@ -657,7 +657,7 @@ class ConjectureRunner:
         self.settings.database.delete(self.pareto_key, choices_to_bytes(data.choices))
 
     def generate_novel_prefix(self) -> tuple[ChoiceT, ...]:
-        """Uses the tree to proactively generate a starting sequence of bytes
+        """Uses the tree to proactively generate a starting choice sequence
         that we haven't explored yet for this test.
 
         When this method is called, we assume that there must be at
@@ -1047,10 +1047,8 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
-            # Unfortunately generate_novel_prefix still operates in terms of
-            # a buffer and uses HypothesisProvider as its backing provider,
-            # not whatever is specified by the backend. We can improve this
-            # once more things are on the ir.
+            # we don't yet integrate DataTree with backends. Instead of generating
+            # a novel prefix, ask the backend for an input.
             if not self.using_hypothesis_backend:
                 data = self.new_conjecture_data([])
                 with suppress(BackendCannotProceed):

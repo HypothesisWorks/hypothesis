@@ -13,8 +13,10 @@ import contextlib
 import math
 import warnings
 from collections.abc import Iterable
+from functools import cached_property
 from random import Random
 from sys import float_info
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -45,7 +47,7 @@ from hypothesis.internal.conjecture.utils import (
     Sampler,
     many,
 )
-from hypothesis.internal.constants_ast import local_constants
+from hypothesis.internal.constants_ast import constants_from_module, local_modules
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -197,21 +199,40 @@ GLOBAL_CONSTANTS: "ConstantsT" = {
 }
 
 
-_local_constants_hash: Optional[int] = None
+_local_constants: "ConstantsT" = {
+    "integer": SortedSet(),
+    "float": SortedSet(key=float_to_int),
+    "bytes": SortedSet(),
+    "string": SortedSet(),
+}
+# modules that we've already seen and processed for local constants.
+_local_modules: set[ModuleType] = set()
 
 
-def _get_local_constants():
-    global _local_constants_hash
+def _get_local_constants() -> "ConstantsT":
+    new_constants: set[ConstantT] = set()
+    new_modules = list(local_modules() - _local_modules)
+    for new_module in new_modules:
+        new_constants |= constants_from_module(new_module)
 
-    constants = local_constants()
-    constants_hash = hash(tuple((k, tuple(v)) for k, v in constants.items()))
-    # if we've added new constants since the last time we checked, invalidate
-    # the cache.
-    if constants_hash != _local_constants_hash:
-        CONSTANTS_CACHE.cache.clear()
-        _local_constants_hash = constants_hash
+    for constant in new_constants:
+        choice_type = {
+            int: "integer",
+            float: "float",
+            bytes: "bytes",
+            str: "string",
+        }[type(constant)]
+        # if we add any new constant, invalidate the constant cache for permitted values.
+        # A more efficient approach would be invalidating just the keys with this
+        # choice_type.
+        if (
+            constant not in _local_constants[choice_type]  # type: ignore
+        ):  # pragma: no branch
+            CONSTANTS_CACHE.cache.clear()
+        _local_constants[choice_type].add(constant)  # type: ignore
 
-    return constants
+    _local_modules.update(new_modules)
+    return _local_constants
 
 
 class _BackendInfoMsg(TypedDict):
@@ -371,8 +392,12 @@ class HypothesisProvider(PrimitiveProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
-        self.local_constants = _get_local_constants()
         self._random = None if self._cd is None else self._cd._random
+
+    @cached_property
+    def _local_constants(self):
+        # defer computation of local constants until/if we need it
+        return _get_local_constants()
 
     def _maybe_draw_constant(
         self,
@@ -382,6 +407,7 @@ class HypothesisProvider(PrimitiveProvider):
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
         assert self._random is not None
+        assert self._local_constants is not None
         assert choice_type != "boolean"
 
         # check whether we even want a constant before spending time computing
@@ -399,7 +425,7 @@ class HypothesisProvider(PrimitiveProvider):
                 ),
                 tuple(
                     choice
-                    for choice in self.local_constants[choice_type]
+                    for choice in self._local_constants[choice_type]
                     if choice_permitted(choice, constraints)
                 ),
             )

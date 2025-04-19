@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import inspect
 import subprocess
 import sys
 import textwrap
@@ -17,13 +18,20 @@ from types import ModuleType
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
+    ConstantVisitor,
     _is_local_module_file,
-    _module_ast,
-    constants_from_ast,
+    constants_from_module,
 )
 
 from tests.common.utils import skipif_emscripten
+
+
+def constants_from_ast(tree):
+    visitor = ConstantVisitor()
+    visitor.visit(tree)
+    return visitor.constants
 
 
 @pytest.mark.parametrize(
@@ -128,7 +136,7 @@ def test_constants_from_running_file(tmp_path):
         # third-party
         import pytest
         import hypothesis
-        from hypothesis.internal.constants_ast import local_constants
+        from hypothesis.internal.constants_ast import local_modules, constants_from_module
 
         # these modules are in fact detected as local if they are installed
         # as editable (as is common for contributors). Prevent the ast constant
@@ -136,6 +144,21 @@ def test_constants_from_running_file(tmp_path):
         for module in sys.modules.copy():
             if module.startswith("hypofuzz"):
                 del sys.modules[module]
+
+        constants = set()
+        for module in local_modules():
+            constants |= constants_from_module(module)
+        expected = {
+            # strings
+            'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz',
+            # floats
+            3.14,
+            # bytes
+            b'test2',
+            # integers
+            142, 101, 102, 103, 104,
+        }
+        assert constants == expected, constants.symmetric_difference(expected)
 
         # local
         a = 142
@@ -145,13 +168,6 @@ def test_constants_from_running_file(tmp_path):
         e = b"test2"
         f = (101, 102)
         g = frozenset([103, 104])
-        actual = local_constants()
-        assert actual == {
-            'string': {'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz'},
-            'float': {3.14},
-            'bytes': {b'test2'},
-            "integer": {142, 101, 102, 103, 104}
-        }, actual
         """,
         ),
         encoding="utf-8",
@@ -162,7 +178,7 @@ def test_constants_from_running_file(tmp_path):
 def test_constants_from_bad_module():
     # covering test for the except branch
     module = ModuleType("nonexistent")
-    assert _module_ast(module) is None
+    assert constants_from_module(module) == set()
 
 
 @pytest.mark.parametrize(
@@ -176,3 +192,25 @@ def test_constants_from_bad_module():
 )
 def test_local_modules_ignores_test_modules(path):
     assert not _is_local_module_file(path)
+
+
+@pytest.mark.skipif(PYPY, reason="no memory error on pypy")
+def test_ignores_ast_parse_error(tmp_path):
+    p = tmp_path / "errors_on_parse.py"
+    p.write_text("[1, " * 200 + "]" * 200, encoding="utf-8")
+    module = ModuleType("<test_ignores_ast_parse_error>")
+    module.__file__ = str(p)
+
+    source = inspect.getsource(module)
+    with pytest.raises(MemoryError):
+        ast.parse(source)
+
+    assert constants_from_module(module) == set()
+
+
+@given(st.sets(constants))
+def test_constant_visitor_roundtrips_string(constants):
+    # our files in storage_directory("constants") rely on this roundtrip
+    visitor = ConstantVisitor()
+    visitor.visit(ast.parse(str(constants)))
+    assert visitor.constants == constants
