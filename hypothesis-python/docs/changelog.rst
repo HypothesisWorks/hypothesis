@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.6:
+
+--------------------
+6.131.6 - 2025-04-19
+--------------------
+
+This patch makes the new features introduced in :ref:`version 6.131.1 <v6.131.1>` much
+faster, and fixes an internal ``RecursionError`` when working with deeply-nested code.
+
 .. _v6.131.5:
 
 --------------------
