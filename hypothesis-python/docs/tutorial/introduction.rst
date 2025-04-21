@@ -82,7 +82,7 @@ and want to make sure it's correct. We can write the following test by combining
 
   test_sort_correct()
 
-When running ``test_sort_correct``, Hypothesis uses the ``lists(integers())`` strategy to generate randm lists of integers. Feel free to run ``python example.py`` to get an idea of the kinds of lists Hypothesis generates (and to convince yourself that this test passes).
+When running ``test_sort_correct``, Hypothesis uses the ``lists(integers())`` strategy to generate random lists of integers. Feel free to run ``python example.py`` to get an idea of the kinds of lists Hypothesis generates (and to convince yourself that this test passes).
 
 Adding floats to our test
 ~~~~~~~~~~~~~~~~~~~~~~~~~
