@@ -152,21 +152,12 @@ def is_local_module_file(path: str) -> bool:
     from hypothesis.internal.scrutineer import ModuleLocation
 
     return (
-        # pyodide builds bundle the stdlib in a nonstandard location, like
-        # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
-        # the stdlib as local code and slowing down on emscripten, instead return
-        # that nothing is local.
-        #
-        # pyodide may provide some way to distinguish stdlib/third-party/local
-        # code. I haven't looked into it. If they do, we should correctly implement
-        # ModuleLocation for pyodide instead of this.
-        sys.platform != "emscripten"
         # Skip expensive path lookup for stdlib modules.
         # This will cause false negatives if a user names their module the
         # same as a stdlib module.
         #
         # sys.stdlib_module_names is new in 3.10
-        and not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
+        (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
         # A path containing site-packages is extremely likely to be
         # ModuleLocation.SITE_PACKAGES. Skip the expensive path lookup here.
         and "/site-packages/" not in path
