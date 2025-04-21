@@ -148,16 +148,28 @@ def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
 
 
 @lru_cache(4096)
-def _is_local_module_file(path: str) -> bool:
+def is_local_module_file(path: str) -> bool:
     from hypothesis.internal.scrutineer import ModuleLocation
 
     return (
+        # pyodide builds bundle the stdlib in a nonstandard location, like
+        # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
+        # the stdlib as local code and slowing down on emscripten, instead return
+        # that nothing is local.
+        #
+        # pyodide may provide some way to distinguish stdlib/third-party/local
+        # code. I haven't looked into it. If they do, we should correctly implement
+        # ModuleLocation for pyodide instead of this.
+        sys.platform != "emscripten"
         # Skip expensive path lookup for stdlib modules.
         # This will cause false negatives if a user names their module the
         # same as a stdlib module.
         #
         # sys.stdlib_module_names is new in 3.10
-        not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
+        and not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
+        # A path containing site-packages is extremely likely to be
+        # ModuleLocation.SITE_PACKAGES. Skip the expensive path lookup here.
+        and "/site-packages/" not in path
         and ModuleLocation.from_path(path) is ModuleLocation.LOCAL
         # normally, hypothesis is a third-party library and is not returned
         # by local_modules. However, if it is installed as an editable package
@@ -172,27 +184,3 @@ def _is_local_module_file(path: str) -> bool:
             or p.stem.endswith("_test")
         )
     )
-
-
-def local_modules() -> set[ModuleType]:
-    if sys.platform == "emscripten":  # pragma: no cover
-        # pyodide builds bundle the stdlib in a nonstandard location, like
-        # `/lib/python312.zip/heapq.py`. To avoid identifying the entirety of
-        # the stdlib as local code and slowing down on emscripten, instead return
-        # that nothing is local.
-        #
-        # pyodide may provide some way to distinguish stdlib/third-party/local
-        # code. I haven't looked into it. If they do, we should correctly implement
-        # ModuleLocation for pyodide instead of this.
-        return set()
-
-    return {
-        module
-        # copy to avoid a RuntimeError if another thread imports a module while
-        # we're iterating.
-        for module in sys.modules.copy().values()
-        if (
-            getattr(module, "__file__", None) is not None
-            and _is_local_module_file(module.__file__)
-        )
-    }

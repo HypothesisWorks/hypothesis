@@ -66,7 +66,7 @@ def test_actual_collection(monkeypatch):
     # hypothesis as being the "local" module, just to get some real constant
     # collection going.
     monkeypatch.setattr(
-        constants_ast, "_is_local_module_file", lambda f: "hypothesis" in f
+        constants_ast, "is_local_module_file", lambda f: "hypothesis" in f
     )
 
     @given(st.integers())

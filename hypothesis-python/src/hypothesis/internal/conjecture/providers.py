@@ -11,6 +11,7 @@
 import abc
 import contextlib
 import math
+import sys
 import warnings
 from collections.abc import Iterable
 from functools import cached_property
@@ -47,7 +48,10 @@ from hypothesis.internal.conjecture.utils import (
     Sampler,
     many,
 )
-from hypothesis.internal.constants_ast import constants_from_module, local_modules
+from hypothesis.internal.constants_ast import (
+    constants_from_module,
+    is_local_module_file,
+)
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -82,7 +86,6 @@ AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
-FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
 # cache the choice_permitted constants for a particular set of constraints.
 CONSTANTS_CACHE = LRUCache(1024)
 
@@ -205,15 +208,42 @@ _local_constants: "ConstantsT" = {
     "bytes": SortedSet(),
     "string": SortedSet(),
 }
-# modules that we've already seen and processed for local constants.
-_local_modules: set[ModuleType] = set()
+# modules that we've already seen and processed for local constants. These are
+# are all modules, not necessarily local ones. This lets us quickly see which
+# modules are new without an expensive path.resolve() or is_local_module_file
+# cache lookup.
+_seen_modules: set[ModuleType] = set()
+_sys_modules_len: Optional[int] = None
 
 
 def _get_local_constants() -> "ConstantsT":
+    global _sys_modules_len
     new_constants: set[ConstantT] = set()
-    new_modules = list(local_modules() - _local_modules)
-    for new_module in new_modules:
-        new_constants |= constants_from_module(new_module)
+    # We call this function once per HypothesisProvider instance, i.e. once per
+    # input, so it needs to be performant. The logic here is more complicated
+    # than necessary because of this.
+    #
+    # First, we check whether there are any new modules with a very cheap length
+    # check. This check can be fooled if a module is added while another module is
+    # removed, but the more correct check against tuple(sys.modules.keys()) is
+    # substantially more expensive. Such a new module would eventually be discovered
+    # if / when the length changes again in the future.
+    #
+    # If the length has changed, we find just modules we haven't seen before. Of
+    # those, we find the ones which correspond to local modules, and extract their
+    # constants.
+
+    # walrus operator avoids race conditions of sys.modules length changing from
+    # another thread before we set _sys_modules_len.
+    if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
+        new_modules = set(sys.modules.values()) - _seen_modules
+        for module in new_modules:
+            if getattr(module, "__file__", None) is not None and is_local_module_file(
+                module.__file__
+            ):
+                new_constants |= constants_from_module(module)
+        _seen_modules.update(new_modules)
+        _sys_modules_len = sys_modules_len
 
     for constant in new_constants:
         choice_type = {
@@ -231,7 +261,6 @@ def _get_local_constants() -> "ConstantsT":
             CONSTANTS_CACHE.cache.clear()
         _local_constants[choice_type].add(constant)  # type: ignore
 
-    _local_modules.update(new_modules)
     return _local_constants
 
 
