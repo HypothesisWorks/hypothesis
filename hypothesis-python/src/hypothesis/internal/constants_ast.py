@@ -157,7 +157,7 @@ def is_local_module_file(path: str) -> bool:
         # same as a stdlib module.
         #
         # sys.stdlib_module_names is new in 3.10
-        (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
+        not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
         # A path containing site-packages is extremely likely to be
         # ModuleLocation.SITE_PACKAGES. Skip the expensive path lookup here.
         and "/site-packages/" not in path
