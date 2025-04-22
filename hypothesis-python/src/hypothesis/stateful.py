@@ -390,6 +390,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def _repr_step(self, rule, data, result):
         output_assignment = ""
+        extra_assignment_lines = []
         if rule.targets:
             number_of_results = (
                 len(result.values) if isinstance(result, MultipleResults) else 1
@@ -401,25 +402,25 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             ]
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
+                    # comma after each name (len-1 tuple)
                     output_names = [f"{name}," for name in chain(*names_per_target)]
                     output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
-                    # We prefer the per-result ordering - otherwise we get interleaved
-                    # ordering for duplicate targets when there are >1 results.
-                    # Note: "per-target" and "per-result" is only true in the abstract,
-                    # the actual value ordering may differ.
-                    output_names = sum(zip(*names_per_target), ())  # transpose&flatten
-                    if len(rule.targets) == 1:
-                        output_assignment = ", ".join(output_names) + " = "
-                    else:
-                        # Note special curly-bracket notation, it is meant to signal that this case
-                        # (only) does not have strict ordering of the result-to-target mapping
-                        output_assignment = "{" + ", ".join(output_names) + "} = "
+                    # multiple values, multiple targets -- use the first target
+                    # for the assignment from function, and do the other target
+                    # assignments on separate lines
+                    first_names = names_per_target[0]
+                    output_assignment = ", ".join(first_names) + " = "
+                    for output_names in names_per_target[1:]:
+                        extra_assignment_lines.append(
+                            ", ".join(output_names) + " = " + ", ".join(first_names)
+                        )
             else:
                 output_names = chain(*names_per_target)
                 output_assignment = " = ".join(output_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
-        return f"{output_assignment}state.{rule.function.__name__}({args})"
+        output_line = f"{output_assignment}state.{rule.function.__name__}({args})"
+        return "\n".join([output_line] + extra_assignment_lines)
 
     def _add_result_to_targets(self, targets, result):
         for target in targets:
