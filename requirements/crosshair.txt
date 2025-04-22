@@ -6,7 +6,7 @@
 #
 attrs==24.1.0
     # via
-    #   -r requirements/crosshair.in
+    #   -r requirements/test.in
     #   cattrs
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
@@ -15,7 +15,7 @@ cattrs==24.1.3
     # via
     #   lsprotocol
     #   pygls
-crosshair-tool==0.0.85
+crosshair-tool==0.0.86
     # via
     #   -r requirements/crosshair.in
     #   hypothesis-crosshair
@@ -24,9 +24,9 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   cattrs
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
-hypothesis==6.131.0
+hypothesis==6.131.6
     # via hypothesis-crosshair
-hypothesis-crosshair==0.0.20
+hypothesis-crosshair==0.0.22
     # via -r requirements/crosshair.in
 importlib-metadata==8.6.1
     # via crosshair-tool
