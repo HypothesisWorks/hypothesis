@@ -123,7 +123,7 @@ Rules
 -----
 
 As said earlier, rules are the most common feature used in RuleBasedStateMachine. They are defined by applying the :func:`~hypothesis.stateful.rule` decorator
-on a function. Note that RuleBasedStateMachine must have at least one rule defined and that a single function cannot be used to define multiple rules (this to avoid having multiple rules doing the same things). Due to the stateful execution method, rules generally cannot take arguments from other sources such as fixtures or ``pytest.mark.parametrize`` - consider providing them via a strategy such as :func:`~hypothesis.strategies.sampled_from` instead.
+on a function. Note that RuleBasedStateMachine must have at least one rule defined and that a single function cannot be used to define multiple rules (this is to avoid having multiple rules doing the same things). Due to the stateful execution method, rules generally cannot take arguments from other sources such as fixtures or ``pytest.mark.parametrize`` - consider providing them via a strategy such as :func:`~hypothesis.strategies.sampled_from` instead.
 
 Initializes
 -----------
@@ -201,7 +201,7 @@ Often there are invariants that you want to ensure are met after every step in a
                 self.num += 1
 
         @invariant()
-        def divide_with_one(self):
+        def is_even(self):
             assert self.num % 2 == 0
 
     NumberTest = NumberModifier.TestCase
