@@ -1261,7 +1261,7 @@ state.teardown()
         (
             "aba",
             multiple("ret1", "ret2"),
-            "\n".join(
+            "\n".join(  # noqa: FLY002  # no, f-string is not more readable
                 [
                     "a_0, a_2 = state.init()",
                     "b_0, b_1 = a_0, a_2",
