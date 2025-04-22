@@ -245,8 +245,8 @@ def _get_local_constants() -> "ConstantsT":
     # those, we find the ones which correspond to local modules, and extract their
     # constants.
 
-    # walrus operator avoids race conditions of sys.modules length changing from
-    # another thread before we set _sys_modules_len.
+    # careful: store sys.modules length when we first check to avoid race conditions
+    # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
         new_modules = set(sys.modules.values()) - _seen_modules
         for module in new_modules:
