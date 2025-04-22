@@ -201,7 +201,7 @@ Often there are invariants that you want to ensure are met after every step in a
                 self.num += 1
 
         @invariant()
-        def divide_with_one(self):
+        def is_even(self):
             assert self.num % 2 == 0
 
     NumberTest = NumberModifier.TestCase
