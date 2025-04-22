@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.7:
+
+--------------------
+6.131.7 - 2025-04-22
+--------------------
+
+Further improve the performance of the new features introduced in :ref:`version 6.131.1 <v6.131.1>`.
+
 .. _v6.131.6:
 
 --------------------
