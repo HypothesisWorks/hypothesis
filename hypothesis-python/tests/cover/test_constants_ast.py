@@ -21,8 +21,8 @@ from hypothesis import given, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     ConstantVisitor,
-    _is_local_module_file,
     constants_from_module,
+    is_local_module_file,
 )
 
 from tests.common.utils import skipif_emscripten
@@ -136,7 +136,7 @@ def test_constants_from_running_file(tmp_path):
         # third-party
         import pytest
         import hypothesis
-        from hypothesis.internal.constants_ast import local_modules, constants_from_module
+        from hypothesis.internal.constants_ast import is_local_module_file, constants_from_module
 
         # these modules are in fact detected as local if they are installed
         # as editable (as is common for contributors). Prevent the ast constant
@@ -146,11 +146,15 @@ def test_constants_from_running_file(tmp_path):
                 del sys.modules[module]
 
         constants = set()
-        for module in local_modules():
-            constants |= constants_from_module(module)
+        for module in sys.modules.values():
+            if getattr(module, "__file__", None) is not None and is_local_module_file(
+                module.__file__
+            ):
+                constants |= constants_from_module(module)
+
         expected = {
             # strings
-            'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz',
+            'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz', '__file__',
             # floats
             3.14,
             # bytes
@@ -191,7 +195,7 @@ def test_constants_from_bad_module():
     ],
 )
 def test_local_modules_ignores_test_modules(path):
-    assert not _is_local_module_file(path)
+    assert not is_local_module_file(path)
 
 
 @pytest.mark.skipif(PYPY, reason="no memory error on pypy")
