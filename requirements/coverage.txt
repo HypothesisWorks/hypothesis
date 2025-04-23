@@ -36,13 +36,13 @@ lark==1.2.2
     # via -r requirements/coverage.in
 libcst==1.7.0
     # via -r requirements/coverage.in
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via black
-numpy==2.2.4
+numpy==2.2.5
     # via
     #   -r requirements/coverage.in
     #   pandas
-packaging==24.2
+packaging==25.0
     # via
     #   black
     #   pytest
@@ -92,7 +92,7 @@ tomli==2.2.1
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.13.1
+typing-extensions==4.13.2
     # via
     #   -r requirements/coverage.in
     #   black

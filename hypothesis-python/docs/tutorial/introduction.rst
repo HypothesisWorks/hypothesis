@@ -120,14 +120,14 @@ And now this test passes without issues.
 
 .. note::
 
-  You can use the ``.example()`` method to get an idea of the kinds of things a strategy will generate:
+  You can use the |.example()| method to get an idea of the kinds of things a strategy will generate:
 
   .. code-block:: pycon
 
     >>> st.lists(st.integers() | st.floats(allow_nan=False)).example()
     [-5.969063e-08, 15283673678, 18717, -inf]
 
-  Note that ``.example()`` is intended for interactive use only (i.e., in a :term:`REPL <python:REPL>`). It is not intended to be used inside tests.
+  Note that |.example()| is intended for interactive use only (i.e., in a :term:`REPL <python:REPL>`). It is not intended to be used inside tests.
 
 
 Tests with multiple arguments

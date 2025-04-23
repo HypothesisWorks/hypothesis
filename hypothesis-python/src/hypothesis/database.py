@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import abc
+import errno
 import json
 import os
 import struct
@@ -390,7 +391,14 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 os.close(fd)
                 try:
                     tmppath.rename(path)
-                except OSError:  # pragma: no cover
+                except OSError as err:  # pragma: no cover
+                    if err.errno == errno.EXDEV:
+                        # Can't rename across filesystem boundaries, see e.g.
+                        # https://github.com/HypothesisWorks/hypothesis/issues/4335
+                        try:
+                            path.write_bytes(tmppath.read_bytes())
+                        except OSError:
+                            pass
                     tmppath.unlink()
                 assert not tmppath.exists()
         except OSError:  # pragma: no cover

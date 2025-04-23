@@ -125,11 +125,14 @@ Misc
 Related
 -------
 
-.. autoclass:: hypothesis.strategies.DataObject
 .. autoclass:: hypothesis.strategies.DrawFn
+.. autoclass:: hypothesis.strategies.DataObject
+
+  .. automethod:: hypothesis.strategies.DataObject.draw
 
 .. autoclass:: hypothesis.strategies.SearchStrategy
 
+  .. automethod:: hypothesis.strategies.SearchStrategy.example
   .. automethod:: hypothesis.strategies.SearchStrategy.filter
   .. automethod:: hypothesis.strategies.SearchStrategy.map
   .. automethod:: hypothesis.strategies.SearchStrategy.flatmap

@@ -16,8 +16,10 @@ If you are unable to use the stdlib :mod:`zoneinfo` module, e.g. via the
 strategy with :py:func:`hypothesis.strategies.datetimes` and
 :py:func:`hypothesis.strategies.times` to produce timezone-aware values.
 
-.. deprecated:: :mod:`zoneinfo` was added
-    we intend to remove ``hypothesis.extra.pytz``, after libraries
+.. warning::
+
+    Since :mod:`zoneinfo` was added in Python 3.9, this extra
+    is deprecated.  We intend to remove it after libraries
     such as Pandas and Django complete their own migrations.
 """
 

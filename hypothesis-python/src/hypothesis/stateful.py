@@ -560,7 +560,7 @@ class Bundle(SearchStrategy[Ex]):
         # We assume that a bundle will grow over time
         return False
 
-    def available(self, data):
+    def _available(self, data):
         # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
         # Hence drawing from it only returns the current state machine without
         # modifying the underlying buffer.
