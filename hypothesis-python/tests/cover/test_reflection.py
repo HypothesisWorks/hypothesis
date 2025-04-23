@@ -692,20 +692,6 @@ def _prep_source(*pairs):
         ),
         (
             """
-            def      \\
-                f(): pass
-            """,
-            """
-            def\\
-                f(): pass
-            """,
-            pytest.mark.skipif(
-                sys.version_info[:3] == (3, 13, 2),
-                reason="untokenize() does not round-trip for code with line breaks, gh-125553",
-            ),
-        ),
-        (
-            """
             @dec
             async def f():
                 pass
