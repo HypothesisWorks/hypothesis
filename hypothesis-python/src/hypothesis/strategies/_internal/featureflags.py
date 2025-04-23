@@ -58,10 +58,16 @@ class FeatureFlags:
         # original model.
         #
         # We implement this as a single 8-bit integer and enable features which
-        # score >= that value. In particular when self.__baseline is 0, all
+        # score >= that value. In particular when self.__p_disabled is 0, all
         # features will be enabled. This is so that we shrink in the direction
         # of more features being enabled.
         if self.__data is not None:
+            # this really messes up our deduplication tracking, because all 255
+            # draws are unique. But we more or less have to choose whether something
+            # is enabled on-demand with a prior probability, rather than choosing what
+            # is enabled up front, because the latter results in a very large choice
+            # sequence when there are lots of possibilities.
+            # (a tradeoff might be selecting up front when there are <= 3 options?)
             self.__p_disabled = self.__data.draw_integer(0, 254) / 255
         else:
             # If data is None we're in example mode so all that matters is the
@@ -86,9 +92,11 @@ class FeatureFlags:
             return not self.__is_disabled.get(name, False)
 
         data = self.__data
-
+        # TODO I wouldn't expect a span here to do anything, since it only ever
+        # encapsulates a single draw, but test_minimizes_individual_features_to_open
+        # fails without this. Can we improve the shrinker so this span isn't
+        # necessary?
         data.start_span(label=FEATURE_LABEL)
-
         # If we've already decided on this feature then we don't actually
         # need to draw anything, but we do write the same decision to the
         # input stream. This allows us to lazily decide whether a feature
