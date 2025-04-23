@@ -217,20 +217,18 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
 
 
 class SearchStrategy(Generic[Ex]):
-    """A SearchStrategy is an object that knows how to explore data of a given
-    type.
+    """A ``SearchStrategy`` tells Hypothesis how to generate that kind of input.
 
-    Except where noted otherwise, methods on this class are not part of
-    the public API and their behaviour may change significantly between
-    minor version releases. They will generally be stable between patch
-    releases.
+    This class is only part of the public API for use in type annotations, so that
+    you can write e.g. ``-> SearchStrategy[Foo]`` for your function which returns
+    ``builds(Foo, ...)``.  Do not inherit from or directly instantiate this class.
     """
 
     validate_called: bool = False
     __label: Union[int, UniqueIdentifier, None] = None
     __module__: str = "hypothesis.strategies"
 
-    def available(self, data: ConjectureData) -> bool:
+    def _available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
         values. This typically useful for stateful testing where ``Bundle``
         grows over time a list of value to choose from.
@@ -287,15 +285,12 @@ class SearchStrategy(Generic[Ex]):
     def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return False
 
-    def example(self) -> Ex:
-        """Provide an example of the sort of value that this strategy
-        generates. This is biased to be slightly simpler than is typical for
-        values from this strategy, for clarity purposes.
+    def example(self) -> Ex:  # FIXME
+        """Provide an example of the sort of value that this strategy generates.
 
-        This method shouldn't be taken too seriously. It's here for interactive
-        exploration of the API, not for any sort of real testing.
-
-        This method is part of the public API.
+        This method is designed for use in a REPL, and will raise an error if
+        called from inside |@given| or a strategy definition.  For serious use,
+        see |@composite| or |st.data|.
         """
         if getattr(sys, "ps1", None) is None:  # pragma: no branch
             # The other branch *is* covered in cover/test_examples.py; but as that
@@ -361,10 +356,9 @@ class SearchStrategy(Generic[Ex]):
         return self.__examples.pop()
 
     def map(self, pack: Callable[[Ex], T]) -> "SearchStrategy[T]":
-        """Returns a new strategy that generates values by generating a value
-        from this strategy and then calling pack() on the result, giving that.
-
-        This method is part of the public API.
+        """Returns a new strategy which generates a value from this one, and
+        then returns ``pack(value)``.  For example, ``integers().map(str)``
+        could generate ``str(5)`` == ``"5"``.
         """
         if is_identity_function(pack):
             return self  # type: ignore  # Mypy has no way to know that `Ex == T`
@@ -372,12 +366,21 @@ class SearchStrategy(Generic[Ex]):
 
     def flatmap(
         self, expand: Callable[[Ex], "SearchStrategy[T]"]
-    ) -> "SearchStrategy[T]":
-        """Returns a new strategy that generates values by generating a value
-        from this strategy, say x, then generating a value from
-        strategy(expand(x))
+    ) -> "SearchStrategy[T]":  # FIXME
+        """Old syntax for a special case of |@composite|:
 
-        This method is part of the public API.
+        .. code-block:: python
+
+            @st.composite
+            def flatmap_like(draw, base_strategy, expand):
+                value = draw(base_strategy)
+                new_strategy = expand(value)
+                return draw(new_strategy)
+
+        We find that the greater readability of |@composite| usually outweighs
+        the verbosity, with a few exceptions for simple cases or recipes like
+        ``from_type(type).flatmap(from_type)`` ("pick a type, get a strategy for
+        any instance of that type, and then generate one of those").
         """
         from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 
@@ -393,11 +396,21 @@ class SearchStrategy(Generic[Ex]):
     # reference the local TypeVar context.
     def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
         """Returns a new strategy that generates values from this strategy
-        which satisfy the provided condition. Note that if the condition is too
-        hard to satisfy this might result in your tests failing with
-        Unsatisfiable.
+        which satisfy the provided condition.
 
-        This method is part of the public API.
+        Note that if the condition is too hard to satisfy this might result
+        in your tests failing with an Unsatisfiable exception.
+        A basic version of the filtering logic would look something like:
+
+        .. code-block:: python
+
+            @st.composite
+            def filter_like(draw, strategy, condition):
+                for _ in range(3):
+                    value = draw(strategy)
+                    if condition(value):
+                        return value
+                assume(False)
         """
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
@@ -780,7 +793,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
-                lambda s: s.available(data)
+                lambda s: s._available(data)
             )
         )
         return data.draw(strategy)

@@ -1831,12 +1831,13 @@ class DrawFn(Protocol):
 
     .. code-block:: python
 
+        def draw(strategy: SearchStrategy[Ex], label: object = None) -> Ex: ...
+
         @composite
         def list_and_index(draw: DrawFn) -> tuple[int, str]:
-            i = draw(integers())  # type inferred as 'int'
-            s = draw(text())  # type inferred as 'str'
+            i = draw(integers())  # type of `i` inferred as 'int'
+            s = draw(text())  # type of `s` inferred as 'str'
             return i, s
-
     """
 
     def __init__(self):
@@ -2210,6 +2211,7 @@ class DataObject:
         return "data(...)"
 
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+        """Like :obj:`~hypothesis.strategies.DrawFn`."""
         check_strategy(strategy, "strategy")
         self.count += 1
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"

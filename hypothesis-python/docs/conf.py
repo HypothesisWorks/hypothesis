@@ -249,6 +249,7 @@ rst_prolog = """
 .. |strategy.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
 
