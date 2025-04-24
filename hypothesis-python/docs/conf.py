@@ -63,7 +63,7 @@ redirects = {
     "changes": "changelog.html",
     "strategies": "extensions.html",
     # these pages were removed without replacement
-    # "support": "index.html",
+    "support": "index.html",
     "manifesto": "index.html",
     "examples": "index.html",
 }
