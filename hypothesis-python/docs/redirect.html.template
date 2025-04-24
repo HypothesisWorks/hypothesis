@@ -22,6 +22,7 @@
         "details.html#hypothesis.target": "reference/api.html#hypothesis.target",
         "details.html#hypothesis.register_random": "reference/strategies.html#hypothesis.register_random",
         "details.html#hypothesis.strategies.SearchStrategy": "reference/strategies.html#hypothesis.strategies.SearchStrategy",
+        "details.html#test-statistics": "reference/integrations.html#statistics",
       };
       var redirect = manualRedirects[window.location.pathname.split('/').pop() + window.location.hash];
 
