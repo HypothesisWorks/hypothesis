@@ -116,4 +116,3 @@ Technical API reference.
   extensions
   packaging
   community
-  endorsements

@@ -56,6 +56,7 @@ redirects = {
     "numpy": "reference/strategies.html#numpy",
     "observability": "reference/integrations.html#observability",
     "settings": "reference/api.html#settings",
+    "endorsements": "usage.html#testimonials",
     # TODO enable when we actually rename them
     # "extras": "extensions.html",
     "supported": "compatibility.html",
