@@ -1,6 +1,6 @@
-=============================
-Projects extending Hypothesis
-=============================
+======================
+Third-party extensions
+======================
 
 There are a number of open-source community libraries that extend Hypothesis. This page lists some of them; you can find more by searching PyPI `by keyword <https://pypi.org/search/?q=hypothesis>`_ or `by framework classifier <https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`_.
 
