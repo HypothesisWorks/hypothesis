@@ -14,13 +14,18 @@ import inspect
 import math
 import sys
 from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
+from collections.abc import Iterator
 from functools import lru_cache
+from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, AbstractSet, TypedDict, Union
+from typing import TYPE_CHECKING, Union
+
+from sortedcontainers import SortedSet
 
 import hypothesis
 from hypothesis.configuration import storage_directory
+from hypothesis.internal.conjecture.choice import ChoiceTypeT
 from hypothesis.internal.escalation import is_hypothesis_file
 
 if TYPE_CHECKING:
@@ -29,17 +34,74 @@ if TYPE_CHECKING:
 ConstantT: "TypeAlias" = Union[int, float, bytes, str]
 
 
-class ConstantsT(TypedDict):
-    integer: AbstractSet[int]
-    float: AbstractSet[float]
-    bytes: AbstractSet[bytes]
-    string: AbstractSet[str]
+class Constants:
+    def __init__(
+        self,
+        *,
+        # spiritually "an AbstractSet, with the addition of a .add method"
+        integers: Union[set[int], SortedSet[int]] = None,
+        floats: Union[set[float], SortedSet[float]] = None,
+        bytes: Union[set[bytes], SortedSet[bytes]] = None,
+        strings: Union[set[str], SortedSet[str]] = None,
+    ):
+        self.integers = set() if integers is None else integers
+        self.floats = set() if floats is None else floats
+        self.bytes = set() if bytes is None else bytes
+        self.strings = set() if strings is None else strings
+
+    def set_for_type(
+        self, constant_type: Union[type[ConstantT], ChoiceTypeT]
+    ) -> Union[set[ConstantT], SortedSet[ConstantT]]:
+        if constant_type is int or constant_type == "integer":
+            return self.integers
+        elif constant_type is float or constant_type == "float":
+            return self.floats
+        elif constant_type is bytes or constant_type == "bytes":
+            return self.bytes
+        elif constant_type is str or constant_type == "string":
+            return self.strings
+        raise ValueError(f"unknown constant_type {constant_type}")
+
+    def add(self, constant: ConstantT) -> None:
+        self.set_for_type(type(constant)).add(constant)
+
+    def __contains__(self, constant: ConstantT) -> bool:
+        return constant in self.set_for_type(type(constant))
+
+    def __or__(self, other: "Constants") -> "Constants":
+        return Constants(
+            integers=self.integers | other.integers,
+            floats=self.floats | other.floats,
+            bytes=self.bytes | other.bytes,
+            strings=self.strings | other.strings,
+        )
+
+    def __iter__(self) -> Iterator[ConstantT]:
+        return iter(chain(self.integers, self.floats, self.bytes, self.strings))
+
+    def __len__(self) -> int:
+        return (
+            len(self.integers) + len(self.floats) + len(self.bytes) + len(self.strings)
+        )
+
+    def __repr__(self) -> str:
+        return f"Constants({self.integers=}, {self.floats=}, {self.bytes=}, {self.strings=})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Constants):
+            return False
+        return (
+            self.integers == other.integers
+            and self.floats == other.floats
+            and self.bytes == other.bytes
+            and self.strings == other.strings
+        )
 
 
 class ConstantVisitor(NodeVisitor):
     def __init__(self):
         super().__init__()
-        self.constants: set[ConstantT] = set()
+        self.constants = Constants()
 
     def _add_constant(self, value: object) -> None:
         if isinstance(value, str) and (
@@ -96,7 +158,7 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def _constants_from_source(source: Union[str, bytes]) -> AbstractSet[ConstantT]:
+def _constants_from_source(source: Union[str, bytes]) -> Constants:
     tree = ast.parse(source)
     visitor = ConstantVisitor()
     visitor.visit(tree)
@@ -104,13 +166,13 @@ def _constants_from_source(source: Union[str, bytes]) -> AbstractSet[ConstantT]:
 
 
 @lru_cache(4096)
-def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
+def constants_from_module(module: ModuleType) -> Constants:
     try:
         module_file = inspect.getsourcefile(module)
         # use type: ignore because we know this might error
         source_bytes = Path(module_file).read_bytes()  # type: ignore
     except Exception:
-        return set()
+        return Constants()
 
     source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
     cache_p = storage_directory("constants") / source_hash
@@ -129,7 +191,7 @@ def constants_from_module(module: ModuleType) -> AbstractSet[ConstantT]:
         # * NodeVisitor may hit a RecursionError (see many related issues on
         #   e.g. libcst https://github.com/Instagram/LibCST/issues?q=recursion),
         #   or a MemoryError (`"[1, " * 200 + "]" * 200`)
-        return set()
+        return Constants()
 
     try:
         cache_p.parent.mkdir(parents=True, exist_ok=True)

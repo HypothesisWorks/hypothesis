@@ -49,6 +49,7 @@ from hypothesis.internal.conjecture.utils import (
     many,
 )
 from hypothesis.internal.constants_ast import (
+    Constants,
     constants_from_module,
     is_local_module_file,
 )
@@ -65,7 +66,7 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from hypothesis.internal.conjecture.data import ConjectureData
-    from hypothesis.internal.constants_ast import ConstantsT, ConstantT
+    from hypothesis.internal.constants_ast import ConstantT
 
 T = TypeVar("T")
 _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
@@ -194,20 +195,20 @@ _constant_strings = {
 
 # we don't actually care what order the constants are sorted in, just that the
 # ordering is deterministic.
-GLOBAL_CONSTANTS: "ConstantsT" = {
-    "float": SortedSet(_constant_floats, key=float_to_int),
-    "string": SortedSet(_constant_strings),
-    "integer": SortedSet(),
-    "bytes": SortedSet(),
-}
+GLOBAL_CONSTANTS = Constants(
+    integers=SortedSet(),
+    floats=SortedSet(_constant_floats, key=float_to_int),
+    bytes=SortedSet(),
+    strings=SortedSet(_constant_strings),
+)
 
 
-_local_constants: "ConstantsT" = {
-    "integer": SortedSet(),
-    "float": SortedSet(key=float_to_int),
-    "bytes": SortedSet(),
-    "string": SortedSet(),
-}
+_local_constants = Constants(
+    integers=SortedSet(),
+    floats=SortedSet(key=float_to_int),
+    bytes=SortedSet(),
+    strings=SortedSet(),
+)
 # modules that we've already seen and processed for local constants. These are
 # are all modules, not necessarily local ones. This lets us quickly see which
 # modules are new without an expensive path.resolve() or is_local_module_file
@@ -216,8 +217,8 @@ _seen_modules: set[ModuleType] = set()
 _sys_modules_len: Optional[int] = None
 
 
-def _get_local_constants() -> "ConstantsT":
-    global _sys_modules_len
+def _get_local_constants() -> Constants:
+    global _sys_modules_len, _local_constants
 
     if sys.platform == "emscripten":  # pragma: no cover
         # pyodide builds bundle the stdlib in a nonstandard location, like
@@ -230,7 +231,7 @@ def _get_local_constants() -> "ConstantsT":
         # ModuleLocation for pyodide instead of this.
         return _local_constants
 
-    new_constants: set[ConstantT] = set()
+    count_constants = len(_local_constants)
     # We call this function once per HypothesisProvider instance, i.e. once per
     # input, so it needs to be performant. The logic here is more complicated
     # than necessary because of this.
@@ -253,25 +254,15 @@ def _get_local_constants() -> "ConstantsT":
             if getattr(module, "__file__", None) is not None and is_local_module_file(
                 module.__file__
             ):
-                new_constants |= constants_from_module(module)
+                _local_constants |= constants_from_module(module)
         _seen_modules.update(new_modules)
         _sys_modules_len = sys_modules_len
 
-    for constant in new_constants:
-        choice_type = {
-            int: "integer",
-            float: "float",
-            bytes: "bytes",
-            str: "string",
-        }[type(constant)]
-        # if we add any new constant, invalidate the constant cache for permitted values.
-        # A more efficient approach would be invalidating just the keys with this
-        # choice_type.
-        if (
-            constant not in _local_constants[choice_type]  # type: ignore
-        ):  # pragma: no branch
-            CONSTANTS_CACHE.cache.clear()
-        _local_constants[choice_type].add(constant)  # type: ignore
+    # if we add any new constant, invalidate the constant cache for permitted values.
+    # A more efficient approach would be invalidating just the keys with this
+    # choice_type.
+    if len(_local_constants) > count_constants:
+        CONSTANTS_CACHE.cache.clear()
 
     return _local_constants
 
@@ -461,12 +452,12 @@ class HypothesisProvider(PrimitiveProvider):
             CONSTANTS_CACHE[key] = (
                 tuple(
                     choice
-                    for choice in GLOBAL_CONSTANTS[choice_type]
+                    for choice in GLOBAL_CONSTANTS.set_for_type(choice_type)
                     if choice_permitted(choice, constraints)
                 ),
                 tuple(
                     choice
-                    for choice in self._local_constants[choice_type]
+                    for choice in self._local_constants.set_for_type(choice_type)
                     if choice_permitted(choice, constraints)
                 ),
             )

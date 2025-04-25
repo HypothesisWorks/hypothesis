@@ -20,6 +20,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
+    Constants,
     ConstantVisitor,
     constants_from_module,
     is_local_module_file,
@@ -27,11 +28,42 @@ from hypothesis.internal.constants_ast import (
 
 from tests.common.utils import skipif_emscripten
 
+# constants_from_ast skips small integers
+constant_ints = st.integers(max_value=-101) | st.integers(min_value=101)
+constant_floats = st.floats(allow_nan=False, allow_infinity=False)
+constant_bytes = st.binary(min_size=1)
+constant_strings = st.text(min_size=1, max_size=10).filter(lambda s: not s.isspace())
+constants = constant_ints | constant_floats | constant_bytes | constant_strings
+
+constants_classes = st.builds(
+    Constants,
+    integers=st.sets(constant_ints),
+    floats=st.sets(constant_floats),
+    bytes=st.sets(constant_bytes),
+    strings=st.sets(constant_strings),
+)
+
 
 def constants_from_ast(tree):
     visitor = ConstantVisitor()
     visitor.visit(tree)
     return visitor.constants
+
+
+def test_constants_set_from_type_invalid():
+    with pytest.raises(ValueError):
+        Constants().set_for_type("not_a_type")
+
+
+@given(st.integers())
+def test_constants_contains(n):
+    assert n in Constants(integers={n})
+
+
+@given(constants_classes)
+def test_constants_not_equal_to_set(constants):
+    assert constants != set()
+    assert constants != set(constants)
 
 
 @pytest.mark.parametrize(
@@ -89,27 +121,12 @@ def constants_from_ast(tree):
 def test_constants_from_ast(source, expected):
     source = textwrap.dedent(source)
     tree = ast.parse(source)
-    assert constants_from_ast(tree) == expected
+    assert set(constants_from_ast(tree)) == expected
 
 
 @given(st.integers(max_value=-101))
 def test_parses_negatives(n):
-    assert constants_from_ast(ast.parse(f"a = {n}")) == {n}
-
-
-constants = st.one_of(
-    # constants_from_ast skips small integers
-    st.integers(max_value=-101),
-    st.integers(min_value=101),
-    st.floats(allow_nan=False, allow_infinity=False),
-    # constants_from_ast skips b""
-    st.binary(min_size=1),
-    # constants_from_ast skips the following strings:
-    # * empty strings
-    # * long strings
-    # * strings which are entirely spaces
-    st.text(min_size=1, max_size=10).filter(lambda s: not s.isspace()),
-)
+    assert constants_from_ast(ast.parse(f"a = {n}")) == Constants(integers={n})
 
 
 @given(st.tuples(constants))
@@ -136,7 +153,11 @@ def test_constants_from_running_file(tmp_path):
         # third-party
         import pytest
         import hypothesis
-        from hypothesis.internal.constants_ast import is_local_module_file, constants_from_module
+        from hypothesis.internal.constants_ast import (
+            is_local_module_file,
+            constants_from_module,
+            Constants
+        )
 
         # these modules are in fact detected as local if they are installed
         # as editable (as is common for contributors). Prevent the ast constant
@@ -145,44 +166,43 @@ def test_constants_from_running_file(tmp_path):
             if module.startswith("hypofuzz"):
                 del sys.modules[module]
 
-        constants = set()
+        constants = Constants()
         for module in sys.modules.values():
             if getattr(module, "__file__", None) is not None and is_local_module_file(
                 module.__file__
             ):
                 constants |= constants_from_module(module)
 
-        expected = {
-            # strings
-            'float', 'string', 'bytes', 'integer', 'test1', 'hypofuzz', '__file__',
-            # floats
-            3.14,
-            # bytes
-            b'test2',
-            # integers
-            142, 101, 102, 103, 104,
-        }
-        assert constants == expected, constants.symmetric_difference(expected)
+        expected = Constants(
+            strings={'float', 'string', 'bytes', 'integer', 'test', 'hypofuzz', '__file__'},
+            floats={3.14},
+            bytes={b'test'},
+            integers={142, 101, 102, 103, 104},
+        )
+        assert constants == expected, set(constants).symmetric_difference(set(expected))
 
         # local
         a = 142
-        b = "test1"
+        b = "test"
         c = True
         d = 3.14
-        e = b"test2"
+        e = b"test"
         f = (101, 102)
         g = frozenset([103, 104])
         """,
         ),
         encoding="utf-8",
     )
-    subprocess.check_call([sys.executable, str(p)])
+    # this test doubles as a regression test for
+    # https://github.com/HypothesisWorks/hypothesis/issues/4375. Fail on comparisons
+    # between bytes and str.
+    subprocess.check_call([sys.executable, "-bb", str(p)])
 
 
 def test_constants_from_bad_module():
     # covering test for the except branch
     module = ModuleType("nonexistent")
-    assert constants_from_module(module) == set()
+    assert constants_from_module(module) == Constants()
 
 
 @pytest.mark.parametrize(
@@ -209,12 +229,12 @@ def test_ignores_ast_parse_error(tmp_path):
     with pytest.raises(MemoryError):
         ast.parse(source)
 
-    assert constants_from_module(module) == set()
+    assert constants_from_module(module) == Constants()
 
 
-@given(st.sets(constants))
+@given(constants_classes)
 def test_constant_visitor_roundtrips_string(constants):
     # our files in storage_directory("constants") rely on this roundtrip
     visitor = ConstantVisitor()
-    visitor.visit(ast.parse(str(constants)))
+    visitor.visit(ast.parse(str(set(constants))))
     assert visitor.constants == constants
