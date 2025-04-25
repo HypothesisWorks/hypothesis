@@ -56,13 +56,14 @@ redirects = {
     "numpy": "reference/strategies.html#numpy",
     "observability": "reference/integrations.html#observability",
     "settings": "reference/api.html#settings",
+    "endorsements": "usage.html#testimonials",
     # TODO enable when we actually rename them
     # "extras": "extensions.html",
     "supported": "compatibility.html",
     "changes": "changelog.html",
     "strategies": "extensions.html",
     # these pages were removed without replacement
-    # "support": "index.html",
+    "support": "index.html",
     "manifesto": "index.html",
     "examples": "index.html",
 }

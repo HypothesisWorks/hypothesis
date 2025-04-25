@@ -95,7 +95,6 @@ Technical API reference.
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Hypothesis
 
   quickstart
   tutorial/index
@@ -104,17 +103,16 @@ Technical API reference.
   reference/index
   stateful
   Extras <extras>
-  compatibility
   changelog
 
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Community
+  :caption: About Hypothesis
 
   development
+  compatibility
   usage
   extensions
   packaging
   community
-  endorsements
