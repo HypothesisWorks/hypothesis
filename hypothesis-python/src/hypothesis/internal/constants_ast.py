@@ -38,11 +38,11 @@ class Constants:
     def __init__(
         self,
         *,
-        # spiritually an "AbstractSet, with the addition of a .add method"
-        integers: set[int] | SortedSet[int] = None,
-        floats: set[float] | SortedSet[float] = None,
-        bytes: set[bytes] | SortedSet[bytes] = None,
-        strings: set[str] | SortedSet[str] = None,
+        # spiritually "an AbstractSet, with the addition of a .add method"
+        integers: Union[set[int], SortedSet[int]] = None,
+        floats: Union[set[float], SortedSet[float]] = None,
+        bytes: Union[set[bytes], SortedSet[bytes]] = None,
+        strings: Union[set[str], SortedSet[str]] = None,
     ):
         self.integers = set() if integers is None else integers
         self.floats = set() if floats is None else floats
@@ -50,8 +50,8 @@ class Constants:
         self.strings = set() if strings is None else strings
 
     def set_for_type(
-        self, constant_type: type[ConstantT] | ChoiceTypeT
-    ) -> set[ConstantT] | SortedSet[ConstantT]:
+        self, constant_type: Union[type[ConstantT], ChoiceTypeT]
+    ) -> Union[set[ConstantT], SortedSet[ConstantT]]:
         if constant_type is int or constant_type == "integer":
             return self.integers
         elif constant_type is float or constant_type == "float":
