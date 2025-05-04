@@ -4,7 +4,7 @@
     "oneOf": [
         {
             "title": "Test case",
-            "description": "Describes the inputs to and result of running some test function on a particular input.  The test might have passed, failed, or been abandoned part way through (e.g. because we failed a ``.filter()`` condition).",
+            "description": "Describes the inputs to and result of running some test function on a particular input.  The test might have passed, failed, or been abandoned part way through (e.g. because we failed a |.filter| condition).",
             "type": "object",
             "properties": {
                 "type": {
@@ -13,7 +13,7 @@
                 },
                 "status": {
                     "enum": ["passed", "failed", "gave_up"],
-                    "description": "Whether the test passed, failed, or was aborted before completion (e.g. due to use of ``.filter()``).  Note that if we gave_up partway, values such as arguments and features may be incomplete."
+                    "description": "Whether the test passed, failed, or was aborted before completion (e.g. due to use of |.filter|).  Note that if we gave_up partway, values such as arguments and features may be incomplete."
                 },
                 "status_reason": {
                     "type": "string",
@@ -25,7 +25,7 @@
                 },
                 "arguments": {
                     "type": "object",
-                    "description": "A structured json-encoded representation of the input.  Hypothesis provides a dictionary of argument names to json-ified values, including interactive draws from the :func:`~hypothesis.strategies.data` strategy.  If 'status' is 'gave_up', this may be absent or incomplete.  In other libraries this can be any object."
+                    "description": "A structured json representation of the input.  Hypothesis provides a dictionary of argument names to json-ified values, including interactive draws from the |st.data| strategy.  If 'status' is 'gave_up', this may be absent or incomplete.  In other libraries this can be any json object."
                 },
                 "how_generated": {
                     "type": ["string", "null"],
@@ -33,7 +33,7 @@
                 },
                 "features": {
                     "type": "object",
-                    "description": "Runtime observations which might help explain what this test case did.  Hypothesis includes target() scores, tags from event(), and so on."
+                    "description": "Runtime observations which might help explain what this test case did.  Hypothesis includes |target| scores, tags from |event|, and so on."
                 },
                 "coverage": {
                     "type": ["object", "null"],
