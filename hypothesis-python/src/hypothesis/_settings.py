@@ -173,8 +173,8 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either
-    through use of :func:`~hypothesis.assume()` or |strategy.filter|,
-    or occasionally for Hypothesis internal reasons."""
+    through use of |assume| or |.filter|, or occasionally for Hypothesis
+    internal reasons."""
 
     too_slow = 3
     """Check for when your data generation is extremely slow and likely to hurt

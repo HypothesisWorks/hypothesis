@@ -3233,7 +3233,7 @@ repr does not include all relevant details, and will unlock further improvements
 in a future version.
 
 For now, we capture calls made via :func:`~hypothesis.strategies.builds`, and via
-|strategy.map|.
+|.map|.
 
 .. _v6.64.0:
 
