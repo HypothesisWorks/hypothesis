@@ -46,7 +46,7 @@ execnet==2.1.1
     # via pytest-xdist
 fakeredis==2.28.1
     # via -r requirements/coverage.in
-h11==0.14.0
+h11==0.16.0
     # via
     #   hypercorn
     #   wsproto
@@ -58,9 +58,9 @@ hypercorn==0.17.3
     # via hypofuzz
 hyperframe==6.1.0
     # via h2
-hypofuzz==25.4.5
+hypofuzz==25.4.10
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.131.7
+hypothesis[cli,watchdog]==6.131.9
     # via hypofuzz
 idna==3.10
     # via
@@ -106,7 +106,7 @@ psutil==7.0.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==19.0.1
+pyarrow==20.0.0
     # via -r requirements/coverage.in
 pygments==2.19.1
     # via rich
@@ -130,7 +130,7 @@ pytz==2025.2
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.2.1
+redis==6.0.0
     # via fakeredis
 rich==14.0.0
     # via hypothesis

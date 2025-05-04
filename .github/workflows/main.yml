@@ -233,7 +233,7 @@ jobs:
       # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
       # The versions of pyodide-build and the Pyodide runtime may differ.
       PYODIDE_VERSION: 0.27.5
-      PYODIDE_BUILD_VERSION: 0.30.0
+      PYODIDE_BUILD_VERSION: 0.30.1
       PYTHON_VERSION: 3.12.7
     steps:
       - uses: actions/checkout@v3

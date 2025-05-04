@@ -27,11 +27,11 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.131.7
+hypothesis==6.131.9
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.22
     # via -r requirements/crosshair.in
-importlib-metadata==8.6.1
+importlib-metadata==8.7.0
     # via crosshair-tool
 importlib-resources==6.5.2
     # via typeshed-client
