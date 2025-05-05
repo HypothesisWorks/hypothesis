@@ -284,9 +284,9 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     At any given point a random applicable rule will be executed.
     """
 
-    _rules_per_class: ClassVar[dict[type, list[classmethod]]] = {}
-    _invariants_per_class: ClassVar[dict[type, list[classmethod]]] = {}
-    _initializers_per_class: ClassVar[dict[type, list[classmethod]]] = {}
+    _rules_per_class: ClassVar[dict[type, list["Rule"]]] = {}
+    _invariants_per_class: ClassVar[dict[type, list["Invariant"]]] = {}
+    _initializers_per_class: ClassVar[dict[type, list["Rule"]]] = {}
 
     def __init__(self) -> None:
         if not self.rules():
@@ -336,7 +336,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         self.names_list.append(result)
         return result
 
-    def _last_names(self, n):
+    def _last_names(self, n: int) -> list[str]:
         len_ = len(self.names_list)
         assert len_ >= n
         return self.names_list[len_ - n :]
@@ -345,7 +345,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return self.bundles.setdefault(name, [])
 
     @classmethod
-    def initialize_rules(cls):
+    def initialize_rules(cls) -> list["Rule"]:
         try:
             return cls._initializers_per_class[cls]
         except KeyError:
@@ -359,7 +359,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return cls._initializers_per_class[cls]
 
     @classmethod
-    def rules(cls):
+    def rules(cls) -> list["Rule"]:
         try:
             return cls._rules_per_class[cls]
         except KeyError:
@@ -373,7 +373,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return cls._rules_per_class[cls]
 
     @classmethod
-    def invariants(cls):
+    def invariants(cls) -> list["Invariant"]:
         try:
             return cls._invariants_per_class[cls]
         except KeyError:
@@ -387,7 +387,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         cls._invariants_per_class[cls] = target
         return cls._invariants_per_class[cls]
 
-    def _repr_step(self, rule, data, result):
+    def _repr_step(self, rule: "Rule", data: Any, result: Any) -> str:
         output_assignment = ""
         if rule.targets:
             if isinstance(result, MultipleResults):
