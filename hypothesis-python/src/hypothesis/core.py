@@ -1428,7 +1428,7 @@ class StateForActualGivenExecution:
                 if self.settings.print_blob:
                     fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
-                        f"{reproduction_decorator(falsifying_example.choics)} "
+                        f"{reproduction_decorator(falsifying_example.choices)} "
                         "as a decorator on your test case"
                     )
                 # Mostly useful for ``find`` and ensuring that objects that
