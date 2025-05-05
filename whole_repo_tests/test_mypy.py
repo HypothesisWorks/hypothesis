@@ -33,6 +33,8 @@ def test_mypy_passes_on_hypothesis_strict():
 
 def get_mypy_output(fname, *extra_args):
     proc = subprocess.run(
+        # --no-incremental is substantially slower, but works around a mypy cache
+        # bug https://github.com/HypothesisWorks/hypothesis/pull/4256
         [tool_path("mypy"), "--no-incremental", *extra_args, str(fname)],
         encoding="utf-8",
         capture_output=True,

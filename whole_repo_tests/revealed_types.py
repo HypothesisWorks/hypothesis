@@ -42,6 +42,10 @@ REVEALED_TYPES = [
     ("booleans().filter(lambda x: x)", "bool"),
     ("integers().map(bool).filter(lambda x: x)", "bool"),
     ("integers().flatmap(lambda x: lists(floats()))", "list[float]"),
+    ("one_of([integers(), integers()])", "int"),
+    ("one_of([integers(), floats()])", "float"),
+    ("one_of([integers(), none()])", "Union[int, None]"),
+    ("one_of(integers(), none())", "Union[int, None]"),
 ]
 
 NUMPY_REVEALED_TYPES = [
