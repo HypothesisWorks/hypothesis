@@ -693,7 +693,7 @@ Generating child models
 For the moment there's no explicit support in hypothesis-django for generating
 dependent models. i.e. a Company model will generate no Shops. However if you
 want to generate some dependent models as well, you can emulate this by using
-the |strategy.flatmap| function as follows:
+the |.flatmap| function as follows:
 
 .. code:: python
 
