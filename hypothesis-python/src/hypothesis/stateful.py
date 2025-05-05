@@ -179,7 +179,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                 cd.draw_times[draw_label] += perf_counter() - start_draw - in_gctime
 
                 # Pretty-print the values this rule was called with *before* calling
-                # _add_result_to_targets, to avoid printing arguments which are also
+                # _add_results_to_targets, to avoid printing arguments which are also
                 # a return value using the variable name they are assigned to.
                 # See https://github.com/HypothesisWorks/hypothesis/issues/2341
                 if print_steps or TESTCASE_CALLBACKS:
@@ -208,12 +208,9 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
 
                     if rule.targets:
                         if isinstance(result, MultipleResults):
-                            for single_result in result.values:
-                                machine._add_result_to_targets(
-                                    rule.targets, single_result
-                                )
+                            machine._add_results_to_targets(rule.targets, result.values)
                         else:
-                            machine._add_result_to_targets(rule.targets, result)
+                            machine._add_results_to_targets(rule.targets, [result])
                     elif result is not None:
                         fail_health_check(
                             settings,
@@ -397,44 +394,46 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             )
             number_of_last_names = len(rule.targets) * number_of_results
             last_names = self._last_names(number_of_last_names)
-            names_per_target = [
-                last_names[i :: len(rule.targets)] for i in range(len(rule.targets))
-            ]
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
                     # comma after each name (len-1 tuple)
-                    output_names = [f"{name}," for name in chain(*names_per_target)]
+                    output_names = [f"{name}," for name in last_names]
                     output_assignment = " = ".join(output_names) + " = "
                 elif result.values:
                     # multiple values, multiple targets -- use the first target
                     # for the assignment from function, and do the other target
                     # assignments on separate lines
-                    first_names = names_per_target[0]
+                    first_names = last_names[:number_of_results]
                     output_assignment = ", ".join(first_names) + " = "
-                    for output_names in names_per_target[1:]:
+                    # itertools.batched would be nice here, from py3.12
+                    for i in range(1, len(rule.targets)):
+                        n = number_of_results
+                        output_names = last_names[i * n : (i + 1) * n]
                         extra_assignment_lines.append(
                             ", ".join(output_names) + " = " + ", ".join(first_names)
                         )
             else:
-                output_names = chain(*names_per_target)
+                output_names = last_names
                 output_assignment = " = ".join(output_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
         output_line = f"{output_assignment}state.{rule.function.__name__}({args})"
         return "\n".join([output_line] + extra_assignment_lines)
 
-    def _add_result_to_targets(self, targets, result):
+    def _add_results_to_targets(self, targets, results):
+        # Note, the assignment order here is reflected in _repr_step
         for target in targets:
-            name = self._new_name(target)
+            for result in results:
+                name = self._new_name(target)
 
-            def printer(obj, p, cycle, name=name):
-                return p.text(name)
+                def printer(obj, p, cycle, name=name):
+                    return p.text(name)
 
-            # see
-            # https://github.com/HypothesisWorks/hypothesis/pull/4266#discussion_r1949619102
-            if not _is_singleton(result):
-                self.__printer.singleton_pprinters.setdefault(id(result), printer)
-            self.names_to_values[name] = result
-            self.bundles.setdefault(target, []).append(VarReference(name))
+                # see
+                # https://github.com/HypothesisWorks/hypothesis/pull/4266#discussion_r1949619102
+                if not _is_singleton(result):
+                    self.__printer.singleton_pprinters.setdefault(id(result), printer)
+                self.names_to_values[name] = result
+                self.bundles.setdefault(target, []).append(VarReference(name))
 
     def check_invariants(self, settings, output, runtimes):
         for invar in self.invariants():

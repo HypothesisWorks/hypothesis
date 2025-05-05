@@ -1263,9 +1263,9 @@ state.teardown()
             multiple("ret1", "ret2"),
             "\n".join(  # noqa: FLY002  # no, f-string is not more readable
                 [
-                    "a_0, a_2 = state.init()",
-                    "b_0, b_1 = a_0, a_2",
-                    "a_1, a_3 = a_0, a_2",
+                    "a_0, a_1 = state.init()",
+                    "b_0, b_1 = a_0, a_1",
+                    "a_2, a_3 = a_0, a_1",
                 ]
             ),
         ),
@@ -1372,9 +1372,9 @@ def test_multiple_common_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, a_2, a_4 = state.initialize()
-b_0, b_1, b_2 = a_0, a_2, a_4
-a_1, a_3, a_5 = a_0, a_2, a_4
+a_0, a_1, a_2 = state.initialize()
+b_0, b_1, b_2 = a_0, a_1, a_2
+a_3, a_4, a_5 = a_0, a_1, a_2
 state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
