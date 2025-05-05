@@ -26,6 +26,7 @@ from hypothesis import (
     settings,
     strategies as st,
 )
+from hypothesis._settings import Phase
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
@@ -293,7 +294,7 @@ def test_invalid_lifetime():
             )
 
 
-function_lifetime_init_count = 0
+_function_lifetime_init_count = 0
 
 
 class LifetimeTestFunction(TrivialProvider):
@@ -302,8 +303,8 @@ class LifetimeTestFunction(TrivialProvider):
     def __init__(self, conjecturedata):
         super().__init__(conjecturedata)
         # hacky, but no easy alternative.
-        global function_lifetime_init_count
-        function_lifetime_init_count += 1
+        global _function_lifetime_init_count
+        _function_lifetime_init_count += 1
 
 
 def test_function_lifetime():
@@ -314,14 +315,14 @@ def test_function_lifetime():
         def test_function(n):
             pass
 
-        assert function_lifetime_init_count == 0
+        assert _function_lifetime_init_count == 0
         test_function()
-        assert function_lifetime_init_count == 1
+        assert _function_lifetime_init_count == 1
         test_function()
-        assert function_lifetime_init_count == 2
+        assert _function_lifetime_init_count == 2
 
 
-test_case_lifetime_init_count = 0
+_test_case_lifetime_init_count = 0
 
 
 class LifetimeTestCase(TrivialProvider):
@@ -329,8 +330,8 @@ class LifetimeTestCase(TrivialProvider):
 
     def __init__(self, conjecturedata):
         super().__init__(conjecturedata)
-        global test_case_lifetime_init_count
-        test_case_lifetime_init_count += 1
+        global _test_case_lifetime_init_count
+        _test_case_lifetime_init_count += 1
 
 
 def test_case_lifetime():
@@ -344,7 +345,7 @@ def test_case_lifetime():
             nonlocal test_function_count
             test_function_count += 1
 
-        assert test_case_lifetime_init_count == 0
+        assert _test_case_lifetime_init_count == 0
         test_function()
 
         # we create a new provider each time we *try* to generate an input to the
@@ -355,7 +356,7 @@ def test_case_lifetime():
         # anywhere reasonably close to the number of function calls.
         assert (
             test_function_count - 10
-            <= test_case_lifetime_init_count
+            <= _test_case_lifetime_init_count
             <= test_function_count + 10
         )
 
@@ -560,7 +561,7 @@ class ExhaustibleProvider(TrivialProvider):
             # This is complete nonsense of course, so we'll see Hypothesis complain
             # that we found a problem after the backend reported verification.
             raise BackendCannotProceed(self.scope)
-        return 1
+        return self._calls
 
 
 class UnsoundVerifierProvider(ExhaustibleProvider):
@@ -575,7 +576,7 @@ def test_notes_incorrect_verification(provider):
         @given(st.integers())
         @settings(backend="p", database=None, max_examples=100)
         def test_function(x):
-            assert x == 1  # True from this backend, false in general!
+            assert x >= 0  # True from this backend, false in general!
 
         with pytest.raises(AssertionError) as ctx:
             test_function()
@@ -668,3 +669,21 @@ def test_listen_to_start_phase(phases):
 
         f()
         assert _seen_phases == phases
+
+
+class ChoiceTemplateProvider(TrivialProvider):
+    def draw_choice_template(self, choice_template, choice_type, constraints):
+        assert choice_template.type == "simplest"
+        assert choice_type == "integer"
+        return 5
+
+
+def test_can_override_choice_template_draws():
+    with temp_register_backend("choice_template", ChoiceTemplateProvider):
+
+        @given(st.integers())
+        @settings(backend="choice_template", max_examples=1, database=None)
+        def f(x):
+            assert x == 5
+
+        f()
