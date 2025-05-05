@@ -322,6 +322,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     return accept
 
 
+def reproduction_decorator(choices: Iterable[ChoiceT]) -> str:
+    return f"@reproduce_failure({__version__!r}, {encode_failure(choices)!r})"
+
+
 def encode_failure(choices: Iterable[ChoiceT]) -> bytes:
     blob = choices_to_bytes(choices)
     compressed = zlib.compress(blob)
@@ -1424,8 +1428,8 @@ class StateForActualGivenExecution:
                 if self.settings.print_blob:
                     fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
-                        "@reproduce_failure(%r, %r) as a decorator on your test case"
-                        % (__version__, encode_failure(falsifying_example.choices))
+                        f"{reproduction_decorator(falsifying_example.choics)} "
+                        "as a decorator on your test case"
                     )
                 # Mostly useful for ``find`` and ensuring that objects that
                 # hold on to a reference to ``data`` know that it's now been
