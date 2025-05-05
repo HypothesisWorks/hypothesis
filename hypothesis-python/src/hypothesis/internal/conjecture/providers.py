@@ -67,6 +67,7 @@ if TYPE_CHECKING:
 
     from hypothesis.internal.conjecture.data import ConjectureData
     from hypothesis.internal.constants_ast import ConstantT
+    from hypothesis._settings import Phase
 
 T = TypeVar("T")
 _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
@@ -416,6 +417,21 @@ class PrimitiveProvider(abc.ABC):
         Note however that side effects can make this determination unsound.
 
         This method is called from ConjectureData.stop_span().
+        """
+
+    def start_phase(self, phase: "Phase", /) -> None:
+        """
+        Called when Hypothesis enters a new phase.
+
+        There is no corresponding `end_phase`; the start of a new phase always
+        implies the end of the previous phase.
+
+        If a phase has been leeft out of a test function's `phase=` setting,
+        start_phase may still be called for that phase, though no test cases will
+        be generated during that phase.
+
+        Do not rely on the phases passed to this function to determine which phases
+        are enabled. For that, use `settings().phases`.
         """
 
 

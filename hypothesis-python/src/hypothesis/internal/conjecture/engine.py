@@ -262,7 +262,7 @@ class ConjectureRunner:
 
         # Global dict of per-phase statistics, and a list of per-call stats
         # which transfer to the global dict at the end of each phase.
-        self._current_phase: str = "(not a phase)"
+        self._current_phase: Optional[Phase] = None
         self.statistics: StatisticsDict = {}
         self.stats_per_test_case: list[CallStats] = []
 
@@ -329,18 +329,16 @@ class ConjectureRunner:
         self.__pending_call_explanation = None
 
     @contextmanager
-    def _log_phase_statistics(
-        self, phase: Literal["reuse", "generate", "shrink"]
-    ) -> Generator[None, None, None]:
+    def _log_phase_statistics(self, phase: Phase) -> Generator[None, None, None]:
         self.stats_per_test_case.clear()
         start_time = time.perf_counter()
         try:
-            self._current_phase = phase
+            self._switch_to_phase(phase)
             yield
         finally:
             # We ignore the mypy type error here. Because `phase` is a string literal and "-phase" is a string literal
             # as well, the concatenation will always be valid key in the dictionary.
-            self.statistics[phase + "-phase"] = {  # type: ignore
+            self.statistics[phase.name + "-phase"] = {  # type: ignore
                 "duration-seconds": time.perf_counter() - start_time,
                 "test-cases": list(self.stats_per_test_case),
                 "distinct-failures": len(self.interesting_examples),
@@ -1055,7 +1053,7 @@ class ConjectureRunner:
                     self.test_function(data)
                 continue
 
-            self._current_phase = "generate"
+            self._switch_to_phase(Phase.generate)
             prefix = self.generate_novel_prefix()
             if (
                 self.valid_examples <= small_example_cap
@@ -1133,7 +1131,7 @@ class ConjectureRunner:
                 and not ran_optimisations
             ):
                 ran_optimisations = True
-                self._current_phase = "target"
+                self._switch_to_phase(Phase.target)
                 self.optimise_targets()
 
     def generate_mutations_from(
@@ -1340,29 +1338,29 @@ class ConjectureRunner:
         if self.pareto_front is not None:
             ParetoOptimiser(self).run()
 
+    def _switch_to_phase(self, phase: Phase) -> None:
+        self._current_phase = phase
+        if isinstance(self.provider, PrimitiveProvider):
+            # self.provider is a provider instance, not the type of a provider class
+            self.provider.start_phase(phase)
+
     def _run(self) -> None:
-        # have to use the primitive provider to interpret database bits...
-        self._switch_to_hypothesis_provider = True
-        with self._log_phase_statistics("reuse"):
+        with self._log_phase_statistics(Phase.reuse):
             self.reuse_existing_examples()
         # Fast path for development: If the database gave us interesting
         # examples from the previously stored primary key, don't try
         # shrinking it again as it's unlikely to work.
         if self.reused_previously_shrunk_test_case:
             self.exit_with(ExitReason.finished)
-        # ...but we should use the supplied provider when generating...
-        self._switch_to_hypothesis_provider = False
-        with self._log_phase_statistics("generate"):
+        with self._log_phase_statistics(Phase.generate):
             self.generate_new_examples()
             # We normally run the targeting phase mixed in with the generate phase,
             # but if we've been asked to run it but not generation then we have to
             # run it explicitly on its own here.
             if Phase.generate not in self.settings.phases:
-                self._current_phase = "target"
+                self._switch_to_phase(Phase.target)
                 self.optimise_targets()
-        # ...and back to the primitive provider when shrinking.
-        self._switch_to_hypothesis_provider = True
-        with self._log_phase_statistics("shrink"):
+        with self._log_phase_statistics(Phase.shrink):
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
@@ -1497,7 +1495,7 @@ class ConjectureRunner:
             predicate,
             allow_transition=allow_transition,
             explain=Phase.explain in self.settings.phases,
-            in_target_phase=self._current_phase == "target",
+            in_target_phase=self._current_phase is Phase.target,
         )
 
     def passing_choice_sequences(

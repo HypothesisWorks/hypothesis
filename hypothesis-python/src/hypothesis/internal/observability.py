@@ -19,6 +19,7 @@ from datetime import date, timedelta
 from functools import lru_cache
 from typing import Any, Callable, Optional
 
+from hypothesis._settings import Phase
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData, Status
@@ -41,12 +42,12 @@ def make_testcase(
     arguments: Optional[dict] = None,
     timing: dict[str, float],
     coverage: Optional[dict[str, list[int]]] = None,
-    phase: Optional[str] = None,
+    phase: Optional[Phase] = None,
     backend_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
     if data.interesting_origin:
         status_reason = str(data.interesting_origin)
-    elif phase == "shrink" and data.status == Status.OVERRUN:
+    elif phase is Phase.shrink and data.status == Status.OVERRUN:
         status_reason = "exceeded size of current best example"
     else:
         status_reason = str(data.events.pop("invalid because", ""))

@@ -1181,13 +1181,14 @@ class StateForActualGivenExecution:
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals
                     if self.failed_normally or self.failed_due_to_deadline:
-                        phase = "shrink"
+                        phase = Phase.shrink
                     else:
-                        phase = "unknown"
+                        phase = None
                 backend_desc = f", using backend={self.settings.backend!r}" * (
                     self.settings.backend != "hypothesis"
                     and not getattr(runner, "_switch_to_hypothesis_provider", False)
                 )
+                phase_str = phase.name if phase is not None else "unknown"
                 try:
                     data._observability_args = data.provider.realize(
                         data._observability_args
@@ -1201,7 +1202,7 @@ class StateForActualGivenExecution:
                     start_timestamp=self._start_timestamp,
                     test_name_or_nodeid=self.test_identifier,
                     data=data,
-                    how_generated=f"during {phase} phase{backend_desc}",
+                    how_generated=f"during {phase_str} phase{backend_desc}",
                     string_repr=self._string_repr,
                     arguments=data._observability_args,
                     timing=self._timing_features,

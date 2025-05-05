@@ -635,3 +635,36 @@ def test_saves_on_fatal_error_with_backend():
             test_function()
 
         assert len(db.data) == 1
+
+
+class PhaseListeningProvider(TrivialProvider):
+    def __init__(self, conjecturedata) -> None:
+        super().__init__(conjecturedata)
+
+    def start_phase(self, phase: Phase, /) -> None:
+        global _seen_phases
+        _seen_phases.append(phase)
+
+
+_seen_phases = []
+
+
+@pytest.mark.parametrize(
+    "phases",
+    [
+        [Phase.reuse],
+        [Phase.reuse, Phase.generate],
+    ],
+)
+def test_listen_to_start_phase(phases):
+    global _seen_phases
+    _seen_phases.clear()
+    with temp_register_backend("phase_listening", PhaseListeningProvider):
+
+        @settings(backend="phase_listening", phases=phases)
+        @given(st.integers())
+        def f(n):
+            pass
+
+        f()
+        assert _seen_phases == phases
