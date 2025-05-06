@@ -47,7 +47,11 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
-from tests.common.utils import capture_observations, capture_out
+from tests.common.utils import (
+    capture_observations,
+    capture_out,
+    checks_deprecated_behaviour,
+)
 from tests.conjecture.common import nodes
 
 
@@ -635,3 +639,21 @@ def test_saves_on_fatal_error_with_backend():
             test_function()
 
         assert len(db.data) == 1
+
+
+class NoForFailureProvider(TrivialProvider):
+    def realize(self, value):
+        return value
+
+
+@checks_deprecated_behaviour
+def test_realize_without_for_failure():
+    with temp_register_backend("no_for_failure", NoForFailureProvider):
+
+        @given(st.integers())
+        @settings(backend="no_for_failure", database=None)
+        def f(n):
+            assert n != 1
+
+        with pytest.raises(AssertionError):
+            f()
