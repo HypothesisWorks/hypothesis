@@ -6,7 +6,7 @@ This is a trickier question than you might expect. The short answer is "exactly 
 - Less than |max_examples| times, if Hypothesis exhausts the search space early.
 - More than |max_examples| times, if Hypothesis retries some examples because either:
 
-  - They failed an |assume| or |strategy.filter| condition, or
+  - They failed an |assume| or |.filter| condition, or
   - They were too large to continue generating.
 
 - Either less or more than |max_examples| times, if Hypothesis finds a failing example.
@@ -42,10 +42,10 @@ The search space tracking in Hypothesis is good, but not perfect. We treat this 
 
 ..     Search space tracking uses the :doc:`choice sequence <choice-sequence>` to determine uniqueness of inputs.
 
-|assume| and |strategy.filter|
-------------------------------
+|assume| and |.filter|
+----------------------
 
-If an example fails to satisfy an |assume| or |strategy.filter| condition, Hypothesis will retry generating that example and will not count it towards the |max_examples| limit. For instance:
+If an example fails to satisfy an |assume| or |.filter| condition, Hypothesis will retry generating that example and will not count it towards the |max_examples| limit. For instance:
 
 .. code-block:: python
 
@@ -57,9 +57,9 @@ If an example fails to satisfy an |assume| or |strategy.filter| condition, Hypot
 
 will run roughly 200 times, since half of the examples are discarded from the |assume|.
 
-Note that while failing an |assume| triggers an immediate retry of the entire example, Hypothesis will try several times in the same example to satisfy a |strategy.filter| condition. This makes expressing the same condition using |strategy.filter| more efficient than |assume|.
+Note that while failing an |assume| triggers an immediate retry of the entire example, Hypothesis will try several times in the same example to satisfy a |.filter| condition. This makes expressing the same condition using |.filter| more efficient than |assume|.
 
-Also note that even if your code does not explicitly use |assume| or |strategy.filter|, a builtin strategy may still use them and cause retries. We try to directly satisfy conditions where possible instead of relying on rejection sampling, so this should be relatively uncommon.
+Also note that even if your code does not explicitly use |assume| or |.filter|, a builtin strategy may still use them and cause retries. We try to directly satisfy conditions where possible instead of relying on rejection sampling, so this should be relatively uncommon.
 
 Examples which are too large
 ----------------------------
