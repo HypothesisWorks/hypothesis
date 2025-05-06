@@ -641,6 +641,36 @@ def test_saves_on_fatal_error_with_backend():
         assert len(db.data) == 1
 
 
+class SoundnessTestProvider(TrivialProvider):
+    def __init__(self, conjecturedata):
+        super().__init__(conjecturedata)
+        self.calls = 0
+
+    def draw_integer(self, **constraints):
+        self.calls += 1
+        if self.calls == 1:
+            return 0
+
+        raise BackendCannotProceed("verified")
+
+
+def test_raising_verified_after_failure_is_sound():
+    # see https://github.com/pschanely/hypothesis-crosshair/issues/31#issuecomment-2852940574
+
+    with temp_register_backend("soundness_test", SoundnessTestProvider):
+
+        @given(st.integers())
+        @settings(backend="soundness_test", database=None)
+        def f(n):
+            assert n != 0
+
+        with pytest.raises(AssertionError) as e:
+            f()
+        # full message as of writing: "backend='soundness_test' claimed to
+        # verify this test passes - please send them a bug report!"
+        assert all("backend" not in note for note in e.value.__notes__)
+
+
 class NoForFailureProvider(TrivialProvider):
     def realize(self, value):
         return value
