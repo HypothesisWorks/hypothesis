@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import importlib
+import inspect
 import math
 import textwrap
 import time
@@ -214,8 +215,17 @@ class DiscardObserver(DataObserver):
 
 
 def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
+    # backwards-compatibility with backends without for_failure, can remove
+    # in a few months
+    kwargs = {}
+    if (
+        for_failure
+        and "for_failure" in inspect.signature(data.provider.realize).parameters
+    ):
+        kwargs["for_failure"] = True
+
     for node in data.nodes:
-        value = data.provider.realize(node.value, for_failure=for_failure)
+        value = data.provider.realize(node.value, **kwargs)
         expected_type = {
             "string": str,
             "float": float,
@@ -232,7 +242,7 @@ def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
         constraints = cast(
             ChoiceConstraintsT,
             {
-                k: data.provider.realize(v, for_failure=for_failure)
+                k: data.provider.realize(v, **kwargs)
                 for k, v in node.constraints.items()
             },
         )
