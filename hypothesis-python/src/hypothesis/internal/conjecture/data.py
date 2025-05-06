@@ -850,10 +850,9 @@ class ConjectureData:
         *,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float = SMALLEST_SUBNORMAL,
-        # TODO: consider supporting these float widths at the IR level in the
-        # future.
+        # TODO: consider supporting these float widths at the choice sequence
+        # level in the future.
         # width: Literal[16, 32, 64] = 64,
-        # exclude_min and exclude_max handled higher up,
         forced: Optional[float] = None,
         observe: bool = True,
     ) -> float:
@@ -1006,12 +1005,12 @@ class ConjectureData:
             bytes: "bytes",
         }[type(choice)]
         # If we're trying to:
-        # * draw a different ir type at the same location
-        # * draw the same ir type with a different constraints, which does not permit
+        # * draw a different choice type at the same location
+        # * draw the same choice type with a different constraints, which does not permit
         #   the current value
         #
         # then we call this a misalignment, because the choice sequence has
-        # slipped from what we expected at some point. An easy misalignment is
+        # changed from what we expected at some point. An easy misalignment is
         #
         #   one_of(integers(0, 100), integers(101, 200))
         #
