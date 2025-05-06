@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.10:
+
+---------------------
+6.131.10 - 2025-05-06
+---------------------
+
+Remove more false-positive locations from |Phase.explain| output, and add a new ``metadata.reproduction_decorator`` field in :ref:`observability reports <observability>` for failing examples.
+
 .. _v6.131.9:
 
 --------------------
