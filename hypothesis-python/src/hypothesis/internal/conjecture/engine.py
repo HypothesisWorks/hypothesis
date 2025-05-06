@@ -480,11 +480,7 @@ class ConjectureRunner:
         except BackendCannotProceed as exc:
             if exc.scope in ("verified", "exhausted"):
                 self._switch_to_hypothesis_provider = True
-                if exc.scope == "verified" and not self._backend_found_failure:
-                    # A backend might report a failure and then report verified
-                    # afterwards, which is to be interpreted only as "there are
-                    # no more failures *other than what we already reported*".
-                    # Do not report this as unsound.
+                if exc.scope == "verified":
                     self._verified_by = self.settings.backend
             elif exc.scope == "discard_test_case":
                 self.__failed_realize_count += 1

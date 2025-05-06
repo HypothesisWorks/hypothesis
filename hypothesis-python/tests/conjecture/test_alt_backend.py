@@ -650,7 +650,7 @@ class SoundnessTestProvider(TrivialProvider):
         raise BackendCannotProceed("verified")
 
 
-def test_raising_verified_after_failiure_is_sound():
+def test_raising_verified_after_failure_is_sound():
     # see https://github.com/pschanely/hypothesis-crosshair/issues/31#issuecomment-2852940574
 
     with temp_register_backend("soundness_test", SoundnessTestProvider):
@@ -662,6 +662,6 @@ def test_raising_verified_after_failiure_is_sound():
 
         with pytest.raises(AssertionError) as e:
             f()
-        # full message as of writing: "backend='soundsness_test' claimed to
+        # full message as of writing: "backend='soundness_test' claimed to
         # verify this test passes - please send them a bug report!"
         assert all("backend" not in note for note in e.value.__notes__)
