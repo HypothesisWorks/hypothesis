@@ -1100,8 +1100,8 @@ class ConjectureData:
         observe_as: Optional[str] = None,
     ) -> "Ex":
         from hypothesis.internal.observability import TESTCASE_CALLBACKS
-        from hypothesis.strategies._internal.utils import to_jsonable
         from hypothesis.strategies._internal.lazy import unwrap_strategies
+        from hypothesis.strategies._internal.utils import to_jsonable
 
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
