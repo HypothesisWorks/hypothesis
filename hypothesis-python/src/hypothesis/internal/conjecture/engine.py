@@ -213,9 +213,9 @@ class DiscardObserver(DataObserver):
         raise ContainsDiscard
 
 
-def realize_choices(data: ConjectureData) -> None:
+def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
     for node in data.nodes:
-        value = data.provider.realize(node.value)
+        value = data.provider.realize(node.value, for_failure=for_failure)
         expected_type = {
             "string": str,
             "float": float,
@@ -231,7 +231,10 @@ def realize_choices(data: ConjectureData) -> None:
 
         constraints = cast(
             ChoiceConstraintsT,
-            {k: data.provider.realize(v) for k, v in node.constraints.items()},
+            {
+                k: data.provider.realize(v, for_failure=for_failure)
+                for k, v in node.constraints.items()
+            },
         )
         node.value = value
         node.constraints = constraints
@@ -496,7 +499,7 @@ class ConjectureRunner:
         except BaseException:
             data.freeze()
             if self.settings.backend != "hypothesis":
-                realize_choices(data)
+                realize_choices(data, for_failure=True)
             self.save_choices(data.choices)
             raise
         finally:
@@ -516,7 +519,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    realize_choices(data)
+                    realize_choices(data, for_failure=False)
 
                 self._cache(data)
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
