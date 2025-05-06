@@ -244,12 +244,12 @@ rst_prolog = """
 .. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
-.. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
-.. |strategy.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
-.. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
-.. |strategy.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
-.. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
-.. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`

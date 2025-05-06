@@ -25,6 +25,8 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+# use pinned redis version instead of inheriting from fakeredis
+pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
 pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/

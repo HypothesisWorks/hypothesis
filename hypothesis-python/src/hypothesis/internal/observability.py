@@ -44,6 +44,8 @@ def make_testcase(
     phase: Optional[str] = None,
     backend_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
+    from hypothesis.core import reproduction_decorator
+
     if data.interesting_origin:
         status_reason = str(data.interesting_origin)
     elif phase == "shrink" and data.status == Status.OVERRUN:
@@ -76,6 +78,11 @@ def make_testcase(
         "timing": timing,
         "metadata": {
             "traceback": data.expected_traceback,
+            "reproduction_decorator": (
+                reproduction_decorator(data.choices)
+                if data.status is Status.INTERESTING
+                else None
+            ),
             "predicates": dict(data._observability_predicates),
             "backend": backend_metadata or {},
             **_system_metadata(),

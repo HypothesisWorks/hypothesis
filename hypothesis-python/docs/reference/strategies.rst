@@ -7,7 +7,7 @@ Strategies are the way Hypothesis describes the values for |@given| to generate.
 
 This reference page lists all of Hypothesis' first-party functions which return a strategy. There are also many provided by :doc:`third-party libraries </extensions>`.  Note that we often say "strategy" when we mean "function returning a strategy"; it's usually clear from context which one we mean.
 
-Strategies can be passed to other strategies as arguments, combined using :ref:`combinator strategies <combinators>`, or modified using |strategy.filter|, |strategy.map|, or |strategy.flatmap|.
+Strategies can be passed to other strategies as arguments, combined using :ref:`combinator strategies <combinators>`, or modified using |.filter|, |.map|, or |.flatmap|.
 
 Primitives
 ----------
@@ -35,7 +35,7 @@ Strings
 
 .. seealso::
 
-  The |st.uuids| and |st.ip_addresses| strategies generate instances of :mod:`UUID <python:uuid>` and :mod:`IPAddress <python:ipaddress>` respectively. You can generate corresponding string values by using |strategy.map|, such as ``st.uuids().map(str)``.
+  The |st.uuids| and |st.ip_addresses| strategies generate instances of :mod:`UUID <python:uuid>` and :mod:`IPAddress <python:ipaddress>` respectively. You can generate corresponding string values by using |.map|, such as ``st.uuids().map(str)``.
 
 .. autofunction:: hypothesis.strategies.text
 .. autofunction:: hypothesis.strategies.characters

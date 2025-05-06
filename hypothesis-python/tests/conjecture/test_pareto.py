@@ -76,9 +76,9 @@ def test_database_contains_only_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["1"] = data.draw(st.integers(0, 5))
-            data.draw(st.integers())
-            data.target_observations["2"] = data.draw(st.integers(0, 100))
+            data.target_observations["1"] = data.draw(st.integers(0, 2**4))
+            data.draw(st.integers(0, 2**64))
+            data.target_observations["2"] = data.draw(st.integers(0, 2**8))
 
             assert len(set(db.fetch(b"stuff.pareto"))) == len(runner.pareto_front)
 

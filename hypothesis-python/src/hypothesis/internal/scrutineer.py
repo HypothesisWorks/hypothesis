@@ -136,11 +136,7 @@ UNHELPFUL_LOCATIONS = (
     "/re/__init__.py",  # refactored in Python 3.11
     "/warnings.py",
     # Quite rarely, the first AFNP line is in Pytest's internals.
-    "/_pytest/_io/saferepr.py",
-    "/_pytest/_io/terminalwriter.py",
-    "/_pytest/assertion/*.py",
-    "/_pytest/config/__init__.py",
-    "/_pytest/pytester.py",
+    "/_pytest/**",
     "/pluggy/_*.py",
     # used by pytest for failure formatting in the terminal
     "/pygments/lexer.py",
@@ -149,17 +145,19 @@ UNHELPFUL_LOCATIONS = (
     "/reprlib.py",
     "/typing.py",
     "/conftest.py",
+    "/pprint.py",
 )
 
 
 def _glob_to_re(locs: Iterable[str]) -> str:
     """Translate a list of glob patterns to a combined regular expression.
-    Only the * wildcard is supported, and patterns including special
+    Only the * and ** wildcards are supported, and patterns including special
     characters will only work by chance."""
     # fnmatch.translate is not an option since its "*" consumes path sep
     return "|".join(
-        loc.replace("*", r"[^/]+")
-        .replace(".", re.escape("."))
+        loc.replace(".", re.escape("."))
+        .replace("**", r".+")
+        .replace("*", r"[^/]+")
         .replace("/", re.escape(sep))
         + r"\Z"  # right anchored
         for loc in locs
