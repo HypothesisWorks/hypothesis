@@ -1441,7 +1441,7 @@ class StateForActualGivenExecution:
 
 
 def _raise_to_user(
-    errors_to_report, settings, target_lines, trailer="", verified_by=None
+    errors_to_report, settings, target_lines, trailer="", *, verified_by=None
 ):
     """Helper function for attaching notes and grouping multiple errors."""
     failing_prefix = "Falsifying example: "
