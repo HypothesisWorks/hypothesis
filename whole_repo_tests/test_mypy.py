@@ -130,6 +130,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
+        ("one_of([integers(), none()])", "Union[int, None]"),
+        ("one_of(integers(), none())", "Union[int, None]"),
         # Note: keep this in sync with the equivalent test for Pyright
     ],
 )

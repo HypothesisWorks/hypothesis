@@ -44,8 +44,6 @@ REVEALED_TYPES = [
     ("integers().flatmap(lambda x: lists(floats()))", "list[float]"),
     ("one_of([integers(), integers()])", "int"),
     ("one_of([integers(), floats()])", "float"),
-    ("one_of([integers(), none()])", "Union[int, None]"),
-    ("one_of(integers(), none())", "Union[int, None]"),
 ]
 
 NUMPY_REVEALED_TYPES = [

@@ -193,6 +193,8 @@ def test_numpy_arrays_strategy(tmp_path: Path):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
+        ("one_of([integers(), none()])", "int | None"),
+        ("one_of(integers(), none())", "int | None"),
         # Note: keep this in sync with the equivalent test for Mypy
     ],
 )
