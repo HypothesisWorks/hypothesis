@@ -377,7 +377,7 @@ def test_flaky_with_backend():
 
 
 class BadRealizeProvider(TrivialProvider):
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         return None
 
 
@@ -399,7 +399,7 @@ def test_bad_realize():
 class RealizeProvider(TrivialProvider):
     avoid_realization = True
 
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         if isinstance(value, int):
             return 42
         return value
@@ -473,7 +473,7 @@ class ObservableProvider(TrivialProvider):
             yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
             yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
 
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         # Get coverage of the can't-realize path for observability outputs
         raise BackendCannotProceed
 
