@@ -88,3 +88,8 @@ def test_draw_uses_wrapped_label(strategy):
 
     assert len(cd.spans) == 2
     assert cd.spans[1].label == st.integers().label
+
+
+def test_deferred_label():
+    strategy = st.deferred(lambda: st.integers())
+    assert strategy.label != st.integers().label
