@@ -21,6 +21,7 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     repr_call,
 )
+from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
 
 unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
@@ -30,7 +31,8 @@ unwrap_depth = 0
 def unwrap_strategies(s):
     global unwrap_depth
 
-    if not (isinstance(s, SearchStrategy) and hasattr(s, "wrapped_strategy")):
+    # optimization
+    if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
 
     try:
