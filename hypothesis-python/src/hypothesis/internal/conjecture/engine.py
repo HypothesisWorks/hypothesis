@@ -223,10 +223,10 @@ def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
             kwargs["for_failure"] = True
         else:
             note_deprecation(
-                "provider.realize does not have the for_failure parameter. This "
-                "will be an error in future versions of Hypothesis. (If you "
-                "installed this backend from a separate package, upgrading that "
-                "package may help).",
+                f"{type(data.provider).__qualname__}.realize does not have the "
+                "for_failure parameter. This will be an error in future versions "
+                "of Hypothesis. (If you installed this backend from a separate "
+                "package, upgrading that package may help).",
                 has_codemod=False,
                 since="RELEASEDAY",
             )
