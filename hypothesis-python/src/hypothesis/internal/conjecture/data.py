@@ -1141,7 +1141,6 @@ class ConjectureData:
             assert start_time is not None
             key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
             try:
-                strategy.validate()
                 try:
                     v = unwrapped.do_draw(self)
                 finally:
