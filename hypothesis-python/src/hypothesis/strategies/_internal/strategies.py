@@ -825,8 +825,8 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
 @overload
 def one_of(
-    __args: Sequence[SearchStrategy[Any]],
-) -> SearchStrategy[Any]:  # pragma: no cover
+    __args: Sequence[SearchStrategy[Ex]],
+) -> SearchStrategy[Ex]:  # pragma: no cover
     ...
 
 
