@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.11:
+
+---------------------
+6.131.11 - 2025-05-06
+---------------------
+
+Fix incorrectly reporting :ref:`alternative backends <alternative-backends>` as unsound in some cases.
+
 .. _v6.131.10:
 
 ---------------------
