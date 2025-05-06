@@ -310,6 +310,7 @@ class ConjectureRunner:
         self.reused_previously_shrunk_test_case: bool = False
 
         self.__pending_call_explanation: Optional[str] = None
+        self._backend_found_failure: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
@@ -611,6 +612,8 @@ class ConjectureRunner:
             if changed:
                 self.save_choices(data.choices)
                 self.interesting_examples[key] = data.as_result()  # type: ignore
+                if not self.using_hypothesis_backend:
+                    self._backend_found_failure = True
                 self.__data_cache.pin(self._cache_key(data.choices), data.as_result())
                 self.shrunk_examples.discard(key)
 
