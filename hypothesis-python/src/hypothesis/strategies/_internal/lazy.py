@@ -30,32 +30,32 @@ unwrap_depth = 0
 def unwrap_strategies(s):
     global unwrap_depth
 
-    if not isinstance(s, SearchStrategy):
+    if not (isinstance(s, SearchStrategy) and hasattr(s, "wrapped_strategy")):
         return s
+
     try:
         return unwrap_cache[s]
     except KeyError:
         pass
 
     unwrap_cache[s] = s
+    unwrap_depth += 1
 
     try:
-        unwrap_depth += 1
-        try:
-            result = unwrap_strategies(s.wrapped_strategy)
-            unwrap_cache[s] = result
-            try:
-                assert result.force_has_reusable_values == s.force_has_reusable_values
-            except AttributeError:
-                pass
+        result = unwrap_strategies(s.wrapped_strategy)
+        unwrap_cache[s] = result
 
-            try:
-                result.force_has_reusable_values = s.force_has_reusable_values
-            except AttributeError:
-                pass
-            return result
+        try:
+            assert result.force_has_reusable_values == s.force_has_reusable_values
         except AttributeError:
-            return s
+            pass
+
+        try:
+            result.force_has_reusable_values = s.force_has_reusable_values
+        except AttributeError:
+            pass
+
+        return result
     finally:
         unwrap_depth -= 1
         if unwrap_depth <= 0:

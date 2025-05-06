@@ -1101,6 +1101,7 @@ class ConjectureData:
     ) -> "Ex":
         from hypothesis.internal.observability import TESTCASE_CALLBACKS
         from hypothesis.strategies._internal.utils import to_jsonable
+        from hypothesis.strategies._internal.lazy import unwrap_strategies
 
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
@@ -1126,19 +1127,23 @@ class ConjectureData:
         if self.depth >= MAX_DEPTH:
             self.mark_invalid("max depth exceeded")
 
+        # Jump directly to the unwrapped strategy for the label and for do_draw.
+        # This avoids adding an extra span to all lazy strategies.
+        unwrapped = unwrap_strategies(strategy)
         if label is None:
-            assert isinstance(strategy.label, int)
-            label = strategy.label
+            label = unwrapped.label
+            assert isinstance(label, int)
+
         self.start_span(label=label)
         try:
             if not at_top_level:
-                return strategy.do_draw(self)
+                return unwrapped.do_draw(self)
             assert start_time is not None
             key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
             try:
                 strategy.validate()
                 try:
-                    v = strategy.do_draw(self)
+                    v = unwrapped.do_draw(self)
                 finally:
                     # Subtract the time spent in GC to avoid overcounting, as it is
                     # accounted for at the overall example level.
