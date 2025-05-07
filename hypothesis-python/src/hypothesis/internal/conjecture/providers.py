@@ -317,7 +317,7 @@ class PrimitiveProvider(abc.ABC):
     def per_test_case_context_manager(self):
         return contextlib.nullcontext()
 
-    def realize(self, value: T) -> T:
+    def realize(self, value: T, *, for_failure: bool = False) -> T:
         """
         Called whenever hypothesis requires a concrete (non-symbolic) value from
         a potentially symbolic value. Hypothesis will not check that `value` is
@@ -325,7 +325,14 @@ class PrimitiveProvider(abc.ABC):
         `value` is non-symbolic.
 
         The returned value should be non-symbolic.  If you cannot provide a value,
-        raise hypothesis.errors.BackendCannotProceed("discard_test_case")
+        raise hypothesis.errors.BackendCannotProceed("discard_test_case").
+
+        If for_failure is True, the value is associated with a failing example.
+        In this case, the backend should spend substantially more effort when
+        attempting to realize the value, since it is important to avoid discarding
+        failing  examples. Backends may still raise BackendCannotProceed when
+        for_failure is True, if realization is truly impossible or if realization
+        takes significantly longer than expected (say, 5 minutes).
         """
         return value
 
