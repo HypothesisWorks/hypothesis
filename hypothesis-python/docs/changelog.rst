@@ -18,6 +18,38 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.13:
+
+---------------------
+6.131.13 - 2025-05-07
+---------------------
+
+Add a ``for_failure: bool = False`` parameter to ``provider.realize`` in :ref:`alternative backends <alternative-backends>`, so that symbolic-based backends can increase their timeouts when realizing failures, which are more important than regular examples.
+
+.. _v6.131.12:
+
+---------------------
+6.131.12 - 2025-05-06
+---------------------
+
+Improve type hints for the single-argument form of |st.one_of|. ``st.one_of(strategies)`` now matches the type of ``st.one_of(*strategies)``. For instance, ``st.one_of([st.integers(), st.none()])`` now has the correct type of ``SearchStrategy[int | None]`` instead of ``SearchStrategy[Any]``.
+
+.. _v6.131.11:
+
+---------------------
+6.131.11 - 2025-05-06
+---------------------
+
+Fix incorrectly reporting :ref:`alternative backends <alternative-backends>` as unsound in some cases.
+
+.. _v6.131.10:
+
+---------------------
+6.131.10 - 2025-05-06
+---------------------
+
+Remove more false-positive locations from |Phase.explain| output, and add a new ``metadata.reproduction_decorator`` field in :ref:`observability reports <observability>` for failing examples.
+
 .. _v6.131.9:
 
 --------------------
@@ -1087,7 +1119,7 @@ for use by :ref:`alternative-backends`.
 6.112.5 - 2024-10-08
 --------------------
 
-This release fixes a regression where :class:`hypothesis.stateful.Bundle` did not work properly with |strategy.flatmap| functionality (:issue:`4128`).
+This release fixes a regression where :class:`hypothesis.stateful.Bundle` did not work properly with |.flatmap| functionality (:issue:`4128`).
 
 .. _v6.112.4:
 
@@ -3233,7 +3265,7 @@ repr does not include all relevant details, and will unlock further improvements
 in a future version.
 
 For now, we capture calls made via :func:`~hypothesis.strategies.builds`, and via
-|strategy.map|.
+|.map|.
 
 .. _v6.64.0:
 
@@ -12322,7 +12354,7 @@ substantially faster. If you are not, this will likely have no effect on you.
 
 This is a small refactoring release that changes how Hypothesis detects when
 the structure of data generation depends on earlier values generated (e.g. when
-using |strategy.flatmap| or :func:`~hypothesis.strategies.composite`).
+using |.flatmap| or :func:`~hypothesis.strategies.composite`).
 It should not have any observable effect on behaviour.
 
 .. _v3.44.17:
@@ -13119,7 +13151,7 @@ least-frequently used, least recently used key invalidation policy, and is
 somewhat more conservative about which strategies it caches.
 
 Workloads which create strategies based on dynamic values, e.g. by using
-|strategy.flatmap| or :func:`~hypothesis.strategies.composite`,
+|.flatmap| or :func:`~hypothesis.strategies.composite`,
 will use significantly less memory.
 
 .. _v3.30.1:
@@ -13508,7 +13540,7 @@ handles shrinking.
 
 This should mostly be visible in terms of getting better examples for tests
 which make heavy use of :func:`~hypothesis.strategies.composite`,
-:func:`~hypothesis.strategies.data` or |strategy.flatmap| where the data
+:func:`~hypothesis.strategies.data` or |.flatmap| where the data
 drawn depends a lot on previous choices, especially where size parameters are
 affected. Previously Hypothesis would have struggled to reliably produce
 good examples here. Now it should do much better. Performance should also be
@@ -14123,7 +14155,7 @@ improvements.
 * The distribution of code using nested calls to :func:`~hypothesis.strategies.one_of` or the ``|`` operator for
   combining strategies has been improved, as branches are now flattened to give
   a more uniform distribution.
-* Examples using :func:`~hypothesis.strategies.composite` or |strategy.flatmap| should now shrink better. In particular
+* Examples using :func:`~hypothesis.strategies.composite` or |.flatmap| should now shrink better. In particular
   this will affect things which work by first generating a length and then
   generating that many items, which have historically not shrunk very well.
 

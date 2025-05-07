@@ -1,12 +1,12 @@
 Adapting strategies
 ===================
 
-This page discusses ways to adapt strategies to your needs, either by transforming them inline with |strategy.map|, or filtering out unwanted inputs with |strategy.filter| and |assume|.
+This page discusses ways to adapt strategies to your needs, either by transforming them inline with |.map|, or filtering out unwanted inputs with |.filter| and |assume|.
 
 Mapping strategy inputs
 -----------------------
 
-Sometimes you want to apply a simple transformation to a strategy. For instance, we know that we can generate lists of integers with ``lists(integers())``. But maybe we wanted to instead generate sorted lists. We could use an inline |strategy.map| to achieve this:
+Sometimes you want to apply a simple transformation to a strategy. For instance, we know that we can generate lists of integers with ``lists(integers())``. But maybe we wanted to instead generate sorted lists. We could use an inline |.map| to achieve this:
 
 .. code-block:: pycon
 
@@ -36,7 +36,7 @@ For instance, suppose we have written a simple test involving the modulo operato
 
 Hypothesis will quickly report a failure for this test: ``ZeroDivisionError: integer modulo by zero``. Just like division, modulo isn't defined for 0. The case of ``b == 0`` isn't interesting for the test, and we would like to get rid of it.
 
-The best way to do this is with the |strategy.filter| method:
+The best way to do this is with the |.filter| method:
 
 .. code-block:: python
 
@@ -49,14 +49,14 @@ The best way to do this is with the |strategy.filter| method:
 
 This test now passes cleanly.
 
-Calling |strategy.filter| on a strategy creates a new strategy with that filter applied at generation-time. For instance, ``integers().filter(lambda n: n != 0)`` is a strategy which generates nonzero integers.
+Calling |.filter| on a strategy creates a new strategy with that filter applied at generation-time. For instance, ``integers().filter(lambda n: n != 0)`` is a strategy which generates nonzero integers.
 
 Assuming away test cases
 ------------------------
 
-|strategy.filter| lets you filter test inputs from a single strategy. Hypothesis also provides an |assume| function for when you need to filter an entire test case, based on an arbitrary condition.
+|.filter| lets you filter test inputs from a single strategy. Hypothesis also provides an |assume| function for when you need to filter an entire test case, based on an arbitrary condition.
 
-The |assume| function skips test cases where some condition evaluates to ``True``. You can use it anywhere in your test. We could have expressed our |strategy.filter| example above using |assume| as well:
+The |assume| function skips test cases where some condition evaluates to ``True``. You can use it anywhere in your test. We could have expressed our |.filter| example above using |assume| as well:
 
 .. code-block:: python
 
@@ -68,12 +68,12 @@ The |assume| function skips test cases where some condition evaluates to ``True`
         # b will be nonzero here
         assert abs(a % b) < abs(b)
 
-|assume| vs |strategy.filter|
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|assume| vs |.filter|
+~~~~~~~~~~~~~~~~~~~~~
 
-Where possible, you should use |strategy.filter|. Hypothesis can often rewrite simple filters into more efficient sampling methods than rejection sampling, and will retry filters several times instead of aborting the entire test case (as with |assume|).
+Where possible, you should use |.filter|. Hypothesis can often rewrite simple filters into more efficient sampling methods than rejection sampling, and will retry filters several times instead of aborting the entire test case (as with |assume|).
 
-For more complex relationships that can't be expressed with |strategy.filter|, use |assume|.
+For more complex relationships that can't be expressed with |.filter|, use |assume|.
 
 Here's an example of a test where we want to filter out two different types of examples:
 
@@ -100,7 +100,7 @@ We could start by using |assume| for both:
         assume(a % b == 0)
         assert (a // b) * b == a
 
-And then notice that the ``b != 0`` condition can be moved into the strategy definition as a |strategy.filter| call:
+And then notice that the ``b != 0`` condition can be moved into the strategy definition as a |.filter| call:
 
 .. code-block:: python
 

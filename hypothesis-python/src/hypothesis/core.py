@@ -322,6 +322,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     return accept
 
 
+def reproduction_decorator(choices: Iterable[ChoiceT]) -> str:
+    return f"@reproduce_failure({__version__!r}, {encode_failure(choices)!r})"
+
+
 def encode_failure(choices: Iterable[ChoiceT]) -> bytes:
     blob = choices_to_bytes(choices)
     compressed = zlib.compress(blob)
@@ -1424,8 +1428,8 @@ class StateForActualGivenExecution:
                 if self.settings.print_blob:
                     fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
-                        "@reproduce_failure(%r, %r) as a decorator on your test case"
-                        % (__version__, encode_failure(falsifying_example.choices))
+                        f"{reproduction_decorator(falsifying_example.choices)} "
+                        "as a decorator on your test case"
                     )
                 # Mostly useful for ``find`` and ensuring that objects that
                 # hold on to a reference to ``data`` know that it's now been
@@ -1436,12 +1440,19 @@ class StateForActualGivenExecution:
             errors_to_report,
             self.settings,
             report_lines,
-            verified_by=runner._verified_by,
+            # A backend might report a failure and then report verified afterwards,
+            # which is to be interpreted as "there are no more failures *other
+            # than what we already reported*". Do not report this as unsound.
+            unsound_backend=(
+                runner._verified_by
+                if runner._verified_by and not runner._backend_found_failure
+                else None
+            ),
         )
 
 
 def _raise_to_user(
-    errors_to_report, settings, target_lines, trailer="", verified_by=None
+    errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
     """Helper function for attaching notes and grouping multiple errors."""
     failing_prefix = "Falsifying example: "
@@ -1467,8 +1478,8 @@ def _raise_to_user(
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
 
-    if verified_by:
-        msg = f"backend={verified_by!r} claimed to verify this test passes - please send them a bug report!"
+    if unsound_backend:
+        msg = f"backend={unsound_backend!r} claimed to verify this test passes - please send them a bug report!"
         add_note(err, msg)
 
     raise the_error_hypothesis_found

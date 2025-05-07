@@ -103,7 +103,7 @@ Or use keyword arguments:
 Filtering inside a test
 -----------------------
 
-Sometimes, you need to remove invalid cases from your test. The best way to do this is with |strategy.filter|:
+Sometimes, you need to remove invalid cases from your test. The best way to do this is with |.filter|:
 
 .. code-block:: python
 
@@ -122,7 +122,7 @@ For more complicated conditions, you can use |assume|, which tells Hypothesis to
 
 .. note::
 
-    You can learn more about |strategy.filter| and |assume| in the :doc:`/tutorial/adapting-strategies` tutorial page.
+    You can learn more about |.filter| and |assume| in the :doc:`/tutorial/adapting-strategies` tutorial page.
 
 Dependent generation
 --------------------

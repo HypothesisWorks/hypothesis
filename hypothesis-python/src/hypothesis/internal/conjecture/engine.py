@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import importlib
+import inspect
 import math
 import textwrap
 import time
@@ -23,7 +24,7 @@ from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, ca
 import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
-from hypothesis._settings import local_settings
+from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -213,9 +214,25 @@ class DiscardObserver(DataObserver):
         raise ContainsDiscard
 
 
-def realize_choices(data: ConjectureData) -> None:
+def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
+    # backwards-compatibility with backends without for_failure, can remove
+    # in a few months
+    kwargs = {}
+    if for_failure:
+        if "for_failure" in inspect.signature(data.provider.realize).parameters:
+            kwargs["for_failure"] = True
+        else:
+            note_deprecation(
+                f"{type(data.provider).__qualname__}.realize does not have the "
+                "for_failure parameter. This will be an error in future versions "
+                "of Hypothesis. (If you installed this backend from a separate "
+                "package, upgrading that package may help).",
+                has_codemod=False,
+                since="2025-05-07",
+            )
+
     for node in data.nodes:
-        value = data.provider.realize(node.value)
+        value = data.provider.realize(node.value, **kwargs)
         expected_type = {
             "string": str,
             "float": float,
@@ -231,7 +248,10 @@ def realize_choices(data: ConjectureData) -> None:
 
         constraints = cast(
             ChoiceConstraintsT,
-            {k: data.provider.realize(v) for k, v in node.constraints.items()},
+            {
+                k: data.provider.realize(v, **kwargs)
+                for k, v in node.constraints.items()
+            },
         )
         node.value = value
         node.constraints = constraints
@@ -310,6 +330,7 @@ class ConjectureRunner:
         self.reused_previously_shrunk_test_case: bool = False
 
         self.__pending_call_explanation: Optional[str] = None
+        self._backend_found_failure: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
@@ -496,7 +517,7 @@ class ConjectureRunner:
         except BaseException:
             data.freeze()
             if self.settings.backend != "hypothesis":
-                realize_choices(data)
+                realize_choices(data, for_failure=True)
             self.save_choices(data.choices)
             raise
         finally:
@@ -516,7 +537,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    realize_choices(data)
+                    realize_choices(data, for_failure=data.status is Status.INTERESTING)
 
                 self._cache(data)
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
@@ -611,6 +632,8 @@ class ConjectureRunner:
             if changed:
                 self.save_choices(data.choices)
                 self.interesting_examples[key] = data.as_result()  # type: ignore
+                if not self.using_hypothesis_backend:
+                    self._backend_found_failure = True
                 self.__data_cache.pin(self._cache_key(data.choices), data.as_result())
                 self.shrunk_examples.discard(key)
 

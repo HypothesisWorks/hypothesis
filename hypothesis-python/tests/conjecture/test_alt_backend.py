@@ -47,7 +47,11 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
-from tests.common.utils import capture_observations, capture_out
+from tests.common.utils import (
+    capture_observations,
+    capture_out,
+    checks_deprecated_behaviour,
+)
 from tests.conjecture.common import nodes
 
 
@@ -377,7 +381,7 @@ def test_flaky_with_backend():
 
 
 class BadRealizeProvider(TrivialProvider):
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         return None
 
 
@@ -399,7 +403,7 @@ def test_bad_realize():
 class RealizeProvider(TrivialProvider):
     avoid_realization = True
 
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         if isinstance(value, int):
             return 42
         return value
@@ -473,7 +477,7 @@ class ObservableProvider(TrivialProvider):
             yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
             yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
 
-    def realize(self, value):
+    def realize(self, value, *, for_failure=False):
         # Get coverage of the can't-realize path for observability outputs
         raise BackendCannotProceed
 
@@ -635,3 +639,51 @@ def test_saves_on_fatal_error_with_backend():
             test_function()
 
         assert len(db.data) == 1
+
+
+class SoundnessTestProvider(TrivialProvider):
+    def __init__(self, conjecturedata):
+        super().__init__(conjecturedata)
+        self.calls = 0
+
+    def draw_integer(self, **constraints):
+        self.calls += 1
+        if self.calls == 1:
+            return 0
+
+        raise BackendCannotProceed("verified")
+
+
+def test_raising_verified_after_failure_is_sound():
+    # see https://github.com/pschanely/hypothesis-crosshair/issues/31#issuecomment-2852940574
+
+    with temp_register_backend("soundness_test", SoundnessTestProvider):
+
+        @given(st.integers())
+        @settings(backend="soundness_test", database=None)
+        def f(n):
+            assert n != 0
+
+        with pytest.raises(AssertionError) as e:
+            f()
+        # full message as of writing: "backend='soundness_test' claimed to
+        # verify this test passes - please send them a bug report!"
+        assert all("backend" not in note for note in e.value.__notes__)
+
+
+class NoForFailureProvider(TrivialProvider):
+    def realize(self, value):
+        return value
+
+
+@checks_deprecated_behaviour
+def test_realize_without_for_failure():
+    with temp_register_backend("no_for_failure", NoForFailureProvider):
+
+        @given(st.integers())
+        @settings(backend="no_for_failure", database=None)
+        def f(n):
+            assert n != 1
+
+        with pytest.raises(AssertionError):
+            f()
