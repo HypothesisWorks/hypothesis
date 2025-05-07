@@ -37,7 +37,7 @@ from hypothesis._settings import (
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import add_note
+from hypothesis.internal.compat import add_note, batched
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
@@ -395,25 +395,23 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             last_names = self._last_names(number_of_last_names)
             if isinstance(result, MultipleResults):
                 if len(result.values) == 1:
-                    # comma after each name (len-1 tuple)
-                    output_names = [f"{name}," for name in last_names]
-                    output_assignment = " = ".join(output_names) + " = "
+                    # len-1 tuples
+                    output_per_target = [f"({name},)" for name in last_names]
+                    output_assignment = " = ".join(output_per_target) + " = "
                 elif result.values:
                     # multiple values, multiple targets -- use the first target
                     # for the assignment from function, and do the other target
                     # assignments on separate lines
-                    first_names = last_names[:number_of_results]
-                    output_assignment = ", ".join(first_names) + " = "
-                    # itertools.batched would be nice here, from py3.12
-                    for i in range(1, len(rule.targets)):
-                        n = number_of_results
-                        output_names = last_names[i * n : (i + 1) * n]
+                    names_per_target = list(batched(last_names, number_of_results))
+                    first_target_output = ", ".join(names_per_target[0])
+                    output_assignment = first_target_output + " = "
+                    for other_target_names in names_per_target[1:]:
+                        other_target_output = ", ".join(other_target_names)
                         extra_assignment_lines.append(
-                            ", ".join(output_names) + " = " + ", ".join(first_names)
+                            other_target_output + " = " + first_target_output
                         )
             else:
-                output_names = last_names
-                output_assignment = " = ".join(output_names) + " = "
+                output_assignment = " = ".join(last_names) + " = "
         args = ", ".join("%s=%s" % kv for kv in data.items())
         output_line = f"{output_assignment}state.{rule.function.__name__}({args})"
         return "\n".join([output_line] + extra_assignment_lines)

@@ -1255,8 +1255,8 @@ state.teardown()
         ("aba", "ret1", "a_0 = b_0 = a_1 = state.init()"),
         ("a", multiple(), "state.init()"),
         ("aba", multiple(), "state.init()"),
-        ("a", multiple("ret1"), "a_0, = state.init()"),
-        ("aba", multiple("ret1"), "a_0, = b_0, = a_1, = state.init()"),
+        ("a", multiple("ret1"), "(a_0,) = state.init()"),
+        ("aba", multiple("ret1"), "(a_0,) = (b_0,) = (a_1,) = state.init()"),
         ("a", multiple("ret1", "ret2"), "a_0, a_1 = state.init()"),
         (
             "aba",
