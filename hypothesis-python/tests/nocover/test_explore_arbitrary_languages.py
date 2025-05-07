@@ -9,8 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import random
+from dataclasses import dataclass, field
+from typing import Any
 
-import attr
 import pytest
 
 from hypothesis import (
@@ -30,22 +31,22 @@ from tests.common.utils import Why, xfail_on_crosshair
 from tests.conjecture.common import interesting_origin
 
 
-@attr.s()
+@dataclass
 class Write:
-    value = attr.ib()
-    child = attr.ib()
+    value: Any
+    child: Any
 
 
-@attr.s()
+@dataclass
 class Branch:
-    bits = attr.ib()
-    children = attr.ib(factory=dict)
+    bits: Any
+    children: Any = field(default_factory=dict)
 
 
-@attr.s()
+@dataclass
 class Terminal:
-    status = attr.ib()
-    payload = attr.ib(default=None)
+    status: Any
+    payload: Any = field(default=None)
 
 
 nodes = st.deferred(lambda: terminals | writes | branches)

@@ -16,12 +16,11 @@ import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
 from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, cast
-
-import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -91,13 +90,13 @@ def shortlex(s):
     return (len(s), s)
 
 
-@attr.s
+@dataclass
 class HealthCheckState:
-    valid_examples: int = attr.ib(default=0)
-    invalid_examples: int = attr.ib(default=0)
-    overrun_examples: int = attr.ib(default=0)
-    draw_times: "defaultdict[str, List[float]]" = attr.ib(
-        factory=lambda: defaultdict(list)
+    valid_examples: int = field(default=0)
+    invalid_examples: int = field(default=0)
+    overrun_examples: int = field(default=0)
+    draw_times: "defaultdict[str, List[float]]" = field(
+        default_factory=lambda: defaultdict(list)
     )
 
     @property
