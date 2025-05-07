@@ -148,20 +148,16 @@ def test_example_depth_marking():
     d.draw(st.integers())  # v4
     d.freeze()
 
-    assert len(d.spans) == 10
+    assert len(d.spans) == 6
 
     depths = [(ex.choice_count, ex.depth) for ex in d.spans]
     assert depths == [
         (4, 0),  # top
         (1, 1),  # v1
-        (1, 2),  # v1
         (2, 1),  # inner
         (1, 2),  # v2
-        (1, 3),  # v2
         (1, 2),  # v3
-        (1, 3),  # v3
         (1, 1),  # v4
-        (1, 2),  # v4
     ]
 
 
@@ -343,17 +339,17 @@ def test_child_indices():
 
     d.start_span(0)  # examples[1]
     d.start_span(1)  # examples[2]
-    d.draw(st.booleans())  # examples[3] (lazystrategy) + examples[4] (st.booleans)
-    d.draw(st.booleans())  # examples[4] (lazystrategy) + examples[5] (st.booleans)
+    d.draw(st.booleans())  # examples[3] (st.booleans)
+    d.draw(st.booleans())  # examples[4] (st.booleans)
     d.stop_span()
     d.stop_span()
-    d.draw(st.booleans())  # examples[7] (lazystrategy) + examples[8] (st.booleans)
-    d.draw(st.booleans())  # examples[9] (lazystrategy) + examples[10] (st.booleans)
+    d.draw(st.booleans())  # examples[5] (st.booleans)
+    d.draw(st.booleans())  # examples[6] (st.booleans)
     d.freeze()
 
-    assert list(d.spans.children[0]) == [1, 7, 9]
+    assert list(d.spans.children[0]) == [1, 5, 6]
     assert list(d.spans.children[1]) == [2]
-    assert list(d.spans.children[2]) == [3, 5]
+    assert list(d.spans.children[2]) == [3, 4]
 
     assert d.spans[0].parent is None
     for ex in list(d.spans)[1:]:
