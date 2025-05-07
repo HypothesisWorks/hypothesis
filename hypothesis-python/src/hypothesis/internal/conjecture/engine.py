@@ -228,7 +228,7 @@ def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
                 "of Hypothesis. (If you installed this backend from a separate "
                 "package, upgrading that package may help).",
                 has_codemod=False,
-                since="RELEASEDAY",
+                since="2025-05-07",
             )
 
     for node in data.nodes:

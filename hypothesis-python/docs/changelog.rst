@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.13:
+
+---------------------
+6.131.13 - 2025-05-07
+---------------------
+
+Add a ``for_failure: bool = False`` parameter to ``provider.realize`` in :ref:`alternative backends <alternative-backends>`, so that symbolic-based backends can increase their timeouts when realizing failures, which are more important than regular examples.
+
 .. _v6.131.12:
 
 ---------------------
