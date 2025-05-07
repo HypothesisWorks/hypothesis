@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.15:
+
+---------------------
+6.131.15 - 2025-05-07
+---------------------
+
+Improves output when assigning values to multiple target bundles
+in a stateful rule (:issue:`4361`).
+
 .. _v6.131.14:
 
 ---------------------
