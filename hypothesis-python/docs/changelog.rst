@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.14:
+
+---------------------
+6.131.14 - 2025-05-07
+---------------------
+
+Internal optimization to reduce redundant choice sequence spans.
+
 .. _v6.131.13:
 
 ---------------------
