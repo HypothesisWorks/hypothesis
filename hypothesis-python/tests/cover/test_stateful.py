@@ -282,7 +282,7 @@ def test_multiple_variables_printed_single_element():
         run_state_machine_as_test(ProducesMultiple)
 
     assignment_line = err.value.__notes__[2]
-    assert assignment_line == "b_0, = state.populate_bundle()"
+    assert assignment_line == "(b_0,) = state.populate_bundle()"
 
     state = ProducesMultiple()
     (v1,) = state.populate_bundle()
