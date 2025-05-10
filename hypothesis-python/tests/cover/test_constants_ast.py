@@ -116,6 +116,7 @@ def test_constants_not_equal_to_set(constants):
         ("a = 10", set()),
         ("a = -1", set()),
         ("a = b''", set()),
+        (f'a = b"{"b" * 100}"', set()),
     ],
 )
 def test_constants_from_ast(source, expected):
