@@ -83,7 +83,7 @@ You can pass multiple arguments to |@given|:
 .. code-block:: python
 
     @given(st.integers(), st.text())
-    def test_integers(n, s, b1, b2):
+    def test_integers(n, s):
         assert isinstance(n, int)
         assert isinstance(s, str)
 
