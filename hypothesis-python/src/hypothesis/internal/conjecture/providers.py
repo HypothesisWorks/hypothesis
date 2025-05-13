@@ -88,7 +88,9 @@ AVAILABLE_PROVIDERS = {
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 # cache the choice_permitted constants for a particular set of constraints.
-CONSTANTS_CACHE = LRUCache(1024)
+CacheKeyT: "TypeAlias" = tuple[ChoiceTypeT, tuple[Any, ...]]
+CacheValueT: "TypeAlias" = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
+CONSTANTS_CACHE: LRUCache[CacheKeyT, CacheValueT] = LRUCache(1024)
 
 _constant_floats = (
     [
