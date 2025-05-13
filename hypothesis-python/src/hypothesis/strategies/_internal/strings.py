@@ -156,9 +156,9 @@ _nonempty_and_content_names = (
 class TextStrategy(ListStrategy[str]):
     def do_draw(self, data):
         # if our element strategy is OneCharStringStrategy, we can skip the
-        # ListStrategy draw and jump right to our nice IR string draw.
+        # ListStrategy draw and jump right to data.draw_string.
         # Doing so for user-provided element strategies is not correct in
-        # general, as they may define a different distribution than our IR.
+        # general, as they may define a different distribution than data.draw_string.
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             return data.draw_string(

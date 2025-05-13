@@ -1160,8 +1160,8 @@ def _unpack_uleb128(buffer: bytes) -> tuple[int, int]:
     return (i + 1, value)
 
 
-def choices_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
-    """Serialize a list of IR elements to a bytestring.  Inverts choices_from_bytes."""
+def choices_to_bytes(choices: Iterable[ChoiceT], /) -> bytes:
+    """Serialize a list of choices to a bytestring.  Inverts choices_from_bytes."""
     # We use a custom serialization format for this, which might seem crazy - but our
     # data is a flat sequence of elements, and standard tools like protobuf or msgpack
     # don't deal well with e.g. nonstandard bit-pattern-NaNs, or invalid-utf8 unicode.
@@ -1169,33 +1169,33 @@ def choices_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
     # We simply encode each element with a metadata byte, if needed a uint16 size, and
     # then the payload bytes.  For booleans, the payload is inlined into the metadata.
     parts = []
-    for elem in ir:
-        if isinstance(elem, bool):
+    for choice in choices:
+        if isinstance(choice, bool):
             # `000_0000v` - tag zero, low bit payload.
-            parts.append(b"\1" if elem else b"\0")
+            parts.append(b"\1" if choice else b"\0")
             continue
 
         # `tag_ssss [uint16 size?] [payload]`
-        if isinstance(elem, float):
+        if isinstance(choice, float):
             tag = 1 << 5
-            elem = struct.pack("!d", elem)
-        elif isinstance(elem, int):
+            choice = struct.pack("!d", choice)
+        elif isinstance(choice, int):
             tag = 2 << 5
-            elem = elem.to_bytes(1 + elem.bit_length() // 8, "big", signed=True)
-        elif isinstance(elem, bytes):
+            choice = choice.to_bytes(1 + choice.bit_length() // 8, "big", signed=True)
+        elif isinstance(choice, bytes):
             tag = 3 << 5
         else:
-            assert isinstance(elem, str)
+            assert isinstance(choice, str)
             tag = 4 << 5
-            elem = elem.encode(errors="surrogatepass")
+            choice = choice.encode(errors="surrogatepass")
 
-        size = len(elem)
+        size = len(choice)
         if size < 0b11111:
             parts.append((tag | size).to_bytes(1, "big"))
         else:
             parts.append((tag | 0b11111).to_bytes(1, "big"))
             parts.append(_pack_uleb128(size))
-        parts.append(elem)
+        parts.append(choice)
 
     return b"".join(parts)
 

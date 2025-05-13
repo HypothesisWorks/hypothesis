@@ -401,7 +401,7 @@ def nodes(draw, *, was_forced=None, choice_types=None):
     else:
         choice_type = draw(st.sampled_from(choice_types))
         constraints = draw(constraints_strategy(choice_type))
-    # ir nodes don't include forced in their constraints. see was_forced attribute
+    # choice nodes don't include forced in their constraints. see was_forced attribute
     del constraints["forced"]
     value = draw_value(choice_type, constraints)
     was_forced = draw(st.booleans()) if was_forced is None else was_forced

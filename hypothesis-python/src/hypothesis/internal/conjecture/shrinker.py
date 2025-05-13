@@ -1076,7 +1076,7 @@ class Shrinker:
         to shrink_target).
 
         In current usage it is expected that each of the nodes currently have
-        the same value and ir type, although this is not essential. Note that
+        the same value and choice_type, although this is not essential. Note that
         n must be < the node at min(nodes) or this is not a valid shrink.
 
         This method will attempt to do some small amount of work to delete data

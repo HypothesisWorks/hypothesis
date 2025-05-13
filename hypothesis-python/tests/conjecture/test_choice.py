@@ -324,7 +324,7 @@ def test_data_with_empty_choices_is_overrun():
 @given(nodes(was_forced=True))
 def test_data_with_changed_forced_value(node):
     # we had a forced node and then tried to draw a different forced value from it.
-    # ir tree: v1 [was_forced=True]
+    # nodes:   v1 [was_forced=True]
     # drawing:    [forced=v2]
     #
     # This is actually fine; we'll just ignore the forced node (v1) and return
@@ -340,7 +340,7 @@ def test_data_with_changed_forced_value(node):
     assert choice_equal(draw_func(**constraints), constraints["forced"])
 
 
-# ensure we hit bare-minimum coverage for all ir types.
+# ensure we hit bare-minimum coverage for all choice sequence types.
 @example(
     ChoiceNode(type="float", value=0.0, constraints=float_constr(), was_forced=True)
 )
@@ -381,7 +381,7 @@ def test_data_with_changed_forced_value(node):
 def test_data_with_same_forced_value_is_valid(node):
     # we had a forced node and then drew the same forced value. This is totally
     # fine!
-    # ir tree: v1 [was_forced=True]
+    # nodes:   v1 [was_forced=True]
     # drawing:    [forced=v1]
     data = ConjectureData.for_choices([node.value])
     draw_func = getattr(data, f"draw_{node.type}")
@@ -788,7 +788,7 @@ def test_shrink_towards_has_index_0(constraints):
 
 @given(choice_types_constraints())
 def test_choice_to_index_injective(choice_type_and_constraints):
-    # ir ordering should be injective both ways.
+    # choice sequence ordering should be injective both ways.
     (choice_type, constraints) = choice_type_and_constraints
     # ...except for floats, which are hard to order bijectively.
     assume(choice_type != "float")
