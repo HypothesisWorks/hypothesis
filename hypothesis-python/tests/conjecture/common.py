@@ -411,11 +411,11 @@ def nodes(draw, *, was_forced=None, choice_types=None):
     )
 
 
-def ir(*values: list[ChoiceT]) -> list[ChoiceNode]:
+def nodes_inline(*values: list[ChoiceT]) -> list[ChoiceNode]:
     """
-    For inline-creating an ir node or list of ir nodes, where you don't care about the
-    constraints. This uses maximally-permissable constraints and infers the choice_type you meant
-    based on the type of the value.
+    For inline-creating a choice node or list of choice nodes, where you don't
+    care about the constraints. This uses maximally-permissable constraints and
+    infers the choice_type you meant based on the type of the value.
 
     You can optionally pass (value, constraints) to as an element in order to override
     the default constraints for that element.
@@ -500,5 +500,5 @@ def string_constr(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE
     return {"intervals": intervals, "min_size": min_size, "max_size": max_size}
 
 
-# we could in theory define bytes_kw and boolean_kw, but without any
+# we could in theory define bytes_constr and boolean_constr, but without any
 # default kw values they aren't really a time save.
