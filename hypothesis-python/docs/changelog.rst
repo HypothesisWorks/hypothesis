@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.16:
+
+---------------------
+6.131.16 - 2025-05-13
+---------------------
+
+Improve performance of an internal method to count possible choices.
+
 .. _v6.131.15:
 
 ---------------------
