@@ -976,17 +976,12 @@ class ConjectureData:
             if node.type == "simplest":
                 if forced is not None:
                     choice = forced
-                elif isinstance(self.provider, HypothesisProvider):
-                    try:
-                        choice = choice_from_index(0, choice_type, constraints)
-                    except ChoiceTooLarge:
-                        self.mark_overrun()
-                else:
-                    # give alternative backends control over ChoiceTemplate draws
-                    # as well
-                    choice = getattr(self.provider, f"draw_{choice_type}")(
-                        **constraints
+                try:
+                    choice = self.provider.draw_choice_template(
+                        node, choice_type, constraints
                     )
+                except ChoiceTooLarge:
+                    self.mark_overrun()
             else:
                 raise NotImplementedError
 
