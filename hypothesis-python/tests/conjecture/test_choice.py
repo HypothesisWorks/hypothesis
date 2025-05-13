@@ -110,7 +110,7 @@ def test_compute_max_children_is_positive(choice_type_and_constraints):
                 "max_size": COLLECTION_DEFAULT_MAX_SIZE,
                 "intervals": IntervalSet.from_string("a"),
             },
-            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+            COLLECTION_DEFAULT_MAX_SIZE + 1,
         ),
         (
             "string",
@@ -169,7 +169,11 @@ def test_compute_max_children_is_positive(choice_type_and_constraints):
     ],
 )
 def test_compute_max_children(choice_type, constraints, count_children):
-    assert compute_max_children(choice_type, constraints) == count_children
+    candidates = [count_children]
+    if count_children > MAX_CHILDREN_EFFECTIVELY_INFINITE:
+        # Acceptable to return either the exact value or the estimate
+        candidates.append(MAX_CHILDREN_EFFECTIVELY_INFINITE)
+    assert compute_max_children(choice_type, constraints) in candidates
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
