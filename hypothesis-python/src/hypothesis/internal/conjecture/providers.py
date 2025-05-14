@@ -223,7 +223,7 @@ _sys_modules_len: Optional[int] = None
 def _module_too_large(file: str) -> bool:
     try:
         return os.path.getsize(file) > 200 * 1024
-    except Exception:
+    except Exception:  # pragma: no cover
         return True
 
 
