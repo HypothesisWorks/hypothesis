@@ -217,6 +217,16 @@ _seen_modules: set[ModuleType] = set()
 _sys_modules_len: Optional[int] = None
 
 
+# Skip files over 200kb. For reference, the largest source file
+# in Hypothesis is strategies/_internal/core.py at 107kb at time
+# of writing.
+def _module_too_large(file: str) -> bool:
+    try:
+        return os.path.getsize(file) > 200 * 1024
+    except Exception:
+        return True
+
+
 def _get_local_constants() -> Constants:
     global _sys_modules_len, _local_constants
 
@@ -257,10 +267,7 @@ def _get_local_constants() -> Constants:
             if (
                 (module_file := getattr(module, "__file__", None)) is not None
                 and is_local_module_file(module_file)
-                # Skip files over 200kb. For reference, the largest source file
-                # in Hypothesis is strategies/_internal/core.py at 107kb at time
-                # of writing.
-                and os.path.getsize(module_file) < 200 * 1024
+                and not _module_too_large(module_file)
             ):
                 new_constants |= constants_from_module(module)
         _local_constants |= new_constants
