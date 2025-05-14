@@ -555,7 +555,7 @@ class settings(metaclass=settingsMeta):
         If not set, a |DirectoryBasedExampleDatabase| is created in the current
         working directory under ``.hypothesis/examples``. If this location is
         unusable, e.g. due to the lack of read or write permissions, Hypothesis
-        will emit a warning a fall back to an |InMemoryExampleDatabase|.
+        will emit a warning and fall back to an |InMemoryExampleDatabase|.
 
         If ``None``, no storage will be used.
 

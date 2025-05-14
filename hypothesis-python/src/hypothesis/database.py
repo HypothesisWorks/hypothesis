@@ -149,8 +149,10 @@ class ExampleDatabase(metaclass=_EDMeta):
     """
     A Hypothesis database, for use in the |settings.database| setting.
 
-    A Hypothesis database acts like a ``Mapping[bytes, set[bytes]]``, mapping
-    each ``bytes`` key to a set of ``bytes`` values.
+    Using an |ExampleDatabase| allows Hypothesis to
+    remember and replay failing examples, and ensure that your tests are never
+    flaky. We provide several concrete subclasses, and you can write a custom
+    database backed by your preferred way to store a ``dict[bytes, set[bytes]]``.
 
     Change listening
     ----------------
@@ -161,7 +163,7 @@ class ExampleDatabase(metaclass=_EDMeta):
     or moved. See |ExampleDatabase.add_listener| for details.
 
     All databases in Hypothesis support change listening. Custom database classes
-    are not required to sipport change listening, unless they want to be
+    are not required to support change listening, unless they want to be
     compatible with features that require change listening. Currently, no Hypothesis
     features require change listening.
 
@@ -187,6 +189,9 @@ class ExampleDatabase(metaclass=_EDMeta):
     * |ExampleDatabase.add_listener|
     * |ExampleDatabase.remove_listener|
     * |ExampleDatabase.clear_listeners|
+    * |ExampleDatabase._start_listening|
+    * |ExampleDatabase._stop_listening|
+    * |ExampleDatabase._broadcast_change|
     """
 
     def __init__(self) -> None:
@@ -299,9 +304,10 @@ class ExampleDatabase(metaclass=_EDMeta):
         have any change listeners. Intended to allow databases to wait to start
         expensive listening operations until necessary.
 
-        _start_listening and _stop_listening are guaranteed to alternate, so you
-        do not need to handle the case of multiple consecutive _start_listening
-        calls without an intermediate _stop_listening call.
+        ``_start_listening`` and ``_stop_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_start_listening`` calls without an intermediate ``_stop_listening``
+        call.
         """
         warnings.warn(
             f"{self.__class__} does not support listening for changes",
@@ -313,9 +319,10 @@ class ExampleDatabase(metaclass=_EDMeta):
         """
         Called whenever no change listeners remain on the database.
 
-        _stop_listening and _start_listening are guaranteed to alternate, so you
-        do not need to handle the case of multiple consecutive _stop_listening
-        calls without an intermediate _start_listening call.
+        ``_stop_listening`` and ``_start_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_stop_listening`` calls without an intermediate ``_start_listening``
+        call.
         """
         warnings.warn(
             f"{self.__class__} does not support stopping listening for changes",

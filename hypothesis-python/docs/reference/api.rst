@@ -425,6 +425,7 @@ ExampleDatabase implementations
 
 .. autoclass:: hypothesis.database.ExampleDatabase
     :members:
+    :private-members: _broadcast_change, _start_listening, _stop_listening
 
 .. autoclass:: hypothesis.database.InMemoryExampleDatabase
 .. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase

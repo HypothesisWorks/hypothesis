@@ -264,6 +264,9 @@ rst_prolog = """
 .. |ExampleDatabase.add_listener| replace:: :func:`~hypothesis.database.ExampleDatabase.add_listener`
 .. |ExampleDatabase.remove_listener| replace:: :func:`~hypothesis.database.ExampleDatabase.remove_listener`
 .. |ExampleDatabase.clear_listeners| replace:: :func:`~hypothesis.database.ExampleDatabase.clear_listeners`
+.. |ExampleDatabase._start_listening| replace:: :func:`~hypothesis.database.ExampleDatabase._start_listening`
+.. |ExampleDatabase._stop_listening| replace:: :func:`~hypothesis.database.ExampleDatabase._stop_listening`
+.. |ExampleDatabase._broadcast_change| replace:: :func:`~hypothesis.database.ExampleDatabase._broadcast_change`
 
 .. |DirectoryBasedExampleDatabase| replace:: :class:`~hypothesis.database.DirectoryBasedExampleDatabase`
 .. |InMemoryExampleDatabase| replace:: :class:`~hypothesis.database.InMemoryExampleDatabase`
