@@ -287,7 +287,7 @@ def target(observation: Union[int, float], *, label: str = "") -> Union[int, flo
     ``target()`` with any label more than once per test case.
 
     .. note::
-        **The more examples you run, the better this technique works.**
+        The more examples you run, the better this technique works.
 
         As a rule of thumb, the targeting effect is noticeable above
         :obj:`max_examples=1000 <hypothesis.settings.max_examples>`,

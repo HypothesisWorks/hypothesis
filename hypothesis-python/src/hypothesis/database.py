@@ -146,10 +146,52 @@ if "sphinx" in sys.modules:
 
 
 class ExampleDatabase(metaclass=_EDMeta):
-    """An abstract base class for storing examples in Hypothesis' internal format.
+    """
+    A Hypothesis database, for use in the |settings.database| setting.
 
-    An ExampleDatabase maps each ``bytes`` key to many distinct ``bytes``
-    values, like a ``Mapping[bytes, set[bytes]]``.
+    Using an |ExampleDatabase| allows Hypothesis to
+    remember and replay failing examples, and ensure that your tests are never
+    flaky. We provide several concrete subclasses, and you can write a custom
+    database backed by your preferred way to store a ``dict[bytes, set[bytes]]``.
+
+    Change listening
+    ----------------
+
+    An optional extension to |ExampleDatabase| is change listening. On databases
+    which support it, you can call |ExampleDatabase.add_listener| to add a function
+    as a change listener, which will be called whenever a value is added, deleted,
+    or moved. See |ExampleDatabase.add_listener| for details.
+
+    All databases in Hypothesis support change listening. Custom database classes
+    are not required to support change listening, unless they want to be
+    compatible with features that require change listening. Currently, no Hypothesis
+    features require change listening.
+
+    .. note::
+
+        Change listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
+
+    Methods
+    -------
+
+    Required methods:
+
+    * |ExampleDatabase.save|
+    * |ExampleDatabase.fetch|
+    * |ExampleDatabase.delete|
+
+    Optional methods:
+
+    * |ExampleDatabase.move|
+
+    Change listening methods:
+
+    * |ExampleDatabase.add_listener|
+    * |ExampleDatabase.remove_listener|
+    * |ExampleDatabase.clear_listeners|
+    * |ExampleDatabase._start_listening|
+    * |ExampleDatabase._stop_listening|
+    * |ExampleDatabase._broadcast_change|
     """
 
     def __init__(self) -> None:
@@ -159,7 +201,7 @@ class ExampleDatabase(metaclass=_EDMeta):
     def save(self, key: bytes, value: bytes) -> None:
         """Save ``value`` under ``key``.
 
-        If this value is already present for this key, silently do nothing.
+        If ``value`` is already present in ``key``, silently do nothing.
         """
         raise NotImplementedError(f"{type(self).__name__}.save")
 
@@ -170,16 +212,18 @@ class ExampleDatabase(metaclass=_EDMeta):
 
     @abc.abstractmethod
     def delete(self, key: bytes, value: bytes) -> None:
-        """Remove this value from this key.
+        """Remove ``value`` from ``key``.
 
-        If this value is not present, silently do nothing.
+        If ``value`` is not present in ``key``, silently do nothing.
         """
         raise NotImplementedError(f"{type(self).__name__}.delete")
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
-        """Move ``value`` from key ``src`` to key ``dest``. Equivalent to
-        ``delete(src, value)`` followed by ``save(src, value)``, but may
-        have a more efficient implementation.
+        """
+        Move ``value`` from key ``src`` to key ``dest``.
+
+        Equivalent to ``delete(src, value)`` followed by ``save(src, value)``,
+        but may have a more efficient implementation.
 
         Note that ``value`` will be inserted at ``dest`` regardless of whether
         it is currently present at ``src``.
@@ -191,7 +235,24 @@ class ExampleDatabase(metaclass=_EDMeta):
         self.save(dest, value)
 
     def add_listener(self, f: ListenerT, /) -> None:
-        """Add a change listener."""
+        """
+        Add a change listener. ``f`` will be called whenever a value is saved,
+        deleted, or moved in the database.
+
+        ``f`` can be called with two different event values:
+
+        * ``("save", (key, value))``
+        * ``("delete", (key, value))``
+
+        where ``key`` and ``value`` are both ``bytes``.
+
+        There is no ``move`` event. Instead, a move is broadcasted as a
+        ``delete`` event followed by a ``save`` event.
+
+        For the ``delete`` event, ``value`` may be ``None``. This might occur if
+        the database knows that a deletion has occurred in ``key``, but does not
+        know what value was deleted.
+        """
         had_listeners = bool(self._listeners)
         self._listeners.append(f)
         if not had_listeners:
@@ -199,8 +260,9 @@ class ExampleDatabase(metaclass=_EDMeta):
 
     def remove_listener(self, f: ListenerT, /) -> None:
         """
-        Remove a change listener. If the listener is not present, silently do
-        nothing.
+        Removes ``f`` from the list of change listeners.
+
+        If ``f`` is not in the list of change listeners, silently do nothing.
         """
         if f not in self._listeners:
             return
@@ -218,16 +280,20 @@ class ExampleDatabase(metaclass=_EDMeta):
     def _broadcast_change(self, event: ListenerEventT) -> None:
         """
         Called when a value has been either added to or deleted from a key in
-        the underlying database store. event_type is one of "save" or "delete".
+        the underlying database store. The possible values for ``event`` are:
 
-        ``value`` may be ``None`` for ``event_type == "delete"``, which indicates
-        we don't know what value was deleted from the database.
+        * ``("save", (key, value))``
+        * ``("delete", (key, value))``
 
-        Note that you should not assume you are the only reference to the underlying
-        database store. For example, if two DirectoryBasedExampleDatabase reference
-        the same directory, _broadcast_change should be called whenever a file is
-        added or removed from the directory, even if that database was not responsible
-        for changing the file.
+        ``value`` may be ``None`` for the ``delete`` event, indicating we know
+        that some value was deleted under this key, but not its exact value.
+
+        Note that you should not assume your instance is the only reference to
+        the underlying database store. For example, if two instances of
+        |DirectoryBasedExampleDatabase| reference the same directory,
+        _broadcast_change should be called whenever a file is added or removed
+        from the directory, even if that database was not responsible for
+        changing the file.
         """
         for listener in self._listeners:
             listener(event)
@@ -238,9 +304,10 @@ class ExampleDatabase(metaclass=_EDMeta):
         have any change listeners. Intended to allow databases to wait to start
         expensive listening operations until necessary.
 
-        _start_listening and _stop_listening are guaranteed to alternate, so you
-        do not need to handle the case of multiple consecutive _start_listening
-        calls without an intermediate _stop_listening call.
+        ``_start_listening`` and ``_stop_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_start_listening`` calls without an intermediate ``_stop_listening``
+        call.
         """
         warnings.warn(
             f"{self.__class__} does not support listening for changes",
@@ -252,9 +319,10 @@ class ExampleDatabase(metaclass=_EDMeta):
         """
         Called whenever no change listeners remain on the database.
 
-        _stop_listening and _start_listening are guaranteed to alternate, so you
-        do not need to handle the case of multiple consecutive _stop_listening
-        calls without an intermediate _start_listening call.
+        ``_stop_listening`` and ``_start_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_stop_listening`` calls without an intermediate ``_start_listening``
+        call.
         """
         warnings.warn(
             f"{self.__class__} does not support stopping listening for changes",
@@ -264,7 +332,8 @@ class ExampleDatabase(metaclass=_EDMeta):
 
 
 class InMemoryExampleDatabase(ExampleDatabase):
-    """A non-persistent example database, implemented in terms of a dict of sets.
+    """A non-persistent example database, implemented in terms of an in-memory
+    dictionary.
 
     This can be useful if you call a test function several times in a single
     session, or for testing other database implementations, but because it
@@ -318,7 +387,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     Each test corresponds to a directory, and each example to a file within that
     directory.  While the contents are fairly opaque, a
-    ``DirectoryBasedExampleDatabase`` can be shared by checking the directory
+    |DirectoryBasedExampleDatabase| can be shared by checking the directory
     into version control, for example with the following ``.gitignore``::
 
         # Ignore files cached by Hypothesis...
@@ -328,8 +397,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     Note however that this only makes sense if you also pin to an exact version of
     Hypothesis, and we would usually recommend implementing a shared database with
-    a network datastore - see :class:`~hypothesis.database.ExampleDatabase`, and
-    the :class:`~hypothesis.database.MultiplexedDatabase` helper.
+    a network datastore - see |ExampleDatabase|, and the |MultiplexedDatabase| helper.
     """
 
     # we keep a database entry of the full values of all the database keys.
