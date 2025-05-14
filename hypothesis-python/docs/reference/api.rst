@@ -453,7 +453,6 @@ For example, here's a simple database class that uses :mod:`sqlite <sqlite3>` as
     class SQLiteExampleDatabase(ExampleDatabase):
         def __init__(self, db_path: str):
             self.conn = sqlite3.connect(db_path)
-            self._create_tables()
 
             self.conn.execute(
                 """
