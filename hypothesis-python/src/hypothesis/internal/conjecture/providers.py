@@ -11,6 +11,7 @@
 import abc
 import contextlib
 import math
+import os
 import sys
 import warnings
 from collections.abc import Iterable
@@ -202,7 +203,6 @@ GLOBAL_CONSTANTS = Constants(
     strings=SortedSet(_constant_strings),
 )
 
-
 _local_constants = Constants(
     integers=SortedSet(),
     floats=SortedSet(key=float_to_int),
@@ -250,11 +250,20 @@ def _get_local_constants() -> Constants:
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
         new_modules = set(sys.modules.values()) - _seen_modules
+        # Repeated SortedSet unions are expensive. Do the initial unions on a
+        # set(), then do a one-time union with _local_constants after.
+        new_constants = Constants()
         for module in new_modules:
-            if getattr(module, "__file__", None) is not None and is_local_module_file(
-                module.__file__
+            if (
+                (module_file := getattr(module, "__file__", None)) is not None
+                and is_local_module_file(module_file)
+                # Skip files over 200kb. For reference, the largest source file
+                # in Hypothesis is strategies/_internal/core.py at 107kb at time
+                # of writing.
+                and os.path.getsize(module_file) < 200 * 1024
             ):
-                _local_constants |= constants_from_module(module)
+                new_constants |= constants_from_module(module)
+        _local_constants |= new_constants
         _seen_modules.update(new_modules)
         _sys_modules_len = sys_modules_len
 
