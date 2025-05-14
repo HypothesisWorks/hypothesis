@@ -51,7 +51,7 @@ class Constants:
 
     def set_for_type(
         self, constant_type: Union[type[ConstantT], ChoiceTypeT]
-    ) -> MutableSet[int] | MutableSet[float] | MutableSet[bytes] | MutableSet[str]:
+    ) -> Union[MutableSet[int], MutableSet[float], MutableSet[bytes], MutableSet[str]]:
         if constant_type is int or constant_type == "integer":
             return self.integers
         elif constant_type is float or constant_type == "float":
