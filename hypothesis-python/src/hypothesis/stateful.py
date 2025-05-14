@@ -941,9 +941,17 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
 
 @dataclass
 class Invariant:
-    function: Any = field(repr=get_pretty_function_description)
+    function: Any
     preconditions: Any
     check_during_init: bool
+
+    def __repr__(self) -> str:
+        parts = [
+            f"function={get_pretty_function_description(self.function)}",
+            f"{self.preconditions=}",
+            f"{self.check_during_init=}",
+        ]
+        return f"Invariant({', '.join(parts)})"
 
 
 def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFunc]:
