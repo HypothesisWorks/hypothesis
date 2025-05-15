@@ -802,3 +802,34 @@ def test_deprecated_example_database_memory():
 @checks_deprecated_behaviour
 def test_deprecated_example_database_no_args():
     ExampleDatabase()
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("a")),
+        (
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+        ),
+    ],
+)
+def test_database_equal(db1, db2):
+    assert db1 == db2
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (InMemoryExampleDatabase(), InMemoryExampleDatabase()),
+        (InMemoryExampleDatabase(), DirectoryBasedExampleDatabase("a")),
+        (BackgroundWriteDatabase(InMemoryExampleDatabase()), InMemoryExampleDatabase()),
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")),
+    ],
+)
+def test_database_not_equal(db1, db2):
+    assert db1 != db2

@@ -278,6 +278,9 @@ class InMemoryExampleDatabase(ExampleDatabase):
     def __repr__(self) -> str:
         return f"InMemoryExampleDatabase({self.data!r})"
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, InMemoryExampleDatabase) and self.data is other.data
+
     def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self.data.get(key, ())
 
@@ -345,6 +348,11 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, DirectoryBasedExampleDatabase) and self.path == other.path
+        )
 
     def _key_path(self, key: bytes) -> Path:
         try:
@@ -562,6 +570,9 @@ class ReadOnlyDatabase(ExampleDatabase):
     def __repr__(self) -> str:
         return f"ReadOnlyDatabase({self._wrapped!r})"
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ReadOnlyDatabase) and self._wrapped == other._wrapped
+
     def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self._wrapped.fetch(key)
 
@@ -612,6 +623,11 @@ class MultiplexedDatabase(ExampleDatabase):
 
     def __repr__(self) -> str:
         return "MultiplexedDatabase({})".format(", ".join(map(repr, self._wrapped)))
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, MultiplexedDatabase) and self._wrapped == other._wrapped
+        )
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         seen = set()
@@ -758,6 +774,15 @@ class GitHubArtifactDatabase(ExampleDatabase):
         return (
             f"GitHubArtifactDatabase(owner={self.owner!r}, "
             f"repo={self.repo!r}, artifact_name={self.artifact_name!r})"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, GitHubArtifactDatabase)
+            and self.owner == other.owner
+            and self.repo == other.repo
+            and self.artifact_name == other.artifact_name
+            and self.path == other.path
         )
 
     def _prepare_for_io(self) -> None:
@@ -992,6 +1017,9 @@ class BackgroundWriteDatabase(ExampleDatabase):
 
     def __repr__(self) -> str:
         return f"BackgroundWriteDatabase({self._db!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, BackgroundWriteDatabase) and self._db == other._db
 
     def _worker(self) -> None:
         while True:
