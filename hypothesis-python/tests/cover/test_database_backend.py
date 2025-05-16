@@ -816,6 +816,14 @@ def test_deprecated_example_database_no_args():
                 DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
             ),
         ),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner1", "repo1"),
+        ),
     ],
 )
 def test_database_equal(db1, db2):
@@ -829,6 +837,14 @@ def test_database_equal(db1, db2):
         (InMemoryExampleDatabase(), DirectoryBasedExampleDatabase("a")),
         (BackgroundWriteDatabase(InMemoryExampleDatabase()), InMemoryExampleDatabase()),
         (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("b")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner2", "repo2"),
+        ),
     ],
 )
 def test_database_not_equal(db1, db2):
