@@ -50,6 +50,7 @@ from tests.common.utils import (
     skipif_emscripten,
     xfail_on_crosshair,
 )
+from tests.conjecture.common import buffer_size_limit
 
 # This particular test file is run under both pytest and nose, so it can't
 # rely on pytest-specific helpers like `pytest.raises` unless we define a
@@ -518,7 +519,7 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
 
 
 def test_notes_high_overrun_rates_in_unsatisfiable_error():
-    @given(st.binary(min_size=9000))
+    @given(st.binary(min_size=100))
     @settings(
         suppress_health_check=[
             HealthCheck.data_too_large,
@@ -529,11 +530,14 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
     def f(v):
         pass
 
-    with raises(
-        Unsatisfiable,
-        match=(
-            r"1000 of 1000 examples were too large to finish generating; "
-            r"try reducing the typical size of your inputs\?"
+    with (
+        raises(
+            Unsatisfiable,
+            match=(
+                r"1000 of 1000 examples were too large to finish generating; "
+                r"try reducing the typical size of your inputs\?"
+            ),
         ),
+        buffer_size_limit(10),
     ):
         f()
