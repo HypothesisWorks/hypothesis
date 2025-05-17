@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.18:
+
+---------------------
+6.131.18 - 2025-05-17
+---------------------
+
+All |ExampleDatabase| implementations in Hypothesis now implement ``__eq__``.
+
 .. _v6.131.17:
 
 ---------------------
