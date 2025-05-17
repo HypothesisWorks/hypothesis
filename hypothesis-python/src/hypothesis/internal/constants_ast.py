@@ -105,11 +105,19 @@ class ConstantVisitor(NodeVisitor):
 
     def _add_constant(self, value: object) -> None:
         if isinstance(value, str) and (
-            len(value) > 20 or value.isspace() or value == ""
+            value.isspace()
+            or value == ""
+            # long strings are unlikely to be useful.
+            or len(value) > 20
         ):
-            # discard long strings, which are unlikely to be useful.
             return
-        if isinstance(value, bytes) and value == b"":
+        if isinstance(value, bytes) and (
+            value == b""
+            # long bytes seem plausibly more likely to be useful than long strings
+            # (e.g. AES-256 has a 32 byte key), but we still want to cap at some
+            # point to avoid performance issues.
+            or len(value) > 50
+        ):
             return
         if isinstance(value, bool):
             return

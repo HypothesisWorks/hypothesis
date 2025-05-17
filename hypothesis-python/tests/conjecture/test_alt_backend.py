@@ -564,7 +564,7 @@ class ExhaustibleProvider(TrivialProvider):
             # This is complete nonsense of course, so we'll see Hypothesis complain
             # that we found a problem after the backend reported verification.
             raise BackendCannotProceed(self.scope)
-        return 1
+        return self._calls
 
 
 class UnsoundVerifierProvider(ExhaustibleProvider):
@@ -579,7 +579,7 @@ def test_notes_incorrect_verification(provider):
         @given(st.integers())
         @settings(backend="p", database=None, max_examples=100)
         def test_function(x):
-            assert x == 1  # True from this backend, false in general!
+            assert x >= 0  # True from this backend, false in general!
 
         with pytest.raises(AssertionError) as ctx:
             test_function()
@@ -687,3 +687,21 @@ def test_realize_without_for_failure():
 
         with pytest.raises(AssertionError):
             f()
+
+
+class ChoiceTemplateProvider(TrivialProvider):
+    def draw_choice_template(self, choice_template, choice_type, constraints):
+        assert choice_template.type == "simplest"
+        assert choice_type == "integer"
+        return 5
+
+
+def test_can_override_choice_template_draws():
+    with temp_register_backend("choice_template", ChoiceTemplateProvider):
+
+        @given(st.integers())
+        @settings(backend="choice_template", max_examples=1, database=None)
+        def f(x):
+            assert x == 5
+
+        f()
