@@ -57,6 +57,14 @@ class RedisExampleDatabase(ExampleDatabase):
             f"RedisExampleDatabase({self.redis!r}, expire_after={self._expire_after!r})"
         )
 
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, RedisExampleDatabase)
+            and self.redis == other.redis
+            and self._prefix == other._prefix
+            and self.listener_channel == other.listener_channel
+        )
+
     @contextmanager
     def _pipeline(
         self,

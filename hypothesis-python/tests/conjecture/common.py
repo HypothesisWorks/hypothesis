@@ -14,8 +14,6 @@ from contextlib import contextmanager
 from random import Random
 from typing import Optional
 
-import pytest
-
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context, currently_in_test_context
 from hypothesis.internal.conjecture import engine as engine_module
@@ -104,6 +102,9 @@ def shrinking_from(start):
 
 
 def fresh_data(*, random=None, observer=None) -> ConjectureData:
+    # support importing this file from our nose job, which doesn't have pytest
+    import pytest
+
     context = current_build_context() if currently_in_test_context() else None
     if context is not None and settings().backend == "crosshair":
         # we should reeaxmine fresh_data sometime and see if we can replace it
