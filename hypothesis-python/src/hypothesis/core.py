@@ -277,7 +277,7 @@ class example:
 
 
 def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
-    """seed: Start the test execution from a specific seed.
+    """Start the test execution from a specific seed.
 
     May be any hashable object. No exact meaning for seed is provided
     other than that for a fixed seed value Hypothesis will try the same

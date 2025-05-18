@@ -14,14 +14,12 @@ import inspect
 import math
 import sys
 from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
-from collections.abc import Iterator
+from collections.abc import Iterator, MutableSet
 from functools import lru_cache
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Union
-
-from sortedcontainers import SortedSet
+from typing import TYPE_CHECKING, Optional, Union
 
 import hypothesis
 from hypothesis.configuration import storage_directory
@@ -33,25 +31,27 @@ if TYPE_CHECKING:
 
 ConstantT: "TypeAlias" = Union[int, float, bytes, str]
 
+# unfortunate collision with builtin. I don't want to name the init arg bytes_.
+bytesT = bytes
+
 
 class Constants:
     def __init__(
         self,
         *,
-        # spiritually "an AbstractSet, with the addition of a .add method"
-        integers: Union[set[int], SortedSet[int]] = None,
-        floats: Union[set[float], SortedSet[float]] = None,
-        bytes: Union[set[bytes], SortedSet[bytes]] = None,
-        strings: Union[set[str], SortedSet[str]] = None,
+        integers: Optional[MutableSet[int]] = None,
+        floats: Optional[MutableSet[float]] = None,
+        bytes: Optional[MutableSet[bytes]] = None,
+        strings: Optional[MutableSet[str]] = None,
     ):
-        self.integers = set() if integers is None else integers
-        self.floats = set() if floats is None else floats
-        self.bytes = set() if bytes is None else bytes
-        self.strings = set() if strings is None else strings
+        self.integers: MutableSet[int] = set() if integers is None else integers
+        self.floats: MutableSet[float] = set() if floats is None else floats
+        self.bytes: MutableSet[bytesT] = set() if bytes is None else bytes
+        self.strings: MutableSet[str] = set() if strings is None else strings
 
     def set_for_type(
         self, constant_type: Union[type[ConstantT], ChoiceTypeT]
-    ) -> Union[set[ConstantT], SortedSet[ConstantT]]:
+    ) -> Union[MutableSet[int], MutableSet[float], MutableSet[bytes], MutableSet[str]]:
         if constant_type is int or constant_type == "integer":
             return self.integers
         elif constant_type is float or constant_type == "float":
@@ -63,17 +63,17 @@ class Constants:
         raise ValueError(f"unknown constant_type {constant_type}")
 
     def add(self, constant: ConstantT) -> None:
-        self.set_for_type(type(constant)).add(constant)
+        self.set_for_type(type(constant)).add(constant)  # type: ignore
 
     def __contains__(self, constant: ConstantT) -> bool:
         return constant in self.set_for_type(type(constant))
 
     def __or__(self, other: "Constants") -> "Constants":
         return Constants(
-            integers=self.integers | other.integers,
-            floats=self.floats | other.floats,
-            bytes=self.bytes | other.bytes,
-            strings=self.strings | other.strings,
+            integers=self.integers | other.integers,  # type: ignore
+            floats=self.floats | other.floats,  # type: ignore
+            bytes=self.bytes | other.bytes,  # type: ignore
+            strings=self.strings | other.strings,  # type: ignore
         )
 
     def __iter__(self) -> Iterator[ConstantT]:

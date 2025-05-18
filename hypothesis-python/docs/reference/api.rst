@@ -409,41 +409,23 @@ Using a value of ``list(HealthCheck)`` will disable all health checks.
 Database
 --------
 
-When Hypothesis finds a bug it stores enough information in its database to reproduce it. This
-enables you to have a classic testing workflow of find a bug, fix a bug, and be confident that
-this is actually doing the right thing because Hypothesis will start by retrying the examples that
-broke things last time.
+When Hypothesis finds a bug, it stores enough information in its database to reproduce it. The next
+time the test is run, Hypothesis will start by trying the stored example that failed last time.
 
-Limitations
-~~~~~~~~~~~
+The database is best thought of as a cache that you never need to invalidate. Entries may be
+transparently dropped when upgrading your Hypothesis version or changing your test. You shouldn't
+rely on the database for correctness; to ensure Hypothesis always tries an example, use |@example|.
 
-The database is best thought of as a cache that you never need to invalidate: Information may be
-lost when you upgrade a Hypothesis version or change your test, so you shouldn't rely on it for
-correctness - if there's an example you want to ensure occurs each time then :ref:`there's a feature for
-including them in your source code <providing-explicit-examples>` - but it helps the development
-workflow considerably by making sure that the examples you've just found are reproduced.
-
-The database also records examples that exercise less-used parts of your
-code, so the database may update even when no failing examples were found.
-
-Upgrading Hypothesis and changing your tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The design of the Hypothesis database is such that you can put arbitrary data in the database
-and not get wrong behaviour. When you upgrade Hypothesis, old data *might* be invalidated, but
-this should happen transparently. It can never be the case that e.g. changing the strategy
-that generates an argument gives you data from the old strategy.
+Hypothesis is designed so that arbitrary data can be placed in the database without causing incorrect
+behavior. It can never be the case that changing the strategy for a test gives you incorrect stored
+data from the previous strategy, for instance.
 
 ExampleDatabase implementations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis' default :obj:`~hypothesis.settings.database` setting creates a
-:class:`~hypothesis.database.DirectoryBasedExampleDatabase` in your current working directory,
-under ``.hypothesis/examples``.  If this location is unusable, e.g. because you do not have
-read or write permissions, Hypothesis will emit a warning and fall back to an
-:class:`~hypothesis.database.InMemoryExampleDatabase`.
-
-Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` implementations:
+.. autoclass:: hypothesis.database.ExampleDatabase
+    :members:
+    :private-members: _broadcast_change, _start_listening, _stop_listening
 
 .. autoclass:: hypothesis.database.InMemoryExampleDatabase
 .. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
@@ -453,14 +435,60 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 .. autoclass:: hypothesis.database.BackgroundWriteDatabase
 .. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
-Defining your own ExampleDatabase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _custom-database:
 
-You can define your :class:`~hypothesis.database.ExampleDatabase`, for example
-to use a shared datastore, with just a few methods:
+Implementing your own database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: hypothesis.database.ExampleDatabase
-   :members:
+To define your own |ExampleDatabase| class, implement the |ExampleDatabase.save|, |ExampleDatabase.fetch|, and |ExampleDatabase.delete| methods.
+
+For example, here's a simple database class that uses :mod:`sqlite <sqlite3>` as the backing data store:
+
+.. code-block:: python
+
+    import sqlite3
+    from collections.abc import Iterable
+
+    from hypothesis.database import ExampleDatabase
+
+    class SQLiteExampleDatabase(ExampleDatabase):
+        def __init__(self, db_path: str):
+            self.conn = sqlite3.connect(db_path)
+
+            self.conn.execute(
+                """
+                CREATE TABLE examples (
+                    key BLOB,
+                    value BLOB,
+                    UNIQUE (key, value)
+                )
+            """
+            )
+
+        def save(self, key: bytes, value: bytes) -> None:
+            self.conn.execute(
+                "INSERT OR IGNORE INTO examples VALUES (?, ?)",
+                (key, value),
+            )
+
+        def fetch(self, key: bytes) -> Iterable[bytes]:
+            cursor = self.conn.execute("SELECT value FROM examples WHERE key = ?", (key,))
+            yield from [value[0] for value in cursor.fetchall()]
+
+        def delete(self, key: bytes, value: bytes) -> None:
+            self.conn.execute(
+                "DELETE FROM examples WHERE key = ? AND value = ?",
+                (key, value),
+            )
+
+Database classes are not required to implement |ExampleDatabase.move|. The default implementation of a move is a |ExampleDatabase.delete| of the value in the old key, followed by a |ExampleDatabase.save| of the value in the new key. You can override |ExampleDatabase.move| in a database class to override this behavior, if for instance the backing store offers a more efficient move implementation.
+
+Change listening
+^^^^^^^^^^^^^^^^
+
+To support change listening in a database class, you should call ``self._broadcast_change(event)`` whenever a value is saved, deleted, or moved in the backing database store. How you track this depends on the details of the database class. For instance, in |DirectoryBasedExampleDatabase|, Hypothesis installs a filesystem monitor via :pypi:`watchdog` in order to broadcast change events.
+
+Two related useful methods are ``ExampleDatabase._start_listening`` and ``ExampleDatabase._stop_listening``, which a database class can override to know when to start or stop expensive listening operations. See source code for documentation.
 
 .. _stateful:
 
@@ -916,4 +944,4 @@ To determine whether a test has been defined with Hypothesis or not, use |is_hyp
 
 .. autofunction:: hypothesis.is_hypothesis_test
 
-If you're working with :pypi:`pytest`, our :ref:`pytest plugin <pytest-plugin>` automatically adds the ``@pytest.mark.hypothesis`` mark to all Hypothesis tests. You can use ``node.get_closest_marker("hypothesis")`` or similar methods to detect the existence of this mark.
+If you're working with :pypi:`pytest`, the :ref:`Hypothesis pytest plugin <pytest-plugin>` automatically adds the ``@pytest.mark.hypothesis`` mark to all Hypothesis tests. You can use ``node.get_closest_marker("hypothesis")`` or similar methods to detect the existence of this mark.

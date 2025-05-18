@@ -142,3 +142,10 @@ def test_redis_listener_explicit():
     db.save(b"a", b"c")
     flush_messages(db)
     assert calls == 3
+
+
+def test_redis_equality():
+    redis = FakeRedis()
+    assert RedisExampleDatabase(redis) == RedisExampleDatabase(redis)
+    # FakeRedis() != FakeRedis(), not much we can do here
+    assert RedisExampleDatabase(FakeRedis()) != RedisExampleDatabase(FakeRedis())

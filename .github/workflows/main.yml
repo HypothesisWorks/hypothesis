@@ -268,6 +268,7 @@ jobs:
           # pyodide can't run multiple processes internally, so parallelize explicitly over
           # discovered test files instead (20 at a time)
           TEST_FILES=$(python -m pytest -p no:cacheprovider --setup-plan hypothesis-python/tests/cover | grep ^hypothesis-python/ | cut -d " " -f 1)
+          echo "test files: $TEST_FILES"
           parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
             python -m pytest -p no:cacheprovider <<< $TEST_FILES
 

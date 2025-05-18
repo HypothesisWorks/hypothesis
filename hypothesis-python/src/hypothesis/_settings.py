@@ -549,12 +549,18 @@ class settings(metaclass=settingsMeta):
     @property
     def database(self):
         """
-        An instance of |ExampleDatabase| that will be
-        used to save examples to and load previous examples from. If ``None``,
-        no storage will be used.
+        An instance of |ExampleDatabase| that will be used to save examples to
+        and load previous examples from.
 
-        See the :ref:`database documentation <database>` for a list of built-in
-        example database implementations, and how to define custom implementations.
+        If not set, a |DirectoryBasedExampleDatabase| is created in the current
+        working directory under ``.hypothesis/examples``. If this location is
+        unusable, e.g. due to the lack of read or write permissions, Hypothesis
+        will emit a warning and fall back to an |InMemoryExampleDatabase|.
+
+        If ``None``, no storage will be used.
+
+        See the :ref:`database documentation <database>` for a list of database
+        classes, and how to define custom database classes.
         """
         from hypothesis.database import _db_for_path
 

@@ -257,6 +257,17 @@ rst_prolog = """
 .. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
 
 .. |ExampleDatabase| replace:: :class:`~hypothesis.database.ExampleDatabase`
+.. |ExampleDatabase.save| replace:: :func:`~hypothesis.database.ExampleDatabase.save`
+.. |ExampleDatabase.delete| replace:: :func:`~hypothesis.database.ExampleDatabase.delete`
+.. |ExampleDatabase.fetch| replace:: :func:`~hypothesis.database.ExampleDatabase.fetch`
+.. |ExampleDatabase.move| replace:: :func:`~hypothesis.database.ExampleDatabase.move`
+.. |ExampleDatabase.add_listener| replace:: :func:`~hypothesis.database.ExampleDatabase.add_listener`
+.. |ExampleDatabase.remove_listener| replace:: :func:`~hypothesis.database.ExampleDatabase.remove_listener`
+.. |ExampleDatabase.clear_listeners| replace:: :func:`~hypothesis.database.ExampleDatabase.clear_listeners`
+.. |ExampleDatabase._start_listening| replace:: :func:`~hypothesis.database.ExampleDatabase._start_listening`
+.. |ExampleDatabase._stop_listening| replace:: :func:`~hypothesis.database.ExampleDatabase._stop_listening`
+.. |ExampleDatabase._broadcast_change| replace:: :func:`~hypothesis.database.ExampleDatabase._broadcast_change`
+
 .. |DirectoryBasedExampleDatabase| replace:: :class:`~hypothesis.database.DirectoryBasedExampleDatabase`
 .. |InMemoryExampleDatabase| replace:: :class:`~hypothesis.database.InMemoryExampleDatabase`
 .. |ReadOnlyDatabase| replace:: :class:`~hypothesis.database.ReadOnlyDatabase`

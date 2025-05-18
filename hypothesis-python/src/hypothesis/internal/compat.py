@@ -12,6 +12,7 @@ import codecs
 import copy
 import dataclasses
 import inspect
+import itertools
 import platform
 import sys
 import sysconfig
@@ -292,3 +293,20 @@ def _asdict_inner(obj, dict_factory):
         )
     else:
         return copy.deepcopy(obj)
+
+
+if sys.version_info[:2] < (3, 13):
+    # batched was added in 3.12, strict flag in 3.13
+    # copied from 3.13 docs reference implementation
+
+    def batched(iterable, n, *, strict=False):
+        if n < 1:
+            raise ValueError("n must be at least one")
+        iterator = iter(iterable)
+        while batch := tuple(itertools.islice(iterator, n)):
+            if strict and len(batch) != n:  # pragma: no cover
+                raise ValueError("batched(): incomplete batch")
+            yield batch
+
+else:  # pragma: no cover
+    batched = itertools.batched

@@ -18,6 +18,47 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.18:
+
+---------------------
+6.131.18 - 2025-05-17
+---------------------
+
+All |ExampleDatabase| implementations in Hypothesis now implement ``__eq__``.
+
+.. _v6.131.17:
+
+---------------------
+6.131.17 - 2025-05-14
+---------------------
+
+Further improve the performance of the new features introduced in :ref:`version 6.131.1 <v6.131.1>`, by improving unions of large sets.
+
+.. _v6.131.16:
+
+---------------------
+6.131.16 - 2025-05-13
+---------------------
+
+Improve performance of an internal method to count possible choices.
+
+.. _v6.131.15:
+
+---------------------
+6.131.15 - 2025-05-07
+---------------------
+
+Improves output when assigning values to multiple target bundles
+in a stateful rule (:issue:`4361`).
+
+.. _v6.131.14:
+
+---------------------
+6.131.14 - 2025-05-07
+---------------------
+
+Internal optimization to reduce redundant choice sequence spans.
+
 .. _v6.131.13:
 
 ---------------------
