@@ -987,6 +987,7 @@ class ConjectureRunner:
         self.debug("Generating new examples")
 
         assert self.should_generate_more()
+        self._switch_to_hypothesis_provider = True
         zero_data = self.cached_test_function((ChoiceTemplate("simplest", count=None),))
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
@@ -1068,6 +1069,7 @@ class ConjectureRunner:
         small_example_cap = min(self.settings.max_examples // 10, 50)
         optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1, 10)
         ran_optimisations = False
+        self._switch_to_hypothesis_provider = False
 
         while self.should_generate_more():
             # we don't yet integrate DataTree with backends. Instead of generating
