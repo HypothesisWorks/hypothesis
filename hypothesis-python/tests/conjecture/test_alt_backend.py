@@ -421,7 +421,9 @@ def test_realize():
 
         test_function()
 
-        assert all(n == 42 for n in values)
+        # first draw is 0 from ChoiceTemplate(type="simplest")
+        assert values[0] == 0
+        assert all(n == 42 for n in values[1:])
 
 
 def test_realize_dependent_draw():
@@ -485,7 +487,7 @@ class ObservableProvider(TrivialProvider):
 def test_custom_observations_from_backend():
     with temp_register_backend("observable", ObservableProvider):
 
-        @given(st.none())
+        @given(st.booleans())
         @settings(backend="observable", database=None)
         def test_function(_):
             pass
@@ -644,12 +646,12 @@ def test_saves_on_fatal_error_with_backend():
 class SoundnessTestProvider(TrivialProvider):
     def __init__(self, conjecturedata):
         super().__init__(conjecturedata)
-        self.calls = 0
+        self.n = 0
 
     def draw_integer(self, **constraints):
-        self.calls += 1
-        if self.calls == 1:
-            return 0
+        self.n += 1
+        if self.n == 1:
+            return 1
 
         raise BackendCannotProceed("verified")
 
@@ -662,7 +664,7 @@ def test_raising_verified_after_failure_is_sound():
         @given(st.integers())
         @settings(backend="soundness_test", database=None)
         def f(n):
-            assert n != 0
+            assert n != 1
 
         with pytest.raises(AssertionError) as e:
             f()
@@ -687,21 +689,3 @@ def test_realize_without_for_failure():
 
         with pytest.raises(AssertionError):
             f()
-
-
-class ChoiceTemplateProvider(TrivialProvider):
-    def draw_choice_template(self, choice_template, choice_type, constraints):
-        assert choice_template.type == "simplest"
-        assert choice_type == "integer"
-        return 5
-
-
-def test_can_override_choice_template_draws():
-    with temp_register_backend("choice_template", ChoiceTemplateProvider):
-
-        @given(st.integers())
-        @settings(backend="choice_template", max_examples=1, database=None)
-        def f(x):
-            assert x == 5
-
-        f()

@@ -35,12 +35,9 @@ from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
-    ChoiceT,
-    ChoiceTemplate,
     ChoiceTypeT,
     FloatConstraints,
     choice_constraints_key,
-    choice_from_index,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.floats import lex_to_float
@@ -361,17 +358,6 @@ class PrimitiveProvider(abc.ABC):
         """
         assert lifetime in ("test_case", "test_function")
         yield from []
-
-    def draw_choice_template(
-        self,
-        choice_template: ChoiceTemplate,
-        choice_type: ChoiceTypeT,
-        constraints: ChoiceConstraintsT,
-        /,
-    ) -> ChoiceT:
-        if choice_template.type == "simplest":
-            return choice_from_index(0, choice_type, constraints)
-        raise NotImplementedError
 
     @abc.abstractmethod
     def draw_boolean(

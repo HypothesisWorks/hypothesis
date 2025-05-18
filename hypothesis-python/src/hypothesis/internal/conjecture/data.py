@@ -977,9 +977,7 @@ class ConjectureData:
                 if forced is not None:
                     choice = forced
                 try:
-                    choice = self.provider.draw_choice_template(
-                        node, choice_type, constraints
-                    )
+                    choice = choice_from_index(0, choice_type, constraints)
                 except ChoiceTooLarge:
                     self.mark_overrun()
             else:
