@@ -12,7 +12,7 @@ import datetime as dt
 import operator as op
 import zoneinfo
 from calendar import monthrange
-from functools import lru_cache, partial
+from functools import cache, partial
 from importlib import resources
 from pathlib import Path
 from typing import Optional
@@ -359,7 +359,7 @@ def timedeltas(
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _valid_key_cacheable(tzpath, key):
     assert isinstance(tzpath, tuple)  # zoneinfo changed, better update this function!
     for root in tzpath:

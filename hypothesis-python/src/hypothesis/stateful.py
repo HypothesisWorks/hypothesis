@@ -399,7 +399,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                     output_assignment = ", ".join(output_names) + " = "
             else:
                 output_assignment = self._last_names(1)[0] + " = "
-        args = ", ".join("%s=%s" % kv for kv in data.items())
+        args = ", ".join("{}={}".format(*kv) for kv in data.items())
         return f"{output_assignment}state.{rule.function.__name__}({args})"
 
     def _add_result_to_targets(self, targets, result):
@@ -623,8 +623,8 @@ def _convert_targets(targets, target):
     if target is not None:
         if targets:
             raise InvalidArgument(
-                "Passing both targets=%r and target=%r is redundant - pass "
-                "targets=%r instead." % (targets, target, (*targets, target))
+                f"Passing both targets={targets!r} and target={target!r} is "
+                f"redundant - pass targets={(*targets, target)!r} instead."
             )
         targets = (target,)
 

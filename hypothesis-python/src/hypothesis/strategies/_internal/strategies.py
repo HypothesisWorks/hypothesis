@@ -299,7 +299,7 @@ class SearchStrategy(Generic[Ex]):
                 "The `.example()` method is good for exploring strategies, but should "
                 "only be used interactively.  We recommend using `@given` for tests - "
                 "it performs better, saves and replays failures to avoid flakiness, "
-                "and reports minimal examples. (strategy: %r)" % (self,),
+                f"and reports minimal examples. (strategy: {self!r})",
                 NonInteractiveExampleWarning,
                 stacklevel=2,
             )
@@ -799,7 +799,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         return data.draw(strategy)
 
     def __repr__(self) -> str:
-        return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
+        return "one_of({})".format(", ".join(map(repr, self.original_strategies)))
 
     def do_validate(self) -> None:
         for e in self.element_strategies:
@@ -1171,6 +1171,6 @@ def check_strategy(arg: object, name: str = "") -> None:
         if name:
             name += "="
         raise InvalidArgument(
-            "Expected a SearchStrategy%s but got %s%r (type=%s)"
-            % (hint, name, arg, type(arg).__name__)
+            f"Expected a SearchStrategy{hint} but got {name}{arg!r} "
+            f"(type={type(arg).__name__})"
         )

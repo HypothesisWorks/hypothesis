@@ -11,7 +11,7 @@
 import copy
 import re
 import warnings
-from functools import lru_cache, partial
+from functools import cache, lru_cache, partial
 from typing import Optional
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
@@ -32,7 +32,7 @@ from hypothesis.vendor.pretty import pretty
 
 
 # Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
-@lru_cache(maxsize=None)
+@cache
 def _check_is_single_character(c):
     # In order to mitigate the performance cost of this check, we use a shared cache,
     # even at the cost of showing the culprit strategy in the error message.

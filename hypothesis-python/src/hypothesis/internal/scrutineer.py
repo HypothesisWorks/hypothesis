@@ -35,7 +35,7 @@ Branch: "TypeAlias" = tuple[Optional[Location], Location]
 Trace: "TypeAlias" = set[Branch]
 
 
-@lru_cache(maxsize=None)
+@functools.cache
 def should_trace_file(fname: str) -> bool:
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.

@@ -11,7 +11,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from random import Random
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 
@@ -58,7 +58,7 @@ class Chooser:
     ):
         self.__selection_order = selection_order
         self.__node_trail = [tree.root]
-        self.__choices: "List[int]" = []
+        self.__choices: list[int] = []
         self.__finished = False
 
     def choose(
@@ -146,8 +146,8 @@ class ChoiceTree:
 class TreeNode:
     def __init__(self) -> None:
         self.children: dict[int, TreeNode] = defaultdict(TreeNode)
-        self.live_child_count: "Optional[int]" = None
-        self.n: "Optional[int]" = None
+        self.live_child_count: Optional[int] = None
+        self.n: Optional[int] = None
 
     @property
     def exhausted(self) -> bool:

@@ -27,9 +27,7 @@ class Project:
         self.end = end
 
     def __repr__(self):
-        return "Project {} from {} to {}".format(
-            self.name, self.start.isoformat(), self.end.isoformat()
-        )
+        return f"Project {self.name} from {self.start.isoformat()} to {self.end.isoformat()}"
 ```
 
 A project has a name, a start date, and an end date.
@@ -366,5 +364,3 @@ a flavour of the sort of things to try and the sort of things that are possible.
 It's worth having a read of [the documentation](https://hypothesis.readthedocs.io/en/latest/data.html)
 for this, and if you're still stuck then try asking [the community](https://hypothesis.readthedocs.io/en/latest/community.html)
 for some help. We're pretty friendly.
-
-

@@ -531,9 +531,9 @@ class Target:
         ((), {}, set("ab")),
         ((1,), {}, set("b")),
         ((1, 2), {}, set()),
-        ((), dict(a=1), set("b")),
-        ((), dict(b=2), set("a")),
-        ((), dict(a=1, b=2), set()),
+        ((), {"a": 1}, set("b")),
+        ((), {"b": 2}, set("a")),
+        ((), {"a": 1, "b": 2}, set()),
     ],
 )
 def test_required_args(target, args, kwargs, expected):

@@ -127,15 +127,15 @@ def integers(
     if min_value is not None:
         if min_value != int(min_value):
             raise InvalidArgument(
-                "min_value=%r of type %r cannot be exactly represented as an integer."
-                % (min_value, type(min_value))
+                f"min_value={min_value!r} of type {type(min_value)!r} "
+                "cannot be exactly represented as an integer."
             )
         min_value = int(min_value)
     if max_value is not None:
         if max_value != int(max_value):
             raise InvalidArgument(
-                "max_value=%r of type %r cannot be exactly represented as an integer."
-                % (max_value, type(max_value))
+                f"max_value={max_value!r} of type {type(max_value)!r} "
+                "cannot be exactly represented as an integer."
             )
         max_value = int(max_value)
 
@@ -422,8 +422,8 @@ def floats(
         # This is a custom alternative to check_valid_interval, because we want
         # to include the bit-width and exclusion information in the message.
         msg = (
-            "There are no %s-bit floating-point values between min_value=%r "
-            "and max_value=%r" % (width, min_arg, max_arg)
+            f"There are no {width}-bit floating-point values between "
+            f"min_value={min_arg!r} and max_value={max_arg!r}"
         )
         if exclude_min or exclude_max:
             msg += f", {exclude_min=} and {exclude_max=}"

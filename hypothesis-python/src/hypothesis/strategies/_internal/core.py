@@ -549,8 +549,9 @@ def fixed_dictionaries(
             check_strategy(v, f"optional[{k!r}]")
         if type(mapping) != type(optional):
             raise InvalidArgument(
-                "Got arguments of different types: mapping=%s, optional=%s"
-                % (nicerepr(type(mapping)), nicerepr(type(optional)))
+                f"Got arguments of different types: "
+                f"mapping={nicerepr(type(mapping))}, "
+                f"optional={nicerepr(type(optional))}"
             )
         if set(mapping) & set(optional):
             raise InvalidArgument(

@@ -248,8 +248,8 @@ class ArrayStrategy(st.SearchStrategy):
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                "Internal error when checking element=%r of %r to array of %r"
-                % (val, val.dtype, result.dtype)
+                f"Internal error when checking element={val!r} of {val.dtype!r} "
+                f"to array of {result.dtype!r}"
             ) from err
         if elem_changed:
             strategy = self.fill if fill else self.element_strategy
@@ -272,11 +272,11 @@ class ArrayStrategy(st.SearchStrategy):
                         "allow_subnormal=False."
                     )
             raise InvalidArgument(
-                "Generated array element %r from %r cannot be represented as "
-                "dtype %r - instead it becomes %r (type %r).  Consider using a more "
-                "precise strategy, for example passing the `width` argument to "
-                "`floats()`."
-                % (val, strategy, self.dtype, result[idx], type(result[idx]))
+                f"Generated array element {val!r} from {strategy!r} cannot be "
+                f"represented as dtype {self.dtype!r} - instead it becomes "
+                f"{result[idx]!r} (type {type(result[idx])!r}).  Consider using "
+                "a more precise strategy, for example passing the `width` argument "
+                "to `floats()`."
             )
 
     def do_draw(self, data):
@@ -388,10 +388,10 @@ class ArrayStrategy(st.SearchStrategy):
             mismatch = out != result
             if mismatch.any():
                 raise InvalidArgument(
-                    "Array elements %r cannot be represented as dtype %r - instead "
-                    "they become %r.  Use a more precise strategy, e.g. without "
+                    f"Array elements {result[mismatch]!r} cannot be represented "
+                    f"as dtype {self.dtype!r} - instead they become "
+                    f"{out[mismatch]!r}.  Use a more precise strategy, e.g. without "
                     "trailing null bytes, as this will be an error future versions."
-                    % (result[mismatch], self.dtype, out[mismatch])
                 )
             result = out
 
