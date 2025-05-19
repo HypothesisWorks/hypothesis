@@ -206,8 +206,8 @@ class DeadlineExceeded(_Trimmable):
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
-            "Test took %.2fms, which exceeds the deadline of %.2fms"
-            % (runtime.total_seconds() * 1000, deadline.total_seconds() * 1000)
+            f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
+            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms"
         )
         self.runtime = runtime
         self.deadline = deadline

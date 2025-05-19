@@ -1034,24 +1034,24 @@ def make_strategies_namespace(
                 f_args += f", api_version='{self.api_version}'"
             return f"make_strategies_namespace({f_args})"
 
-    kwargs = dict(
-        name=xp.__name__,
-        api_version=api_version,
-        from_dtype=from_dtype,
-        arrays=arrays,
-        array_shapes=array_shapes,
-        scalar_dtypes=scalar_dtypes,
-        boolean_dtypes=boolean_dtypes,
-        real_dtypes=real_dtypes,
-        numeric_dtypes=numeric_dtypes,
-        integer_dtypes=integer_dtypes,
-        unsigned_integer_dtypes=unsigned_integer_dtypes,
-        floating_dtypes=floating_dtypes,
-        valid_tuple_axes=valid_tuple_axes,
-        broadcastable_shapes=broadcastable_shapes,
-        mutually_broadcastable_shapes=mutually_broadcastable_shapes,
-        indices=indices,
-    )
+    kwargs = {
+        "name": xp.__name__,
+        "api_version": api_version,
+        "from_dtype": from_dtype,
+        "arrays": arrays,
+        "array_shapes": array_shapes,
+        "scalar_dtypes": scalar_dtypes,
+        "boolean_dtypes": boolean_dtypes,
+        "real_dtypes": real_dtypes,
+        "numeric_dtypes": numeric_dtypes,
+        "integer_dtypes": integer_dtypes,
+        "unsigned_integer_dtypes": unsigned_integer_dtypes,
+        "floating_dtypes": floating_dtypes,
+        "valid_tuple_axes": valid_tuple_axes,
+        "broadcastable_shapes": broadcastable_shapes,
+        "mutually_broadcastable_shapes": mutually_broadcastable_shapes,
+        "indices": indices,
+    }
 
     if api_version > "2021.12":
 

@@ -65,8 +65,8 @@ def minimal(definition, condition=lambda x: True, settings=None):
     except Found:
         return result
     raise Unsatisfiable(
-        "Could not find any examples from %r that satisfied %s"
-        % (definition, get_pretty_function_description(condition))
+        f"Could not find any examples from {definition!r} that satisfied "
+        f"{get_pretty_function_description(condition)}"
     )
 
 

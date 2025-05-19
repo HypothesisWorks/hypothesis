@@ -130,8 +130,8 @@ def elements_and_dtype(elements, dtype, source=None):
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
                 raise InvalidArgument(
-                    "Cannot convert %s=%r of type %s to dtype %s"
-                    % (name, value, type(value).__name__, dtype.str)
+                    f"Cannot convert {name}={value!r} of type "
+                    f"{type(value).__name__} to dtype {dtype.str}"
                 ) from None
 
         elements = elements.map(convert_element)
@@ -719,8 +719,8 @@ def data_frames(
                         for k in row:
                             if k not in column_names:
                                 raise InvalidArgument(
-                                    "Row %r contains column %r not in columns %r)"
-                                    % (row, k, [c.name for c in rewritten_columns])
+                                    f"Row {row!r} contains column {k!r} not in "
+                                    f"columns {[c.name for c in rewritten_columns]!r})"
                                 )
                         row = as_list
                     if any_unique:

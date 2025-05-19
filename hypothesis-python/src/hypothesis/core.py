@@ -1040,16 +1040,13 @@ class StateForActualGivenExecution:
             ):
                 report(
                     "Unreliable test timings! On an initial run, this "
-                    "test took %.2fms, which exceeded the deadline of "
-                    "%.2fms, but on a subsequent run it took %.2f ms, "
+                    f"test took {exception.runtime.total_seconds() * 1000:.2f}ms, "
+                    "which exceeded the deadline of "
+                    f"{self.settings.deadline.total_seconds() * 1000:.2f}ms, but "
+                    f"on a subsequent run it took {runtime_secs * 1000:.2f} ms, "
                     "which did not. If you expect this sort of "
                     "variability in your test timings, consider turning "
                     "deadlines off for this test by setting deadline=None."
-                    % (
-                        exception.runtime.total_seconds() * 1000,
-                        self.settings.deadline.total_seconds() * 1000,
-                        runtime_secs * 1000,
-                    )
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
@@ -1741,10 +1738,9 @@ def given(
                 if expected_version != __version__:
                     raise InvalidArgument(
                         "Attempting to reproduce a failure from a different "
-                        "version of Hypothesis. This failure is from %s, but "
-                        "you are currently running %r. Please change your "
+                        f"version of Hypothesis. This failure is from {expected_version}, but "
+                        f"you are currently running {__version__!r}. Please change your "
                         "Hypothesis version to a matching one."
-                        % (expected_version, __version__)
                     )
                 try:
                     state.execute_once(

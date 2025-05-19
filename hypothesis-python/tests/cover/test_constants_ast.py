@@ -28,10 +28,9 @@ from hypothesis.internal.constants_ast import (
 
 from tests.common.utils import skipif_emscripten
 
-# constants_from_ast skips small integers
 constant_ints = st.integers(max_value=-101) | st.integers(min_value=101)
 constant_floats = st.floats(allow_nan=False, allow_infinity=False)
-constant_bytes = st.binary(min_size=1)
+constant_bytes = st.binary(min_size=1, max_size=50)
 constant_strings = st.text(min_size=1, max_size=10).filter(lambda s: not s.isspace())
 constants = constant_ints | constant_floats | constant_bytes | constant_strings
 

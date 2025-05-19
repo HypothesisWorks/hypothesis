@@ -14,8 +14,6 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import ExceptionGroup
 
-from tests.common.utils import Why, xfail_on_crosshair
-
 
 def test_does_not_shrink_on_replay():
     database = InMemoryExampleDatabase()
@@ -88,7 +86,6 @@ def test_does_not_shrink_on_replay_with_multiple_bugs():
     assert call_count == 4
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_will_always_shrink_if_previous_example_does_not_replay():
     database = InMemoryExampleDatabase()
 

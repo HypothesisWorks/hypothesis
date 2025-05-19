@@ -189,7 +189,7 @@ def urls() -> st.SearchStrategy[str]:
     """
 
     def url_encode(s: str) -> str:
-        return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
+        return "".join(c if c in URL_SAFE_CHARACTERS else f"%{ord(c):02X}" for c in s)
 
     schemes = st.sampled_from(["http", "https"])
     ports = st.integers(min_value=1, max_value=2**16 - 1).map(":{}".format)

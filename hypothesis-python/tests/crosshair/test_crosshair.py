@@ -101,15 +101,22 @@ def test_no_path_constraints_are_added_to_symbolic_values(strategy, expected_cho
     # add path constraints).
 
     expected_choices = expected_choices()
+    # skip the first call, which is ChoiceTemplate(type="simplest") with the
+    # hypothesis backend.
+    called = False
 
     # limit to one example to prevent crosshair from raising e.g.
     # BackendCannotProceed(scope="verified") and switching to the hypothesis
     # provider
     @given(strategy)
     @settings(
-        backend="crosshair", database=None, phases={Phase.generate}, max_examples=1
+        backend="crosshair", database=None, phases={Phase.generate}, max_examples=2
     )
     def f(value):
+        nonlocal called
+        if not called:
+            called = True
+            return
         # if this test ever fails, we will replay it without crosshair, in which
         # case the statespace is None.
         statespace = crosshair.statespace.optional_context_statespace()
@@ -132,30 +139,48 @@ def test_no_path_constraints_are_added_to_symbolic_values(strategy, expected_cho
 )
 def test_observability_and_verbosity_dont_add_choices(strategy, extra_observability):
     choices = {}
+    # skip the first call, which is ChoiceTemplate(type="simplest") with the
+    # hypothesis backend.
+    called = False
 
     @given(strategy)
-    @settings(backend="crosshair", database=None, max_examples=1)
+    @settings(backend="crosshair", database=None, max_examples=2)
     def f_normal(value):
-        choices["normal"] = len(crosshair.statespace.context_statespace().choices_made)
+        nonlocal called
+        if called:
+            choices["normal"] = len(
+                crosshair.statespace.context_statespace().choices_made
+            )
+        called = True
 
-    @given(strategy)
-    @settings(backend="crosshair", database=None, max_examples=1)
-    def f_observability(value):
-        choices["observability"] = len(
-            crosshair.statespace.context_statespace().choices_made
-        )
+    f_normal()
+    called = False
 
     @given(strategy)
     @settings(
-        backend="crosshair", database=None, max_examples=1, verbosity=Verbosity.debug
+        backend="crosshair", database=None, max_examples=2, verbosity=Verbosity.debug
     )
     def f_verbosity(value):
-        choices["verbosity"] = len(
-            crosshair.statespace.context_statespace().choices_made
-        )
+        nonlocal called
+        if called:
+            choices["verbosity"] = len(
+                crosshair.statespace.context_statespace().choices_made
+            )
+        called = True
 
-    f_normal()
     f_verbosity()
+    called = False
+
+    @given(strategy)
+    @settings(backend="crosshair", database=None, max_examples=2)
+    def f_observability(value):
+        nonlocal called
+        if called:
+            choices["observability"] = len(
+                crosshair.statespace.context_statespace().choices_made
+            )
+        called = True
+
     with capture_observations():
         f_observability()
 

@@ -421,7 +421,9 @@ def test_realize():
 
         test_function()
 
-        assert all(n == 42 for n in values)
+        # first draw is 0 from ChoiceTemplate(type="simplest")
+        assert values[0] == 0
+        assert all(n == 42 for n in values[1:])
 
 
 def test_realize_dependent_draw():
@@ -485,7 +487,7 @@ class ObservableProvider(TrivialProvider):
 def test_custom_observations_from_backend():
     with temp_register_backend("observable", ObservableProvider):
 
-        @given(st.none())
+        @given(st.booleans())
         @settings(backend="observable", database=None)
         def test_function(_):
             pass
@@ -511,7 +513,7 @@ def test_custom_observations_from_backend():
 class FallibleProvider(TrivialProvider):
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)
-        self._it = itertools.cycle([1, 1, 1, "discard_test_case", "other"])
+        self._it = itertools.cycle([1, 1, "discard_test_case", "other"])
 
     def draw_integer(self, *args, **constraints):
         x = next(self._it)
@@ -564,7 +566,7 @@ class ExhaustibleProvider(TrivialProvider):
             # This is complete nonsense of course, so we'll see Hypothesis complain
             # that we found a problem after the backend reported verification.
             raise BackendCannotProceed(self.scope)
-        return 1
+        return self._calls
 
 
 class UnsoundVerifierProvider(ExhaustibleProvider):
@@ -579,7 +581,7 @@ def test_notes_incorrect_verification(provider):
         @given(st.integers())
         @settings(backend="p", database=None, max_examples=100)
         def test_function(x):
-            assert x == 1  # True from this backend, false in general!
+            assert x >= 0  # True from this backend, false in general!
 
         with pytest.raises(AssertionError) as ctx:
             test_function()
@@ -644,12 +646,12 @@ def test_saves_on_fatal_error_with_backend():
 class SoundnessTestProvider(TrivialProvider):
     def __init__(self, conjecturedata):
         super().__init__(conjecturedata)
-        self.calls = 0
+        self.n = 0
 
     def draw_integer(self, **constraints):
-        self.calls += 1
-        if self.calls == 1:
-            return 0
+        self.n += 1
+        if self.n == 1:
+            return 1
 
         raise BackendCannotProceed("verified")
 
@@ -662,7 +664,7 @@ def test_raising_verified_after_failure_is_sound():
         @given(st.integers())
         @settings(backend="soundness_test", database=None)
         def f(n):
-            assert n != 0
+            assert n != 1
 
         with pytest.raises(AssertionError) as e:
             f()
