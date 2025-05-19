@@ -78,8 +78,8 @@ def _test_matching_pattern(pattern, *, isvalidchar, is_unicode=False):
             assert r.search(c), msg % (pattern, c, c, unicodedata.category(c))
         else:
             assert not r.search(c), (
-                f'"{pattern}" supposed not to match "{c}" ({c!r}, category '
-                f'{unicodedata.category(c)}"), but it does'
+                f'"{pattern}" supposed not to match {c!r} (category '
+                f"{unicodedata.category(c)!r}), but it does"
             )
 
 

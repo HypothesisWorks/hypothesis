@@ -412,7 +412,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                         )
             else:
                 output_assignment = " = ".join(last_names) + " = "
-        args = ", ".join("{}={}".format(*kv) for kv in data.items())
+        args = ", ".join(f"{k}={v}" for k, v in data.items())
         output_line = f"{output_assignment}state.{rule.function.__name__}({args})"
         return "\n".join([output_line] + extra_assignment_lines)
 
