@@ -15,6 +15,7 @@ import datetime
 import inspect
 import io
 import math
+import os
 import sys
 import time
 import traceback
@@ -24,6 +25,7 @@ import warnings
 import zlib
 from collections import defaultdict
 from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from inspect import Parameter
 from random import Random
@@ -867,13 +869,72 @@ class StateForActualGivenExecution:
 
     def execute_once(
         self,
-        data,
+        data: ConjectureData,
         *,
-        print_example=False,
-        is_final=False,
-        expected_failure=None,
-        example_kwargs=None,
-    ):
+        print_example: bool = False,
+        is_final: bool = False,
+        expected_failure: Optional[tuple[BaseException, str]] = None,
+        example_kwargs: Optional[dict[str, Any]] = None,
+    ) -> Any:
+        if (
+            free_threading_count_str := os.environ.get(
+                "HYPOTHESIS_FREE_THREADING_COUNT"
+            )
+        ) is not None:
+            free_threading_count = int(free_threading_count_str)
+            pool = ThreadPoolExecutor()
+            # we must execute and return the passed `data`, without making a copy,
+            # because callers assume the passed data gets mutated accordingly
+            # in execute_once.
+            future = pool.submit(
+                self._execute_once,
+                data,
+                print_example=print_example,
+                is_final=is_final,
+                expected_failure=expected_failure,
+                example_kwargs=example_kwargs,
+            )
+            for _ in range(free_threading_count - 1):
+                data_copy = ConjectureData(
+                    random=data._random,
+                    # don't write back to the datatree; not threadsafe
+                    observer=None,
+                    provider=data.provider,
+                    prefix=data.prefix,
+                    max_choices=data.max_choices,
+                    # TODO store data.provider_kw so we can retrieve it here?
+                    # (or, more likely, don't support alternative backends on
+                    # free-threading)
+                    provider_kw=None,
+                )
+                pool.submit(
+                    self._execute_once,
+                    data_copy,
+                    print_example=print_example,
+                    is_final=is_final,
+                    expected_failure=expected_failure,
+                    example_kwargs=example_kwargs,
+                )
+            pool.shutdown()
+            return future.result()
+        else:
+            return self._execute_once(
+                data,
+                print_example=print_example,
+                is_final=is_final,
+                expected_failure=expected_failure,
+                example_kwargs=example_kwargs,
+            )
+
+    def _execute_once(
+        self,
+        data: ConjectureData,
+        *,
+        print_example: bool = False,
+        is_final: bool = False,
+        expected_failure: Optional[tuple[BaseException, str]] = None,
+        example_kwargs: Optional[dict[str, Any]] = None,
+    ) -> Any:
         """Run the test function once, using ``data`` as input.
 
         If the test raises an exception, it will propagate through to the
