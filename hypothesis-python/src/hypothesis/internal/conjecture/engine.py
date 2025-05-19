@@ -1482,16 +1482,14 @@ class ConjectureRunner:
                     choices_to_bytes(v.choices)
                     for v in self.interesting_examples.values()
                 }
-                cap = max(map(shortlex, primary))
-
-                if shortlex(c) > cap:
+                if shortlex(c) > max(map(shortlex, primary)):
                     break
-                else:
-                    self.cached_test_function(choices)
-                    # We unconditionally remove c from the secondary key as it
-                    # is either now primary or worse than our primary example
-                    # of this reason for interestingness.
-                    self.settings.database.delete(self.secondary_key, c)
+
+                self.cached_test_function(choices)
+                # We unconditionally remove c from the secondary key as it
+                # is either now primary or worse than our primary example
+                # of this reason for interestingness.
+                self.settings.database.delete(self.secondary_key, c)
 
     def shrink(
         self,
