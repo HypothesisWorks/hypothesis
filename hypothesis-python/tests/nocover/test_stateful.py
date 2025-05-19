@@ -206,8 +206,11 @@ with_cheap_bad_machines = pytest.mark.parametrize(
     "machine", bad_machines, ids=[t.__name__ for t in bad_machines]
 )
 def test_bad_machines_fail(machine):
-    if machine is CanSwarm and Settings._current_profile == "crosshair":
-        # and also takes 10 minutes, on top of not finding the failure
+    if (
+        machine in [CanSwarm, RoseTreeStateMachine]
+        and Settings._current_profile == "crosshair"
+    ):
+        # and also takes 10/6 minutes respectively, on top of not finding the failure
         pytest.xfail(reason=str(Why.undiscovered))
 
     test_class = machine.TestCase

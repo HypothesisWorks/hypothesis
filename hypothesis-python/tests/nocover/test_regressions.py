@@ -17,7 +17,6 @@ from hypothesis.errors import HypothesisDeprecationWarning
 from tests.common.utils import Why, xfail_on_crosshair
 
 
-@xfail_on_crosshair(Why.other)
 def test_note_deprecation_blames_right_code_issue_652():
     msg = "this is an arbitrary deprecation warning message"
 

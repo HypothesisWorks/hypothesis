@@ -513,7 +513,7 @@ def test_custom_observations_from_backend():
 class FallibleProvider(TrivialProvider):
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)
-        self._it = itertools.cycle([1, 1, 1, "discard_test_case", "other"])
+        self._it = itertools.cycle([1, 1, "discard_test_case", "other"])
 
     def draw_integer(self, *args, **constraints):
         x = next(self._it)

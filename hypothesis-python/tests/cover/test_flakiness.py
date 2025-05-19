@@ -27,7 +27,6 @@ class Nope(Exception):
     pass
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_fails_only_once_is_flaky():
     first_call = True
 
@@ -45,7 +44,6 @@ def test_fails_only_once_is_flaky():
     assert isinstance(exceptions[0], Nope)
 
 
-@xfail_on_crosshair(Why.other)
 def test_fails_differently_is_flaky():
     call_count = 0
 
@@ -95,7 +93,6 @@ def rude_fn(x):
     assert list(map(type, exceptions[0].exceptions)) == [Nope]
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 

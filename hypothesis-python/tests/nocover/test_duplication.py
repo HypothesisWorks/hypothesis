@@ -26,6 +26,7 @@ class Blocks(SearchStrategy):
         return data.draw_bytes(self.n, self.n)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 @pytest.mark.parametrize("n", range(1, 5))
 def test_does_not_duplicate_blocks(n):
     counts = Counter()

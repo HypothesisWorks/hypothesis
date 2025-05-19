@@ -16,7 +16,7 @@ from hypothesis import Verbosity, assume, core, given, settings, strategies as s
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
 
-from tests.common.utils import Why, all_values, capture_out, xfail_on_crosshair
+from tests.common.utils import all_values, capture_out
 
 
 @pytest.mark.parametrize("in_pytest", [False, True])
@@ -80,7 +80,6 @@ def test_uses_global_force(monkeypatch):
     assert "@seed" not in output[0]
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_does_print_on_reuse_from_database():
     passes_healthcheck = False
 
