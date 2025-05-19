@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.19:
+
+---------------------
+6.131.19 - 2025-05-19
+---------------------
+
+Cap the length of bytestrings collected as part of the constants-collection feature introduced in :ref:`version 6.131.1 <v6.131.1>`, as long bytestrings are unlikely to be useful.
+
 .. _v6.131.18:
 
 ---------------------
