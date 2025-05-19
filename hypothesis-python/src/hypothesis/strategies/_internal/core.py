@@ -143,7 +143,7 @@ from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
+    from types import EllipsisType
 elif typing.TYPE_CHECKING:  # pragma: no cover
     from builtins import ellipsis as EllipsisType
 
