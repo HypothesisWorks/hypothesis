@@ -488,12 +488,11 @@ class ConjectureRunner:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
 
-        self.call_count += 1
-
         interrupted = False
         try:
             self.__stoppable_test_function(data)
         except KeyboardInterrupt:
+            self.call_count += 1
             interrupted = True
             raise
         except BackendCannotProceed as exc:
@@ -508,12 +507,24 @@ class ConjectureRunner:
                     and (self.__failed_realize_count / self.call_count) > 0.2
                 ):
                     self._switch_to_hypothesis_provider = True
+
+            assert data.status is Status.VALID
+            # we do not count BackendCannotProceed which did not make any choices
+            # against call_count.
+            # (if it did make choices, then it might have executed the test
+            # function, so we count it. The important invariant is
+            # self.call_count == "number of times test_* was called").
+            if data.length > 0:
+                self.valid_examples += 1
+                self.call_count += 1
+
             # skip the post-test-case tracking; we're pretending this never happened
             interrupted = True
             data.cannot_proceed_scope = exc.scope
             data.freeze()
             return
         except BaseException:
+            self.call_count += 1
             data.freeze()
             if self.settings.backend != "hypothesis":
                 realize_choices(data, for_failure=True)
@@ -542,6 +553,7 @@ class ConjectureRunner:
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
                     self.misaligned_count += 1
 
+        self.call_count += 1
         self.debug_data(data)
 
         if (
