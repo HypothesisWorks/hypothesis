@@ -23,7 +23,10 @@ from tests.common.utils import skipif_emscripten
 def coro_decorator(f):
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=DeprecationWarning)
-        return asyncio.coroutine(f)
+        try:
+            return asyncio.coroutine(f)
+        except AttributeError:
+            pytest.skip("needs fixing for asyncio version", allow_module_level=True)
 
 
 class TestAsyncio(TestCase):
