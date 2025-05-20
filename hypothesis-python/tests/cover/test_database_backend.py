@@ -11,7 +11,6 @@
 import os
 import re
 import shutil
-import sys
 import tempfile
 import zipfile
 from collections import Counter
@@ -62,12 +61,6 @@ from hypothesis.utils.conventions import not_set
 
 from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
 from tests.conjecture.common import nodes, nodes_inline
-
-if sys.platform == "emscripten":
-    # possibly FIXME?
-    pytest.skip(
-        "unsupported threads created during collection", allow_module_level=True
-    )
 
 
 @given(lists(tuples(binary(), binary())))
