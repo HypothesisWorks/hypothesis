@@ -16,12 +16,11 @@ import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
 from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, cast
-
-import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -91,13 +90,13 @@ def shortlex(s):
     return (len(s), s)
 
 
-@attr.s
+@dataclass
 class HealthCheckState:
-    valid_examples: int = attr.ib(default=0)
-    invalid_examples: int = attr.ib(default=0)
-    overrun_examples: int = attr.ib(default=0)
-    draw_times: "defaultdict[str, List[float]]" = attr.ib(
-        factory=lambda: defaultdict(list)
+    valid_examples: int = field(default=0)
+    invalid_examples: int = field(default=0)
+    overrun_examples: int = field(default=0)
+    draw_times: "defaultdict[str, List[float]]" = field(
+        default_factory=lambda: defaultdict(list)
     )
 
     @property
@@ -490,8 +489,8 @@ class ConjectureRunner:
             self.__pending_call_explanation = None
 
         self.call_count += 1
-
         interrupted = False
+
         try:
             self.__stoppable_test_function(data)
         except KeyboardInterrupt:
@@ -509,6 +508,13 @@ class ConjectureRunner:
                     and (self.__failed_realize_count / self.call_count) > 0.2
                 ):
                     self._switch_to_hypothesis_provider = True
+
+            # treat all BackendCannotProceed exceptions as invalid. This isn't
+            # great; "verified" should really be counted as self.valid_examples += 1.
+            # But we check self.valid_examples == 0 to determine whether to raise
+            # Unsatisfiable, and that would throw this check off.
+            self.invalid_examples += 1
+
             # skip the post-test-case tracking; we're pretending this never happened
             interrupted = True
             data.cannot_proceed_scope = exc.scope
@@ -1485,16 +1491,14 @@ class ConjectureRunner:
                     choices_to_bytes(v.choices)
                     for v in self.interesting_examples.values()
                 }
-                cap = max(map(shortlex, primary))
-
-                if shortlex(c) > cap:
+                if shortlex(c) > max(map(shortlex, primary)):
                     break
-                else:
-                    self.cached_test_function(choices)
-                    # We unconditionally remove c from the secondary key as it
-                    # is either now primary or worse than our primary example
-                    # of this reason for interestingness.
-                    self.settings.database.delete(self.secondary_key, c)
+
+                self.cached_test_function(choices)
+                # We unconditionally remove c from the secondary key as it
+                # is either now primary or worse than our primary example
+                # of this reason for interestingness.
+                self.settings.database.delete(self.secondary_key, c)
 
     def shrink(
         self,

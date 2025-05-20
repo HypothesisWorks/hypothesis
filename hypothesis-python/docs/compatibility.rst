@@ -127,7 +127,7 @@ As discussed in :issue:`2719`, Hypothesis is not truly thread-safe and that's un
 
 **Running separate tests in multiple threads** is not something we design or test for, and is not formally supported.  That said, anecdotally it does mostly work and we would like it to keep working - we accept reasonable patches and low-priority bug reports.  The main risks here are global state, shared caches, and cached strategies.
 
-**Running the same test in multiple threads** , or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
+**Running the same test in multiple threads**, or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
 
 Hypothesis assumes that tests are single-threaded, or do a sufficiently-good job of pretending to be single-threaded.  Tests that use helper threads internally should be OK, but the user must be careful to ensure that test outcomes are still deterministic. In particular it counts as nondeterministic if helper-thread timing changes the sequence of dynamic draws using e.g. the |st.data| strategy.
 

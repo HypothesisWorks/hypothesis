@@ -137,7 +137,7 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 
 # This cache can be quite hot and so we prefer LRUCache over LRUReusedCache for
 # performance. We lose scan resistance, but that's probably fine here.
-POOLED_CONSTRAINTS_CACHE = LRUCache(4096)
+POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCache(4096)
 
 
 class Span:

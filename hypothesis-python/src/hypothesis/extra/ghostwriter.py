@@ -123,7 +123,7 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
 
 if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
+    from types import EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
 else:

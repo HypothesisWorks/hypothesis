@@ -67,7 +67,11 @@ def codespell(*files):
         "codespell",
         "--check-hidden",
         "--check-filenames",
-        "--ignore-words=./tooling/ignore-list.txt",
+        "--ignore-words=./tooling/codespell-ignore.txt",
+        # passing a custom --dictionary disables the default dictionary by default.
+        # Add it back in with --dictionary=-.
+        "--dictionary=-",
+        "--dictionary=./tooling/codespell-dict.txt",
         "--skip=__pycache__,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
         *files,
     )

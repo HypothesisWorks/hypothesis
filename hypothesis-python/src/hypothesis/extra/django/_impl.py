@@ -24,7 +24,7 @@ from hypothesis.extra.django._fields import from_field
 from hypothesis.strategies._internal.utils import defines_strategy
 
 if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
+    from types import EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
 else:

@@ -11,7 +11,8 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Literal, Optional, Union, cast
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 import attr
 
@@ -88,7 +89,7 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
 SHRINK_PASS_DEFINITIONS: dict[str, "ShrinkPassDefinition"] = {}
 
 
-@attr.s()
+@dataclass
 class ShrinkPassDefinition:
     """A shrink pass bundles together a large number of local changes to
     the current shrink target.
@@ -104,13 +105,13 @@ class ShrinkPassDefinition:
     changes.
     """
 
-    run_with_chooser = attr.ib()
+    run_with_chooser: Any
 
     @property
     def name(self) -> str:
         return self.run_with_chooser.__name__
 
-    def __attrs_post_init__(self) -> None:
+    def __post_init__(self) -> None:
         assert self.name not in SHRINK_PASS_DEFINITIONS, self.name
         SHRINK_PASS_DEFINITIONS[self.name] = self
 
@@ -1075,7 +1076,7 @@ class Shrinker:
         to shrink_target).
 
         In current usage it is expected that each of the nodes currently have
-        the same value and ir type, although this is not essential. Note that
+        the same value and choice_type, although this is not essential. Note that
         n must be < the node at min(nodes) or this is not a valid shrink.
 
         This method will attempt to do some small amount of work to delete data

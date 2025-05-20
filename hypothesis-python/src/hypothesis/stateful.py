@@ -16,16 +16,16 @@ Notably, the set of steps available at any point may depend on the
 execution to date.
 """
 import collections
+import dataclasses
 import inspect
 from collections.abc import Iterable, Sequence
 from copy import copy
+from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
 from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
 from unittest import TestCase
-
-import attr
 
 from hypothesis import strategies as st
 from hypothesis._settings import (
@@ -483,15 +483,15 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
-@attr.s(repr=False)
+@dataclass
 class Rule:
-    targets = attr.ib()
-    function = attr.ib(repr=get_pretty_function_description)
-    arguments = attr.ib()
-    preconditions = attr.ib()
-    bundles = attr.ib(init=False)
+    targets: Any
+    function: Any
+    arguments: Any
+    preconditions: Any
+    bundles: tuple["Bundle", ...] = field(init=False)
 
-    def __attrs_post_init__(self):
+    def __post_init__(self):
         self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
@@ -505,7 +505,7 @@ class Rule:
 
     def __repr__(self) -> str:
         rep = get_pretty_function_description
-        bits = [f"{k}={rep(v)}" for k, v in attr.asdict(self).items() if v]
+        bits = [f"{k}={rep(v)}" for k, v in dataclasses.asdict(self).items() if v]
         return f"{self.__class__.__name__}({', '.join(bits)})"
 
 
@@ -616,9 +616,9 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     return BundleConsumer(bundle)
 
 
-@attr.s()
+@dataclass
 class MultipleResults(Iterable[Ex]):
-    values = attr.ib()
+    values: tuple[Ex, ...]
 
     def __iter__(self):
         return iter(self.values)
@@ -872,9 +872,9 @@ def initialize(
     return accept
 
 
-@attr.s()
+@dataclass
 class VarReference:
-    name = attr.ib()
+    name: str
 
 
 # There are multiple alternatives for annotating the `precond` type, all of them
@@ -917,11 +917,13 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
         invariant = getattr(f, INVARIANT_MARKER, None)
         if rule is not None:
             assert invariant is None
-            new_rule = attr.evolve(rule, preconditions=(*rule.preconditions, precond))
+            new_rule = dataclasses.replace(
+                rule, preconditions=(*rule.preconditions, precond)
+            )
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
         elif invariant is not None:
             assert rule is None
-            new_invariant = attr.evolve(
+            new_invariant = dataclasses.replace(
                 invariant, preconditions=(*invariant.preconditions, precond)
             )
             setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
@@ -937,11 +939,19 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
     return decorator
 
 
-@attr.s()
+@dataclass
 class Invariant:
-    function = attr.ib(repr=get_pretty_function_description)
-    preconditions = attr.ib()
-    check_during_init = attr.ib()
+    function: Any
+    preconditions: Any
+    check_during_init: bool
+
+    def __repr__(self) -> str:
+        parts = [
+            f"function={get_pretty_function_description(self.function)}",
+            f"{self.preconditions=}",
+            f"{self.check_during_init=}",
+        ]
+        return f"Invariant({', '.join(parts)})"
 
 
 def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFunc]:

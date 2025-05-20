@@ -75,6 +75,7 @@ class OneCharStringStrategy(SearchStrategy[str]):
         )
         if codec is not None:
             intervals &= charmap.intervals_from_codec(codec)
+
         _arg_repr = ", ".join(
             f"{k}={v!r}"
             for k, v in [
@@ -85,7 +86,8 @@ class OneCharStringStrategy(SearchStrategy[str]):
                 ("exclude_characters", exclude_characters),
                 ("include_characters", include_characters),
             ]
-            if v not in (None, "", set(charmap.categories()) - {"Cs"})
+            if v not in (None, "")
+            and not (k == "categories" and set(v) == set(charmap.categories()) - {"Cs"})
         )
         if not intervals:
             raise InvalidArgument(
@@ -156,9 +158,9 @@ _nonempty_and_content_names = (
 class TextStrategy(ListStrategy[str]):
     def do_draw(self, data):
         # if our element strategy is OneCharStringStrategy, we can skip the
-        # ListStrategy draw and jump right to our nice IR string draw.
+        # ListStrategy draw and jump right to data.draw_string.
         # Doing so for user-provided element strategies is not correct in
-        # general, as they may define a different distribution than our IR.
+        # general, as they may define a different distribution than data.draw_string.
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             return data.draw_string(

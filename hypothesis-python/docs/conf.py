@@ -218,6 +218,7 @@ rst_prolog = """
 .. |st.data| replace:: :func:`~hypothesis.strategies.data`
 .. |st.one_of| replace:: :func:`~hypothesis.strategies.one_of`
 .. |st.text| replace:: :func:`~hypothesis.strategies.text`
+.. |st.characters| replace:: :func:`~hypothesis.strategies.characters`
 .. |st.tuples| replace:: :func:`~hypothesis.strategies.tuples`
 .. |st.sets| replace:: :func:`~hypothesis.strategies.sets`
 .. |st.dictionaries| replace:: :func:`~hypothesis.strategies.dictionaries`

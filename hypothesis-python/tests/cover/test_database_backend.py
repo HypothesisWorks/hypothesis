@@ -60,7 +60,7 @@ from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
 from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
-from tests.conjecture.common import ir, nodes
+from tests.conjecture.common import nodes, nodes_inline
 
 
 @given(lists(tuples(binary(), binary())))
@@ -493,14 +493,14 @@ def test_background_write_database():
 
 @given(lists(nodes()))
 # covering examples
-@example(ir(True))
-@example(ir(1))
-@example(ir(0.0))
-@example(ir(-0.0))
-@example(ir("a"))
-@example(ir(b"a"))
-@example(ir(b"a" * 50))
-@example(ir(b"1" * 100_000))  # really long bytes
+@example(nodes_inline(True))
+@example(nodes_inline(1))
+@example(nodes_inline(0.0))
+@example(nodes_inline(-0.0))
+@example(nodes_inline("a"))
+@example(nodes_inline(b"a"))
+@example(nodes_inline(b"a" * 50))
+@example(nodes_inline(b"1" * 100_000))  # really long bytes
 def test_nodes_roundtrips(nodes1):
     s1 = choices_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
