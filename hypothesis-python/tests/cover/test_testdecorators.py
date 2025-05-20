@@ -520,7 +520,9 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
 
 # crosshair generates one valid input before verifying the test function,
 # so the Unsatisfiable check never occurs.
-@xfail_on_crosshair(Why.other)
+# (not strict due to slowness causing crosshair to bail out on the first input,
+# maybe?)
+@xfail_on_crosshair(Why.other, strict=False)
 def test_notes_high_overrun_rates_in_unsatisfiable_error():
     @given(st.binary(min_size=100))
     @settings(
