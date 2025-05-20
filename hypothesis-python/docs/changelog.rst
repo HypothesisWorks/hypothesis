@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.20:
+
+---------------------
+6.131.20 - 2025-05-20
+---------------------
+
+Improve the string representation of |st.characters| in some cases.
+
 .. _v6.131.19:
 
 ---------------------
