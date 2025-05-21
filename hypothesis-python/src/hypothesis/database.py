@@ -1077,11 +1077,15 @@ class BackgroundWriteDatabase(ExampleDatabase):
         super().__init__()
         self._db = db
         self._queue: Queue[tuple[str, tuple[bytes, ...]]] = Queue()
-        self._thread = Thread(target=self._worker, daemon=True)
-        self._thread.start()
-        # avoid an unbounded timeout during gc. 0.1 should be plenty for most
-        # use cases.
-        weakref.finalize(self, self._join, 0.1)
+        self._thread: Optional[Thread] = None
+
+    def _ensure_thread(self):
+        if self._thread is None:
+            self._thread = Thread(target=self._worker, daemon=True)
+            self._thread.start()
+            # avoid an unbounded timeout during gc. 0.1 should be plenty for most
+            # use cases.
+            weakref.finalize(self, self._join, 0.1)
 
     def __repr__(self) -> str:
         return f"BackgroundWriteDatabase({self._db!r})"
@@ -1106,12 +1110,15 @@ class BackgroundWriteDatabase(ExampleDatabase):
         return self._db.fetch(key)
 
     def save(self, key: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("save", (key, value)))
 
     def delete(self, key: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("delete", (key, value)))
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("move", (src, dest, value)))
 
     def _start_listening(self) -> None:
