@@ -22,6 +22,8 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
     ConstantVisitor,
+    TooManyConstants,
+    _constants_from_source,
     constants_from_module,
     is_local_module_file,
 )
@@ -237,3 +239,17 @@ def test_constant_visitor_roundtrips_string(constants):
     visitor = ConstantVisitor()
     visitor.visit(ast.parse(str(set(constants))))
     assert visitor.constants == constants
+
+
+def test_too_many_constants():
+    visitor = ConstantVisitor()
+    # start at n=1000 to avoid ConstantVisitor ignoring small integers
+    s = "; ".join(
+        f"n = {i}" for i in range(1000, 1000 + ConstantVisitor.CONSTANTS_LIMIT + 1)
+    )
+    # visitor should raise on too many constants
+    with pytest.raises(TooManyConstants):
+        visitor.visit(ast.parse(s))
+
+    # and also _constants_from_source should return empty on too many constants
+    assert _constants_from_source(s) == Constants()

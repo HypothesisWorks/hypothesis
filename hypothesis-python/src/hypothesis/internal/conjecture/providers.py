@@ -11,6 +11,7 @@
 import abc
 import contextlib
 import math
+import os
 import sys
 import warnings
 from collections.abc import Iterable
@@ -218,6 +219,16 @@ _seen_modules: set[ModuleType] = set()
 _sys_modules_len: Optional[int] = None
 
 
+def _module_too_large(file: str) -> bool:
+    # Skip files over 512kb. For reference, the largest source file
+    # in Hypothesis is strategies/_internal/core.py at 107kb at time
+    # of writing.
+    try:
+        return os.path.getsize(file) > 512 * 1024
+    except Exception:  # pragma: no cover
+        return True
+
+
 def _get_local_constants() -> Constants:
     global _sys_modules_len, _local_constants
 
@@ -256,8 +267,10 @@ def _get_local_constants() -> Constants:
         new_constants = Constants()
         for module in new_modules:
             if (
-                module_file := getattr(module, "__file__", None)
-            ) is not None and is_local_module_file(module_file):
+                (module_file := getattr(module, "__file__", None)) is not None
+                and is_local_module_file(module_file)
+                and not _module_too_large(module_file)
+            ):
                 new_constants |= constants_from_module(module)
         _local_constants |= new_constants
         _seen_modules.update(new_modules)

@@ -98,12 +98,23 @@ class Constants:
         )
 
 
+class TooManyConstants(Exception):
+    # a control flow exception which we raise in ConstantsVisitor when the
+    # number of constants in a module gets too large.
+    pass
+
+
 class ConstantVisitor(NodeVisitor):
+    CONSTANTS_LIMIT: int = 1024
+
     def __init__(self):
         super().__init__()
         self.constants = Constants()
 
     def _add_constant(self, value: object) -> None:
+        if len(self.constants) >= self.CONSTANTS_LIMIT:
+            raise TooManyConstants
+
         if isinstance(value, str) and (
             value.isspace()
             or value == ""
@@ -169,7 +180,14 @@ class ConstantVisitor(NodeVisitor):
 def _constants_from_source(source: Union[str, bytes]) -> Constants:
     tree = ast.parse(source)
     visitor = ConstantVisitor()
-    visitor.visit(tree)
+
+    try:
+        visitor.visit(tree)
+    except TooManyConstants:
+        # in the case of an incomplete collection, return nothing, to avoid
+        # muddying caches etc.
+        return Constants()
+
     return visitor.constants
 
 
