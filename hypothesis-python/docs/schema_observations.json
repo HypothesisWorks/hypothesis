@@ -21,7 +21,7 @@
                 },
                 "representation": {
                     "type": "string",
-                    "description": "The string representation of the input."
+                    "description": "The string representation of the input. In Hypothesis, this includes the property name (like ``test_a(a=1)``), and additionally includes any notes from |note| or |Phase.explain| for failing examples."
                 },
                 "arguments": {
                     "type": "object",

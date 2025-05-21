@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
+import textwrap
+
 import pytest
 
 from hypothesis import (
@@ -15,6 +18,7 @@ from hypothesis import (
     event,
     example,
     given,
+    note,
     seed,
     settings,
     strategies as st,
@@ -88,6 +92,63 @@ def test_capture_unnamed_arguments():
             "data",
             "Draw 1",
         ], test_case
+
+
+def test_includes_explain_phase_output():
+    @given(st.integers(), st.integers())
+    @settings(database=None)
+    def test_fails(x, y):
+        if x:
+            assert False
+
+    with (
+        capture_observations() as observations,
+        pytest.raises(AssertionError),
+    ):
+        test_fails()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    # only the last test case observation, once we've finished shrinking it,
+    # will include explain phase output
+    expected = textwrap.dedent(
+        r"""
+        test_fails\(
+            x=1,
+            y=0,  # or any other generated value
+        \)
+        Explanation:
+            These lines were always and only run by failing examples:
+                .*
+    """
+    ).strip()
+    assert re.match(expected, test_cases[-1]["representation"])
+
+
+def test_includes_notes():
+    @given(st.data())
+    @settings(database=None)
+    def test_fails_with_note(data):
+        note("this note is included")
+        data.draw(st.booleans())
+        assert False
+
+    with (
+        capture_observations() as observations,
+        pytest.raises(AssertionError),
+    ):
+        test_fails_with_note()
+
+    expected = textwrap.dedent(
+        """
+        test_fails_with_note(
+            data=data(...),
+        )
+        this note is included
+        Draw 1: False
+    """
+    ).strip()
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    assert test_cases[-1]["representation"] == expected
 
 
 @xfail_on_crosshair(Why.other)
