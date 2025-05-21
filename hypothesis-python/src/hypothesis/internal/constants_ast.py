@@ -107,12 +107,13 @@ class TooManyConstants(Exception):
 class ConstantVisitor(NodeVisitor):
     CONSTANTS_LIMIT: int = 1024
 
-    def __init__(self):
+    def __init__(self, *, limit: bool):
         super().__init__()
         self.constants = Constants()
+        self.limit = limit
 
     def _add_constant(self, value: object) -> None:
-        if len(self.constants) >= self.CONSTANTS_LIMIT:
+        if self.limit and len(self.constants) >= self.CONSTANTS_LIMIT:
             raise TooManyConstants
 
         if isinstance(value, str) and (
@@ -177,9 +178,9 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def _constants_from_source(source: Union[str, bytes]) -> Constants:
+def _constants_from_source(source: Union[str, bytes], *, limit: bool) -> Constants:
     tree = ast.parse(source)
-    visitor = ConstantVisitor()
+    visitor = ConstantVisitor(limit=limit)
 
     try:
         visitor.visit(tree)
@@ -192,7 +193,7 @@ def _constants_from_source(source: Union[str, bytes]) -> Constants:
 
 
 @lru_cache(4096)
-def constants_from_module(module: ModuleType) -> Constants:
+def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constants:
     try:
         module_file = inspect.getsourcefile(module)
         # use type: ignore because we know this might error
@@ -203,14 +204,14 @@ def constants_from_module(module: ModuleType) -> Constants:
     source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
     cache_p = storage_directory("constants") / source_hash
     try:
-        return _constants_from_source(cache_p.read_bytes())
+        return _constants_from_source(cache_p.read_bytes(), limit=limit)
     except Exception:
         # if the cached location doesn't exist, or it does exist but there was
         # a problem reading it, fall back to standard computation of the constants
         pass
 
     try:
-        constants = _constants_from_source(source_bytes)
+        constants = _constants_from_source(source_bytes, limit=limit)
     except Exception:
         # A bunch of things can go wrong here.
         # * ast.parse may fail on the source code
