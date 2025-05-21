@@ -1394,9 +1394,17 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
-                assert fragments[0].startswith("Falsifying example: ")
                 repr_fragments = (
-                    "\n" + "\n".join(fragments[1:]) if len(fragments) > 1 else ""
+                    fragments[1:]
+                    if fragments
+                    and (
+                        fragments[0].startswith("Falsifying example: ")
+                        or fragments[0].startswith("Falsifying explicit example: ")
+                    )
+                    else fragments
+                )
+                repr_fragments = (
+                    "\n" + "\n".join(repr_fragments) if repr_fragments else ""
                 )
                 # log our observability line for the final failing example
                 tc = {
