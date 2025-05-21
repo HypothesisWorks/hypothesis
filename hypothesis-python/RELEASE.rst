@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-Internal changes for pyodide support.
+|BackgroundWriteDatabase| instances now defer creating and starting a thread until first use.
