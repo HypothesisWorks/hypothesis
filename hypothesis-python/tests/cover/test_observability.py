@@ -25,6 +25,8 @@ from hypothesis import (
     target,
 )
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.internal.compat import PYPY
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -94,12 +96,15 @@ def test_capture_unnamed_arguments():
         ], test_case
 
 
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="explain phase requires sys.settrace pre-3.12"
+)
 def test_includes_explain_phase_output():
     @given(st.integers(), st.integers())
     @settings(database=None)
     def test_fails(x, y):
         if x:
-            assert False
+            raise ValueError
 
     with (
         capture_observations() as observations,
@@ -130,7 +135,7 @@ def test_includes_notes():
     def test_fails_with_note(data):
         note("this note is included")
         data.draw(st.booleans())
-        assert False
+        raise ValueError
 
     with (
         capture_observations() as observations,
