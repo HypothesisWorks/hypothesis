@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.21:
+
+---------------------
+6.131.21 - 2025-05-21
+---------------------
+
+|BackgroundWriteDatabase| instances now defer creating and starting a thread until first use.
+
 .. _v6.131.20:
 
 ---------------------
