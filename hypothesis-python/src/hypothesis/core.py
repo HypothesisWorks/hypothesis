@@ -1007,11 +1007,7 @@ class StateForActualGivenExecution:
                 if parts := getattr(data, "_stateful_repr_parts", None):
                     self._string_repr = "\n".join(parts)
 
-                # if is_final, we will append to "representation" in the final
-                # failing example in run_engine. Don't duplicate by also appending
-                # here. We prefer to append in run_engine because that respects
-                # the order in which other notes were added around draws.
-                if TESTCASE_CALLBACKS and not is_final:
+                if TESTCASE_CALLBACKS:
                     printer = RepresentationPrinter(context=context)
                     for name, value in data._observability_args.items():
                         if name.startswith("generate:Draw "):
@@ -1406,18 +1402,6 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
-                repr_fragments = (
-                    fragments[1:]
-                    if fragments
-                    and (
-                        fragments[0].startswith("Falsifying example: ")
-                        or fragments[0].startswith("Falsifying explicit example: ")
-                    )
-                    else fragments
-                )
-                repr_fragments = (
-                    "\n" + "\n".join(repr_fragments) if repr_fragments else ""
-                )
                 # log our observability line for the final failing example
                 tc = {
                     "type": "test_case",
@@ -1425,7 +1409,7 @@ class StateForActualGivenExecution:
                     "property": self.test_identifier,
                     "status": "passed" if sys.exc_info()[0] else "failed",
                     "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": f"{self._string_repr}{repr_fragments}",
+                    "representation": f"{self._string_repr}",
                     "arguments": ran_example._observability_args,
                     "how_generated": "minimal failing example",
                     "features": {
