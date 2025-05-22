@@ -169,13 +169,14 @@ def test_normal_representation_includes_draws():
     with capture_observations() as observations:
         f()
 
+    crosshair = settings._current_profile == "crosshair"
     expected = textwrap.dedent(
-        """
+        f"""
         f(
-            data=data(...),
+            data={'<symbolic>' if crosshair else 'data(...)'},
         )
-        Draw 1: True
-        Draw 2 (second): True
+        Draw 1: {'<symbolic>' if crosshair else 'True'}
+        Draw 2 (second): {'<symbolic>' if crosshair else 'True'}
     """
     ).strip()
     test_cases = [
@@ -184,7 +185,10 @@ def test_normal_representation_includes_draws():
         if tc["type"] == "test_case" and tc["status"] == "passed"
     ]
     assert test_cases
-    assert all(tc["representation"] == expected for tc in test_cases)
+    # TODO crosshair has a soundness bug with assume. remove branch when fixed
+    # https://github.com/pschanely/hypothesis-crosshair/issues/34
+    if not crosshair:
+        assert {tc["representation"] for tc in test_cases} == {expected}
 
 
 @xfail_on_crosshair(Why.other)

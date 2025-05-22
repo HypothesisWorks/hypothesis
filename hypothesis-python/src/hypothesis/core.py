@@ -1017,7 +1017,7 @@ class StateForActualGivenExecution:
                         if name.startswith("generate:Draw "):
                             try:
                                 value = data.provider.realize(value)
-                            except BackendCannotProceed:
+                            except BackendCannotProceed:  # pragma: no cover
                                 value = "<backend failed to realize symbolic>"
                             printer.text(f"\n{name.removeprefix('generate:')}: ")
                             printer.pretty(value)
