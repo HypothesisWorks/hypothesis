@@ -138,7 +138,6 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
-from hypothesis.strategies._internal.utils import to_jsonable
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
@@ -991,10 +990,6 @@ class StateForActualGivenExecution:
                     avoid_realization=data.provider.avoid_realization,
                 )
                 self._string_repr = printer.getvalue()
-                data._observability_arguments = {
-                    k: to_jsonable(v, avoid_realization=data.provider.avoid_realization)
-                    for k, v in [*enumerate(args), *kwargs.items()]
-                }
 
             try:
                 return test(*args, **kwargs)
