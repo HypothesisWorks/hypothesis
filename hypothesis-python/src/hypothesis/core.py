@@ -931,7 +931,7 @@ class StateForActualGivenExecution:
                         )
                 return result
 
-        def run(data):
+        def run(data: ConjectureData) -> None:
             # Set up dynamic context needed by a single test run.
             if self.stuff.selfy is not None:
                 data.hypothesis_runner = self.stuff.selfy

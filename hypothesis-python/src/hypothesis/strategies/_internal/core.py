@@ -2163,17 +2163,14 @@ class RunnerStrategy(SearchStrategy):
         self.default = default
 
     def do_draw(self, data):
-        runner = getattr(data, "hypothesis_runner", not_set)
-        if runner is not_set:
+        if data.hypothesis_runner is not_set:
             if self.default is not_set:
                 raise InvalidArgument(
                     "Cannot use runner() strategy with no "
                     "associated runner or explicit default."
                 )
-            else:
-                return self.default
-        else:
-            return runner
+            return self.default
+        return data.hypothesis_runner
 
 
 @defines_strategy(force_reusable_values=True)
