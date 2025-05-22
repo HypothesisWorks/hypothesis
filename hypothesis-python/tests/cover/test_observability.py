@@ -99,12 +99,12 @@ def test_capture_unnamed_arguments():
 @pytest.mark.skipif(
     PYPY or IN_COVERAGE_TESTS, reason="explain phase requires sys.settrace pre-3.12"
 )
-def test_includes_explain_phase_output():
+def test_failure_includes_explain_phase_output():
     @given(st.integers(), st.integers())
     @settings(database=None)
     def test_fails(x, y):
         if x:
-            raise ValueError
+            raise AssertionError
 
     with (
         capture_observations() as observations,
@@ -129,13 +129,14 @@ def test_includes_explain_phase_output():
     assert re.match(expected, test_cases[-1]["representation"])
 
 
-def test_includes_notes():
+def test_failure_includes_notes():
     @given(st.data())
     @settings(database=None)
     def test_fails_with_note(data):
-        note("this note is included")
+        note("this note is included first")
         data.draw(st.booleans())
-        raise ValueError
+        note("this note is included after")
+        raise AssertionError
 
     with (
         capture_observations() as observations,
@@ -148,12 +149,42 @@ def test_includes_notes():
         test_fails_with_note(
             data=data(...),
         )
-        this note is included
+        this note is included first
         Draw 1: False
+        this note is included after
     """
     ).strip()
     test_cases = [tc for tc in observations if tc["type"] == "test_case"]
     assert test_cases[-1]["representation"] == expected
+
+
+def test_normal_representation_includes_draws():
+    @given(st.data())
+    def f(data):
+        b1 = data.draw(st.booleans())
+        note("not included because not failing")
+        b2 = data.draw(st.booleans(), label="second")
+        assume(b1 and b2)
+
+    with capture_observations() as observations:
+        f()
+
+    expected = textwrap.dedent(
+        """
+        f(
+            data=data(...),
+        )
+        Draw 1: True
+        Draw 2 (second): True
+    """
+    ).strip()
+    test_cases = [
+        tc
+        for tc in observations
+        if tc["type"] == "test_case" and tc["status"] == "passed"
+    ]
+    assert test_cases
+    assert all(tc["representation"] == expected for tc in test_cases)
 
 
 @xfail_on_crosshair(Why.other)

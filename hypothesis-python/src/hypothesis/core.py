@@ -1012,6 +1012,22 @@ class StateForActualGivenExecution:
                 if parts := getattr(data, "_stateful_repr_parts", None):
                     self._string_repr = "\n".join(parts)
 
+                # if is_final, we will append to "representation" in the final
+                # failing example in run_engine. Don't duplicate by also appending
+                # here. We prefer to append in run_engine because that respects
+                # the order in which other notes were added around draws.
+                if TESTCASE_CALLBACKS and not is_final:
+                    printer = RepresentationPrinter(context=context)
+                    for name, value in data._observability_args.items():
+                        if name.startswith("generate:Draw "):
+                            printer.text(f"\n{name.removeprefix('generate:')}: ")
+                            if data.provider.avoid_realization:
+                                printer.text("<symbolic>")
+                            else:
+                                printer.pretty(value)
+
+                    self._string_repr += printer.getvalue()
+
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
         with (
