@@ -69,7 +69,7 @@ their individual contributions.
 * `Francesc Elies <https://www.github.com/FrancescElies>`_
 * `Gabe Joseph <https://github.com/gjoseph92>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
-* `Genevieve Mendoza <https://www.github.com/genevieve-me>`
+* `Genevieve Mendoza <https://www.github.com/genevieve-me>`_
 * `George Macon <https://www.github.com/gmacon>`_
 * `Glenn Lehman <https://www.github.com/glnnlhmn>`_
 * `Graham Williamson <https://github.com/00willo>`_
