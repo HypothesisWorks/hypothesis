@@ -60,6 +60,7 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.reporting import debug_report
+from hypothesis.utils.conventions import not_set
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -707,6 +708,7 @@ class ConjectureData:
             tuple[str, object]
         ] = None
         self._shared_strategy_draws: dict[Hashable, Any] = {}
+        self.hypothesis_runner = not_set
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None

@@ -138,7 +138,6 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
-from hypothesis.strategies._internal.utils import to_jsonable
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
@@ -932,7 +931,7 @@ class StateForActualGivenExecution:
                         )
                 return result
 
-        def run(data):
+        def run(data: ConjectureData) -> None:
             # Set up dynamic context needed by a single test run.
             if self.stuff.selfy is not None:
                 data.hypothesis_runner = self.stuff.selfy
@@ -991,10 +990,6 @@ class StateForActualGivenExecution:
                     avoid_realization=data.provider.avoid_realization,
                 )
                 self._string_repr = printer.getvalue()
-                data._observability_arguments = {
-                    k: to_jsonable(v, avoid_realization=data.provider.avoid_realization)
-                    for k, v in [*enumerate(args), *kwargs.items()]
-                }
 
             try:
                 return test(*args, **kwargs)
@@ -1011,6 +1006,19 @@ class StateForActualGivenExecution:
             finally:
                 if parts := getattr(data, "_stateful_repr_parts", None):
                     self._string_repr = "\n".join(parts)
+
+                if TESTCASE_CALLBACKS:
+                    printer = RepresentationPrinter(context=context)
+                    for name, value in data._observability_args.items():
+                        if name.startswith("generate:Draw "):
+                            try:
+                                value = data.provider.realize(value)
+                            except BackendCannotProceed:  # pragma: no cover
+                                value = "<backend failed to realize symbolic>"
+                            printer.text(f"\n{name.removeprefix('generate:')}: ")
+                            printer.pretty(value)
+
+                    self._string_repr += printer.getvalue()
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.

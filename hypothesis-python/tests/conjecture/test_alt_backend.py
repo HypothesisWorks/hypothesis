@@ -401,17 +401,18 @@ def test_bad_realize():
 
 
 class RealizeProvider(TrivialProvider):
+    # self-documenting constant
+    REALIZED = 42
     avoid_realization = True
 
     def realize(self, value, *, for_failure=False):
         if isinstance(value, int):
-            return 42
+            return self.REALIZED
         return value
 
 
 def test_realize():
     with temp_register_backend("realize", RealizeProvider):
-
         values = []
 
         @given(st.integers())
@@ -423,7 +424,7 @@ def test_realize():
 
         # first draw is 0 from ChoiceTemplate(type="simplest")
         assert values[0] == 0
-        assert all(n == 42 for n in values[1:])
+        assert all(n == RealizeProvider.REALIZED for n in values[1:])
 
 
 def test_realize_dependent_draw():
@@ -465,6 +466,27 @@ def test_realization_with_verbosity_draw(verbosity):
         with capture_out() as out:
             test_function()
         assert "Draw 1: <symbolic>" in out.getvalue()
+
+
+def test_realization_with_observability():
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize")
+        def test_function(data):
+            data.draw(st.integers())
+
+        with capture_observations() as observations:
+            test_function()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    assert {tc["representation"] for tc in test_cases} == {
+        # from the first ChoiceTemplate(type="simplest") example
+        "test_function(\n    data=data(...),\n)\nDraw 1: 0",
+        # from all other examples. data=<symbolic> isn't ideal; we should special
+        # case this as data=data(...).
+        f"test_function(\n    data=<symbolic>,\n)\nDraw 1: {RealizeProvider.REALIZED}",
+    }
 
 
 class ObservableProvider(TrivialProvider):

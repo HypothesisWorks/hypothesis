@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
+import textwrap
+
 import pytest
 
 from hypothesis import (
@@ -15,12 +18,15 @@ from hypothesis import (
     event,
     example,
     given,
+    note,
     seed,
     settings,
     strategies as st,
     target,
 )
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.internal.compat import PYPY
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -88,6 +94,99 @@ def test_capture_unnamed_arguments():
             "data",
             "Draw 1",
         ], test_case
+
+
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="explain phase requires sys.settrace pre-3.12"
+)
+def test_failure_includes_explain_phase_comments():
+    @given(st.integers(), st.integers())
+    @settings(database=None)
+    def test_fails(x, y):
+        if x:
+            raise AssertionError
+
+    with (
+        capture_observations() as observations,
+        pytest.raises(AssertionError),
+    ):
+        test_fails()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    # only the last test case observation, once we've finished shrinking it,
+    # will include explain phase comments.
+    #
+    # Note that the output does *not* include `Explanation:` comments. See
+    # https://github.com/HypothesisWorks/hypothesis/pull/4399#discussion_r2101559648
+    expected = textwrap.dedent(
+        r"""
+        test_fails\(
+            x=1,
+            y=0,  # or any other generated value
+        \)
+    """
+    ).strip()
+    assert re.fullmatch(expected, test_cases[-1]["representation"])
+
+
+def test_failure_includes_notes():
+    @given(st.data())
+    @settings(database=None)
+    def test_fails_with_note(data):
+        note("not included 1")
+        data.draw(st.booleans())
+        note("not included 2")
+        raise AssertionError
+
+    with (
+        capture_observations() as observations,
+        pytest.raises(AssertionError),
+    ):
+        test_fails_with_note()
+
+    expected = textwrap.dedent(
+        """
+        test_fails_with_note(
+            data=data(...),
+        )
+        Draw 1: False
+    """
+    ).strip()
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    assert test_cases[-1]["representation"] == expected
+
+
+def test_normal_representation_includes_draws():
+    @given(st.data())
+    def f(data):
+        b1 = data.draw(st.booleans())
+        note("not included")
+        b2 = data.draw(st.booleans(), label="second")
+        assume(b1 and b2)
+
+    with capture_observations() as observations:
+        f()
+
+    crosshair = settings._current_profile == "crosshair"
+    expected = textwrap.dedent(
+        f"""
+        f(
+            data={'<symbolic>' if crosshair else 'data(...)'},
+        )
+        Draw 1: True
+        Draw 2 (second): True
+    """
+    ).strip()
+    test_cases = [
+        tc
+        for tc in observations
+        if tc["type"] == "test_case" and tc["status"] == "passed"
+    ]
+    assert test_cases
+    # TODO crosshair has a soundness bug with assume. remove branch when fixed
+    # https://github.com/pschanely/hypothesis-crosshair/issues/34
+    if not crosshair:
+        assert {tc["representation"] for tc in test_cases} == {expected}
 
 
 @xfail_on_crosshair(Why.other)
