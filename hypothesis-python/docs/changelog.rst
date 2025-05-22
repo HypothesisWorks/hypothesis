@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.22:
+
+---------------------
+6.131.22 - 2025-05-22
+---------------------
+
+Include |note| and |Phase.explain| output in the "representation" field of :ref:`observability reports <observability>` for failing examples, to more closely match the output produced by Hypothesis.
+
 .. _v6.131.21:
 
 ---------------------
