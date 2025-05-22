@@ -1015,11 +1015,12 @@ class StateForActualGivenExecution:
                     printer = RepresentationPrinter(context=context)
                     for name, value in data._observability_args.items():
                         if name.startswith("generate:Draw "):
+                            try:
+                                value = data.provider.realize(value)
+                            except BackendCannotProceed:
+                                value = "<backend failed to realize symbolic>"
                             printer.text(f"\n{name.removeprefix('generate:')}: ")
-                            if data.provider.avoid_realization:
-                                printer.text("<symbolic>")
-                            else:
-                                printer.pretty(value)
+                            printer.pretty(value)
 
                     self._string_repr += printer.getvalue()
 

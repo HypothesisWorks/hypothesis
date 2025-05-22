@@ -467,6 +467,26 @@ def test_realization_with_verbosity_draw(verbosity):
         assert "Draw 1: <symbolic>" in out.getvalue()
 
 
+def test_realization_with_observability():
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize")
+        def test_function(data):
+            data.draw(st.integers())
+
+        with capture_observations() as observations:
+            test_function()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    assert {tc["representation"] for tc in test_cases} == {
+        # from the first ChoiceTemplate(type="simplest") example
+        "test_function(\n    data=data(...),\n)\nDraw 1: 0",
+        # from all other examples. data=<symbolic> probably isn't ideal.
+        "test_function(\n    data=<symbolic>,\n)\nDraw 1: 42",
+    }
+
+
 class ObservableProvider(TrivialProvider):
     def observe_test_case(self):
         return {"msg_key": "some message", "data_key": [1, "2", {}]}
