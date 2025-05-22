@@ -1409,7 +1409,7 @@ class StateForActualGivenExecution:
                     "property": self.test_identifier,
                     "status": "passed" if sys.exc_info()[0] else "failed",
                     "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": f"{self._string_repr}",
+                    "representation": self._string_repr,
                     "arguments": ran_example._observability_args,
                     "how_generated": "minimal failing example",
                     "features": {
