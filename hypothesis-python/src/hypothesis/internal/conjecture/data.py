@@ -69,7 +69,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import ObservabilityPredicate
+from hypothesis.internal.observability import PredicateCounts
 from hypothesis.reporting import debug_report
 
 if TYPE_CHECKING:
@@ -711,8 +711,8 @@ class ConjectureData:
         self.arg_slices: set[tuple[int, int]] = set()
         self.slice_comments: dict[tuple[int, int], str] = {}
         self._observability_args: dict[str, Any] = {}
-        self._observability_predicates: defaultdict[str, ObservabilityPredicate] = (
-            defaultdict(lambda: {"satisfied": 0, "unsatisfied": 0})
+        self._observability_predicates: defaultdict[str, PredicateCounts] = defaultdict(
+            lambda: {"satisfied": 0, "unsatisfied": 0}
         )
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]

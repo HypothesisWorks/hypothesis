@@ -174,11 +174,12 @@ def types_to_strategy(attrib: Attribute, types: Collection[Any]) -> SearchStrate
 
     # Otherwise, try the `type` attribute as a fallback, and finally try
     # the type hints on a converter (desperate!) before giving up.
-    if (attrib_type := attrib.type) is not None and is_a_type(attrib_type):
+    if is_a_type(getattr(attrib, "type", None)):
+        assert attrib.type is not None
         # The convoluted test is because variable annotations may be stored
         # in string form; attrs doesn't evaluate them and we don't handle them.
         # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.
-        return st.from_type(attrib_type)
+        return st.from_type(attrib.type)
 
     converter = getattr(attrib, "converter", None)
     if isinstance(converter, type):

@@ -33,7 +33,7 @@ def deliver_json_blob(value: dict) -> None:
         callback(value)
 
 
-class ObservabilityPredicate(TypedDict):
+class PredicateCounts(TypedDict):
     satisfied: int
     unsatisfied: int
 
