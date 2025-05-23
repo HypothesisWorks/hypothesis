@@ -159,6 +159,17 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
+    @classmethod
+    def all(cls) -> list["HealthCheck"]:
+        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
+        note_deprecation(
+            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
+            since="2023-04-16",
+            has_codemod=True,
+            stacklevel=1,
+        )
+        return list(HealthCheck)
+
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
 
@@ -234,22 +245,6 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     level of nesting, add a suppression for this health check to every
     |@given| except the innermost one.
     """
-
-    @classmethod
-    def all(cls) -> list["HealthCheck"]:
-        """
-        Returns a list of all |HealthCheck| enum values. Can be used with
-        ``suppress_health_check=HealthCheck.all()`` to suppress all health
-        checks - though we recommend silencing individual health checks instead!
-        """
-        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
-        note_deprecation(
-            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
-            since="2023-04-16",
-            has_codemod=True,
-            stacklevel=1,
-        )
-        return list(HealthCheck)
 
 
 class duration(datetime.timedelta):

@@ -266,6 +266,7 @@ Settings
 .. autoclass:: hypothesis.HealthCheck
    :undoc-members:
    :inherited-members:
+   :exclude-members: all
 
 .. _database:
 
