@@ -169,6 +169,7 @@ rst_prolog = """
 .. |@example| replace:: :func:`@example <hypothesis.example>`
 .. |@example.xfail| replace:: :func:`@example(...).xfail() <hypothesis.example.xfail>`
 .. |@settings| replace:: :func:`@settings <hypothesis.settings>`
+.. |settings| replace:: :func:`settings <hypothesis.settings>`
 .. |@composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
 .. |assume| replace:: :func:`~hypothesis.assume`
 .. |target| replace:: :func:`~hypothesis.target`
@@ -185,6 +186,8 @@ rst_prolog = """
 .. |settings.report_multiple_bugs| replace:: :obj:`~hypothesis.settings.report_multiple_bugs`
 .. |settings.verbosity| replace:: :obj:`~hypothesis.settings.verbosity`
 .. |settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
+.. |settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
+.. |settings.backend| replace:: :obj:`~hypothesis.settings.backend`
 
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
@@ -208,6 +211,9 @@ rst_prolog = """
 .. |Verbosity.debug| replace:: :obj:`Verbosity.debug <hypothesis.Verbosity.debug>`
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
+
+.. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
+
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`

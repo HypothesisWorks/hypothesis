@@ -2322,7 +2322,7 @@ def register_type_strategy(
     """Add an entry to the global type-to-strategy lookup.
 
     This lookup is used in :func:`~hypothesis.strategies.builds` and
-    :func:`@given <hypothesis.given>`.
+    |@given|.
 
     :func:`~hypothesis.strategies.builds` will be used automatically for
     classes with type annotations on ``__init__`` , so you only need to

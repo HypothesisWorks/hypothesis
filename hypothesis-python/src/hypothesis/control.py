@@ -77,7 +77,7 @@ _current_build_context = DynamicVariable[Optional["BuildContext"]](None)
 
 def currently_in_test_context() -> bool:
     """Return ``True`` if the calling code is currently running inside an
-    :func:`@given <hypothesis.given>` or :ref:`stateful <stateful>` test,
+    |@given| or :ref:`stateful <stateful>` test,
     ``False`` otherwise.
 
     This is useful for third-party integrations and assertion helpers which
