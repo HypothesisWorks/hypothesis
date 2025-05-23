@@ -30,7 +30,6 @@ from functools import partial
 from inspect import Parameter
 from random import Random
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
     Callable,
@@ -72,6 +71,7 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
+    EllipsisType,
     add_note,
     bad_django_TestCase,
     get_type_hints,
@@ -141,14 +141,6 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.strategies._internal.utils import to_jsonable
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType
-elif TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:  # pragma: no cover
-    EllipsisType = type(Ellipsis)
-
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
 

@@ -77,6 +77,13 @@ else:
             TypeAlias = None
             override = lambda f: f
 
+if sys.version_info >= (3, 10):
+    from types import EllipsisType as EllipsisType
+elif TYPE_CHECKING:
+    from builtins import ellipsis as EllipsisType
+else:
+    EllipsisType = type(Ellipsis)
+
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
