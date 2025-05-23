@@ -443,11 +443,11 @@ class settings(metaclass=settingsMeta):
     settings objects created after the profile was made active, but not in existing
     settings objects.
 
-    Default profiles
-    ----------------
+    Built-in profiles
+    -----------------
 
     While you can register additional profiles with |settings.register_profile|,
-    Hypothesis comes with two profiles by default: ``default`` and ``ci``.
+    Hypothesis comes with two built-in profiles: ``default`` and ``ci``.
 
     The ``default`` profile is active by default, unless one of the ``CI``,
     ``TF_BUILD``, or ``GITLAB_CI`` environment variables are set (to any value),
@@ -457,7 +457,7 @@ class settings(metaclass=settingsMeta):
     ``settings()`` (so ``settings().max_examples`` is the currently active default
     for |settings.max_examples|).
 
-    The settings attributes for the default profiles are as follows:
+    The settings attributes for the built-in profiles are as follows:
 
     .. code-block:: python
 
@@ -486,7 +486,7 @@ class settings(metaclass=settingsMeta):
             suppress_health_check=[HealthCheck.too_slow],
         )
 
-    You can configure either of the default profiles with |settings.register_profile|:
+    You can configure either of the built-in profiles with |settings.register_profile|:
 
     .. code-block:: python
 
