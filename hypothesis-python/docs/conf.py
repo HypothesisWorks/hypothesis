@@ -293,7 +293,7 @@ codeautolink_global_preface = """
 from hypothesis import *
 import hypothesis.strategies as st
 from hypothesis.strategies import *
-"""
+""".lstrip()
 
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.

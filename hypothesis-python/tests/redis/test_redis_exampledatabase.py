@@ -9,9 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import uuid
+import warnings
 
 import pytest
-from fakeredis import FakeRedis
+from fakeredis import FakeRedis as _actual_FakeRedis
 
 from hypothesis import strategies as st
 from hypothesis.database import InMemoryExampleDatabase
@@ -20,6 +21,13 @@ from hypothesis.extra.redis import RedisExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
+
+
+def FakeRedis(**kwargs):
+    # new warning in Redis 6.0 which fakeredis doesn't handle yet
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        return _actual_FakeRedis(**kwargs)
 
 
 @pytest.mark.parametrize(
