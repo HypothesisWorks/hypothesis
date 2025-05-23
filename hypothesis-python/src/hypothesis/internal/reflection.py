@@ -29,7 +29,7 @@ from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import Any, Callable, Optional, TypeVar, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
