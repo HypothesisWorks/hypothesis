@@ -249,7 +249,8 @@ class duration(datetime.timedelta):
 def is_in_ci() -> bool:
     # GitHub Actions, Travis CI and AppVeyor have "CI"
     # Azure Pipelines has "TF_BUILD"
-    return "CI" in os.environ or "TF_BUILD" in os.environ
+    # GitLab CI has "GITLAB_CI"
+    return "CI" in os.environ or "TF_BUILD" in os.environ or "GITLAB_CI" in os.environ
 
 
 default_variable = DynamicVariable[Optional["settings"]](None)
