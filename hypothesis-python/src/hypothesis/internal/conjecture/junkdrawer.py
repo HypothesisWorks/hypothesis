@@ -192,7 +192,7 @@ class LazySequenceCopy(Generic[T]):
         self.__values = values
         self.__len = len(values)
         self.__mask: Optional[dict[int, T]] = None
-        self.__popped_indices: Optional[SortedList] = None
+        self.__popped_indices: Optional[SortedList[int]] = None
 
     def __len__(self) -> int:
         if self.__popped_indices is None:

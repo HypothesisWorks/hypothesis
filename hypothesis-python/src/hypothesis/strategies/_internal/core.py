@@ -72,6 +72,7 @@ from hypothesis.internal.charmap import (
 )
 from hypothesis.internal.compat import (
     Concatenate,
+    EllipsisType,
     ParamSpec,
     bit_count,
     ceil,
@@ -141,14 +142,6 @@ from hypothesis.strategies._internal.strings import (
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import RepresentationPrinter
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType
-elif typing.TYPE_CHECKING:  # pragma: no cover
-    from builtins import ellipsis as EllipsisType
-
-else:
-    EllipsisType = type(Ellipsis)  # pragma: no cover
 
 
 @cacheable
@@ -1016,14 +1009,19 @@ def random_module() -> SearchStrategy[RandomSeeder]:
     return shared(RandomModule(), key="hypothesis.strategies.random_module()")
 
 
-class BuildsStrategy(SearchStrategy):
-    def __init__(self, target, args, kwargs):
+class BuildsStrategy(SearchStrategy[Ex]):
+    def __init__(
+        self,
+        target: Callable[..., Ex],
+        args: tuple[SearchStrategy[Any], ...],
+        kwargs: dict[str, SearchStrategy[Any]],
+    ):
         self.target = target
         self.args = args
         self.kwargs = kwargs
 
-    def do_draw(self, data):
-        args = [data.draw(a) for a in self.args]
+    def do_draw(self, data: ConjectureData) -> Ex:
+        args = [data.draw(s) for s in self.args]
         kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
         try:
             obj = self.target(*args, **kwargs)
@@ -1059,7 +1057,7 @@ class BuildsStrategy(SearchStrategy):
         current_build_context().record_call(obj, self.target, args, kwargs)
         return obj
 
-    def validate(self):
+    def validate(self) -> None:
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
 
@@ -1141,6 +1139,9 @@ def builds(
                     # and `...` contains recursion on `cls`.  See
                     # https://github.com/HypothesisWorks/hypothesis/issues/3026
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
+
+    # validated by handling all EllipsisType in the to_infer case
+    kwargs = cast(dict[str, SearchStrategy], kwargs)
     return BuildsStrategy(target, args, kwargs)
 
 

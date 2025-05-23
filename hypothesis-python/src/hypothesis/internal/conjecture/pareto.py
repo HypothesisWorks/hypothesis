@@ -259,9 +259,14 @@ class ParetoFront:
         self.__eviction_listeners.append(f)
 
     def __contains__(self, data: object) -> bool:
-        return isinstance(data, (ConjectureData, ConjectureResult)) and (
-            data.as_result() in self.front
-        )
+        if not isinstance(data, (ConjectureData, ConjectureResult)):
+            return False
+
+        result = data.as_result()
+        if isinstance(result, _Overrun):
+            return False
+
+        return result in self.front
 
     def __iter__(self) -> Iterator[ConjectureResult]:
         return iter(self.front)

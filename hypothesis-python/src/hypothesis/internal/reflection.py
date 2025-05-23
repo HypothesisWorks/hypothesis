@@ -29,14 +29,17 @@ from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.compat import is_typed_named_tuple
+from hypothesis.internal.compat import EllipsisType, is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
+
+if TYPE_CHECKING:
+    from hypothesis.strategies._internal.strategies import SearchStrategy
 
 T = TypeVar("T")
 
@@ -182,7 +185,11 @@ def arg_is_required(param: Parameter) -> bool:
     )
 
 
-def required_args(target, args=(), kwargs=()):
+def required_args(
+    target: Callable[..., Any],
+    args: tuple["SearchStrategy[Any]", ...] = (),
+    kwargs: Optional[dict[str, Union["SearchStrategy[Any]", EllipsisType]]] = None,
+) -> set[str]:
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
 
@@ -191,6 +198,7 @@ def required_args(target, args=(), kwargs=()):
     and bound methods).  args and kwargs should be as they are passed to
     builds() - that is, a tuple of values and a dict of names: values.
     """
+    kwargs = {} if kwargs is None else kwargs
     # We start with a workaround for NamedTuples, which don't have nice inits
     if inspect.isclass(target) and is_typed_named_tuple(target):
         provided = set(kwargs) | set(target._fields[: len(args)])

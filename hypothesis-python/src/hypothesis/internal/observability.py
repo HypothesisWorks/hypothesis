@@ -17,11 +17,13 @@ import time
 import warnings
 from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.conjecture.data import ConjectureData, Status
+
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.data import ConjectureData
 
 TESTCASE_CALLBACKS: list[Callable[[dict], None]] = []
 
@@ -31,11 +33,16 @@ def deliver_json_blob(value: dict) -> None:
         callback(value)
 
 
+class PredicateCounts(TypedDict):
+    satisfied: int
+    unsatisfied: int
+
+
 def make_testcase(
     *,
     start_timestamp: float,
     test_name_or_nodeid: str,
-    data: ConjectureData,
+    data: "ConjectureData",
     how_generated: str,
     string_repr: str = "<unknown>",
     arguments: Optional[dict] = None,
@@ -45,6 +52,7 @@ def make_testcase(
     backend_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
     from hypothesis.core import reproduction_decorator
+    from hypothesis.internal.conjecture.data import Status
 
     if data.interesting_origin:
         status_reason = str(data.interesting_origin)

@@ -707,7 +707,7 @@ class DataTree:
 
     def generate_novel_prefix(self, random: Random) -> tuple[ChoiceT, ...]:
         """Generate a short random string that (after rewriting) is not
-        a prefix of any buffer previously added to the tree.
+        a prefix of any choice sequence previously added to the tree.
 
         The resulting prefix is essentially arbitrary - it would be nice
         for it to be uniform at random, but previous attempts to do that
@@ -899,8 +899,9 @@ class DataTree:
         # entails some bookkeeping such that we're careful about when the
         # float key is in its bits form (as a key into branch.children) and
         # when it is in its float form (as a value we want to write to the
-        # buffer), and converting between the two forms as appropriate.
+        # choice sequence), and converting between the two forms as appropriate.
         if choice_type == "float":
+            assert isinstance(value, float)
             value = float_to_int(value)
         return value
 

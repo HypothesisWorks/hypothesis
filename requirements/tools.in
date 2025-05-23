@@ -29,4 +29,5 @@ types-redis
 typing-extensions
 watchdog # for typing
 build
+sortedcontainers-stubs # for typing
 -r test.in

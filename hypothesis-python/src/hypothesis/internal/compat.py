@@ -18,7 +18,15 @@ import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ForwardRef,
+    Optional,
+    TypedDict as TypedDict,
+    Union,
+    get_args,
+)
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -28,7 +36,7 @@ except NameError:
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing_extensions import (
         Concatenate as Concatenate,
         NotRequired as NotRequired,
@@ -77,6 +85,13 @@ else:
             TypeAlias = None
             override = lambda f: f
 
+if sys.version_info >= (3, 10):
+    from types import EllipsisType as EllipsisType
+elif TYPE_CHECKING:
+    from builtins import ellipsis as EllipsisType
+else:  # pragma: no cover
+    EllipsisType = type(Ellipsis)
+
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
@@ -101,7 +116,7 @@ def escape_unicode_characters(s: str) -> str:
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
 
-def int_from_bytes(data: typing.Union[bytes, bytearray]) -> int:
+def int_from_bytes(data: Union[bytes, bytearray]) -> int:
     return int.from_bytes(data, "big")
 
 
