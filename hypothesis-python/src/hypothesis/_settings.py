@@ -815,8 +815,7 @@ class settings(metaclass=settingsMeta):
     def print_blob(self):
         """
         If set to ``True``, Hypothesis will print code for failing examples that
-        can be used with :func:`@reproduce_failure <hypothesis.reproduce_failure>`
-        to reproduce the failing example.
+        can be used with |@reproduce_failure| to reproduce the failing example.
 
         The default value is ``False``. If running on CI, the default is ``True`` instead.
         """

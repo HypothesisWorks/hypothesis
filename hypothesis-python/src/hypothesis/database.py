@@ -147,12 +147,21 @@ if "sphinx" in sys.modules:
 
 class ExampleDatabase(metaclass=_EDMeta):
     """
-    A Hypothesis database, for use in the |settings.database| setting.
+    A Hypothesis database, for use in |settings.database|.
 
-    Using an |ExampleDatabase| allows Hypothesis to
-    remember and replay failing examples, and ensure that your tests are never
-    flaky. We provide several concrete subclasses, and you can write a custom
-    database backed by your preferred way to store a ``dict[bytes, set[bytes]]``.
+    Hypothesis automatically saves failures to the database set in
+    |settings.database|. The next time the test is run, Hypothesis will replay
+    any failures from the database in |settings.database| for that test (in
+    |Phase.reuse|).
+
+    The database is best thought of as a cache that you never need to invalidate.
+    Entries may be transparently dropped when upgrading your Hypothesis version
+    or changing your test. Do not rely on the database for correctness; to ensure
+    Hypothesis always tries an input, use |@example|.
+
+    Hypothesis provides several concrete database subclasses. A Hypothesis database
+    is a simple mapping of bytes to sets of bytes, so you can also write your own
+    database implementation. See :doc:`/how-to/custom-database`.
 
     Change listening
     ----------------

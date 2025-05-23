@@ -268,16 +268,34 @@ class example:
 
 
 def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
-    """Start the test execution from a specific seed.
+    """
+    Seed the randomness for this test.
 
-    May be any hashable object. No exact meaning for seed is provided
-    other than that for a fixed seed value Hypothesis will try the same
-    actions (insofar as it can given external sources of non-
-    determinism. e.g. timing and hash randomization).
+    ``seed`` may be any hashable object. No exact meaning for ``seed`` is provided
+    other than that for a fixed seed value Hypothesis will produce the same
+    examples (assuming that there are no other sources of nondeterminisim, such
+    as timing, hash randomization, or external state).
 
-    Overrides the derandomize setting, which is designed to enable
-    deterministic builds rather than reproducing observed failures.
+    For example, the following test function and |RuleBasedStateMachine| will
+    each generate the same series of examples each time they are executed:
 
+    .. code-block:: python
+
+        @seed(1234)
+        @given(st.integers())
+        def test(n): ...
+
+        @seed(6789)
+        class MyMachine(RuleBasedStateMachine): ...
+
+    If using pytest, you can alternatively pass ``--hypothesis-seed`` on the
+    command line.
+
+    Setting a seed overrides |settings.derandomize|, which is designed to enable
+    deterministic CI tests rather than reproducing observed failures.
+
+    Hypothesis will only print the seed which would reproduce a failure if a test
+    fails in an unexpected way, for instance inside Hypothesis internals.
     """
 
     def accept(test):
@@ -292,18 +310,22 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
 
 
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
-    """Run the example that corresponds to this data blob in order to reproduce
-    a failure.
+    """
+    Run the example corresponding to the binary ``blob`` in order to reproduce a
+    failure.
 
-    A test with this decorator *always* runs only one example and always fails.
-    If the provided example does not cause a failure, or is in some way invalid
-    for this test, then this will fail with a DidNotReproduce error.
+    A test decorated with |@reproduce_failure| always runs exactly one example,
+    which is expected to cause a failure. If the provided ``blob`` does not
+    cause a failure, Hypothesis will raise |DidNotReproduce|.
 
-    This decorator is not intended to be a permanent addition to your test
-    suite. It's simply some code you can add to ease reproduction of a problem
-    in the event that you don't have access to the test database. Because of
-    this, *no* compatibility guarantees are made between different versions of
-    Hypothesis - its API may change arbitrarily from version to version.
+    Hypothesis will print an |@reproduce_failure| decorator if
+    |settings.print_blob| is ``True``.
+
+    |@reproduce_failure| is intended to be temporarily added to your test suite in
+    order to reproduce a failure. It is not intended to be a permanent addition to
+    your test suite. Because of this, no compatibility guarantees are made across
+    Hypothesis versions, and |@reproduce_failure| will error if used on a different
+    Hypothesis version than it was created for.
     """
 
     def accept(test):
