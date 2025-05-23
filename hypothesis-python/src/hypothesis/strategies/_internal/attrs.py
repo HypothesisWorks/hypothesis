@@ -8,20 +8,40 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Collection, Generator, Iterable, Sequence
 from functools import reduce
 from itertools import chain
+from typing import Any, Optional, TypeVar, Union
 
 import attr
 
+# attr/validators.pyi does not expose types for these, even though they exist
+# in source.
+from attr.validators import (  # type: ignore
+    _AndValidator,
+    _InstanceOfValidator,
+    _InValidator,
+    _OptionalValidator,
+)
+from attrs import Attribute, AttrsInstance, Factory
+
 from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import EllipsisType, get_type_hints
 from hypothesis.strategies._internal.core import BuildsStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
 from hypothesis.utils.conventions import infer
 
+T = TypeVar("T")
 
-def get_attribute_by_alias(fields, alias, *, target=None):
+
+def get_attribute_by_alias(
+    fields: Iterable[Attribute],
+    alias: str,
+    *,
+    target: Optional[type[AttrsInstance]] = None,
+) -> Attribute:
     """
     Get an attrs attribute by its alias, rather than its name (compare
     getattr(fields, name)).
@@ -46,12 +66,17 @@ def get_attribute_by_alias(fields, alias, *, target=None):
     return matched_fields[0]
 
 
-def from_attrs(target, args, kwargs, to_infer):
+def from_attrs(
+    target: type[AttrsInstance],
+    args: tuple[SearchStrategy[Any], ...],
+    kwargs: dict[str, Union[SearchStrategy[Any], EllipsisType]],
+    to_infer: Iterable[str],
+) -> SearchStrategy:
     """An internal version of builds(), specialised for Attrs classes."""
-    fields = attr.fields(target)
+    attributes: tuple[Attribute, ...] = attr.fields(target)
     kwargs = {k: v for k, v in kwargs.items() if v is not infer}
     for name in to_infer:
-        attrib = get_attribute_by_alias(fields, name, target=target)
+        attrib = get_attribute_by_alias(attributes, name, target=target)
         kwargs[name] = from_attrs_attribute(attrib, target)
     # We might make this strategy more efficient if we added a layer here that
     # retries drawing if validation fails, for improved composition.
@@ -59,38 +84,47 @@ def from_attrs(target, args, kwargs, to_infer):
     return BuildsStrategy(target, args, kwargs)
 
 
-def from_attrs_attribute(attrib, target):
+def from_attrs_attribute(
+    attrib: Attribute, target: type[AttrsInstance]
+) -> SearchStrategy:
     """Infer a strategy from the metadata on an attr.Attribute object."""
     # Try inferring from the default argument.  Note that this will only help if
     # the user passed `...` to builds() for this attribute, but in that case
     # we use it as the minimal example.
-    default = st.nothing()
-    if isinstance(attrib.default, attr.Factory):
+    default: SearchStrategy = st.nothing()
+    # attr/__init__.pyi uses overloads to declare Factory as a function, not a
+    # class. This is a fib - at runtime and always, it is a class.
+    if isinstance(attrib.default, Factory):  # type: ignore
+        assert attrib.default is not None
         if not attrib.default.takes_self:
             default = st.builds(attrib.default.factory)
     elif attrib.default is not attr.NOTHING:
         default = st.just(attrib.default)
 
     # Try inferring None, exact values, or type from attrs provided validators.
-    null = st.nothing()  # updated to none() on seeing an OptionalValidator
-    in_collections = []  # list of in_ validator collections to sample from
-    validator_types = set()  # type constraints to pass to types_to_strategy()
+
+    # updated to none() on seeing an OptionalValidator
+    null: SearchStrategy = st.nothing()
+    # list of in_ validator collections to sample from
+    in_collections = []
+    # type constraints to pass to types_to_strategy()
+    validator_types = set()
     if attrib.validator is not None:
         validator = attrib.validator
-        if isinstance(validator, attr.validators._OptionalValidator):
+        if isinstance(validator, _OptionalValidator):
             null = st.none()
             validator = validator.validator
-        if isinstance(validator, attr.validators._AndValidator):
+        if isinstance(validator, _AndValidator):
             vs = validator._validators
         else:
             vs = [validator]
         for v in vs:
-            if isinstance(v, attr.validators._InValidator):
+            if isinstance(v, _InValidator):
                 if isinstance(v.options, str):
                     in_collections.append(list(all_substrings(v.options)))
                 else:
                     in_collections.append(v.options)
-            elif isinstance(v, attr.validators._InstanceOfValidator):
+            elif isinstance(v, _InstanceOfValidator):
                 validator_types.add(v.type)
 
     # This is the important line.  We compose the final strategy from various
@@ -115,7 +149,7 @@ def from_attrs_attribute(attrib, target):
     return strat
 
 
-def types_to_strategy(attrib, types):
+def types_to_strategy(attrib: Attribute, types: Collection[Any]) -> SearchStrategy:
     """Find all the type metadata for this attribute, reconcile it, and infer a
     strategy from the mess."""
     # If we know types from the validator(s), that's sufficient.
@@ -140,11 +174,11 @@ def types_to_strategy(attrib, types):
 
     # Otherwise, try the `type` attribute as a fallback, and finally try
     # the type hints on a converter (desperate!) before giving up.
-    if is_a_type(getattr(attrib, "type", None)):
+    if (attrib_type := attrib.type) is not None and is_a_type(attrib_type):
         # The convoluted test is because variable annotations may be stored
         # in string form; attrs doesn't evaluate them and we don't handle them.
         # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.
-        return st.from_type(attrib.type)
+        return st.from_type(attrib_type)
 
     converter = getattr(attrib, "converter", None)
     if isinstance(converter, type):
@@ -157,7 +191,7 @@ def types_to_strategy(attrib, types):
     return st.nothing()
 
 
-def ordered_intersection(in_):
+def ordered_intersection(in_: Sequence[Iterable[T]]) -> Generator[T, None, None]:
     """Set union of n sequences, ordered for reproducibility across runs."""
     intersection = reduce(set.intersection, in_, set(in_[0]))
     for x in chain.from_iterable(in_):
@@ -166,7 +200,7 @@ def ordered_intersection(in_):
             intersection.remove(x)
 
 
-def all_substrings(s):
+def all_substrings(s: str) -> Generator[str, None, None]:
     """Generate all substrings of `s`, in order of length then occurrence.
     Includes the empty string (first), and any duplicates that are present.
 

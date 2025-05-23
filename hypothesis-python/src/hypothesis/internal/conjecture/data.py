@@ -15,7 +15,17 @@ from collections.abc import Hashable, Iterable, Iterator, Sequence
 from enum import IntEnum
 from functools import cached_property
 from random import Random
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NoReturn,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import attr
 
@@ -59,6 +69,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import ObservabilityPredicate
 from hypothesis.reporting import debug_report
 
 if TYPE_CHECKING:
@@ -700,8 +711,8 @@ class ConjectureData:
         self.arg_slices: set[tuple[int, int]] = set()
         self.slice_comments: dict[tuple[int, int], str] = {}
         self._observability_args: dict[str, Any] = {}
-        self._observability_predicates: defaultdict = defaultdict(
-            lambda: {"satisfied": 0, "unsatisfied": 0}
+        self._observability_predicates: defaultdict[str, ObservabilityPredicate] = (
+            defaultdict(lambda: {"satisfied": 0, "unsatisfied": 0})
         )
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]
@@ -737,7 +748,65 @@ class ConjectureData:
     #
     # `observe` formalizes this. The choice will only be written to the choice
     # sequence if observe is True.
-    def _draw(self, choice_type, constraints, *, observe, forced):
+
+    @overload
+    def _draw(
+        self,
+        choice_type: Literal["integer"],
+        constraints: IntegerConstraints,
+        *,
+        observe: bool,
+        forced: Optional[int],
+    ) -> int: ...
+
+    @overload
+    def _draw(
+        self,
+        choice_type: Literal["float"],
+        constraints: FloatConstraints,
+        *,
+        observe: bool,
+        forced: Optional[float],
+    ) -> float: ...
+
+    @overload
+    def _draw(
+        self,
+        choice_type: Literal["string"],
+        constraints: StringConstraints,
+        *,
+        observe: bool,
+        forced: Optional[str],
+    ) -> str: ...
+
+    @overload
+    def _draw(
+        self,
+        choice_type: Literal["bytes"],
+        constraints: BytesConstraints,
+        *,
+        observe: bool,
+        forced: Optional[bytes],
+    ) -> bytes: ...
+
+    @overload
+    def _draw(
+        self,
+        choice_type: Literal["boolean"],
+        constraints: BooleanConstraints,
+        *,
+        observe: bool,
+        forced: Optional[bool],
+    ) -> bool: ...
+
+    def _draw(
+        self,
+        choice_type: ChoiceTypeT,
+        constraints: ChoiceConstraintsT,
+        *,
+        observe: bool,
+        forced: Optional[ChoiceT],
+    ) -> ChoiceT:
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
@@ -776,8 +845,10 @@ class ConjectureData:
         # bring that back (ABOVE the choice sequence layer) in the future.
         #
         # See https://github.com/HypothesisWorks/hypothesis/issues/3926.
-        if choice_type == "float" and math.isnan(value):
-            value = int_to_float(float_to_int(value))
+        if choice_type == "float":
+            assert isinstance(value, float)
+            if math.isnan(value):
+                value = int_to_float(float_to_int(value))
 
         if observe:
             was_forced = forced is not None
@@ -940,7 +1011,34 @@ class ConjectureData:
         constraints: BooleanConstraints = self._pooled_constraints("boolean", {"p": p})
         return self._draw("boolean", constraints, observe=observe, forced=forced)
 
-    def _pooled_constraints(self, choice_type, constraints):
+    @overload
+    def _pooled_constraints(
+        self, choice_type: Literal["integer"], constraints: IntegerConstraints
+    ) -> IntegerConstraints: ...
+
+    @overload
+    def _pooled_constraints(
+        self, choice_type: Literal["float"], constraints: FloatConstraints
+    ) -> FloatConstraints: ...
+
+    @overload
+    def _pooled_constraints(
+        self, choice_type: Literal["string"], constraints: StringConstraints
+    ) -> StringConstraints: ...
+
+    @overload
+    def _pooled_constraints(
+        self, choice_type: Literal["bytes"], constraints: BytesConstraints
+    ) -> BytesConstraints: ...
+
+    @overload
+    def _pooled_constraints(
+        self, choice_type: Literal["boolean"], constraints: BooleanConstraints
+    ) -> BooleanConstraints: ...
+
+    def _pooled_constraints(
+        self, choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
+    ) -> ChoiceConstraintsT:
         """Memoize common dictionary objects to reduce memory pressure."""
         # caching runs afoul of nondeterminism checks
         if self.provider.avoid_realization:
@@ -1276,6 +1374,8 @@ class ConjectureData:
         self.conclude_test(Status.OVERRUN)
 
 
-def draw_choice(choice_type, constraints, *, random):
+def draw_choice(
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT, *, random: Random
+) -> ChoiceT:
     cd = ConjectureData(random=random)
-    return getattr(cd.provider, f"draw_{choice_type}")(**constraints)
+    return cast(ChoiceT, getattr(cd.provider, f"draw_{choice_type}")(**constraints))
