@@ -231,6 +231,8 @@ Targeted property-based testing combines the advantages of both search-based and
 
 This is not *always* a good idea - for example calculating the search metric might take time better spent running more uniformly-random test cases, or your target metric might accidentally lead Hypothesis *away* from bugs - but if there is a natural metric like "floating-point error", "load factor" or "queue length", we encourage you to experiment with targeted testing.
 
+We recommend that users also skim the papers introducing targeted PBT; from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__ and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__. For the curious, the initial implementation in Hypothesis uses hill-climbing search via a mutating fuzzer, with some tactics inspired by simulated annealing to avoid getting stuck and endlessly mutating a local maximum.
+
 .. code-block:: python
 
   from hypothesis import given, strategies as st, target
@@ -245,16 +247,15 @@ This is not *always* a good idea - for example calculating the search metric mig
 
 .. autofunction:: hypothesis.target
 
-We recommend that users also skim the papers introducing targeted PBT; from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__ and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__. For the curious, the initial implementation in Hypothesis uses hill-climbing search via a mutating fuzzer, with some tactics inspired by simulated annealing to avoid getting stuck and endlessly mutating a local maximum.
-
-
-
 Settings
 --------
 
+.. seealso::
+
+    See also :doc:`the tutorial for settings </tutorial/settings>`.
+
 .. autoclass:: hypothesis.settings
     :members:
-    :exclude-members: register_profile, get_profile, load_profile
 
 .. autoclass:: hypothesis.Phase
     :members:
@@ -262,147 +263,9 @@ Settings
 .. autoclass:: hypothesis.Verbosity
     :members:
 
-Building settings objects
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Settings can be created by calling :class:`~hypothesis.settings` with any of the available settings
-values. Any absent ones will be set to defaults:
-
-.. code-block:: pycon
-
-    >>> from hypothesis import settings
-    >>> settings().max_examples
-    100
-    >>> settings(max_examples=10).max_examples
-    10
-
-You can also pass a 'parent' settings object as the first argument,
-and any settings you do not specify as keyword arguments will be
-copied from the parent settings:
-
-.. code-block:: pycon
-
-    >>> parent = settings(max_examples=10)
-    >>> child = settings(parent, deadline=None)
-    >>> parent.max_examples == child.max_examples == 10
-    True
-    >>> parent.deadline
-    200
-    >>> child.deadline is None
-    True
-
-Default settings
-~~~~~~~~~~~~~~~~
-
-At any given point in your program there is a current default settings,
-available as ``settings.default``. As well as being a settings object in its own
-right, all newly created settings objects which are not explicitly based off
-another settings are based off the default, so will inherit any values that are
-not explicitly set from it.
-
-You can change the defaults by using profiles.
-
-.. _settings_profiles:
-
-Settings profiles
-~~~~~~~~~~~~~~~~~
-
-Depending on your environment you may want different default settings.
-For example: during development you may want to lower the number of examples
-to speed up the tests. However, in a CI environment you may want more examples
-so you are more likely to find bugs.
-
-Hypothesis allows you to define different settings profiles. These profiles
-can be loaded at any time.
-
-.. automethod:: hypothesis.settings.register_profile
-.. automethod:: hypothesis.settings.get_profile
-.. automethod:: hypothesis.settings.load_profile
-
-Loading a profile changes the default settings but will not change the behaviour
-of tests that explicitly change the settings.
-
-.. code-block:: pycon
-
-    >>> from hypothesis import settings
-    >>> settings.register_profile("ci", max_examples=1000)
-    >>> settings().max_examples
-    100
-    >>> settings.load_profile("ci")
-    >>> settings().max_examples
-    1000
-
-Instead of loading the profile and overriding the defaults you can retrieve profiles for
-specific tests.
-
-.. code-block:: pycon
-
-    >>> settings.get_profile("ci").max_examples
-    1000
-
-Optionally, you may define the environment variable to load a profile for you.
-This is the suggested pattern for running your tests on CI.
-The code below should run in a ``conftest.py`` or any setup/initialization section of your test suite.
-If this variable is not defined the Hypothesis defined defaults will be loaded.
-
-.. code-block:: pycon
-
-    >>> import os
-    >>> from hypothesis import settings, Verbosity
-    >>> settings.register_profile("ci", max_examples=1000)
-    >>> settings.register_profile("dev", max_examples=10)
-    >>> settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose)
-    >>> settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
-
-If you are using the hypothesis pytest plugin and your profiles are registered
-by your conftest you can load one with the command line option ``--hypothesis-profile``.
-
-.. code:: bash
-
-    $ pytest tests --hypothesis-profile <profile-name>
-
-
-Hypothesis comes with two built-in profiles, ``ci`` and ``default``.
-``ci`` is set up to have good defaults for running in a CI environment, so emphasizes determinism, while the
-``default`` settings are picked to be more likely to find bugs and to have a good workflow when used for local development.
-
-Hypothesis will automatically detect certain common CI environments and use the ci profile automatically
-when running in them.
-In particular, if you wish to use the ``ci`` profile, setting the ``CI`` environment variable will do this.
-
-This will still be the case if you register your own ci profile. For example, if you wanted to run more examples in CI, you might configure it as follows:
-
-.. code-block:: python
-
-    settings.register_profile(
-        "ci",
-        settings(
-            settings.get_profile("ci"),
-            max_examples=1000,
-        ),
-    )
-
-This will configure your CI to run 1000 examples per test rather than the default of 100, and this change will automatically be picked up when running on a CI server.
-
-.. _healthchecks:
-
-Health checks
-~~~~~~~~~~~~~
-
-Hypothesis' health checks are designed to detect and warn you about performance
-problems where your tests are slow, inefficient, or generating very large examples.
-
-If this is expected, e.g. when generating large arrays or dataframes, you can selectively
-disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
-The argument for this parameter is a list with elements drawn from any of
-the class-level attributes of the HealthCheck class.
-Using a value of ``list(HealthCheck)`` will disable all health checks.
-
 .. autoclass:: hypothesis.HealthCheck
    :undoc-members:
    :inherited-members:
-   :exclude-members: all
-
 
 .. _database:
 
@@ -611,6 +474,15 @@ each ``@reproduce_failure`` invocation is specific to a Hypothesis version).
 By default these messages are not printed.
 If you want to see these you can set the :attr:`~hypothesis.settings.print_blob` setting to ``True``.
 
+Hypothesis exceptions
+---------------------
+
+Custom exceptions raised by Hypothesis.
+
+.. autoclass:: hypothesis.errors.HypothesisException
+.. autoclass:: hypothesis.errors.InvalidArgument
+.. autoclass:: hypothesis.errors.ResolutionFailed
+.. autoclass:: hypothesis.errors.Unsatisfiable
 
 .. _hypothesis-django:
 
@@ -633,13 +505,13 @@ Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TransactionTestCase` or
 :class:`~hypothesis.extra.django.LiveServerTestCase` or
 :class:`~hypothesis.extra.django.StaticLiveServerTestCase`
-and you can use :func:`@given <hypothesis.given>` as normal,
+and you can use |@given| as normal,
 and the transactions will be per example
-rather than per test function as they would be if you used :func:`@given <hypothesis.given>` with a normal
+rather than per test function as they would be if you used |@given| with a normal
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
-:func:`@given <hypothesis.given>` will be run as normal for :class:`django:django.test.TestCase` or :class:`django:django.test.TransactionTestCase`.
+|@given| will be run as normal for :class:`django:django.test.TestCase` or :class:`django:django.test.TransactionTestCase`.
 
 .. autoclass:: hypothesis.extra.django.TransactionTestCase
 .. autoclass:: hypothesis.extra.django.LiveServerTestCase
@@ -651,9 +523,9 @@ Because Hypothesis runs this in a loop, the performance problems :class:`django:
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
-to avoid :ref:`errors due to slow example generation <healthchecks>`.
+to avoid a |HealthCheck| error due to slow example generation.
 
-Having set up a test class, you can now pass :func:`@given <hypothesis.given>`
+Having set up a test class, you can now pass |@given|
 a strategy for Django models with |django.from_model|.
 For example, using :gh-file:`the trivial django project we have for testing
 <hypothesis-python/tests/django/toystore/models.py>`:
@@ -878,7 +750,7 @@ The way this works is by introducing the concept of an executor. An executor is 
     def default_executor(function):
         return function()
 
-You define executors by defining a method ``execute_example`` on a class. Any test methods on that class with :func:`@given <hypothesis.given>` used on them will use ``self.execute_example`` as an executor with which to run tests. For example, the following executor runs all its code twice:
+You define executors by defining a method ``execute_example`` on a class. Any test methods on that class with |@given| used on them will use ``self.execute_example`` as an executor with which to run tests. For example, the following executor runs all its code twice:
 
 .. code:: python
 
@@ -918,7 +790,7 @@ and should be rewritten as:
                 result = result()
             return result
 
-An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying :func:`@given <hypothesis.given>`.
+An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying |@given|.
 
 .. code:: python
 

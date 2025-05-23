@@ -145,21 +145,19 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
     Each member of this enum is a specific health check to suppress.
+
+    Hypothesis' health checks are designed to detect and warn you about performance
+    problems where your tests are slow, inefficient, or generating very large examples.
+
+    If this is expected, e.g. when generating large arrays or dataframes, you can selectively
+    disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
+    The argument for this parameter is a list with elements drawn from any of
+    the class-level attributes of the HealthCheck class.
+    Using a value of ``list(HealthCheck)`` will disable all health checks.
     """
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
-
-    @classmethod
-    def all(cls) -> list["HealthCheck"]:
-        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
-        note_deprecation(
-            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
-            since="2023-04-16",
-            has_codemod=True,
-            stacklevel=1,
-        )
-        return list(HealthCheck)
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
@@ -187,11 +185,11 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Deprecated; we always error if :func:`@given <hypothesis.given>` is applied
+    """Deprecated; we always error if |@given| is applied
     to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
+    """Checks if |@given| has been applied to a test
     with a pytest function-scoped fixture. Function-scoped fixtures run once
     for the whole function, not once per example, and this is usually not what
     you want.
@@ -209,7 +207,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     which is enabled by default when running Hypothesis inside pytest."""
 
     differing_executors = 10
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
+    """Checks if |@given| has been applied to a test
     which is executed by different :ref:`executors<custom-function-execution>`.
     If your test function is defined as a method on a class, that class will be
     your executor, and subclasses executing an inherited test is a common way
@@ -217,25 +215,41 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     The correct fix is often to bring the executor instance under the control
     of hypothesis by explicit parametrization over, or sampling from,
-    subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
+    subclasses, or to refactor so that |@given| is
     specified on leaf subclasses."""
 
     nested_given = 11
-    """Checks if :func:`@given <hypothesis.given>` is used inside another
-    :func:`@given <hypothesis.given>`. This results in quadratic generation and
+    """Checks if |@given| is used inside another
+    |@given|. This results in quadratic generation and
     shrinking behavior, and can usually be expressed more cleanly by using
     :func:`~hypothesis.strategies.data` to replace the inner
-    :func:`@given <hypothesis.given>`.
+    |@given|.
 
     Nesting @given can be appropriate if you set appropriate limits for the
     quadratic behavior and cannot easily reexpress the inner function with
     :func:`~hypothesis.strategies.data`. To suppress this health check, set
     ``suppress_health_check=[HealthCheck.nested_given]`` on the outer
-    :func:`@given <hypothesis.given>`. Setting it on the inner
-    :func:`@given <hypothesis.given>` has no effect. If you have more than one
+    |@given|. Setting it on the inner
+    |@given| has no effect. If you have more than one
     level of nesting, add a suppression for this health check to every
-    :func:`@given <hypothesis.given>` except the innermost one.
+    |@given| except the innermost one.
     """
+
+    @classmethod
+    def all(cls) -> list["HealthCheck"]:
+        """
+        Returns a list of all |HealthCheck| enum values. Can be used with
+        ``suppress_health_check=HealthCheck.all()`` to suppress all health
+        checks - though we recommend silencing individual health checks instead!
+        """
+        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
+        note_deprecation(
+            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
+            since="2023-04-16",
+            has_codemod=True,
+            stacklevel=1,
+        )
+        return list(HealthCheck)
 
 
 class duration(datetime.timedelta):
@@ -398,11 +412,89 @@ class settingsMeta(type):
 
 
 class settings(metaclass=settingsMeta):
-    """A settings object configures options including verbosity, runtime controls,
-    persistence, determinism, and more.
+    """
+    A settings object controls the following aspects of test behavior:
+    |settings.max_examples|, |settings.derandomize|, |settings.database|,
+    |settings.verbosity|, |settings.phases|, |settings.stateful_step_count|,
+    |settings.report_multiple_bugs|, |settings.suppress_health_check|,
+    |settings.deadline|, |settings.print_blob|, and |settings.backend|.
 
-    Default values are picked up from the settings.default object and
-    changes made there will be picked up in newly created settings.
+    A settings object can be applied as a decorator to a test function, in which
+    case that test function will use those settings. A test may only have one
+    settings object applied to it. A settings object can also be passed to
+    |settings.register_profile| or as a parent to another |settings|.
+
+    Attribute inheritance
+    ---------------------
+
+    Settings objects are immutable once created. When a settings object is created,
+    it uses the value specified for each attribute. Any attribute which is
+    not specified will inherit from its value in the ``parent`` settings object.
+    If ``parent`` is not passed, any attributes which are not specified will inherit
+    from the currently active settings profile instead.
+
+    For instance, ``settings(max_examples=10)`` will have a ``max_examples`` of ``10``,
+    and the value of all other attributes will be equal to its value in the
+    currently active settings profile.
+
+    A settings object is immutable once created. Changes made from activating a new
+    settings profile with |settings.load_profile| will be reflected in
+    settings objects created after the profile was made active, but not in existing
+    settings objects.
+
+    Default profiles
+    ----------------
+
+    While you can register additional profiles with |settings.register_profile|,
+    Hypothesis comes with two profiles by default: ``default`` and ``ci``.
+
+    The ``default`` profile is active by default, unless one of the ``CI``,
+    ``TF_BUILD``, or ``GITLAB_CI`` environment variables are set (to any value),
+    in which case the ``CI`` profile will be active by default.
+
+    The attributes of the currently active settings profile can be retrieved with
+    ``settings()`` (so ``settings().max_examples`` is the currently active default
+    for |settings.max_examples|).
+
+    The settings attributes for the default profiles are as follows:
+
+    .. code-block:: python
+
+        default = settings.register_profile(
+            "default",
+            max_examples=100,
+            derandomize=False,
+            database=not_set,  # see settings.database for details
+            verbosity=Verbosity.normal,
+            phases=tuple(Phase),
+            stateful_step_count=50,
+            report_multiple_bugs=True,
+            suppress_health_check=(),
+            deadline=duration(milliseconds=200),
+            print_blob=False,
+            backend="hypothesis",
+        )
+
+        ci = settings.register_profile(
+            "ci",
+            parent=default,
+            derandomize=True,
+            deadline=None,
+            database=None,
+            print_blob=True,
+            suppress_health_check=[HealthCheck.too_slow],
+        )
+
+    You can configure either of the default profiles with |settings.register_profile|:
+
+    .. code-block:: python
+
+        # run more examples in CI
+        settings.register_profile(
+            "ci",
+            settings.get_profile("ci"),
+            max_examples=1000,
+        )
     """
 
     _profiles: ClassVar[dict[str, "settings"]] = {}
@@ -537,8 +629,8 @@ class settings(metaclass=settingsMeta):
         update Hypothesis, Python, or the test function.
 
         This allows you to `check for regressions and look for bugs
-        <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ using
-        :ref:`separate settings profiles <settings_profiles>` - for example running
+        <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ using separate
+        settings profiles - for example running
         quick deterministic tests on every commit, and a longer non-deterministic
         nightly testing run.
 
@@ -604,10 +696,8 @@ class settings(metaclass=settingsMeta):
             Trying example: []
             Falsifying example: [-1198601713, -67, 116, -29578]
             Shrunk example to [-1198601713]
-            Shrunk example to [-32896]
             Shrunk example to [-128]
             Shrunk example to [32]
-            Shrunk example to [3]
             Shrunk example to [1]
             [1]
 
@@ -825,21 +915,18 @@ class settings(metaclass=settingsMeta):
         parent: Optional["settings"] = None,
         **kwargs: Any,
     ) -> None:
-        """Registers a collection of values to be used as a settings profile.
+        """
+        Register a settings object as a settings profile, under the name ``name``.
+        The ``parent`` and ``kwargs`` arguments to this method are as for
+        |settings|.
 
-        Settings profiles can be loaded by name - for example, you might
-        create a 'fast' profile which runs fewer examples, keep the 'default'
-        profile, and create a 'ci' profile that increases the number of
-        examples and uses a different database to store failures.
-
-        The arguments to this method are exactly as for
-        :class:`~hypothesis.settings`: optional ``parent`` settings, and
-        keyword arguments for each setting that will be set differently to
-        parent (or settings.default, if parent is None).
-
-        If you register a profile that has already been defined and that profile
-        is the currently loaded profile, the new changes will take effect immediately,
+        If a settings profile already exists under ``name``, it will be overwritten.
+        Registering a profile with the same name as the currently active profile
+        will cause those changes to take effect in the active profile immediately,
         and do not require reloading the profile.
+
+        Registered settings profiles can be retrieved later by name with
+        |settings.get_profile|.
         """
         check_type(str, name, "name")
         # if we just pass the parent and no kwargs, like
@@ -856,7 +943,10 @@ class settings(metaclass=settingsMeta):
 
     @staticmethod
     def get_profile(name: str) -> "settings":
-        """Return the profile with the given name."""
+        """
+        Returns the settings profile registered under ``name``. If no settings
+        profile is registered under ``name``, raises |InvalidArgument|.
+        """
         check_type(str, name, "name")
         try:
             return settings._profiles[name]
@@ -865,11 +955,10 @@ class settings(metaclass=settingsMeta):
 
     @staticmethod
     def load_profile(name: str) -> None:
-        """Loads in the settings defined in the profile provided.
+        """
+        Makes the settings profile registered under ``name`` the active profile.
 
-        If the profile does not exist, InvalidArgument will be raised.
-        Any setting not defined in the profile will be the library
-        defined default for that setting.
+        If no settings profile is registered under ``name``, raises |InvalidArgument|.
         """
         check_type(str, name, "name")
         settings._current_profile = name
