@@ -402,6 +402,7 @@ class PrimitiveProvider(abc.ABC):
         This method is currently used for relatively tight integration between
         Hypothesis and specific providers.
         """
+        return None
 
     def observe_test_case(self) -> dict[str, Any]:
         """Called at the end of the test case when observability mode is active.
