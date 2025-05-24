@@ -74,16 +74,34 @@ _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-# The available `PrimitiveProvider`s, and therefore also the available backends
-# for use by @settings(backend=...). The key is the name to be used in the backend=
-# value, and the value is the importable path to a subclass of PrimitiveProvider.
-#
-# See also
-# https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends-for-hypothesis.
-#
-# NOTE: the PrimitiveProvider interface is not yet stable. We may continue to
-# make breaking changes to it. (but if you want to experiment and don't mind
-# breakage, here you go!)
+#: Registered Hypothesis backends. This is a dictionary whose keys are the name
+#: to be used in |settings.backend|, and whose values are a string of the absolute
+#: importable path to a subclass of |PrimitiveProvider|, which Hypothesis will
+#: instantiate when your backend is requested by a test's |settings.backend| value.
+#:
+#: For example, the default Hypothesis backend is registered as:
+#:
+#: .. code-block:: python
+#:
+#:    from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+#:
+#:    AVAILABLE_PROVIDERS["hypothesis"] = "hypothesis.internal.conjecture.providers.HypothesisProvider"
+#:
+#: And can be used with:
+#:
+#: .. code-block:: python
+#:
+#:     from hypothesis import given, settings, strategies as st
+#:
+#:     @given(st.integers())
+#:     @settings(backend="hypothesis")
+#:     def f(n):
+#:         pass
+#:
+#: Though, as ``backend="hypothesis"`` is the default setting, the above would
+#: typically not have any effect.
+#:
+#: See also :ref:`alternative-backends`.
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
@@ -285,34 +303,34 @@ class PrimitiveProvider(abc.ABC):
     (see :ref:`alternative-backends`).
     """
 
-    # How long a provider instance is used for. One of test_function or
-    # test_case. Defaults to test_function.
-    #
-    # If test_function, a single provider instance will be instantiated and used
-    # for the entirety of each test function. I.e., roughly one provider per
-    # @given annotation. This can be useful if you need to track state over many
-    # executions to a test function.
-    #
-    # This lifetime will cause None to be passed for the ConjectureData object
-    # in PrimitiveProvider.__init__, because that object is instantiated per
-    # test case.
-    #
-    # If test_case, a new provider instance will be instantiated and used each
-    # time hypothesis tries to generate a new input to the test function. This
-    # lifetime can access the passed ConjectureData object.
-    #
-    # Non-hypothesis providers probably want to set a lifetime of test_function.
+    #: How long a provider instance is used for. One of test_function or
+    #: test_case. Defaults to test_function.
+    #:
+    #: If test_function, a single provider instance will be instantiated and used
+    #: for the entirety of each test function. I.e., roughly one provider per
+    #: |@given| annotation. This can be useful if you need to track state over
+    #: many executions to a test function.
+    #:
+    #: This lifetime will cause None to be passed for the ConjectureData object
+    #: in PrimitiveProvider.__init__, because that object is instantiated per
+    #: test case.
+    #:
+    #: If test_case, a new provider instance will be instantiated and used each
+    #: time hypothesis tries to generate a new input to the test function. This
+    #: lifetime can access the passed ConjectureData object.
+    #:
+    #: Non-hypothesis providers probably want to set a lifetime of test_function.
     lifetime: _Lifetime = "test_function"
 
-    # Solver-based backends such as hypothesis-crosshair use symbolic values
-    # which record operations performed on them in order to discover new paths.
-    # If avoid_realization is set to True, hypothesis will avoid interacting with
-    # symbolic choices returned by the provider in any way that would force the
-    # solver to narrow the range of possible values for that symbolic.
-    #
-    # Setting this to True disables some hypothesis features, such as
-    # DataTree-based deduplication, and some internal optimizations, such as
-    # caching constraints. Only enable this if it is necessary for your backend.
+    #: Solver-based backends such as hypothesis-crosshair use symbolic values
+    #: which record operations performed on them in order to discover new paths.
+    #: If ``avoid_realization`` is set to ``True``, hypothesis will avoid interacting
+    #: with symbolic choices returned by the provider in any way that would force
+    #: the solver to narrow the range of possible values for that symbolic.
+    #:
+    #: Setting this to ``True`` disables some hypothesis features, such as
+    #: DataTree-based deduplication, and some internal optimizations, such as
+    #: caching constraints. Only enable this if it is necessary for your backend.
     avoid_realization = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
@@ -377,7 +395,7 @@ class PrimitiveProvider(abc.ABC):
         generating strategy values for each test case. This is just before any
         :ref:`custom executor <custom-function-execution>` is called.
 
-        Even if not returning a custom context manager, PrimitiveProvider
+        Even if not returning a custom context manager, |PrimitiveProvider|
         subclasses are welcome to override this method to know when Hypothesis
         starts and ends the execution of a single test case.
         """
@@ -386,14 +404,14 @@ class PrimitiveProvider(abc.ABC):
     def realize(self, value: T, *, for_failure: bool = False) -> T:
         """
         Called whenever hypothesis requires a concrete (non-symbolic) value from
-        a potentially symbolic value. Hypothesis will not check that `value` is
-        symbolic before calling `realize`, so you should handle the case where
-        `value` is non-symbolic.
+        a potentially symbolic value. Hypothesis will not check that ``value`` is
+        symbolic before calling ``realize``, so you should handle the case where
+        ``value`` is non-symbolic.
 
         The returned value should be non-symbolic.  If you cannot provide a value,
-        raise hypothesis.errors.BackendCannotProceed("discard_test_case").
+        raise |BackendCannotProceed| with a value of ``"discard_test_case"``.
 
-        If for_failure is True, the value is associated with a failing example.
+        If ``for_failure`` is ``True``, the value is associated with a failing example.
         In this case, the backend should spend substantially more effort when
         attempting to realize the value, since it is important to avoid discarding
         failing  examples. Backends may still raise BackendCannotProceed when
@@ -417,7 +435,7 @@ class PrimitiveProvider(abc.ABC):
         """Called at the end of the test case when observability mode is active.
 
         The return value should be a non-symbolic json-encodable dictionary,
-        and will be included as `observation["metadata"]["backend"]`.
+        and will be included as ``observation["metadata"]["backend"]``.
         """
         return {}
 
@@ -426,9 +444,9 @@ class PrimitiveProvider(abc.ABC):
     ) -> Iterable[_BackendInfoMsg]:
         """Called at the end of each test case and again at end of the test function.
 
-        Return an iterable of `{type: info/alert/error, title: str, content: str|dict}`
+        Return an iterable of ``{type: info/alert/error, title: str, content: str|dict}``
         dictionaries to be delivered as individual information messages.
-        (Hypothesis adds the `run_start` timestamp and `property` name for you.)
+        (Hypothesis adds the ``run_start`` timestamp and ``property`` name for you.)
         """
         assert lifetime in ("test_case", "test_function")
         yield from []
@@ -438,7 +456,7 @@ class PrimitiveProvider(abc.ABC):
 
         Providers can optionally track this data to learn which sub-sequences
         of draws correspond to a higher-level object, recovering the parse tree.
-        `label` is an opaque integer, which will be shared by all spans drawn
+        ``label`` is an opaque integer, which will be shared by all spans drawn
         from a particular strategy.
 
         This method is called from ConjectureData.start_span().
@@ -447,7 +465,7 @@ class PrimitiveProvider(abc.ABC):
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
         """Marks the end of a semantically meaningful span.
 
-        `discard` is True when the draw was filtered out or otherwise marked as
+        ``discard`` is True when the draw was filtered out or otherwise marked as
         unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
