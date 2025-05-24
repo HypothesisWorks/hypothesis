@@ -35,6 +35,7 @@ from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
+    ChoiceT,
     ChoiceTypeT,
     FloatConstraints,
     choice_constraints_key,
@@ -279,12 +280,10 @@ class _BackendInfoMsg(TypedDict):
 
 
 class PrimitiveProvider(abc.ABC):
-    # This is the low-level interface which would also be implemented
-    # by e.g. CrossHair, by an Atheris-hypothesis integration, etc.
-    # We'd then build the structured tree handling, database and replay
-    # support, etc. on top of this - so all backends get those for free.
-    #
-    # See https://github.com/HypothesisWorks/hypothesis/issues/3086
+    """
+    A primitive provider is the implementation interface of a Hypothesis backend
+    (see :ref:`alternative-backends`).
+    """
 
     # How long a provider instance is used for. One of test_function or
     # test_case. Defaults to test_function.
@@ -318,48 +317,6 @@ class PrimitiveProvider(abc.ABC):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
-
-    def per_test_case_context_manager(self):
-        return contextlib.nullcontext()
-
-    def realize(self, value: T, *, for_failure: bool = False) -> T:
-        """
-        Called whenever hypothesis requires a concrete (non-symbolic) value from
-        a potentially symbolic value. Hypothesis will not check that `value` is
-        symbolic before calling `realize`, so you should handle the case where
-        `value` is non-symbolic.
-
-        The returned value should be non-symbolic.  If you cannot provide a value,
-        raise hypothesis.errors.BackendCannotProceed("discard_test_case").
-
-        If for_failure is True, the value is associated with a failing example.
-        In this case, the backend should spend substantially more effort when
-        attempting to realize the value, since it is important to avoid discarding
-        failing  examples. Backends may still raise BackendCannotProceed when
-        for_failure is True, if realization is truly impossible or if realization
-        takes significantly longer than expected (say, 5 minutes).
-        """
-        return value
-
-    def observe_test_case(self) -> dict[str, Any]:
-        """Called at the end of the test case when observability mode is active.
-
-        The return value should be a non-symbolic json-encodable dictionary,
-        and will be included as `observation["metadata"]["backend"]`.
-        """
-        return {}
-
-    def observe_information_messages(
-        self, *, lifetime: _Lifetime
-    ) -> Iterable[_BackendInfoMsg]:
-        """Called at the end of each test case and again at end of the test function.
-
-        Return an iterable of `{type: info/alert/error, title: str, content: str|dict}`
-        dictionaries to be delivered as individual information messages.
-        (Hypothesis adds the `run_start` timestamp and `property` name for you.)
-        """
-        assert lifetime in ("test_case", "test_function")
-        yield from []
 
     @abc.abstractmethod
     def draw_boolean(
@@ -408,6 +365,63 @@ class PrimitiveProvider(abc.ABC):
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
         raise NotImplementedError
+
+    def per_test_case_context_manager(self):
+        return contextlib.nullcontext()
+
+    def realize(self, value: T, *, for_failure: bool = False) -> T:
+        """
+        Called whenever hypothesis requires a concrete (non-symbolic) value from
+        a potentially symbolic value. Hypothesis will not check that `value` is
+        symbolic before calling `realize`, so you should handle the case where
+        `value` is non-symbolic.
+
+        The returned value should be non-symbolic.  If you cannot provide a value,
+        raise hypothesis.errors.BackendCannotProceed("discard_test_case").
+
+        If for_failure is True, the value is associated with a failing example.
+        In this case, the backend should spend substantially more effort when
+        attempting to realize the value, since it is important to avoid discarding
+        failing  examples. Backends may still raise BackendCannotProceed when
+        for_failure is True, if realization is truly impossible or if realization
+        takes significantly longer than expected (say, 5 minutes).
+        """
+        return value
+
+    def replay_choices(self, choices: tuple[ChoiceT, ...]) -> None:
+        """
+        Called to indicate that the provider should replay this choice sequence
+        the next time Hypothesis enters per_test_case_context_manager, instead of
+        generating its own choice sequence.
+
+        This is intended to indicate that the passed choice sequence is particularly
+        interesting in some way, and that the provider should collect runtime
+        information about it while replaying, in order to generate more effective
+        choice sequences in the future.
+
+        This method is currently used for relatively tight integration between
+        Hypothesis and specific providers.
+        """
+
+    def observe_test_case(self) -> dict[str, Any]:
+        """Called at the end of the test case when observability mode is active.
+
+        The return value should be a non-symbolic json-encodable dictionary,
+        and will be included as `observation["metadata"]["backend"]`.
+        """
+        return {}
+
+    def observe_information_messages(
+        self, *, lifetime: _Lifetime
+    ) -> Iterable[_BackendInfoMsg]:
+        """Called at the end of each test case and again at end of the test function.
+
+        Return an iterable of `{type: info/alert/error, title: str, content: str|dict}`
+        dictionaries to be delivered as individual information messages.
+        (Hypothesis adds the `run_start` timestamp and `property` name for you.)
+        """
+        assert lifetime in ("test_case", "test_function")
+        yield from []
 
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
         """Marks the beginning of a semantically meaningful span.
