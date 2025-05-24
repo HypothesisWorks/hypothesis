@@ -17,6 +17,17 @@ The most straightforward way is to use |is_hypothesis_test|:
 
     assert is_hypothesis_test(f)
 
+This works for stateful tests as well:
+
+.. code-block:: python
+
+    from hypothesis import is_hypothesis_test
+    from hypothesis.stateful import RuleBasedStateMachine
+
+    class MyStateMachine(RuleBasedStateMachine): ...
+
+    assert is_hypothesis_test(MyStateMachine.TestCase().runTest)
+
 Via pytest
 ~~~~~~~~~~
 

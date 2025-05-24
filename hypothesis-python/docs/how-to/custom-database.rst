@@ -47,6 +47,6 @@ Database classes are not required to implement |ExampleDatabase.move|. The defau
 Change listening
 ----------------
 
-To support change listening in a database class, you should call ``self._broadcast_change(event)`` whenever a value is saved, deleted, or moved in the backing database store. How you track this depends on the details of the database class. For instance, in |DirectoryBasedExampleDatabase|, Hypothesis installs a filesystem monitor via :pypi:`watchdog` in order to broadcast change events.
+To support change listening in a database class, you should call |ExampleDatabase._broadcast_change| whenever a value is saved, deleted, or moved in the backing database store. How you track this depends on the details of the database class. For instance, in |DirectoryBasedExampleDatabase|, Hypothesis installs a filesystem monitor via :pypi:`watchdog` in order to broadcast change events.
 
-Two related useful methods are ``ExampleDatabase._start_listening`` and ``ExampleDatabase._stop_listening``, which a database class can override to know when to start or stop expensive listening operations. See source code for documentation.
+Two related useful methods are |ExampleDatabase._start_listening| and |ExampleDatabase._stop_listening|, which a database class can override to know when to start or stop expensive listening operations. See documentation for details.

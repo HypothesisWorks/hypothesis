@@ -309,17 +309,21 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
     return accept
 
 
+# TODO_DOCS: link to /explanation/choice-sequence
+
+
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
     """
     Run the example corresponding to the binary ``blob`` in order to reproduce a
-    failure.
+    failure. ``blob`` is a serialized version of the internal input representation
+    of Hypothesis.
 
     A test decorated with |@reproduce_failure| always runs exactly one example,
     which is expected to cause a failure. If the provided ``blob`` does not
     cause a failure, Hypothesis will raise |DidNotReproduce|.
 
     Hypothesis will print an |@reproduce_failure| decorator if
-    |settings.print_blob| is ``True``.
+    |settings.print_blob| is ``True`` (which is the default in CI).
 
     |@reproduce_failure| is intended to be temporarily added to your test suite in
     order to reproduce a failure. It is not intended to be a permanent addition to

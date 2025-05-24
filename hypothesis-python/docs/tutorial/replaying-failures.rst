@@ -81,7 +81,9 @@ Hypothesis will print ``Falsifying explicit example: test_something_with_integer
 Prefer |@example| over the database for correctness
 ---------------------------------------------------
 
-While the database is useful for quick local iteration, Hypothesis may invalidate it when upgrading (because e.g. the internal format may have changed). We therefore recommend against relying on the database for the correctness of your tests. If you want to ensure an input is run every time, use |@example|.
+.. TODO_DOCS: link to /explanation/database-keys
+
+While the database is useful for quick local iteration, Hypothesis may invalidate it when upgrading (because e.g. the internal format may have changed). Changes to the source code of a test function may also change its database key, invalidating its stored entries. We therefore recommend against relying on the database for the correctness of your tests. If you want to ensure an input is run every time, use |@example|.
 
 Replaying examples with |@reproduce_failure|
 --------------------------------------------
