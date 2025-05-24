@@ -711,3 +711,9 @@ def test_realize_without_for_failure():
 
         with pytest.raises(AssertionError):
             f()
+
+
+def test_replay_choices():
+    # trivial covering test
+    provider = TrivialProvider(None)
+    provider.replay_choices([1])
