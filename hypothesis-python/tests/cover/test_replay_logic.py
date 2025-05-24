@@ -55,10 +55,9 @@ def test_does_not_shrink_on_replay():
 
 def test_does_not_shrink_on_replay_with_multiple_bugs():
     database = InMemoryExampleDatabase()
-
     call_count = 0
-
-    tombstone = 1000093
+    raised = False
+    marker = 1000093
 
     @settings(
         database=database,
@@ -68,11 +67,14 @@ def test_does_not_shrink_on_replay_with_multiple_bugs():
     )
     @given(st.integers())
     def test(i):
-        nonlocal call_count
+        nonlocal call_count, raised
         call_count += 1
-        if i > tombstone:
+        if i > marker:
+            raised = True
             raise AssertionError
-        elif i == tombstone:
+        # de-flake by preventing the possibility of hitting i == marker by
+        # chance on the first iteration
+        elif i == marker and raised:
             raise AssertionError
 
     with pytest.raises(ExceptionGroup):
