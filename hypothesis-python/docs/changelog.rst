@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.27:
+
+---------------------
+6.131.27 - 2025-05-24
+---------------------
+
+Add ``PrimitiveProvider.replay_choices`` to the :ref:`alternative backends <alternative-backends>` interface, to support warm-starting e.g. :pypi:`hypothesis-crosshair` from :pypi:`hypofuzz`.
+
 .. _v6.131.26:
 
 ---------------------
