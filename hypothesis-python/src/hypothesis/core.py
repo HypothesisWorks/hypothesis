@@ -1142,7 +1142,15 @@ class StateForActualGivenExecution:
             else:
                 tb = e.__traceback__
             filepath = traceback.extract_tb(tb)[-1][0]
-            if is_hypothesis_file(filepath) and not isinstance(e, HypothesisException):
+            if (
+                is_hypothesis_file(filepath)
+                and not isinstance(e, HypothesisException)
+                # We expect backend authors to use the provider_conformance test
+                # to test their backends. If an error occurs there, it is probably
+                # from their backend, and we would like to treat it as a standard
+                # error, not a hypothesis-internal error.
+                and not filepath.endswith("internal/conjecture/provider_conformance.py")
+            ):
                 raise
 
             if data.frozen:
