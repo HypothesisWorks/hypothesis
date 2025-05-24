@@ -172,7 +172,7 @@ Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`, wh
 - ``pytest --hypothesis-show-statistics`` can be used to :ref:`display test and data generation statistics <statistics>`.
 - ``pytest --hypothesis-profile=<profile name>`` can be used to load a settings profile (as in |settings.load_profile|).
 - ``pytest --hypothesis-verbosity=<level name>`` can be used to override the current |Verbosity| setting.
-- ``pytest --hypothesis-seed=<an int>`` can be used to :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
+- ``pytest --hypothesis-seed=<an int>`` can be used to reproduce a failure with a particular seed (as in |@seed|).
 - ``pytest --hypothesis-explain`` can be used to temporarily enable |Phase.explain|.
 
 Finally, all tests that are defined with Hypothesis automatically have ``@pytest.mark.hypothesis`` applied to them.  See :ref:`here for information on working with markers <pytest:mark examples>`.

@@ -5271,7 +5271,7 @@ to shrink towards negative values instead of positive values in some cases.
 -------------------
 
 This patch fixes rare cases where ``hypothesis write --binary-op`` could
-print :ref:`reproducing instructions <reproducing-failures>` from the internal
+print :ref:`reproducing instructions <reproducing-inputs>` from the internal
 search for an identity element.
 
 .. _v6.13.4:

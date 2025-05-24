@@ -30,6 +30,11 @@ def is_hypothesis_test(f: object) -> bool:
 
         assert is_hypothesis_test(f)
         assert is_hypothesis_test(MyStateMachine.TestCase().runTest)
+
+    .. seealso::
+
+        See also the :doc:`Detect Hypothesis tests
+        </how-to/detect-hypothesis-tests>` how-to.
     """
     if isinstance(f, MethodType):
         return is_hypothesis_test(f.__func__)

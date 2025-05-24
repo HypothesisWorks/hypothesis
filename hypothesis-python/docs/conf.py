@@ -177,25 +177,38 @@ rst_prolog = """
 .. |note| replace:: :func:`~hypothesis.note`
 
 .. |max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
-.. |settings.max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
-.. |settings.database| replace:: :obj:`~hypothesis.settings.database`
-.. |settings.deadline| replace:: :obj:`~hypothesis.settings.deadline`
-.. |settings.derandomize| replace:: :obj:`~hypothesis.settings.derandomize`
-.. |settings.phases| replace:: :obj:`~hypothesis.settings.phases`
-.. |settings.print_blob| replace:: :obj:`~hypothesis.settings.print_blob`
-.. |settings.report_multiple_bugs| replace:: :obj:`~hypothesis.settings.report_multiple_bugs`
-.. |settings.verbosity| replace:: :obj:`~hypothesis.settings.verbosity`
-.. |settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
-.. |settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
-.. |settings.backend| replace:: :obj:`~hypothesis.settings.backend`
+.. |settings.max_examples| replace:: :obj:`settings.max_examples <hypothesis.settings.max_examples>`
+.. |settings.database| replace:: :obj:`settings.database <hypothesis.settings.database>`
+.. |settings.deadline| replace:: :obj:`settings.deadline <hypothesis.settings.deadline>`
+.. |settings.derandomize| replace:: :obj:`settings.derandomize <hypothesis.settings.derandomize>`
+.. |settings.phases| replace:: :obj:`settings.phases <hypothesis.settings.phases>`
+.. |settings.print_blob| replace:: :obj:`settings.print_blob <hypothesis.settings.print_blob>`
+.. |settings.report_multiple_bugs| replace:: :obj:`settings.report_multiple_bugs <hypothesis.settings.report_multiple_bugs>`
+.. |settings.verbosity| replace:: :obj:`settings.verbosity <hypothesis.settings.verbosity>`
+.. |settings.suppress_health_check| replace:: \
+    :obj:`settings.suppress_health_check <hypothesis.settings.suppress_health_check>`
+.. |settings.stateful_step_count| replace:: :obj:`settings.stateful_step_count <hypothesis.settings.stateful_step_count>`
+.. |settings.backend| replace:: :obj:`settings.backend <hypothesis.settings.backend>`
+
+.. |~settings.max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
+.. |~settings.database| replace:: :obj:`~hypothesis.settings.database`
+.. |~settings.deadline| replace:: :obj:`~hypothesis.settings.deadline`
+.. |~settings.derandomize| replace:: :obj:`~hypothesis.settings.derandomize`
+.. |~settings.phases| replace:: :obj:`~hypothesis.settings.phases`
+.. |~settings.print_blob| replace:: :obj:`~hypothesis.settings.print_blob`
+.. |~settings.report_multiple_bugs| replace:: :obj:`~hypothesis.settings.report_multiple_bugs`
+.. |~settings.verbosity| replace:: :obj:`~hypothesis.settings.verbosity`
+.. |~settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
+.. |~settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
+.. |~settings.backend| replace:: :obj:`~hypothesis.settings.backend`
 
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
 .. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
-.. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture \
-<hypothesis.HealthCheck.function_scoped_fixture>`
-.. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors \
-<hypothesis.HealthCheck.differing_executors>`
+.. |HealthCheck.function_scoped_fixture| replace:: \
+    :obj:`HealthCheck.function_scoped_fixture <hypothesis.HealthCheck.function_scoped_fixture>`
+.. |HealthCheck.differing_executors| replace:: \
+    :obj:`HealthCheck.differing_executors <hypothesis.HealthCheck.differing_executors>`
 .. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
 
 .. |Phase| replace:: :obj:`Phase <hypothesis.Phase>`
@@ -213,7 +226,7 @@ rst_prolog = """
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
 
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
-
+.. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
@@ -260,8 +273,10 @@ rst_prolog = """
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
+.. |RuleBasedStateMachine| replace:: :class:`~hypothesis.stateful.RuleBasedStateMachine`
 
 .. |@reproduce_failure| replace:: :func:`@reproduce_failure <hypothesis.reproduce_failure>`
+.. |@seed| replace:: :func:`@seed <hypothesis.seed>`
 
 .. |ExampleDatabase| replace:: :class:`~hypothesis.database.ExampleDatabase`
 .. |ExampleDatabase.save| replace:: :func:`~hypothesis.database.ExampleDatabase.save`

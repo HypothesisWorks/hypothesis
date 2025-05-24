@@ -185,9 +185,7 @@ Control
 Functions that can be called from anywhere inside a test, to either modify how Hypothesis treats the current test case, or to give Hypothesis more information about the current test case.
 
 .. autofunction:: hypothesis.assume
-
 .. autofunction:: hypothesis.note
-
 .. autofunction:: hypothesis.event
 
 You can mark custom events in a test using |event|:
@@ -273,20 +271,6 @@ Settings
 Database
 --------
 
-When Hypothesis finds a bug, it stores enough information in its database to reproduce it. The next
-time the test is run, Hypothesis will start by trying the stored example that failed last time.
-
-The database is best thought of as a cache that you never need to invalidate. Entries may be
-transparently dropped when upgrading your Hypothesis version or changing your test. You shouldn't
-rely on the database for correctness; to ensure Hypothesis always tries an example, use |@example|.
-
-Hypothesis is designed so that arbitrary data can be placed in the database without causing incorrect
-behavior. It can never be the case that changing the strategy for a test gives you incorrect stored
-data from the previous strategy, for instance.
-
-ExampleDatabase implementations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 .. autoclass:: hypothesis.database.ExampleDatabase
     :members:
     :private-members: _broadcast_change, _start_listening, _stop_listening
@@ -299,61 +283,6 @@ ExampleDatabase implementations
 .. autoclass:: hypothesis.database.BackgroundWriteDatabase
 .. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
-.. _custom-database:
-
-Implementing your own database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To define your own |ExampleDatabase| class, implement the |ExampleDatabase.save|, |ExampleDatabase.fetch|, and |ExampleDatabase.delete| methods.
-
-For example, here's a simple database class that uses :mod:`sqlite <sqlite3>` as the backing data store:
-
-.. code-block:: python
-
-    import sqlite3
-    from collections.abc import Iterable
-
-    from hypothesis.database import ExampleDatabase
-
-    class SQLiteExampleDatabase(ExampleDatabase):
-        def __init__(self, db_path: str):
-            self.conn = sqlite3.connect(db_path)
-
-            self.conn.execute(
-                """
-                CREATE TABLE examples (
-                    key BLOB,
-                    value BLOB,
-                    UNIQUE (key, value)
-                )
-            """
-            )
-
-        def save(self, key: bytes, value: bytes) -> None:
-            self.conn.execute(
-                "INSERT OR IGNORE INTO examples VALUES (?, ?)",
-                (key, value),
-            )
-
-        def fetch(self, key: bytes) -> Iterable[bytes]:
-            cursor = self.conn.execute("SELECT value FROM examples WHERE key = ?", (key,))
-            yield from [value[0] for value in cursor.fetchall()]
-
-        def delete(self, key: bytes, value: bytes) -> None:
-            self.conn.execute(
-                "DELETE FROM examples WHERE key = ? AND value = ?",
-                (key, value),
-            )
-
-Database classes are not required to implement |ExampleDatabase.move|. The default implementation of a move is a |ExampleDatabase.delete| of the value in the old key, followed by a |ExampleDatabase.save| of the value in the new key. You can override |ExampleDatabase.move| in a database class to override this behavior, if for instance the backing store offers a more efficient move implementation.
-
-Change listening
-^^^^^^^^^^^^^^^^
-
-To support change listening in a database class, you should call ``self._broadcast_change(event)`` whenever a value is saved, deleted, or moved in the backing database store. How you track this depends on the details of the database class. For instance, in |DirectoryBasedExampleDatabase|, Hypothesis installs a filesystem monitor via :pypi:`watchdog` in order to broadcast change events.
-
-Two related useful methods are ``ExampleDatabase._start_listening`` and ``ExampleDatabase._stop_listening``, which a database class can override to know when to start or stop expensive listening operations. See source code for documentation.
-
 .. _stateful:
 
 Stateful tests
@@ -365,17 +294,11 @@ Rules
 ~~~~~
 
 .. autofunction:: hypothesis.stateful.rule
-
 .. autofunction:: hypothesis.stateful.consumes
-
 .. autofunction:: hypothesis.stateful.multiple
-
 .. autoclass:: hypothesis.stateful.Bundle
-
 .. autofunction:: hypothesis.stateful.initialize
-
 .. autofunction:: hypothesis.stateful.precondition
-
 .. autofunction:: hypothesis.stateful.invariant
 
 Running state machines
@@ -385,95 +308,13 @@ Running state machines
 
 If you want to bypass the TestCase infrastructure you can invoke these manually. The stateful module exposes the function ``run_state_machine_as_test``, which takes an arbitrary function returning a RuleBasedStateMachine and an optional settings parameter and does the same as the class based runTest provided.
 
+.. _reproducing-inputs:
 
-.. _reproducing-failures:
-
-Reproducing failures
---------------------
-
-One of the things that is often concerning for people using randomized testing
-is the question of how to reproduce failing test cases. Hypothesis has a number of features to support this. The one you
-will use most commonly when developing locally is :ref:`the example database <database>`,
-which means that you shouldn't have to think about the problem at all for local
-use - test failures will just automatically reproduce without you having to do
-anything.
-
-The example database is perfectly suitable for sharing between machines, but
-there currently aren't very good work flows for that, so Hypothesis provides a
-number of ways to make examples reproducible by adding them to the source code
-of your tests. This is particularly useful when e.g. you are trying to run an
-example that has failed on your CI, or otherwise share them between machines.
-
-.. _reproducing-with-seed:
-
-Reproducing a test run with ``@seed``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reproducing inputs
+------------------
 
 .. autofunction:: hypothesis.seed
-
-When a test fails unexpectedly, usually due to a health check failure,
-Hypothesis will print out a seed that led to that failure, if the test is not
-already running with a fixed seed. You can then recreate that failure using either
-the ``@seed`` decorator or (if you are running :pypi:`pytest`) with
-``--hypothesis-seed``.  For example, the following test function and
-:class:`~hypothesis.stateful.RuleBasedStateMachine` will each check the
-same examples each time they are executed, thanks to ``@seed()``:
-
-.. code-block:: python
-
-    @seed(1234)
-    @given(x=...)
-    def test(x): ...
-
-    @seed(6789)
-    class MyModel(RuleBasedStateMachine): ...
-
-The seed will not be printed if you could simply use ``@example`` instead.
-
-.. _reproduce_failure:
-
-Reproducing an example with ``@reproduce_failure``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Hypothesis has an opaque binary representation that it uses for all examples it
-generates. This representation is not intended to be stable across versions or
-with respect to changes in the test, but can be used to to reproduce failures
-with the ``@reproduce_failure`` decorator.
-
 .. autofunction:: hypothesis.reproduce_failure
-
-The intent is that you should never write this decorator by hand, but it is
-instead provided by Hypothesis.
-When a test fails with a falsifying example, Hypothesis may print out a
-suggestion to use ``@reproduce_failure`` on the test to recreate the problem
-as follows:
-
-.. code-block:: pycon
-
-    >>> from hypothesis import settings, given, PrintSettings
-    >>> import hypothesis.strategies as st
-    >>> @given(st.floats())
-    ... @settings(print_blob=True)
-    ... def test(f):
-    ...     assert f == f
-    ...
-    >>> try:
-    ...     test()
-    ... except AssertionError:
-    ...     pass
-    ...
-    Falsifying example: test(f=nan)
-
-    You can reproduce this example by temporarily adding @reproduce_failure(..., b'AAAA//AAAAAAAAEA') as a decorator on your test case
-
-Adding the suggested decorator to the test should reproduce the failure (as
-long as everything else is the same - changing the versions of Python or
-anything else involved, might of course affect the behaviour of the test! Note
-that changing the version of Hypothesis will result in a different error -
-each ``@reproduce_failure`` invocation is specific to a Hypothesis version).
-
-By default these messages are not printed.
-If you want to see these you can set the :attr:`~hypothesis.settings.print_blob` setting to ``True``.
 
 Hypothesis exceptions
 ---------------------
@@ -484,6 +325,7 @@ Custom exceptions raised by Hypothesis.
 .. autoclass:: hypothesis.errors.InvalidArgument
 .. autoclass:: hypothesis.errors.ResolutionFailed
 .. autoclass:: hypothesis.errors.Unsatisfiable
+.. autoclass:: hypothesis.errors.DidNotReproduce
 
 .. _hypothesis-django:
 
@@ -718,7 +560,7 @@ Depending on the input to ``fuzz_one_input``, one of three things will happen:
 
 - If the test *failed*, i.e. raised an exception, ``fuzz_one_input`` will add the pruned buffer to :ref:`the Hypothesis example database <database>` and then re-raise that exception.  All you need to do to reproduce, minimize, and de-duplicate all the failures found via fuzzing is run your test suite!
 
-Note that the interpretation of both input and output bytestrings is specific to the exact version of Hypothesis you are using and the strategies given to the test, just like the :ref:`example database <database>` and :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
+Note that the interpretation of both input and output bytestrings is specific to the exact version of Hypothesis you are using and the strategies given to the test, just like the :ref:`example database <database>` and |@reproduce_failure| decorator.
 
 .. tip::
 
@@ -732,7 +574,7 @@ Interaction with settings
 - The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode - adding failures to the database to be replayed when you next run your tests is our preferred reporting mechanism and response to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
 - The :obj:`~hypothesis.settings.verbosity` and :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.
 
-The |settings.deadline|, |settings.derandomize|, |settings.max_examples|, |settings.phases|, |settings.print_blob|, |settings.report_multiple_bugs|, and |settings.suppress_health_check| settings do not affect fuzzing mode.
+The |~settings.deadline|, |~settings.derandomize|, |~settings.max_examples|, |~settings.phases|, |~settings.print_blob|, |~settings.report_multiple_bugs|, and |~settings.suppress_health_check| settings do not affect fuzzing mode.
 
 
 .. _custom-function-execution:
@@ -810,11 +652,7 @@ For authors of test runners however, assigning to the ``inner_test`` attribute o
 
 If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.
 
-Detecting Hypothesis tests
---------------------------
-
-To determine whether a test has been defined with Hypothesis or not, use |is_hypothesis_test|:
+Detection
+---------
 
 .. autofunction:: hypothesis.is_hypothesis_test
-
-If you're working with :pypi:`pytest`, the :ref:`Hypothesis pytest plugin <pytest-plugin>` automatically adds the ``@pytest.mark.hypothesis`` mark to all Hypothesis tests. You can use ``node.get_closest_marker("hypothesis")`` or similar methods to detect the existence of this mark.

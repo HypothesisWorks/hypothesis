@@ -410,10 +410,10 @@ class settingsMeta(type):
 class settings(metaclass=settingsMeta):
     """
     A settings object controls the following aspects of test behavior:
-    |settings.max_examples|, |settings.derandomize|, |settings.database|,
-    |settings.verbosity|, |settings.phases|, |settings.stateful_step_count|,
-    |settings.report_multiple_bugs|, |settings.suppress_health_check|,
-    |settings.deadline|, |settings.print_blob|, and |settings.backend|.
+    |~settings.max_examples|, |~settings.derandomize|, |~settings.database|,
+    |~settings.verbosity|, |~settings.phases|, |~settings.stateful_step_count|,
+    |~settings.report_multiple_bugs|, |~settings.suppress_health_check|,
+    |~settings.deadline|, |~settings.print_blob|, and |~settings.backend|.
 
     A settings object can be applied as a decorator to a test function, in which
     case that test function will use those settings. A test may only have one
@@ -815,8 +815,7 @@ class settings(metaclass=settingsMeta):
     def print_blob(self):
         """
         If set to ``True``, Hypothesis will print code for failing examples that
-        can be used with :func:`@reproduce_failure <hypothesis.reproduce_failure>`
-        to reproduce the failing example.
+        can be used with |@reproduce_failure| to reproduce the failing example.
 
         The default value is ``False``. If running on CI, the default is ``True`` instead.
         """
