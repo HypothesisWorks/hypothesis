@@ -367,6 +367,20 @@ class PrimitiveProvider(abc.ABC):
         raise NotImplementedError
 
     def per_test_case_context_manager(self):
+        """
+        Returns a context manager which will be entered each time Hypothesis
+        starts generating and executing one test case, and exited when that test
+        case finishes generating and executing, including if any exception is
+        thrown.
+
+        In the lifecycle of a Hypothesis test, this is called before
+        generating strategy values for each test case. This is just before any
+        :ref:`custom executor <custom-function-execution>` is called.
+
+        Even if not returning a custom context manager, PrimitiveProvider
+        subclasses are welcome to override this method to know when Hypothesis
+        starts and ends the execution of a single test case.
+        """
         return contextlib.nullcontext()
 
     def realize(self, value: T, *, for_failure: bool = False) -> T:
@@ -390,17 +404,12 @@ class PrimitiveProvider(abc.ABC):
 
     def replay_choices(self, choices: tuple[ChoiceT, ...]) -> None:
         """
-        Called to indicate that the provider should replay this choice sequence
-        the next time Hypothesis enters per_test_case_context_manager, instead of
-        generating its own choice sequence.
+        Called when Hypothesis has discovered a choice sequence which the provider
+        may wish to enqueue to replay under its own instrumentation when we next
+        ask to generate a test case, rather than generating one from scratch.
 
-        This is intended to indicate that the passed choice sequence is particularly
-        interesting in some way, and that the provider should collect runtime
-        information about it while replaying, in order to generate more effective
-        choice sequences in the future.
-
-        This method is currently used for relatively tight integration between
-        Hypothesis and specific providers.
+        This is used to e.g. warm-start hypothesis-crosshair with a corpus of
+        high-code-coverage inputs discovered by HypoFuzz.
         """
         return None
 
