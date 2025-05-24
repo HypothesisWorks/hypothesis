@@ -13,6 +13,7 @@ omit =
     **/extra/pytestplugin.py
     **/internal/scrutineer.py
     **/utils/terminal.py
+    **/internal/conjecture/provider_conformance.py
 
 [report]
 fail_under = 100

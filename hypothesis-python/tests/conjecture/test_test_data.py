@@ -23,7 +23,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
     structural_coverage,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy
 
 from tests.conjecture.common import buffer_size_limit, interesting_origin
 

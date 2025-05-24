@@ -24,7 +24,7 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 

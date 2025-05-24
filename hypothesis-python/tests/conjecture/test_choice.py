@@ -45,6 +45,7 @@ from hypothesis.internal.conjecture.datatree import (
     compute_max_children,
 )
 from hypothesis.internal.conjecture.engine import choice_count
+from hypothesis.internal.conjecture.provider_conformance import integer_constraints
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -56,7 +57,6 @@ from tests.conjecture.common import (
     float_constr,
     fresh_data,
     integer_constr,
-    integer_constraints,
     nodes,
 )
 

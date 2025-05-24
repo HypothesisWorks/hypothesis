@@ -14,6 +14,7 @@ import math
 import sys
 import warnings
 from collections.abc import Iterable
+from contextlib import AbstractContextManager
 from functools import cached_property
 from random import Random
 from sys import float_info
@@ -21,6 +22,7 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
     Optional,
     TypedDict,
@@ -69,7 +71,7 @@ if TYPE_CHECKING:
     from hypothesis.internal.constants_ast import ConstantT
 
 T = TypeVar("T")
-_Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
+LifetimeT: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
@@ -303,7 +305,7 @@ class PrimitiveProvider(abc.ABC):
     # lifetime can access the passed ConjectureData object.
     #
     # Non-hypothesis providers probably want to set a lifetime of test_function.
-    lifetime: _Lifetime = "test_function"
+    lifetime: ClassVar[LifetimeT] = "test_function"
 
     # Solver-based backends such as hypothesis-crosshair use symbolic values
     # which record operations performed on them in order to discover new paths.
@@ -314,12 +316,12 @@ class PrimitiveProvider(abc.ABC):
     # Setting this to True disables some hypothesis features, such as
     # DataTree-based deduplication, and some internal optimizations, such as
     # caching constraints. Only enable this if it is necessary for your backend.
-    avoid_realization = False
+    avoid_realization: ClassVar[bool] = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
-    def per_test_case_context_manager(self):
+    def per_test_case_context_manager(self) -> AbstractContextManager:
         return contextlib.nullcontext()
 
     def realize(self, value: T, *, for_failure: bool = False) -> T:
@@ -350,7 +352,7 @@ class PrimitiveProvider(abc.ABC):
         return {}
 
     def observe_information_messages(
-        self, *, lifetime: _Lifetime
+        self, *, lifetime: LifetimeT
     ) -> Iterable[_BackendInfoMsg]:
         """Called at the end of each test case and again at end of the test function.
 
