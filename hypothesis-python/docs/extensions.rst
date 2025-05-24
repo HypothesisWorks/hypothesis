@@ -238,11 +238,6 @@ Then, set the relevant environment variable and run normally::
 Alternative backends for Hypothesis
 -----------------------------------
 
-.. warning::
-
-   Alternative backends are experimental and not yet part of the public API.
-   We may continue to make breaking changes as we finalize the interface.
-
 Hypothesis supports alternative backends, which tells Hypothesis how to generate primitive
 types. This enables powerful generation techniques which are compatible with all parts of
 Hypothesis, including the database and shrinking.

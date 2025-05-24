@@ -141,6 +141,7 @@ hoverxref_role_types = {
     "mod": "tooltip",
     "obj": "tooltip",
     "ref": "tooltip",
+    "data": "tooltip",
 }
 
 intersphinx_mapping = {
@@ -271,6 +272,14 @@ rst_prolog = """
 .. |.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
+
+.. |PrimitiveProvider| replace:: :class:`~hypothesis.internal.conjecture.providers.PrimitiveProvider`
+.. |PrimitiveProvider.realize| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.realize`
+.. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
+.. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
+.. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
+.. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`
+.. |BackendCannotProceed| replace:: :exc:`~hypothesis.errors.BackendCannotProceed`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
 .. |RuleBasedStateMachine| replace:: :class:`~hypothesis.stateful.RuleBasedStateMachine`
