@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.26:
+
+---------------------
+6.131.26 - 2025-05-24
+---------------------
+
+Improve |ExampleDatabase| documentation.
+
 .. _v6.131.25:
 
 ---------------------
