@@ -16,7 +16,7 @@ from django.test import TestCase as DjangoTestCase
 
 from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.django import TestCase, TransactionTestCase
+from hypothesis.extra.django import SimpleTestCase, TestCase, TransactionTestCase
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.strategies import integers
 
@@ -24,9 +24,7 @@ from tests.django.toystore.models import Company
 
 
 class SomeStuff:
-    @settings(
-        suppress_health_check=[HealthCheck.too_slow, HealthCheck.differing_executors]
-    )
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.differing_executors])
     @given(integers())
     def test_is_blank_slate(self, unused):
         Company.objects.create(name="MickeyCo")
@@ -58,9 +56,7 @@ class TestWorkflow(VanillaTestCase):
 
         class LocalTest(TestCase):
             @given(integers().map(break_the_db))
-            @settings(
-                suppress_health_check=list(HealthCheck), verbosity=Verbosity.quiet
-            )
+            @settings(suppress_health_check=list(HealthCheck), verbosity=Verbosity.quiet)
             def test_does_not_break_other_things(self, unused):
                 pass
 
@@ -82,3 +78,10 @@ class TestWorkflow(VanillaTestCase):
 
         with pytest.raises(InvalidArgument):
             LocalTest("tst").tst()
+
+
+class TestSimple(SimpleTestCase):
+    @given(integers())
+    def test_that_doesnt_need_db(self, z: int):
+        company = Company(name="Company-" + str(z))
+        assert company.name.endswith(str(z))
