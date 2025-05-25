@@ -12,6 +12,10 @@ Hypothesis internals
 Alternative backends
 --------------------
 
+.. seealso::
+
+    See also the user-facing :ref:`alternative-backends` documentation.
+
 .. autoclass:: hypothesis.internal.conjecture.providers.PrimitiveProvider
     :members:
 

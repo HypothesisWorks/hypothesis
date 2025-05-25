@@ -101,7 +101,9 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #: Though, as ``backend="hypothesis"`` is the default setting, the above would
 #: typically not have any effect.
 #:
-#: See also :ref:`alternative-backends`.
+#: The purpose of mapping to an absolute importable path, rather than the actual
+#: |PrimitiveProvider| class, is to avoid slowing down Hypothesis startup times
+#: by only importing alternative backends when required.
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
@@ -448,9 +450,9 @@ class PrimitiveProvider(abc.ABC):
         intervals : IntervalSet
             The set of codepoints to sample from.
         min_size : int
-            (inclusive) lower bound on the string length.
+            (Inclusive) lower bound on the string length.
         max_size : int
-            (inclusive) upper bound on the string length.
+            (Inclusive) upper bound on the string length.
         """
         raise NotImplementedError
 
@@ -466,9 +468,9 @@ class PrimitiveProvider(abc.ABC):
         Parameters
         ----------
         min_size : int
-            (inclusive) lower bound on the bytes length.
+            (Inclusive) lower bound on the bytes length.
         max_size : int
-            (inclusive) upper bound on the bytes length.
+            (Inclusive) upper bound on the bytes length.
         """
         raise NotImplementedError
 

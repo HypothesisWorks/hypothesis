@@ -132,8 +132,9 @@ def _system_metadata():
 
 #: If ``False``, do not collect coverage information when observability is enabled.
 #:
-#: This is exposed for performance, as coverage collection can be slow on Python
-#: 3.11 and earlier. On Python 3.12+, there should be no need to set this.
+#: This is exposed both for performance (as coverage collection can be slow on
+#: Python 3.11 and earlier) and size (if you do not use coverage information,
+#: you may not want to store it in-memory).
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
