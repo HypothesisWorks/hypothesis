@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.28:
+
+---------------------
+6.131.28 - 2025-05-25
+---------------------
+
+Add documentation to some internal APIs.
+
 .. _v6.131.27:
 
 ---------------------
