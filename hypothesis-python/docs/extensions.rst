@@ -238,6 +238,10 @@ Then, set the relevant environment variable and run normally::
 Alternative backends for Hypothesis
 -----------------------------------
 
+.. seealso::
+
+  See also the :ref:`Alternative backends interface <alternative-backends-internals>` for details on implementing your own alternative backend.
+
 Hypothesis supports alternative backends, which tells Hypothesis how to generate primitive
 types. This enables powerful generation techniques which are compatible with all parts of
 Hypothesis, including the database and shrinking.

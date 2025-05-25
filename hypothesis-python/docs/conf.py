@@ -33,6 +33,8 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
     "hoverxref.extension",
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
@@ -45,6 +47,7 @@ extensions = [
 
 templates_path = ["_templates"]
 
+# config for hypothesis_redirects
 redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
@@ -68,6 +71,10 @@ redirects = {
     "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
+
+# config for sphinx_autodoc_typehints
+always_use_bars_union = True
+typehints_document_rtype = False
 
 source_suffix = ".rst"
 
@@ -275,6 +282,14 @@ rst_prolog = """
 
 .. |PrimitiveProvider| replace:: :class:`~hypothesis.internal.conjecture.providers.PrimitiveProvider`
 .. |PrimitiveProvider.realize| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.realize`
+.. |PrimitiveProvider.draw_integer| replace:: \
+    :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_integer`
+.. |PrimitiveProvider.draw_boolean| replace:: \
+    :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_boolean`
+.. |PrimitiveProvider.draw_float| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_float`
+.. |PrimitiveProvider.draw_string| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_string`
+.. |PrimitiveProvider.draw_bytes| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_bytes`
+
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`

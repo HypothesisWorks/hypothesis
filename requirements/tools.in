@@ -19,6 +19,7 @@ sphinx
 sphinx-codeautolink
 sphinx-hoverxref
 sphinx-jsonschema
+sphinx-autodoc-typehints
 furo
 sphinx-selective-exclude
 tox

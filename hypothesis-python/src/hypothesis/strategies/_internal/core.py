@@ -1150,17 +1150,16 @@ def builds(
 def from_type(thing: type[T]) -> SearchStrategy[T]:
     """Looks up the appropriate search strategy for the given type.
 
-    ``from_type`` is used internally to fill in missing arguments to
-    :func:`~hypothesis.strategies.builds` and can be used interactively
+    |st.from_type| is used internally to fill in missing arguments to
+    |st.builds| and can be used interactively
     to explore what strategies are available or to debug type resolution.
 
-    You can use :func:`~hypothesis.strategies.register_type_strategy` to
+    You can use |st.register_type_strategy| to
     handle your custom types, or to globally redefine certain strategies -
     for example excluding NaN from floats, or use timezone-aware instead of
     naive time and datetime strategies.
 
-    The resolution logic may be changed in a future version, but currently
-    tries these five options:
+    |st.from_type| looks up a strategy in the following order:
 
     1. If ``thing`` is in the default lookup mapping or user-registered lookup,
        return the corresponding strategy.  The default lookup covers all types
@@ -1172,14 +1171,14 @@ def from_type(thing: type[T]) -> SearchStrategy[T]:
        other elements in the lookup.
     4. Finally, if ``thing`` has type annotations for all required arguments,
        and is not an abstract class, it is resolved via
-       :func:`~hypothesis.strategies.builds`.
+       |st.builds|.
     5. Because :mod:`abstract types <python:abc>` cannot be instantiated,
        we treat abstract types as the union of their concrete subclasses.
        Note that this lookup works via inheritance but not via
        :obj:`~python:abc.ABCMeta.register`, so you may still need to use
-       :func:`~hypothesis.strategies.register_type_strategy`.
+       |st.register_type_strategy|.
 
-    There is a valuable recipe for leveraging ``from_type()`` to generate
+    There is a valuable recipe for leveraging |st.from_type| to generate
     "everything except" values from a specified type. I.e.
 
     .. code-block:: python
@@ -1192,9 +1191,9 @@ def from_type(thing: type[T]) -> SearchStrategy[T]:
             )
 
     For example, ``everything_except(int)`` returns a strategy that can
-    generate anything that ``from_type()`` can ever generate, except for
-    instances of :class:`python:int`, and excluding instances of types
-    added via :func:`~hypothesis.strategies.register_type_strategy`.
+    generate anything that |st.from_type| can ever generate, except for
+    instances of |int|, and excluding instances of types
+    added via |st.register_type_strategy|.
 
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.

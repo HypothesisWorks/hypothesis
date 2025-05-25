@@ -56,6 +56,7 @@ from hypothesis.utils.conventions import UniqueIdentifier
 if TYPE_CHECKING:
     from typing import TypeAlias
 
+if sys.version_info >= (3, 13):
     Ex = TypeVar("Ex", covariant=True, default=Any)
 else:
     Ex = TypeVar("Ex", covariant=True)
