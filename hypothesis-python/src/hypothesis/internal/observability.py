@@ -25,6 +25,13 @@ from hypothesis.errors import HypothesisWarning
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
 
+#: A list of callback functions for :ref:`observability <observability>`. Whenever
+#: a new observation is created, each function in this list will be called with a
+#: single value, which is a dictionary representing that observation.
+#:
+#: You can append a function to this list to receive observability reports, and
+#: remove that function from the list to stop receiving observability reports.
+#: Observability is considered enabled if this list is nonempty.
 TESTCASE_CALLBACKS: list[Callable[[dict], None]] = []
 
 
@@ -123,6 +130,11 @@ def _system_metadata():
     }
 
 
+#: If ``False``, do not collect coverage information when observability is enabled.
+#:
+#: This is exposed both for performance (as coverage collection can be slow on
+#: Python 3.11 and earlier) and size (if you do not use coverage information,
+#: you may not want to store it in-memory).
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )

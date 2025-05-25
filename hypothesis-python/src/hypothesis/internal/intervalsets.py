@@ -28,6 +28,13 @@ IntervalsT: "TypeAlias" = tuple[tuple[int, int], ...]
 
 @final
 class IntervalSet:
+    """
+    A compact and efficient representation of a set of ``(a, b)`` intervals. Can
+    be treated like a set of integers, in that ``n in intervals`` will return
+    ``True`` if ``n`` is contained in any of the ``(a, b)`` intervals, and
+    ``False`` otherwise.
+    """
+
     @classmethod
     def from_string(cls, s: str) -> "Self":
         """Return a tuple of intervals, covering the codepoints of characters in `s`.
