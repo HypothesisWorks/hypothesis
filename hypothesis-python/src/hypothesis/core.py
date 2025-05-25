@@ -16,6 +16,7 @@ import datetime
 import inspect
 import io
 import math
+import os
 import sys
 import time
 import traceback
@@ -1149,7 +1150,9 @@ class StateForActualGivenExecution:
                 # to test their backends. If an error occurs there, it is probably
                 # from their backend, and we would like to treat it as a standard
                 # error, not a hypothesis-internal error.
-                and not filepath.endswith("internal/conjecture/provider_conformance.py")
+                and not filepath.endswith(
+                    f"internal{os.sep}conjecture{os.sep}provider_conformance.py"
+                )
             ):
                 raise
 
