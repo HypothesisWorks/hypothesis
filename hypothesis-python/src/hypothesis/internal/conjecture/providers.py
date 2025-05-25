@@ -366,7 +366,7 @@ class PrimitiveProvider(abc.ABC):
 
         Parameters
         ----------
-        p
+        p: float
             The probability of returning ``True``. Between 0 and 1 inclusive.
 
             Except for ``0`` and ``1``, the value of ``p`` is a hint provided by
@@ -391,16 +391,16 @@ class PrimitiveProvider(abc.ABC):
 
         Parameters
         ----------
-        min_value
+        min_value : int | None
             (Inclusive) lower bound on the integer value. If ``None``, there is
             no lower bound.
-        max_value
+        max_value : int | None
             (Inclusive) upper bound on the integer value. If ``None``, there is
             no upper bound.
-        weights
+        weights: dict[int, float] | None
             Maps keys in the range [``min_value``, ``max_value``] to the probability
             of returning that key.
-        shrink_towards
+        shrink_towards: int
             The integer to shrink towards. This is not used during generation and
             can be ignored by backends.
         """
@@ -420,13 +420,13 @@ class PrimitiveProvider(abc.ABC):
 
         Parameters
         ----------
-        min_value
+        min_value : float
             (Inclusive) lower bound on the float value.
-        max_value
+        max_value : float
             (Inclusive) upper bound on the float value.
-        allow_nan
+        allow_nan : bool
             If ``False``, it is invalid to return ``math.nan``.
-        smallest_nonzero_magnitude
+        smallest_nonzero_magnitude : float
             The smallest allowed nonzero magnitude. ``draw_float`` should not
             return a float ``f`` if ``abs(f) < smallest_nonzero_magnitude``.
         """
@@ -445,11 +445,11 @@ class PrimitiveProvider(abc.ABC):
 
         Parameters
         ----------
-        intervals
+        intervals : IntervalSet
             The set of codepoints to sample from.
-        min_size
+        min_size : int
             (inclusive) lower bound on the string length.
-        max_size
+        max_size : int
             (inclusive) upper bound on the string length.
         """
         raise NotImplementedError
@@ -465,9 +465,9 @@ class PrimitiveProvider(abc.ABC):
 
         Parameters
         ----------
-        min_size
+        min_size : int
             (inclusive) lower bound on the bytes length.
-        max_size
+        max_size : int
             (inclusive) upper bound on the bytes length.
         """
         raise NotImplementedError

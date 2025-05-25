@@ -34,7 +34,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
     "hoverxref.extension",
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
@@ -71,10 +70,6 @@ redirects = {
     "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
-
-# config for sphinx_autodoc_typehints
-always_use_bars_union = True
-typehints_document_rtype = False
 
 source_suffix = ".rst"
 
