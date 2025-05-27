@@ -276,7 +276,6 @@ rst_prolog = """
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 
 .. |PrimitiveProvider| replace:: :class:`~hypothesis.internal.conjecture.providers.PrimitiveProvider`
-.. |PrimitiveProvider.realize| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.realize`
 .. |PrimitiveProvider.draw_integer| replace:: \
     :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_integer`
 .. |PrimitiveProvider.draw_boolean| replace:: \
@@ -284,6 +283,11 @@ rst_prolog = """
 .. |PrimitiveProvider.draw_float| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_float`
 .. |PrimitiveProvider.draw_string| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_string`
 .. |PrimitiveProvider.draw_bytes| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_bytes`
+.. |PrimitiveProvider.realize| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.realize`
+.. |PrimitiveProvider.on_observation| replace:: \
+    :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.on_observation`
+.. |PrimitiveProvider.per_test_case_context_manager| replace:: \
+    :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.per_test_case_context_manager`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`

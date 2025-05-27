@@ -62,7 +62,7 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import InfoObservationType
+from hypothesis.internal.observability import InfoObservationType, Observation
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -543,6 +543,37 @@ class PrimitiveProvider(abc.ABC):
         """
         assert lifetime in ("test_case", "test_function")
         yield from []
+
+    def on_observation(self, observation: Observation) -> None:  # noqa: B027
+        """
+        Called at the end of each test case which uses this provider, with the same
+        ``observation["type"] == "test_case"`` observation that is passed to
+        other callbacks in |TESTCASE_CALLBACKS|. This method is not called with
+        ``observation["type"] in {"info", "alert", "error"}`` observations.
+
+        Calls to this method are guaranteed to alternate with calls to
+        |PrimitiveProvider.per_test_case_context_manager|. For example:
+
+        .. code-block:: python
+
+            # test function starts
+            per_test_case_context_manager()
+            on_observation()
+            per_test_case_context_manager()
+            on_observation()
+            ...
+            # test function ends
+
+        Note that |PrimitiveProvider.on_observation| will not be called for test
+        cases which did not use this provider during generation, for example
+        during |Phase.reuse| or |Phase.shrink|, or because Hypothesis switched
+        to the standard Hypothesis backend after this backend raised too many
+        |BackendCannotProceed| exceptions.
+
+        By default, observability will not be enabled for backends which do not
+        override this method. By overriding this method, any test which sets
+        |settings.backend| to this provider will automatically enable observability.
+        """
 
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
         """Marks the beginning of a semantically meaningful span of choices.

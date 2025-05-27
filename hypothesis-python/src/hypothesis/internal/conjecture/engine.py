@@ -15,7 +15,7 @@ import textwrap
 import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
@@ -68,6 +68,7 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
+from hypothesis.internal.observability import Observation, with_observation_callback
 from hypothesis.reporting import base_report, report
 
 #: The maximum number of times the shrinker will reduce the complexity of a failing
@@ -830,8 +831,34 @@ class ConjectureRunner:
             f"{', ' + data.output if data.output else ''}"
         )
 
+    def observe_for_provider(self) -> AbstractContextManager:
+        def on_observation(observation: Observation) -> None:
+            assert isinstance(self.provider, PrimitiveProvider)
+            # only fire if we actually used that provider to generate this observation
+            if not self._switch_to_hypothesis_provider:
+                self.provider.on_observation(observation)
+
+        # adding this callback enables observability. Use a nullcontext
+        # if the backend won't use observability.
+        return (
+            with_observation_callback(on_observation)
+            if (
+                self.settings.backend != "hypothesis"
+                # only for lifetime = "test_function" providers
+                and isinstance(self.provider, PrimitiveProvider)
+                # and the provider class overrode the default
+                # (see https://github.com/python/mypy/issues/14123 for type ignore)
+                and self.provider.on_observation.__func__  # type: ignore
+                is not PrimitiveProvider.on_observation
+            )
+            else nullcontext()
+        )
+
     def run(self) -> None:
-        with local_settings(self.settings):
+        with (
+            local_settings(self.settings),
+            self.observe_for_provider(),
+        ):
             try:
                 self._run()
             except RunIsComplete:

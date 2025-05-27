@@ -15,6 +15,8 @@ import os
 import sys
 import time
 import warnings
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
@@ -96,6 +98,17 @@ Observation: "TypeAlias" = Union[InfoObservation, TestCaseObservation]
 #: remove that function from the list to stop receiving observability reports.
 #: Observability is considered enabled if this list is nonempty.
 TESTCASE_CALLBACKS: list[Callable[[Observation], None]] = []
+
+
+@contextmanager
+def with_observation_callback(
+    callback: Callable[[Observation], None],
+) -> Generator[None, None, None]:
+    TESTCASE_CALLBACKS.append(callback)
+    try:
+        yield
+    finally:
+        TESTCASE_CALLBACKS.remove(callback)
 
 
 def deliver_observation(observation: Observation) -> None:
