@@ -34,7 +34,7 @@ class PredicateCounts:
     satisfied: int = 0
     unsatisfied: int = 0
 
-    def update_count(self, condition: bool) -> None:
+    def update_count(self, *, condition: bool) -> None:
         if condition:
             self.satisfied += 1
         else:

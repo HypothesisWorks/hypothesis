@@ -45,7 +45,7 @@ def reject() -> NoReturn:
     where = _calling_function_location("reject", inspect.currentframe())
     if currently_in_test_context():
         counts = current_build_context().data._observability_predicates[where]
-        counts.update_count(False)
+        counts.update_count(condition=False)
     raise UnsatisfiedAssumption(where)
 
 
@@ -66,7 +66,7 @@ def assume(condition: object) -> bool:
         where = _calling_function_location("assume", inspect.currentframe())
         if TESTCASE_CALLBACKS and currently_in_test_context():
             counts = current_build_context().data._observability_predicates[where]
-            counts.update_count(bool(condition))
+            counts.update_count(condition=bool(condition))
         if not condition:
             raise UnsatisfiedAssumption(f"failed to satisfy {where}")
     return True
