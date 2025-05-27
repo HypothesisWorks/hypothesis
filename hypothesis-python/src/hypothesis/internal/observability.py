@@ -186,7 +186,11 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     fname.parent.mkdir(exist_ok=True, parents=True)
     _WROTE_TO.add(fname)
     with fname.open(mode="a") as f:
-        f.write(json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n")
+        obs_json: dict[str, Any] = to_jsonable(observation, avoid_realization=False)  # type: ignore
+        if obs_json["type"] == "test_case":
+            obs_json["metadata"]["sys.argv"] = obs_json["metadata"].pop("sys_argv")
+            obs_json["metadata"]["os.getpid()"] = obs_json["metadata"].pop("os_getpid")
+        f.write(json.dumps(obs_json) + "\n")
 
 
 _imported_at = time.time()
