@@ -1074,7 +1074,7 @@ class RuleStrategy(SearchStrategy):
         for pred in rule.preconditions:
             meets_precond = pred(self.machine)
             where = f"{desc} precondition {get_pretty_function_description(pred)}"
-            predicates[where]["satisfied" if meets_precond else "unsatisfied"] += 1
+            predicates[where].update_count(meets_precond)
             if not meets_precond:
                 return False
 

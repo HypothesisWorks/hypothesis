@@ -62,6 +62,7 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import InfoObservationType
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -294,7 +295,7 @@ def _get_local_constants() -> Constants:
 
 
 class _BackendInfoMsg(TypedDict):
-    type: str
+    type: InfoObservationType
     title: str
     content: Union[str, dict[str, Any]]
 
