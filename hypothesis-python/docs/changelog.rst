@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.30:
+
+---------------------
+6.131.30 - 2025-05-27
+---------------------
+
+This patch resolves a Pandas FutureWarning (:issue:`4400`) caused by indexing with an integer key.
+
 .. _v6.131.29:
 
 ---------------------
