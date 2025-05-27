@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.29:
+
+---------------------
+6.131.29 - 2025-05-27
+---------------------
+
+The observations passed to |TESTCASE_CALLBACKS| are now dataclasses, rather than dictionaries. The content written to ``.hypothesis/observed`` under ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY`` remains the same.
+
 .. _v6.131.28:
 
 ---------------------
