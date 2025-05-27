@@ -33,7 +33,6 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    "hoverxref.extension",
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
     "sphinx-jsonschema",
@@ -127,21 +126,6 @@ linkcheck_ignore = [
     r"https://github.com/HypothesisWorks/hypothesis/issues/\d+",
     r"https://github.com/HypothesisWorks/hypothesis/pull/\d+",
 ]
-
-# See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
-hoverxref_auto_ref = True
-hoverxref_domains = ["py"]
-hoverxref_role_types = {
-    "attr": "tooltip",
-    "class": "tooltip",
-    "const": "tooltip",
-    "exc": "tooltip",
-    "func": "tooltip",
-    "meth": "tooltip",
-    "mod": "tooltip",
-    "obj": "tooltip",
-    "ref": "tooltip",
-}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
