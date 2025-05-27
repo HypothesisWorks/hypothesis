@@ -175,6 +175,7 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
         return obj
     if avoid_realization:
         return "<symbolic>"
+
     recur = partial(to_jsonable, avoid_realization=avoid_realization)
     if isinstance(obj, (list, tuple, set, frozenset)):
         if isinstance(obj, tuple) and hasattr(obj, "_asdict"):

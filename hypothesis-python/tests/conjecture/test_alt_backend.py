@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import itertools
 import math
 import sys
@@ -479,8 +480,8 @@ def test_realization_with_observability():
         with capture_observations() as observations:
             test_function()
 
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
-    assert {tc["representation"] for tc in test_cases} == {
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert {tc.representation for tc in test_cases} == {
         # from the first ChoiceTemplate(type="simplest") example
         "test_function(\n    data=data(...),\n)\nDraw 1: 0",
         # from all other examples. data=<symbolic> isn't ideal; we should special
@@ -518,15 +519,15 @@ def test_custom_observations_from_backend():
             test_function()
 
     assert len(ls) >= 3
-    cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
+    cases = [t.metadata.backend for t in ls if t.type == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
     assert "<backend failed to realize symbolic arguments>" in repr(ls)
 
     infos = [
-        {k: v for k, v in t.items() if k in ("title", "content")}
+        {k: v for k, v in dataclasses.asdict(t).items() if k in ("title", "content")}
         for t in ls
-        if t["type"] != "test_case"
+        if t.type != "test_case"
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos

@@ -101,8 +101,9 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
-    _system_metadata,
-    deliver_json_blob,
+    InfoObservation,
+    InfoObservationType,
+    deliver_observation,
     make_testcase,
 )
 from hypothesis.internal.reflection import (
@@ -613,14 +614,14 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     )
 
                 tc = make_testcase(
-                    start_timestamp=state._start_timestamp,
-                    test_name_or_nodeid=state.test_identifier,
+                    run_start=state._start_timestamp,
+                    property=state.test_identifier,
                     data=empty_data,
                     how_generated="explicit example",
-                    string_repr=state._string_repr,
+                    representation=state._string_repr,
                     timing=state._timing_features,
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -1225,18 +1226,18 @@ class StateForActualGivenExecution:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
                 tc = make_testcase(
-                    start_timestamp=self._start_timestamp,
-                    test_name_or_nodeid=self.test_identifier,
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
                     data=data,
                     how_generated=f"during {phase} phase{backend_desc}",
-                    string_repr=self._string_repr,
+                    representation=self._string_repr,
                     arguments=data._observability_args,
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
                 ):
@@ -1244,16 +1245,16 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: Union[str, dict]
     ) -> None:
-        deliver_json_blob(
-            {
-                "type": type,
-                "run_start": self._start_timestamp,
-                "property": self.test_identifier,
-                "title": title,
-                "content": content,
-            }
+        deliver_observation(
+            InfoObservation(
+                type=type,
+                run_start=self._start_timestamp,
+                property=self.test_identifier,
+                title=title,
+                content=content,
+            )
         )
 
     def run_engine(self):
@@ -1421,31 +1422,20 @@ class StateForActualGivenExecution:
                 raise NotImplementedError("This should be unreachable")
             finally:
                 # log our observability line for the final failing example
-                tc = {
-                    "type": "test_case",
-                    "run_start": self._start_timestamp,
-                    "property": self.test_identifier,
-                    "status": "passed" if sys.exc_info()[0] else "failed",
-                    "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": self._string_repr,
-                    "arguments": ran_example._observability_args,
-                    "how_generated": "minimal failing example",
-                    "features": {
-                        **{
-                            f"target:{k}".strip(":"): v
-                            for k, v in ran_example.target_observations.items()
-                        },
-                        **ran_example.events,
-                    },
-                    "timing": self._timing_features,
-                    "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {
-                        "traceback": tb,
-                        "predicates": dict(ran_example._observability_predicates),
-                        **_system_metadata(),
-                    },
-                }
-                deliver_json_blob(tc)
+                tc = make_testcase(
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
+                    data=ran_example,
+                    how_generated="minimal failing example",
+                    representation=self._string_repr,
+                    arguments=ran_example._observability_args,
+                    timing=self._timing_features,
+                    coverage=None,  # Not recorded when we're replaying the MFE
+                    status="passed" if sys.exc_info()[0] else "failed",
+                    status_reason=str(origin or "unexpected/flaky pass"),
+                    metadata={"traceback": tb},
+                )
+                deliver_observation(tc)
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
