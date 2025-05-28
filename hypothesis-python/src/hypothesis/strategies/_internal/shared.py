@@ -8,10 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
 from collections.abc import Hashable
 from typing import Any, Optional
 
-from hypothesis._settings import note_deprecation
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.strategies import Ex
@@ -49,10 +50,11 @@ class SharedStrategy(SearchStrategy[Ex]):
         else:
             drawn_strat_label, drawn = data._shared_strategy_draws[key]
             if drawn_strat_label != strat_label:
-                note_deprecation(
-                    "Drawing shared values from different underlying strategies is deprecated.",
-                    since="2025-05-28",
-                    has_codemod=False,
+                warnings.warn(
+                    f"Different strategies are shared under {key=}. This"
+                    " risks drawing values that are not valid examples for the strategy,"
+                    " or that have a narrower range than expected.",
+                    HypothesisWarning,
                     stacklevel=1,
                 )
         return drawn
