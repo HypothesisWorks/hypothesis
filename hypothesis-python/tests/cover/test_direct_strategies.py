@@ -19,7 +19,7 @@ from ipaddress import IPv4Network, IPv6Network
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 from hypothesis.vendor.pretty import pretty
 
 from tests.common.debug import check_can_generate_examples, minimal
@@ -585,14 +585,85 @@ def test_builds_error_messages(data):
     data.draw(st.sampled_from(AnEnum))
 
 
-def test_incompatible_shared_strategies_raises():
+@pytest.mark.parametrize(
+    "strat1,strat2",
+    [
+        (st.integers(), st.integers(0)),
+        (st.builds(int), st.builds(float)),
+        (st.none(), st.integers()),
+        pytest.param(
+            st.composite(lambda draw: draw(st.none()))(),
+            st.composite(lambda draw: draw(st.integers()))(),
+            marks=pytest.mark.xfail(strict=True, reason="incompatible @composite"),
+        ),
+    ],
+)
+def test_incompatible_shared_strategies_raises(strat1, strat2):
 
-    strat1 = st.shared(st.integers(), key="share")
-    strat2 = st.shared(st.integers(0), key="share")
+    shared1 = st.shared(strat1, key="share")
+    shared2 = st.shared(strat2, key="share")
 
-    @given(strat1, strat2)
+    @given(shared1, shared2)
     def test_it(a, b):
         assert a == b
 
-    with pytest.raises(InvalidArgument, match="incompatible strategies"):
+    with pytest.raises(
+        HypothesisDeprecationWarning, match="different underlying strategies"
+    ):
         test_it()
+
+
+@st.composite
+def _composite1(draw):
+    return draw(st.integers())
+
+
+@st.composite
+def _composite2(draw):
+    return draw(st.integers())
+
+
+@pytest.mark.parametrize(
+    "strat1,strat2",
+    [
+        (st.floats(allow_nan=False), st.floats(allow_nan=False)),
+        (st.builds(float), st.builds(float)),
+        (_composite1(), _composite1()),
+        pytest.param(
+            st.floats(allow_nan=False),
+            st.floats(allow_nan=0),
+            marks=pytest.mark.xfail(
+                raises=HypothesisDeprecationWarning,
+                strict=True,
+                reason="un-normalized constraint value (#...)",
+            ),
+        ),
+        pytest.param(
+            _composite1(),
+            _composite2(),
+            marks=pytest.mark.xfail(
+                raises=HypothesisDeprecationWarning,
+                strict=True,
+                reason="differently named @composites",
+            ),
+        ),
+        pytest.param(
+            st.integers().flatmap(st.just),
+            st.integers(),
+            marks=pytest.mark.xfail(
+                raises=HypothesisDeprecationWarning,
+                strict=True,
+                reason="really different (but compatible)",
+            ),
+        ),
+    ],
+)
+def test_compatible_shared_strategies_do_not_raise(strat1, strat2):
+    shared1 = st.shared(strat1, key="share")
+    shared2 = st.shared(strat2, key="share")
+
+    @given(shared1, shared2)
+    def test_it(a, b):
+        assert a == b
+
+    test_it()

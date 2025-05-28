@@ -1,3 +1,5 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-Add check for validity of draws from shared strategies.
+Deprecate :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+drawing from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.

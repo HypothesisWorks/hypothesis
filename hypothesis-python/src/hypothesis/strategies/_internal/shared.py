@@ -11,7 +11,7 @@
 from collections.abc import Hashable
 from typing import Any, Optional
 
-from hypothesis.errors import InvalidArgument
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.strategies import Ex
@@ -41,7 +41,7 @@ class SharedStrategy(SearchStrategy[Ex]):
             # Assume that uncached strategies are distinguishable by their
             # label. False negatives (even collisions w/id above) are ok as
             # long as they are infrequent.
-            strat_label = self.base.calc_label()
+            strat_label = self.base.label
         key = self.key or self
         if key not in data._shared_strategy_draws:
             drawn = data.draw(self.base)
@@ -49,7 +49,10 @@ class SharedStrategy(SearchStrategy[Ex]):
         else:
             drawn_strat_label, drawn = data._shared_strategy_draws[key]
             if drawn_strat_label != strat_label:
-                raise InvalidArgument(
-                    "Can't draw shared value from incompatible strategies"
+                note_deprecation(
+                    "Drawing shared values from different underlying strategies is deprecated.",
+                    since="2025-05-28",
+                    has_codemod=False,
+                    stacklevel=1,
                 )
         return drawn
