@@ -595,7 +595,10 @@ def test_builds_error_messages(data):
             st.composite(lambda draw: draw(st.none()))(),
             st.composite(lambda draw: draw(st.integers()))(),
             marks=pytest.mark.xfail(
-                strict=True, reason="same-name incompatible @composite"
+                # https://github.com/pytest-dev/pytest/issues/8928
+                raises=pytest.fail.Exception,
+                strict=True,
+                reason="same-name incompatible @composite",
             ),
         ),
     ],
