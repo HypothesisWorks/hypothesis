@@ -345,7 +345,12 @@ def run_conformance_test(
     settings: Optional[Settings] = None,
 ) -> None:
     """
-    Test that the ``Provider`` class conforms to the primitive provider interface.
+    Test that the given ``Provider`` class conforms to the |PrimitiveProvider|
+    interface.
+
+    For instance, this tests that ``Provider`` does not return out of bounds
+    choices from any of the ``draw_*`` methods, or violate other invariants
+    depended on by Hypothesis.
 
     This function is intended to be called at test-time, not at runtime. It is
     provided by Hypothesis to make it easy for third-party backend authors to
@@ -354,15 +359,16 @@ def run_conformance_test(
 
     .. code-block:: python
 
-        from hypothesis.internal.conjecture.providers import run_conformance_test
+        from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 
         def test_conformance():
             run_conformance_test(MyProvider)
 
-    If your provider raises control flow exceptions that are handled by your
-    provider's ``per_test_case_context_manager``, pass a list of these exceptions
-    types to ``context_manager_exceptions``. Otherwise, ``run_conformance_test``
-    will treat those exceptions as fatal errors.
+    If your provider can raise control flow exceptions inside one of the five
+    ``draw_*`` methods that are handled by your provider's
+    ``per_test_case_context_manager``, pass a list of these exceptions types to
+    ``context_manager_exceptions``. Otherwise, ``run_conformance_test`` will
+    treat those exceptions as fatal errors.
     """
 
     @Settings(settings, suppress_health_check=[HealthCheck.too_slow])
