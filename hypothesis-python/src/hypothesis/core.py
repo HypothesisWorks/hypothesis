@@ -161,7 +161,78 @@ class Example:
 
 
 class example:
-    """A decorator which ensures a specific example is always tested."""
+    """
+    Add an explicit test case to a Hypothesis test, which Hypothesis will always
+    try before generating random inputs. This combines the randomized nature of
+    Hypothesis generation with a traditional parametrized test.
+
+    For example:
+
+    .. code-block:: python
+
+        @example("Hello world")
+        @example("some string with special significance")
+        @given(st.text())
+        def test_strings(s):
+            pass
+
+    will first call ``test_strings("Hello World")``, then
+    ``test_strings("some string with special significance")``, and then generate
+    inputs randomly.
+
+    Explicit test cases from |@example| are run in the |Phase.explicit| phase.
+    Explicit test cases do not count towards |settings.max_examples|.
+
+    |@example| can also be used to easily reproduce a failure. For instance, if
+    Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
+    ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
+
+    Note that explicit test cases added by |@example| do not shrink. If an
+    explicit test case fails, Hypothesis will stop immediately and report that
+    failure.
+
+    |@example| may be placed in any order relative to |@given| and |@settings|.
+
+    |@example| Parameters
+    ---------------------
+
+    Like |@given|, parameters to |@example| may be either positional or keyword
+    arguments:
+
+    .. code-block:: python
+
+        @example(1, 2)
+        @example(x=1, y=2)
+        @given(st.integers(), st.integers())
+        def test(x, y):
+            pass
+
+    If |@example| is provided fewer positional arguments than the decorated test,
+    the test arguments are filled in from the right, leaving the leftmost
+    positional arguments unfilled:
+
+    .. code-block:: python
+
+        @example(2, 3)
+        @given(st.just(2), st.just(3))
+        def test(passed_manually, y, z):
+            assert passed_manually == 1
+            assert y == 2
+            assert z == 3
+
+        # `test` is now a callable which takes one argument `passed_manually`
+
+        test(1)
+        # or equivalently:
+        test(passed_manually=1)
+
+    Note that, as with |@given|, it is an error to mix positional and keyword
+    arguments in |@example|.
+
+    .. seealso::
+
+        See also the :doc:`/tutorial/replaying-failures` tutorial.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if args and kwargs:
@@ -243,24 +314,29 @@ class example:
         return self
 
     def via(self, whence: str, /) -> "example":
-        """Attach a machine-readable label noting whence this example came.
+        """Attach a machine-readable label noting what the origin of this example
+        was. |example.via| is completely optional and does not change runtime
+        behavior.
 
-        The idea is that tools will be able to add ``@example()`` cases for you, e.g.
-        to maintain a high-coverage set of explicit examples, but also *remove* them
-        if they become redundant - without ever deleting manually-added examples:
+        |example.via| is intended to support tooling which adds (and possibly
+        removes) |@example| decorators automatically. For example:
 
         .. code-block:: python
 
-            # You can choose to annotate examples, or not, as you prefer
+            # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-
             # The `hy-` prefix is reserved for automated tooling
             @example(...).via("hy-failing")
             @example(...).via("hy-coverage")
             @example(...).via("hy-target-$label")
             def test(x):
                 pass
+
+        .. note::
+
+            `HypoFuzz <https://hypofuzz.com/>`_ uses |example.via| to tag examples
+            in the patch of its high-coverage set of explicit test cases.
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -331,6 +407,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     your test suite. Because of this, no compatibility guarantees are made across
     Hypothesis versions, and |@reproduce_failure| will error if used on a different
     Hypothesis version than it was created for.
+
+    .. seealso::
+
+        See also the :doc:`/tutorial/replaying-failures` tutorial.
     """
 
     def accept(test):
@@ -590,7 +670,8 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     new = HypothesisWarning(
                         "The @example() decorator expects to be passed values, but "
                         "you passed strategies instead.  See https://hypothesis."
-                        "readthedocs.io/en/latest/reproducing.html for details."
+                        "readthedocs.io/en/latest/reference/api.html#hypothesis"
+                        ".example for details."
                     )
                     new.__cause__ = err
                     err = new

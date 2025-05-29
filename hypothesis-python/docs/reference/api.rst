@@ -128,57 +128,6 @@ Hypothesis does not inspect :pep:`484` type comments at runtime. While |st.from_
 
 The :mod:`python:typing` module changes between different Python releases, including at minor versions.  These are all supported on a best-effort basis, but you may encounter problems.  Please report them to us, and consider updating to a newer version of Python as a workaround.
 
-
-.. _providing-explicit-examples:
-
-|@example|
-----------
-
-The simplest way to reproduce a failed test is to ask Hypothesis to run the
-failing example it printed.  For example, if ``Falsifying example: test(n=1)``
-was printed you can decorate ``test`` with ``@example(n=1)``.
-
-``@example`` can also be used to ensure a specific example is *always* executed
-as a regression test or to cover some edge case - basically combining a
-Hypothesis test and a traditional parametrized test.
-
-.. autoclass:: hypothesis.example
-
-Hypothesis will run all examples you've asked for first. If any of them fail it
-will not go on to look for more examples.
-
-It doesn't matter whether you put the example decorator before or after given.
-Any permutation of the decorators in the above will do the same thing.
-
-Note that examples can be positional or keyword based. If they're positional then
-they will be filled in from the right when calling, so either of the following
-styles will work as expected:
-
-.. code:: python
-
-  @given(text())
-  @example("Hello world")
-  @example(x="Some very long string")
-  def test_some_code(x):
-      pass
-
-  from unittest import TestCase
-
-  class TestThings(TestCase):
-      @given(text())
-      @example("Hello world")
-      @example(x="Some very long string")
-      def test_some_code(self, x):
-          pass
-
-As with |@given|, it is not permitted for a single example to be a mix of
-positional and keyword arguments.
-
-.. automethod:: hypothesis.example.xfail
-
-.. automethod:: hypothesis.example.via
-
-
 Control
 -------
 
@@ -313,8 +262,15 @@ If you want to bypass the TestCase infrastructure you can invoke these manually.
 Reproducing inputs
 ------------------
 
-.. autofunction:: hypothesis.seed
+.. seealso::
+
+    See also the :doc:`/tutorial/replaying-failures` tutorial.
+
+.. autoclass:: hypothesis.example
+.. automethod:: hypothesis.example.xfail
+.. automethod:: hypothesis.example.via
 .. autofunction:: hypothesis.reproduce_failure
+.. autofunction:: hypothesis.seed
 
 Hypothesis exceptions
 ---------------------
