@@ -80,6 +80,18 @@ Explicit inputs
 .. automethod:: hypothesis.example.xfail
 .. automethod:: hypothesis.example.via
 
+.. _reproducing-inputs:
+
+Reproducing inputs
+------------------
+
+.. seealso::
+
+    See also the :doc:`/tutorial/replaying-failures` tutorial.
+
+.. autofunction:: hypothesis.reproduce_failure
+.. autofunction:: hypothesis.seed
+
 Control
 -------
 
@@ -208,18 +220,6 @@ Running state machines
 If you want to bypass the TestCase infrastructure you can invoke these manually. The stateful module exposes |run_state_machine_as_test|, which takes an arbitrary function returning a |RuleBasedStateMachine| and an optional settings parameter and does the same as the class based runTest provided.
 
 .. autofunction:: hypothesis.stateful.run_state_machine_as_test
-
-.. _reproducing-inputs:
-
-Reproducing inputs
-------------------
-
-.. seealso::
-
-    See also the :doc:`/tutorial/replaying-failures` tutorial.
-
-.. autofunction:: hypothesis.reproduce_failure
-.. autofunction:: hypothesis.seed
 
 Hypothesis exceptions
 ---------------------
