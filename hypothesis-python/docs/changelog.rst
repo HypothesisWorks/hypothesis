@@ -18,6 +18,46 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.30:
+
+---------------------
+6.131.30 - 2025-05-27
+---------------------
+
+This patch resolves a Pandas FutureWarning (:issue:`4400`) caused by indexing with an integer key.
+
+.. _v6.131.29:
+
+---------------------
+6.131.29 - 2025-05-27
+---------------------
+
+The observations passed to |TESTCASE_CALLBACKS| are now dataclasses, rather than dictionaries. The content written to ``.hypothesis/observed`` under ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY`` remains the same.
+
+.. _v6.131.28:
+
+---------------------
+6.131.28 - 2025-05-25
+---------------------
+
+Add documentation to some internal APIs.
+
+.. _v6.131.27:
+
+---------------------
+6.131.27 - 2025-05-24
+---------------------
+
+Add ``PrimitiveProvider.replay_choices`` to the :ref:`alternative backends <alternative-backends>` interface, to support warm-starting e.g. :pypi:`hypothesis-crosshair` from :pypi:`hypofuzz`.
+
+.. _v6.131.26:
+
+---------------------
+6.131.26 - 2025-05-24
+---------------------
+
+Improve |ExampleDatabase| documentation.
+
 .. _v6.131.25:
 
 ---------------------
@@ -5271,7 +5311,7 @@ to shrink towards negative values instead of positive values in some cases.
 -------------------
 
 This patch fixes rare cases where ``hypothesis write --binary-op`` could
-print :ref:`reproducing instructions <reproducing-failures>` from the internal
+print :ref:`reproducing instructions <reproducing-inputs>` from the internal
 search for an identity element.
 
 .. _v6.13.4:

@@ -102,8 +102,9 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
-    _system_metadata,
-    deliver_json_blob,
+    InfoObservation,
+    InfoObservationType,
+    deliver_observation,
     make_testcase,
 )
 from hypothesis.internal.reflection import (
@@ -269,16 +270,34 @@ class example:
 
 
 def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
-    """Start the test execution from a specific seed.
+    """
+    Seed the randomness for this test.
 
-    May be any hashable object. No exact meaning for seed is provided
-    other than that for a fixed seed value Hypothesis will try the same
-    actions (insofar as it can given external sources of non-
-    determinism. e.g. timing and hash randomization).
+    ``seed`` may be any hashable object. No exact meaning for ``seed`` is provided
+    other than that for a fixed seed value Hypothesis will produce the same
+    examples (assuming that there are no other sources of nondeterminisim, such
+    as timing, hash randomization, or external state).
 
-    Overrides the derandomize setting, which is designed to enable
-    deterministic builds rather than reproducing observed failures.
+    For example, the following test function and |RuleBasedStateMachine| will
+    each generate the same series of examples each time they are executed:
 
+    .. code-block:: python
+
+        @seed(1234)
+        @given(st.integers())
+        def test(n): ...
+
+        @seed(6789)
+        class MyMachine(RuleBasedStateMachine): ...
+
+    If using pytest, you can alternatively pass ``--hypothesis-seed`` on the
+    command line.
+
+    Setting a seed overrides |settings.derandomize|, which is designed to enable
+    deterministic CI tests rather than reproducing observed failures.
+
+    Hypothesis will only print the seed which would reproduce a failure if a test
+    fails in an unexpected way, for instance inside Hypothesis internals.
     """
 
     def accept(test):
@@ -292,19 +311,27 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
     return accept
 
 
+# TODO_DOCS: link to /explanation/choice-sequence
+
+
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
-    """Run the example that corresponds to this data blob in order to reproduce
-    a failure.
+    """
+    Run the example corresponding to the binary ``blob`` in order to reproduce a
+    failure. ``blob`` is a serialized version of the internal input representation
+    of Hypothesis.
 
-    A test with this decorator *always* runs only one example and always fails.
-    If the provided example does not cause a failure, or is in some way invalid
-    for this test, then this will fail with a DidNotReproduce error.
+    A test decorated with |@reproduce_failure| always runs exactly one example,
+    which is expected to cause a failure. If the provided ``blob`` does not
+    cause a failure, Hypothesis will raise |DidNotReproduce|.
 
-    This decorator is not intended to be a permanent addition to your test
-    suite. It's simply some code you can add to ease reproduction of a problem
-    in the event that you don't have access to the test database. Because of
-    this, *no* compatibility guarantees are made between different versions of
-    Hypothesis - its API may change arbitrarily from version to version.
+    Hypothesis will print an |@reproduce_failure| decorator if
+    |settings.print_blob| is ``True`` (which is the default in CI).
+
+    |@reproduce_failure| is intended to be temporarily added to your test suite in
+    order to reproduce a failure. It is not intended to be a permanent addition to
+    your test suite. Because of this, no compatibility guarantees are made across
+    Hypothesis versions, and |@reproduce_failure| will error if used on a different
+    Hypothesis version than it was created for.
     """
 
     def accept(test):
@@ -588,14 +615,14 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     )
 
                 tc = make_testcase(
-                    start_timestamp=state._start_timestamp,
-                    test_name_or_nodeid=state.test_identifier,
+                    run_start=state._start_timestamp,
+                    property=state.test_identifier,
                     data=empty_data,
                     how_generated="explicit example",
-                    string_repr=state._string_repr,
+                    representation=state._string_repr,
                     timing=state._timing_features,
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -1210,18 +1237,18 @@ class StateForActualGivenExecution:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
                 tc = make_testcase(
-                    start_timestamp=self._start_timestamp,
-                    test_name_or_nodeid=self.test_identifier,
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
                     data=data,
                     how_generated=f"during {phase} phase{backend_desc}",
-                    string_repr=self._string_repr,
+                    representation=self._string_repr,
                     arguments=data._observability_args,
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
                 ):
@@ -1229,16 +1256,16 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: Union[str, dict]
     ) -> None:
-        deliver_json_blob(
-            {
-                "type": type,
-                "run_start": self._start_timestamp,
-                "property": self.test_identifier,
-                "title": title,
-                "content": content,
-            }
+        deliver_observation(
+            InfoObservation(
+                type=type,
+                run_start=self._start_timestamp,
+                property=self.test_identifier,
+                title=title,
+                content=content,
+            )
         )
 
     def run_engine(self):
@@ -1406,31 +1433,20 @@ class StateForActualGivenExecution:
                 raise NotImplementedError("This should be unreachable")
             finally:
                 # log our observability line for the final failing example
-                tc = {
-                    "type": "test_case",
-                    "run_start": self._start_timestamp,
-                    "property": self.test_identifier,
-                    "status": "passed" if sys.exc_info()[0] else "failed",
-                    "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": self._string_repr,
-                    "arguments": ran_example._observability_args,
-                    "how_generated": "minimal failing example",
-                    "features": {
-                        **{
-                            f"target:{k}".strip(":"): v
-                            for k, v in ran_example.target_observations.items()
-                        },
-                        **ran_example.events,
-                    },
-                    "timing": self._timing_features,
-                    "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {
-                        "traceback": tb,
-                        "predicates": dict(ran_example._observability_predicates),
-                        **_system_metadata(),
-                    },
-                }
-                deliver_json_blob(tc)
+                tc = make_testcase(
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
+                    data=ran_example,
+                    how_generated="minimal failing example",
+                    representation=self._string_repr,
+                    arguments=ran_example._observability_args,
+                    timing=self._timing_features,
+                    coverage=None,  # Not recorded when we're replaying the MFE
+                    status="passed" if sys.exc_info()[0] else "failed",
+                    status_reason=str(origin or "unexpected/flaky pass"),
+                    metadata={"traceback": tb},
+                )
+                deliver_observation(tc)
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:

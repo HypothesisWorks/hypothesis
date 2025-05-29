@@ -13,6 +13,7 @@ from typing import NamedTuple, Optional, Union
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import EllipsisType
 from hypothesis.internal.conjecture.utils import _calc_p_continue
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -37,8 +38,7 @@ __all__ = [
 
 
 Shape = tuple[int, ...]
-# We silence flake8 here because it disagrees with mypy about `ellipsis` (`type(...)`)
-BasicIndex = tuple[Union[int, slice, None, "ellipsis"], ...]  # noqa: F821
+BasicIndex = tuple[Union[int, slice, None, EllipsisType], ...]
 
 
 class BroadcastableShapes(NamedTuple):
