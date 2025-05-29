@@ -656,3 +656,4 @@ Detection
 ---------
 
 .. autofunction:: hypothesis.is_hypothesis_test
+.. autofunction:: hypothesis.currently_in_test_context

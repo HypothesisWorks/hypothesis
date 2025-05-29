@@ -126,10 +126,7 @@ standard library. Strategies for other things are also welcome; anything with
 external dependencies just goes in ``hypothesis.extra``.
 
 Tools such as assertion helpers may also need to check whether the current
-test is using Hypothesis:
-
-.. autofunction:: hypothesis.currently_in_test_context
-
+test is using Hypothesis. For that, see |currently_in_test_context|.
 
 .. _entry-points:
 
