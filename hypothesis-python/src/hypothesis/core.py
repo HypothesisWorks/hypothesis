@@ -179,22 +179,20 @@ class example:
         def test_strings(s):
             pass
 
-    will first call ``test_strings("Hello World")``, then
-    ``test_strings("some string with special significance")``, and then generate
-    inputs randomly.
+    will call ``test_strings("Hello World")`` and
+    ``test_strings("some string with special significance")`` before generating
+    any random inputs. |@example| may be placed in any order relative to |@given|
+    and |@settings|.
 
     Explicit inputs from |@example| are run in the |Phase.explicit| phase.
-    Explicit inputs do not count towards |settings.max_examples|.
+    Explicit inputs do not count towards |settings.max_examples|. Note that
+    explicit inputs added by |@example| do not shrink. If an explicit input
+    fails, Hypothesis will stop and report the failure without generating any
+    random inputs.
 
     |@example| can also be used to easily reproduce a failure. For instance, if
     Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
     ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
-
-    Note that explicit inputs added by |@example| do not shrink. If an
-    explicit input fails, Hypothesis will stop immediately and report that
-    failure.
-
-    |@example| may be placed in any order relative to |@given| and |@settings|.
 
     Arguments to ``@example``
     -------------------------
@@ -214,7 +212,7 @@ class example:
     Noting that while arguments to |@given| are strategies (like |st.integers|),
     arguments to |@example| are values instead (like ``1``).
 
-    See the "Arguments to ``@given``" section in |@given| for full details.
+    See the :ref:`given-arguments` section for full details.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -1661,6 +1659,8 @@ def given(
 
         See also the :doc:`/tutorial/introduction` tutorial, which introduces
         defining Hypothesis tests with |@given|.
+
+    .. _given-arguments:
 
     Arguments to ``@given``
     -----------------------
