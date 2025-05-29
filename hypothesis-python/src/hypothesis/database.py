@@ -159,29 +159,30 @@ class ExampleDatabase(metaclass=_EDMeta):
     or changing your test. Do not rely on the database for correctness; to ensure
     Hypothesis always tries an input, use |@example|.
 
-    Hypothesis provides several concrete database subclasses. A Hypothesis database
-    is a simple mapping of bytes to sets of bytes, so you can also write your own
-    database implementation. See :doc:`/how-to/custom-database`.
+    A Hypothesis database is a simple mapping of bytes to sets of bytes. Hypothesis
+    provides several concrete database subclasses. To write your own database class,
+    see :doc:`/how-to/custom-database`.
 
     Change listening
     ----------------
 
     An optional extension to |ExampleDatabase| is change listening. On databases
-    which support it, you can call |ExampleDatabase.add_listener| to add a function
-    as a change listener, which will be called whenever a value is added, deleted,
-    or moved. See |ExampleDatabase.add_listener| for details.
+    which support change listening, calling |ExampleDatabase.add_listener| adds
+    a function as a change listener, which will be called whenever a value is
+    added, deleted, or moved inside the database. See |ExampleDatabase.add_listener|
+    for details.
 
     All databases in Hypothesis support change listening. Custom database classes
-    are not required to support change listening, unless they want to be
-    compatible with features that require change listening. Currently, no Hypothesis
-    features require change listening.
+    are not required to support change listening, though they will not be compatible
+    with features that require change listening until they do so.
 
     .. note::
 
-        Change listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
+        While no Hypothesis features currently require change listening, change
+        listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
 
-    Methods
-    -------
+    Database methods
+    ----------------
 
     Required methods:
 
