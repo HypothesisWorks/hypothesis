@@ -455,15 +455,15 @@ class HypothesisProvider(PrimitiveProvider):
         *,
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
+        assert self._random is not None
+        assert choice_type != "boolean"
         # check whether we even want a constant before spending time computing
         # and caching the allowed constants.
         if self._random.random() > p:
             return None
 
-        assert self._random is not None
-        # note: this property access results in computation
+        # note: this property access results in computation being done
         assert self._local_constants is not None
-        assert choice_type != "boolean"
 
         key = (choice_type, choice_constraints_key(choice_type, constraints))
         if key not in CONSTANTS_CACHE:
