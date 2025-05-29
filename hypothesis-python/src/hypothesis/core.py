@@ -68,6 +68,7 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
+from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -99,7 +100,6 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
-    OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
     InfoObservation,
     InfoObservationType,
@@ -875,7 +875,9 @@ class StateForActualGivenExecution:
         ) or get_pretty_function_description(self.wrapped_test)
 
     def _should_trace(self):
-        _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
+        # NOTE: we explicitly support monkeypatching this. Keep the namespace
+        # access intact.
+        _trace_obs = TESTCASE_CALLBACKS and observability.OBSERVABILITY_COLLECT_COVERAGE
         _trace_failure = (
             self.failed_normally
             and not self.failed_due_to_deadline
