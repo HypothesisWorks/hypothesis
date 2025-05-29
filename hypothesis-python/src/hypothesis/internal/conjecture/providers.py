@@ -252,7 +252,10 @@ def _get_local_constants() -> Constants:
     # careful: store sys.modules length when we first check to avoid race conditions
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
-        new_modules = set(sys.modules.values()) - _seen_modules
+        # set(_seen_modules) shouldn't typically be required, but I have run into
+        # a "set changed size during iteration" error here when running
+        # test_provider_conformance_crosshair.
+        new_modules = set(sys.modules.values()) - set(_seen_modules)
         # Repeated SortedSet unions are expensive. Do the initial unions on a
         # set(), then do a one-time union with _local_constants after.
         new_constants = Constants()
@@ -452,14 +455,15 @@ class HypothesisProvider(PrimitiveProvider):
         *,
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
-        assert self._random is not None
-        assert self._local_constants is not None
-        assert choice_type != "boolean"
-
         # check whether we even want a constant before spending time computing
         # and caching the allowed constants.
         if self._random.random() > p:
             return None
+
+        assert self._random is not None
+        # note: this property access results in computation
+        assert self._local_constants is not None
+        assert choice_type != "boolean"
 
         key = (choice_type, choice_constraints_key(choice_type, constraints))
         if key not in CONSTANTS_CACHE:
