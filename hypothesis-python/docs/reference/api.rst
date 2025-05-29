@@ -7,7 +7,18 @@ Reference for non-strategy objects that are part of the Hypothesis API. For docu
 ----------
 
 .. autofunction:: hypothesis.given
-.. autodata:: hypothesis.infer
+
+.. standard #: directives in the source don't work for hypothesis.infer,
+.. see https://github.com/sphinx-doc/sphinx/issues/6495
+
+.. data:: hypothesis.infer
+
+    An alias for ``...`` (|ellipsis|). |infer| can be passed to |@given| or
+    |st.builds| to indicate that a strategy for that parameter should be inferred
+    from its type annotations.
+
+    In all cases, using |infer| is equivalent to using ``...``.
+
 
 Inferred strategies
 ~~~~~~~~~~~~~~~~~~~
@@ -25,7 +36,7 @@ no strategy was passed to |st.builds|, |st.from_type| is used to fill them in. Y
     >>> builds(func).example()
     [-6993, '']
 
-|@given| does not perform any implicit inference for required arguments, as this would break compatibility with pytest fixtures. ``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill in an argument from its type annotation.  You can also use the :obj:`hypothesis.infer` alias if writing a literal ``...`` seems too weird.
+|@given| does not perform any implicit inference for required arguments, as this would break compatibility with pytest fixtures. ``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill in an argument from its type annotation.  You can also use the |infer| alias if writing a literal ``...`` seems too weird.
 
 .. code:: python
 

@@ -12,6 +12,7 @@
 .. |target| replace:: :func:`~hypothesis.target`
 .. |event| replace:: :func:`~hypothesis.event`
 .. |note| replace:: :func:`~hypothesis.note`
+.. |infer| replace:: :data:`~hypothesis.infer`
 
 .. |max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
 .. |settings.max_examples| replace:: :obj:`settings.max_examples <hypothesis.settings.max_examples>`
@@ -161,3 +162,5 @@
 .. |dataclasses| replace:: :mod:`python:dataclasses`
 .. |random.random| replace:: :class:`python:random.Random`
 .. |random.Random| replace:: :class:`python:random.Random`
+.. |ellipsis| replace:: :obj:`python:Ellipsis`
+.. |Ellipsis| replace:: :obj:`python:Ellipsis`
