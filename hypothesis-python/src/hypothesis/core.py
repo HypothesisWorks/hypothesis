@@ -160,9 +160,12 @@ class Example:
     reason: Any = field(default=None)
 
 
+# TODO_DOCS link to not-yet-existent patch-dumping docs
+
+
 class example:
     """
-    Add an explicit test case to a Hypothesis test, which Hypothesis will always
+    Add an explicit input to a Hypothesis test, which Hypothesis will always
     try before generating random inputs. This combines the randomized nature of
     Hypothesis generation with a traditional parametrized test.
 
@@ -180,24 +183,25 @@ class example:
     ``test_strings("some string with special significance")``, and then generate
     inputs randomly.
 
-    Explicit test cases from |@example| are run in the |Phase.explicit| phase.
-    Explicit test cases do not count towards |settings.max_examples|.
+    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
+    Explicit inputs do not count towards |settings.max_examples|.
 
     |@example| can also be used to easily reproduce a failure. For instance, if
     Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
     ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
 
-    Note that explicit test cases added by |@example| do not shrink. If an
-    explicit test case fails, Hypothesis will stop immediately and report that
+    Note that explicit inputs added by |@example| do not shrink. If an
+    explicit input fails, Hypothesis will stop immediately and report that
     failure.
 
     |@example| may be placed in any order relative to |@given| and |@settings|.
 
-    |@example| Parameters
-    ---------------------
+    Arguments to ``@example``
+    -------------------------
 
-    Like |@given|, parameters to |@example| may be either positional or keyword
-    arguments:
+    Arguments to |@example| have the same behavior and restrictions as arguments
+    to |@given|. This means they may be either positional or keyword arguments
+    (but not both in the same |@example|):
 
     .. code-block:: python
 
@@ -207,31 +211,10 @@ class example:
         def test(x, y):
             pass
 
-    If |@example| is provided fewer positional arguments than the decorated test,
-    the test arguments are filled in from the right, leaving the leftmost
-    positional arguments unfilled:
+    Noting that while arguments to |@given| are strategies (like |st.integers|),
+    arguments to |@example| are values instead (like ``1``).
 
-    .. code-block:: python
-
-        @example(2, 3)
-        @given(st.just(2), st.just(3))
-        def test(passed_manually, y, z):
-            assert passed_manually == 1
-            assert y == 2
-            assert z == 3
-
-        # `test` is now a callable which takes one argument `passed_manually`
-
-        test(1)
-        # or equivalently:
-        test(passed_manually=1)
-
-    Note that, as with |@given|, it is an error to mix positional and keyword
-    arguments in |@example|.
-
-    .. seealso::
-
-        See also the :doc:`/tutorial/replaying-failures` tutorial.
+    See the "Arguments to ``@given``" section in |@given| for full details.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -326,17 +309,19 @@ class example:
             # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-            # The `hy-` prefix is reserved for automated tooling
-            @example(...).via("hy-failing")
-            @example(...).via("hy-coverage")
-            @example(...).via("hy-target-$label")
+            # The `hypothesis-` and `hypofuzz-` prefixes are reserved for
+            # automated tooling
+            @example(...).via("hypothesis-failing")
+            @example(...).via("hypothesis-target-$label")
+            @example(...).via("hypofuzz-covering")
             def test(x):
                 pass
 
         .. note::
 
             `HypoFuzz <https://hypofuzz.com/>`_ uses |example.via| to tag examples
-            in the patch of its high-coverage set of explicit test cases.
+            in the patch of its high-coverage set of explicit inputs, on
+            `the patches page <https://hypofuzz.com/example-dashboard/#/patches>`_.
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -1671,10 +1656,96 @@ def given(
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
-    """A decorator for turning a test function that accepts arguments into a
-    randomized test.
+    """
+    The |@given| decorator turns a function into a Hypothesis test. This is the
+    main entry point to Hypothesis.
 
-    This is the main entry point to Hypothesis.
+    .. seealso::
+
+        See also the :doc:`/tutorial/introduction` tutorial, which introduces
+        defining Hypothesis tests with |@given|.
+
+    Arguments to ``@given``
+    -----------------------
+
+    Arguments to |@given| may be either positional or keyword arguments:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test_one(x, y):
+            pass
+
+        @given(x=st.integers(), y=st.floats())
+        def test_two(x, y):
+            pass
+
+    If using keyword arguments, the arguments may appear in any order, as with
+    standard Python functions:
+
+    .. code-block:: python
+
+        # different order, but still equivalent to before
+        @given(y=st.floats(), x=st.integers())
+        def test(x, y):
+            assert isinstance(x, int)
+            assert isinstance(y, float)
+
+    If |@given| is provided fewer positional arguments than the decorated test,
+    the test arguments are filled in on the right side, leaving the leftmost
+    positional arguments unfilled:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test(manual_string, y, z):
+            assert manual_string == "x"
+            assert isinstance(y, int)
+            assert isinstance(z, float)
+
+        # `test` is now a callable which takes one argument `manual_string`
+
+        test("x")
+        # or equivalently:
+        test(manual_string="x")
+
+    The reason for this "from the right" behavior is to support using |@given|
+    with instance methods, by passing through ``self``:
+
+    .. code-block:: python
+
+        class MyTest(TestCase):
+            @given(st.integers())
+            def test(self, x):
+                assert isinstance(self, MyTest)
+                assert isinstance(x, int)
+
+    If (and only if) using keyword arguments, |@given| may be combined with
+    ``**kwargs`` or ``*args``:
+
+    .. code-block:: python
+
+        @given(x=integers(), y=integers())
+        def test(x, **kwargs):
+            assert "y" in kwargs
+
+        @given(x=integers(), y=integers())
+        def test(x, *args, **kwargs):
+            assert args == ()
+            assert "x" not in kwargs
+            assert "y" in kwargs
+
+    It is an error to:
+
+    * Mix positional and keyword arguments to |@given|.
+    * Use |@given| with a function that has a default value for an argument.
+    * Use |@given| with positional arguments with a function that uses ``*args``,
+      ``**kwargs``, or keyword-only arguments.
+
+    The function returned by given has all the same arguments as the original
+    test, minus those that are filled in by |@given|. See the :ref:`notes on
+    framework compatibility <framework-compatibility>` for how this interacts
+    with features of other testing libraries, such as :pypi:`pytest` fixtures.
     """
 
     if currently_in_test_context():
