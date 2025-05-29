@@ -833,6 +833,7 @@ class ConjectureRunner:
 
     def observe_for_provider(self) -> AbstractContextManager:
         def on_observation(observation: Observation) -> None:
+            # because lifetime == "test_function"
             assert isinstance(self.provider, PrimitiveProvider)
             # only fire if we actually used that provider to generate this observation
             if not self._switch_to_hypothesis_provider:
@@ -844,11 +845,12 @@ class ConjectureRunner:
             with_observation_callback(on_observation)
             if (
                 self.settings.backend != "hypothesis"
-                # only for lifetime = "test_function" providers
+                # only for lifetime = "test_function" providers (guaranteed
+                # by this isinstance check)
                 and isinstance(self.provider, PrimitiveProvider)
                 # and the provider class overrode the default
                 # (see https://github.com/python/mypy/issues/14123 for type ignore)
-                and self.provider.on_observation.__func__  # type: ignore
+                and type(self.provider).on_observation
                 is not PrimitiveProvider.on_observation
             )
             else nullcontext()
