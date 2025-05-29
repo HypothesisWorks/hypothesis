@@ -301,19 +301,16 @@ class example:
         was. |example.via| is completely optional and does not change runtime
         behavior.
 
-        |example.via| is intended to support tooling which adds (and possibly
-        removes) |@example| decorators automatically. For example:
+        |example.via| is intended to support self-documenting behavior, as well as
+        tooling which might add (or remove) |@example| decorators automatically.
+        For example:
 
         .. code-block:: python
 
             # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-            # The `hypothesis-` and `hypofuzz-` prefixes are reserved for
-            # automated tooling
-            @example(...).via("hypothesis-failing")
-            @example(...).via("hypothesis-target-$label")
-            @example(...).via("hypofuzz-covering")
+            @example(...).via("discovered failure")
             def test(x):
                 pass
 
