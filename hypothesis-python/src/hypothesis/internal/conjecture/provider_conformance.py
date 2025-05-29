@@ -10,11 +10,18 @@
 
 import math
 import sys
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Collection, Generator, Iterable, Sequence
 from itertools import islice
 from typing import Any, Optional
 
-from hypothesis import assume, given, note, strategies as st
+from hypothesis import (
+    HealthCheck,
+    assume,
+    note,
+    settings as Settings,
+    strategies as st,
+)
+from hypothesis.errors import BackendCannotProceed
 from hypothesis.internal.conjecture.choice import (
     ChoiceTypeT,
     choice_permitted,
@@ -331,7 +338,12 @@ def choice_types_constraints(strategy_constraints=None, *, use_forced=False):
     )
 
 
-def run_conformance_test(Provider: type[PrimitiveProvider]) -> None:
+def run_conformance_test(
+    Provider: type[PrimitiveProvider],
+    *,
+    context_manager_exceptions: Collection[type[BaseException]] = (),
+    settings: Optional[Settings] = None,
+) -> None:
     """
     Test that the ``Provider`` class conforms to the primitive provider interface.
 
@@ -346,42 +358,14 @@ def run_conformance_test(Provider: type[PrimitiveProvider]) -> None:
 
         def test_conformance():
             run_conformance_test(MyProvider)
+
+    If your provider raises control flow exceptions that are handled by your
+    provider's ``per_test_case_context_manager``, pass a list of these exceptions
+    types to ``context_manager_exceptions``. Otherwise, ``run_conformance_test``
+    will treat those exceptions as fatal errors.
     """
 
-    # This test currently doesn't correctly test providers which:
-    # * define per_test_case_context_manager, and
-    # * catch a custom control flow exception in that context manager
-    #
-    # Because manually calling __enter__ on a context manager does not
-    # automatically call __exit__ when an exception is raised, bypassing expected
-    # control flow.
-    #
-    # What we would like to have happen is call per_test_case_context_manager.__enter__(),
-    # then install a try/catch handler around this iteration of the stateful test
-    # (but not around the entire stateful test). In the catch, call
-    # per_test_case_context_manager.__exit__ with the caught exception, and wrap
-    # *that* in a try/except which catches BackendCannotProceed.
-    #
-    # The flow for crosshair looks like this:
-    # * per_test_case_context_manager.__enter__()
-    # * provider.draw_integer raises IgnoreAttempt
-    # * Usually, this bubbles up to crosshair's try/except around its yield inside
-    #  per_test_case_context_manager, but we're managing the context manager
-    #  lifetime explicitly.
-    # * So in this test, IgnoreAttempt would bubble up to our try/catch handler
-    # * We call per_test_case_context_manager.__exit__
-    # * Crosshair's per_test_case_context_manager yield fires, which catches
-    #   IgnoreAttempt and raises BackendCannotProceed
-    # * Our try/catch around per_test_case_context_manager.__exit__ catches
-    #   BackendCannotProceed, and ignores that attempt
-    #
-    # All of this would ensure that BackendCannotProceeed is being raised only in
-    # places where we expect it to.
-    #
-    # Alternatively, we might restructure this test to handle
-    #   with provider.per_test_case_context_manager
-    # properly.
-
+    @Settings(settings, suppress_health_check=[HealthCheck.too_slow])
     class ProviderConformanceTest(RuleBasedStateMachine):
         def __init__(self):
             super().__init__()
@@ -400,17 +384,28 @@ def run_conformance_test(Provider: type[PrimitiveProvider]) -> None:
 
         def _draw(self, choice_type, constraints):
             del constraints["forced"]
-            choice = getattr(self.provider, f"draw_{choice_type}")(**constraints)
-            note(f"drew {choice_type} {choice}")
-            expected_type = {
-                "integer": int,
-                "float": float,
-                "bytes": bytes,
-                "string": str,
-                "boolean": bool,
-            }[choice_type]
-            assert isinstance(choice, expected_type)
-            assert choice_permitted(choice, constraints)
+            draw_func = getattr(self.provider, f"draw_{choice_type}")
+
+            try:
+                choice = draw_func(**constraints)
+                note(f"drew {choice_type} {choice}")
+                expected_type = {
+                    "integer": int,
+                    "float": float,
+                    "bytes": bytes,
+                    "string": str,
+                    "boolean": bool,
+                }[choice_type]
+                assert isinstance(choice, expected_type)
+                assert choice_permitted(choice, constraints)
+            except context_manager_exceptions as e:
+                note(f"caught exception {type(e)} in context_manager_exceptions: {e}")
+                try:
+                    self.context_manager.__exit__(type(e), e, None)
+                except BackendCannotProceed:
+                    self.frozen = True
+                    return None
+
             return choice
 
         @precondition(lambda self: not self.frozen)
@@ -439,35 +434,50 @@ def run_conformance_test(Provider: type[PrimitiveProvider]) -> None:
             self._draw("boolean", constraints)
 
         @precondition(lambda self: not self.frozen)
-        def span_start(self):
-            self.provider.span_start()
+        @rule(label=st.integers())
+        def span_start(self, label):
+            self.provider.span_start(label)
 
         @precondition(lambda self: not self.frozen)
-        def span_end(self):
-            self.provider.span_end()
+        @rule(discard=st.booleans())
+        def span_end(self, discard):
+            self.provider.span_end(discard)
 
+        @precondition(lambda self: not self.frozen)
+        @rule()
         def freeze(self):
             # phase-transition, mimicking data.freeze() at the end of a test case.
             self.frozen = True
             self.context_manager.__exit__(None, None, None)
 
         @precondition(lambda self: self.frozen)
-        @given(value=st.from_type(object))
+        @rule(
+            value=st.integers()
+            | st.floats(allow_nan=False)
+            | st.booleans()
+            | st.binary()
+            | st.text()
+        )
         def realize(self, value):
-            # ignore math.nan and other weirder things
-            assume(value == value)
+            # Hypothesis can in theory pass values of any type to `realize`,
+            # but st.from_type(object) acts too much like a fuzzer for crosshair
+            # internals here and finds very strange errors.
+
             # if `value` is non-symbolic, the provider should return it as-is.
             assert self.provider.realize(value) == value
 
         @precondition(lambda self: self.frozen)
+        @rule()
         def observe_test_case(self):
             observations = self.provider.observe_test_case()
             assert isinstance(observations, dict)
 
         @precondition(lambda self: self.frozen)
-        def observe_information_messages(self):
-            observations = self.provider.observe_information_messages()
-            assert isinstance(observations, dict)
+        @rule(lifetime=st.sampled_from(["test_function", "test_case"]))
+        def observe_information_messages(self, lifetime):
+            observations = self.provider.observe_information_messages(lifetime=lifetime)
+            for observation in observations:
+                assert isinstance(observation, dict)
 
         def teardown(self):
             if not self.frozen:
