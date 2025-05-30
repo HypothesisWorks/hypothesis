@@ -63,7 +63,7 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import InfoObservationType, Observation
+from hypothesis.internal.observability import InfoObservationType, TestCaseObservation
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -364,7 +364,7 @@ class PrimitiveProvider(abc.ABC):
     #:
     #: The opt-in behavior of observability is because enabling observability
     #: might increase runtime or memory usage.
-    add_observation_callback: ClassVar[bool] = False
+    add_observability_callback: ClassVar[bool] = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
@@ -554,7 +554,7 @@ class PrimitiveProvider(abc.ABC):
         assert lifetime in ("test_case", "test_function")
         yield from []
 
-    def on_observation(self, observation: Observation) -> None:  # noqa: B027
+    def on_observation(self, observation: TestCaseObservation) -> None:  # noqa: B027
         """
         Called at the end of each test case which uses this provider, with the same
         ``observation["type"] == "test_case"`` observation that is passed to
@@ -564,7 +564,7 @@ class PrimitiveProvider(abc.ABC):
         .. important::
 
             For |PrimitiveProvider.on_observation| to be called by Hypothesis,
-            |PrimitiveProvider.add_observation_callback| must be set to ``True``,
+            |PrimitiveProvider.add_observability_callback| must be set to ``True``,
 
             |PrimitiveProvider.on_observation| is explicitly opt-in, as enabling
             observability might increase runtime or memory usage.

@@ -722,7 +722,7 @@ def test_replay_choices():
 
 
 class ObservationProvider(TrivialProvider):
-    add_observation_callback = True
+    add_observability_callback = True
 
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)

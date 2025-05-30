@@ -833,6 +833,7 @@ class ConjectureRunner:
 
     def observe_for_provider(self) -> AbstractContextManager:
         def on_observation(observation: Observation) -> None:
+            assert observation.type == "test_case"
             # because lifetime == "test_function"
             assert isinstance(self.provider, PrimitiveProvider)
             # only fire if we actually used that provider to generate this observation
@@ -849,7 +850,7 @@ class ConjectureRunner:
                 # by this isinstance check)
                 and isinstance(self.provider, PrimitiveProvider)
                 # and the provider opted-in to observations
-                and self.provider.add_observation_callback
+                and self.provider.add_observability_callback
             )
             else nullcontext()
         )
