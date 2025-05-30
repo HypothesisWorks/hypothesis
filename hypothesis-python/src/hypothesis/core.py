@@ -161,8 +161,60 @@ class Example:
     reason: Any = field(default=None)
 
 
+# TODO_DOCS link to not-yet-existent patch-dumping docs
+
+
 class example:
-    """A decorator which ensures a specific example is always tested."""
+    """
+    Add an explicit input to a Hypothesis test, which Hypothesis will always
+    try before generating random inputs. This combines the randomized nature of
+    Hypothesis generation with a traditional parametrized test.
+
+    For example:
+
+    .. code-block:: python
+
+        @example("Hello world")
+        @example("some string with special significance")
+        @given(st.text())
+        def test_strings(s):
+            pass
+
+    will call ``test_strings("Hello World")`` and
+    ``test_strings("some string with special significance")`` before generating
+    any random inputs. |@example| may be placed in any order relative to |@given|
+    and |@settings|.
+
+    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
+    Explicit inputs do not count towards |settings.max_examples|. Note that
+    explicit inputs added by |@example| do not shrink. If an explicit input
+    fails, Hypothesis will stop and report the failure without generating any
+    random inputs.
+
+    |@example| can also be used to easily reproduce a failure. For instance, if
+    Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
+    ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
+
+    Arguments to ``@example``
+    -------------------------
+
+    Arguments to |@example| have the same behavior and restrictions as arguments
+    to |@given|. This means they may be either positional or keyword arguments
+    (but not both in the same |@example|):
+
+    .. code-block:: python
+
+        @example(1, 2)
+        @example(x=1, y=2)
+        @given(st.integers(), st.integers())
+        def test(x, y):
+            pass
+
+    Noting that while arguments to |@given| are strategies (like |st.integers|),
+    arguments to |@example| are values instead (like ``1``).
+
+    See the :ref:`given-arguments` section for full details.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if args and kwargs:
@@ -244,24 +296,28 @@ class example:
         return self
 
     def via(self, whence: str, /) -> "example":
-        """Attach a machine-readable label noting whence this example came.
+        """Attach a machine-readable label noting what the origin of this example
+        was. |example.via| is completely optional and does not change runtime
+        behavior.
 
-        The idea is that tools will be able to add ``@example()`` cases for you, e.g.
-        to maintain a high-coverage set of explicit examples, but also *remove* them
-        if they become redundant - without ever deleting manually-added examples:
+        |example.via| is intended to support self-documenting behavior, as well as
+        tooling which might add (or remove) |@example| decorators automatically.
+        For example:
 
         .. code-block:: python
 
-            # You can choose to annotate examples, or not, as you prefer
+            # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-
-            # The `hy-` prefix is reserved for automated tooling
-            @example(...).via("hy-failing")
-            @example(...).via("hy-coverage")
-            @example(...).via("hy-target-$label")
+            @example(...).via("discovered failure")
             def test(x):
                 pass
+
+        .. note::
+
+            `HypoFuzz <https://hypofuzz.com/>`_ uses |example.via| to tag examples
+            in the patch of its high-coverage set of explicit inputs, on
+            `the patches page <https://hypofuzz.com/example-dashboard/#/patches>`_.
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -332,6 +388,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     your test suite. Because of this, no compatibility guarantees are made across
     Hypothesis versions, and |@reproduce_failure| will error if used on a different
     Hypothesis version than it was created for.
+
+    .. seealso::
+
+        See also the :doc:`/tutorial/replaying-failures` tutorial.
     """
 
     def accept(test):
@@ -591,7 +651,8 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     new = HypothesisWarning(
                         "The @example() decorator expects to be passed values, but "
                         "you passed strategies instead.  See https://hypothesis."
-                        "readthedocs.io/en/latest/reproducing.html for details."
+                        "readthedocs.io/en/latest/reference/api.html#hypothesis"
+                        ".example for details."
                     )
                     new.__cause__ = err
                     err = new
@@ -1601,10 +1662,98 @@ def given(
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
-    """A decorator for turning a test function that accepts arguments into a
-    randomized test.
+    """
+    The |@given| decorator turns a function into a Hypothesis test. This is the
+    main entry point to Hypothesis.
 
-    This is the main entry point to Hypothesis.
+    .. seealso::
+
+        See also the :doc:`/tutorial/introduction` tutorial, which introduces
+        defining Hypothesis tests with |@given|.
+
+    .. _given-arguments:
+
+    Arguments to ``@given``
+    -----------------------
+
+    Arguments to |@given| may be either positional or keyword arguments:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test_one(x, y):
+            pass
+
+        @given(x=st.integers(), y=st.floats())
+        def test_two(x, y):
+            pass
+
+    If using keyword arguments, the arguments may appear in any order, as with
+    standard Python functions:
+
+    .. code-block:: python
+
+        # different order, but still equivalent to before
+        @given(y=st.floats(), x=st.integers())
+        def test(x, y):
+            assert isinstance(x, int)
+            assert isinstance(y, float)
+
+    If |@given| is provided fewer positional arguments than the decorated test,
+    the test arguments are filled in on the right side, leaving the leftmost
+    positional arguments unfilled:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test(manual_string, y, z):
+            assert manual_string == "x"
+            assert isinstance(y, int)
+            assert isinstance(z, float)
+
+        # `test` is now a callable which takes one argument `manual_string`
+
+        test("x")
+        # or equivalently:
+        test(manual_string="x")
+
+    The reason for this "from the right" behavior is to support using |@given|
+    with instance methods, by passing through ``self``:
+
+    .. code-block:: python
+
+        class MyTest(TestCase):
+            @given(st.integers())
+            def test(self, x):
+                assert isinstance(self, MyTest)
+                assert isinstance(x, int)
+
+    If (and only if) using keyword arguments, |@given| may be combined with
+    ``**kwargs`` or ``*args``:
+
+    .. code-block:: python
+
+        @given(x=integers(), y=integers())
+        def test(x, **kwargs):
+            assert "y" in kwargs
+
+        @given(x=integers(), y=integers())
+        def test(x, *args, **kwargs):
+            assert args == ()
+            assert "x" not in kwargs
+            assert "y" in kwargs
+
+    It is an error to:
+
+    * Mix positional and keyword arguments to |@given|.
+    * Use |@given| with a function that has a default value for an argument.
+    * Use |@given| with positional arguments with a function that uses ``*args``,
+      ``**kwargs``, or keyword-only arguments.
+
+    The function returned by given has all the same arguments as the original
+    test, minus those that are filled in by |@given|. See the :ref:`notes on
+    framework compatibility <framework-compatibility>` for how this interacts
+    with features of other testing libraries, such as :pypi:`pytest` fixtures.
     """
 
     if currently_in_test_context():
@@ -1922,7 +2071,12 @@ def given(
                 )
                 try:
                     state.execute_once(data)
-                except (StopTest, UnsatisfiedAssumption):
+                    status = Status.VALID
+                except StopTest:
+                    status = data.status
+                    return None
+                except UnsatisfiedAssumption:
+                    status = Status.INVALID
                     return None
                 except BaseException:
                     known = minimal_failures.get(data.interesting_origin)
@@ -1933,7 +2087,25 @@ def given(
                             database_key, choices_to_bytes(data.choices)
                         )
                         minimal_failures[data.interesting_origin] = data.nodes
+                    status = Status.INTERESTING
                     raise
+                finally:
+                    if TESTCASE_CALLBACKS:
+                        tc = make_testcase(
+                            run_start=state._start_timestamp,
+                            property=state.test_identifier,
+                            data=data,
+                            how_generated="fuzz_one_input",
+                            representation=state._string_repr,
+                            arguments=data._observability_args,
+                            timing=state._timing_features,
+                            coverage=None,
+                            status=status,
+                            backend_metadata=data.provider.observe_test_case(),
+                        )
+                        deliver_observation(tc)
+                        state._timing_features = {}
+
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)
 

@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import textwrap
+from contextlib import nullcontext
 
 import pytest
 
@@ -298,3 +299,36 @@ def test_observability_captures_stateful_reprs():
         has_inc = "generate:rule:inc" in t and "execute:rule:inc" in t
         has_dec = "generate:rule:dec" in t and "execute:rule:dec" in t
         assert has_inc or has_dec
+
+
+# BytestringProvider.draw_boolean divides [0, 127] as False and [128, 255]
+# as True
+@pytest.mark.parametrize(
+    "buffer, expected_status",
+    [
+        # Status.OVERRUN
+        (b"", "gave_up"),
+        # Status.INVALID
+        (b"\x00" + bytes([255]), "gave_up"),
+        # Status.VALID
+        (b"\x00\x00", "passed"),
+        # Status.INTERESTING
+        (bytes([255]) + b"\x00", "failed"),
+    ],
+)
+def test_fuzz_one_input_status(buffer, expected_status):
+    @given(st.booleans(), st.booleans())
+    def test_fails(should_fail, should_fail_assume):
+        if should_fail:
+            raise AssertionError
+        if should_fail_assume:
+            assume(False)
+
+    with (
+        capture_observations() as ls,
+        pytest.raises(AssertionError) if expected_status == "failed" else nullcontext(),
+    ):
+        test_fails.hypothesis.fuzz_one_input(buffer)
+    assert len(ls) == 1
+    assert ls[0].status == expected_status
+    assert ls[0].how_generated == "fuzz_one_input"
