@@ -45,6 +45,7 @@ from hypothesis.internal.conjecture.engine import (
 from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.debug import minimal
@@ -160,6 +161,9 @@ def recur(i, data):
 
 
 @pytest.mark.skipif(PYPY, reason="stack tricks only work reliably on CPython")
+@pytest.mark.skipif(
+    IN_COVERAGE_TESTS, reason="flaky under coverage instrumentation? see #4391"
+)
 def test_recursion_error_is_not_flaky():
     def tf(data):
         i = data.draw_integer(0, 2**16 - 1)
