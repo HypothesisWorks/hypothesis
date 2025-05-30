@@ -28,7 +28,7 @@ from hypothesis.errors import HypothesisWarning
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    from hypothesis.internal.conjecture.data import ConjectureData
+    from hypothesis.internal.conjecture.data import ConjectureData, Status
 
 
 @dataclass
@@ -128,7 +128,9 @@ def make_testcase(
     coverage: Optional[dict[str, list[int]]] = None,
     phase: Optional[str] = None,
     backend_metadata: Optional[dict[str, Any]] = None,
-    status: Optional[TestCaseStatus] = None,  # overrides automatic calculation
+    status: Optional[
+        Union[TestCaseStatus, "Status"]
+    ] = None,  # overrides automatic calculation
     status_reason: Optional[str] = None,  # overrides automatic calculation
     # added to calculated metadata. If keys overlap, the value from this `metadata`
     # is used
@@ -152,6 +154,9 @@ def make_testcase(
         Status.VALID: "passed",
         Status.INTERESTING: "failed",
     }
+
+    if status is not None and isinstance(status, Status):
+        status = status_map[status]
 
     return TestCaseObservation(
         type="test_case",
