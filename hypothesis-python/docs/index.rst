@@ -58,7 +58,7 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
 You should start with the :doc:`tutorial <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
 
-.. rst-class:: clearfix row
+.. rst-class:: row
 
 .. rst-class:: column column2 top-left
 
@@ -90,7 +90,7 @@ Commentary oriented towards deepening your understanding of Hypothesis.
 
 Technical API reference.
 
-.. rst-class:: clearfix row
+.. rst-class:: row
 
 .. toctree::
   :maxdepth: 1

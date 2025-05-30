@@ -6925,8 +6925,7 @@ This release consists of some internal refactoring to the shrinker in preparatio
 5.18.0 - 2020-06-22
 -------------------
 
-This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for
-:ref:`explicit examples <providing-explicit-examples>`, as we already do
+This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for |@example|, as we already do
 for generated examples, so that you can focus on your code rather than ours.
 
 If you have multiple failing explicit examples, they will now all be reported.
@@ -10874,7 +10873,7 @@ and adds a CI check so we don't add new ones.
 This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
 about :func:`@seed <hypothesis.seed>` did not check the current verbosity
 setting, and the wrong settings were active while executing
-:ref:`explicit examples <providing-explicit-examples>`.
+explicit examples from |@example|.
 
 .. _v3.71.5:
 
