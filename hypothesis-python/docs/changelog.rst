@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.131.32:
+
+---------------------
+6.131.32 - 2025-05-30
+---------------------
+
+:ref:`fuzz_one_input <fuzz_one_input>` now writes :ref:`observability reports <observability>` if observability is enabled, bringing it in line with the behavior of other standard ways to invoke a Hypothesis test.
+
 .. _v6.131.31:
 
 ---------------------
