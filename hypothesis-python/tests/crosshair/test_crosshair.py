@@ -10,10 +10,12 @@
 
 import crosshair
 import pytest
+from crosshair.core import IgnoreAttempt, NotDeterministic, UnexploredPath
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
 from hypothesis import Phase, Verbosity, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.vendor.pretty import pretty
@@ -188,4 +190,12 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
         choices["normal"]
         == (choices["observability"] - extra_observability)
         == choices["verbosity"]
+    )
+
+
+def test_provider_conformance_crosshair():
+    run_conformance_test(
+        CrossHairPrimitiveProvider,
+        context_manager_exceptions=(IgnoreAttempt, UnexploredPath, NotDeterministic),
+        settings=settings(max_examples=5, stateful_step_count=10),
     )

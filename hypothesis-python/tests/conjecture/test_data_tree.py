@@ -24,14 +24,16 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.conjecture.provider_conformance import (
+    boolean_constraints,
+    integer_constraints,
+)
 from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
-    boolean_constraints,
     constraints_strategy,
     fresh_data,
-    integer_constraints,
     interesting_origin,
     nodes,
     run_to_nodes,

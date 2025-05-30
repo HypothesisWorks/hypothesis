@@ -14,8 +14,9 @@ from collections import Counter
 from hypothesis import assume, example, given, settings, strategies as st, target
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+from hypothesis.internal.conjecture.provider_conformance import integer_weights
 
-from tests.conjecture.common import fresh_data, integer_weights
+from tests.conjecture.common import fresh_data
 
 
 @given(integer_weights(), st.randoms(use_true_random=True))

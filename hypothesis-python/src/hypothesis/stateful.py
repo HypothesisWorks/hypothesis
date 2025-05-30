@@ -1038,7 +1038,11 @@ class RuleStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
-            msg = f"No progress can be made from state {self.machine!r}"
+            rules = ", ".join([rule.function.__name__ for rule in self.rules])
+            msg = (
+                f"No progress can be made from state {self.machine!r}, because no "
+                f"available rule had a True precondition. rules: {rules}"
+            )
             raise InvalidDefinition(msg) from None
 
         feature_flags = data.draw(self.enabled_rules_strategy)

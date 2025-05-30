@@ -22,6 +22,8 @@ Alternative backends
 .. autodata:: hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS
     :no-value:
 
+.. autofunction:: hypothesis.internal.conjecture.provider_conformance.run_conformance_test
+
 .. autoclass:: hypothesis.errors.BackendCannotProceed
 .. autoclass:: hypothesis.internal.intervalsets.IntervalSet
 
