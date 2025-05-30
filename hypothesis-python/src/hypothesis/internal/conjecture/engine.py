@@ -848,10 +848,8 @@ class ConjectureRunner:
                 # only for lifetime = "test_function" providers (guaranteed
                 # by this isinstance check)
                 and isinstance(self.provider, PrimitiveProvider)
-                # and the provider class overrode the default
-                # (see https://github.com/python/mypy/issues/14123 for type ignore)
-                and type(self.provider).on_observation
-                is not PrimitiveProvider.on_observation
+                # and the provider opted-in to observations
+                and self.provider.add_observation_callback
             )
             else nullcontext()
         )

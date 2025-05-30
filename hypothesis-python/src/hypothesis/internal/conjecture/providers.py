@@ -21,6 +21,7 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
     Optional,
     TypedDict,
@@ -356,6 +357,15 @@ class PrimitiveProvider(abc.ABC):
     #: Only set this to ``True`` if it is necessary for your backend.
     avoid_realization = False
 
+    #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
+    #: callback to |TESTCASE_CALLBACKS|, enabling observability during the lifetime
+    #: of this provider. If ``False``, |PrimitiveProvider.on_observation| will
+    #: never be called by Hypothesis.
+    #:
+    #: The opt-in behavior of observability is because enabling observability
+    #: might increase runtime or memory usage.
+    add_observation_callback: ClassVar[bool] = False
+
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
@@ -550,6 +560,14 @@ class PrimitiveProvider(abc.ABC):
         ``observation["type"] == "test_case"`` observation that is passed to
         other callbacks in |TESTCASE_CALLBACKS|. This method is not called with
         ``observation["type"] in {"info", "alert", "error"}`` observations.
+
+        .. important::
+
+            For |PrimitiveProvider.on_observation| to be called by Hypothesis,
+            |PrimitiveProvider.add_observation_callback| must be set to ``True``,
+
+            |PrimitiveProvider.on_observation| is explicitly opt-in, as enabling
+            observability might increase runtime or memory usage.
 
         Calls to this method are guaranteed to alternate with calls to
         |PrimitiveProvider.per_test_case_context_manager|. For example:

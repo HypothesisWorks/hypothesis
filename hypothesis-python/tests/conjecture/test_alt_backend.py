@@ -722,6 +722,8 @@ def test_replay_choices():
 
 
 class ObservationProvider(TrivialProvider):
+    add_observation_callback = True
+
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)
         # calls to per_test_case_context_manager and on_observation alternate,

@@ -117,6 +117,7 @@
 .. |PrimitiveProvider.draw_bytes| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_bytes`
 .. |PrimitiveProvider.on_observation| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.on_observation`
 .. |PrimitiveProvider.per_test_case_context_manager| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.per_test_case_context_manager`
+.. |PrimitiveProvider.add_observation_callback| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.add_observation_callback`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
