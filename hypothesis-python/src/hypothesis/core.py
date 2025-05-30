@@ -1911,7 +1911,12 @@ def given(
                 )
                 try:
                     state.execute_once(data)
-                except (StopTest, UnsatisfiedAssumption):
+                    status = Status.VALID
+                except StopTest:
+                    status = data.status
+                    return None
+                except UnsatisfiedAssumption:
+                    status = Status.INVALID
                     return None
                 except BaseException:
                     known = minimal_failures.get(data.interesting_origin)
@@ -1922,7 +1927,25 @@ def given(
                             database_key, choices_to_bytes(data.choices)
                         )
                         minimal_failures[data.interesting_origin] = data.nodes
+                    status = Status.INTERESTING
                     raise
+                finally:
+                    if TESTCASE_CALLBACKS:
+                        tc = make_testcase(
+                            run_start=state._start_timestamp,
+                            property=state.test_identifier,
+                            data=data,
+                            how_generated="fuzz_one_input",
+                            representation=state._string_repr,
+                            arguments=data._observability_args,
+                            timing=state._timing_features,
+                            coverage=None,
+                            status=status,
+                            backend_metadata=data.provider.observe_test_case(),
+                        )
+                        deliver_observation(tc)
+                        state._timing_features = {}
+
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)
 
