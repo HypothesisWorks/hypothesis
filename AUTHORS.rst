@@ -120,6 +120,7 @@ their individual contributions.
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `Lundy Bernard <https://github.com/lundybernard>`_
+* `Marco Ricci <https://github.com/the-13th-letter>`_
 * `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
