@@ -840,20 +840,16 @@ class ConjectureRunner:
             if not self._switch_to_hypothesis_provider:
                 self.provider.on_observation(observation)
 
-        # adding this callback enables observability. Use a nullcontext
-        # if the backend won't use observability.
-        return (
-            with_observation_callback(on_observation)
-            if (
-                self.settings.backend != "hypothesis"
-                # only for lifetime = "test_function" providers (guaranteed
-                # by this isinstance check)
-                and isinstance(self.provider, PrimitiveProvider)
-                # and the provider opted-in to observations
-                and self.provider.add_observability_callback
-            )
-            else nullcontext()
-        )
+        if (
+            self.settings.backend != "hypothesis"
+            # only for lifetime = "test_function" providers (guaranteed
+            # by this isinstance check)
+            and isinstance(self.provider, PrimitiveProvider)
+            # and the provider opted-in to observations
+            and self.provider.add_observability_callback
+        ):
+            return with_observation_callback(on_observation)
+        return nullcontext()
 
     def run(self) -> None:
         with (
