@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.132.0:
+
+--------------------
+6.132.0 - 2025-05-31
+--------------------
+
+Add |PrimitiveProvider.on_observation| to the internal :ref:`alternative backends <alternative-backends-internals>` interface.
+
 .. _v6.131.33:
 
 ---------------------
