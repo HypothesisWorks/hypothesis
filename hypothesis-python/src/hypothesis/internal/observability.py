@@ -10,7 +10,10 @@
 
 """Observability tools to spit out analysis-ready tables, one row per test case."""
 
+import base64
+import dataclasses
 import json
+import math
 import os
 import sys
 import time
@@ -20,10 +23,24 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.conjecture.choice import (
+    BooleanConstraints,
+    BytesConstraints,
+    ChoiceConstraintsT,
+    ChoiceNode,
+    ChoiceT,
+    ChoiceTypeT,
+    FloatConstraints,
+    IntegerConstraints,
+    StringConstraints,
+)
+from hypothesis.internal.escalation import InterestingOrigin
+from hypothesis.internal.floats import float_to_int
+from hypothesis.internal.intervalsets import IntervalSet
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -43,6 +60,89 @@ class PredicateCounts:
             self.unsatisfied += 1
 
 
+def _choice_to_json(choice: Union[ChoiceT, None]) -> Any:
+    if choice is None:
+        return None
+    # see the note on the same check in to_jsonable for why we cast large
+    # integers to floats.
+    if isinstance(choice, int) and not isinstance(choice, bool) and choice > 2**63:
+        return ["integer", float(choice)]
+    elif isinstance(choice, bytes):
+        return ["bytes", base64.b64encode(choice).decode()]
+    elif isinstance(choice, float) and math.isnan(choice):
+        # handle nonstandard nan bit patterns. We don't need to do this for -0.0
+        # vs 0.0 since json doesn't normalize -0.0 to 0.0.
+        return ["float", float_to_int(choice)]
+    return choice
+
+
+def choices_to_json(choices: tuple[ChoiceT, ...]) -> list[Any]:
+    return [_choice_to_json(choice) for choice in choices]
+
+
+def _constraints_to_json(
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
+) -> dict[str, Any]:
+    constraints = constraints.copy()
+    if choice_type == "integer":
+        constraints = cast(IntegerConstraints, constraints)
+        return {
+            "min_value": _choice_to_json(constraints["min_value"]),
+            "max_value": _choice_to_json(constraints["max_value"]),
+            "weights": (
+                None
+                if constraints["weights"] is None
+                # wrap up in a list, instead of a dict, because json dicts
+                # require string keys
+                else [
+                    (_choice_to_json(k), v) for k, v in constraints["weights"].items()
+                ]
+            ),
+            "shrink_towards": _choice_to_json(constraints["shrink_towards"]),
+        }
+    elif choice_type == "float":
+        constraints = cast(FloatConstraints, constraints)
+        return {
+            "min_value": _choice_to_json(constraints["min_value"]),
+            "max_value": _choice_to_json(constraints["max_value"]),
+            "allow_nan": constraints["allow_nan"],
+            "smallest_nonzero_magnitude": constraints["smallest_nonzero_magnitude"],
+        }
+    elif choice_type == "string":
+        constraints = cast(StringConstraints, constraints)
+        assert isinstance(constraints["intervals"], IntervalSet)
+        return {
+            "intervals": constraints["intervals"].intervals,
+            "min_size": _choice_to_json(constraints["min_size"]),
+            "max_size": _choice_to_json(constraints["max_size"]),
+        }
+    elif choice_type == "bytes":
+        constraints = cast(BytesConstraints, constraints)
+        return {
+            "min_size": _choice_to_json(constraints["min_size"]),
+            "max_size": _choice_to_json(constraints["max_size"]),
+        }
+    elif choice_type == "boolean":
+        constraints = cast(BooleanConstraints, constraints)
+        return {
+            "p": constraints["p"],
+        }
+    else:
+        raise NotImplementedError(f"unknown choice type {choice_type}")
+
+
+def nodes_to_json(nodes: tuple[ChoiceNode, ...]) -> list[dict[str, Any]]:
+    return [
+        {
+            "type": node.type,
+            "value": _choice_to_json(node.value),
+            "constraints": _constraints_to_json(node.type, node.constraints),
+            "was_forced": node.was_forced,
+        }
+        for node in nodes
+    ]
+
+
 @dataclass
 class ObservationMetadata:
     traceback: Optional[str]
@@ -52,6 +152,28 @@ class ObservationMetadata:
     sys_argv: list[str]
     os_getpid: int
     imported_at: float
+    data_status: "Status"
+    interesting_origin: Optional[InterestingOrigin]
+    choice_nodes: Optional[tuple[ChoiceNode, ...]]
+
+    def to_json(self) -> dict[str, Any]:
+        data = {
+            "traceback": self.traceback,
+            "reproduction_decorator": self.reproduction_decorator,
+            "predicates": self.predicates,
+            "backend": self.backend,
+            "sys.argv": self.sys_argv,
+            "os.getpid()": self.os_getpid,
+            "imported_at": self.imported_at,
+            "data_status": self.data_status,
+            "interesting_origin": self.interesting_origin,
+            "choice_nodes": (
+                None if self.choice_nodes is None else nodes_to_json(self.choice_nodes)
+            ),
+        }
+        # check that we didn't forget one
+        assert len(data) == len(dataclasses.fields(self))
+        return data
 
 
 @dataclass
@@ -183,6 +305,9 @@ def make_testcase(
                 ),
                 "predicates": dict(data._observability_predicates),
                 "backend": backend_metadata or {},
+                "data_status": data.status,
+                "interesting_origin": data.interesting_origin,
+                "choice_nodes": data.nodes if OBSERVABILITY_CHOICE_NODES else None,
                 **_system_metadata(),
                 # unpack last so it takes precedence for duplicate keys
                 **(metadata or {}),
@@ -204,11 +329,7 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     fname.parent.mkdir(exist_ok=True, parents=True)
     _WROTE_TO.add(fname)
     with fname.open(mode="a") as f:
-        obs_json: dict[str, Any] = to_jsonable(observation, avoid_realization=False)  # type: ignore
-        if obs_json["type"] == "test_case":
-            obs_json["metadata"]["sys.argv"] = obs_json["metadata"].pop("sys_argv")
-            obs_json["metadata"]["os.getpid()"] = obs_json["metadata"].pop("os_getpid")
-        f.write(json.dumps(obs_json) + "\n")
+        f.write(json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n")
 
 
 _imported_at = time.time()
@@ -231,6 +352,10 @@ def _system_metadata() -> dict[str, Any]:
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
+OBSERVABILITY_CHOICE_NODES = (
+    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICE_NODES" in os.environ
+)
+
 if OBSERVABILITY_COLLECT_COVERAGE is False and (
     sys.version_info[:2] >= (3, 12)
 ):  # pragma: no cover
@@ -240,8 +365,10 @@ if OBSERVABILITY_COLLECT_COVERAGE is False and (
         HypothesisWarning,
         stacklevel=2,
     )
-if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ or (
-    OBSERVABILITY_COLLECT_COVERAGE is False
+
+if (
+    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ
+    or OBSERVABILITY_COLLECT_COVERAGE is False
 ):  # pragma: no cover
     TESTCASE_CALLBACKS.append(_deliver_to_file)
 

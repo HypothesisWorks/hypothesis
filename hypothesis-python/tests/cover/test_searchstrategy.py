@@ -8,11 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import dataclasses
 import functools
 import random
 import sys
 from collections import defaultdict, namedtuple
+from dataclasses import dataclass
 
 import attr
 import pytest
@@ -117,7 +117,7 @@ def test_jsonable():
     assert isinstance(to_jsonable(object(), avoid_realization=False), str)
 
 
-@dataclasses.dataclass()
+@dataclass
 class HasDefaultDict:
     x: defaultdict
 
@@ -165,7 +165,7 @@ def test_jsonable_very_large_ints():
     assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
 
 
-@dataclasses.dataclass()
+@dataclass
 class HasCustomJsonFormat:
     x: str
 
@@ -176,6 +176,25 @@ class HasCustomJsonFormat:
 def test_jsonable_override():
     obj = HasCustomJsonFormat("expected")
     assert to_jsonable(obj, avoid_realization=False) == "surprise!"
+    assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
+
+
+@dataclass
+class Inner:
+    value: int
+
+    def to_json(self):
+        return "custom"
+
+
+@dataclass
+class Outer:
+    inner: Inner
+
+
+def test_jsonable_to_json_nested():
+    obj = Outer(Inner(42))
+    assert to_jsonable(obj, avoid_realization=False) == {"inner": "custom"}
     assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
 
 
