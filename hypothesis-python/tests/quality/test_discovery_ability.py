@@ -74,7 +74,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             )
 
         def test_function(data):
-            with BuildContext(data):
+            with BuildContext(data, wrapped_test=None):
                 try:
                     value = data.draw(specifier)
                 except UnsatisfiedAssumption:
