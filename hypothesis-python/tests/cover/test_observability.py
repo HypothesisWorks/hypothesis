@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import base64
+import json
+import math
 import textwrap
 from contextlib import nullcontext
 
@@ -26,7 +29,11 @@ from hypothesis import (
 )
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
+from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.floats import SIGNALING_NAN, int_to_float
+from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import choices_to_json, nodes_to_json
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -35,6 +42,7 @@ from hypothesis.stateful import (
 )
 
 from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.conjecture.common import choices, nodes
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -332,3 +340,108 @@ def test_fuzz_one_input_status(buffer, expected_status):
     assert len(ls) == 1
     assert ls[0].status == expected_status
     assert ls[0].how_generated == "fuzz_one_input"
+
+
+def _decode_choice(value):
+    if isinstance(value, list):
+        if value[0] == "integer":
+            # large integers get cast to float, stored as ["integer", float(value)]
+            assert isinstance(value[1], float)
+            return int(value[1])
+        elif value[0] == "bytes":
+            assert isinstance(value[1], str)
+            return base64.b64decode(value[1])
+        elif value[0] == "float":
+            assert isinstance(value[1], int)
+            choice = int_to_float(value[1])
+            assert math.isnan(choice)
+            return choice
+        else:
+            return value[1]
+
+    return value
+
+
+def _decode_choices(data):
+    return [_decode_choice(value) for value in data]
+
+
+def _decode_nodes(data):
+    return [
+        ChoiceNode(
+            type=node["type"],
+            value=_decode_choice(node["value"]),
+            constraints=_decode_constraints(node["type"], node["constraints"]),
+            was_forced=node["was_forced"],
+        )
+        for node in data
+    ]
+
+
+def _decode_constraints(choice_type, data):
+    if choice_type == "integer":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "weights": (
+                None
+                if data["weights"] is None
+                else {_decode_choice(k): v for k, v in data["weights"]}
+            ),
+            "shrink_towards": _decode_choice(data["shrink_towards"]),
+        }
+    elif choice_type == "float":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "allow_nan": data["allow_nan"],
+            "smallest_nonzero_magnitude": data["smallest_nonzero_magnitude"],
+        }
+    elif choice_type == "string":
+        return {
+            "intervals": IntervalSet(tuple(data["intervals"])),
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "bytes":
+        return {
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "boolean":
+        return {"p": data["p"]}
+    else:
+        raise ValueError(f"unknown choice type {choice_type}")
+
+
+def _will_be_cast_to_float(value):
+    return isinstance(value, int) and abs(value) >= 2**63
+
+
+@example([0.0])
+@example([-0.0])
+@example([SIGNALING_NAN])
+@example([math.nan])
+@example([math.inf])
+@example([-math.inf])
+@given(st.lists(choices()))
+def test_choices_json_roundtrips(choices):
+    # choices_to_json and nodes_to_json roundtrip, *except for large integers*,
+    # which get cast to the nearest integer-valued float on roundtrip. This is
+    # an intentional design decision of the format; see related comment in
+    # to_jsonable.
+    if any(_will_be_cast_to_float(choice) for choice in choices):
+        assume(False)
+    choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
+    assert choices_key(choices) == choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_nodes_json_roundtrips(nodes):
+    for node in nodes:
+        if _will_be_cast_to_float(node.value) or any(
+            _will_be_cast_to_float(value) for value in node.constraints.values()
+        ):
+            assume(False)
+    nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
+    assert nodes == nodes2
