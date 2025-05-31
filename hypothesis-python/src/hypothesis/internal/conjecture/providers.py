@@ -587,10 +587,6 @@ class PrimitiveProvider(abc.ABC):
         during |Phase.reuse| or |Phase.shrink|, or because Hypothesis switched
         to the standard Hypothesis backend after this backend raised too many
         |BackendCannotProceed| exceptions.
-
-        By default, observability will not be enabled for backends which do not
-        override this method. By overriding this method, any test which sets
-        |settings.backend| to this provider will automatically enable observability.
         """
 
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop

@@ -741,23 +741,21 @@ class ObservationProvider(TrivialProvider):
         self.expected = "per_test_case_context_manager"
 
 
+@temp_register_backend("observation", ObservationProvider)
 def test_on_observation_alternates():
-    with temp_register_backend("observation", ObservationProvider):
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        pass
 
-        @given(st.integers())
-        @settings(backend="observation")
-        def f(n):
-            pass
-
-        f()
+    f()
 
 
+@temp_register_backend("observation", TrivialProvider)
 def test_on_observation_no_override():
-    with temp_register_backend("observation", TrivialProvider):
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        assert TESTCASE_CALLBACKS == []
 
-        @given(st.integers())
-        @settings(backend="observation")
-        def f(n):
-            assert TESTCASE_CALLBACKS == []
-
-        f()
+    f()
