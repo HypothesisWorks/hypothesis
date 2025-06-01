@@ -165,6 +165,10 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     known types.
     """
     if isinstance(obj, (str, int, float, bool, type(None))):
+        # We convert integers of 2**63 to floats, to avoid crashing external
+        # utilities with a 64 bit integer cap (notable, sqlite). See
+        # https://github.com/HypothesisWorks/hypothesis/pull/3797#discussion_r1413425110
+        # and https://github.com/simonw/sqlite-utils/issues/605.
         if isinstance(obj, int) and not isinstance(obj, bool) and abs(obj) >= 2**63:
             # Silently clamp very large ints to max_float, to avoid OverflowError when
             # casting to float.  (but avoid adding more constraints to symbolic values)
