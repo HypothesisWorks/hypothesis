@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.133.0:
+
+--------------------
+6.133.0 - 2025-06-02
+--------------------
+
+Warn when :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+draw from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.
+
 .. _v6.132.0:
 
 --------------------
