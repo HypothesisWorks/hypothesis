@@ -10,8 +10,7 @@
 
 import math
 import sys
-from collections.abc import Collection, Generator, Iterable, Sequence
-from itertools import islice
+from collections.abc import Collection, Iterable, Sequence
 from typing import Any, Optional
 
 from hypothesis import (
@@ -22,6 +21,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import BackendCannotProceed
+from hypothesis.internal.compat import batched
 from hypothesis.internal.conjecture.choice import (
     ChoiceTypeT,
     choice_permitted,
@@ -38,16 +38,11 @@ from hypothesis.strategies import DrawFn, SearchStrategy
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 
-def build_intervals(intervals: list[int]) -> Generator[Sequence[int], None, None]:
-    it = iter(intervals)
-    while batch := tuple(islice(it, 2)):
-        # To guarantee we return pairs of 2, drop the last batch if it's
-        # unbalanced.
-        # Dropping a random element if the list is odd would probably make for
-        # a better distribution, but a task for another day.
-        if len(batch) < 2:
-            continue
-        yield batch
+def build_intervals(intervals: list[int]) -> list[tuple[int, int]]:
+    if len(intervals) % 2:
+        intervals = intervals[:-1]
+    intervals.sort()
+    return list(batched(intervals, 2, strict=True))
 
 
 def interval_lists(
@@ -343,6 +338,8 @@ def run_conformance_test(
     *,
     context_manager_exceptions: Collection[type[BaseException]] = (),
     settings: Optional[Settings] = None,
+    _realize_objects: SearchStrategy[Any] = st.from_type(object)
+    | st.from_type(type).flatmap(st.from_type),
 ) -> None:
     """
     Test that the given ``Provider`` class conforms to the |PrimitiveProvider|
@@ -457,17 +454,14 @@ def run_conformance_test(
             self.context_manager.__exit__(None, None, None)
 
         @precondition(lambda self: self.frozen)
-        @rule(
-            value=st.integers()
-            | st.floats(allow_nan=False)
-            | st.booleans()
-            | st.binary()
-            | st.text()
-        )
+        @rule(value=_realize_objects)
         def realize(self, value):
-            # Hypothesis can in theory pass values of any type to `realize`,
-            # but st.from_type(object) acts too much like a fuzzer for crosshair
-            # internals here and finds very strange errors.
+            # filter out nans and weirder things
+            try:
+                assume(value == value)
+            except Exception:
+                # e.g. value = Decimal('-sNaN')
+                assume(False)
 
             # if `value` is non-symbolic, the provider should return it as-is.
             assert self.provider.realize(value) == value

@@ -773,4 +773,6 @@ def test_on_observation_no_override():
 
 @pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
 def test_provider_conformance(provider):
-    run_conformance_test(provider)
+    run_conformance_test(
+        provider, settings=settings(max_examples=20, stateful_step_count=20)
+    )

@@ -194,8 +194,15 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
 
 
 def test_provider_conformance_crosshair():
+    # Hypothesis can in theory pass values of any type to `realize`,
+    # but the default strategy in the conformance test here acts too much like a
+    # fuzzer for crosshair internals here and finds very strange errors.
+    _realize_objects = (
+        st.integers() | st.floats() | st.booleans() | st.binary() | st.text()
+    )
     run_conformance_test(
         CrossHairPrimitiveProvider,
         context_manager_exceptions=(IgnoreAttempt, UnexploredPath, NotDeterministic),
         settings=settings(max_examples=5, stateful_step_count=10),
+        _realize_objects=_realize_objects,
     )
