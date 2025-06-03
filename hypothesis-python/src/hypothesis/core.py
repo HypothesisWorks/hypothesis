@@ -1109,7 +1109,9 @@ class StateForActualGivenExecution:
         # three nested with-statements, instead of one compound statement.
         with local_settings(self.settings):
             with deterministic_PRNG():
-                with BuildContext(data, is_final=is_final) as context:
+                with BuildContext(
+                    data, is_final=is_final, wrapped_test=self.wrapped_test
+                ) as context:
                     # providers may throw in per_case_context_fn, and we'd like
                     # `result` to still be set in these cases.
                     result = None
