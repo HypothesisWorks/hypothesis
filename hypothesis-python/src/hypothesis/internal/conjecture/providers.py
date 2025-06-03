@@ -577,7 +577,7 @@ class PrimitiveProvider(abc.ABC):
         .. important::
 
             For |PrimitiveProvider.on_observation| to be called by Hypothesis,
-            |PrimitiveProvider.add_observability_callback| must be set to ``True``,
+            |PrimitiveProvider.add_observability_callback| must be set to ``True``.
 
             |PrimitiveProvider.on_observation| is explicitly opt-in, as enabling
             observability might increase runtime or memory usage.
