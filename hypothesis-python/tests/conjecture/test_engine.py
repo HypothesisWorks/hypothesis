@@ -456,8 +456,8 @@ def test_fails_health_check_for_large_base():
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
-        if data.draw_integer(0, 2**8 - 1):
-            data.draw_bytes(10**6, 10**6)
+        if data.draw_boolean():
+            data.draw_bytes(10_000, 10_000)
 
 
 def test_fails_health_check_for_slow_draws():
