@@ -15,6 +15,7 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis.internal.conjecture.choice import choice_equal, choice_permitted
+from hypothesis.internal.conjecture.provider_conformance import float_constraints
 from hypothesis.internal.floats import (
     count_between_floats,
     make_float_clamper,
@@ -23,7 +24,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 
-from tests.conjecture.common import float_constr, float_constraints
+from tests.conjecture.common import float_constr
 
 
 def test_can_handle_straddling_zero():
