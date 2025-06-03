@@ -131,10 +131,12 @@ class BuildContext:
         data: ConjectureData,
         *,
         is_final: bool = False,
+        wrapped_test: Callable,
     ) -> None:
         self.data = data
         self.tasks: list[Callable[[], Any]] = []
         self.is_final = is_final
+        self.wrapped_test = wrapped_test
 
         # Use defaultdict(list) here to handle the possibility of having multiple
         # functions registered for the same object (due to caching, small ints, etc).

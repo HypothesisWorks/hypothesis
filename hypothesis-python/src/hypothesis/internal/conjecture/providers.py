@@ -64,7 +64,7 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import InfoObservationType
+from hypothesis.internal.observability import InfoObservationType, TestCaseObservation
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -361,6 +361,15 @@ class PrimitiveProvider(abc.ABC):
     #: Only set this to ``True`` if it is necessary for your backend.
     avoid_realization: ClassVar[bool] = False
 
+    #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
+    #: callback to |TESTCASE_CALLBACKS|, enabling observability during the lifetime
+    #: of this provider. If ``False``, |PrimitiveProvider.on_observation| will
+    #: never be called by Hypothesis.
+    #:
+    #: The opt-in behavior of observability is because enabling observability
+    #: might increase runtime or memory usage.
+    add_observability_callback: ClassVar[bool] = False
+
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
@@ -548,6 +557,41 @@ class PrimitiveProvider(abc.ABC):
         """
         assert lifetime in ("test_case", "test_function")
         yield from []
+
+    def on_observation(self, observation: TestCaseObservation) -> None:  # noqa: B027
+        """
+        Called at the end of each test case which uses this provider, with the same
+        ``observation["type"] == "test_case"`` observation that is passed to
+        other callbacks in |TESTCASE_CALLBACKS|. This method is not called with
+        ``observation["type"] in {"info", "alert", "error"}`` observations.
+
+        .. important::
+
+            For |PrimitiveProvider.on_observation| to be called by Hypothesis,
+            |PrimitiveProvider.add_observability_callback| must be set to ``True``,
+
+            |PrimitiveProvider.on_observation| is explicitly opt-in, as enabling
+            observability might increase runtime or memory usage.
+
+        Calls to this method are guaranteed to alternate with calls to
+        |PrimitiveProvider.per_test_case_context_manager|. For example:
+
+        .. code-block:: python
+
+            # test function starts
+            per_test_case_context_manager()
+            on_observation()
+            per_test_case_context_manager()
+            on_observation()
+            ...
+            # test function ends
+
+        Note that |PrimitiveProvider.on_observation| will not be called for test
+        cases which did not use this provider during generation, for example
+        during |Phase.reuse| or |Phase.shrink|, or because Hypothesis switched
+        to the standard Hypothesis backend after this backend raised too many
+        |BackendCannotProceed| exceptions.
+        """
 
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
         """Marks the beginning of a semantically meaningful span of choices.

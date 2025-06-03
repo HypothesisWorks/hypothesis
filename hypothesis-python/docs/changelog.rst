@@ -18,6 +18,52 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.133.2:
+
+--------------------
+6.133.2 - 2025-06-03
+--------------------
+
+Internal changes to support `hypofuzz <https://hypofuzz.com>`__.
+
+.. _v6.133.1:
+
+--------------------
+6.133.1 - 2025-06-03
+--------------------
+
+The ``to_json`` hook used internally when writing :ref:`observability <observability>` reports is now supported on nested dataclasses (in addition to outermost dataclasses).
+
+.. _v6.133.0:
+
+--------------------
+6.133.0 - 2025-06-02
+--------------------
+
+Warn when :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+draw from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.
+
+.. _v6.132.0:
+
+--------------------
+6.132.0 - 2025-05-31
+--------------------
+
+Add |PrimitiveProvider.on_observation| to the internal :ref:`alternative backends <alternative-backends-internals>` interface.
+
+.. _v6.131.33:
+
+---------------------
+6.131.33 - 2025-05-31
+---------------------
+
+This patch restores compatibility when using `the legacy Python 3.9 LL(1)
+parser <https://docs.python.org/3/whatsnew/3.9.html#new-parser>`__, which
+was accidentally broken since :ref:`version 6.130.13 <v6.130.13>`.
+
+Thanks to Marco Ricci for this fix!
+
 .. _v6.131.32:
 
 ---------------------

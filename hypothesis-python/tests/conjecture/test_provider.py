@@ -48,6 +48,7 @@ from hypothesis.internal.conjecture.providers import (
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
 
 from tests.common.debug import minimal
 from tests.common.utils import (
@@ -728,6 +729,46 @@ def test_replay_choices():
     # trivial covering test
     provider = TrivialProvider(None)
     provider.replay_choices([1])
+
+
+class ObservationProvider(TrivialProvider):
+    add_observability_callback = True
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        # calls to per_test_case_context_manager and on_observation alternate,
+        # starting with per_test_case_context_manager
+        self.expected = "per_test_case_context_manager"
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        assert self.expected == "per_test_case_context_manager"
+        self.expected = "on_observation"
+        yield
+
+    def on_observation(self, observation: Observation) -> None:
+        assert self.expected == "on_observation"
+        self.expected = "per_test_case_context_manager"
+
+
+@temp_register_backend("observation", ObservationProvider)
+def test_on_observation_alternates():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        pass
+
+    f()
+
+
+@temp_register_backend("observation", TrivialProvider)
+def test_on_observation_no_override():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        assert TESTCASE_CALLBACKS == []
+
+    f()
 
 
 @pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
