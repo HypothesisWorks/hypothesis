@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.133.2:
+
+--------------------
+6.133.2 - 2025-06-03
+--------------------
+
+Internal changes to support `hypofuzz <https://hypofuzz.com>`__.
+
 .. _v6.133.1:
 
 --------------------
