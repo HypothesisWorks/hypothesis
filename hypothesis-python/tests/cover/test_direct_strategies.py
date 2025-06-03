@@ -13,6 +13,7 @@ import decimal
 import enum
 import fractions
 import math
+import warnings
 from datetime import date, datetime, time, timedelta
 from ipaddress import IPv4Network, IPv6Network
 
@@ -671,4 +672,6 @@ def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
     def test_it(a, b):
         assert a == b
 
-    test_it()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", HypothesisWarning)
+        test_it()
