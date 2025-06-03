@@ -8,7 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import contextlib
 import itertools
+from random import Random
 
 import pytest
 
@@ -18,8 +20,10 @@ from hypothesis.database import (
     choices_from_bytes,
     choices_to_bytes,
 )
-from hypothesis.internal.conjecture.data import Status
+from hypothesis.errors import StopTest
+from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
+from hypothesis.internal.conjecture.pareto import ParetoFront
 from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.conjecture.common import interesting_origin
@@ -279,3 +283,14 @@ def test_stops_optimising_once_interesting():
     runner.pareto_optimise()
     assert runner.call_count <= 20
     assert runner.interesting_examples
+
+
+def test_pareto_contains():
+    front = ParetoFront(random=Random())
+    assert "not a data" not in front
+
+    data = ConjectureData.for_choices([])
+    with contextlib.suppress(StopTest):
+        data.mark_overrun()
+    # check a data which turns into an Overrun when .as_result is called
+    assert data not in front

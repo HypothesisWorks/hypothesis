@@ -18,6 +18,142 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.133.2:
+
+--------------------
+6.133.2 - 2025-06-03
+--------------------
+
+Internal changes to support `hypofuzz <https://hypofuzz.com>`__.
+
+.. _v6.133.1:
+
+--------------------
+6.133.1 - 2025-06-03
+--------------------
+
+The ``to_json`` hook used internally when writing :ref:`observability <observability>` reports is now supported on nested dataclasses (in addition to outermost dataclasses).
+
+.. _v6.133.0:
+
+--------------------
+6.133.0 - 2025-06-02
+--------------------
+
+Warn when :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+draw from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.
+
+.. _v6.132.0:
+
+--------------------
+6.132.0 - 2025-05-31
+--------------------
+
+Add |PrimitiveProvider.on_observation| to the internal :ref:`alternative backends <alternative-backends-internals>` interface.
+
+.. _v6.131.33:
+
+---------------------
+6.131.33 - 2025-05-31
+---------------------
+
+This patch restores compatibility when using `the legacy Python 3.9 LL(1)
+parser <https://docs.python.org/3/whatsnew/3.9.html#new-parser>`__, which
+was accidentally broken since :ref:`version 6.130.13 <v6.130.13>`.
+
+Thanks to Marco Ricci for this fix!
+
+.. _v6.131.32:
+
+---------------------
+6.131.32 - 2025-05-30
+---------------------
+
+:ref:`fuzz_one_input <fuzz_one_input>` now writes :ref:`observability reports <observability>` if observability is enabled, bringing it in line with the behavior of other standard ways to invoke a Hypothesis test.
+
+.. _v6.131.31:
+
+---------------------
+6.131.31 - 2025-05-30
+---------------------
+
+Improve documentation of |@example|.
+
+.. _v6.131.30:
+
+---------------------
+6.131.30 - 2025-05-27
+---------------------
+
+This patch resolves a Pandas FutureWarning (:issue:`4400`) caused by indexing with an integer key.
+
+.. _v6.131.29:
+
+---------------------
+6.131.29 - 2025-05-27
+---------------------
+
+The observations passed to |TESTCASE_CALLBACKS| are now dataclasses, rather than dictionaries. The content written to ``.hypothesis/observed`` under ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY`` remains the same.
+
+.. _v6.131.28:
+
+---------------------
+6.131.28 - 2025-05-25
+---------------------
+
+Add documentation to some internal APIs.
+
+.. _v6.131.27:
+
+---------------------
+6.131.27 - 2025-05-24
+---------------------
+
+Add ``PrimitiveProvider.replay_choices`` to the :ref:`alternative backends <alternative-backends>` interface, to support warm-starting e.g. :pypi:`hypothesis-crosshair` from :pypi:`hypofuzz`.
+
+.. _v6.131.26:
+
+---------------------
+6.131.26 - 2025-05-24
+---------------------
+
+Improve |ExampleDatabase| documentation.
+
+.. _v6.131.25:
+
+---------------------
+6.131.25 - 2025-05-23
+---------------------
+
+Add some internal type hints.
+
+.. _v6.131.24:
+
+---------------------
+6.131.24 - 2025-05-23
+---------------------
+
+Improve |@settings| documentation.
+
+.. _v6.131.23:
+
+---------------------
+6.131.23 - 2025-05-23
+---------------------
+
+This patch adds ``GITLAB_CI`` to the environment variables checked when enabling the default CI |settings| profile.
+
+Thanks to Genevieve Mendoza for this contribution!
+
+.. _v6.131.22:
+
+---------------------
+6.131.22 - 2025-05-22
+---------------------
+
+Include |note| and |Phase.explain| output in the "representation" field of :ref:`observability reports <observability>` for failing examples, to more closely match the output produced by Hypothesis.
+
 .. _v6.131.21:
 
 ---------------------
@@ -323,7 +459,7 @@ Improve the documentation for some strategies, including |st.composite| and |st.
 6.130.0 - 2025-03-21
 --------------------
 
-Nesting :func:`@given <hypothesis.given>` inside of :func:`@given <hypothesis.given>` is now a :ref:`health check <healthchecks>` failure. Nesting :func:`@given <hypothesis.given>` results in quadratic generation and shrinking behavior, and can usually be more cleanly expressed by replacing the inner function with a :func:`~hypothesis.strategies.data` parameter on the outer given. For more details, see :obj:`~hypothesis.HealthCheck.nested_given`. (:issue:`4167`)
+Nesting :func:`@given <hypothesis.given>` inside of :func:`@given <hypothesis.given>` is now a |HealthCheck| failure. Nesting :func:`@given <hypothesis.given>` results in quadratic generation and shrinking behavior, and can usually be more cleanly expressed by replacing the inner function with a :func:`~hypothesis.strategies.data` parameter on the outer given. For more details, see :obj:`~hypothesis.HealthCheck.nested_given`. (:issue:`4167`)
 
 .. _v6.129.5:
 
@@ -5237,7 +5373,7 @@ to shrink towards negative values instead of positive values in some cases.
 -------------------
 
 This patch fixes rare cases where ``hypothesis write --binary-op`` could
-print :ref:`reproducing instructions <reproducing-failures>` from the internal
+print :ref:`reproducing instructions <reproducing-inputs>` from the internal
 search for an identity element.
 
 .. _v6.13.4:
@@ -6851,8 +6987,7 @@ This release consists of some internal refactoring to the shrinker in preparatio
 5.18.0 - 2020-06-22
 -------------------
 
-This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for
-:ref:`explicit examples <providing-explicit-examples>`, as we already do
+This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for |@example|, as we already do
 for generated examples, so that you can focus on your code rather than ours.
 
 If you have multiple failing explicit examples, they will now all be reported.
@@ -10743,7 +10878,7 @@ This release makes setting attributes of the :class:`hypothesis.settings`
 class an explicit error.  This has never had any effect, but could mislead
 users who confused it with the current settings *instance*
 ``hypothesis.settings.default`` (which is also immutable).  You can change
-the global settings with :ref:`settings profiles <settings_profiles>`.
+the global settings with |settings.register_profile|.
 
 .. _v3.71.11:
 
@@ -10800,7 +10935,7 @@ and adds a CI check so we don't add new ones.
 This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
 about :func:`@seed <hypothesis.seed>` did not check the current verbosity
 setting, and the wrong settings were active while executing
-:ref:`explicit examples <providing-explicit-examples>`.
+explicit examples from |@example|.
 
 .. _v3.71.5:
 
@@ -12861,7 +12996,7 @@ minor warts ranging from indirect imports to typos in comments.
 3.38.0 - 2017-11-18
 -------------------
 
-This release overhauls :ref:`the health check system <healthchecks>`
+This release overhauls the |HealthCheck| system
 in a variety of small ways.
 It adds no new features, but is nevertheless a minor release because it changes
 which tests are likely to fail health checks.

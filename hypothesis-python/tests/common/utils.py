@@ -19,7 +19,7 @@ from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
+from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
 from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
@@ -236,7 +236,7 @@ def raises_warning(expected_warning, match=None):
 
 @contextlib.contextmanager
 def capture_observations():
-    ls = []
+    ls: list[Observation] = []
     TESTCASE_CALLBACKS.append(ls.append)
     try:
         yield ls

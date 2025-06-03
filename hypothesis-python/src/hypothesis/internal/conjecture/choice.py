@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Hashable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -601,8 +601,11 @@ def choice_constraints_equal(
     )
 
 
-def choice_constraints_key(choice_type, constraints):
+def choice_constraints_key(
+    choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT
+) -> tuple[Hashable, ...]:
     if choice_type == "float":
+        constraints = cast(FloatConstraints, constraints)
         return (
             float_to_int(constraints["min_value"]),
             float_to_int(constraints["max_value"]),
@@ -610,13 +613,14 @@ def choice_constraints_key(choice_type, constraints):
             constraints["smallest_nonzero_magnitude"],
         )
     if choice_type == "integer":
+        constraints = cast(IntegerConstraints, constraints)
         return (
             constraints["min_value"],
             constraints["max_value"],
             None if constraints["weights"] is None else tuple(constraints["weights"]),
             constraints["shrink_towards"],
         )
-    return tuple(constraints[key] for key in sorted(constraints))
+    return tuple(constraints[key] for key in sorted(constraints))  # type: ignore
 
 
 def choices_size(choices: Iterable[ChoiceT]) -> int:

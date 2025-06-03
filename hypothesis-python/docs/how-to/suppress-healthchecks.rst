@@ -3,7 +3,7 @@ Suppress a health check everywhere
 
 Hypothesis sometimes raises a |HealthCheck| to indicate that your test may be less effective than you expect, slower than you expect, unlikely to generate effective examples, or otherwise has silently degraded performance.
 
-While |HealthCheck| can be useful to proactively identify issues, you may not care about certain classes of them. If you want to disable a |HealthCheck| everywhere, you can define and load a :ref:`settings profile <settings_profiles>`. Place the following code in any file which is loaded before running your test (or in ``conftest.py``, if using pytest):
+While |HealthCheck| can be useful to proactively identify issues, you may not care about certain classes of them. If you want to disable a |HealthCheck| everywhere, you can register and load a settings profile with |settings.register_profile| and |settings.load_profile|. Place the following code in any file which is loaded before running your test (or in ``conftest.py``, if using pytest):
 
 .. code-block:: python
 

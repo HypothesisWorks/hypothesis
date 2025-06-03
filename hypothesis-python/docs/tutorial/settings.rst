@@ -54,13 +54,13 @@ Here are a few of the more commonly used setting values:
 
 .. note::
 
-    See the |@settings| reference for a full list of possible settings.
+    See the |settings| reference for a full list of possible settings.
 
 
 Changing settings across your test suite
 ----------------------------------------
 
-In addition to configuring individual test functions with |@settings|, you can configure test behavior across your test suite using a settings profile.
+In addition to configuring individual test functions with |@settings|, you can configure test behavior across your test suite using a settings profile. This might be useful for creating a development settings profile which runs fewer examples, or a settings profile in CI which connects to a separate database.
 
 To create a settings profile, use |settings.register_profile|:
 
@@ -68,7 +68,7 @@ To create a settings profile, use |settings.register_profile|:
 
     from hypothesis import HealthCheck, settings
 
-    settings.register_profile("my_profile_name", max_examples=200)
+    settings.register_profile("fast", max_examples=10)
 
 You can place this code in any file which gets loaded before your tests get run. This includes an ``__init__.py`` file in the test directory or any of the test files themselves. If using pytest, the standard location to place this code is in a ``confest.py`` file (though an ``__init__.py`` or test file will also work).
 
@@ -78,14 +78,36 @@ Note that registering a new profile will not affect tests until it is loaded wit
 
     from hypothesis import HealthCheck, settings
 
-    settings.register_profile("my_profile_name", max_examples=200)
+    settings.register_profile("fast", max_examples=10)
 
     # any tests executed before loading this profile will still use the
-    # default of 100 examples.
+    # default active profile of 100 examples.
 
-    settings.load_profile("my_profile_name")
+    settings.load_profile("fast")
 
-    # any tests executed after this point will use your profile of
-    # 200 examples.
+    # any tests executed after this point will use the active fast
+    # profile of 10 examples.
 
-There is no limit to the number of settings profiles you can create. Hypothesis creates a profile called ``"default"``, which is loaded by default. You can also explicitly load it at any time using ``settings.load_profile("default")``, if for instance you want to revert a custom profile you had previously loaded.
+There is no limit to the number of settings profiles you can create. Hypothesis creates a profile called ``"default"``, which is active by default. You can also explicitly make it active at any time using ``settings.load_profile("default")``, if for instance you wanted to revert a custom profile you had previously loaded.
+
+Loading profiles from environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using an environment variable to load a settings profile is a useful trick for choosing a settings profile depending on the environment:
+
+.. code-block:: pycon
+
+    >>> import os
+    >>> from hypothesis import settings, Verbosity
+    >>> settings.register_profile("long", max_examples=1000)
+    >>> settings.register_profile("fast", max_examples=10)
+    >>> settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose)
+    >>> settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
+
+If using pytest, you can also easily select the active profile with ``--hypothesis-profile``:
+
+.. code:: bash
+
+    $ pytest --hypothesis-profile fast
+
+See the :ref:`Hypothesis pytest plugin <pytest-plugin>`.

@@ -69,6 +69,7 @@ their individual contributions.
 * `Francesc Elies <https://www.github.com/FrancescElies>`_
 * `Gabe Joseph <https://github.com/gjoseph92>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
+* `Genevieve Mendoza <https://www.github.com/genevieve-me>`_
 * `George Macon <https://www.github.com/gmacon>`_
 * `Glenn Lehman <https://www.github.com/glnnlhmn>`_
 * `Graham Williamson <https://github.com/00willo>`_
@@ -119,6 +120,7 @@ their individual contributions.
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `Lundy Bernard <https://github.com/lundybernard>`_
+* `Marco Ricci <https://github.com/the-13th-letter>`_
 * `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)

@@ -22,6 +22,7 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
     Optional,
     TypedDict,
@@ -36,6 +37,7 @@ from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
+    ChoiceT,
     ChoiceTypeT,
     FloatConstraints,
     choice_constraints_key,
@@ -62,6 +64,7 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import InfoObservationType, TestCaseObservation
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -74,16 +77,36 @@ _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-# The available `PrimitiveProvider`s, and therefore also the available backends
-# for use by @settings(backend=...). The key is the name to be used in the backend=
-# value, and the value is the importable path to a subclass of PrimitiveProvider.
-#
-# See also
-# https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends-for-hypothesis.
-#
-# NOTE: the PrimitiveProvider interface is not yet stable. We may continue to
-# make breaking changes to it. (but if you want to experiment and don't mind
-# breakage, here you go!)
+#: Registered Hypothesis backends. This is a dictionary whose keys are the name
+#: to be used in |settings.backend|, and whose values are a string of the absolute
+#: importable path to a subclass of |PrimitiveProvider|, which Hypothesis will
+#: instantiate when your backend is requested by a test's |settings.backend| value.
+#:
+#: For example, the default Hypothesis backend is registered as:
+#:
+#: .. code-block:: python
+#:
+#:    from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+#:
+#:    AVAILABLE_PROVIDERS["hypothesis"] = "hypothesis.internal.conjecture.providers.HypothesisProvider"
+#:
+#: And can be used with:
+#:
+#: .. code-block:: python
+#:
+#:     from hypothesis import given, settings, strategies as st
+#:
+#:     @given(st.integers())
+#:     @settings(backend="hypothesis")
+#:     def f(n):
+#:         pass
+#:
+#: Though, as ``backend="hypothesis"`` is the default setting, the above would
+#: typically not have any effect.
+#:
+#: The purpose of mapping to an absolute importable path, rather than the actual
+#: |PrimitiveProvider| class, is to avoid slowing down Hypothesis startup times
+#: by only importing alternative backends when required.
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
@@ -286,99 +309,98 @@ def _get_local_constants() -> Constants:
 
 
 class _BackendInfoMsg(TypedDict):
-    type: str
+    type: InfoObservationType
     title: str
     content: Union[str, dict[str, Any]]
 
 
-class PrimitiveProvider(abc.ABC):
-    # This is the low-level interface which would also be implemented
-    # by e.g. CrossHair, by an Atheris-hypothesis integration, etc.
-    # We'd then build the structured tree handling, database and replay
-    # support, etc. on top of this - so all backends get those for free.
-    #
-    # See https://github.com/HypothesisWorks/hypothesis/issues/3086
+# TODO_DOCS: link to choice sequence explanation page
 
-    # How long a provider instance is used for. One of test_function or
-    # test_case. Defaults to test_function.
-    #
-    # If test_function, a single provider instance will be instantiated and used
-    # for the entirety of each test function. I.e., roughly one provider per
-    # @given annotation. This can be useful if you need to track state over many
-    # executions to a test function.
-    #
-    # This lifetime will cause None to be passed for the ConjectureData object
-    # in PrimitiveProvider.__init__, because that object is instantiated per
-    # test case.
-    #
-    # If test_case, a new provider instance will be instantiated and used each
-    # time hypothesis tries to generate a new input to the test function. This
-    # lifetime can access the passed ConjectureData object.
-    #
-    # Non-hypothesis providers probably want to set a lifetime of test_function.
+
+class PrimitiveProvider(abc.ABC):
+    """
+    |PrimitiveProvider| is the implementation interface of a
+    :ref:`Hypothesis backend <alternative-backends>`.
+
+    A |PrimitiveProvider| is required to implement the following five
+    ``draw_*`` methods:
+
+    * |PrimitiveProvider.draw_integer|
+    * |PrimitiveProvider.draw_boolean|
+    * |PrimitiveProvider.draw_float|
+    * |PrimitiveProvider.draw_string|
+    * |PrimitiveProvider.draw_bytes|
+
+    Each strategy in Hypothesis generates values by drawing a series of choices
+    from these five methods. By overriding them, a |PrimitiveProvider| can control
+    the distribution of inputs generated by Hypothesis.
+
+    For example, :pypi:`hypothesis-crosshair` implements a |PrimitiveProvider|
+    which uses an SMT solver to generate inputs that uncover new branches.
+
+    Once you implement a |PrimitiveProvider|, you can make it available for use
+    through |AVAILABLE_PROVIDERS|.
+    """
+
+    #: The lifetime of a |PrimitiveProvider| instance. Either ``test_function``
+    #: or ``test_case``.
+    #:
+    #: If ``test_function`` (the default), a single provider instance will be
+    #: instantiated and used for the entirety of each test function (i.e., roughly
+    #: one provider per |@given| annotation). This can be useful for tracking state
+    #: over the entirety of a test function.
+    #:
+    #: If ``test_case``, a new provider instance will be instantiated and used for
+    #: each input Hypothesis generates.
+    #:
+    #: The ``conjecturedata`` argument to ``PrimitiveProvider.__init__`` will
+    #: be ``None`` for a lifetime of ``test_function``, and an instance of
+    #: ``ConjectureData`` for a lifetime of ``test_case``.
+    #:
+    #: Third-party providers likely want to set a lifetime of ``test_function``.
     lifetime: _Lifetime = "test_function"
 
-    # Solver-based backends such as hypothesis-crosshair use symbolic values
-    # which record operations performed on them in order to discover new paths.
-    # If avoid_realization is set to True, hypothesis will avoid interacting with
-    # symbolic choices returned by the provider in any way that would force the
-    # solver to narrow the range of possible values for that symbolic.
-    #
-    # Setting this to True disables some hypothesis features, such as
-    # DataTree-based deduplication, and some internal optimizations, such as
-    # caching constraints. Only enable this if it is necessary for your backend.
+    #: Solver-based backends such as ``hypothesis-crosshair`` use symbolic values
+    #: which record operations performed on them in order to discover new paths.
+    #: If ``avoid_realization`` is set to ``True``, hypothesis will avoid interacting
+    #: with symbolic choices returned by the provider in any way that would force
+    #: the solver to narrow the range of possible values for that symbolic.
+    #:
+    #: Setting this to ``True`` disables some hypothesis features and optimizations.
+    #: Only set this to ``True`` if it is necessary for your backend.
     avoid_realization = False
+
+    #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
+    #: callback to |TESTCASE_CALLBACKS|, enabling observability during the lifetime
+    #: of this provider. If ``False``, |PrimitiveProvider.on_observation| will
+    #: never be called by Hypothesis.
+    #:
+    #: The opt-in behavior of observability is because enabling observability
+    #: might increase runtime or memory usage.
+    add_observability_callback: ClassVar[bool] = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
-
-    def per_test_case_context_manager(self):
-        return contextlib.nullcontext()
-
-    def realize(self, value: T, *, for_failure: bool = False) -> T:
-        """
-        Called whenever hypothesis requires a concrete (non-symbolic) value from
-        a potentially symbolic value. Hypothesis will not check that `value` is
-        symbolic before calling `realize`, so you should handle the case where
-        `value` is non-symbolic.
-
-        The returned value should be non-symbolic.  If you cannot provide a value,
-        raise hypothesis.errors.BackendCannotProceed("discard_test_case").
-
-        If for_failure is True, the value is associated with a failing example.
-        In this case, the backend should spend substantially more effort when
-        attempting to realize the value, since it is important to avoid discarding
-        failing  examples. Backends may still raise BackendCannotProceed when
-        for_failure is True, if realization is truly impossible or if realization
-        takes significantly longer than expected (say, 5 minutes).
-        """
-        return value
-
-    def observe_test_case(self) -> dict[str, Any]:
-        """Called at the end of the test case when observability mode is active.
-
-        The return value should be a non-symbolic json-encodable dictionary,
-        and will be included as `observation["metadata"]["backend"]`.
-        """
-        return {}
-
-    def observe_information_messages(
-        self, *, lifetime: _Lifetime
-    ) -> Iterable[_BackendInfoMsg]:
-        """Called at the end of each test case and again at end of the test function.
-
-        Return an iterable of `{type: info/alert/error, title: str, content: str|dict}`
-        dictionaries to be delivered as individual information messages.
-        (Hypothesis adds the `run_start` timestamp and `property` name for you.)
-        """
-        assert lifetime in ("test_case", "test_function")
-        yield from []
 
     @abc.abstractmethod
     def draw_boolean(
         self,
         p: float = 0.5,
     ) -> bool:
+        """
+        Draw a boolean choice.
+
+        Parameters
+        ----------
+        p: float
+            The probability of returning ``True``. Between 0 and 1 inclusive.
+
+            Except for ``0`` and ``1``, the value of ``p`` is a hint provided by
+            Hypothesis, and may be ignored by the backend.
+
+            If ``0``, the provider must return ``False``. If ``1``, the provider
+            must return ``True``.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -387,10 +409,27 @@ class PrimitiveProvider(abc.ABC):
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
         weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
     ) -> int:
+        """
+        Draw an integer choice.
+
+        Parameters
+        ----------
+        min_value : int | None
+            (Inclusive) lower bound on the integer value. If ``None``, there is
+            no lower bound.
+        max_value : int | None
+            (Inclusive) upper bound on the integer value. If ``None``, there is
+            no upper bound.
+        weights: dict[int, float] | None
+            Maps keys in the range [``min_value``, ``max_value``] to the probability
+            of returning that key.
+        shrink_towards: int
+            The integer to shrink towards. This is not used during generation and
+            can be ignored by backends.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -402,6 +441,21 @@ class PrimitiveProvider(abc.ABC):
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
     ) -> float:
+        """
+        Draw a float choice.
+
+        Parameters
+        ----------
+        min_value : float
+            (Inclusive) lower bound on the float value.
+        max_value : float
+            (Inclusive) upper bound on the float value.
+        allow_nan : bool
+            If ``False``, it is invalid to return ``math.nan``.
+        smallest_nonzero_magnitude : float
+            The smallest allowed nonzero magnitude. ``draw_float`` should not
+            return a float ``f`` if ``abs(f) < smallest_nonzero_magnitude``.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -412,6 +466,18 @@ class PrimitiveProvider(abc.ABC):
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> str:
+        """
+        Draw a string choice.
+
+        Parameters
+        ----------
+        intervals : IntervalSet
+            The set of codepoints to sample from.
+        min_size : int
+            (Inclusive) lower bound on the string length.
+        max_size : int
+            (Inclusive) upper bound on the string length.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -420,27 +486,141 @@ class PrimitiveProvider(abc.ABC):
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
+        """
+        Draw a bytes choice.
+
+        Parameters
+        ----------
+        min_size : int
+            (Inclusive) lower bound on the bytes length.
+        max_size : int
+            (Inclusive) upper bound on the bytes length.
+        """
         raise NotImplementedError
 
+    def per_test_case_context_manager(self):
+        """
+        Returns a context manager which will be entered each time Hypothesis
+        starts generating and executing one test case, and exited when that test
+        case finishes generating and executing, including if any exception is
+        thrown.
+
+        In the lifecycle of a Hypothesis test, this is called before
+        generating strategy values for each test case. This is just before any
+        :ref:`custom executor <custom-function-execution>` is called.
+
+        Even if not returning a custom context manager, |PrimitiveProvider|
+        subclasses are welcome to override this method to know when Hypothesis
+        starts and ends the execution of a single test case.
+        """
+        return contextlib.nullcontext()
+
+    def realize(self, value: T, *, for_failure: bool = False) -> T:
+        """
+        Called whenever hypothesis requires a concrete (non-symbolic) value from
+        a potentially symbolic value. Hypothesis will not check that ``value`` is
+        symbolic before calling ``realize``, so you should handle the case where
+        ``value`` is non-symbolic.
+
+        The returned value should be non-symbolic.  If you cannot provide a value,
+        raise |BackendCannotProceed| with a value of ``"discard_test_case"``.
+
+        If ``for_failure`` is ``True``, the value is associated with a failing example.
+        In this case, the backend should spend substantially more effort when
+        attempting to realize the value, since it is important to avoid discarding
+        failing examples. Backends may still raise |BackendCannotProceed| when
+        ``for_failure`` is ``True``, if realization is truly impossible or if
+        realization takes significantly longer than expected (say, 5 minutes).
+        """
+        return value
+
+    def replay_choices(self, choices: tuple[ChoiceT, ...]) -> None:
+        """
+        Called when Hypothesis has discovered a choice sequence which the provider
+        may wish to enqueue to replay under its own instrumentation when we next
+        ask to generate a test case, rather than generating one from scratch.
+
+        This is used to e.g. warm-start :pypi:`hypothesis-crosshair` with a corpus
+        of high-code-coverage inputs discovered by
+        `HypoFuzz <https://hypofuzz.com/>`_.
+        """
+        return None
+
+    def observe_test_case(self) -> dict[str, Any]:
+        """Called at the end of the test case when :ref:`observability
+        <observability>` is enabled.
+
+        The return value should be a non-symbolic json-encodable dictionary,
+        and will be included in observations as ``observation["metadata"]["backend"]``.
+        """
+        return {}
+
+    def observe_information_messages(
+        self, *, lifetime: _Lifetime
+    ) -> Iterable[_BackendInfoMsg]:
+        """Called at the end of each test case and again at end of the test function.
+
+        Return an iterable of ``{type: info/alert/error, title: str, content: str | dict}``
+        dictionaries to be delivered as individual information messages. Hypothesis
+        adds the ``run_start`` timestamp and ``property`` name for you.
+        """
+        assert lifetime in ("test_case", "test_function")
+        yield from []
+
+    def on_observation(self, observation: TestCaseObservation) -> None:  # noqa: B027
+        """
+        Called at the end of each test case which uses this provider, with the same
+        ``observation["type"] == "test_case"`` observation that is passed to
+        other callbacks in |TESTCASE_CALLBACKS|. This method is not called with
+        ``observation["type"] in {"info", "alert", "error"}`` observations.
+
+        .. important::
+
+            For |PrimitiveProvider.on_observation| to be called by Hypothesis,
+            |PrimitiveProvider.add_observability_callback| must be set to ``True``,
+
+            |PrimitiveProvider.on_observation| is explicitly opt-in, as enabling
+            observability might increase runtime or memory usage.
+
+        Calls to this method are guaranteed to alternate with calls to
+        |PrimitiveProvider.per_test_case_context_manager|. For example:
+
+        .. code-block:: python
+
+            # test function starts
+            per_test_case_context_manager()
+            on_observation()
+            per_test_case_context_manager()
+            on_observation()
+            ...
+            # test function ends
+
+        Note that |PrimitiveProvider.on_observation| will not be called for test
+        cases which did not use this provider during generation, for example
+        during |Phase.reuse| or |Phase.shrink|, or because Hypothesis switched
+        to the standard Hypothesis backend after this backend raised too many
+        |BackendCannotProceed| exceptions.
+        """
+
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
-        """Marks the beginning of a semantically meaningful span.
+        """Marks the beginning of a semantically meaningful span of choices.
 
         Providers can optionally track this data to learn which sub-sequences
         of draws correspond to a higher-level object, recovering the parse tree.
-        `label` is an opaque integer, which will be shared by all spans drawn
+        ``label`` is an opaque integer, which will be shared by all spans drawn
         from a particular strategy.
 
-        This method is called from ConjectureData.start_span().
+        This method is called from ``ConjectureData.start_span()``.
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
-        """Marks the end of a semantically meaningful span.
+        """Marks the end of a semantically meaningful span of choices.
 
-        `discard` is True when the draw was filtered out or otherwise marked as
-        unlikely to contribute to the input data as seen by the user's test.
+        ``discard`` is ``True`` when the draw was filtered out or otherwise marked
+        as unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        This method is called from ConjectureData.stop_span().
+        This method is called from ``ConjectureData.stop_span()``.
         """
 
 

@@ -44,8 +44,8 @@ def reject() -> NoReturn:
         )
     where = _calling_function_location("reject", inspect.currentframe())
     if currently_in_test_context():
-        count = current_build_context().data._observability_predicates[where]
-        count["unsatisfied"] += 1
+        counts = current_build_context().data._observability_predicates[where]
+        counts.update_count(condition=False)
     raise UnsatisfiedAssumption(where)
 
 
@@ -65,8 +65,8 @@ def assume(condition: object) -> bool:
     if TESTCASE_CALLBACKS or not condition:
         where = _calling_function_location("assume", inspect.currentframe())
         if TESTCASE_CALLBACKS and currently_in_test_context():
-            predicates = current_build_context().data._observability_predicates
-            predicates[where]["satisfied" if condition else "unsatisfied"] += 1
+            counts = current_build_context().data._observability_predicates[where]
+            counts.update_count(condition=bool(condition))
         if not condition:
             raise UnsatisfiedAssumption(f"failed to satisfy {where}")
     return True
@@ -77,12 +77,11 @@ _current_build_context = DynamicVariable[Optional["BuildContext"]](None)
 
 def currently_in_test_context() -> bool:
     """Return ``True`` if the calling code is currently running inside an
-    :func:`@given <hypothesis.given>` or :ref:`stateful <stateful>` test,
-    ``False`` otherwise.
+    |@given| or :ref:`stateful <stateful>` test, and ``False`` otherwise.
 
     This is useful for third-party integrations and assertion helpers which
-    may be called from traditional or property-based tests, but can only use
-    :func:`~hypothesis.assume` or :func:`~hypothesis.target` in the latter case.
+    may be called from either traditional or property-based tests, and can only
+    use e.g. |assume| or |target| in the latter case.
     """
     return _current_build_context.value is not None
 
@@ -132,10 +131,12 @@ class BuildContext:
         data: ConjectureData,
         *,
         is_final: bool = False,
+        wrapped_test: Callable,
     ) -> None:
         self.data = data
         self.tasks: list[Callable[[], Any]] = []
         self.is_final = is_final
+        self.wrapped_test = wrapped_test
 
         # Use defaultdict(list) here to handle the possibility of having multiple
         # functions registered for the same object (due to caching, small ints, etc).

@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import itertools
 import math
 import sys
@@ -45,6 +46,7 @@ from hypothesis.internal.conjecture.providers import (
 )
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
 
 from tests.common.debug import minimal
 from tests.common.utils import (
@@ -401,17 +403,18 @@ def test_bad_realize():
 
 
 class RealizeProvider(TrivialProvider):
+    # self-documenting constant
+    REALIZED = 42
     avoid_realization = True
 
     def realize(self, value, *, for_failure=False):
         if isinstance(value, int):
-            return 42
+            return self.REALIZED
         return value
 
 
 def test_realize():
     with temp_register_backend("realize", RealizeProvider):
-
         values = []
 
         @given(st.integers())
@@ -423,7 +426,7 @@ def test_realize():
 
         # first draw is 0 from ChoiceTemplate(type="simplest")
         assert values[0] == 0
-        assert all(n == 42 for n in values[1:])
+        assert all(n == RealizeProvider.REALIZED for n in values[1:])
 
 
 def test_realize_dependent_draw():
@@ -467,6 +470,27 @@ def test_realization_with_verbosity_draw(verbosity):
         assert "Draw 1: <symbolic>" in out.getvalue()
 
 
+def test_realization_with_observability():
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize")
+        def test_function(data):
+            data.draw(st.integers())
+
+        with capture_observations() as observations:
+            test_function()
+
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert {tc.representation for tc in test_cases} == {
+        # from the first ChoiceTemplate(type="simplest") example
+        "test_function(\n    data=data(...),\n)\nDraw 1: 0",
+        # from all other examples. data=<symbolic> isn't ideal; we should special
+        # case this as data=data(...).
+        f"test_function(\n    data=<symbolic>,\n)\nDraw 1: {RealizeProvider.REALIZED}",
+    }
+
+
 class ObservableProvider(TrivialProvider):
     def observe_test_case(self):
         return {"msg_key": "some message", "data_key": [1, "2", {}]}
@@ -496,15 +520,15 @@ def test_custom_observations_from_backend():
             test_function()
 
     assert len(ls) >= 3
-    cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
+    cases = [t.metadata.backend for t in ls if t.type == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
     assert "<backend failed to realize symbolic arguments>" in repr(ls)
 
     infos = [
-        {k: v for k, v in t.items() if k in ("title", "content")}
+        {k: v for k, v in dataclasses.asdict(t).items() if k in ("title", "content")}
         for t in ls
-        if t["type"] != "test_case"
+        if t.type != "test_case"
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos
@@ -689,3 +713,49 @@ def test_realize_without_for_failure():
 
         with pytest.raises(AssertionError):
             f()
+
+
+def test_replay_choices():
+    # trivial covering test
+    provider = TrivialProvider(None)
+    provider.replay_choices([1])
+
+
+class ObservationProvider(TrivialProvider):
+    add_observability_callback = True
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        # calls to per_test_case_context_manager and on_observation alternate,
+        # starting with per_test_case_context_manager
+        self.expected = "per_test_case_context_manager"
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        assert self.expected == "per_test_case_context_manager"
+        self.expected = "on_observation"
+        yield
+
+    def on_observation(self, observation: Observation) -> None:
+        assert self.expected == "on_observation"
+        self.expected = "per_test_case_context_manager"
+
+
+@temp_register_backend("observation", ObservationProvider)
+def test_on_observation_alternates():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        pass
+
+    f()
+
+
+@temp_register_backend("observation", TrivialProvider)
+def test_on_observation_no_override():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        assert TESTCASE_CALLBACKS == []
+
+    f()
