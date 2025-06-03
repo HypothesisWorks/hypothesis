@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.0:
+
+--------------------
+6.135.0 - 2025-06-03
+--------------------
+
+This release adds :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`, for use in testing implementations of :ref:`alternative backends <alternative-backends>`.
+
 .. _v6.134.0:
 
 --------------------
