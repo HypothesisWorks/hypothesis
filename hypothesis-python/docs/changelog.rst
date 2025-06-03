@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.134.0:
+
+--------------------
+6.134.0 - 2025-06-03
+--------------------
+
+This patch adds :class:`hypothesis.extra.django.SimpleTestCase` (:issue:`4117`)
+
+Thanks to Chris Wesseling for this contribution!
+
 .. _v6.133.2:
 
 --------------------
