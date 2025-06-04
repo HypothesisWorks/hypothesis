@@ -346,7 +346,7 @@ def _decode_choice(value):
     if isinstance(value, list):
         if value[0] == "integer":
             # large integers get cast to string, stored as ["integer", str(value)]
-            assert isinstance(value[1], float)
+            assert isinstance(value[1], str)
             return int(value[1])
         elif value[0] == "bytes":
             assert isinstance(value[1], str)
@@ -414,10 +414,6 @@ def _decode_constraints(choice_type, data):
         raise ValueError(f"unknown choice type {choice_type}")
 
 
-def _will_be_cast_to_float(value):
-    return isinstance(value, int) and abs(value) >= 2**63
-
-
 @example([0.0])
 @example([-0.0])
 @example([SIGNALING_NAN])
@@ -426,23 +422,12 @@ def _will_be_cast_to_float(value):
 @example([-math.inf])
 @given(st.lists(choices()))
 def test_choices_json_roundtrips(choices):
-    # choices_to_json and nodes_to_json roundtrip, *except for large integers*,
-    # which get cast to the nearest integer-valued float on roundtrip. This is
-    # an intentional design decision of the format; see related comment in
-    # to_jsonable.
-    if any(_will_be_cast_to_float(choice) for choice in choices):
-        assume(False)
     choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
     assert choices_key(choices) == choices_key(choices2)
 
 
 @given(st.lists(nodes()))
 def test_nodes_json_roundtrips(nodes):
-    for node in nodes:
-        if _will_be_cast_to_float(node.value) or any(
-            _will_be_cast_to_float(value) for value in node.constraints.values()
-        ):
-            assume(False)
     nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
     assert nodes == nodes2
 

@@ -1,5 +1,4 @@
 {
-    "title": "Hypothesis Metadata",
     "description": "Hypothesis-specific values included in the ``metadata`` key of observations for test cases.",
     "type": "object",
     "properties": {
@@ -56,11 +55,11 @@
         },
         "interesting_origin": {
             "type": ["string", "null"],
-            "description": "The internal InterestingOrigin object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
+            "description": "The internal ``InterestingOrigin`` object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
         },
         "choice_nodes": {
             "type": ["array", "null"],
-            "description": "The sequence of choices made during this test case. This includes the choice value, as well as its constraints and whether it was forced or not. The choice sequence is a relatively low-level implementation detail of Hypothesis, and is exposed here for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence.\n\nOnly present if |OBSERVABILITY_CHOICE_NODES| is set.",
+            "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute may change or disappear without warning.\n\nThe sequence of choices made during this test case. This includes the choice value, as well as its constraints and whether it was forced or not. The choice sequence is a relatively low-level implementation detail of Hypothesis, and is exposed here for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence.\n\nOnly present if |OBSERVABILITY_CHOICE_NODES| is ``True``.",
             "items": {
                 "type": "object",
                 "properties": {

@@ -361,6 +361,13 @@ OBSERVABILITY_COLLECT_COVERAGE = (
 #:
 #: ``False`` by default. ``metadata.choice_nodes`` can be substantial amount of
 #: data, and so must be opted-in to, even when observability is enabled.
+#:
+#: .. warning::
+#:
+#:     EXPERIMENTAL AND UNSTABLE. We are actively working towards a better
+#:     interface for this as of June 2025, and this attribute may disappear or
+#:     be renamed without notice.
+#:
 OBSERVABILITY_CHOICE_NODES = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICE_NODES" in os.environ
 )
