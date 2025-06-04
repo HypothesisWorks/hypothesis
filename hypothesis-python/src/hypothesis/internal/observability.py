@@ -265,6 +265,10 @@ def make_testcase(
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status
 
+    # We should only be sending observability reports for datas that have finished
+    # being modified.
+    assert data.frozen
+
     if status_reason is not None:
         pass
     elif data.interesting_origin:
