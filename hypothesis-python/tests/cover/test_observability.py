@@ -509,7 +509,9 @@ def test_metadata_to_json():
 
     observations = [obs for obs in observations if obs.type == "test_case"]
     for observation in observations:
-        assert to_jsonable(observation.metadata, avoid_realization=False).keys() == {
+        assert set(
+            to_jsonable(observation.metadata, avoid_realization=False).keys()
+        ) == {
             "traceback",
             "reproduction_decorator",
             "predicates",
@@ -520,11 +522,11 @@ def test_metadata_to_json():
             "data_status",
             "interesting_origin",
             "choice_nodes",
-            "spans",
+            "choice_spans",
         }
         assert observation.metadata.choice_nodes is not None
 
-        for span in observation.metadata.spans:
+        for span in observation.metadata.choice_spans:
             assert isinstance(span, Span)
             assert 0 <= span.start <= len(observation.metadata.choice_nodes)
             assert 0 <= span.end <= len(observation.metadata.choice_nodes)

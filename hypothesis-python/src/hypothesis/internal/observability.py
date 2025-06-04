@@ -159,7 +159,7 @@ class ObservationMetadata:
     data_status: "Status"
     interesting_origin: Optional[InterestingOrigin]
     choice_nodes: Optional[tuple[ChoiceNode, ...]]
-    spans: Optional["Spans"]
+    choice_spans: Optional["Spans"]
 
     def to_json(self) -> dict[str, Any]:
         data = {
@@ -175,9 +175,9 @@ class ObservationMetadata:
             "choice_nodes": (
                 None if self.choice_nodes is None else nodes_to_json(self.choice_nodes)
             ),
-            "spans": (
+            "choice_spans": (
                 None
-                if self.spans is None
+                if self.choice_spans is None
                 else [
                     (
                         # span.label is an int, but cast to string to avoid conversion
@@ -190,7 +190,7 @@ class ObservationMetadata:
                         span.end,
                         span.discarded,
                     )
-                    for span in self.spans
+                    for span in self.choice_spans
                 ]
             ),
         }
@@ -335,7 +335,7 @@ def make_testcase(
                 "data_status": data.status,
                 "interesting_origin": data.interesting_origin,
                 "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
-                "spans": data.spans if OBSERVABILITY_CHOICES else None,
+                "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
                 **_system_metadata(),
                 # unpack last so it takes precedence for duplicate keys
                 **(metadata or {}),

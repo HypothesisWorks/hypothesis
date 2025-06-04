@@ -84,7 +84,7 @@
                 "additionalProperties": false
             }
         },
-        "spans": {
+        "choice_spans": {
             "type": "array",
             "items": {"type": "array"},
             "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute may change format or disappear without warning.\n\nThe semantically-meaningful spans of the choice sequence of this test case.\n\nEach span has the format ``[label, start, end, discarded]``, where:\n\n* ``label`` is an opaque integer-value string shared by all spans drawn from a particular strategy.\n* ``start`` and ``end`` are indices into the choice sequence for this span, such that ``choices[start:end]`` are the corresponding choices.\n* ``discarded`` is a boolean indicating whether this span was discarded (see |PrimitiveProvider.span_end|).\n\nOnly present if |OBSERVABILITY_CHOICES| is ``True``.\n\n.. note::\n\n  Spans are a relatively low-level implementation detail of Hypothesis, and are exposed in observability for users building tools or research on top of Hypothesis. See |PrimitiveProvider| (and particularly |PrimitiveProvider.span_start| and |PrimitiveProvider.span_end|) for more details about spans."
