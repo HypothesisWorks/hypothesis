@@ -415,20 +415,39 @@ def _decode_constraints(choice_type, data):
         raise ValueError(f"unknown choice type {choice_type}")
 
 
+def _has_surrogate(choice):
+    return isinstance(choice, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in choice)
+
+
 @example([0.0])
 @example([-0.0])
 @example([SIGNALING_NAN])
 @example([math.nan])
 @example([math.inf])
 @example([-math.inf])
+# json.{loads, dumps} does not roundtrip for surrogate pairs; they are combined
+# into the single code point by json.loads:
+#   json.loads(json.dumps("\udbf4\udc00")) == '\U0010d000'
+#
+# Ignore this case with an `assume`, and add an explicit example to ensure we
+# continue to do so.
+@example(["\udbf4\udc00"])
 @given(st.lists(choices()))
 def test_choices_json_roundtrips(choices):
+    assume(not any(_has_surrogate(choice) for choice in choices))
     choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
     assert choices_key(choices) == choices_key(choices2)
 
 
 @given(st.lists(nodes()))
 def test_nodes_json_roundtrips(nodes):
+    assume(
+        not any(
+            _has_surrogate(node.value)
+            or any(_has_surrogate(value) for value in node.constraints.values())
+            for node in nodes
+        )
+    )
     nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
     assert nodes == nodes2
 
