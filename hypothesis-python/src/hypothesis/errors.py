@@ -253,7 +253,7 @@ CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "oth
 
 class BackendCannotProceed(HypothesisException):
     """
-    Raised by alternative backends when the PrimitiveProvider cannot proceed.
+    Raised by alternative backends when a |PrimitiveProvider| cannot proceed.
     This is expected to occur inside one of the ``.draw_*()`` methods, or for
     symbolic execution perhaps in |PrimitiveProvider.realize|.
 

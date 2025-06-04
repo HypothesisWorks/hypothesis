@@ -40,11 +40,13 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
+    HypothesisProvider,
 )
-from hypothesis.internal.floats import SIGNALING_NAN
+from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
 
@@ -80,16 +82,11 @@ class PrngProvider(PrimitiveProvider):
         weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
     ) -> int:
-        assert isinstance(shrink_towards, int)  # otherwise ignored here
-
-        if weights is not None:
-            assert min_value is not None
-            assert max_value is not None
-            # use .choices so we can use the weights= param.
-            choices = self.prng.choices(
-                range(min_value, max_value + 1), weights=weights, k=1
-            )
-            return choices[0]
+        # shrink_towards is fully ignored here. It would be nice to implement
+        # weights, but it's tricky to fully conform it to our
+        # provider_conformance test.
+        assert isinstance(shrink_towards, int)
+        assert weights is None or isinstance(weights, dict)
 
         if min_value is None and max_value is None:
             min_value = -(2**127)
@@ -119,18 +116,28 @@ class PrngProvider(PrimitiveProvider):
             return -math.inf
 
         # get rid of infs, they cause nans if we pass them to prng.uniform
+        min_value_bound = min_value
+        max_value_bound = max_value
         if min_value in [-math.inf, math.inf]:
-            min_value = math.copysign(1, min_value) * sys.float_info.max
+            min_value_bound = math.copysign(1, min_value) * sys.float_info.max
             # being too close to the bounds causes prng.uniform to only return
             # inf.
-            min_value /= 2
+            min_value_bound /= 2
         if max_value in [-math.inf, math.inf]:
-            max_value = math.copysign(1, max_value) * sys.float_info.max
-            max_value /= 2
+            max_value_bound = math.copysign(1, max_value) * sys.float_info.max
+            max_value_bound /= 2
 
-        value = self.prng.uniform(min_value, max_value)
+        value = self.prng.uniform(min_value_bound, max_value_bound)
+        # random.uniform can in fact provide out of bounds values, e.g.
+        #   random.uniform(-8.98846567431158e+307, 8.98846567431158e+307)
+        # can produce math.inf, which is strictly greater than 8.98846567431158e+307
+        value = clamp(min_value, value, max_value)
         if value and abs(value) < smallest_nonzero_magnitude:
-            return math.copysign(0.0, value)
+            return (
+                smallest_nonzero_magnitude
+                if min_value <= smallest_nonzero_magnitude <= max_value
+                else -smallest_nonzero_magnitude
+            )
         return value
 
     def draw_string(
@@ -143,6 +150,8 @@ class PrngProvider(PrimitiveProvider):
         size = self.prng.randint(
             min_size, max(min_size, min(100 if max_size is None else max_size, 100))
         )
+        if len(intervals) == 0:
+            return ""
         return "".join(map(chr, self.prng.choices(intervals, k=size)))
 
     def draw_bytes(
@@ -150,7 +159,8 @@ class PrngProvider(PrimitiveProvider):
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
-        max_size = 100 if max_size is None else max_size
+        # cap max size for performance
+        max_size = 100 if max_size is None else min(max_size, 100)
         size = self.prng.randint(min_size, max_size)
         try:
             return self.prng.randbytes(size)
@@ -759,3 +769,10 @@ def test_on_observation_no_override():
         assert TESTCASE_CALLBACKS == []
 
     f()
+
+
+@pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
+def test_provider_conformance(provider):
+    run_conformance_test(
+        provider, settings=settings(max_examples=20, stateful_step_count=20)
+    )

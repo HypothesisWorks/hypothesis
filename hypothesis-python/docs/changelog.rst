@@ -18,6 +18,50 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.0:
+
+--------------------
+6.135.0 - 2025-06-03
+--------------------
+
+This release adds :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`, for use in testing implementations of :ref:`alternative backends <alternative-backends>`.
+
+.. _v6.134.0:
+
+--------------------
+6.134.0 - 2025-06-03
+--------------------
+
+This patch adds :class:`hypothesis.extra.django.SimpleTestCase` (:issue:`4117`)
+
+Thanks to Chris Wesseling for this contribution!
+
+.. _v6.133.2:
+
+--------------------
+6.133.2 - 2025-06-03
+--------------------
+
+Internal changes to support `hypofuzz <https://hypofuzz.com>`__.
+
+.. _v6.133.1:
+
+--------------------
+6.133.1 - 2025-06-03
+--------------------
+
+The ``to_json`` hook used internally when writing :ref:`observability <observability>` reports is now supported on nested dataclasses (in addition to outermost dataclasses).
+
+.. _v6.133.0:
+
+--------------------
+6.133.0 - 2025-06-02
+--------------------
+
+Warn when :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+draw from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.
+
 .. _v6.132.0:
 
 --------------------
