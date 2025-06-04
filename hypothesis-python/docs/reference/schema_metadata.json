@@ -36,12 +36,12 @@
             "type": "object",
             "description": "Backend-specific observations from |PrimitiveProvider.observe_test_case| and |PrimitiveProvider.observe_information_messages|."
         },
-        "sys_argv": {
+        "sys.argv": {
             "type": "array",
             "items": {"type": "string"},
             "description": "The result of ``sys.argv``."
         },
-        "os_getpid": {
+        "os.getpid()": {
             "type": "integer",
             "description": "The result of ``os.getpid()``."
         },
