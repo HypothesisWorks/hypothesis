@@ -1,0 +1,91 @@
+{
+    "title": "Hypothesis Metadata",
+    "description": "Hypothesis-specific values included in the ``metadata`` key of observations for test cases.",
+    "type": "object",
+    "properties": {
+        "traceback": {
+            "type": ["string", "null"],
+            "description": "The traceback for failing tests, if and only if ``status == \"failed\"``."
+        },
+        "reproduction_decorator": {
+            "type": ["string", "null"],
+            "description": "The ``@reproduce_failure`` decorator string for failing tests, if and only if ``status == \"failed\"``."
+        },
+        "predicates": {
+            "type": "object",
+            "description": "The number of times each |assume| and |@precondition| predicate was satisfied (``True``) and not satisfied (``False``).",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "satisfied": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "The number of times this predicate was satisfied (``True``)."
+                    },
+                    "unsatisfied": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "The number of times this predicate was not satisfied (``False``)."
+                    }
+                },
+                "required": ["satisfied", "unsatisfied"],
+                "additionalProperties": false
+            }
+        },
+        "backend": {
+            "type": "object",
+            "description": "Backend-specific observations from |PrimitiveProvider.observe_test_case| and |PrimitiveProvider.observe_information_messages|."
+        },
+        "sys_argv": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "The result of ``sys.argv``."
+        },
+        "os_getpid": {
+            "type": "integer",
+            "description": "The result of ``os.getpid()``."
+        },
+        "imported_at": {
+            "type": "number",
+            "description": "The unix timestamp when Hypothesis was imported."
+        },
+        "data_status": {
+            "type": "number",
+            "enum": [0, 1, 2, 3],
+            "description": "The internal status of the ConjectureData for this test case. The values are as follows: ``Status.OVERRUN = 0``, ``Status.INVALID = 1``, ``Status.VALID = 2``, and ``Status.INTERESTING = 3``."
+        },
+        "interesting_origin": {
+            "type": ["string", "null"],
+            "description": "The internal InterestingOrigin object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
+        },
+        "choice_nodes": {
+            "type": ["array", "null"],
+            "description": "The sequence of choices made during this test case. This includes the choice value, as well as its constraints and whether it was forced or not. The choice sequence is a relatively low-level implementation detail of Hypothesis, and is exposed here for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence.\n\nOnly present if |OBSERVABILITY_CHOICE_NODES| is set.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": ["integer", "float", "string", "bytes", "boolean"],
+                        "description": "The type of choice made. Corresponds to a call to |PrimitiveProvider.draw_integer|, |PrimitiveProvider.draw_float|, |PrimitiveProvider.draw_string|, |PrimitiveProvider.draw_bytes|, or |PrimitiveProvider.draw_boolean|."
+                    },
+                    "value": {
+                        "description": "The value of the choice. Corresponds to the value returned by a ``PrimitiveProvider.draw_*`` method.\n\n``NaN`` float values are returned as ``[\"float\", <float64_int_value>]``, to distinguish ``NaN`` floats with nonstandard bit patterns. Integers with  ``abs(value) >= 2**63`` are returned as ``[\"integer\", str(value)]``, for compatibility with tools with integer size limitations. Bytes are returned as ``[\"bytes\", base64.b64encode(value)]``."
+                    },
+                    "constraints": {
+                        "type": "object",
+                        "description": "The constraints for this choice. Corresponds to the constraints passed to a ``PrimitiveProvider.draw_*`` method. ``NaN`` float values, integers with ``abs(value) >= 2**63``, and byte values for constraints are transformed as for the ``value`` attribute."
+                    },
+                    "was_forced": {
+                        "type": "boolean",
+                        "description": "Whether this choice was forced. As an implementation detail, Hypothesis occasionally requires that some choices take on a specific value, for instance to end generation of collection elements early for performance. These values are \"forced\", and have ``was_forced = True``."
+                    }
+                },
+                "required": ["type", "value", "constraints", "was_forced"],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": ["traceback", "reproduction_decorator", "predicates", "backend", "sys_argv", "os_getpid", "imported_at", "data_status", "interesting_origin", "choice_nodes"],
+    "additionalProperties": false
+}

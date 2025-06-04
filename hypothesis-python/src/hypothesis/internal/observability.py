@@ -65,8 +65,12 @@ def _choice_to_json(choice: Union[ChoiceT, None]) -> Any:
         return None
     # see the note on the same check in to_jsonable for why we cast large
     # integers to floats.
-    if isinstance(choice, int) and not isinstance(choice, bool) and choice > 2**63:
-        return ["integer", float(choice)]
+    if (
+        isinstance(choice, int)
+        and not isinstance(choice, bool)
+        and abs(choice) >= 2**63
+    ):
+        return ["integer", str(choice)]
     elif isinstance(choice, bytes):
         return ["bytes", base64.b64encode(choice).decode()]
     elif isinstance(choice, float) and math.isnan(choice):
@@ -352,6 +356,11 @@ def _system_metadata() -> dict[str, Any]:
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
+#: If ``True``, include the ``metadata.choice_nodes`` key in test case
+#: observations.
+#:
+#: ``False`` by default. ``metadata.choice_nodes`` can be substantial amount of
+#: data, and so must be opted-in to, even when observability is enabled.
 OBSERVABILITY_CHOICE_NODES = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICE_NODES" in os.environ
 )

@@ -31,7 +31,7 @@ from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
-from hypothesis.internal.floats import SIGNALING_NAN, int_to_float
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import choices_to_json, nodes_to_json
 from hypothesis.stateful import (
@@ -42,7 +42,7 @@ from hypothesis.stateful import (
 )
 
 from tests.common.utils import Why, capture_observations, xfail_on_crosshair
-from tests.conjecture.common import choices, nodes
+from tests.conjecture.common import choices, integer_constr, nodes
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -345,7 +345,7 @@ def test_fuzz_one_input_status(buffer, expected_status):
 def _decode_choice(value):
     if isinstance(value, list):
         if value[0] == "integer":
-            # large integers get cast to float, stored as ["integer", float(value)]
+            # large integers get cast to string, stored as ["integer", str(value)]
             assert isinstance(value[1], float)
             return int(value[1])
         elif value[0] == "bytes":
@@ -445,3 +445,47 @@ def test_nodes_json_roundtrips(nodes):
             assume(False)
     nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
     assert nodes == nodes2
+
+
+@pytest.mark.parametrize(
+    "choice, expected",
+    [
+        (math.nan, ["float", float_to_int(math.nan)]),
+        (SIGNALING_NAN, ["float", float_to_int(SIGNALING_NAN)]),
+        (1, 1),
+        (-1, -1),
+        (2**63 + 1, ["integer", str(2**63 + 1)]),
+        (-(2**63 + 1), ["integer", str(-(2**63 + 1))]),
+        (1.0, 1.0),
+        (-0.0, -0.0),
+        (0.0, 0.0),
+        (True, True),
+        (False, False),
+        (b"a", ["bytes", "YQ=="]),
+    ],
+)
+def test_choices_to_json_explicit(choice, expected):
+    assert choices_to_json([choice]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "choice_node, expected",
+    [
+        (
+            ChoiceNode(
+                type="integer",
+                value=2**63 + 1,
+                constraints=integer_constr(),
+                was_forced=False,
+            ),
+            {
+                "type": "integer",
+                "value": ["integer", str(2**63 + 1)],
+                "constraints": integer_constr(),
+                "was_forced": False,
+            },
+        ),
+    ],
+)
+def test_choice_nodes_to_json_explicit(choice_node, expected):
+    assert nodes_to_json([choice_node]) == [expected]
