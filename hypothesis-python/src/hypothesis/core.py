@@ -976,8 +976,12 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_markers_from_group(), ensure_free_stackframes():
-                    return self.test(*args, **kwargs)
+                with unwrap_markers_from_group():
+                    # NOTE: For compatibility with Python 3.9's LL(1)
+                    # parser, this is written as a nested with-statement,
+                    # instead of a compound one.
+                    with ensure_free_stackframes():
+                        return self.test(*args, **kwargs)
 
         else:
 
@@ -988,8 +992,12 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with unwrap_markers_from_group(), ensure_free_stackframes():
-                        result = self.test(*args, **kwargs)
+                    with unwrap_markers_from_group():
+                        # NOTE: For compatibility with Python 3.9's LL(1)
+                        # parser, this is written as a nested with-statement,
+                        # instead of a compound one.
+                        with ensure_free_stackframes():
+                            result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
