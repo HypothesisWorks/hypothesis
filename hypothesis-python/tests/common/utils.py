@@ -240,6 +240,7 @@ def capture_observations(*, choices=None):
     ls: list[Observation] = []
     TESTCASE_CALLBACKS.append(ls.append)
     if choices is not None:
+        old_choices = observability.OBSERVABILITY_CHOICES
         observability.OBSERVABILITY_CHOICES = choices
 
     try:
@@ -247,7 +248,7 @@ def capture_observations(*, choices=None):
     finally:
         TESTCASE_CALLBACKS.remove(ls.append)
         if choices is not None:
-            observability.OBSERVABILITY_CHOICES = choices
+            observability.OBSERVABILITY_CHOICES = old_choices
 
 
 # Specifies whether we can represent subnormal floating point numbers.
