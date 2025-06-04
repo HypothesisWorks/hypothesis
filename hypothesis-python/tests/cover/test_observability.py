@@ -40,6 +40,7 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
+from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import Why, capture_observations, xfail_on_crosshair
 from tests.conjecture.common import choices, integer_constr, nodes
@@ -474,3 +475,29 @@ def test_choices_to_json_explicit(choice, expected):
 )
 def test_choice_nodes_to_json_explicit(choice_node, expected):
     assert nodes_to_json([choice_node]) == [expected]
+
+
+def test_metadata_to_json():
+    # this is mostly a covering test than testing anything particular about
+    # ObservationMetadata.
+    @given(st.integers())
+    def f(n):
+        pass
+
+    with capture_observations() as observations:
+        f()
+
+    observations = [obs for obs in observations if obs.type == "test_case"]
+    for observation in observations:
+        assert to_jsonable(observation.metadata, avoid_realization=False).keys() == {
+            "traceback",
+            "reproduction_decorator",
+            "predicates",
+            "backend",
+            "sys.argv",
+            "os.getpid()",
+            "imported_at",
+            "data_status",
+            "interesting_origin",
+            "choice_nodes",
+        }
