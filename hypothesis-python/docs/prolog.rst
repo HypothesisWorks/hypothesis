@@ -120,10 +120,12 @@
 .. |PrimitiveProvider.observe_information_messages| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.observe_information_messages`
 .. |PrimitiveProvider.per_test_case_context_manager| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.per_test_case_context_manager`
 .. |PrimitiveProvider.add_observability_callback| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.add_observability_callback`
+.. |PrimitiveProvider.span_start| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_start`
+.. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
-.. |OBSERVABILITY_CHOICE_NODES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICE_NODES`
+.. |OBSERVABILITY_CHOICES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICES`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`

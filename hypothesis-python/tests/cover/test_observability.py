@@ -30,6 +30,7 @@ from hypothesis import (
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
+from hypothesis.internal.conjecture.data import Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
@@ -503,7 +504,7 @@ def test_metadata_to_json():
     def f(n):
         pass
 
-    with capture_observations() as observations:
+    with capture_observations(choices=True) as observations:
         f()
 
     observations = [obs for obs in observations if obs.type == "test_case"]
@@ -519,4 +520,11 @@ def test_metadata_to_json():
             "data_status",
             "interesting_origin",
             "choice_nodes",
+            "spans",
         }
+        assert observation.metadata.choice_nodes is not None
+
+        for span in observation.metadata.spans:
+            assert isinstance(span, Span)
+            assert 0 <= span.start <= len(observation.metadata.choice_nodes)
+            assert 0 <= span.end <= len(observation.metadata.choice_nodes)

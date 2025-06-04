@@ -59,7 +59,7 @@
         },
         "choice_nodes": {
             "type": ["array", "null"],
-            "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute may change or disappear without warning.\n\nThe sequence of choices made during this test case. This includes the choice value, as well as its constraints and whether it was forced or not. The choice sequence is a relatively low-level implementation detail of Hypothesis, and is exposed here for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence.\n\nOnly present if |OBSERVABILITY_CHOICE_NODES| is ``True``.",
+            "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute may change format or disappear without warning.\n\nThe sequence of choices made during this test case. This includes the choice value, as well as its constraints and whether it was forced or not.\n\nOnly present if |OBSERVABILITY_CHOICES| is ``True``.\n\n.. note::\n\n  The choice sequence is a relatively low-level implementation detail of Hypothesis, and is exposed in observability for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -77,12 +77,17 @@
                     },
                     "was_forced": {
                         "type": "boolean",
-                        "description": "Whether this choice was forced. As an implementation detail, Hypothesis occasionally requires that some choices take on a specific value, for instance to end generation of collection elements early for performance. These values are \"forced\", and have ``was_forced = True``."
+                        "description": "Whether this choice was forced. As an implementation detail, Hypothesis occasionally requires that some choices take on a specific value, for instance to end generation of collection elements early for performance. These values are called \"forced\", and have ``was_forced = True``."
                     }
                 },
                 "required": ["type", "value", "constraints", "was_forced"],
                 "additionalProperties": false
             }
+        },
+        "spans": {
+            "type": "array",
+            "items": {"type": "array"},
+            "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute may change format or disappear without warning.\n\nThe semantically-meaningful spans of the choice sequence of this test case.\n\nEach span has the format ``[label, start, end, discarded]``, where:\n\n* ``label`` is an opaque integer-value string shared by all spans drawn from a particular strategy.\n* ``start`` and ``end`` are indices into the choice sequence for this span, such that ``choices[start:end]`` are the corresponding choices.\n* ``discarded`` is a boolean indicating whether this span was discarded (see |PrimitiveProvider.span_end|).\n\nOnly present if |OBSERVABILITY_CHOICES| is ``True``.\n\n.. note::\n\n  Spans are a relatively low-level implementation detail of Hypothesis, and are exposed in observability for users building tools or research on top of Hypothesis. See |PrimitiveProvider| (and particularly |PrimitiveProvider.span_start| and |PrimitiveProvider.span_end|) for more details about spans."
         }
     },
     "required": ["traceback", "reproduction_decorator", "predicates", "backend", "sys_argv", "os_getpid", "imported_at", "data_status", "interesting_origin", "choice_nodes"],

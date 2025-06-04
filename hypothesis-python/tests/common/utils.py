@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.internal import observability
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
@@ -235,13 +236,18 @@ def raises_warning(expected_warning, match=None):
 
 
 @contextlib.contextmanager
-def capture_observations():
+def capture_observations(*, choices=None):
     ls: list[Observation] = []
     TESTCASE_CALLBACKS.append(ls.append)
+    if choices is not None:
+        observability.OBSERVABILITY_CHOICES = choices
+
     try:
         yield ls
     finally:
         TESTCASE_CALLBACKS.remove(ls.append)
+        if choices is not None:
+            observability.OBSERVABILITY_CHOICES = choices
 
 
 # Specifies whether we can represent subnormal floating point numbers.

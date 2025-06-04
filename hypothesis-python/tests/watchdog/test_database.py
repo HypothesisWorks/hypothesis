@@ -43,7 +43,7 @@ def test_database_listener_directory():
 
 
 # seen flaky on test-win; we get *three* of the same save events in the first
-# assertion, which...is baffling, and posibly a genuine bug (most likely in
+# assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
 @flaky(max_runs=2, min_passes=1)
 def test_database_listener_multiplexed(tmp_path):

@@ -45,7 +45,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    from hypothesis.internal.conjecture.data import ConjectureData, Status
+    from hypothesis.internal.conjecture.data import ConjectureData, Spans, Status
 
 
 @dataclass
@@ -159,6 +159,7 @@ class ObservationMetadata:
     data_status: "Status"
     interesting_origin: Optional[InterestingOrigin]
     choice_nodes: Optional[tuple[ChoiceNode, ...]]
+    spans: Optional["Spans"]
 
     def to_json(self) -> dict[str, Any]:
         data = {
@@ -173,6 +174,24 @@ class ObservationMetadata:
             "interesting_origin": self.interesting_origin,
             "choice_nodes": (
                 None if self.choice_nodes is None else nodes_to_json(self.choice_nodes)
+            ),
+            "spans": (
+                None
+                if self.spans is None
+                else [
+                    (
+                        # span.label is an int, but cast to string to avoid conversion
+                        # to float  (and loss of precision) for large label values.
+                        #
+                        # The value of this label is opaque to consumers anyway, so its
+                        # type shouldn't matter as long as it's consistent.
+                        str(span.label),
+                        span.start,
+                        span.end,
+                        span.discarded,
+                    )
+                    for span in self.spans
+                ]
             ),
         }
         # check that we didn't forget one
@@ -315,7 +334,8 @@ def make_testcase(
                 "backend": backend_metadata or {},
                 "data_status": data.status,
                 "interesting_origin": data.interesting_origin,
-                "choice_nodes": data.nodes if OBSERVABILITY_CHOICE_NODES else None,
+                "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
+                "spans": data.spans if OBSERVABILITY_CHOICES else None,
                 **_system_metadata(),
                 # unpack last so it takes precedence for duplicate keys
                 **(metadata or {}),
@@ -360,11 +380,12 @@ def _system_metadata() -> dict[str, Any]:
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
-#: If ``True``, include the ``metadata.choice_nodes`` key in test case
-#: observations.
+#: If ``True``, include the ``metadata.choice_nodes`` and ``metadata.spans`` keys
+#: in test case observations.
 #:
-#: ``False`` by default. ``metadata.choice_nodes`` can be substantial amount of
-#: data, and so must be opted-in to, even when observability is enabled.
+#: ``False`` by default. ``metadata.choice_nodes`` and ``metadata.spans`` can be
+#: a substantial amount of data, and so must be opted-in to, even when
+#: observability is enabled.
 #:
 #: .. warning::
 #:
@@ -372,9 +393,7 @@ OBSERVABILITY_COLLECT_COVERAGE = (
 #:     interface for this as of June 2025, and this attribute may disappear or
 #:     be renamed without notice.
 #:
-OBSERVABILITY_CHOICE_NODES = (
-    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICE_NODES" in os.environ
-)
+OBSERVABILITY_CHOICES = "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICES" in os.environ
 
 if OBSERVABILITY_COLLECT_COVERAGE is False and (
     sys.version_info[:2] >= (3, 12)
