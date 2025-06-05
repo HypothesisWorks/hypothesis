@@ -338,8 +338,9 @@ def run_conformance_test(
     *,
     context_manager_exceptions: Collection[type[BaseException]] = (),
     settings: Optional[Settings] = None,
-    _realize_objects: SearchStrategy[Any] = st.from_type(object)
-    | st.from_type(type).flatmap(st.from_type),
+    _realize_objects: SearchStrategy[Any] = (
+        st.from_type(object) | st.from_type(type).flatmap(st.from_type)
+    ),
 ) -> None:
     """
     Test that the given ``Provider`` class conforms to the |PrimitiveProvider|
