@@ -265,10 +265,9 @@ def test_too_many_constants():
 def test_module_too_large(tmp_path):
     module = ModuleType("module_too_large")
 
-    large_file = tmp_path / "large_module.py"
-    with large_file.open("w") as f:
-        f.write("a = 11231783\n\n")
-        f.write("#" * (512 * 1024 + 1))
+    large_file = tmp_path / "large_file.py"
+    large_file.write_text("a = 11231783\n\n", encoding="utf-8")
+    large_file.write_text("#" * (512 * 1024 + 1), encoding="utf-8")
 
     module.__file__ = str(large_file)
     assert constants_from_module(module) == Constants()
