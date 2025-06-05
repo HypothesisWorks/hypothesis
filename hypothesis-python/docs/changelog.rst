@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.1:
+
+--------------------
+6.135.1 - 2025-06-05
+--------------------
+
+|DirectoryBasedExampleDatabase| now removes empty directories after |ExampleDatabase.delete| is called.
+
 .. _v6.135.0:
 
 --------------------
