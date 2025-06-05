@@ -66,15 +66,13 @@ def test_does_not_shrink_on_replay_with_multiple_bugs():
         max_examples=1000,
     )
     @given(st.integers())
-    def test(i):
+    def test(n):
         nonlocal call_count, raised
         call_count += 1
-        if i > marker:
+        if n >= marker:
             raised = True
             raise AssertionError
-        # de-flake by preventing the possibility of hitting i == marker by
-        # chance on the first iteration
-        elif i == marker and raised:
+        elif n < marker and raised:
             raise AssertionError
 
     with pytest.raises(ExceptionGroup):
@@ -101,10 +99,10 @@ def test_will_always_shrink_if_previous_example_does_not_replay():
         max_examples=1000,
     )
     @given(st.integers(min_value=0))
-    def test(i):
+    def test(n):
         nonlocal last
-        if i not in good:
-            last = i
+        if n not in good:
+            last = n
             raise AssertionError
 
     for i in range(20):
