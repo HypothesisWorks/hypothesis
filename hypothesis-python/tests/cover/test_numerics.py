@@ -169,6 +169,9 @@ def test_consistent_decimal_error():
     with pytest.raises(InvalidArgument) as excinfo:
         check_can_generate_examples(decimals(bad))
     with pytest.raises(InvalidArgument) as excinfo2:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with decimal.localcontext(decimal.Context(traps=[])):
             check_can_generate_examples(decimals(bad))
     assert str(excinfo.value) == str(excinfo2.value)

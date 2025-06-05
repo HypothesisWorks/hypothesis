@@ -22,6 +22,9 @@ from tests.common.utils import Why, capture_out, fails, xfail_on_crosshair
 @contextmanager
 def capture_verbosity():
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with with_reporter(default_reporter):
             yield o
 

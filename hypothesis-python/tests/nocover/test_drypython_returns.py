@@ -199,5 +199,8 @@ def wrong_generic_func2(obj: _SecondBase[None, bool]):
 @pytest.mark.parametrize("func", [wrong_generic_func1, wrong_generic_func2])
 def test_several_generic_bases_wrong_functions(func):
     with temp_registered(AllConcrete, st.builds(AllConcrete)):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ResolutionFailed):
             check_can_generate_examples(st.builds(func))

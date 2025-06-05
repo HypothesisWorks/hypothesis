@@ -161,6 +161,9 @@ def test_custom_type_resolution_with_function():
 
 def test_custom_type_resolution_with_function_non_strategy():
     with temp_registered(UnknownType, lambda _: None):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ResolutionFailed):
             check_can_generate_examples(st.from_type(UnknownType))
         with pytest.raises(ResolutionFailed):

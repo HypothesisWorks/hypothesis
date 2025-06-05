@@ -303,6 +303,9 @@ class InvalidLifetime(TrivialProvider):
 
 def test_invalid_lifetime():
     with temp_register_backend("invalid_lifetime", InvalidLifetime):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(InvalidArgument):
             ConjectureRunner(
                 lambda: True, settings=settings(backend="invalid_lifetime")
@@ -649,17 +652,18 @@ def test_can_generate_from_all_available_providers(backend, strategy):
     def f(x):
         raise ValueError
 
-    with (
-        pytest.raises(ValueError),
-        (
+    with pytest.raises(ValueError):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with (
             pytest.warns(
                 HypothesisWarning, match="/dev/urandom is not available on windows"
             )
             if backend == "hypothesis-urandom" and WINDOWS
             else nullcontext()
-        ),
-    ):
-        f()
+        ):
+            f()
 
 
 def test_saves_on_fatal_error_with_backend():

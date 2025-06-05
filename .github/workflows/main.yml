@@ -30,6 +30,7 @@ jobs:
           - check-coverage
           - check-conjecture-coverage
           - check-py39-cover
+          - check-py39-oldparser
           - check-pypy39-cover
           - check-py310-cover
           - check-py310-nocover

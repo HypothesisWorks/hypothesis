@@ -852,20 +852,21 @@ class ConjectureRunner:
         return nullcontext()
 
     def run(self) -> None:
-        with (
-            local_settings(self.settings),
-            self.observe_for_provider(),
-        ):
-            try:
-                self._run()
-            except RunIsComplete:
-                pass
-            for v in self.interesting_examples.values():
-                self.debug_data(v)
-            self.debug(
-                "Run complete after %d examples (%d valid) and %d shrinks"
-                % (self.call_count, self.valid_examples, self.shrinks)
-            )
+        with local_settings(self.settings):
+            # NOTE: For compatibility with Python 3.9's LL(1)
+            # parser, this is written as a nested with-statement,
+            # instead of a compound one.
+            with self.observe_for_provider():
+                try:
+                    self._run()
+                except RunIsComplete:
+                    pass
+                for v in self.interesting_examples.values():
+                    self.debug_data(v)
+                self.debug(
+                    "Run complete after %d examples (%d valid) and %d shrinks"
+                    % (self.call_count, self.valid_examples, self.shrinks)
+                )
 
     @property
     def database(self) -> Optional[ExampleDatabase]:

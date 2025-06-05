@@ -45,6 +45,9 @@ def test_prints_seed_only_on_healthcheck(
         assert fail_healthcheck
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(expected_exc):
             test()
 
@@ -72,6 +75,9 @@ def test_uses_global_force(monkeypatch):
 
     for _ in range(2):
         with capture_out() as o:
+            # NOTE: For compatibility with Python 3.9's LL(1)
+            # parser, this is written as a nested with-statement,
+            # instead of a compound one.
             with pytest.raises(ValueError):
                 test()
         output.append(o.getvalue())
@@ -92,6 +98,9 @@ def test_does_print_on_reuse_from_database():
         raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(FailedHealthCheck):
             test()
 
@@ -100,6 +109,9 @@ def test_does_print_on_reuse_from_database():
     passes_healthcheck = True
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
 
@@ -109,6 +121,9 @@ def test_does_print_on_reuse_from_database():
     passes_healthcheck = False
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(FailedHealthCheck):
             test()
 

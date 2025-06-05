@@ -210,6 +210,9 @@ def test_can_patch_up_examples():
 
 def test_optimiser_when_test_grows_buffer_to_overflow():
     with deterministic_PRNG():
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with buffer_size_limit(2):
 
             def test(data):

@@ -67,6 +67,9 @@ def test_does_print_verbose_in_debug():
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
     read, write = os.pipe()
     with open(read, encoding="ascii") as read:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with open(write, "w", encoding="ascii") as write:
             monkeypatch.setattr(sys, "stdout", write)
             reporting.default("☃")

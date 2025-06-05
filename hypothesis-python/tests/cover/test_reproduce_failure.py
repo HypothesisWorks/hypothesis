@@ -157,6 +157,9 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -170,6 +173,9 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -184,6 +190,9 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
             raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -201,6 +210,9 @@ def test_does_not_print_reproduction_if_told_not_to():
         raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
 
@@ -227,6 +239,9 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
         assert data.draw(st.just(False))
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_always_fails()
 

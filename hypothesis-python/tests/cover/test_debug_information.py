@@ -27,6 +27,9 @@ def test_reports_passes():
         assert i < 10
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
 
