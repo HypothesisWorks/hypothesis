@@ -512,7 +512,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         try:
             self._value_path(key, value).unlink()
         except OSError:
-            pass
+            return
 
         # try deleting the key dir, which will only succeed if the dir is empty
         # (i.e. ``value`` was the last value in this key).
@@ -522,11 +522,9 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             pass
         else:
             # if the deletion succeeded, also delete this key entry from metakeys.
-
-            # if we just removed the metakeys dir, there's no need to delete it
-            # from the (now-nonexistent) metakeys key; it won't be there.
-            if self._key_path(key).name != self._metakeys_hash:
-                self.delete(self._metakeys_name, key)
+            # (if this key happens to be the metakey itself, this deletion will
+            # fail; that's ok and faster than checking for this rare case.)
+            self.delete(self._metakeys_name, key)
 
     def _start_listening(self) -> None:
         try:
