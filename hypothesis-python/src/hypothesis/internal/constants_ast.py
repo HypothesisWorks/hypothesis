@@ -201,7 +201,7 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
     except Exception:
         return Constants()
 
-    if limit and len(source_bytes) > 512 * 1024:  # pragma: no cover
+    if limit and len(source_bytes) > 512 * 1024:
         # Skip files over 512kb. For reference, the largest source file
         # in Hypothesis is strategies/_internal/core.py at 107kb at time
         # of writing.
