@@ -514,6 +514,11 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         except OSError:
             pass
 
+        try:
+            self._key_path(key).rmdir()
+        except OSError:
+            pass
+
     def _start_listening(self) -> None:
         try:
             from watchdog.events import (

@@ -849,3 +849,16 @@ def test_database_equal(db1, db2):
 )
 def test_database_not_equal(db1, db2):
     assert db1 != db2
+
+
+def test_directory_db_removes_empty_dirs(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    db.save(b"k1", b"v2")
+    assert db._key_path(b"k1").exists()
+
+    db.delete(b"k1", b"v1")
+    assert db._key_path(b"k1").exists()
+
+    db.delete(b"k1", b"v2")
+    assert not db._key_path(b"k1").exists()
