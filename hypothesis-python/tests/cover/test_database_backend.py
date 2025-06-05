@@ -738,13 +738,13 @@ def test_metakeys(tmp_path):
     db.save(b"k1", b"v2")
     assert set(db.fetch(db._metakeys_name)) == {b"k1"}
 
-    # deleting all the values from a key doesn't (currently?) clean up that key
+    # deleting all the values from a key removes that metakey
     db.delete(b"k1", b"v1")
     db.delete(b"k1", b"v2")
-    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+    assert set(db.fetch(db._metakeys_name)) == set()
 
     db.save(b"k2", b"v1")
-    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+    assert set(db.fetch(db._metakeys_name)) == {b"k2"}
 
 
 class TracksListens(ExampleDatabase):
@@ -856,9 +856,12 @@ def test_directory_db_removes_empty_dirs(tmp_path):
     db.save(b"k1", b"v1")
     db.save(b"k1", b"v2")
     assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
 
     db.delete(b"k1", b"v1")
     assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
 
     db.delete(b"k1", b"v2")
     assert not db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == set()

@@ -514,10 +514,19 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         except OSError:
             pass
 
+        # try deleting the key dir, which will only succeed if the dir is empty
+        # (i.e. ``value`` was the last value in this key).
         try:
             self._key_path(key).rmdir()
         except OSError:
             pass
+        else:
+            # if the deletion succeeded, also delete this key entry from metakeys.
+
+            # if we just removed the metakeys dir, there's no need to delete it
+            # from the (now-nonexistent) metakeys key; it won't be there.
+            if self._key_path(key).name != self._metakeys_hash:
+                self.delete(self._metakeys_name, key)
 
     def _start_listening(self) -> None:
         try:
