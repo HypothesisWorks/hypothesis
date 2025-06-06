@@ -598,7 +598,7 @@ class PrimitiveProvider(abc.ABC):
 
         Providers can optionally track this data to learn which sub-sequences
         of draws correspond to a higher-level object, recovering the parse tree.
-        ``label`` is an opaque integer, which will be shared by all spans drawn
+        ``label`` is an opaque integer, which is shared by all spans drawn
         from a particular strategy.
 
         This method is called from ``ConjectureData.start_span()``.
