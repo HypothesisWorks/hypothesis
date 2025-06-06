@@ -208,7 +208,10 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
         return Constants()
 
     source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
-    cache_p = storage_directory("constants") / source_hash
+    # separate cache files for each limit param. see discussion in pull/4398
+    cache_p = storage_directory("constants") / (
+        source_hash + ("" if limit else "_nolimit")
+    )
     try:
         return _constants_from_source(cache_p.read_bytes(), limit=limit)
     except Exception:
