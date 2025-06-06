@@ -598,7 +598,7 @@ class PrimitiveProvider(abc.ABC):
 
         Spans are a depth-first tree structure. A span is opened by a call to
         |PrimitiveProvider.span_start|, and a call to |PrimitiveProvider.span_end|
-        closes the most recently opened span. So the following sequence:
+        closes the most recently opened span. So the following sequence of calls:
 
         .. code-block:: python
 
@@ -621,13 +621,13 @@ class PrimitiveProvider(abc.ABC):
         Hypothesis uses spans to denote "semantically meaningful" sequences of
         choices. For instance, Hypothesis opens a span for the sequence of choices
         made while drawing from each strategy. Not every span corresponds to a
-        strategy:; the generation of e.g. each element in |st.lists| is also marked
+        strategy; the generation of e.g. each element in |st.lists| is also marked
         with a span, among others.
 
         ``label`` is an opaque integer, which has no defined semantics.
         The only guarantee made by Hypothesis is that all spans with the same
-        "meaning" will share the same ``label``. For instance, spans from the
-        same strategy share the same label, as does e.g. the span for |st.lists|
+        "meaning" will share the same ``label``. So all spans from the same
+        strategy will share the same label, as will e.g. the spans for |st.lists|
         elements.
 
         Providers can track calls to |PrimitiveProvider.span_start| and
@@ -639,14 +639,16 @@ class PrimitiveProvider(abc.ABC):
         being used in what contexts.
 
         It is possible for Hypothesis to start and immediately stop a span,
-        without calling a ``draw_*`` method. These spans contain zero choices.
+        without calling a ``draw_*`` method in between. These spans contain zero
+        choices.
 
         Hypothesis will always balance the number of calls to
         |PrimitiveProvider.span_start| and |PrimitiveProvider.span_end|. A call
         to |PrimitiveProvider.span_start| will always be followed by a call to
         |PrimitiveProvider.span_end| before the end of the test case.
 
-        |PrimitiveProvider.span_start| is called from ``ConjectureData.start_span()``.
+        |PrimitiveProvider.span_start| is called from ``ConjectureData.start_span()``
+        internally.
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
@@ -656,7 +658,8 @@ class PrimitiveProvider(abc.ABC):
         as unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        |PrimitiveProvider.span_end| is called from ``ConjectureData.stop_span()``.
+        |PrimitiveProvider.span_end| is called from ``ConjectureData.stop_span()``
+        internally.
         """
 
 
