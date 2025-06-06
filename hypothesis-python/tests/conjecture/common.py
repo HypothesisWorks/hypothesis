@@ -160,6 +160,12 @@ def draw_value(choice_type, constraints):
 
 
 @st.composite
+def choices(draw):
+    (choice_type, constraints) = draw(choice_types_constraints())
+    return draw_value(choice_type, constraints)
+
+
+@st.composite
 def nodes(draw, *, was_forced=None, choice_types=None):
     if choice_types is None:
         (choice_type, constraints) = draw(choice_types_constraints())

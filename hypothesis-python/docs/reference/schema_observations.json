@@ -3,7 +3,6 @@
     "description": "PBT Observations define a standard way to communicate what happened when property-based tests were run.  They describe test cases, or general notifications classified as info, alert, or error messages.",
     "oneOf": [
         {
-            "title": "Test case",
             "description": "Describes the inputs to and result of running some test function on a particular input.  The test might have passed, failed, or been abandoned part way through (e.g. because we failed a |.filter| condition).",
             "type": "object",
             "properties": {
@@ -69,7 +68,6 @@
             "additionalProperties": false
         },
         {
-            "title": "Information message",
             "description": "Info, alert, and error messages correspond to a group of test cases or the overall run, and are intended for humans rather than machine analysis.",
             "type": "object",
             "properties": {
