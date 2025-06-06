@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+from unittest import skipIf
 from uuid import UUID
 
 import django
 from django.conf import settings as django_settings
-from django.contrib.auth.models import User
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -25,6 +25,11 @@ from hypothesis.extra.django import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import just, lists
+
+if "django.contrib.auth" in django_settings.INSTALLED_APPS:
+    from django.contrib.auth.models import User
+else:
+    User = None
 
 from tests.common.debug import check_can_generate_examples
 from tests.django.toystore.models import (
@@ -184,6 +189,7 @@ class TestRestrictedFields(TestCase):
         self.assertTrue(instance.non_blank_text_field)
 
 
+@skipIf(not User, "contrib.auth not installed")
 class TestValidatorInference(TestCase):
     @given(from_model(User))
     def test_user_issue_1112_regression(self, user):
