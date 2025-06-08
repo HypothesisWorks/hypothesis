@@ -280,6 +280,9 @@ def test_ga_no_artifact(tmp_path):
 
 def test_ga_corrupted_artifact():
     """Tests that corrupted artifacts are properly detected and warned about."""
+    # NOTE: For compatibility with Python 3.9's LL(1)
+    # parser, this is written as a nested with-statement,
+    # instead of a compound one.
     with ga_empty_artifact() as (path, zip_path):
         # Corrupt the CRC of the zip file
         with open(zip_path, "rb+") as f:
@@ -296,6 +299,9 @@ def test_ga_deletes_old_artifacts():
     """Tests that old artifacts are automatically deleted."""
     now = datetime.now(timezone.utc)
     with ga_empty_artifact(date=now) as (path, file_now):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
             _,
             file_old,

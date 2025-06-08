@@ -692,6 +692,9 @@ def _dict_pprinter_factory(
 
         if cycle:
             return p.text("{...}")
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with p.group(1, start, end):
             # If the dict contains both "" and b"" (empty string and empty bytes), we
             # ignore the BytesWarning raised by `python -bb` mode.  We can't use

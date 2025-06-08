@@ -24,8 +24,12 @@ from tests.common.utils import (
 
 
 def capture_reports(test):
-    with capture_out() as o, pytest.raises(ExceptionGroup) as err:
-        test()
+    with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(ExceptionGroup) as err:
+            test()
 
     return o.getvalue() + "\n\n".join(
         f"{e!r}\n" + "\n".join(getattr(e, "__notes__", []))
