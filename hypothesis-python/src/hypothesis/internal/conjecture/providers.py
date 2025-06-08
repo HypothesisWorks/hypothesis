@@ -596,12 +596,59 @@ class PrimitiveProvider(abc.ABC):
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
         """Marks the beginning of a semantically meaningful span of choices.
 
-        Providers can optionally track this data to learn which sub-sequences
-        of draws correspond to a higher-level object, recovering the parse tree.
-        ``label`` is an opaque integer, which will be shared by all spans drawn
-        from a particular strategy.
+        Spans are a depth-first tree structure. A span is opened by a call to
+        |PrimitiveProvider.span_start|, and a call to |PrimitiveProvider.span_end|
+        closes the most recently opened span. So the following sequence of calls:
 
-        This method is called from ``ConjectureData.start_span()``.
+        .. code-block:: python
+
+            span_start(label=1)
+            n1 = draw_integer()
+            span_start(label=2)
+            b1 = draw_boolean()
+            n2 = draw_integer()
+            span_end()
+            f1 = draw_float()
+            span_end()
+
+        produces the following two spans of choices:
+
+        .. code-block::
+
+            1: [n1, b1, n2, f1]
+            2: [b1, n2]
+
+        Hypothesis uses spans to denote "semantically meaningful" sequences of
+        choices. For instance, Hypothesis opens a span for the sequence of choices
+        made while drawing from each strategy. Not every span corresponds to a
+        strategy; the generation of e.g. each element in |st.lists| is also marked
+        with a span, among others.
+
+        ``label`` is an opaque integer, which has no defined semantics.
+        The only guarantee made by Hypothesis is that all spans with the same
+        "meaning" will share the same ``label``. So all spans from the same
+        strategy will share the same label, as will e.g. the spans for |st.lists|
+        elements.
+
+        Providers can track calls to |PrimitiveProvider.span_start| and
+        |PrimitiveProvider.span_end| to learn something about the semantics of
+        the test's choice sequence. For instance, a provider could track the depth
+        of the span tree, or the number of unique labels, which says something about
+        the complexity of the choices being generated. Or a provider could track
+        the span tree across test cases in order to determine what strategies are
+        being used in what contexts.
+
+        It is possible for Hypothesis to start and immediately stop a span,
+        without calling a ``draw_*`` method in between. These spans contain zero
+        choices.
+
+        Hypothesis will always balance the number of calls to
+        |PrimitiveProvider.span_start| and |PrimitiveProvider.span_end|. A call
+        to |PrimitiveProvider.span_start| will always be followed by a call to
+        |PrimitiveProvider.span_end| before the end of the test case.
+
+        |PrimitiveProvider.span_start| is called from ``ConjectureData.start_span()``
+        internally.
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
@@ -611,7 +658,8 @@ class PrimitiveProvider(abc.ABC):
         as unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        This method is called from ``ConjectureData.stop_span()``.
+        |PrimitiveProvider.span_end| is called from ``ConjectureData.stop_span()``
+        internally.
         """
 
 

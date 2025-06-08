@@ -116,17 +116,23 @@
 .. |PrimitiveProvider.draw_string| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_string`
 .. |PrimitiveProvider.draw_bytes| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.draw_bytes`
 .. |PrimitiveProvider.on_observation| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.on_observation`
+.. |PrimitiveProvider.observe_test_case| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.observe_test_case`
+.. |PrimitiveProvider.observe_information_messages| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.observe_information_messages`
 .. |PrimitiveProvider.per_test_case_context_manager| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.per_test_case_context_manager`
 .. |PrimitiveProvider.add_observability_callback| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.add_observability_callback`
+.. |PrimitiveProvider.span_start| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_start`
+.. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
+.. |OBSERVABILITY_CHOICES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICES`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`
 .. |BackendCannotProceed| replace:: :exc:`~hypothesis.errors.BackendCannotProceed`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
+.. |@precondition| replace:: :func:`@precondition <hypothesis.stateful.precondition>`
 .. |RuleBasedStateMachine| replace:: :class:`~hypothesis.stateful.RuleBasedStateMachine`
 .. |run_state_machine_as_test| replace:: :func:`~hypothesis.stateful.run_state_machine_as_test`
 

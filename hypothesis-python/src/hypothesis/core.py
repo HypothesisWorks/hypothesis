@@ -675,6 +675,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         "Falsifying example", "Falsifying explicit example", 1
                     )
 
+                empty_data.freeze()
                 tc = make_testcase(
                     run_start=state._start_timestamp,
                     property=state.test_identifier,
@@ -1310,6 +1311,7 @@ class StateForActualGivenExecution:
                     data._observability_args = {}
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                data.freeze()
                 tc = make_testcase(
                     run_start=self._start_timestamp,
                     property=self.test_identifier,
@@ -1506,6 +1508,7 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
+                ran_example.freeze()
                 # log our observability line for the final failing example
                 tc = make_testcase(
                     run_start=self._start_timestamp,
@@ -1529,11 +1532,7 @@ class StateForActualGivenExecution:
                         f"{reproduction_decorator(falsifying_example.choices)} "
                         "as a decorator on your test case"
                     )
-                # Mostly useful for ``find`` and ensuring that objects that
-                # hold on to a reference to ``data`` know that it's now been
-                # finished and they can't draw more data from it.
-                ran_example.freeze()  # pragma: no branch
-                # No branch is possible here because we never have an active exception.
+
         _raise_to_user(
             errors_to_report,
             self.settings,
@@ -2104,6 +2103,7 @@ def given(
                     raise
                 finally:
                     if TESTCASE_CALLBACKS:
+                        data.freeze()
                         tc = make_testcase(
                             run_start=state._start_timestamp,
                             property=state.test_identifier,
