@@ -22,6 +22,8 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
     ConstantVisitor,
+    TooManyConstants,
+    _constants_from_source,
     constants_from_module,
     is_local_module_file,
 )
@@ -44,7 +46,7 @@ constants_classes = st.builds(
 
 
 def constants_from_ast(tree):
-    visitor = ConstantVisitor()
+    visitor = ConstantVisitor(limit=True)
     visitor.visit(tree)
     return visitor.constants
 
@@ -234,6 +236,40 @@ def test_ignores_ast_parse_error(tmp_path):
 @given(constants_classes)
 def test_constant_visitor_roundtrips_string(constants):
     # our files in storage_directory("constants") rely on this roundtrip
-    visitor = ConstantVisitor()
+    visitor = ConstantVisitor(limit=True)
     visitor.visit(ast.parse(str(set(constants))))
     assert visitor.constants == constants
+
+
+def test_too_many_constants():
+    visitor = ConstantVisitor(limit=True)
+    # start at n=1000 to avoid ConstantVisitor ignoring small integers
+    s = "; ".join(
+        f"n = {i}" for i in range(1000, 1000 + ConstantVisitor.CONSTANTS_LIMIT + 1)
+    )
+    # visitor should raise on too many constants
+    with pytest.raises(TooManyConstants):
+        visitor.visit(ast.parse(s))
+
+    # and also _constants_from_source should return empty on too many constants
+    assert _constants_from_source(s, limit=True) == Constants()
+
+    # but it parses fine with limit=False
+    visitor = ConstantVisitor(limit=False)
+    visitor.visit(ast.parse(s))
+    assert _constants_from_source(s, limit=False) == Constants(
+        integers=set(range(1000, 1000 + ConstantVisitor.CONSTANTS_LIMIT + 1))
+    )
+
+
+def test_module_too_large(tmp_path):
+    constant = 11231783
+
+    p = tmp_path / "large_file.py"
+    content = f"a = {constant}\n\n" + "#" * (512 * 1024 + 1)
+    p.write_text(content, encoding="utf-8")
+
+    module = ModuleType("large_module")
+    module.__file__ = str(p)
+    assert constants_from_module(module) == Constants()
+    assert constants_from_module(module, limit=False) == Constants(integers={constant})

@@ -98,12 +98,24 @@ class Constants:
         )
 
 
+class TooManyConstants(Exception):
+    # a control flow exception which we raise in ConstantsVisitor when the
+    # number of constants in a module gets too large.
+    pass
+
+
 class ConstantVisitor(NodeVisitor):
-    def __init__(self):
+    CONSTANTS_LIMIT: int = 1024
+
+    def __init__(self, *, limit: bool):
         super().__init__()
         self.constants = Constants()
+        self.limit = limit
 
     def _add_constant(self, value: object) -> None:
+        if self.limit and len(self.constants) >= self.CONSTANTS_LIMIT:
+            raise TooManyConstants
+
         if isinstance(value, str) and (
             value.isspace()
             or value == ""
@@ -166,15 +178,22 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def _constants_from_source(source: Union[str, bytes]) -> Constants:
+def _constants_from_source(source: Union[str, bytes], *, limit: bool) -> Constants:
     tree = ast.parse(source)
-    visitor = ConstantVisitor()
-    visitor.visit(tree)
+    visitor = ConstantVisitor(limit=limit)
+
+    try:
+        visitor.visit(tree)
+    except TooManyConstants:
+        # in the case of an incomplete collection, return nothing, to avoid
+        # muddying caches etc.
+        return Constants()
+
     return visitor.constants
 
 
 @lru_cache(4096)
-def constants_from_module(module: ModuleType) -> Constants:
+def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constants:
     try:
         module_file = inspect.getsourcefile(module)
         # use type: ignore because we know this might error
@@ -182,17 +201,26 @@ def constants_from_module(module: ModuleType) -> Constants:
     except Exception:
         return Constants()
 
+    if limit and len(source_bytes) > 512 * 1024:
+        # Skip files over 512kb. For reference, the largest source file
+        # in Hypothesis is strategies/_internal/core.py at 107kb at time
+        # of writing.
+        return Constants()
+
     source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
-    cache_p = storage_directory("constants") / source_hash
+    # separate cache files for each limit param. see discussion in pull/4398
+    cache_p = storage_directory("constants") / (
+        source_hash + ("" if limit else "_nolimit")
+    )
     try:
-        return _constants_from_source(cache_p.read_bytes())
+        return _constants_from_source(cache_p.read_bytes(), limit=limit)
     except Exception:
         # if the cached location doesn't exist, or it does exist but there was
         # a problem reading it, fall back to standard computation of the constants
         pass
 
     try:
-        constants = _constants_from_source(source_bytes)
+        constants = _constants_from_source(source_bytes, limit=limit)
     except Exception:
         # A bunch of things can go wrong here.
         # * ast.parse may fail on the source code
