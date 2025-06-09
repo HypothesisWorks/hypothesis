@@ -70,9 +70,9 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     assert result.ret == 0
 
 
-def get_line_num(token, result, skip_n=0):
+def get_line_num(token, lines, skip_n=0):
     skipped = 0
-    for i, line in enumerate(result.stdout.lines):
+    for i, line in enumerate(lines):
         if token in line:
             if skip_n == skipped:
                 return i
@@ -96,12 +96,14 @@ def test_healthcheck_traceback_is_hidden(x):
 def test_healthcheck_traceback_is_hidden(testdir, monkeypatch):
     monkeypatch.delenv("CI", raising=False)
     script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
-    result = testdir.runpytest(script, "--verbose")
+    lines = testdir.runpytest(script, "--verbose").stdout.lines
     def_token = "__ test_healthcheck_traceback_is_hidden __"
     timeout_token = ": FailedHealthCheck"
-    def_line = get_line_num(def_token, result)
-    timeout_line = get_line_num(timeout_token, result)
-    assert timeout_line - def_line == 9
+    def_line = get_line_num(def_token, lines)
+    timeout_line = get_line_num(timeout_token, lines)
+    assert timeout_line - def_line == (
+        10 if tuple(map(int, pytest.__version__.split(".")[:2])) >= (8, 4) else 9
+    )
 
 
 COMPOSITE_IS_NOT_A_TEST = """
