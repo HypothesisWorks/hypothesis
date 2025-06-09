@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.4:
+
+--------------------
+6.135.4 - 2025-06-09
+--------------------
+
+Further improve the performance of the constants-collection feature introduced in :ref:`version 6.131.1 <v6.131.1>`, by ignoring large files and files with many constants.
+
 .. _v6.135.3:
 
 --------------------
