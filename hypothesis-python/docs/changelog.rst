@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.5:
+
+--------------------
+6.135.5 - 2025-06-10
+--------------------
+
+Improve the error message when applying |@given| to a :pypi:`pytest` fixture with pytest 8.4.0.
+
 .. _v6.135.4:
 
 --------------------
