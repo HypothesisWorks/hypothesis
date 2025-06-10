@@ -101,9 +101,9 @@ def test_healthcheck_traceback_is_hidden(testdir, monkeypatch):
     timeout_token = ": FailedHealthCheck"
     def_line = get_line_num(def_token, lines)
     timeout_line = get_line_num(timeout_token, lines)
-    assert timeout_line - def_line == (
-        10 if tuple(map(int, pytest.__version__.split(".")[:2])) >= (8, 4) else 9
-    )
+    # 10 on pytest 8.4.0 combined with py3{9, 10} or 3.13 free-threading (but
+    # not with 3.13 normal??)
+    assert timeout_line - def_line in {9, 10}
 
 
 COMPOSITE_IS_NOT_A_TEST = """

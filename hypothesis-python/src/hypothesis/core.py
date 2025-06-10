@@ -1792,7 +1792,7 @@ def given(
             and isinstance(
                 test, sys.modules["_pytest"].fixtures.FixtureFunctionDefinition
             )
-        ):
+        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
             raise InvalidArgument("@given cannot be applied to a pytest fixture")
 
         given_arguments = tuple(_given_arguments)
