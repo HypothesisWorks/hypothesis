@@ -1781,7 +1781,20 @@ def given(
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
-            raise InvalidArgument("@given cannot be applied to a class.")
+            raise InvalidArgument("@given cannot be applied to a class")
+
+        if (
+            "_pytest" in sys.modules
+            and (
+                tuple(map(int, sys.modules["_pytest"].__version__.split(".")[:2]))
+                >= (8, 4)
+            )
+            and isinstance(
+                test, sys.modules["_pytest"].fixtures.FixtureFunctionDefinition
+            )
+        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+            raise InvalidArgument("@given cannot be applied to a pytest fixture")
+
         given_arguments = tuple(_given_arguments)
         given_kwargs = dict(_given_kwargs)
 
