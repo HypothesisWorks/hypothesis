@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-This patch corrects f-string formatting in error messages `_array_helpers.py`.
+This patch corrects the f-string formatting of a few array-related error messages.
