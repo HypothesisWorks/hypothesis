@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.6:
+
+--------------------
+6.135.6 - 2025-06-11
+--------------------
+
+This patch corrects the f-string formatting of a few array-related error messages.
+
 .. _v6.135.5:
 
 --------------------
