@@ -43,11 +43,11 @@ try:
 except ImportError:
     black = None  # type: ignore
 
-HEADER = f"""\
+HEADER = """\
 From HEAD Mon Sep 17 00:00:00 2001
-From: Hypothesis {__version__} <no-reply@hypothesis.works>
-Date: {{when:%a, %d %b %Y %H:%M:%S}}
-Subject: [PATCH] {{msg}}
+From: {author}
+Date: {when:%a, %d %b %Y %H:%M:%S}
+Subject: [PATCH] {msg}
 
 ---
 """
@@ -235,7 +235,13 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
     return (str(fname), before, indent(after.code, prefix=prefix))
 
 
-def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
+def make_patch(
+    triples,
+    *,
+    msg="Hypothesis: add explicit examples",
+    when=None,
+    author=f"Hypothesis {__version__} <no-reply@hypothesis.works>",
+):
     """Create a patch for (fname, before, after) triples."""
     assert triples, "attempted to create empty patch"
     when = when or datetime.now(tz=timezone.utc)
@@ -244,7 +250,7 @@ def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
     for fname, before, after in triples:
         by_fname.setdefault(Path(fname), []).append((before, after))
 
-    diffs = [HEADER.format(msg=msg, when=when)]
+    diffs = [HEADER.format(msg=msg, when=when, author=author)]
     for fname, changes in sorted(by_fname.items()):
         source_before = source_after = fname.read_text(encoding="utf-8")
         for before, after in changes:
