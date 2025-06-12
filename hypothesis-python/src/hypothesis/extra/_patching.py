@@ -141,20 +141,38 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
 
 
 def get_patch_for(func, failing_examples, *, strip_via=()):
-    # Skip this if we're unable to find the location or source of this function.
+    # Skip this if we're unable to find the location of this function.
     try:
         module = sys.modules[func.__module__]
-        fname = Path(module.__file__).relative_to(Path.cwd())
-        before = inspect.getsource(func)
+        file_path = Path(module.__file__)
     except Exception:
         return None
 
+    fname = (
+        file_path.relative_to(Path.cwd())
+        if file_path.is_relative_to(Path.cwd())
+        else file_path
+    )
+    patch = _get_patch_for(
+        func, failing_examples, strip_via=strip_via, namespace=module.__dict__
+    )
+    if patch is None:
+        return None
+
+    (before, after) = patch
+    return (str(fname), before, after)
+
+
+# split out for easier testing of patches in hypofuzz, where the function to
+# apply the patch to may not be loaded in sys.modules.
+def _get_patch_for(func, failing_examples, *, strip_via=(), namespace):
+    try:
+        before = inspect.getsource(func)
+    except Exception:  # pragma: no cover
+        return None
+
     modules_in_test_scope = sorted(
-        (
-            (k, v)
-            for (k, v) in module.__dict__.items()
-            if isinstance(v, types.ModuleType)
-        ),
+        ((k, v) for (k, v) in namespace.items() if isinstance(v, types.ModuleType)),
         key=lambda kv: len(kv[1].__name__),
     )
 
@@ -180,7 +198,7 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
                     isinstance(anode, ast.Name)
                     and isinstance(anode.ctx, ast.Load)
                     and anode.id not in names
-                    and anode.id not in module.__dict__
+                    and anode.id not in namespace
                 ):
                     for k, v in modules_in_test_scope:
                         if anode.id in v.__dict__:
@@ -211,8 +229,8 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         return None
 
     if (
-        module.__dict__.get("hypothesis") is sys.modules["hypothesis"]
-        and "given" not in module.__dict__  # more reliably present than `example`
+        namespace.get("hypothesis") is sys.modules["hypothesis"]
+        and "given" not in namespace  # more reliably present than `example`
     ):
         decorator_func = "hypothesis.example"
     else:
@@ -232,7 +250,7 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         dec=decorator_func,
         width=88 - len(prefix),  # to match Black's default formatting
     ).transform_module(node)
-    return (str(fname), before, indent(after.code, prefix=prefix))
+    return (before, indent(after.code, prefix=prefix))
 
 
 def make_patch(
