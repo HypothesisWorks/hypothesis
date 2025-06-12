@@ -158,7 +158,7 @@ intersphinx_mapping = {
         "http://docs.djangoproject.com/en/stable/_objects/",
     ),
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
-    "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
+    "redis": ("https://redis.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),

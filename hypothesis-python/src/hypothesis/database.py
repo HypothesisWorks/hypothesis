@@ -567,7 +567,13 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 key_hash = value_path.parent.name
 
                 if key_hash == _metakeys_hash:
-                    hash_to_key[value_path.name] = value_path.read_bytes()
+                    try:
+                        hash_to_key[value_path.name] = value_path.read_bytes()
+                    except OSError:  # pragma: no cover
+                        # this might occur if all the values in a key have been
+                        # deleted and DirectoryBasedExampleDatabase removes its
+                        # metakeys entry (which is `value_path` here`).
+                        pass
                     return
 
                 key = hash_to_key.get(key_hash)
