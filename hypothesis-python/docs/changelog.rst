@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.9:
+
+--------------------
+6.135.9 - 2025-06-13
+--------------------
+
+Refactor some internal code related to patches to make it easier to test.
+
 .. _v6.135.8:
 
 --------------------
