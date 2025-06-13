@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.8:
+
+--------------------
+6.135.8 - 2025-06-13
+--------------------
+
+Add type hints to internal code for patching.
+
 .. _v6.135.7:
 
 --------------------
