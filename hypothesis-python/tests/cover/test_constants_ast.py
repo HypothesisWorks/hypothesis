@@ -17,7 +17,7 @@ from types import ModuleType
 
 import pytest
 
-from hypothesis import given, note, strategies as st
+from hypothesis import example, given, note, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
@@ -232,9 +232,6 @@ def test_ignores_ast_parse_error(tmp_path):
         ast.parse(source)
 
     assert constants_from_module(module) == Constants()
-
-
-from hypothesis import example
 
 
 @example(
