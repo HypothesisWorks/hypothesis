@@ -192,6 +192,10 @@ def _constants_from_source(source: Union[str, bytes], *, limit: bool) -> Constan
     return visitor.constants
 
 
+def _constants_file_str(constants: Constants) -> str:
+    return str(sorted(constants, key=lambda v: (str(type(v)), v)))
+
+
 @lru_cache(4096)
 def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constants:
     try:
@@ -236,7 +240,7 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
             # somewhat arbitrary sort order. The cache file doesn't *have* to be
             # stable... but it is aesthetically pleasing, and means we could rely
             # on it in the future!
-            + str(sorted(constants, key=lambda v: (str(type(v)), v))),
+            + _constants_file_str(constants),
             encoding="utf-8",
         )
     except Exception:  # pragma: no cover

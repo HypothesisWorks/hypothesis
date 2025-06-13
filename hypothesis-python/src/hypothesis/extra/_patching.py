@@ -45,11 +45,11 @@ try:
 except ImportError:
     black = None  # type: ignore
 
-HEADER = f"""\
+HEADER = """\
 From HEAD Mon Sep 17 00:00:00 2001
-From: Hypothesis {__version__} <no-reply@hypothesis.works>
-Date: {{when:%a, %d %b %Y %H:%M:%S}}
-Subject: [PATCH] {{msg}}
+From: {author}
+Date: {when:%a, %d %b %Y %H:%M:%S}
+Subject: [PATCH] {msg}
 
 ---
 """
@@ -165,20 +165,44 @@ def get_patch_for(
     *,
     strip_via: tuple[str, ...] = (),
 ) -> Optional[tuple[str, str, str]]:
-    # Skip this if we're unable to find the location or source of this function.
+    # Skip this if we're unable to find the location of this function.
     try:
         module = sys.modules[func.__module__]
-        fname = Path(module.__file__).relative_to(Path.cwd())  # type: ignore
-        before = inspect.getsource(func)
+        file_path = Path(module.__file__)  # type: ignore
     except Exception:
         return None
 
+    fname = (
+        file_path.relative_to(Path.cwd())
+        if file_path.is_relative_to(Path.cwd())
+        else file_path
+    )
+    patch = _get_patch_for(
+        func, examples, strip_via=strip_via, namespace=module.__dict__
+    )
+    if patch is None:
+        return None
+
+    (before, after) = patch
+    return (str(fname), before, after)
+
+
+# split out for easier testing of patches in hypofuzz, where the function to
+# apply the patch to may not be loaded in sys.modules.
+def _get_patch_for(
+    func: Any,
+    examples: Sequence[tuple[str, str]],
+    *,
+    strip_via: tuple[str, ...] = (),
+    namespace: dict[str, Any],
+) -> Optional[tuple[str, str]]:
+    try:
+        before = inspect.getsource(func)
+    except Exception:  # pragma: no cover
+        return None
+
     modules_in_test_scope = sorted(
-        (
-            (k, v)
-            for (k, v) in module.__dict__.items()
-            if isinstance(v, types.ModuleType)
-        ),
+        ((k, v) for (k, v) in namespace.items() if isinstance(v, types.ModuleType)),
         key=lambda kv: len(kv[1].__name__),
     )
 
@@ -204,7 +228,7 @@ def get_patch_for(
                     isinstance(anode, ast.Name)
                     and isinstance(anode.ctx, ast.Load)
                     and anode.id not in names
-                    and anode.id not in module.__dict__
+                    and anode.id not in namespace
                 ):
                     for k, v in modules_in_test_scope:
                         if anode.id in v.__dict__:
@@ -236,8 +260,8 @@ def get_patch_for(
         return None
 
     if (
-        module.__dict__.get("hypothesis") is sys.modules["hypothesis"]
-        and "given" not in module.__dict__  # more reliably present than `example`
+        namespace.get("hypothesis") is sys.modules["hypothesis"]
+        and "given" not in namespace  # more reliably present than `example`
     ):
         decorator_func = "hypothesis.example"
     else:
@@ -257,7 +281,7 @@ def get_patch_for(
         decorator=decorator_func,
         width=88 - len(prefix),  # to match Black's default formatting
     ).transform_module(node)
-    return (str(fname), before, indent(after.code, prefix=prefix))
+    return (before, indent(after.code, prefix=prefix))
 
 
 def make_patch(
@@ -265,6 +289,7 @@ def make_patch(
     *,
     msg: str = "Hypothesis: add explicit examples",
     when: Optional[datetime] = None,
+    author: str = f"Hypothesis {__version__} <no-reply@hypothesis.works>",
 ) -> str:
     """Create a patch for (fname, before, after) triples."""
     assert triples, "attempted to create empty patch"
@@ -274,7 +299,7 @@ def make_patch(
     for fname, before, after in triples:
         by_fname.setdefault(Path(fname), []).append((before, after))
 
-    diffs = [HEADER.format(msg=msg, when=when)]
+    diffs = [HEADER.format(msg=msg, when=when, author=author)]
     for fname, changes in sorted(by_fname.items()):
         source_before = source_after = fname.read_text(encoding="utf-8")
         for before, after in changes:
