@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.10:
+
+---------------------
+6.135.10 - 2025-06-15
+---------------------
+
+Fix a rare race condition in |ExampleDatabase.fetch|, where we might have read from a non-existent directory.
+
 .. _v6.135.9:
 
 --------------------
