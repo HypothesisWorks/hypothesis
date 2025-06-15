@@ -447,11 +447,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         kp = self._key_path(key)
         if not kp.is_dir():
             return
-        for path in os.listdir(kp):
-            try:
-                yield (kp / path).read_bytes()
-            except OSError:
-                pass
+
+        try:
+            for path in os.listdir(kp):
+                try:
+                    yield (kp / path).read_bytes()
+                except OSError:
+                    pass
+        except OSError:  # pragma: no cover
+            # the `kp` directory might have been deleted in the meantime
+            pass
 
     def save(self, key: bytes, value: bytes) -> None:
         key_path = self._key_path(key)
