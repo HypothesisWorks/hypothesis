@@ -14,6 +14,7 @@ import weakref
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.internal.compat import FREE_THREADED_CPYTHON
 
 
 @pytest.mark.parametrize(
@@ -51,6 +52,7 @@ def test_cacheable_things_are_cached():
     assert st.tuples(x) == st.tuples(x)
 
 
+@pytest.mark.skipif(FREE_THREADED_CPYTHON, reason="gc differences")
 def test_local_types_are_garbage_collected_issue_493():
     store = None
 

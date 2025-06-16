@@ -24,7 +24,7 @@ from hypothesis import (
 )
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
-from hypothesis.internal.compat import GRAALPY, PYPY
+from hypothesis.internal.compat import FREE_THREADED_CPYTHON, GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
 
@@ -220,7 +220,8 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
 
 
 @pytest.mark.skipif(
-    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+    PYPY or FREE_THREADED_CPYTHON,
+    reason="We can't guard against bad no-reference patterns in pypy.",
 )
 def test_passing_referenced_instance_within_function_scope_warns():
     def f():
