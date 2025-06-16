@@ -15,6 +15,7 @@ import warnings
 import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis.internal.compat import FREE_THREADED_CPYTHON
 
 from tests.common.debug import find_any, minimal
 from tests.common.utils import Why, flaky, xfail_on_crosshair
@@ -174,6 +175,7 @@ def test_self_ref_regression(_):
     pass
 
 
+@pytest.mark.skipif(FREE_THREADED_CPYTHON, reason="gc differences")
 @flaky(min_passes=1, max_runs=2)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):
     # We were concerned in #3979 that we might see bad results from a RecursionError
