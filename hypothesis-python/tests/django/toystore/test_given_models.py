@@ -189,7 +189,7 @@ class TestRestrictedFields(TestCase):
         self.assertTrue(instance.non_blank_text_field)
 
 
-@skipIf(not User, "contrib.auth not installed")
+@skipIf(User is None, "contrib.auth not installed")
 class TestValidatorInference(TestCase):
     @given(from_model(User))
     def test_user_issue_1112_regression(self, user):

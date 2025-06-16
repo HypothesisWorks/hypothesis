@@ -17,6 +17,7 @@ from typing import Any, Callable, TypeVar, Union
 
 import django
 from django import forms as df
+from django.conf import settings
 from django.core.validators import (
     validate_ipv4_address,
     validate_ipv6_address,
@@ -29,13 +30,6 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
 from hypothesis.strategies import emails
-
-from django.conf import settings
-
-if "django.contrib.auth" in settings.INSTALLED_APPS:
-    from django.contrib.auth.forms import UsernameField
-else:
-    UsernameField = None
 
 AnyField = Union[dm.Field, df.Field]
 F = TypeVar("F", bound=AnyField)
@@ -267,8 +261,10 @@ def _for_text(field):
     return strategy
 
 
-if UsernameField:
-    _for_text = register_for(UsernameField)(_for_text)
+if "django.contrib.auth" in settings.INSTALLED_APPS:
+    from django.contrib.auth.forms import UsernameField
+
+    register_for(UsernameField)(_for_text)
 
 
 @register_for(df.BooleanField)

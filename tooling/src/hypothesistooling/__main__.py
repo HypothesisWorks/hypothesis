@@ -635,6 +635,8 @@ standard_tox_task("pytest62")
 
 for n in DJANGO_VERSIONS:
     standard_tox_task(f"django{n.replace('.', '')}")
+# we also test no-contrib on the latest django version
+standard_tox_task("django-nocontrib")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")

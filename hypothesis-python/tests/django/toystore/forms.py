@@ -30,8 +30,6 @@ from tests.django.toystore.models import (
 
 if "django.contrib.auth" in settings.INSTALLED_APPS:
     from django.contrib.auth.forms import ReadOnlyPasswordHashField, UsernameField
-else:
-    ReadOnlyPasswordHashField = UsernameField = None
 
 
 class ReprModelForm(forms.ModelForm):
@@ -222,7 +220,7 @@ class ShortStringForm(ReprForm):
     _not_too_long = forms.CharField(max_length=20, required=False)
 
 
-if UsernameField and ReadOnlyPasswordHashField:
+if "django.contrib.auth" in settings.INSTALLED_APPS:
 
     class UsernameForm(ReprForm):
         username = UsernameField()
@@ -231,7 +229,8 @@ if UsernameField and ReadOnlyPasswordHashField:
         password = ReadOnlyPasswordHashField()
 
 else:
-    UsernameForm = ReadOnlyPasswordHashFieldForm = None
+    UsernameForm = None
+    ReadOnlyPasswordHashFieldForm = None
 
 
 class StoreForm(ReprModelForm):

@@ -10,7 +10,10 @@
 
 from .settings import *  # noqa: F403
 
+# We test django in two contexts: with some default django.contrib apps installed
+# (which is settings.py), and with no django.contrib apps installed (which is this
+# file). We set DJANGO_SETTINGS_MODULE in tox to select which settings file we
+# use during testing.
+
 INSTALLED_APPS = ["tests.django.toystore"]
-
-
-ROOT_URLCONF = "tests.django.toys.no_urls"
+ROOT_URLCONF = "tests.django.toys.settings.no_urls"
