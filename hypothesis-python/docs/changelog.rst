@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.11:
+
+---------------------
+6.135.11 - 2025-06-17
+---------------------
+
+This patch fixes an error when importing :ref:`our django extra <hypothesis-django>` (via ``hypothesis.extra.django``) if ``django.contrib.auth`` was not in ``INSTALLED_APPS`` (:issue:`3716`).
+
+Thanks to Chris Wesseling for this fix!
+
 .. _v6.135.10:
 
 ---------------------
