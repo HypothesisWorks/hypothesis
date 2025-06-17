@@ -399,8 +399,8 @@ def update_django_versions():
     print(versions)
     for short, full in versions.items():
         content = re.sub(
-            rf"(pip install django==){short}\.\d+",
-            rf"\g<1>{full}",
+            rf"django=={short}(\.\d+)?",
+            rf"django=={full}",
             content,
         )
     tox_ini.write_text(content, encoding="utf-8")
