@@ -1038,7 +1038,11 @@ class RuleStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
-            msg = f"No progress can be made from state {self.machine!r}"
+            rules = ", ".join([rule.function.__name__ for rule in self.rules])
+            msg = (
+                f"No progress can be made from state {self.machine!r}, because no "
+                f"available rule had a True precondition. rules: {rules}"
+            )
             raise InvalidDefinition(msg) from None
 
         feature_flags = data.draw(self.enabled_rules_strategy)
@@ -1074,7 +1078,7 @@ class RuleStrategy(SearchStrategy):
         for pred in rule.preconditions:
             meets_precond = pred(self.machine)
             where = f"{desc} precondition {get_pretty_function_description(pred)}"
-            predicates[where]["satisfied" if meets_precond else "unsatisfied"] += 1
+            predicates[where].update_count(condition=meets_precond)
             if not meets_precond:
                 return False
 

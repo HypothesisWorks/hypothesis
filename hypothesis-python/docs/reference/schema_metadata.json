@@ -1,0 +1,62 @@
+{
+    "type": "object",
+    "properties": {
+        "traceback": {
+            "type": ["string", "null"],
+            "description": "The traceback for failing tests, if and only if ``status == \"failed\"``."
+        },
+        "reproduction_decorator": {
+            "type": ["string", "null"],
+            "description": "The ``@reproduce_failure`` decorator string for failing tests, if and only if ``status == \"failed\"``."
+        },
+        "predicates": {
+            "type": "object",
+            "description": "The number of times each |assume| and |@precondition| predicate was satisfied (``True``) and not satisfied (``False``).",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "satisfied": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "The number of times this predicate was satisfied (``True``)."
+                    },
+                    "unsatisfied": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "The number of times this predicate was not satisfied (``False``)."
+                    }
+                },
+                "required": ["satisfied", "unsatisfied"],
+                "additionalProperties": false
+            }
+        },
+        "backend": {
+            "type": "object",
+            "description": "Backend-specific observations from |PrimitiveProvider.observe_test_case| and |PrimitiveProvider.observe_information_messages|."
+        },
+        "sys.argv": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "The result of ``sys.argv``."
+        },
+        "os.getpid()": {
+            "type": "integer",
+            "description": "The result of ``os.getpid()``."
+        },
+        "imported_at": {
+            "type": "number",
+            "description": "The unix timestamp when Hypothesis was imported."
+        },
+        "data_status": {
+            "type": "number",
+            "enum": [0, 1, 2, 3],
+            "description": "The internal status of the ConjectureData for this test case. The values are as follows: ``Status.OVERRUN = 0``, ``Status.INVALID = 1``, ``Status.VALID = 2``, and ``Status.INTERESTING = 3``."
+        },
+        "interesting_origin": {
+            "type": ["string", "null"],
+            "description": "The internal ``InterestingOrigin`` object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
+        }
+    },
+    "required": ["traceback", "reproduction_decorator", "predicates", "backend", "sys.argv", "os.getpid()", "imported_at", "data_status", "interesting_origin"],
+    "additionalProperties": false
+}

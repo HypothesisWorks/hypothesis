@@ -713,12 +713,12 @@ class ConjectureData:
         self.slice_comments: dict[tuple[int, int], str] = {}
         self._observability_args: dict[str, Any] = {}
         self._observability_predicates: defaultdict[str, PredicateCounts] = defaultdict(
-            lambda: {"satisfied": 0, "unsatisfied": 0}
+            PredicateCounts
         )
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]
         ] = None
-        self._shared_strategy_draws: dict[Hashable, Any] = {}
+        self._shared_strategy_draws: dict[Hashable, tuple[int, Any]] = {}
         self.hypothesis_runner = not_set
 
         self.expected_exception: Optional[BaseException] = None

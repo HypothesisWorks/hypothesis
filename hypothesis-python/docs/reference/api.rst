@@ -3,81 +3,22 @@ API Reference
 
 Reference for non-strategy objects that are part of the Hypothesis API. For documentation on strategies, see the :doc:`strategies reference </reference/strategies>`.
 
-|@given|
---------
+``@given``
+----------
 
 .. autofunction:: hypothesis.given
 
+.. standard #: directives in the source don't work for hypothesis.infer,
+.. see https://github.com/sphinx-doc/sphinx/issues/6495
+
 .. data:: hypothesis.infer
 
-Arguments to |@given|
-~~~~~~~~~~~~~~~~~~~~~
+    An alias for ``...`` (|ellipsis|). |infer| can be passed to |@given| or
+    |st.builds| to indicate that a strategy for that parameter should be inferred
+    from its type annotations.
 
-The |@given| decorator may be used to specify which arguments of a function should be parametrized over. You can use either positional or keyword arguments, but not a mixture of both.
+    In all cases, using |infer| is equivalent to using ``...``.
 
-For example, all of the following are valid uses:
-
-.. code:: python
-
-  @given(integers(), integers())
-  def a(x, y):
-      pass
-
-  @given(integers())
-  def b(x, y):
-      pass
-
-  @given(y=integers())
-  def c(x, y):
-      pass
-
-  @given(x=integers())
-  def d(x, y):
-      pass
-
-  @given(x=integers(), y=integers())
-  def e(x, **kwargs):
-      pass
-
-  @given(x=integers(), y=integers())
-  def f(x, *args, **kwargs):
-      pass
-
-  class SomeTest(TestCase):
-      @given(integers())
-      def test_a_thing(self, x):
-          pass
-
-The following are not:
-
-.. code:: python
-
-  @given(integers(), integers(), integers())
-  def g(x, y):
-      pass
-
-  @given(integers())
-  def h(x, *args):
-      pass
-
-  @given(integers(), x=integers())
-  def i(x, y):
-      pass
-
-  @given()
-  def j(x, y):
-      pass
-
-The rules for determining what are valid uses of ``given`` are as follows:
-
-1. You may pass any keyword argument to ``given``.
-2. Positional arguments to ``given`` are equivalent to the rightmost named arguments for the test function.
-3. Positional arguments may not be used if the underlying test function has ``*args``, ``**kwargs``, or keyword-only arguments.
-4. Functions tested with ``given`` may not have any defaults.
-
-The reason for the "rightmost named arguments" behaviour is so that using |@given| with instance methods works: ``self`` will be passed to the function as normal and not be parametrized over.
-
-The function returned by given has all the same arguments as the original test, minus those that are filled in by |@given|. Check :ref:`the notes on framework compatibility <framework-compatibility>` to see how this affects other testing libraries you may be using.
 
 Inferred strategies
 ~~~~~~~~~~~~~~~~~~~
@@ -95,7 +36,7 @@ no strategy was passed to |st.builds|, |st.from_type| is used to fill them in. Y
     >>> builds(func).example()
     [-6993, '']
 
-|@given| does not perform any implicit inference for required arguments, as this would break compatibility with pytest fixtures. ``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill in an argument from its type annotation.  You can also use the :obj:`hypothesis.infer` alias if writing a literal ``...`` seems too weird.
+|@given| does not perform any implicit inference for required arguments, as this would break compatibility with pytest fixtures. ``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill in an argument from its type annotation.  You can also use the |infer| alias if writing a literal ``...`` seems too weird.
 
 .. code:: python
 
@@ -128,56 +69,28 @@ Hypothesis does not inspect :pep:`484` type comments at runtime. While |st.from_
 
 The :mod:`python:typing` module changes between different Python releases, including at minor versions.  These are all supported on a best-effort basis, but you may encounter problems.  Please report them to us, and consider updating to a newer version of Python as a workaround.
 
+Explicit inputs
+---------------
 
-.. _providing-explicit-examples:
+.. seealso::
 
-|@example|
-----------
-
-The simplest way to reproduce a failed test is to ask Hypothesis to run the
-failing example it printed.  For example, if ``Falsifying example: test(n=1)``
-was printed you can decorate ``test`` with ``@example(n=1)``.
-
-``@example`` can also be used to ensure a specific example is *always* executed
-as a regression test or to cover some edge case - basically combining a
-Hypothesis test and a traditional parametrized test.
+    See also the :doc:`/tutorial/replaying-failures` tutorial, which discusses using explicit inputs to reproduce failures.
 
 .. autoclass:: hypothesis.example
-
-Hypothesis will run all examples you've asked for first. If any of them fail it
-will not go on to look for more examples.
-
-It doesn't matter whether you put the example decorator before or after given.
-Any permutation of the decorators in the above will do the same thing.
-
-Note that examples can be positional or keyword based. If they're positional then
-they will be filled in from the right when calling, so either of the following
-styles will work as expected:
-
-.. code:: python
-
-  @given(text())
-  @example("Hello world")
-  @example(x="Some very long string")
-  def test_some_code(x):
-      pass
-
-  from unittest import TestCase
-
-  class TestThings(TestCase):
-      @given(text())
-      @example("Hello world")
-      @example(x="Some very long string")
-      def test_some_code(self, x):
-          pass
-
-As with |@given|, it is not permitted for a single example to be a mix of
-positional and keyword arguments.
-
 .. automethod:: hypothesis.example.xfail
-
 .. automethod:: hypothesis.example.via
 
+.. _reproducing-inputs:
+
+Reproducing inputs
+------------------
+
+.. seealso::
+
+    See also the :doc:`/tutorial/replaying-failures` tutorial.
+
+.. autofunction:: hypothesis.reproduce_failure
+.. autofunction:: hypothesis.seed
 
 Control
 -------
@@ -304,17 +217,9 @@ Rules
 Running state machines
 ~~~~~~~~~~~~~~~~~~~~~~
 
+If you want to bypass the TestCase infrastructure you can invoke these manually. The stateful module exposes |run_state_machine_as_test|, which takes an arbitrary function returning a |RuleBasedStateMachine| and an optional settings parameter and does the same as the class based runTest provided.
+
 .. autofunction:: hypothesis.stateful.run_state_machine_as_test
-
-If you want to bypass the TestCase infrastructure you can invoke these manually. The stateful module exposes the function ``run_state_machine_as_test``, which takes an arbitrary function returning a RuleBasedStateMachine and an optional settings parameter and does the same as the class based runTest provided.
-
-.. _reproducing-inputs:
-
-Reproducing inputs
-------------------
-
-.. autofunction:: hypothesis.seed
-.. autofunction:: hypothesis.reproduce_failure
 
 Hypothesis exceptions
 ---------------------
@@ -345,6 +250,7 @@ if you're still getting security patches, you can test with Hypothesis.
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
+:class:`hypothesis.extra.django.SimpleTestCase` or
 :class:`hypothesis.extra.django.TransactionTestCase` or
 :class:`~hypothesis.extra.django.LiveServerTestCase` or
 :class:`~hypothesis.extra.django.StaticLiveServerTestCase`
@@ -356,6 +262,7 @@ multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 |@given| will be run as normal for :class:`django:django.test.TestCase` or :class:`django:django.test.TransactionTestCase`.
 
+.. autoclass:: hypothesis.extra.django.SimpleTestCase
 .. autoclass:: hypothesis.extra.django.TransactionTestCase
 .. autoclass:: hypothesis.extra.django.LiveServerTestCase
 .. autoclass:: hypothesis.extra.django.StaticLiveServerTestCase
@@ -656,3 +563,4 @@ Detection
 ---------
 
 .. autofunction:: hypothesis.is_hypothesis_test
+.. autofunction:: hypothesis.currently_in_test_context

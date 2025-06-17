@@ -159,29 +159,30 @@ class ExampleDatabase(metaclass=_EDMeta):
     or changing your test. Do not rely on the database for correctness; to ensure
     Hypothesis always tries an input, use |@example|.
 
-    Hypothesis provides several concrete database subclasses. A Hypothesis database
-    is a simple mapping of bytes to sets of bytes, so you can also write your own
-    database implementation. See :doc:`/how-to/custom-database`.
+    A Hypothesis database is a simple mapping of bytes to sets of bytes. Hypothesis
+    provides several concrete database subclasses. To write your own database class,
+    see :doc:`/how-to/custom-database`.
 
     Change listening
     ----------------
 
     An optional extension to |ExampleDatabase| is change listening. On databases
-    which support it, you can call |ExampleDatabase.add_listener| to add a function
-    as a change listener, which will be called whenever a value is added, deleted,
-    or moved. See |ExampleDatabase.add_listener| for details.
+    which support change listening, calling |ExampleDatabase.add_listener| adds
+    a function as a change listener, which will be called whenever a value is
+    added, deleted, or moved inside the database. See |ExampleDatabase.add_listener|
+    for details.
 
     All databases in Hypothesis support change listening. Custom database classes
-    are not required to support change listening, unless they want to be
-    compatible with features that require change listening. Currently, no Hypothesis
-    features require change listening.
+    are not required to support change listening, though they will not be compatible
+    with features that require change listening until they do so.
 
     .. note::
 
-        Change listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
+        While no Hypothesis features currently require change listening, change
+        listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
 
-    Methods
-    -------
+    Database methods
+    ----------------
 
     Required methods:
 
@@ -446,11 +447,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         kp = self._key_path(key)
         if not kp.is_dir():
             return
-        for path in os.listdir(kp):
-            try:
-                yield (kp / path).read_bytes()
-            except OSError:
-                pass
+
+        try:
+            for path in os.listdir(kp):
+                try:
+                    yield (kp / path).read_bytes()
+                except OSError:
+                    pass
+        except OSError:  # pragma: no cover
+            # the `kp` directory might have been deleted in the meantime
+            pass
 
     def save(self, key: bytes, value: bytes) -> None:
         key_path = self._key_path(key)
@@ -511,7 +517,19 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         try:
             self._value_path(key, value).unlink()
         except OSError:
+            return
+
+        # try deleting the key dir, which will only succeed if the dir is empty
+        # (i.e. ``value`` was the last value in this key).
+        try:
+            self._key_path(key).rmdir()
+        except OSError:
             pass
+        else:
+            # if the deletion succeeded, also delete this key entry from metakeys.
+            # (if this key happens to be the metakey itself, this deletion will
+            # fail; that's ok and faster than checking for this rare case.)
+            self.delete(self._metakeys_name, key)
 
     def _start_listening(self) -> None:
         try:
@@ -554,7 +572,13 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 key_hash = value_path.parent.name
 
                 if key_hash == _metakeys_hash:
-                    hash_to_key[value_path.name] = value_path.read_bytes()
+                    try:
+                        hash_to_key[value_path.name] = value_path.read_bytes()
+                    except OSError:  # pragma: no cover
+                        # this might occur if all the values in a key have been
+                        # deleted and DirectoryBasedExampleDatabase removes its
+                        # metakeys entry (which is `value_path` here`).
+                        pass
                     return
 
                 key = hash_to_key.get(key_hash)

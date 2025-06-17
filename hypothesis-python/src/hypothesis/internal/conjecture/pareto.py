@@ -229,7 +229,7 @@ class ParetoFront:
                             already_replaced = True
                             dominators[j] = candidate
                             j += 1
-                        else:
+                        else:  # pragma: no cover # flaky, by test_database_contains_only_pareto_front
                             dominators[j], dominators[-1] = (
                                 dominators[-1],
                                 dominators[j],

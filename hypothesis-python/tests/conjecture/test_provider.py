@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import itertools
 import math
 import sys
@@ -39,12 +40,15 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
+    HypothesisProvider,
 )
-from hypothesis.internal.floats import SIGNALING_NAN
+from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
 
 from tests.common.debug import minimal
 from tests.common.utils import (
@@ -78,16 +82,11 @@ class PrngProvider(PrimitiveProvider):
         weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
     ) -> int:
-        assert isinstance(shrink_towards, int)  # otherwise ignored here
-
-        if weights is not None:
-            assert min_value is not None
-            assert max_value is not None
-            # use .choices so we can use the weights= param.
-            choices = self.prng.choices(
-                range(min_value, max_value + 1), weights=weights, k=1
-            )
-            return choices[0]
+        # shrink_towards is fully ignored here. It would be nice to implement
+        # weights, but it's tricky to fully conform it to our
+        # provider_conformance test.
+        assert isinstance(shrink_towards, int)
+        assert weights is None or isinstance(weights, dict)
 
         if min_value is None and max_value is None:
             min_value = -(2**127)
@@ -117,18 +116,28 @@ class PrngProvider(PrimitiveProvider):
             return -math.inf
 
         # get rid of infs, they cause nans if we pass them to prng.uniform
+        min_value_bound = min_value
+        max_value_bound = max_value
         if min_value in [-math.inf, math.inf]:
-            min_value = math.copysign(1, min_value) * sys.float_info.max
+            min_value_bound = math.copysign(1, min_value) * sys.float_info.max
             # being too close to the bounds causes prng.uniform to only return
             # inf.
-            min_value /= 2
+            min_value_bound /= 2
         if max_value in [-math.inf, math.inf]:
-            max_value = math.copysign(1, max_value) * sys.float_info.max
-            max_value /= 2
+            max_value_bound = math.copysign(1, max_value) * sys.float_info.max
+            max_value_bound /= 2
 
-        value = self.prng.uniform(min_value, max_value)
+        value = self.prng.uniform(min_value_bound, max_value_bound)
+        # random.uniform can in fact provide out of bounds values, e.g.
+        #   random.uniform(-8.98846567431158e+307, 8.98846567431158e+307)
+        # can produce math.inf, which is strictly greater than 8.98846567431158e+307
+        value = clamp(min_value, value, max_value)
         if value and abs(value) < smallest_nonzero_magnitude:
-            return math.copysign(0.0, value)
+            return (
+                smallest_nonzero_magnitude
+                if min_value <= smallest_nonzero_magnitude <= max_value
+                else -smallest_nonzero_magnitude
+            )
         return value
 
     def draw_string(
@@ -141,6 +150,8 @@ class PrngProvider(PrimitiveProvider):
         size = self.prng.randint(
             min_size, max(min_size, min(100 if max_size is None else max_size, 100))
         )
+        if len(intervals) == 0:
+            return ""
         return "".join(map(chr, self.prng.choices(intervals, k=size)))
 
     def draw_bytes(
@@ -148,7 +159,8 @@ class PrngProvider(PrimitiveProvider):
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
-        max_size = 100 if max_size is None else max_size
+        # cap max size for performance
+        max_size = 100 if max_size is None else min(max_size, 100)
         size = self.prng.randint(min_size, max_size)
         try:
             return self.prng.randbytes(size)
@@ -291,6 +303,9 @@ class InvalidLifetime(TrivialProvider):
 
 def test_invalid_lifetime():
     with temp_register_backend("invalid_lifetime", InvalidLifetime):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(InvalidArgument):
             ConjectureRunner(
                 lambda: True, settings=settings(backend="invalid_lifetime")
@@ -479,8 +494,8 @@ def test_realization_with_observability():
         with capture_observations() as observations:
             test_function()
 
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
-    assert {tc["representation"] for tc in test_cases} == {
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert {tc.representation for tc in test_cases} == {
         # from the first ChoiceTemplate(type="simplest") example
         "test_function(\n    data=data(...),\n)\nDraw 1: 0",
         # from all other examples. data=<symbolic> isn't ideal; we should special
@@ -518,15 +533,15 @@ def test_custom_observations_from_backend():
             test_function()
 
     assert len(ls) >= 3
-    cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
+    cases = [t.metadata.backend for t in ls if t.type == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
     assert "<backend failed to realize symbolic arguments>" in repr(ls)
 
     infos = [
-        {k: v for k, v in t.items() if k in ("title", "content")}
+        {k: v for k, v in dataclasses.asdict(t).items() if k in ("title", "content")}
         for t in ls
-        if t["type"] != "test_case"
+        if t.type != "test_case"
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos
@@ -637,17 +652,18 @@ def test_can_generate_from_all_available_providers(backend, strategy):
     def f(x):
         raise ValueError
 
-    with (
-        pytest.raises(ValueError),
-        (
+    with pytest.raises(ValueError):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with (
             pytest.warns(
                 HypothesisWarning, match="/dev/urandom is not available on windows"
             )
             if backend == "hypothesis-urandom" and WINDOWS
             else nullcontext()
-        ),
-    ):
-        f()
+        ):
+            f()
 
 
 def test_saves_on_fatal_error_with_backend():
@@ -717,3 +733,50 @@ def test_replay_choices():
     # trivial covering test
     provider = TrivialProvider(None)
     provider.replay_choices([1])
+
+
+class ObservationProvider(TrivialProvider):
+    add_observability_callback = True
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        # calls to per_test_case_context_manager and on_observation alternate,
+        # starting with per_test_case_context_manager
+        self.expected = "per_test_case_context_manager"
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        assert self.expected == "per_test_case_context_manager"
+        self.expected = "on_observation"
+        yield
+
+    def on_observation(self, observation: Observation) -> None:
+        assert self.expected == "on_observation"
+        self.expected = "per_test_case_context_manager"
+
+
+@temp_register_backend("observation", ObservationProvider)
+def test_on_observation_alternates():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        pass
+
+    f()
+
+
+@temp_register_backend("observation", TrivialProvider)
+def test_on_observation_no_override():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        assert TESTCASE_CALLBACKS == []
+
+    f()
+
+
+@pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
+def test_provider_conformance(provider):
+    run_conformance_test(
+        provider, settings=settings(max_examples=20, stateful_step_count=20)
+    )

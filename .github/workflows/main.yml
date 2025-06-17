@@ -30,6 +30,7 @@ jobs:
           - check-coverage
           - check-conjecture-coverage
           - check-py39-cover
+          - check-py39-oldparser
           - check-pypy39-cover
           - check-py310-cover
           - check-py310-nocover
@@ -55,6 +56,12 @@ jobs:
           # - check-py314t-cover
           # - check-py314t-nocover
           # - check-py314t-niche
+          # - check-py315-cover
+          # - check-py315-nocover
+          # - check-py315-niche
+          # - check-py315t-cover
+          # - check-py315t-nocover
+          # - check-py315t-niche
           - check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby

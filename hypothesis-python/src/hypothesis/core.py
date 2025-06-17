@@ -16,6 +16,7 @@ import datetime
 import inspect
 import io
 import math
+import os
 import sys
 import time
 import traceback
@@ -68,6 +69,7 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
+from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -99,10 +101,10 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
-    OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
-    _system_metadata,
-    deliver_json_blob,
+    InfoObservation,
+    InfoObservationType,
+    deliver_observation,
     make_testcase,
 )
 from hypothesis.internal.reflection import (
@@ -159,8 +161,60 @@ class Example:
     reason: Any = field(default=None)
 
 
+# TODO_DOCS link to not-yet-existent patch-dumping docs
+
+
 class example:
-    """A decorator which ensures a specific example is always tested."""
+    """
+    Add an explicit input to a Hypothesis test, which Hypothesis will always
+    try before generating random inputs. This combines the randomized nature of
+    Hypothesis generation with a traditional parametrized test.
+
+    For example:
+
+    .. code-block:: python
+
+        @example("Hello world")
+        @example("some string with special significance")
+        @given(st.text())
+        def test_strings(s):
+            pass
+
+    will call ``test_strings("Hello World")`` and
+    ``test_strings("some string with special significance")`` before generating
+    any random inputs. |@example| may be placed in any order relative to |@given|
+    and |@settings|.
+
+    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
+    Explicit inputs do not count towards |settings.max_examples|. Note that
+    explicit inputs added by |@example| do not shrink. If an explicit input
+    fails, Hypothesis will stop and report the failure without generating any
+    random inputs.
+
+    |@example| can also be used to easily reproduce a failure. For instance, if
+    Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
+    ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
+
+    Arguments to ``@example``
+    -------------------------
+
+    Arguments to |@example| have the same behavior and restrictions as arguments
+    to |@given|. This means they may be either positional or keyword arguments
+    (but not both in the same |@example|):
+
+    .. code-block:: python
+
+        @example(1, 2)
+        @example(x=1, y=2)
+        @given(st.integers(), st.integers())
+        def test(x, y):
+            pass
+
+    Noting that while arguments to |@given| are strategies (like |st.integers|),
+    arguments to |@example| are values instead (like ``1``).
+
+    See the :ref:`given-arguments` section for full details.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if args and kwargs:
@@ -242,24 +296,28 @@ class example:
         return self
 
     def via(self, whence: str, /) -> "example":
-        """Attach a machine-readable label noting whence this example came.
+        """Attach a machine-readable label noting what the origin of this example
+        was. |example.via| is completely optional and does not change runtime
+        behavior.
 
-        The idea is that tools will be able to add ``@example()`` cases for you, e.g.
-        to maintain a high-coverage set of explicit examples, but also *remove* them
-        if they become redundant - without ever deleting manually-added examples:
+        |example.via| is intended to support self-documenting behavior, as well as
+        tooling which might add (or remove) |@example| decorators automatically.
+        For example:
 
         .. code-block:: python
 
-            # You can choose to annotate examples, or not, as you prefer
+            # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-
-            # The `hy-` prefix is reserved for automated tooling
-            @example(...).via("hy-failing")
-            @example(...).via("hy-coverage")
-            @example(...).via("hy-target-$label")
+            @example(...).via("discovered failure")
             def test(x):
                 pass
+
+        .. note::
+
+            `HypoFuzz <https://hypofuzz.com/>`_ uses |example.via| to tag examples
+            in the patch of its high-coverage set of explicit inputs, on
+            `the patches page <https://hypofuzz.com/example-dashboard/#/patches>`_.
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -330,6 +388,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     your test suite. Because of this, no compatibility guarantees are made across
     Hypothesis versions, and |@reproduce_failure| will error if used on a different
     Hypothesis version than it was created for.
+
+    .. seealso::
+
+        See also the :doc:`/tutorial/replaying-failures` tutorial.
     """
 
     def accept(test):
@@ -589,7 +651,8 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     new = HypothesisWarning(
                         "The @example() decorator expects to be passed values, but "
                         "you passed strategies instead.  See https://hypothesis."
-                        "readthedocs.io/en/latest/reproducing.html for details."
+                        "readthedocs.io/en/latest/reference/api.html#hypothesis"
+                        ".example for details."
                     )
                     new.__cause__ = err
                     err = new
@@ -612,15 +675,16 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         "Falsifying example", "Falsifying explicit example", 1
                     )
 
+                empty_data.freeze()
                 tc = make_testcase(
-                    start_timestamp=state._start_timestamp,
-                    test_name_or_nodeid=state.test_identifier,
+                    run_start=state._start_timestamp,
+                    property=state.test_identifier,
                     data=empty_data,
                     how_generated="explicit example",
-                    string_repr=state._string_repr,
+                    representation=state._string_repr,
                     timing=state._timing_features,
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -874,7 +938,9 @@ class StateForActualGivenExecution:
         ) or get_pretty_function_description(self.wrapped_test)
 
     def _should_trace(self):
-        _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
+        # NOTE: we explicitly support monkeypatching this. Keep the namespace
+        # access intact.
+        _trace_obs = TESTCASE_CALLBACKS and observability.OBSERVABILITY_COLLECT_COVERAGE
         _trace_failure = (
             self.failed_normally
             and not self.failed_due_to_deadline
@@ -911,8 +977,12 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_markers_from_group(), ensure_free_stackframes():
-                    return self.test(*args, **kwargs)
+                with unwrap_markers_from_group():
+                    # NOTE: For compatibility with Python 3.9's LL(1)
+                    # parser, this is written as a nested with-statement,
+                    # instead of a compound one.
+                    with ensure_free_stackframes():
+                        return self.test(*args, **kwargs)
 
         else:
 
@@ -923,8 +993,12 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with unwrap_markers_from_group(), ensure_free_stackframes():
-                        result = self.test(*args, **kwargs)
+                    with unwrap_markers_from_group():
+                        # NOTE: For compatibility with Python 3.9's LL(1)
+                        # parser, this is written as a nested with-statement,
+                        # instead of a compound one.
+                        with ensure_free_stackframes():
+                            result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
@@ -1040,18 +1114,21 @@ class StateForActualGivenExecution:
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
-        with (
-            local_settings(self.settings),
-            deterministic_PRNG(),
-            BuildContext(data, is_final=is_final) as context,
-        ):
-            # providers may throw in per_case_context_fn, and we'd like
-            # `result` to still be set in these cases.
-            result = None
-            with data.provider.per_test_case_context_manager():
-                # Run the test function once, via the executor hook.
-                # In most cases this will delegate straight to `run(data)`.
-                result = self.test_runner(data, run)
+        #
+        # NOTE: For compatibility with Python 3.9's LL(1) parser, this is written as
+        # three nested with-statements, instead of one compound statement.
+        with local_settings(self.settings):
+            with deterministic_PRNG():
+                with BuildContext(
+                    data, is_final=is_final, wrapped_test=self.wrapped_test
+                ) as context:
+                    # providers may throw in per_case_context_fn, and we'd like
+                    # `result` to still be set in these cases.
+                    result = None
+                    with data.provider.per_test_case_context_manager():
+                        # Run the test function once, via the executor hook.
+                        # In most cases this will delegate straight to `run(data)`.
+                        result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.
@@ -1168,7 +1245,17 @@ class StateForActualGivenExecution:
             else:
                 tb = e.__traceback__
             filepath = traceback.extract_tb(tb)[-1][0]
-            if is_hypothesis_file(filepath) and not isinstance(e, HypothesisException):
+            if (
+                is_hypothesis_file(filepath)
+                and not isinstance(e, HypothesisException)
+                # We expect backend authors to use the provider_conformance test
+                # to test their backends. If an error occurs there, it is probably
+                # from their backend, and we would like to treat it as a standard
+                # error, not a hypothesis-internal error.
+                and not filepath.endswith(
+                    f"internal{os.sep}conjecture{os.sep}provider_conformance.py"
+                )
+            ):
                 raise
 
             if data.frozen:
@@ -1224,19 +1311,20 @@ class StateForActualGivenExecution:
                     data._observability_args = {}
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                data.freeze()
                 tc = make_testcase(
-                    start_timestamp=self._start_timestamp,
-                    test_name_or_nodeid=self.test_identifier,
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
                     data=data,
                     how_generated=f"during {phase} phase{backend_desc}",
-                    string_repr=self._string_repr,
+                    representation=self._string_repr,
                     arguments=data._observability_args,
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
                 ):
@@ -1244,16 +1332,16 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: Union[str, dict]
     ) -> None:
-        deliver_json_blob(
-            {
-                "type": type,
-                "run_start": self._start_timestamp,
-                "property": self.test_identifier,
-                "title": title,
-                "content": content,
-            }
+        deliver_observation(
+            InfoObservation(
+                type=type,
+                run_start=self._start_timestamp,
+                property=self.test_identifier,
+                title=title,
+                content=content,
+            )
         )
 
     def run_engine(self):
@@ -1420,32 +1508,22 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
+                ran_example.freeze()
                 # log our observability line for the final failing example
-                tc = {
-                    "type": "test_case",
-                    "run_start": self._start_timestamp,
-                    "property": self.test_identifier,
-                    "status": "passed" if sys.exc_info()[0] else "failed",
-                    "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": self._string_repr,
-                    "arguments": ran_example._observability_args,
-                    "how_generated": "minimal failing example",
-                    "features": {
-                        **{
-                            f"target:{k}".strip(":"): v
-                            for k, v in ran_example.target_observations.items()
-                        },
-                        **ran_example.events,
-                    },
-                    "timing": self._timing_features,
-                    "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {
-                        "traceback": tb,
-                        "predicates": dict(ran_example._observability_predicates),
-                        **_system_metadata(),
-                    },
-                }
-                deliver_json_blob(tc)
+                tc = make_testcase(
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
+                    data=ran_example,
+                    how_generated="minimal failing example",
+                    representation=self._string_repr,
+                    arguments=ran_example._observability_args,
+                    timing=self._timing_features,
+                    coverage=None,  # Not recorded when we're replaying the MFE
+                    status="passed" if sys.exc_info()[0] else "failed",
+                    status_reason=str(origin or "unexpected/flaky pass"),
+                    metadata={"traceback": tb},
+                )
+                deliver_observation(tc)
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
@@ -1454,11 +1532,7 @@ class StateForActualGivenExecution:
                         f"{reproduction_decorator(falsifying_example.choices)} "
                         "as a decorator on your test case"
                     )
-                # Mostly useful for ``find`` and ensuring that objects that
-                # hold on to a reference to ``data`` know that it's now been
-                # finished and they can't draw more data from it.
-                ran_example.freeze()  # pragma: no branch
-                # No branch is possible here because we never have an active exception.
+
         _raise_to_user(
             errors_to_report,
             self.settings,
@@ -1600,10 +1674,98 @@ def given(
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
-    """A decorator for turning a test function that accepts arguments into a
-    randomized test.
+    """
+    The |@given| decorator turns a function into a Hypothesis test. This is the
+    main entry point to Hypothesis.
 
-    This is the main entry point to Hypothesis.
+    .. seealso::
+
+        See also the :doc:`/tutorial/introduction` tutorial, which introduces
+        defining Hypothesis tests with |@given|.
+
+    .. _given-arguments:
+
+    Arguments to ``@given``
+    -----------------------
+
+    Arguments to |@given| may be either positional or keyword arguments:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test_one(x, y):
+            pass
+
+        @given(x=st.integers(), y=st.floats())
+        def test_two(x, y):
+            pass
+
+    If using keyword arguments, the arguments may appear in any order, as with
+    standard Python functions:
+
+    .. code-block:: python
+
+        # different order, but still equivalent to before
+        @given(y=st.floats(), x=st.integers())
+        def test(x, y):
+            assert isinstance(x, int)
+            assert isinstance(y, float)
+
+    If |@given| is provided fewer positional arguments than the decorated test,
+    the test arguments are filled in on the right side, leaving the leftmost
+    positional arguments unfilled:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test(manual_string, y, z):
+            assert manual_string == "x"
+            assert isinstance(y, int)
+            assert isinstance(z, float)
+
+        # `test` is now a callable which takes one argument `manual_string`
+
+        test("x")
+        # or equivalently:
+        test(manual_string="x")
+
+    The reason for this "from the right" behavior is to support using |@given|
+    with instance methods, by passing through ``self``:
+
+    .. code-block:: python
+
+        class MyTest(TestCase):
+            @given(st.integers())
+            def test(self, x):
+                assert isinstance(self, MyTest)
+                assert isinstance(x, int)
+
+    If (and only if) using keyword arguments, |@given| may be combined with
+    ``**kwargs`` or ``*args``:
+
+    .. code-block:: python
+
+        @given(x=integers(), y=integers())
+        def test(x, **kwargs):
+            assert "y" in kwargs
+
+        @given(x=integers(), y=integers())
+        def test(x, *args, **kwargs):
+            assert args == ()
+            assert "x" not in kwargs
+            assert "y" in kwargs
+
+    It is an error to:
+
+    * Mix positional and keyword arguments to |@given|.
+    * Use |@given| with a function that has a default value for an argument.
+    * Use |@given| with positional arguments with a function that uses ``*args``,
+      ``**kwargs``, or keyword-only arguments.
+
+    The function returned by given has all the same arguments as the original
+    test, minus those that are filled in by |@given|. See the :ref:`notes on
+    framework compatibility <framework-compatibility>` for how this interacts
+    with features of other testing libraries, such as :pypi:`pytest` fixtures.
     """
 
     if currently_in_test_context():
@@ -1619,7 +1781,20 @@ def given(
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
-            raise InvalidArgument("@given cannot be applied to a class.")
+            raise InvalidArgument("@given cannot be applied to a class")
+
+        if (
+            "_pytest" in sys.modules
+            and (
+                tuple(map(int, sys.modules["_pytest"].__version__.split(".")[:2]))
+                >= (8, 4)
+            )
+            and isinstance(
+                test, sys.modules["_pytest"].fixtures.FixtureFunctionDefinition
+            )
+        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+            raise InvalidArgument("@given cannot be applied to a pytest fixture")
+
         given_arguments = tuple(_given_arguments)
         given_kwargs = dict(_given_kwargs)
 
@@ -1921,7 +2096,12 @@ def given(
                 )
                 try:
                     state.execute_once(data)
-                except (StopTest, UnsatisfiedAssumption):
+                    status = Status.VALID
+                except StopTest:
+                    status = data.status
+                    return None
+                except UnsatisfiedAssumption:
+                    status = Status.INVALID
                     return None
                 except BaseException:
                     known = minimal_failures.get(data.interesting_origin)
@@ -1932,7 +2112,26 @@ def given(
                             database_key, choices_to_bytes(data.choices)
                         )
                         minimal_failures[data.interesting_origin] = data.nodes
+                    status = Status.INTERESTING
                     raise
+                finally:
+                    if TESTCASE_CALLBACKS:
+                        data.freeze()
+                        tc = make_testcase(
+                            run_start=state._start_timestamp,
+                            property=state.test_identifier,
+                            data=data,
+                            how_generated="fuzz_one_input",
+                            representation=state._string_repr,
+                            arguments=data._observability_args,
+                            timing=state._timing_features,
+                            coverage=None,
+                            status=status,
+                            backend_metadata=data.provider.observe_test_case(),
+                        )
+                        deliver_observation(tc)
+                        state._timing_features = {}
+
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)
 

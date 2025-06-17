@@ -15,7 +15,7 @@ import textwrap
 import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
@@ -33,7 +33,7 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
+from hypothesis.internal.compat import NotRequired, TypedDict, ceil, override
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
     ChoiceKeyT,
@@ -68,22 +68,36 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
+from hypothesis.internal.observability import Observation, with_observation_callback
 from hypothesis.reporting import base_report, report
 
+#: The maximum number of times the shrinker will reduce the complexity of a failing
+#: input before giving up. This avoids falling down a trap of exponential (or worse)
+#: complexity, where the shrinker appears to be making progress but will take a
+#: substantially long time to finish completely.
 MAX_SHRINKS: Final[int] = 500
-CACHE_SIZE: Final[int] = 10000
-MUTATION_POOL_SIZE: Final[int] = 100
-MIN_TEST_CALLS: Final[int] = 10
-BUFFER_SIZE: Final[int] = 8 * 1024
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
 # no output, and appearing to hang isn't great for interactive use either -
 # showing partially-shrunk examples is better than quitting with no examples!
 # (but make it monkeypatchable, for the rare users who need to keep on shrinking)
+
+#: The maximum total time in seconds that the shrinker will try to shrink a failure
+#: for before giving up. This is across all shrinks for the same failure, so even
+#: if the shrinker successfully reduces the complexity of a single failure several
+#: times, it will stop when it hits |MAX_SHRINKING_SECONDS| of total time taken.
 MAX_SHRINKING_SECONDS: Final[int] = 300
 
-Ls: TypeAlias = list["Ls | int"]
+#: The maximum amount of entropy a single test case can use before giving up
+#: while making random choices during input generation.
+#:
+#: The "unit" of one |BUFFER_SIZE| does not have any defined semantics, and you
+#: should not rely on it, except that a linear increase |BUFFER_SIZE| will linearly
+#: increase the amount of entropy a test case can use during generation.
+BUFFER_SIZE: Final[int] = 8 * 1024
+CACHE_SIZE: Final[int] = 10000
+MIN_TEST_CALLS: Final[int] = 10
 
 
 def shortlex(s):
@@ -817,18 +831,42 @@ class ConjectureRunner:
             f"{', ' + data.output if data.output else ''}"
         )
 
+    def observe_for_provider(self) -> AbstractContextManager:
+        def on_observation(observation: Observation) -> None:
+            assert observation.type == "test_case"
+            # because lifetime == "test_function"
+            assert isinstance(self.provider, PrimitiveProvider)
+            # only fire if we actually used that provider to generate this observation
+            if not self._switch_to_hypothesis_provider:
+                self.provider.on_observation(observation)
+
+        if (
+            self.settings.backend != "hypothesis"
+            # only for lifetime = "test_function" providers (guaranteed
+            # by this isinstance check)
+            and isinstance(self.provider, PrimitiveProvider)
+            # and the provider opted-in to observations
+            and self.provider.add_observability_callback
+        ):
+            return with_observation_callback(on_observation)
+        return nullcontext()
+
     def run(self) -> None:
         with local_settings(self.settings):
-            try:
-                self._run()
-            except RunIsComplete:
-                pass
-            for v in self.interesting_examples.values():
-                self.debug_data(v)
-            self.debug(
-                "Run complete after %d examples (%d valid) and %d shrinks"
-                % (self.call_count, self.valid_examples, self.shrinks)
-            )
+            # NOTE: For compatibility with Python 3.9's LL(1)
+            # parser, this is written as a nested with-statement,
+            # instead of a compound one.
+            with self.observe_for_provider():
+                try:
+                    self._run()
+                except RunIsComplete:
+                    pass
+                for v in self.interesting_examples.values():
+                    self.debug_data(v)
+                self.debug(
+                    "Run complete after %d examples (%d valid) and %d shrinks"
+                    % (self.call_count, self.valid_examples, self.shrinks)
+                )
 
     @property
     def database(self) -> Optional[ExampleDatabase]:

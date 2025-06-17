@@ -41,6 +41,7 @@ their individual contributions.
 * `Cheuk Ting Ho <https://github.com/Cheukting>`_
 * `Chris Down  <https://chrisdown.name>`_
 * `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
+* `Chris Wesseling <https://github.com/CharString>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
@@ -120,6 +121,7 @@ their individual contributions.
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `Lundy Bernard <https://github.com/lundybernard>`_
+* `Marco Ricci <https://github.com/the-13th-letter>`_
 * `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)

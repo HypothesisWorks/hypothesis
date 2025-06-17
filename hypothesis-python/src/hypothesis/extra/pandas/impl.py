@@ -638,7 +638,7 @@ def data_frames(
                         else:
                             value = draw(c.elements)
                         try:
-                            data[c.name][i] = value
+                            data[c.name].iloc[i] = value
                         except ValueError as err:  # pragma: no cover
                             # This just works in Pandas 1.4 and later, but gives
                             # a confusing error on previous versions.

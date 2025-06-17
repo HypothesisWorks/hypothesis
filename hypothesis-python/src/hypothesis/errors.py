@@ -252,16 +252,15 @@ CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "oth
 
 
 class BackendCannotProceed(HypothesisException):
-    """UNSTABLE API
+    """
+    Raised by alternative backends when a |PrimitiveProvider| cannot proceed.
+    This is expected to occur inside one of the ``.draw_*()`` methods, or for
+    symbolic execution perhaps in |PrimitiveProvider.realize|.
 
-    Raised by alternative backends when the PrimitiveProvider cannot proceed.
-    This is expected to occur inside one of the `.draw_*()` methods, or for
-    symbolic execution perhaps in `.realize(...)`.
-
-    The optional `scope` argument can enable smarter integration:
+    The optional ``scope`` argument can enable smarter integration:
 
         verified:
-            Do not request further test cases from this backend.  We _may_
+            Do not request further test cases from this backend.  We *may*
             generate more test cases with other backends; if one fails then
             Hypothesis will report unsound verification in the backend too.
 

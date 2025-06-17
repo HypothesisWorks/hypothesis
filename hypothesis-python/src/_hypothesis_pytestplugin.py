@@ -305,6 +305,9 @@ else:
                 item.hypothesis_statistics = describe_statistics(stats)
 
             with collector.with_value(note_statistics):
+                # NOTE: For compatibility with Python 3.9's LL(1)
+                # parser, this is written as a nested with-statement,
+                # instead of a compound one.
                 with with_reporter(store):
                     with current_pytest_item.with_value(item):
                         yield

@@ -13,13 +13,14 @@ import decimal
 import enum
 import fractions
 import math
+import warnings
 from datetime import date, datetime, time, timedelta
 from ipaddress import IPv4Network, IPv6Network
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import Phase, given, settings, strategies as st
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.vendor.pretty import pretty
 
 from tests.common.debug import check_can_generate_examples, minimal
@@ -583,3 +584,94 @@ def test_builds_error_messages(data):
         data.draw(st.builds(AnEnum))
     # and sampled_from() does in fact work
     data.draw(st.sampled_from(AnEnum))
+
+
+@pytest.mark.parametrize(
+    "strat_a,strat_b",
+    [
+        (st.integers(), st.integers(0)),
+        (st.builds(int), st.builds(float)),
+        (st.none(), st.integers()),
+        pytest.param(
+            st.composite(lambda draw: draw(st.none()))(),
+            st.composite(lambda draw: draw(st.integers()))(),
+            marks=pytest.mark.xfail(
+                # https://github.com/pytest-dev/pytest/issues/8928
+                raises=pytest.fail.Exception,
+                strict=True,
+                reason="same-name incompatible @composite",
+            ),
+        ),
+    ],
+)
+def test_incompatible_shared_strategies_warns(strat_a, strat_b):
+
+    shared_a = st.shared(strat_a, key="share")
+    shared_b = st.shared(strat_b, key="share")
+
+    @given(shared_a, shared_b)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b):
+        assert a == b
+
+    with pytest.warns(HypothesisWarning, match="Different strategies"):
+        test_it()
+
+
+@st.composite
+def _composite1(draw):
+    return draw(st.integers())
+
+
+@st.composite
+def _composite2(draw):
+    return draw(st.integers())
+
+
+@pytest.mark.parametrize(
+    "strat_a,strat_b",
+    [
+        (st.floats(allow_nan=False), st.floats(allow_nan=False)),
+        (st.builds(float), st.builds(float)),
+        (_composite1(), _composite1()),
+        pytest.param(
+            st.floats(allow_nan=False),
+            st.floats(allow_nan=0),
+            marks=pytest.mark.xfail(
+                raises=HypothesisWarning,
+                strict=True,
+                reason="un-normalized constraint value (issue #4417)",
+            ),
+        ),
+        pytest.param(
+            _composite1(),
+            _composite2(),
+            marks=pytest.mark.xfail(
+                raises=HypothesisWarning,
+                strict=True,
+                reason="differently named @composites",
+            ),
+        ),
+        pytest.param(
+            st.integers().flatmap(st.just),
+            st.integers(),
+            marks=pytest.mark.xfail(
+                raises=HypothesisWarning,
+                strict=True,
+                reason="really different (but compatible)",
+            ),
+        ),
+    ],
+)
+def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
+    shared_a = st.shared(strat_a, key="share")
+    shared_b = st.shared(strat_b, key="share")
+
+    @given(shared_a, shared_b)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b):
+        assert a == b
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", HypothesisWarning)
+        test_it()

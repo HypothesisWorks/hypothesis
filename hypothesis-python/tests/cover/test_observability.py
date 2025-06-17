@@ -8,8 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import re
+import base64
+import json
+import math
 import textwrap
+from contextlib import nullcontext
 
 import pytest
 
@@ -26,15 +29,22 @@ from hypothesis import (
 )
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
+from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
+from hypothesis.internal.conjecture.data import Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
+from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import choices_to_json, nodes_to_json
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
     rule,
     run_state_machine_as_test,
 )
+from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.conjecture.common import choices, integer_constr, nodes
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -55,25 +65,28 @@ def do_it_all(l, a, x, data):
 @xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 def test_observability():
     with capture_observations() as ls:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ZeroDivisionError):
             do_it_all()
         with pytest.raises(ZeroDivisionError):
             do_it_all()
 
-    infos = [t for t in ls if t["type"] == "info"]
+    infos = [t for t in ls if t.type == "info"]
     assert len(infos) == 2
-    assert {t["title"] for t in infos} == {"Hypothesis Statistics"}
+    assert {t.title for t in infos} == {"Hypothesis Statistics"}
 
-    testcases = [t for t in ls if t["type"] == "test_case"]
+    testcases = [t for t in ls if t.type == "test_case"]
     assert len(testcases) > 50
-    assert {t["property"] for t in testcases} == {do_it_all.__name__}
-    assert len({t["run_start"] for t in testcases}) == 2
-    assert {t["status"] for t in testcases} == {"gave_up", "passed", "failed"}
+    assert {t.property for t in testcases} == {do_it_all.__name__}
+    assert len({t.run_start for t in testcases}) == 2
+    assert {t.status for t in testcases} == {"gave_up", "passed", "failed"}
     for t in testcases:
-        if t["status"] != "gave_up":
-            assert t["timing"]
-            assert ("interactive" in t["arguments"]) == (
-                "generate:interactive" in t["timing"]
+        if t.status != "gave_up":
+            assert t.timing
+            assert ("interactive" in t.arguments) == (
+                "generate:interactive" in t.timing
             )
 
 
@@ -86,9 +99,9 @@ def test_capture_unnamed_arguments():
     with capture_observations() as observations:
         f()
 
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
     for test_case in test_cases:
-        assert list(test_case["arguments"].keys()) == [
+        assert list(test_case.arguments.keys()) == [
             "v1",
             "v2",
             "data",
@@ -97,7 +110,7 @@ def test_capture_unnamed_arguments():
 
 
 @pytest.mark.skipif(
-    PYPY or IN_COVERAGE_TESTS, reason="explain phase requires sys.settrace pre-3.12"
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
 )
 def test_failure_includes_explain_phase_comments():
     @given(st.integers(), st.integers())
@@ -106,13 +119,14 @@ def test_failure_includes_explain_phase_comments():
         if x:
             raise AssertionError
 
-    with (
-        capture_observations() as observations,
-        pytest.raises(AssertionError),
-    ):
-        test_fails()
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails()
 
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
     # only the last test case observation, once we've finished shrinking it,
     # will include explain phase comments.
     #
@@ -120,13 +134,13 @@ def test_failure_includes_explain_phase_comments():
     # https://github.com/HypothesisWorks/hypothesis/pull/4399#discussion_r2101559648
     expected = textwrap.dedent(
         r"""
-        test_fails\(
+        test_fails(
             x=1,
             y=0,  # or any other generated value
-        \)
+        )
     """
     ).strip()
-    assert re.fullmatch(expected, test_cases[-1]["representation"])
+    assert test_cases[-1].representation == expected
 
 
 def test_failure_includes_notes():
@@ -138,11 +152,12 @@ def test_failure_includes_notes():
         note("not included 2")
         raise AssertionError
 
-    with (
-        capture_observations() as observations,
-        pytest.raises(AssertionError),
-    ):
-        test_fails_with_note()
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails_with_note()
 
     expected = textwrap.dedent(
         """
@@ -152,8 +167,8 @@ def test_failure_includes_notes():
         Draw 1: False
     """
     ).strip()
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
-    assert test_cases[-1]["representation"] == expected
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert test_cases[-1].representation == expected
 
 
 def test_normal_representation_includes_draws():
@@ -178,15 +193,13 @@ def test_normal_representation_includes_draws():
     """
     ).strip()
     test_cases = [
-        tc
-        for tc in observations
-        if tc["type"] == "test_case" and tc["status"] == "passed"
+        tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
     ]
     assert test_cases
     # TODO crosshair has a soundness bug with assume. remove branch when fixed
     # https://github.com/pschanely/hypothesis-crosshair/issues/34
     if not crosshair:
-        assert {tc["representation"] for tc in test_cases} == {expected}
+        assert {tc.representation for tc in test_cases} == {expected}
 
 
 @xfail_on_crosshair(Why.other)
@@ -198,9 +211,9 @@ def test_capture_named_arguments():
     with capture_observations() as observations:
         f()
 
-    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
     for test_case in test_cases:
-        assert list(test_case["arguments"].keys()) == [
+        assert list(test_case.arguments.keys()) == [
             "named1",
             "named2",
             "data",
@@ -216,9 +229,56 @@ def test_assume_has_status_reason():
     with capture_observations() as ls:
         f()
 
-    gave_ups = [t for t in ls if t["type"] == "test_case" and t["status"] == "gave_up"]
+    gave_ups = [t for t in ls if t.type == "test_case" and t.status == "gave_up"]
     for gave_up in gave_ups:
-        assert gave_up["status_reason"].startswith("failed to satisfy assume() in f")
+        assert gave_up.status_reason.startswith("failed to satisfy assume() in f")
+
+
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
+)
+def test_minimal_failing_observation():
+    @given(st.integers(), st.integers())
+    @settings(database=None)
+    def test_fails(x, y):
+        if x:
+            raise AssertionError
+
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails()
+
+    observation = [tc for tc in observations if tc.type == "test_case"][-1]
+    expected_representation = textwrap.dedent(
+        r"""
+        test_fails(
+            x=1,
+            y=0,  # or any other generated value
+        )
+    """
+    ).strip()
+
+    assert observation.type == "test_case"
+    assert observation.property == "test_fails"
+    assert observation.status == "failed"
+    assert "AssertionError" in observation.status_reason
+    assert set(observation.timing.keys()) == {
+        "execute:test",
+        "overall:gc",
+        "generate:x",
+        "generate:y",
+    }
+    assert observation.coverage is None
+    assert observation.features == {}
+    assert observation.how_generated == "minimal failing example"
+    assert "AssertionError" in observation.metadata.traceback
+    assert "test_fails" in observation.metadata.traceback
+    assert observation.metadata.reproduction_decorator.startswith("@reproduce_failure")
+    assert observation.representation == expected_representation
+    assert observation.arguments == {"x": 1, "y": 0}
 
 
 @settings(max_examples=20, stateful_step_count=5)
@@ -244,14 +304,240 @@ def test_observability_captures_stateful_reprs():
         run_state_machine_as_test(UltraSimpleMachine)
 
     for x in ls:
-        if x["type"] != "test_case" or x["status"] == "gave_up":
+        if x.type != "test_case" or x.status == "gave_up":
             continue
-        r = x["representation"]
+        r = x.representation
         assert "state.limits()" in r
         assert "state.inc()" in r or "state.dec()" in r  # or both
 
-        t = x["timing"]
+        t = x.timing
         assert "execute:invariant:limits" in t
         has_inc = "generate:rule:inc" in t and "execute:rule:inc" in t
         has_dec = "generate:rule:dec" in t and "execute:rule:dec" in t
         assert has_inc or has_dec
+
+
+# BytestringProvider.draw_boolean divides [0, 127] as False and [128, 255]
+# as True
+@pytest.mark.parametrize(
+    "buffer, expected_status",
+    [
+        # Status.OVERRUN
+        (b"", "gave_up"),
+        # Status.INVALID
+        (b"\x00" + bytes([255]), "gave_up"),
+        # Status.VALID
+        (b"\x00\x00", "passed"),
+        # Status.INTERESTING
+        (bytes([255]) + b"\x00", "failed"),
+    ],
+)
+def test_fuzz_one_input_status(buffer, expected_status):
+    @given(st.booleans(), st.booleans())
+    def test_fails(should_fail, should_fail_assume):
+        if should_fail:
+            raise AssertionError
+        if should_fail_assume:
+            assume(False)
+
+    with capture_observations() as ls:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with (
+            pytest.raises(AssertionError)
+            if expected_status == "failed"
+            else nullcontext()
+        ):
+            test_fails.hypothesis.fuzz_one_input(buffer)
+    assert len(ls) == 1
+    assert ls[0].status == expected_status
+    assert ls[0].how_generated == "fuzz_one_input"
+
+
+def _decode_choice(value):
+    if isinstance(value, list):
+        if value[0] == "integer":
+            # large integers get cast to string, stored as ["integer", str(value)]
+            assert isinstance(value[1], str)
+            return int(value[1])
+        elif value[0] == "bytes":
+            assert isinstance(value[1], str)
+            return base64.b64decode(value[1])
+        elif value[0] == "float":
+            assert isinstance(value[1], int)
+            choice = int_to_float(value[1])
+            assert math.isnan(choice)
+            return choice
+        else:
+            return value[1]
+
+    return value
+
+
+def _decode_choices(data):
+    return [_decode_choice(value) for value in data]
+
+
+def _decode_nodes(data):
+    return [
+        ChoiceNode(
+            type=node["type"],
+            value=_decode_choice(node["value"]),
+            constraints=_decode_constraints(node["type"], node["constraints"]),
+            was_forced=node["was_forced"],
+        )
+        for node in data
+    ]
+
+
+def _decode_constraints(choice_type, data):
+    if choice_type == "integer":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "weights": (
+                None
+                if data["weights"] is None
+                else {_decode_choice(k): v for k, v in data["weights"]}
+            ),
+            "shrink_towards": _decode_choice(data["shrink_towards"]),
+        }
+    elif choice_type == "float":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "allow_nan": data["allow_nan"],
+            "smallest_nonzero_magnitude": data["smallest_nonzero_magnitude"],
+        }
+    elif choice_type == "string":
+        return {
+            "intervals": IntervalSet(tuple(data["intervals"])),
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "bytes":
+        return {
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "boolean":
+        return {"p": data["p"]}
+    else:
+        raise ValueError(f"unknown choice type {choice_type}")
+
+
+def _has_surrogate(choice):
+    return isinstance(choice, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in choice)
+
+
+@example([0.0])
+@example([-0.0])
+@example([SIGNALING_NAN])
+@example([math.nan])
+@example([math.inf])
+@example([-math.inf])
+# json.{loads, dumps} does not roundtrip for surrogate pairs; they are combined
+# into the single code point by json.loads:
+#   json.loads(json.dumps("\udbf4\udc00")) == '\U0010d000'
+#
+# Ignore this case with an `assume`, and add an explicit example to ensure we
+# continue to do so.
+@example(["\udbf4\udc00"])
+@given(st.lists(choices()))
+def test_choices_json_roundtrips(choices):
+    assume(not any(_has_surrogate(choice) for choice in choices))
+    choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
+    assert choices_key(choices) == choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_nodes_json_roundtrips(nodes):
+    assume(
+        not any(
+            _has_surrogate(node.value)
+            or any(_has_surrogate(value) for value in node.constraints.values())
+            for node in nodes
+        )
+    )
+    nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
+    assert nodes == nodes2
+
+
+@pytest.mark.parametrize(
+    "choice, expected",
+    [
+        (math.nan, ["float", float_to_int(math.nan)]),
+        (SIGNALING_NAN, ["float", float_to_int(SIGNALING_NAN)]),
+        (1, 1),
+        (-1, -1),
+        (2**63 + 1, ["integer", str(2**63 + 1)]),
+        (-(2**63 + 1), ["integer", str(-(2**63 + 1))]),
+        (1.0, 1.0),
+        (-0.0, -0.0),
+        (0.0, 0.0),
+        (True, True),
+        (False, False),
+        (b"a", ["bytes", "YQ=="]),
+    ],
+)
+def test_choices_to_json_explicit(choice, expected):
+    assert choices_to_json([choice]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "choice_node, expected",
+    [
+        (
+            ChoiceNode(
+                type="integer",
+                value=2**63 + 1,
+                constraints=integer_constr(),
+                was_forced=False,
+            ),
+            {
+                "type": "integer",
+                "value": ["integer", str(2**63 + 1)],
+                "constraints": integer_constr(),
+                "was_forced": False,
+            },
+        ),
+    ],
+)
+def test_choice_nodes_to_json_explicit(choice_node, expected):
+    assert nodes_to_json([choice_node]) == [expected]
+
+
+def test_metadata_to_json():
+    # this is mostly a covering test than testing anything particular about
+    # ObservationMetadata.
+    @given(st.integers())
+    def f(n):
+        pass
+
+    with capture_observations(choices=True) as observations:
+        f()
+
+    observations = [obs for obs in observations if obs.type == "test_case"]
+    for observation in observations:
+        assert set(
+            to_jsonable(observation.metadata, avoid_realization=False).keys()
+        ) == {
+            "traceback",
+            "reproduction_decorator",
+            "predicates",
+            "backend",
+            "sys.argv",
+            "os.getpid()",
+            "imported_at",
+            "data_status",
+            "interesting_origin",
+            "choice_nodes",
+            "choice_spans",
+        }
+        assert observation.metadata.choice_nodes is not None
+
+        for span in observation.metadata.choice_spans:
+            assert isinstance(span, Span)
+            assert 0 <= span.start <= len(observation.metadata.choice_nodes)
+            assert 0 <= span.end <= len(observation.metadata.choice_nodes)

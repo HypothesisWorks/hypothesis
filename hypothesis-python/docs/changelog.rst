@@ -18,6 +18,199 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.10:
+
+---------------------
+6.135.10 - 2025-06-15
+---------------------
+
+Fix a rare race condition in |ExampleDatabase.fetch|, where we might have read from a non-existent directory.
+
+.. _v6.135.9:
+
+--------------------
+6.135.9 - 2025-06-13
+--------------------
+
+Refactor some internal code related to patches to make it easier to test.
+
+.. _v6.135.8:
+
+--------------------
+6.135.8 - 2025-06-13
+--------------------
+
+Add type hints to internal code for patching.
+
+.. _v6.135.7:
+
+--------------------
+6.135.7 - 2025-06-12
+--------------------
+
+Fixes a race condition in |ExampleDatabase.add_listener| for |DirectoryBasedExampleDatabase| after version :ref:`6.135.1 <v6.135.1>` where the listener might have tried to read a file that doesn't exist.
+
+.. _v6.135.6:
+
+--------------------
+6.135.6 - 2025-06-11
+--------------------
+
+This patch corrects the f-string formatting of a few array-related error messages.
+
+.. _v6.135.5:
+
+--------------------
+6.135.5 - 2025-06-10
+--------------------
+
+Improve the error message when applying |@given| to a :pypi:`pytest` fixture with pytest 8.4.0.
+
+.. _v6.135.4:
+
+--------------------
+6.135.4 - 2025-06-09
+--------------------
+
+Further improve the performance of the constants-collection feature introduced in :ref:`version 6.131.1 <v6.131.1>`, by ignoring large files and files with many constants.
+
+.. _v6.135.3:
+
+--------------------
+6.135.3 - 2025-06-08
+--------------------
+
+This release adds the experimental and unstable |OBSERVABILITY_CHOICES| option for :ref:`observability <observability>`. If set, the choice sequence is included in ``metadata.choice_nodes``, and choice sequence spans are included in ``metadata.choice_spans``.
+
+These are relatively low-level implementation detail of Hypothesis, and are exposed in observability for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence and choice spans.
+
+We are actively working towards a better interface for this. Feel free to use |OBSERVABILITY_CHOICES| to experiment, but don't rely on it yet!
+
+.. _v6.135.2:
+
+--------------------
+6.135.2 - 2025-06-08
+--------------------
+
+This patch restores compatibility when using `the legacy Python 3.9 LL(1)
+parser <https://docs.python.org/3/whatsnew/3.9.html#new-parser>`__ yet
+again, because the fix in :ref:`version 6.131.33 <v6.131.33>` was too
+brittle.
+
+Thanks to Marco Ricci for this fix!
+
+.. _v6.135.1:
+
+--------------------
+6.135.1 - 2025-06-05
+--------------------
+
+|DirectoryBasedExampleDatabase| now removes empty directories after |ExampleDatabase.delete| is called.
+
+.. _v6.135.0:
+
+--------------------
+6.135.0 - 2025-06-03
+--------------------
+
+This release adds :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`, for use in testing implementations of :ref:`alternative backends <alternative-backends>`.
+
+.. _v6.134.0:
+
+--------------------
+6.134.0 - 2025-06-03
+--------------------
+
+This patch adds :class:`hypothesis.extra.django.SimpleTestCase` (:issue:`4117`)
+
+Thanks to Chris Wesseling for this contribution!
+
+.. _v6.133.2:
+
+--------------------
+6.133.2 - 2025-06-03
+--------------------
+
+Internal changes to support `hypofuzz <https://hypofuzz.com>`__.
+
+.. _v6.133.1:
+
+--------------------
+6.133.1 - 2025-06-03
+--------------------
+
+The ``to_json`` hook used internally when writing :ref:`observability <observability>` reports is now supported on nested dataclasses (in addition to outermost dataclasses).
+
+.. _v6.133.0:
+
+--------------------
+6.133.0 - 2025-06-02
+--------------------
+
+Warn when :func:`~hypothesis.strategies.shared` strategies with the same ``key``
+draw from different base strategies. This could lead to subtle failures or
+lower-than-expected example coverage.
+
+.. _v6.132.0:
+
+--------------------
+6.132.0 - 2025-05-31
+--------------------
+
+Add |PrimitiveProvider.on_observation| to the internal :ref:`alternative backends <alternative-backends-internals>` interface.
+
+.. _v6.131.33:
+
+---------------------
+6.131.33 - 2025-05-31
+---------------------
+
+This patch restores compatibility when using `the legacy Python 3.9 LL(1)
+parser <https://docs.python.org/3/whatsnew/3.9.html#new-parser>`__, which
+was accidentally broken since :ref:`version 6.130.13 <v6.130.13>`.
+
+Thanks to Marco Ricci for this fix!
+
+.. _v6.131.32:
+
+---------------------
+6.131.32 - 2025-05-30
+---------------------
+
+:ref:`fuzz_one_input <fuzz_one_input>` now writes :ref:`observability reports <observability>` if observability is enabled, bringing it in line with the behavior of other standard ways to invoke a Hypothesis test.
+
+.. _v6.131.31:
+
+---------------------
+6.131.31 - 2025-05-30
+---------------------
+
+Improve documentation of |@example|.
+
+.. _v6.131.30:
+
+---------------------
+6.131.30 - 2025-05-27
+---------------------
+
+This patch resolves a Pandas FutureWarning (:issue:`4400`) caused by indexing with an integer key.
+
+.. _v6.131.29:
+
+---------------------
+6.131.29 - 2025-05-27
+---------------------
+
+The observations passed to |TESTCASE_CALLBACKS| are now dataclasses, rather than dictionaries. The content written to ``.hypothesis/observed`` under ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY`` remains the same.
+
+.. _v6.131.28:
+
+---------------------
+6.131.28 - 2025-05-25
+---------------------
+
+Add documentation to some internal APIs.
+
 .. _v6.131.27:
 
 ---------------------
@@ -6901,8 +7094,7 @@ This release consists of some internal refactoring to the shrinker in preparatio
 5.18.0 - 2020-06-22
 -------------------
 
-This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for
-:ref:`explicit examples <providing-explicit-examples>`, as we already do
+This release teaches Hypothesis to :ref:`shorten tracebacks <v3.79.2>` for |@example|, as we already do
 for generated examples, so that you can focus on your code rather than ours.
 
 If you have multiple failing explicit examples, they will now all be reported.
@@ -10850,7 +11042,7 @@ and adds a CI check so we don't add new ones.
 This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
 about :func:`@seed <hypothesis.seed>` did not check the current verbosity
 setting, and the wrong settings were active while executing
-:ref:`explicit examples <providing-explicit-examples>`.
+explicit examples from |@example|.
 
 .. _v3.71.5:
 

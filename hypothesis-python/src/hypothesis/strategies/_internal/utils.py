@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import sys
 import threading
 from functools import partial
@@ -17,7 +18,6 @@ from typing import TYPE_CHECKING, Callable
 import attr
 
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import dataclass_asdict
 from hypothesis.internal.floats import clamp, float_to_int
 from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
@@ -88,6 +88,7 @@ def cacheable(fn: "T") -> "T":
         else:
             result = fn(*args, **kwargs)
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
+                result._is_singleton = True
                 cache[cache_key] = result
             return result
 
@@ -165,6 +166,10 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     known types.
     """
     if isinstance(obj, (str, int, float, bool, type(None))):
+        # We convert integers of 2**63 to floats, to avoid crashing external
+        # utilities with a 64 bit integer cap (notable, sqlite). See
+        # https://github.com/HypothesisWorks/hypothesis/pull/3797#discussion_r1413425110
+        # and https://github.com/simonw/sqlite-utils/issues/605.
         if isinstance(obj, int) and not isinstance(obj, bool) and abs(obj) >= 2**63:
             # Silently clamp very large ints to max_float, to avoid OverflowError when
             # casting to float.  (but avoid adding more constraints to symbolic values)
@@ -175,6 +180,7 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
         return obj
     if avoid_realization:
         return "<symbolic>"
+
     recur = partial(to_jsonable, avoid_realization=avoid_realization)
     if isinstance(obj, (list, tuple, set, frozenset)):
         if isinstance(obj, tuple) and hasattr(obj, "_asdict"):
@@ -199,7 +205,12 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
         and dcs.is_dataclass(obj)
         and not isinstance(obj, type)
     ):
-        return recur(dataclass_asdict(obj))
+        # Avoid dataclasses.asdict here to ensure that inner to_json overrides
+        # can get called as well
+        return {
+            field.name: recur(getattr(obj, field.name))
+            for field in dataclasses.fields(obj)  # type: ignore
+        }
     if attr.has(type(obj)):
         return recur(attr.asdict(obj, recurse=False))  # type: ignore
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
