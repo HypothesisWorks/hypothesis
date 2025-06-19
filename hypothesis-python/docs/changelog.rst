@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.12:
+
+---------------------
+6.135.12 - 2025-06-19
+---------------------
+
+Fix a rare race condition in internal cache eviction logic.
+
 .. _v6.135.11:
 
 ---------------------
