@@ -228,7 +228,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.dtype = dtype
         self.element_strategy = element_strategy
         self.unique = unique
-        self._check_elements = dtype.kind not in ("O", "V")
+        self._check_elements = dtype.kind not in ("V",)
 
     def __repr__(self):
         return (
