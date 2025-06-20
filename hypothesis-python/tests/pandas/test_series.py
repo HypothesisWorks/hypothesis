@@ -35,7 +35,10 @@ def test_can_create_a_series_of_mixed_python_type(series):
     assert series.dtype == pd.Series([], dtype=object).dtype
 
 
-@given(data=st.data(), anything=st.from_type(type).flatmap(st.from_type).filter(lambda x: not isinstance(x, HypothesisRandom)))
+@given(
+    data=st.data(),
+    anything=st.from_type(type).flatmap(st.from_type).filter(lambda x: not isinstance(x, HypothesisRandom))
+)
 def test_can_create_a_series_of_single_python_type(data, anything):
     """Ensure that elements from a strategy are present in the series without modification."""
     series = data.draw(pdst.series(elements=st.just(anything), dtype=object).filter(lambda x: not x.empty))
