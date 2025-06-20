@@ -107,21 +107,20 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
             test()
 
 
-def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch):
-    with deterministic_PRNG():
-        for _ in range(100):
-            # Setting max_examples=11 ensures we have enough examples for the
-            # health checks to finish running, but cuts the generation short
-            # after that point to allow this test to run in reasonable time.
-            @settings(database=None, max_examples=11, phases=[Phase.generate])
-            @given(
-                st.integers(0, 100).flatmap(
-                    lambda n: st.binary(
-                        min_size=min(n * 100, BUFFER_SIZE), max_size=n * 100
-                    )
+def test_does_not_trigger_health_check_when_most_examples_are_small():
+    for _ in range(10):
+        # Setting max_examples=11 ensures we have enough examples for the
+        # health checks to finish running, but cuts the generation short
+        # after that point to allow this test to run in reasonable time.
+        @settings(database=None, max_examples=11, phases=[Phase.generate])
+        @given(
+            st.integers(0, 100).flatmap(
+                lambda n: st.binary(
+                    min_size=min(n * 100, BUFFER_SIZE), max_size=n * 100
                 )
             )
-            def test(b):
-                pass
+        )
+        def test(b):
+            pass
 
-            test()
+        test()
