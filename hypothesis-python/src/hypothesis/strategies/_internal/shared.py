@@ -8,11 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import warnings
 from collections.abc import Hashable
 from typing import Any, Optional
 
-from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.strategies import Ex
