@@ -16,6 +16,7 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 from hypothesis.strategies._internal.random import HypothesisRandom
+
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 from tests.pandas.helpers import supported_by_pandas
 
@@ -37,11 +38,17 @@ def test_can_create_a_series_of_mixed_python_type(series):
 
 @given(
     data=st.data(),
-    anything=st.from_type(type).flatmap(st.from_type).filter(lambda x: not isinstance(x, HypothesisRandom))
+    anything=st.from_type(type)
+    .flatmap(st.from_type)
+    .filter(lambda x: not isinstance(x, HypothesisRandom)),
 )
 def test_can_create_a_series_of_single_python_type(data, anything):
     """Ensure that elements from a strategy are present in the series without modification."""
-    series = data.draw(pdst.series(elements=st.just(anything), dtype=object).filter(lambda x: not x.empty))
+    series = data.draw(
+        pdst.series(elements=st.just(anything), dtype=object).filter(
+            lambda x: not x.empty
+        )
+    )
     assert all(val is anything for val in series.values)
 
 
