@@ -82,7 +82,7 @@ def test_enum_repr_uses_class_not_a_list():
 
 
 def test_repr_truncates_with_many_elements():
-    s = st.sampled_from([n for n in range(10_000)])
+    s = st.sampled_from(list(range(10_000)))
     repr_limit = 512
     assert repr(s) == f"sampled_from([{', '.join(map(str, range(repr_limit)))}, ...])"
 
