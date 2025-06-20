@@ -96,6 +96,14 @@ TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
+def _is_comparable(x: Any) -> bool:
+    """Returns True if the input can be compared."""
+    try:
+        return x == x or x != x
+    except Exception:
+        return False
+
+
 @defines_strategy(force_reusable_values=True)
 def from_dtype(
     dtype: np.dtype,
@@ -214,7 +222,7 @@ def from_dtype(
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
     elif dtype.kind == "O":
-        result = st.from_type(type).flatmap(st.from_type)
+        result = st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
