@@ -504,8 +504,12 @@ class Rule:
         self.bundles = tuple(bundles)
 
     def __repr__(self) -> str:
-        rep = get_pretty_function_description
-        bits = [f"{k}={rep(v)}" for k, v in dataclasses.asdict(self).items() if v]
+        bits = [
+            f"{field.name}="
+            f"{get_pretty_function_description(getattr(self, field.name))}"
+            for field in dataclasses.fields(self)
+            if getattr(self, field.name)
+        ]
         return f"{self.__class__.__name__}({', '.join(bits)})"
 
 

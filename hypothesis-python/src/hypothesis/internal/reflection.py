@@ -453,7 +453,7 @@ def get_pretty_function_description(f: object) -> str:
         return pretty(f)
     if not hasattr(f, "__name__"):
         return repr(f)
-    name = f.__name__  # type: ignore # validated by hasattr above
+    name = f.__name__  # type: ignore
     if name == "<lambda>":
         return extract_lambda_source(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
