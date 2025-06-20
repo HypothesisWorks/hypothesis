@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.13:
+
+---------------------
+6.135.13 - 2025-06-20
+---------------------
+
+Fixes a substantial performance regression in stateful tests from computing string representations, present since :ref:`version 6.131.20 <v6.131.20>`.
+
 .. _v6.135.12:
 
 ---------------------
