@@ -586,6 +586,7 @@ def test_builds_error_messages(data):
     data.draw(st.sampled_from(AnEnum))
 
 
+@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
@@ -628,6 +629,7 @@ def _composite2(draw):
     return draw(st.integers())
 
 
+@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [

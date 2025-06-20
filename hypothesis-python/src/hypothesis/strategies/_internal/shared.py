@@ -49,12 +49,14 @@ class SharedStrategy(SearchStrategy[Ex]):
             data._shared_strategy_draws[key] = (strat_label, drawn)
         else:
             drawn_strat_label, drawn = data._shared_strategy_draws[key]
+            # Check disabled pending resolution of #4301
             if drawn_strat_label != strat_label:
-                warnings.warn(
-                    f"Different strategies are shared under {key=}. This"
-                    " risks drawing values that are not valid examples for the strategy,"
-                    " or that have a narrower range than expected.",
-                    HypothesisWarning,
-                    stacklevel=1,
-                )
+                pass
+                # warnings.warn(
+                #     f"Different strategies are shared under {key=}. This"
+                #     " risks drawing values that are not valid examples for the strategy,"
+                #     " or that have a narrower range than expected.",
+                #     HypothesisWarning,
+                #     stacklevel=1,
+                # )
         return drawn
