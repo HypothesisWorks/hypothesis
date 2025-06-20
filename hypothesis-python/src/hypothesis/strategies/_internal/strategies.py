@@ -574,10 +574,11 @@ class SampledFromStrategy(SearchStrategy[Ex]):
 
     def __repr__(self):
         if self._cached_repr is None:
+            rep = get_pretty_function_description
             elements_s = (
-                ", ".join([repr(v) for v in self.elements[:512]]) + ", ..."
+                ", ".join(rep(v) for v in self.elements[:512]) + ", ..."
                 if len(self.elements) > 512
-                else ", ".join([repr(v) for v in self.elements])
+                else ", ".join(rep(v) for v in self.elements)
             )
             braces = self.force_repr_braces or ("(", ")")
             instance_s = (
