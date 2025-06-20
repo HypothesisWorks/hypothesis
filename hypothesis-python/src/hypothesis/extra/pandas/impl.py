@@ -126,6 +126,8 @@ def elements_and_dtype(elements, dtype, source=None):
             if is_na_dtype and value is None:
                 return None
             name = f"draw({prefix}elements)"
+            if dtype.kind == "O":
+                return value  # for objects, just use the object
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
@@ -638,7 +640,7 @@ def data_frames(
                         else:
                             value = draw(c.elements)
                         try:
-                            data[c.name].iloc[i] = value
+                            data[c.name].iat[i] = value
                         except ValueError as err:  # pragma: no cover
                             # This just works in Pandas 1.4 and later, but gives
                             # a confusing error on previous versions.

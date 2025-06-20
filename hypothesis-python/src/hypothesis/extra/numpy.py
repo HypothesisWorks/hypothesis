@@ -213,6 +213,8 @@ def from_dtype(
         else:  # NEP-7 defines the NaT value as integer -(2**63)
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
+    elif dtype.kind == "O":
+        result = st.from_type(type).flatmap(st.from_type)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
