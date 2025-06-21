@@ -48,7 +48,7 @@ class SharedStrategy(SearchStrategy[Ex]):
         else:
             drawn_strat_label, drawn = data._shared_strategy_draws[key]
             # Check disabled pending resolution of #4301
-            if drawn_strat_label != strat_label:
+            if drawn_strat_label != strat_label:  # pragma: no cover
                 pass
                 # warnings.warn(
                 #     f"Different strategies are shared under {key=}. This"
