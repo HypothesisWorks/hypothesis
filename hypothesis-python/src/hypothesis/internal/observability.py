@@ -306,10 +306,12 @@ def make_testcase(
 
     if status is not None and isinstance(status, Status):
         status = status_map[status]
+    if status is None:
+        status = status_map[data.status]
 
     return TestCaseObservation(
         type="test_case",
-        status=status if status is not None else status_map[data.status],
+        status=status,
         status_reason=status_reason,
         representation=representation,
         arguments={
