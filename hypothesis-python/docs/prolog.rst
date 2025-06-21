@@ -83,6 +83,7 @@
 .. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
 .. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
 .. |st.sampled_from| replace:: :func:`~hypothesis.strategies.sampled_from`
+.. |st.shared| replace:: :func:`~hypothesis.strategies.shared`
 .. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
