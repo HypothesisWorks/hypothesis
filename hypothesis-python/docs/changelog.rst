@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.15:
+
+---------------------
+6.135.15 - 2025-06-25
+---------------------
+
+Temporarily disable the warning when |st.shared| strategies with the same ``key`` draw from different base strategies, due to false alarms. Once we fix the false alarms in a future release, the warning will be re-enabled.
+
 .. _v6.135.14:
 
 ---------------------
