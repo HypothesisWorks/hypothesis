@@ -623,6 +623,7 @@ class ConjectureData:
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
         random: Optional[Random] = None,
+        provider_kw: Optional[dict[str, Any]] = None,
     ) -> "ConjectureData":
         from hypothesis.internal.conjecture.engine import choice_count
 
@@ -632,6 +633,7 @@ class ConjectureData:
             prefix=choices,
             observer=observer,
             provider=provider,
+            provider_kw=provider_kw
         )
 
     def __init__(
