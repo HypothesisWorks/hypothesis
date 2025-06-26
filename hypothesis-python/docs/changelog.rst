@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.16:
+
+---------------------
+6.135.16 - 2025-06-26
+---------------------
+
+Fixes an error when the ``_pytest`` module is present in ``sys.modules``, but *not* the ``_pytest.outcomes`` or ``_pytest.fixtures`` modules. This can happen with code that imports just ``_pytest``, without importing ``pytest``.
+
 .. _v6.135.15:
 
 ---------------------
