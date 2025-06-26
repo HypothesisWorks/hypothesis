@@ -331,15 +331,12 @@ def lists(
         # Note that lazy strategies automatically unwrap when passed to a defines_strategy
         # function.
         tuple_suffixes = None
-        # the type: ignores in the TupleStrategy and IntegersStrategy cases are
-        # for a mypy bug, which incorrectly narrows `elements` to Never.
-        # https://github.com/python/mypy/issues/16494
         if (
             # We're generating a list of tuples unique by the first element, perhaps
             # via st.dictionaries(), and this will be more efficient if we rearrange
             # our strategy somewhat to draw the first element then draw add the rest.
             isinstance(elements, TupleStrategy)
-            and len(elements.element_strategies) >= 1  # type: ignore
+            and len(elements.element_strategies) >= 1
             and len(unique_by) == 1
             and (
                 # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
@@ -357,22 +354,24 @@ def lists(
             )
         ):
             unique_by = (identity,)
-            tuple_suffixes = TupleStrategy(elements.element_strategies[1:])  # type: ignore
-            elements = elements.element_strategies[0]  # type: ignore
+            tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
+            elements = elements.element_strategies[0]
 
         # UniqueSampledListStrategy offers a substantial performance improvement for
         # unique arrays with few possible elements, e.g. of eight-bit integer types.
         if (
             isinstance(elements, IntegersStrategy)
-            and elements.start is not None  # type: ignore
-            and elements.end is not None  # type: ignore
-            and (elements.end - elements.start) <= 255  # type: ignore
+            and elements.start is not None
+            and elements.end is not None
+            and (elements.end - elements.start) <= 255
         ):
             elements = SampledFromStrategy(
                 sorted(range(elements.start, elements.end + 1), key=abs)  # type: ignore
-                if elements.end < 0 or elements.start > 0  # type: ignore
-                else list(range(elements.end + 1))  # type: ignore
-                + list(range(-1, elements.start - 1, -1))  # type: ignore
+                if elements.end < 0 or elements.start > 0
+                else (
+                    list(range(elements.end + 1))
+                    + list(range(-1, elements.start - 1, -1))
+                )
             )
 
         if isinstance(elements, SampledFromStrategy):

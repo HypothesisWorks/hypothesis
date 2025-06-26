@@ -87,7 +87,7 @@ def check_sample(
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
-        return values
+        return values  # type: ignore
     return tuple(values)
 
 
