@@ -774,8 +774,8 @@ def skip_exceptions_to_reraise():
         exceptions.add(sys.modules["unittest2"].SkipTest)
     if "nose" in sys.modules:
         exceptions.add(sys.modules["nose"].SkipTest)
-    if "_pytest" in sys.modules:
-        exceptions.add(sys.modules["_pytest"].outcomes.Skipped)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.add(sys.modules["_pytest.outcomes"].Skipped)
     return tuple(sorted(exceptions, key=str))
 
 
@@ -790,8 +790,8 @@ def failure_exceptions_to_catch() -> tuple[type[BaseException], ...]:
     # them as standard exceptions, check for flakiness, etc.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2223 for details.
     exceptions = [Exception, SystemExit, GeneratorExit]
-    if "_pytest" in sys.modules:
-        exceptions.append(sys.modules["_pytest"].outcomes.Failed)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.append(sys.modules["_pytest.outcomes"].Failed)
     return tuple(exceptions)
 
 
@@ -1785,12 +1785,13 @@ def given(
 
         if (
             "_pytest" in sys.modules
+            and "_pytest.fixtures" in sys.modules
             and (
                 tuple(map(int, sys.modules["_pytest"].__version__.split(".")[:2]))
                 >= (8, 4)
             )
             and isinstance(
-                test, sys.modules["_pytest"].fixtures.FixtureFunctionDefinition
+                test, sys.modules["_pytest.fixtures"].FixtureFunctionDefinition
             )
         ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
             raise InvalidArgument("@given cannot be applied to a pytest fixture")
