@@ -17,6 +17,9 @@ from hypothesis.errors import ResolutionFailed
 
 from tests.common import utils
 
+# error only occurs with typing variants
+# ruff: noqa: UP006, UP035
+
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722
 

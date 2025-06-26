@@ -949,7 +949,7 @@ def resolve_Iterator(thing):
     return st.iterables(st.from_type(thing.__args__[0]))
 
 
-@register(typing.Counter, st.builds(collections.Counter))
+@register(collections.Counter, st.builds(collections.Counter))
 def resolve_Counter(thing):
     return st.dictionaries(
         keys=st.from_type(thing.__args__[0]),
@@ -957,17 +957,17 @@ def resolve_Counter(thing):
     ).map(collections.Counter)
 
 
-@register(typing.Deque, st.builds(collections.deque))
+@register(collections.deque, st.builds(collections.deque))
 def resolve_deque(thing):
     return st.lists(st.from_type(thing.__args__[0])).map(collections.deque)
 
 
-@register(typing.ChainMap, st.builds(dict).map(collections.ChainMap))
+@register(collections.ChainMap, st.builds(dict).map(collections.ChainMap))
 def resolve_ChainMap(thing):
     return resolve_Dict(thing).map(collections.ChainMap)
 
 
-@register(typing.OrderedDict, st.builds(dict).map(collections.OrderedDict))
+@register(collections.OrderedDict, st.builds(dict).map(collections.OrderedDict))
 def resolve_OrderedDict(thing):
     return resolve_Dict(thing).map(collections.OrderedDict)
 

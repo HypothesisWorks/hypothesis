@@ -1,6 +1,9 @@
 [tool.ruff]
 line-length = 125
-target-version = "py38"
+target-version = "py39"
+# Because we set target-version=py39, ruff can't parse this file at all.
+# I don't think ruff supports per-file target versions.
+extend-exclude = ["test_typealias_py312.py"]
 
 [tool.ruff.lint]
 select = [
@@ -42,6 +45,7 @@ ignore = [
   "E721",
   "E731",
   "E741",
+  "FBT001",
   "FBT003",
   "PD011",
   "PD901",
@@ -59,9 +63,11 @@ ignore = [
   "PT019",
   "PT023",
   "PT027",
+  "PT031",
   "RUF001",  # don't break our tests by rewriting confusables
   "RUF005",
   "RUF017",
+  "RUF028",  # we use fmt: off for black as well as ruff, with differing semantics
   "SIM102",
   "SIM105",
   "SIM108",
@@ -74,15 +80,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904", "FBT001"]
+"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904"]
 "hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
-"hypothesis-python/src/hypothesis/internal/conjecture/data.py" = ["FBT001"]
-"hypothesis-python/src/hypothesis/internal/conjecture/datatree.py" = ["FBT001"]
 "hypothesis-python/tests/nocover/test_imports.py" = ["F403", "F405"]
 "hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]
 "hypothesis-python/src/hypothesis/internal/conjecture/*" = ["B023"]
 "hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
-"hypothesis-python/tests/conjecture/test_test_data.py" = ["FBT001"]
 
 [tool.mypy]
 python_version = "3.10"

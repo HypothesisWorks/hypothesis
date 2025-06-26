@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
-from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, cast
+from typing import Callable, Final, Literal, NoReturn, Optional, Union, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -109,7 +109,7 @@ class HealthCheckState:
     valid_examples: int = field(default=0)
     invalid_examples: int = field(default=0)
     overrun_examples: int = field(default=0)
-    draw_times: "defaultdict[str, List[float]]" = field(
+    draw_times: defaultdict[str, list[float]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
