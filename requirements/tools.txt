@@ -283,7 +283,7 @@ sortedcontainers-stubs==2.4.3
     # via -r requirements/tools.in
 soupsieve==2.7
     # via beautifulsoup4
-sphinx==8.1.3
+sphinx==8.2.3
     # via
     #   -r requirements/tools.in
     #   furo
