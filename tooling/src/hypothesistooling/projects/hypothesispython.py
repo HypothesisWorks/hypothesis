@@ -69,7 +69,6 @@ def has_source_changes():
 
 def build_docs(*, builder="html", only=()):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-    # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
         "--fail-on-warning",

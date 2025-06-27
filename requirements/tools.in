@@ -29,4 +29,7 @@ typing-extensions
 watchdog # for typing
 build
 sortedcontainers-stubs # for typing
+# pinning due to race condition
+# https://github.com/HypothesisWorks/hypothesis/actions/runs/15914913811/job/44894206776?pr=4388#step:6:764
+snowballstemmer<=3.0.0
 -r test.in
