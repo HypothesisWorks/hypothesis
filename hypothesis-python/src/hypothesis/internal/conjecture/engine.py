@@ -1453,7 +1453,7 @@ class ConjectureRunner:
             prefix=prefix,
             observer=observer,
             provider=provider,
-            provider_kw=self.settings.provider_kw,
+            provider_kw=self.settings.backend_kwargs,
             max_choices=max_choices,
             random=self.random,
         )
