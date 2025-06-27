@@ -168,6 +168,8 @@ Test case
 .. jsonschema:: ./schema_observations.json#/oneOf/0
    :hide_key: /additionalProperties, /type
 
+.. _observability-hypothesis-metadata:
+
 Hypothesis metadata
 +++++++++++++++++++
 

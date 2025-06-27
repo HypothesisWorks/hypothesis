@@ -281,6 +281,30 @@ def test_minimal_failing_observation():
     assert observation.arguments == {"x": 1, "y": 0}
 
 
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
+)
+def test_all_failing_observations_have_reproduction_decorator():
+    @given(st.integers())
+    def test_fails(x):
+        raise AssertionError
+
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails()
+
+    # all failed test case observations should have reprodution_decorator
+    for observation in [
+        tc for tc in observations if tc.type == "test_case" and tc.status == "failed"
+    ]:
+        decorator = observation.metadata.reproduction_decorator
+        assert decorator is not None
+        assert decorator.startswith("@reproduce_failure")
+
+
 @settings(max_examples=20, stateful_step_count=5)
 class UltraSimpleMachine(RuleBasedStateMachine):
     value = 0
