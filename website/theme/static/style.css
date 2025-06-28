@@ -49,24 +49,23 @@ code {
   background-color: #f5f5f5;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.9em;
   color: #c7254e;
 }
 
 pre {
   background-color: #f5f5f5;
-  padding: 1rem;
+  padding: 0.9rem;
   border-radius: 6px;
   overflow-x: auto;
   margin: 1.5rem 0;
   border: 1px solid #ddd;
+  line-height: 1.1;
 }
 
 pre code {
   padding: 0;
   color: var(--text-color);
   font-size: 0.85rem;
-  line-height: 1.4;
 }
 
 @media only screen and (max-width: 25em) {
@@ -194,7 +193,7 @@ pre code {
 }
 
 .home-page {
-  max-width: 800px;
+  max-width: 850px;
   margin: 0 auto;
 }
 
@@ -352,7 +351,7 @@ pre code {
 }
 
 .article-page {
-  max-width: 800px;
+  max-width: 850px;
   margin: 0 auto;
 }
 
@@ -456,7 +455,7 @@ pre code {
 }
 
 .static-page {
-  max-width: 800px;
+  max-width: 850px;
   margin: 0 auto;
 }
 

@@ -16,8 +16,12 @@ pre[class*="language-"] ::-moz-selection {
 
 /* Code blocks */
 pre[class*="language-"] {
-  margin: 2em;
   overflow: auto;
+}
+
+/* Ensure tokens don't override line-height */
+pre[class*="language-"] * {
+  line-height: inherit;
 }
 
 .token.comment,

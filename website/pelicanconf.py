@@ -52,5 +52,20 @@ MENUITEMS = (
 
 DEFAULT_PAGINATION = False
 
+# same as the default from https://docs.getpelican.com/en/latest/settings.html#MARKDOWN,
+# but with use_pygments = False, since we use prism.js for syntax highlighting
+# instead.
+MARKDOWN = {
+    "extension_configs": {
+        "markdown.extensions.codehilite": {
+            "use_pygments": False,
+            "css_class": "highlight",
+        },
+        "markdown.extensions.extra": {},
+        "markdown.extensions.meta": {},
+    },
+    "output_format": "html5",
+}
+
 # Uncomment following line if you want document-relative URLs when developing
 # RELATIVE_URLS = True
