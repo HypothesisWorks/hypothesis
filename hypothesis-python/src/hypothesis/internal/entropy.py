@@ -35,12 +35,13 @@ if TYPE_CHECKING:
 else:  # pragma: no cover
     RandomLike = random.Random
 
+_RKEY = count()
+_global_random_rkey = next(_RKEY)
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
-_RKEY = count()
 RANDOMS_TO_MANAGE: WeakValueDictionary[int, RandomLike] = WeakValueDictionary(
-    {next(_RKEY): random}
+    {_global_random_rkey: random}
 )
 
 
@@ -148,6 +149,16 @@ def register_random(r: RandomLike) -> None:
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
+# the most recent state of the global random instance, as restored by hypothesis.
+# This might not be the current state of the global random instance if its
+# state changed since hypothesis seeded it. If nobody other than hypothesis
+# is touching the global random instance, then this will be the state of the global
+# random instance.
+#
+# This is used to address a threading race condition in deprecate_random_in_strategy.
+_global_random_restored_state: Optional[Any] = None
+
+
 def get_seeder_and_restorer(
     seed: Hashable = 0,
 ) -> tuple[Callable[[], None], Callable[[], None]]:
@@ -177,10 +188,13 @@ def get_seeder_and_restorer(
             r.seed(seed)
 
     def restore_all() -> None:
+        global _global_random_restored_state
+
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
             if r is not None:  # i.e., hasn't been garbage-collected
                 r.setstate(state)
+        _global_random_restored_state = states[_global_random_rkey]
         states.clear()
 
     return seed_all, restore_all
