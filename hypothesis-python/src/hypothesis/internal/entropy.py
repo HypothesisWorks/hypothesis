@@ -15,6 +15,7 @@ import sys
 import warnings
 from collections.abc import Generator, Hashable
 from itertools import count
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Callable, Optional
 from weakref import WeakValueDictionary
 
@@ -186,6 +187,9 @@ def get_seeder_and_restorer(
     return seed_all, restore_all
 
 
+global_random_lock = Lock()
+
+
 @contextlib.contextmanager
 def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     """Context manager that handles random.seed without polluting global state.
@@ -195,9 +199,18 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-        hypothesis.core._hypothesis_global_random = random.Random()
-        register_random(hypothesis.core._hypothesis_global_random)
+    # if thread A passes the `_hypothesis_global_random is not None`
+    # check, then switches to thread B which passes the same check, then
+    # we can leave a Random() instance with zero references
+    # if the thread switches again between setting _hypothesis_global_random
+    # and calling register_random.
+    #
+    # register_random will rightfully complain about this. Prevent this with a
+    # lock around the initialization.
+    with global_random_lock:
+        if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
+            hypothesis.core._hypothesis_global_random = random.Random()
+            register_random(hypothesis.core._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
