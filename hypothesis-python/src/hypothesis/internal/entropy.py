@@ -194,7 +194,14 @@ def get_seeder_and_restorer(
             r = RANDOMS_TO_MANAGE.get(k)
             if r is not None:  # i.e., hasn't been garbage-collected
                 r.setstate(state)
-        _global_random_restored_state = states[_global_random_rkey]
+
+        # we don't expect the global random to ever be gc'd (and therefore removed
+        # from the WeakValueDictionary RANDOMS_TO_MANAGE), but I have observed
+        # RANDOMS_TO_MANAGE being empty when running under crosshair.
+        # `pytest -k test_seed_random_twice --hypothesis-profile=crosshair`
+        # reproduces an empty RANDOMS_TO_MANAGE at time of writing.
+        if _global_random_rkey in states:  # pragma: no branch
+            _global_random_restored_state = states[_global_random_rkey]
         states.clear()
 
     return seed_all, restore_all
