@@ -61,7 +61,7 @@ MIDDLEWARE_CLASSES = (
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
 
-ROOT_URLCONF = "tests.django.toys.urls"
+ROOT_URLCONF = "tests.django.toys.settings.urls"
 
 WSGI_APPLICATION = "tests.django.toys.wsgi.application"
 

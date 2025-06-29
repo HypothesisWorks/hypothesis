@@ -187,10 +187,21 @@ def test(x):
     pass
 """
 
+pytest_version = tuple(map(int, pytest.__version__.split(".")[:2]))
+
+
+def assert_outcomes(result, *, errors=0, failed=0):
+    kwargs = {"errors" if pytest_version[0] > 5 else "error": errors}
+    result.assert_outcomes(failed=failed, **kwargs)
+
 
 def test_given_fails_if_already_decorated_with_fixture(testdir):
     script = testdir.makepyfile(TESTSCRIPT_FIXTURE_THEN_GIVEN)
-    testdir.runpytest(script).assert_outcomes(failed=1)
+    result = testdir.runpytest(script)
+    if pytest_version[:2] >= (8, 4):
+        assert_outcomes(result, errors=1)
+    else:
+        assert_outcomes(result, failed=1)
 
 
 TESTSCRIPT_GIVEN_THEN_FIXTURE = """
@@ -206,7 +217,4 @@ def test(x):
 
 def test_fixture_errors_if_already_decorated_with_given(testdir):
     script = testdir.makepyfile(TESTSCRIPT_GIVEN_THEN_FIXTURE)
-    if int(pytest.__version__.split(".")[0]) > 5:
-        testdir.runpytest(script).assert_outcomes(errors=1)
-    else:
-        testdir.runpytest(script).assert_outcomes(error=1)
+    assert_outcomes(testdir.runpytest(script), errors=1)

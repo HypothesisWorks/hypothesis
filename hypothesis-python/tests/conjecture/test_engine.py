@@ -456,8 +456,8 @@ def test_fails_health_check_for_large_base():
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
-        if data.draw_integer(0, 2**8 - 1):
-            data.draw_bytes(10**6, 10**6)
+        if data.draw_boolean():
+            data.draw_bytes(10_000, 10_000)
 
 
 def test_fails_health_check_for_slow_draws():
@@ -1065,16 +1065,20 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
 
-    with deterministic_PRNG(), buffer_size_limit(buffer_size):
+    with deterministic_PRNG():
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with buffer_size_limit(buffer_size):
 
-        def test(data):
-            while data.draw_boolean():
+            def test(data):
+                while data.draw_boolean():
+                    assert data.length <= buffer_size
                 assert data.length <= buffer_size
-            assert data.length <= buffer_size
 
-        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
-        runner.run()
-        assert runner.valid_examples == buffer_size
+            runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+            runner.run()
+            assert runner.valid_examples == buffer_size
 
 
 def test_does_not_shrink_multiple_bugs_when_told_not_to():

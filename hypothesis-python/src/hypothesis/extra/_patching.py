@@ -26,9 +26,11 @@ import re
 import sys
 import types
 from ast import literal_eval
+from collections.abc import Sequence
 from contextlib import suppress
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any, Optional
 
 import libcst as cst
 from libcst import matchers as m
@@ -43,11 +45,11 @@ try:
 except ImportError:
     black = None  # type: ignore
 
-HEADER = f"""\
+HEADER = """\
 From HEAD Mon Sep 17 00:00:00 2001
-From: Hypothesis {__version__} <no-reply@hypothesis.works>
-Date: {{when:%a, %d %b %Y %H:%M:%S}}
-Subject: [PATCH] {{msg}}
+From: {author}
+Date: {when:%a, %d %b %Y %H:%M:%S}
+Subject: [PATCH] {msg}
 
 ---
 """
@@ -56,7 +58,7 @@ _space_only_re = re.compile("^ +$", re.MULTILINE)
 _leading_space_re = re.compile("(^[ ]*)(?:[^ \n])", re.MULTILINE)
 
 
-def dedent(text):
+def dedent(text: str) -> tuple[str, str]:
     # Simplified textwrap.dedent, for valid Python source code only
     text = _space_only_re.sub("", text)
     prefix = min(_leading_space_re.findall(text), key=len)
@@ -70,7 +72,14 @@ def indent(text: str, prefix: str) -> str:
 class AddExamplesCodemod(VisitorBasedCodemodCommand):
     DESCRIPTION = "Add explicit examples to failing tests."
 
-    def __init__(self, context, fn_examples, strip_via=(), dec="example", width=88):
+    def __init__(
+        self,
+        context: CodemodContext,
+        fn_examples: dict[str, list[tuple[cst.Call, str]]],
+        strip_via: tuple[str, ...] = (),
+        decorator: str = "example",
+        width: int = 88,
+    ):
         """Add @example() decorator(s) for failing test(s).
 
         `code` is the source code of the module where the test functions are defined.
@@ -79,9 +88,11 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
         assert fn_examples, "This codemod does nothing without fn_examples."
         super().__init__(context)
 
-        self.decorator_func = cst.parse_expression(dec)
+        self.decorator_func = cst.parse_expression(decorator)
         self.line_length = width
-        value_in_strip_via = m.MatchIfTrue(lambda x: literal_eval(x.value) in strip_via)
+        value_in_strip_via: Any = m.MatchIfTrue(
+            lambda x: literal_eval(x.value) in strip_via
+        )
         self.strip_matching = m.Call(
             m.Attribute(m.Call(), m.Name("via")),
             [m.Arg(m.SimpleString() & value_in_strip_via)],
@@ -89,11 +100,17 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
 
         # Codemod the failing examples to Call nodes usable as decorators
         self.fn_examples = {
-            k: tuple(d for x in nodes if (d := self.__call_node_to_example_dec(*x)))
+            k: tuple(
+                d
+                for (node, via) in nodes
+                if (d := self.__call_node_to_example_dec(node, via))
+            )
             for k, nodes in fn_examples.items()
         }
 
-    def __call_node_to_example_dec(self, node, via):
+    def __call_node_to_example_dec(
+        self, node: cst.Call, via: str
+    ) -> Optional[cst.Decorator]:
         # If we have black installed, remove trailing comma, _unless_ there's a comment
         node = node.with_changes(
             func=self.decorator_func,
@@ -112,7 +129,7 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
                 else node.args
             ),
         )
-        via = cst.Call(
+        via: cst.BaseExpression = cst.Call(
             func=cst.Attribute(node, cst.Name("via")),
             args=[cst.Arg(cst.SimpleString(repr(via)))],
         )
@@ -127,7 +144,9 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
             via = cst.parse_expression(pretty.strip())
         return cst.Decorator(via)
 
-    def leave_FunctionDef(self, _, updated_node):
+    def leave_FunctionDef(
+        self, _original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
         return updated_node.with_changes(
             # TODO: improve logic for where in the list to insert this decorator
             decorators=tuple(
@@ -140,30 +159,59 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
         )
 
 
-def get_patch_for(func, failing_examples, *, strip_via=()):
-    # Skip this if we're unable to find the location or source of this function.
+def get_patch_for(
+    func: Any,
+    examples: Sequence[tuple[str, str]],
+    *,
+    strip_via: tuple[str, ...] = (),
+) -> Optional[tuple[str, str, str]]:
+    # Skip this if we're unable to find the location of this function.
     try:
         module = sys.modules[func.__module__]
-        fname = Path(module.__file__).relative_to(Path.cwd())
-        before = inspect.getsource(func)
+        file_path = Path(module.__file__)  # type: ignore
     except Exception:
         return None
 
+    fname = (
+        file_path.relative_to(Path.cwd())
+        if file_path.is_relative_to(Path.cwd())
+        else file_path
+    )
+    patch = _get_patch_for(
+        func, examples, strip_via=strip_via, namespace=module.__dict__
+    )
+    if patch is None:
+        return None
+
+    (before, after) = patch
+    return (str(fname), before, after)
+
+
+# split out for easier testing of patches in hypofuzz, where the function to
+# apply the patch to may not be loaded in sys.modules.
+def _get_patch_for(
+    func: Any,
+    examples: Sequence[tuple[str, str]],
+    *,
+    strip_via: tuple[str, ...] = (),
+    namespace: dict[str, Any],
+) -> Optional[tuple[str, str]]:
+    try:
+        before = inspect.getsource(func)
+    except Exception:  # pragma: no cover
+        return None
+
     modules_in_test_scope = sorted(
-        (
-            (k, v)
-            for (k, v) in module.__dict__.items()
-            if isinstance(v, types.ModuleType)
-        ),
+        ((k, v) for (k, v) in namespace.items() if isinstance(v, types.ModuleType)),
         key=lambda kv: len(kv[1].__name__),
     )
 
     # The printed examples might include object reprs which are invalid syntax,
     # so we parse here and skip over those.  If _none_ are valid, there's no patch.
-    call_nodes = []
-    for ex, via in set(failing_examples):
+    call_nodes: list[tuple[cst.Call, str]] = []
+    for ex, via in set(examples):
         with suppress(Exception):
-            node = cst.parse_module(ex)
+            node: Any = cst.parse_module(ex)
             the_call = node.body[0].body[0].value
             assert isinstance(the_call, cst.Call), the_call
             # Check for st.data(), which doesn't support explicit examples
@@ -180,7 +228,7 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
                     isinstance(anode, ast.Name)
                     and isinstance(anode.ctx, ast.Load)
                     and anode.id not in names
-                    and anode.id not in module.__dict__
+                    and anode.id not in namespace
                 ):
                     for k, v in modules_in_test_scope:
                         if anode.id in v.__dict__:
@@ -194,14 +242,15 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
             with suppress(Exception):
                 wrapper = cst.metadata.MetadataWrapper(node)
                 kwarg_names = {
-                    a.keyword for a in m.findall(wrapper, m.Arg(keyword=m.Name()))
+                    node.keyword  # type: ignore
+                    for node in m.findall(wrapper, m.Arg(keyword=m.Name()))
                 }
                 node = m.replace(
                     wrapper,
                     m.Name(value=m.MatchIfTrue(names.__contains__))
                     & m.MatchMetadata(ExpressionContextProvider, ExpressionContext.LOAD)
-                    & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),
-                    replacement=lambda node, _, ns=names: ns[node.value],
+                    & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),  # type: ignore
+                    replacement=lambda node, _, ns=names: ns[node.value],  # type: ignore
                 )
             node = node.body[0].body[0].value
             assert isinstance(node, cst.Call), node
@@ -211,8 +260,8 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         return None
 
     if (
-        module.__dict__.get("hypothesis") is sys.modules["hypothesis"]
-        and "given" not in module.__dict__  # more reliably present than `example`
+        namespace.get("hypothesis") is sys.modules["hypothesis"]
+        and "given" not in namespace  # more reliably present than `example`
     ):
         decorator_func = "hypothesis.example"
     else:
@@ -229,22 +278,28 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         CodemodContext(),
         fn_examples={func.__name__: call_nodes},
         strip_via=strip_via,
-        dec=decorator_func,
+        decorator=decorator_func,
         width=88 - len(prefix),  # to match Black's default formatting
     ).transform_module(node)
-    return (str(fname), before, indent(after.code, prefix=prefix))
+    return (before, indent(after.code, prefix=prefix))
 
 
-def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
+def make_patch(
+    triples: Sequence[tuple[str, str, str]],
+    *,
+    msg: str = "Hypothesis: add explicit examples",
+    when: Optional[datetime] = None,
+    author: str = f"Hypothesis {__version__} <no-reply@hypothesis.works>",
+) -> str:
     """Create a patch for (fname, before, after) triples."""
     assert triples, "attempted to create empty patch"
     when = when or datetime.now(tz=timezone.utc)
 
-    by_fname = {}
+    by_fname: dict[Path, list[tuple[str, str]]] = {}
     for fname, before, after in triples:
         by_fname.setdefault(Path(fname), []).append((before, after))
 
-    diffs = [HEADER.format(msg=msg, when=when)]
+    diffs = [HEADER.format(msg=msg, when=when, author=author)]
     for fname, changes in sorted(by_fname.items()):
         source_before = source_after = fname.read_text(encoding="utf-8")
         for before, after in changes:

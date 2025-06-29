@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from django import forms
-from django.contrib.auth.forms import ReadOnlyPasswordHashField, UsernameField
+from django.conf import settings
 from django.core.validators import (
     MaxLengthValidator,
     MaxValueValidator,
@@ -27,6 +27,9 @@ from tests.django.toystore.models import (
     OddFields,
     Store,
 )
+
+if "django.contrib.auth" in settings.INSTALLED_APPS:
+    from django.contrib.auth.forms import ReadOnlyPasswordHashField, UsernameField
 
 
 class ReprModelForm(forms.ModelForm):
@@ -217,12 +220,17 @@ class ShortStringForm(ReprForm):
     _not_too_long = forms.CharField(max_length=20, required=False)
 
 
-class UsernameForm(ReprForm):
-    username = UsernameField()
+if "django.contrib.auth" in settings.INSTALLED_APPS:
 
+    class UsernameForm(ReprForm):
+        username = UsernameField()
 
-class ReadOnlyPasswordHashFieldForm(ReprForm):
-    password = ReadOnlyPasswordHashField()
+    class ReadOnlyPasswordHashFieldForm(ReprForm):
+        password = ReadOnlyPasswordHashField()
+
+else:
+    UsernameForm = None
+    ReadOnlyPasswordHashFieldForm = None
 
 
 class StoreForm(ReprModelForm):

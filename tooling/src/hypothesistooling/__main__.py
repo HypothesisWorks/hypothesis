@@ -399,8 +399,8 @@ def update_django_versions():
     print(versions)
     for short, full in versions.items():
         content = re.sub(
-            rf"(pip install django==){short}\.\d+",
-            rf"\g<1>{full}",
+            rf"django=={short}(\.\d+)?",
+            rf"django=={full}",
             content,
         )
     tox_ini.write_text(content, encoding="utf-8")
@@ -635,6 +635,8 @@ standard_tox_task("pytest62")
 
 for n in DJANGO_VERSIONS:
     standard_tox_task(f"django{n.replace('.', '')}")
+# we also test no-contrib on the latest django version
+standard_tox_task("django-nocontrib")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
@@ -645,6 +647,7 @@ for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
 standard_tox_task("py39-oldestnumpy", py="3.9")
+standard_tox_task("py39-oldparser", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")

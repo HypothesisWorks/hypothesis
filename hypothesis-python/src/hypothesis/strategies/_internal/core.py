@@ -196,13 +196,17 @@ def sampled_from(
     that behaviour, use ``sampled_from(seq) if seq else nothing()``.
     """
     values = check_sample(elements, "sampled_from")
-    try:
-        if isinstance(elements, type) and issubclass(elements, enum.Enum):
-            repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
-        else:
-            repr_ = f"sampled_from({elements!r})"
-    except Exception:  # pragma: no cover
-        repr_ = None
+    force_repr = None
+    # check_sample converts to tuple unconditionally, but we want to preserve
+    # square braces for list reprs.
+    # This will not cover custom sequence implementations which return different
+    # braces (or other, more unusual things) for their reprs, but this is a tradeoff
+    # between repr accuracy and greedily-evaluating all sequence reprs (at great
+    # cost for large sequences).
+    force_repr_braces = ("[", "]") if isinstance(elements, list) else None
+    if isinstance(elements, type) and issubclass(elements, enum.Enum):
+        force_repr = f"sampled_from({elements.__module__}.{elements.__name__})"
+
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members (including empty) are also members.  We generate these
         # dynamically, because static allocation takes O(2^n) memory.  LazyStrategy is used for the
@@ -237,7 +241,7 @@ def sampled_from(
                 .flatmap(lambda r: sets(sampled_from(flags), min_size=r, max_size=r))
                 .map(lambda s: elements(reduce(operator.or_, s))),
             ]
-        return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=repr_)
+        return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=force_repr)
     if not values:
         if (
             isinstance(elements, type)
@@ -253,7 +257,9 @@ def sampled_from(
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
-    return SampledFromStrategy(values, repr_)
+    return SampledFromStrategy(
+        values, force_repr=force_repr, force_repr_braces=force_repr_braces
+    )
 
 
 @cacheable

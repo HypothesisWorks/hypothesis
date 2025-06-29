@@ -80,6 +80,7 @@ def test_actual_collection(monkeypatch):
     monkeypatch.setattr(providers, "is_local_module_file", lambda f: "hypothesis" in f)
 
     @given(st.integers())
+    @settings(max_examples=100)
     def f(n):
         pass
 

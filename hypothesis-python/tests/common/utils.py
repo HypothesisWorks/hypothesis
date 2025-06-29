@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.internal import observability
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
@@ -115,6 +116,9 @@ def fails_with(e, *, match=None):
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
             with deterministic_PRNG():
+                # NOTE: For compatibility with Python 3.9's LL(1)
+                # parser, this is written as a nested with-statement,
+                # instead of a compound one.
                 with raises(e, match=match):
                     f(*arguments, **kwargs)
 
@@ -229,19 +233,28 @@ def temp_registered(type_, strat_or_factory):
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
     with raises(expected_warning, match=match) as r:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=expected_warning)
             yield r
 
 
 @contextlib.contextmanager
-def capture_observations():
+def capture_observations(*, choices=None):
     ls: list[Observation] = []
     TESTCASE_CALLBACKS.append(ls.append)
+    if choices is not None:
+        old_choices = observability.OBSERVABILITY_CHOICES
+        observability.OBSERVABILITY_CHOICES = choices
+
     try:
         yield ls
     finally:
         TESTCASE_CALLBACKS.remove(ls.append)
+        if choices is not None:
+            observability.OBSERVABILITY_CHOICES = old_choices
 
 
 # Specifies whether we can represent subnormal floating point numbers.

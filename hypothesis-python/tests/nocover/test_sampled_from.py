@@ -81,6 +81,12 @@ def test_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
 
 
+def test_repr_truncates_with_many_elements():
+    s = st.sampled_from(list(range(10_000)))
+    repr_limit = 512
+    assert repr(s) == f"sampled_from([{', '.join(map(str, range(repr_limit)))}, ...])"
+
+
 class AFlag(enum.Flag):
     a = enum.auto()
     b = enum.auto()

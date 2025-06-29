@@ -141,6 +141,9 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
         assert x > 0
 
     with reporting.with_reporter(reporting.default):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             with capture_out() as out:
                 test_positive()
@@ -192,6 +195,9 @@ def test_examples_are_tried_in_order():
         print(f"x -> {x}")
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with reporting.with_reporter(reporting.default):
             test()
     ls = out.getvalue().splitlines()

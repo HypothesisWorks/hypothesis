@@ -41,6 +41,10 @@ class HypothesisTestCase:
             return dt.SimpleTestCase.__call__(self, result)
 
 
+class SimpleTestCase(HypothesisTestCase, dt.SimpleTestCase):
+    pass
+
+
 class TestCase(HypothesisTestCase, dt.TestCase):
     pass
 

@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import base64
+import json
+import math
 import textwrap
 from contextlib import nullcontext
 
@@ -26,15 +29,22 @@ from hypothesis import (
 )
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
+from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
+from hypothesis.internal.conjecture.data import Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
+from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import choices_to_json, nodes_to_json
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
     rule,
     run_state_machine_as_test,
 )
+from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.conjecture.common import choices, integer_constr, nodes
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -55,6 +65,9 @@ def do_it_all(l, a, x, data):
 @xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 def test_observability():
     with capture_observations() as ls:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ZeroDivisionError):
             do_it_all()
         with pytest.raises(ZeroDivisionError):
@@ -106,11 +119,12 @@ def test_failure_includes_explain_phase_comments():
         if x:
             raise AssertionError
 
-    with (
-        capture_observations() as observations,
-        pytest.raises(AssertionError),
-    ):
-        test_fails()
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     # only the last test case observation, once we've finished shrinking it,
@@ -138,11 +152,12 @@ def test_failure_includes_notes():
         note("not included 2")
         raise AssertionError
 
-    with (
-        capture_observations() as observations,
-        pytest.raises(AssertionError),
-    ):
-        test_fails_with_note()
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails_with_note()
 
     expected = textwrap.dedent(
         """
@@ -229,11 +244,12 @@ def test_minimal_failing_observation():
         if x:
             raise AssertionError
 
-    with (
-        capture_observations() as observations,
-        pytest.raises(AssertionError),
-    ):
-        test_fails()
+    with capture_observations() as observations:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with pytest.raises(AssertionError):
+            test_fails()
 
     observation = [tc for tc in observations if tc.type == "test_case"][-1]
     expected_representation = textwrap.dedent(
@@ -324,11 +340,204 @@ def test_fuzz_one_input_status(buffer, expected_status):
         if should_fail_assume:
             assume(False)
 
-    with (
-        capture_observations() as ls,
-        pytest.raises(AssertionError) if expected_status == "failed" else nullcontext(),
-    ):
-        test_fails.hypothesis.fuzz_one_input(buffer)
+    with capture_observations() as ls:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with (
+            pytest.raises(AssertionError)
+            if expected_status == "failed"
+            else nullcontext()
+        ):
+            test_fails.hypothesis.fuzz_one_input(buffer)
     assert len(ls) == 1
     assert ls[0].status == expected_status
     assert ls[0].how_generated == "fuzz_one_input"
+
+
+def _decode_choice(value):
+    if isinstance(value, list):
+        if value[0] == "integer":
+            # large integers get cast to string, stored as ["integer", str(value)]
+            assert isinstance(value[1], str)
+            return int(value[1])
+        elif value[0] == "bytes":
+            assert isinstance(value[1], str)
+            return base64.b64decode(value[1])
+        elif value[0] == "float":
+            assert isinstance(value[1], int)
+            choice = int_to_float(value[1])
+            assert math.isnan(choice)
+            return choice
+        else:
+            return value[1]
+
+    return value
+
+
+def _decode_choices(data):
+    return [_decode_choice(value) for value in data]
+
+
+def _decode_nodes(data):
+    return [
+        ChoiceNode(
+            type=node["type"],
+            value=_decode_choice(node["value"]),
+            constraints=_decode_constraints(node["type"], node["constraints"]),
+            was_forced=node["was_forced"],
+        )
+        for node in data
+    ]
+
+
+def _decode_constraints(choice_type, data):
+    if choice_type == "integer":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "weights": (
+                None
+                if data["weights"] is None
+                else {_decode_choice(k): v for k, v in data["weights"]}
+            ),
+            "shrink_towards": _decode_choice(data["shrink_towards"]),
+        }
+    elif choice_type == "float":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "allow_nan": data["allow_nan"],
+            "smallest_nonzero_magnitude": data["smallest_nonzero_magnitude"],
+        }
+    elif choice_type == "string":
+        return {
+            "intervals": IntervalSet(tuple(data["intervals"])),
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "bytes":
+        return {
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "boolean":
+        return {"p": data["p"]}
+    else:
+        raise ValueError(f"unknown choice type {choice_type}")
+
+
+def _has_surrogate(choice):
+    return isinstance(choice, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in choice)
+
+
+@example([0.0])
+@example([-0.0])
+@example([SIGNALING_NAN])
+@example([math.nan])
+@example([math.inf])
+@example([-math.inf])
+# json.{loads, dumps} does not roundtrip for surrogate pairs; they are combined
+# into the single code point by json.loads:
+#   json.loads(json.dumps("\udbf4\udc00")) == '\U0010d000'
+#
+# Ignore this case with an `assume`, and add an explicit example to ensure we
+# continue to do so.
+@example(["\udbf4\udc00"])
+@given(st.lists(choices()))
+def test_choices_json_roundtrips(choices):
+    assume(not any(_has_surrogate(choice) for choice in choices))
+    choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
+    assert choices_key(choices) == choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_nodes_json_roundtrips(nodes):
+    assume(
+        not any(
+            _has_surrogate(node.value)
+            or any(_has_surrogate(value) for value in node.constraints.values())
+            for node in nodes
+        )
+    )
+    nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
+    assert nodes == nodes2
+
+
+@pytest.mark.parametrize(
+    "choice, expected",
+    [
+        (math.nan, ["float", float_to_int(math.nan)]),
+        (SIGNALING_NAN, ["float", float_to_int(SIGNALING_NAN)]),
+        (1, 1),
+        (-1, -1),
+        (2**63 + 1, ["integer", str(2**63 + 1)]),
+        (-(2**63 + 1), ["integer", str(-(2**63 + 1))]),
+        (1.0, 1.0),
+        (-0.0, -0.0),
+        (0.0, 0.0),
+        (True, True),
+        (False, False),
+        (b"a", ["bytes", "YQ=="]),
+    ],
+)
+def test_choices_to_json_explicit(choice, expected):
+    assert choices_to_json([choice]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "choice_node, expected",
+    [
+        (
+            ChoiceNode(
+                type="integer",
+                value=2**63 + 1,
+                constraints=integer_constr(),
+                was_forced=False,
+            ),
+            {
+                "type": "integer",
+                "value": ["integer", str(2**63 + 1)],
+                "constraints": integer_constr(),
+                "was_forced": False,
+            },
+        ),
+    ],
+)
+def test_choice_nodes_to_json_explicit(choice_node, expected):
+    assert nodes_to_json([choice_node]) == [expected]
+
+
+def test_metadata_to_json():
+    # this is mostly a covering test than testing anything particular about
+    # ObservationMetadata.
+    @given(st.integers())
+    def f(n):
+        pass
+
+    with capture_observations(choices=True) as observations:
+        f()
+
+    observations = [obs for obs in observations if obs.type == "test_case"]
+    for observation in observations:
+        assert set(
+            to_jsonable(observation.metadata, avoid_realization=False).keys()
+        ) == {
+            "traceback",
+            "reproduction_decorator",
+            "predicates",
+            "backend",
+            "sys.argv",
+            "os.getpid()",
+            "imported_at",
+            "data_status",
+            "interesting_origin",
+            "choice_nodes",
+            "choice_spans",
+        }
+        assert observation.metadata.choice_nodes is not None
+
+        for span in observation.metadata.choice_spans:
+            assert isinstance(span, Span)
+            assert 0 <= span.start <= len(observation.metadata.choice_nodes)
+            assert 0 <= span.end <= len(observation.metadata.choice_nodes)

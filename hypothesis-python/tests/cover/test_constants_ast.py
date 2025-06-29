@@ -17,12 +17,13 @@ from types import ModuleType
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import example, given, note, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
     ConstantVisitor,
     TooManyConstants,
+    _constants_file_str,
     _constants_from_source,
     constants_from_module,
     is_local_module_file,
@@ -233,11 +234,32 @@ def test_ignores_ast_parse_error(tmp_path):
     assert constants_from_module(module) == Constants()
 
 
+@example(
+    constants=Constants(
+        integers={-101, 101},
+        floats={101.0},
+        bytes=set(),
+        strings=set(),
+    ),
+)
+@example(
+    constants=Constants(
+        integers={-101, 100},
+        floats={-101.0, 101.0},
+        bytes={b"-101.0", b"101.0"},
+        strings={"-101.0", "101.0"},
+    ),
+)
 @given(constants_classes)
 def test_constant_visitor_roundtrips_string(constants):
     # our files in storage_directory("constants") rely on this roundtrip
     visitor = ConstantVisitor(limit=True)
-    visitor.visit(ast.parse(str(set(constants))))
+
+    s = _constants_file_str(constants)
+    visitor.visit(ast.parse(s))
+
+    note(f"{constants=}")
+    note(f"{visitor.constants=}")
     assert visitor.constants == constants
 
 

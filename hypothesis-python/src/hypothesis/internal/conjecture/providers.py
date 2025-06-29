@@ -14,6 +14,7 @@ import math
 import sys
 import warnings
 from collections.abc import Iterable
+from contextlib import AbstractContextManager
 from functools import cached_property
 from random import Random
 from sys import float_info
@@ -72,7 +73,7 @@ if TYPE_CHECKING:
     from hypothesis.internal.constants_ast import ConstantT
 
 T = TypeVar("T")
-_Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
+LifetimeT: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
@@ -273,7 +274,10 @@ def _get_local_constants() -> Constants:
     # careful: store sys.modules length when we first check to avoid race conditions
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
-        new_modules = set(sys.modules.values()) - _seen_modules
+        # set(_seen_modules) shouldn't typically be required, but I have run into
+        # a "set changed size during iteration" error here when running
+        # test_provider_conformance_crosshair.
+        new_modules = set(sys.modules.values()) - set(_seen_modules)
         # Repeated SortedSet unions are expensive. Do the initial unions on a
         # set(), then do a one-time union with _local_constants after.
         new_constants = Constants()
@@ -345,7 +349,7 @@ class PrimitiveProvider(abc.ABC):
     #: ``ConjectureData`` for a lifetime of ``test_case``.
     #:
     #: Third-party providers likely want to set a lifetime of ``test_function``.
-    lifetime: _Lifetime = "test_function"
+    lifetime: ClassVar[LifetimeT] = "test_function"
 
     #: Solver-based backends such as ``hypothesis-crosshair`` use symbolic values
     #: which record operations performed on them in order to discover new paths.
@@ -355,7 +359,7 @@ class PrimitiveProvider(abc.ABC):
     #:
     #: Setting this to ``True`` disables some hypothesis features and optimizations.
     #: Only set this to ``True`` if it is necessary for your backend.
-    avoid_realization = False
+    avoid_realization: ClassVar[bool] = False
 
     #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
     #: callback to |TESTCASE_CALLBACKS|, enabling observability during the lifetime
@@ -485,7 +489,7 @@ class PrimitiveProvider(abc.ABC):
         """
         raise NotImplementedError
 
-    def per_test_case_context_manager(self):
+    def per_test_case_context_manager(self) -> AbstractContextManager:
         """
         Returns a context manager which will be entered each time Hypothesis
         starts generating and executing one test case, and exited when that test
@@ -543,7 +547,7 @@ class PrimitiveProvider(abc.ABC):
         return {}
 
     def observe_information_messages(
-        self, *, lifetime: _Lifetime
+        self, *, lifetime: LifetimeT
     ) -> Iterable[_BackendInfoMsg]:
         """Called at the end of each test case and again at end of the test function.
 
@@ -592,12 +596,59 @@ class PrimitiveProvider(abc.ABC):
     def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
         """Marks the beginning of a semantically meaningful span of choices.
 
-        Providers can optionally track this data to learn which sub-sequences
-        of draws correspond to a higher-level object, recovering the parse tree.
-        ``label`` is an opaque integer, which will be shared by all spans drawn
-        from a particular strategy.
+        Spans are a depth-first tree structure. A span is opened by a call to
+        |PrimitiveProvider.span_start|, and a call to |PrimitiveProvider.span_end|
+        closes the most recently opened span. So the following sequence of calls:
 
-        This method is called from ``ConjectureData.start_span()``.
+        .. code-block:: python
+
+            span_start(label=1)
+            n1 = draw_integer()
+            span_start(label=2)
+            b1 = draw_boolean()
+            n2 = draw_integer()
+            span_end()
+            f1 = draw_float()
+            span_end()
+
+        produces the following two spans of choices:
+
+        .. code-block::
+
+            1: [n1, b1, n2, f1]
+            2: [b1, n2]
+
+        Hypothesis uses spans to denote "semantically meaningful" sequences of
+        choices. For instance, Hypothesis opens a span for the sequence of choices
+        made while drawing from each strategy. Not every span corresponds to a
+        strategy; the generation of e.g. each element in |st.lists| is also marked
+        with a span, among others.
+
+        ``label`` is an opaque integer, which has no defined semantics.
+        The only guarantee made by Hypothesis is that all spans with the same
+        "meaning" will share the same ``label``. So all spans from the same
+        strategy will share the same label, as will e.g. the spans for |st.lists|
+        elements.
+
+        Providers can track calls to |PrimitiveProvider.span_start| and
+        |PrimitiveProvider.span_end| to learn something about the semantics of
+        the test's choice sequence. For instance, a provider could track the depth
+        of the span tree, or the number of unique labels, which says something about
+        the complexity of the choices being generated. Or a provider could track
+        the span tree across test cases in order to determine what strategies are
+        being used in what contexts.
+
+        It is possible for Hypothesis to start and immediately stop a span,
+        without calling a ``draw_*`` method in between. These spans contain zero
+        choices.
+
+        Hypothesis will always balance the number of calls to
+        |PrimitiveProvider.span_start| and |PrimitiveProvider.span_end|. A call
+        to |PrimitiveProvider.span_start| will always be followed by a call to
+        |PrimitiveProvider.span_end| before the end of the test case.
+
+        |PrimitiveProvider.span_start| is called from ``ConjectureData.start_span()``
+        internally.
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
@@ -607,7 +658,8 @@ class PrimitiveProvider(abc.ABC):
         as unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        This method is called from ``ConjectureData.stop_span()``.
+        |PrimitiveProvider.span_end| is called from ``ConjectureData.stop_span()``
+        internally.
         """
 
 
@@ -631,13 +683,14 @@ class HypothesisProvider(PrimitiveProvider):
         p: float = 0.05,
     ) -> Optional["ConstantT"]:
         assert self._random is not None
-        assert self._local_constants is not None
         assert choice_type != "boolean"
-
         # check whether we even want a constant before spending time computing
         # and caching the allowed constants.
         if self._random.random() > p:
             return None
+
+        # note: this property access results in computation being done
+        assert self._local_constants is not None
 
         key = (choice_type, choice_constraints_key(choice_type, constraints))
         if key not in CONSTANTS_CACHE:

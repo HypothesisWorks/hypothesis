@@ -16,6 +16,7 @@ import datetime
 import inspect
 import io
 import math
+import os
 import sys
 import time
 import traceback
@@ -674,6 +675,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         "Falsifying example", "Falsifying explicit example", 1
                     )
 
+                empty_data.freeze()
                 tc = make_testcase(
                     run_start=state._start_timestamp,
                     property=state.test_identifier,
@@ -772,8 +774,8 @@ def skip_exceptions_to_reraise():
         exceptions.add(sys.modules["unittest2"].SkipTest)
     if "nose" in sys.modules:
         exceptions.add(sys.modules["nose"].SkipTest)
-    if "_pytest" in sys.modules:
-        exceptions.add(sys.modules["_pytest"].outcomes.Skipped)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.add(sys.modules["_pytest.outcomes"].Skipped)
     return tuple(sorted(exceptions, key=str))
 
 
@@ -788,8 +790,8 @@ def failure_exceptions_to_catch() -> tuple[type[BaseException], ...]:
     # them as standard exceptions, check for flakiness, etc.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2223 for details.
     exceptions = [Exception, SystemExit, GeneratorExit]
-    if "_pytest" in sys.modules:
-        exceptions.append(sys.modules["_pytest"].outcomes.Failed)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.append(sys.modules["_pytest.outcomes"].Failed)
     return tuple(exceptions)
 
 
@@ -975,8 +977,12 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_markers_from_group(), ensure_free_stackframes():
-                    return self.test(*args, **kwargs)
+                with unwrap_markers_from_group():
+                    # NOTE: For compatibility with Python 3.9's LL(1)
+                    # parser, this is written as a nested with-statement,
+                    # instead of a compound one.
+                    with ensure_free_stackframes():
+                        return self.test(*args, **kwargs)
 
         else:
 
@@ -987,8 +993,12 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with unwrap_markers_from_group(), ensure_free_stackframes():
-                        result = self.test(*args, **kwargs)
+                    with unwrap_markers_from_group():
+                        # NOTE: For compatibility with Python 3.9's LL(1)
+                        # parser, this is written as a nested with-statement,
+                        # instead of a compound one.
+                        with ensure_free_stackframes():
+                            result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
@@ -1235,7 +1245,17 @@ class StateForActualGivenExecution:
             else:
                 tb = e.__traceback__
             filepath = traceback.extract_tb(tb)[-1][0]
-            if is_hypothesis_file(filepath) and not isinstance(e, HypothesisException):
+            if (
+                is_hypothesis_file(filepath)
+                and not isinstance(e, HypothesisException)
+                # We expect backend authors to use the provider_conformance test
+                # to test their backends. If an error occurs there, it is probably
+                # from their backend, and we would like to treat it as a standard
+                # error, not a hypothesis-internal error.
+                and not filepath.endswith(
+                    f"internal{os.sep}conjecture{os.sep}provider_conformance.py"
+                )
+            ):
                 raise
 
             if data.frozen:
@@ -1291,6 +1311,7 @@ class StateForActualGivenExecution:
                     data._observability_args = {}
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                data.freeze()
                 tc = make_testcase(
                     run_start=self._start_timestamp,
                     property=self.test_identifier,
@@ -1487,6 +1508,7 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
+                ran_example.freeze()
                 # log our observability line for the final failing example
                 tc = make_testcase(
                     run_start=self._start_timestamp,
@@ -1510,11 +1532,7 @@ class StateForActualGivenExecution:
                         f"{reproduction_decorator(falsifying_example.choices)} "
                         "as a decorator on your test case"
                     )
-                # Mostly useful for ``find`` and ensuring that objects that
-                # hold on to a reference to ``data`` know that it's now been
-                # finished and they can't draw more data from it.
-                ran_example.freeze()  # pragma: no branch
-                # No branch is possible here because we never have an active exception.
+
         _raise_to_user(
             errors_to_report,
             self.settings,
@@ -1763,7 +1781,21 @@ def given(
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
-            raise InvalidArgument("@given cannot be applied to a class.")
+            raise InvalidArgument("@given cannot be applied to a class")
+
+        if (
+            "_pytest" in sys.modules
+            and "_pytest.fixtures" in sys.modules
+            and (
+                tuple(map(int, sys.modules["_pytest"].__version__.split(".")[:2]))
+                >= (8, 4)
+            )
+            and isinstance(
+                test, sys.modules["_pytest.fixtures"].FixtureFunctionDefinition
+            )
+        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+            raise InvalidArgument("@given cannot be applied to a pytest fixture")
+
         given_arguments = tuple(_given_arguments)
         given_kwargs = dict(_given_kwargs)
 
@@ -2085,6 +2117,7 @@ def given(
                     raise
                 finally:
                     if TESTCASE_CALLBACKS:
+                        data.freeze()
                         tc = make_testcase(
                             run_start=state._start_timestamp,
                             property=state.test_identifier,
