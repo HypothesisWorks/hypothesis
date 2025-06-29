@@ -12,7 +12,7 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase, choices_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import Shrinker, node_program
+from hypothesis.internal.conjecture.shrinker import Shrinker
 
 from tests.common.utils import (
     Why,
@@ -121,7 +121,7 @@ def test_node_programs_fail_efficiently(monkeypatch):
         Shrinker, "run_node_program", counts_calls(Shrinker.run_node_program)
     )
     shrinker.max_stall = 500
-    shrinker.fixate_shrink_passes([node_program("XX")])
+    shrinker.fixate_shrink_passes([shrinker.node_program("XX")])
 
     assert shrinker.shrinks == 0
     assert 250 <= shrinker.calls <= 260

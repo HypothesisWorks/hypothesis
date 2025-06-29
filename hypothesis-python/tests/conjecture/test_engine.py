@@ -44,7 +44,7 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
-from hypothesis.internal.conjecture.shrinker import Shrinker
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.entropy import deterministic_PRNG
 
@@ -868,7 +868,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
         if n == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (False, 1)
 
 
@@ -881,7 +881,7 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_integer(0, 2**8 - 1)
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
 
 
 def test_block_may_grow_during_lexical_shrinking():
@@ -895,7 +895,7 @@ def test_block_may_grow_during_lexical_shrinking():
             data.draw_integer(0, 2**16 - 1)
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (0, 0)
 
 
