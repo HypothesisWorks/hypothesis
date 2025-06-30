@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.20:
+
+---------------------
+6.135.20 - 2025-06-30
+---------------------
+
+Fixes ``reproduction_decorator`` being missing under :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in many :ref:`observability <observability>` observations, when it should have been present.
+
 .. _v6.135.19:
 
 ---------------------
