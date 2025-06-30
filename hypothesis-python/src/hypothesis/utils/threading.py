@@ -1,0 +1,34 @@
+import threading
+from typing import Any
+
+
+class ThreadLocal:
+    """
+    Manages thread-local state. ThreadLocal forwards getattr and setattr to a
+    threading.local() instance. The passed kwargs defines the available attributes
+    on the threadlocal and their default values.
+
+    The only supported names to geattr and setattr are the keys of the passed kwargs.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.__initialized = False
+        self.__kwargs = kwargs
+        self.__threadlocal = threading.local()
+        self.__initialized = True
+
+    def __getattr__(self, name: str) -> Any:
+        if name not in self.__kwargs:
+            raise AttributeError(f"No attribute {name}")
+        if not hasattr(self.__threadlocal, name):
+            setattr(self.__threadlocal, name, self.__kwargs[name])
+        return getattr(self.__threadlocal, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # disable attribute-forwarding while initializing
+        if "_ThreadLocal__initialized" not in self.__dict__ or not self.__initialized:
+            super().__setattr__(name, value)
+        else:
+            if name not in self.__kwargs:
+                raise AttributeError(f"No attribute {name}")
+            setattr(self.__threadlocal, name, value)
