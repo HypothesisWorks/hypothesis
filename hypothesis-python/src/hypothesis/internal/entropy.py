@@ -200,8 +200,9 @@ def get_seeder_and_restorer(
         # RANDOMS_TO_MANAGE being empty when running under crosshair.
         # `pytest -k test_seed_random_twice --hypothesis-profile=crosshair`
         # reproduces an empty RANDOMS_TO_MANAGE at time of writing.
-        if _global_random_rkey in states:  # pragma: no branch
-            _global_random_restored_state = states[_global_random_rkey]
+        _global_random_restored_state = states.get(
+            _global_random_rkey, _global_random_restored_state
+        )
         states.clear()
 
     return seed_all, restore_all
