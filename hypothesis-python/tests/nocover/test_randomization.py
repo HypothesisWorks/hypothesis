@@ -40,11 +40,11 @@ def test_seeds_off_internal_random():
     def f2(n):
         choices2.append(n)
 
-    core._hypothesis_global_random = Random(0)
-    state = core._hypothesis_global_random.getstate()
+    core.threadlocal._hypothesis_global_random = Random(0)
+    state = core.threadlocal._hypothesis_global_random.getstate()
     f1()
 
-    core._hypothesis_global_random.setstate(state)
+    core.threadlocal._hypothesis_global_random.setstate(state)
     f2()
 
     assert choices1 == choices2
