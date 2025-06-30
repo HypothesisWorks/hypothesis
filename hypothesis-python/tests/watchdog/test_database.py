@@ -45,7 +45,7 @@ def test_database_listener_directory():
 # seen flaky on test-win; we get *three* of the same save events in the first
 # assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
-@flaky(max_runs=2, min_passes=1)
+@flaky(max_runs=5, min_passes=1)
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -96,7 +96,7 @@ def wait_for(condition, *, timeout=1, interval=0.01):
 
 
 # seen flaky on check-coverage (timeout in first wait_for)
-@flaky(max_runs=2, min_passes=1)
+@flaky(max_runs=5, min_passes=1)
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -167,7 +167,7 @@ def test_database_listener_directory_explicit(tmp_path):
 
 
 # seen flaky on windows CI (timeout in wait_for)
-@flaky(max_runs=2, min_passes=1)
+@flaky(max_runs=5, min_passes=1)
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
