@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import runpy
+
 from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.reflection import get_pretty_function_description
 
@@ -174,4 +176,17 @@ def decorator_with_wrapper():
 def test_can_handle_nested_lambda_in_decorator_argument():
     assert (
         get_pretty_function_description(decorator_with_wrapper[0]) == "lambda x: x + 1"
+    )
+
+
+def test_modifying_lambda_source_code_returns_unknown(tmp_path):
+    # see https://github.com/HypothesisWorks/hypothesis/pull/4452
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text("# line one\n\ntest_lambda = lambda x: x * 2")
+
+    module_globals = runpy.run_path(str(test_module))
+    test_module.write_text("# line one\n\n# line two")
+    assert (
+        get_pretty_function_description(module_globals["test_lambda"])
+        == "lambda x: <unknown>"
     )
