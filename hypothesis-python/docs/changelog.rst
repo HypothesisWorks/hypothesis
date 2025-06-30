@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.19:
+
+---------------------
+6.135.19 - 2025-06-30
+---------------------
+
+Improve threading compatibility of an internal helper for managing deterministic rng seeding.
+
 .. _v6.135.18:
 
 ---------------------
