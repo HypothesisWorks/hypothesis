@@ -16,12 +16,7 @@ from hypothesis import HealthCheck, assume, example, given, settings, strategies
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import (
-    Shrinker,
-    ShrinkPass,
-    StopShrinking,
-    node_program,
-)
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, StopShrinking
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
@@ -46,7 +41,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n):
         if any(b):
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (1, 1)
 
 
@@ -54,7 +49,9 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.fixate_shrink_passes(["minimize_individual_choices"]),
+        lambda self: self.fixate_shrink_passes(
+            [ShrinkPass(self.minimize_individual_choices)]
+        ),
     )
     monkeypatch.setattr(
         ConjectureRunner,
@@ -82,7 +79,7 @@ def test_duplicate_nodes_that_go_away():
         if len(set(b)) <= 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_duplicated_choices)])
     assert shrinker.shrink_target.choices == (0, 0)
 
 
@@ -99,7 +96,7 @@ def test_accidental_duplication():
         if len(set(b)) == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_duplicated_choices)])
     print(shrinker.choices)
     assert shrinker.choices == (5, 5, *([b"\x00"] * 5))
 
@@ -141,7 +138,7 @@ def test_can_pass_to_an_indirect_descendant():
         if data.choices in good:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["pass_to_descendant"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.pass_to_descendant)])
     assert shrinker.choices == target
 
 
@@ -188,7 +185,7 @@ def test_can_reorder_spans():
         if total == 2:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["reorder_spans"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.reorder_spans)])
     assert shrinker.choices == (0, 0, 0, 1, 1, 1, 1)
 
 
@@ -211,7 +208,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     assert tuple(n.value for n in nodes) == (1,)
 
 
-def test_block_deletion_can_delete_short_ranges():
+def test_node_deletion_can_delete_short_ranges():
     @shrinking_from([v for i in range(5) for _ in range(i + 1) for v in [i]])
     def shrinker(data: ConjectureData):
         while True:
@@ -222,7 +219,8 @@ def test_block_deletion_can_delete_short_ranges():
             if n == 4:
                 data.mark_interesting()
 
-    shrinker.fixate_shrink_passes([node_program("X" * i) for i in range(1, 5)])
+    passes = [shrinker.node_program("X" * i) for i in range(1, 5)]
+    shrinker.fixate_shrink_passes(passes)
     assert shrinker.choices == (4,) * 5
 
 
@@ -242,7 +240,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (1, True, 65536, 1)
 
 
@@ -281,8 +279,7 @@ def test_node_programs_are_adaptive():
             pass
         data.mark_interesting()
 
-    p = shrinker.add_new_pass(node_program("X"))
-    shrinker.fixate_shrink_passes([p.name])
+    shrinker.fixate_shrink_passes([shrinker.node_program("X")])
 
     assert len(shrinker.choices) == 1
     assert shrinker.calls <= 60
@@ -333,7 +330,7 @@ def test_zig_zags_quickly():
         if abs(m - n) <= 10:
             data.mark_interesting(interesting_origin(1))
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.engine.valid_examples <= 100
     assert shrinker.choices == (1, 1)
 
@@ -366,7 +363,7 @@ def test_zig_zags_quickly_with_shrink_towards(
         if abs(m - n) <= 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.engine.valid_examples <= 40
     assert shrinker.choices == expected
 
@@ -451,17 +448,6 @@ def test_can_expand_deleted_region():
     assert shrinker.choices == (0, 0)
 
 
-def test_shrink_pass_method_is_idempotent():
-    @shrinking_from((255,))
-    def shrinker(data: ConjectureData):
-        data.draw_integer(0, 2**8 - 1)
-        data.mark_interesting()
-
-    sp = shrinker.shrink_pass(node_program("X"))
-    assert isinstance(sp, ShrinkPass)
-    assert shrinker.shrink_pass(sp) is sp
-
-
 def test_will_terminate_stalled_shrinks():
     # Suppress the time based slow shrinking check - we only want
     # the one that checks if we're in a stall where we've shrunk
@@ -492,11 +478,11 @@ def test_will_let_fixate_shrink_passes_do_a_full_run_through():
         data.mark_interesting()
 
     shrinker.max_stall = 5
-    passes = [node_program("X" * i) for i in range(1, 11)]
+    passes = [shrinker.node_program("X" * i) for i in range(1, 11)]
     with pytest.raises(StopShrinking):
         shrinker.fixate_shrink_passes(passes)
 
-    assert shrinker.shrink_pass(passes[-1]).calls > 0
+    assert passes[-1].calls > 0
 
 
 @pytest.mark.parametrize("n_gap", [0, 1, 2])
@@ -514,7 +500,7 @@ def test_can_simultaneously_lower_non_duplicated_nearby_integers(n_gap):
         if n == m + 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["lower_integers_together"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.lower_integers_together)])
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
@@ -526,7 +512,7 @@ def test_redistribute_with_forced_node_integer():
         if n1 + n2 > 20:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     # redistribute_numeric_pairs shouldn't try modifying forced nodes while
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
@@ -541,7 +527,7 @@ def test_can_quickly_shrink_to_trivial_collection(n):
         if len(b) >= n:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (b"\x00" * n,)
     assert shrinker.calls < 10
 
@@ -624,7 +610,7 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
         if v1 + v2 > stop:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     assert len(shrinker.choices) == 2
     # we should always have lowered the first choice and raised the second choice
     # - or left the choices the same.
@@ -655,7 +641,7 @@ def test_lower_duplicated_characters_across_choices(start, expected, gap):
         if s1 == s2:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["lower_duplicated_characters"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.lower_duplicated_characters)])
     assert shrinker.choices == (expected[0],) + (0,) * gap + (expected[1],)
 
 
