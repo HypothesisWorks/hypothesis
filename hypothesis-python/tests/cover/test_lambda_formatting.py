@@ -182,10 +182,12 @@ def test_can_handle_nested_lambda_in_decorator_argument():
 def test_modifying_lambda_source_code_returns_unknown(tmp_path):
     # see https://github.com/HypothesisWorks/hypothesis/pull/4452
     test_module = tmp_path / "test_module.py"
-    test_module.write_text("# line one\n\ntest_lambda = lambda x: x * 2")
+    test_module.write_text(
+        "# line one\n\ntest_lambda = lambda x: x * 2", encoding="utf-8"
+    )
 
     module_globals = runpy.run_path(str(test_module))
-    test_module.write_text("# line one\n\n# line two")
+    test_module.write_text("# line one\n\n# line two", encoding="utf-8")
     assert (
         get_pretty_function_description(module_globals["test_lambda"])
         == "lambda x: <unknown>"
