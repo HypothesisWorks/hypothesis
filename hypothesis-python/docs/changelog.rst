@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.17:
+
+---------------------
+6.135.17 - 2025-06-30
+---------------------
+
+Refactor some internals related to the shrinker for better compatibility with free-threading (:issue:`4451`).
+
 .. _v6.135.16:
 
 ---------------------
