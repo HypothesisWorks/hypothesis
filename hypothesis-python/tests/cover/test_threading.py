@@ -1,5 +1,16 @@
-from hypothesis.utils.threading import ThreadLocal
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 import pytest
+
+from hypothesis.utils.threading import ThreadLocal
 
 
 def test_threadlocal_setattr_and_getattr():
@@ -27,7 +38,7 @@ def test_threadlocal_setattr_and_getattr():
 def test_nonexistent_getattr_raises():
     threadlocal = ThreadLocal(a=1)
     with pytest.raises(AttributeError):
-        c = threadlocal.c
+        _c = threadlocal.c
 
 
 def test_nonexistent_setattr_raises():
