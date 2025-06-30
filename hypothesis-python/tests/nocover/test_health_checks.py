@@ -13,7 +13,7 @@ import time
 import pytest
 from pytest import raises
 
-from hypothesis import HealthCheck, Phase, given, settings, strategies as st
+from hypothesis import HealthCheck, Phase, given, seed, settings, strategies as st
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
@@ -108,7 +108,9 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
 
 
 def test_does_not_trigger_health_check_when_most_examples_are_small():
-    for _ in range(10):
+    for i in range(10):
+
+        @seed(i)
         # Setting max_examples=11 ensures we have enough examples for the
         # health checks to finish running, but cuts the generation short
         # after that point to allow this test to run in reasonable time.
