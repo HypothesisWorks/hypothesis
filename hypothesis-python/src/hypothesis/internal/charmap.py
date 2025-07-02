@@ -133,7 +133,7 @@ def charmap() -> dict[CategoryName, IntervalsT]:
             k: tuple(tuple(pair) for pair in pairs) for k, pairs in tmp_charmap.items()
         }
         # each value is a tuple of 2-tuples (that is, tuples of length 2)
-        # and that both elements of that tuple are integers.
+        # and both elements of that tuple are integers.
         for vs in _charmap.values():
             ints = list(sum(vs, ()))
             assert all(isinstance(x, int) for x in ints)
