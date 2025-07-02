@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.21:
+
+---------------------
+6.135.21 - 2025-07-02
+---------------------
+
+Fix the thread safety of |@rule| definitions in |RuleBasedStateMachine|.
+
 .. _v6.135.20:
 
 ---------------------
