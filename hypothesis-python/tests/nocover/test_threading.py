@@ -10,11 +10,16 @@
 
 from threading import Barrier, Thread
 
-from hypothesis import given, strategies as st
+import pytest
+
+from hypothesis import given, settings, strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 
 def run_concurrently(function, n: int) -> None:
+    if settings._current_profile == "crosshair":
+        pytest.skip(reason="crosshair is not thread safe")
+
     def run():
         barrier.wait()
         function()
