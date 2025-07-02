@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import assume, given, strategies as st, settings
+from hypothesis import assume, given, settings, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.numpy import from_dtype
 from hypothesis.extra.pandas.impl import IntegerDtype
@@ -39,8 +39,9 @@ def test_can_create_a_series_of_mixed_python_type(series):
 
 @given(
     data=st.data(),
-    anything=from_dtype(np.dtype(object))
-    .filter(lambda x: not isinstance(x, HypothesisRandom)),
+    anything=from_dtype(np.dtype(object)).filter(
+        lambda x: not isinstance(x, HypothesisRandom)
+    ),
 )
 @settings(max_examples=1000)
 def test_can_create_a_series_of_single_python_type(data, anything):
