@@ -10,6 +10,7 @@
 
 from collections.abc import MutableMapping, Sequence
 from inspect import signature
+from threading import RLock
 from typing import Any, Callable, Optional
 from weakref import WeakKeyDictionary
 
@@ -23,46 +24,52 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
+from hypothesis.utils.threading import ThreadLocal
 
 unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
-unwrap_depth = 0
+# I don't think making this threadlocal is necessary since we also have
+# unwrap_strategies_lock, but the overhead is so small that I'm doing so for safety.
+threadlocal = ThreadLocal(unwrap_depth=0)
+
+# only let one thread write to unwrap_cache at once. We'd still like to keep the
+# cache global.
+unwrap_strategies_lock = RLock()
 
 
 def unwrap_strategies(s):
-    global unwrap_depth
-
     # optimization
     if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
 
-    try:
-        return unwrap_cache[s]
-    except KeyError:
-        pass
-
-    unwrap_cache[s] = s
-    unwrap_depth += 1
-
-    try:
-        result = unwrap_strategies(s.wrapped_strategy)
-        unwrap_cache[s] = result
-
+    with unwrap_strategies_lock:
         try:
-            assert result.force_has_reusable_values == s.force_has_reusable_values
-        except AttributeError:
+            return unwrap_cache[s]
+        except KeyError:
             pass
 
-        try:
-            result.force_has_reusable_values = s.force_has_reusable_values
-        except AttributeError:
-            pass
+        unwrap_cache[s] = s
+        threadlocal.unwrap_depth += 1
 
-        return result
-    finally:
-        unwrap_depth -= 1
-        if unwrap_depth <= 0:
-            unwrap_cache.clear()
-        assert unwrap_depth >= 0
+        try:
+            result = unwrap_strategies(s.wrapped_strategy)
+            unwrap_cache[s] = result
+
+            try:
+                assert result.force_has_reusable_values == s.force_has_reusable_values
+            except AttributeError:
+                pass
+
+            try:
+                result.force_has_reusable_values = s.force_has_reusable_values
+            except AttributeError:
+                pass
+
+            return result
+        finally:
+            threadlocal.unwrap_depth -= 1
+            if threadlocal.unwrap_depth <= 0:
+                unwrap_cache.clear()
+            assert threadlocal.unwrap_depth >= 0
 
 
 class LazyStrategy(SearchStrategy[Ex]):
