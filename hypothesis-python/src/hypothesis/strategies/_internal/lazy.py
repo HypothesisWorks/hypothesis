@@ -121,13 +121,12 @@ class LazyStrategy(SearchStrategy[Ex]):
 
             base = self.function(*self.__args, **self.__kwargs)
             if unwrapped_args == self.__args and unwrapped_kwargs == self.__kwargs:
-                self.__wrapped_strategy = base
+                _wrapped_strategy = base
             else:
-                self.__wrapped_strategy = self.function(
-                    *unwrapped_args, **unwrapped_kwargs
-                )
+                _wrapped_strategy = self.function(*unwrapped_args, **unwrapped_kwargs)
             for method, fn in self._transformations:
-                self.__wrapped_strategy = getattr(self.__wrapped_strategy, method)(fn)
+                _wrapped_strategy = getattr(_wrapped_strategy, method)(fn)
+            self.__wrapped_strategy = _wrapped_strategy
         assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 
