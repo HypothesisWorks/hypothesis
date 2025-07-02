@@ -72,6 +72,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
 from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.threading import ThreadLocal
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -107,6 +108,9 @@ MisalignedAt: "TypeAlias" = tuple[
 ]
 
 TOP_LABEL = calc_label_from_name("top")
+MAX_DEPTH = 100
+
+threadlocal = ThreadLocal(global_test_counter=0)
 
 
 class ExtraInformation:
@@ -532,11 +536,6 @@ class _Overrun:
 
 Overrun = _Overrun()
 
-global_test_counter = 0
-
-
-MAX_DEPTH = 100
-
 
 class DataObserver:
     """Observer class for recording the behaviour of a
@@ -669,9 +668,8 @@ class ConjectureData:
         self.output = ""
         self.status = Status.VALID
         self.frozen = False
-        global global_test_counter
-        self.testcounter = global_test_counter
-        global_test_counter += 1
+        self.testcounter = threadlocal.global_test_counter
+        threadlocal.global_test_counter += 1
         self.start_time = time.perf_counter()
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, Union[str, int, float]] = {}
