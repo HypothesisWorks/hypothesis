@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.22:
+
+---------------------
+6.135.22 - 2025-07-02
+---------------------
+
+Improves the thread safety of caching strategy definitions, as well as usage of strategy transformations like |.map| and |.filter|.
+
 .. _v6.135.21:
 
 ---------------------
