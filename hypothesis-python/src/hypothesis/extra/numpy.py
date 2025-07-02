@@ -224,7 +224,7 @@ def from_dtype(
     elif dtype.kind == "O":
         result = st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
     else:
-        raise InvalidArgument(f"No strategy inference for {dtype}")
+        raise InvalidArgument(f"No strategy inference for {dtype}")  # pragma: no cover
     return result.map(dtype.type)
 
 
