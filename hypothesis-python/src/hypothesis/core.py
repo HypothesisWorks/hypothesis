@@ -154,7 +154,7 @@ global_force_seed = None
 # ConjectureRunner instance (roughly speaking). Since only one conjecture runner
 # instance can be active per thread, making engine constants thread-local prevents
 # the ConjectureRunner instances of concurrent threads from treading on each other.
-threadlocal = ThreadLocal(_hypothesis_global_random=None)
+threadlocal = ThreadLocal(_hypothesis_global_random=lambda: None)
 
 
 @dataclass

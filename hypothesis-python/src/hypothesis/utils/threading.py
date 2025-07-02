@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
-from typing import Any
+from typing import Any, Callable
 
 
 class ThreadLocal:
@@ -21,7 +21,11 @@ class ThreadLocal:
     The only supported names to geattr and setattr are the keys of the passed kwargs.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Callable) -> None:
+        for name, value in kwargs.items():
+            if not callable(value):
+                raise TypeError(f"Attribute {name} must be a callable. Got {value}")
+
         self.__initialized = False
         self.__kwargs = kwargs
         self.__threadlocal = threading.local()
@@ -30,8 +34,11 @@ class ThreadLocal:
     def __getattr__(self, name: str) -> Any:
         if name not in self.__kwargs:
             raise AttributeError(f"No attribute {name}")
+
         if not hasattr(self.__threadlocal, name):
-            setattr(self.__threadlocal, name, self.__kwargs[name])
+            default = self.__kwargs[name]()
+            setattr(self.__threadlocal, name, default)
+
         return getattr(self.__threadlocal, name)
 
     def __setattr__(self, name: str, value: Any) -> None:

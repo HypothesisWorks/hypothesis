@@ -14,7 +14,7 @@ from hypothesis.utils.threading import ThreadLocal
 
 
 def test_threadlocal_setattr_and_getattr():
-    threadlocal = ThreadLocal(a=1, b=2)
+    threadlocal = ThreadLocal(a=lambda: 1, b=lambda: 2)
     assert threadlocal.a == 1
     assert threadlocal.b == 2
     # check that we didn't add attributes to the ThreadLocal instance itself
@@ -36,12 +36,17 @@ def test_threadlocal_setattr_and_getattr():
 
 
 def test_nonexistent_getattr_raises():
-    threadlocal = ThreadLocal(a=1)
+    threadlocal = ThreadLocal(a=lambda: 1)
     with pytest.raises(AttributeError):
-        _c = threadlocal.c
+        threadlocal.c
 
 
 def test_nonexistent_setattr_raises():
-    threadlocal = ThreadLocal(a=1)
+    threadlocal = ThreadLocal(a=lambda: 1)
     with pytest.raises(AttributeError):
         threadlocal.c = 2
+
+
+def test_raises_if_not_passed_callable():
+    with pytest.raises(TypeError):
+        ThreadLocal(a=1)
