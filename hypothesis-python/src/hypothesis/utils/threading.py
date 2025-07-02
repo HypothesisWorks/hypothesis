@@ -21,7 +21,7 @@ class ThreadLocal:
     The only supported names to geattr and setattr are the keys of the passed kwargs.
     """
 
-    def __init__(self, **kwargs: dict[str, Callable]) -> None:
+    def __init__(self, **kwargs: Callable) -> None:
         for name, value in kwargs.items():
             if not callable(value):
                 raise TypeError(f"Attribute {name} must be a callable. Got {value}")
