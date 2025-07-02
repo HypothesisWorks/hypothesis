@@ -10,8 +10,6 @@
 
 from threading import Barrier, Thread
 
-import pytest
-
 from hypothesis import given, strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
@@ -45,7 +43,6 @@ def test_can_run_given_in_thread():
     assert has_run_successfully
 
 
-@pytest.mark.xfail(reason="hypothesis not yet thread-safe", strict=False)
 def test_run_stateful_test_concurrently():
     class MyStateMachine(RuleBasedStateMachine):
         def __init__(self):
