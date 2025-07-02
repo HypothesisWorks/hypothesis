@@ -222,7 +222,7 @@ def from_dtype(
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
     elif dtype.kind == "O":
-        result = st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
+        return st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")  # pragma: no cover
     return result.map(dtype.type)
@@ -258,7 +258,7 @@ class ArrayStrategy(st.SearchStrategy):
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                f"Internal error when checking element={val!r} of {val.dtype!r} "
+                f"Internal error when checking element={val!r} of {getattr(val, 'dtype', type(val))!r} "
                 f"to array of {result.dtype!r}"
             ) from err
         if elem_changed:
