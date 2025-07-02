@@ -8,9 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import MutableMapping, Sequence
+from collections.abc import Sequence
 from inspect import signature
-from threading import RLock
 from typing import Any, Callable, Optional
 from weakref import WeakKeyDictionary
 
@@ -26,14 +25,7 @@ from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
 from hypothesis.utils.threading import ThreadLocal
 
-unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
-# I don't think making this threadlocal is necessary since we also have
-# unwrap_strategies_lock, but the overhead is so small that I'm doing so for safety.
-threadlocal = ThreadLocal(unwrap_depth=0)
-
-# only let one thread write to unwrap_cache at once. We'd still like to keep the
-# cache global.
-unwrap_strategies_lock = RLock()
+threadlocal = ThreadLocal(unwrap_depth=int, unwrap_cache=WeakKeyDictionary)
 
 
 def unwrap_strategies(s):
@@ -41,35 +33,34 @@ def unwrap_strategies(s):
     if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
 
-    with unwrap_strategies_lock:
+    try:
+        return threadlocal.unwrap_cache[s]
+    except KeyError:
+        pass
+
+    threadlocal.unwrap_cache[s] = s
+    threadlocal.unwrap_depth += 1
+
+    try:
+        result = unwrap_strategies(s.wrapped_strategy)
+        threadlocal.unwrap_cache[s] = result
+
         try:
-            return unwrap_cache[s]
-        except KeyError:
+            assert result.force_has_reusable_values == s.force_has_reusable_values
+        except AttributeError:
             pass
 
-        unwrap_cache[s] = s
-        threadlocal.unwrap_depth += 1
-
         try:
-            result = unwrap_strategies(s.wrapped_strategy)
-            unwrap_cache[s] = result
+            result.force_has_reusable_values = s.force_has_reusable_values
+        except AttributeError:
+            pass
 
-            try:
-                assert result.force_has_reusable_values == s.force_has_reusable_values
-            except AttributeError:
-                pass
-
-            try:
-                result.force_has_reusable_values = s.force_has_reusable_values
-            except AttributeError:
-                pass
-
-            return result
-        finally:
-            threadlocal.unwrap_depth -= 1
-            if threadlocal.unwrap_depth <= 0:
-                unwrap_cache.clear()
-            assert threadlocal.unwrap_depth >= 0
+        return result
+    finally:
+        threadlocal.unwrap_depth -= 1
+        if threadlocal.unwrap_depth <= 0:
+            threadlocal.unwrap_cache.clear()
+        assert threadlocal.unwrap_depth >= 0
 
 
 class LazyStrategy(SearchStrategy[Ex]):

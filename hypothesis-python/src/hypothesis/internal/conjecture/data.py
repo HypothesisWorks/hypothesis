@@ -110,7 +110,7 @@ MisalignedAt: "TypeAlias" = tuple[
 TOP_LABEL = calc_label_from_name("top")
 MAX_DEPTH = 100
 
-threadlocal = ThreadLocal(global_test_counter=0)
+threadlocal = ThreadLocal(global_test_counter=int)
 
 
 class ExtraInformation:
