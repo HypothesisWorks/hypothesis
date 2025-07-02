@@ -149,14 +149,15 @@ def register_random(r: RandomLike) -> None:
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
-# the most recent state of the global random instance, as restored by hypothesis.
+# the most recent state of the global random instance, as set by hypothesis.
 # This might not be the current state of the global random instance if its
 # state changed since hypothesis seeded it. If nobody other than hypothesis
 # is touching the global random instance, then this will be the state of the global
 # random instance.
 #
 # This is used to address a threading race condition in deprecate_random_in_strategy.
-_global_random_restored_state: Optional[Any] = None
+_most_recent_random_state_enter: Optional[Any] = None
+_most_recent_random_state_exit: Optional[Any] = None
 
 
 def get_seeder_and_restorer(
@@ -182,27 +183,34 @@ def get_seeder_and_restorer(
             NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
     def seed_all() -> None:
+        global _most_recent_random_state_enter
         assert not states
         for k, r in RANDOMS_TO_MANAGE.items():
             states[k] = r.getstate()
             r.seed(seed)
+            if k == _global_random_rkey:
+                # setting a seed is equivalent to setting setstate, so we need
+                # to track it globally for race conditions.
+                #
+                # I think there's still a race here if a thread switch occurs
+                # after r.seed but before we set _most_recent_random_state_enter.
+                # We'd need to seed a dummy Random instance to figure out the
+                # seed -> state mapping, then set _most_recent_random_state_enter,
+                # then call setstate (or equivalently .seed) on the real random.
+                _most_recent_random_state_enter = r.getstate()
 
     def restore_all() -> None:
-        global _global_random_restored_state
+        global _most_recent_random_state_exit
 
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
-            if r is not None:  # i.e., hasn't been garbage-collected
-                r.setstate(state)
+            if r is None:  # i.e., has been garbage-collected
+                continue
 
-        # we don't expect the global random to ever be gc'd (and therefore removed
-        # from the WeakValueDictionary RANDOMS_TO_MANAGE), but I have observed
-        # RANDOMS_TO_MANAGE being empty when running under crosshair.
-        # `pytest -k test_seed_random_twice --hypothesis-profile=crosshair`
-        # reproduces an empty RANDOMS_TO_MANAGE at time of writing.
-        _global_random_restored_state = states.get(
-            _global_random_rkey, _global_random_restored_state
-        )
+            if k == _global_random_rkey:
+                _most_recent_random_state_exit = state
+            r.setstate(state)
+
         states.clear()
 
     return seed_all, restore_all
