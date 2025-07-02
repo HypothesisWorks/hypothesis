@@ -18,6 +18,54 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.23:
+
+---------------------
+6.135.23 - 2025-07-02
+---------------------
+
+In order to de-flake ``RecursionError`` failures, Hypothesis sets a deterministic limit on ``sys.setrecursionlimit``. This patch makes the setting of this limit aware of uses by Hypothesis from multiple threads, so it does not produce spurious warnings in multithreaded environments.
+
+.. _v6.135.22:
+
+---------------------
+6.135.22 - 2025-07-02
+---------------------
+
+Improves the thread safety of caching strategy definitions, as well as usage of strategy transformations like |.map| and |.filter|.
+
+.. _v6.135.21:
+
+---------------------
+6.135.21 - 2025-07-02
+---------------------
+
+Fix the thread safety of |@rule| definitions in |RuleBasedStateMachine|.
+
+.. _v6.135.20:
+
+---------------------
+6.135.20 - 2025-06-30
+---------------------
+
+Fixes ``reproduction_decorator`` being missing under :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in many :ref:`observability <observability>` observations, when it should have been present.
+
+.. _v6.135.19:
+
+---------------------
+6.135.19 - 2025-06-30
+---------------------
+
+Improve threading compatibility of an internal helper for managing deterministic rng seeding.
+
+.. _v6.135.18:
+
+---------------------
+6.135.18 - 2025-06-30
+---------------------
+
+Remove an internal assertion which could trigger if (1) a lambda was present in the source code of a test, (2) and the source code file was edited on disk between the start of the python process and when Hypothesis runs the property.
+
 .. _v6.135.17:
 
 ---------------------

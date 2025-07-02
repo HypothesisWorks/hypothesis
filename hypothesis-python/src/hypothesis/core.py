@@ -140,6 +140,7 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
+from hypothesis.utils.threading import ThreadLocal
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
@@ -149,7 +150,11 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 running_under_pytest = False
 pytest_shows_exceptiongroups = True
 global_force_seed = None
-_hypothesis_global_random = None
+# `threadlocal` stores "engine-global" constants, which are global relative to a
+# ConjectureRunner instance (roughly speaking). Since only one conjecture runner
+# instance can be active per thread, making engine constants thread-local prevents
+# the ConjectureRunner instances of concurrent threads from treading on each other.
+threadlocal = ThreadLocal(_hypothesis_global_random=lambda: None)
 
 
 @dataclass
@@ -703,10 +708,9 @@ def get_random_for_wrapped_test(test, wrapped_test):
     elif global_force_seed is not None:
         return Random(global_force_seed)
     else:
-        global _hypothesis_global_random
-        if _hypothesis_global_random is None:  # pragma: no cover
-            _hypothesis_global_random = Random()
-        seed = _hypothesis_global_random.getrandbits(128)
+        if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+            threadlocal._hypothesis_global_random = Random()
+        seed = threadlocal._hypothesis_global_random.getrandbits(128)
         wrapped_test._hypothesis_internal_use_generated_seed = seed
         return Random(seed)
 

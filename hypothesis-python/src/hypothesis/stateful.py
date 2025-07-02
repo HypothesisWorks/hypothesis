@@ -362,12 +362,13 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
-        cls._rules_per_class[cls] = []
+        rules = []
         for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
-                cls._rules_per_class[cls].append(r)
-        return cls._rules_per_class[cls]
+                rules.append(r)
+        cls._rules_per_class[cls] = rules
+        return rules
 
     @classmethod
     def invariants(cls) -> list["Invariant"]:

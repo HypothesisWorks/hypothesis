@@ -217,9 +217,11 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-        hypothesis.core._hypothesis_global_random = random.Random()
-        register_random(hypothesis.core._hypothesis_global_random)
+    if (
+        hypothesis.core.threadlocal._hypothesis_global_random is None
+    ):  # pragma: no cover
+        hypothesis.core.threadlocal._hypothesis_global_random = random.Random()
+        register_random(hypothesis.core.threadlocal._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
