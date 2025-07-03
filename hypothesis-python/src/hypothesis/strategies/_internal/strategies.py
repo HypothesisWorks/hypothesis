@@ -511,9 +511,9 @@ class SearchStrategy(Generic[Ex]):
         with label_lock:
             if self.__label is calculating:
                 return 0
-            if self.__label is None:
-                self.__label = calculating
-                self.__label = self.calc_label()
+            assert self.__label is None
+            self.__label = calculating
+            self.__label = self.calc_label()
         return cast(int, self.__label)
 
     def calc_label(self) -> int:
