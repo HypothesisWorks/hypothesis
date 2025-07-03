@@ -208,7 +208,7 @@ def get_seeder_and_restorer(
             r = ref()
             if r is None:
                 # ie the random instance has been gc'd
-                continue
+                continue  # pragma: no cover
             states[k] = r.getstate()
             r.seed(seed)
             if k == _global_random_rkey:
