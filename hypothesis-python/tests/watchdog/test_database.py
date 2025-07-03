@@ -191,7 +191,8 @@ def test_database_listener_directory_move(tmp_path):
             ("save", (b"k2", b"v1")),
             # windows doesn't fire move events, so value is None
             ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
-        }
+        },
+        timeout=5,
     )
 
 
