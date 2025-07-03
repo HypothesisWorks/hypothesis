@@ -292,11 +292,12 @@ def stack_depth_of_caller() -> int:
 # recursion limit on exit to be any of the following:
 #
 # * the recursion limit on enter.
-# * the recursion limit as set by any other enter of ensure_free_stackframes.
+# * the recursion limit as set by the enter of the most recent
+#   ensure_free_stackframes.
 # * the recursion limit as set by the exit of the most recent
 #   ensure_free_stackframes.
-global_maxdepth_enters: list[int] = []
-most_recent_maxdepth_exit: Optional[int] = None
+_most_recent_maxdepth_enter: Optional[int] = None
+_most_recent_maxdepth_exit: Optional[int] = None
 
 
 class ensure_free_stackframes:
@@ -305,6 +306,7 @@ class ensure_free_stackframes:
     """
 
     def __enter__(self) -> None:
+        global _most_recent_maxdepth_enter
         cur_depth = stack_depth_of_caller()
         self.old_maxdepth = sys.getrecursionlimit()
         # The default CPython recursionlimit is 1000, but pytest seems to bump
@@ -321,23 +323,22 @@ class ensure_free_stackframes:
             "avoid extending the stack limit in an infinite loop..."
             % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
         )
-        global_maxdepth_enters.append(self.new_maxdepth)
+        _most_recent_maxdepth_enter = self.new_maxdepth
         sys.setrecursionlimit(self.new_maxdepth)
 
     def __exit__(self, *args, **kwargs):
-        global most_recent_maxdepth_exit
+        global _most_recent_maxdepth_exit
 
         # in single-threaded uses, we expect sys.getrecursionlimit == self.maxdepth.
         # The other checks are to avoid spurious warnings in multi-threaded
         # environments. Adding them slightly weakens this check, but acceptably so.
         if sys.getrecursionlimit() in [
             self.new_maxdepth,
-            *global_maxdepth_enters,
-            most_recent_maxdepth_exit,
+            _most_recent_maxdepth_enter,
+            _most_recent_maxdepth_exit,
         ]:
-            most_recent_maxdepth_exit = self.old_maxdepth
+            _most_recent_maxdepth_exit = self.old_maxdepth
             sys.setrecursionlimit(self.old_maxdepth)
-            global_maxdepth_enters.remove(self.new_maxdepth)
         else:  # pragma: no cover
             warnings.warn(
                 "The recursion limit will not be reset, since it was changed "
