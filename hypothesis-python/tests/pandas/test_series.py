@@ -50,7 +50,7 @@ def test_can_create_a_series_of_single_python_type(data, anything):
         pdst.series(
             elements=st.just(anything),
             index=pdst.range_indexes(min_size=1),
-            dtype=object
+            dtype=object,
         )
     )
     assert all(val is anything for val in series.values)
