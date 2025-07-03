@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.24:
+
+---------------------
+6.135.24 - 2025-07-03
+---------------------
+
+Makes the deprecation warning for using the global random instance thread-safe, as part of our work towards thread safety (:issue:`4451`).
+
 .. _v6.135.23:
 
 ---------------------
