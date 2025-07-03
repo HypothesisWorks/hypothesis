@@ -47,7 +47,11 @@ def test_can_create_a_series_of_mixed_python_type(series):
 def test_can_create_a_series_of_single_python_type(data, anything):
     """Ensure that elements from a strategy are present in the series without modification."""
     series = data.draw(
-        pdst.series(elements=st.just(anything), index=pdst.range_indexes(min_size=1), dtype=object)
+        pdst.series(
+            elements=st.just(anything),
+            index=pdst.range_indexes(min_size=1),
+            dtype=object
+        )
     )
     assert all(val is anything for val in series.values)
 
