@@ -116,7 +116,11 @@ def register_random(r: RandomLike) -> None:
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"{r=} does not have all the required methods")
 
-    if r in RANDOMS_TO_MANAGE.values():
+    if r in [
+        random
+        for ref in RANDOMS_TO_MANAGE.data.copy().values()
+        if (random := ref()) is not None
+    ]:
         return
 
     if not (PYPY or GRAALPY):  # pragma: no branch
@@ -185,7 +189,26 @@ def get_seeder_and_restorer(
     def seed_all() -> None:
         global _most_recent_random_state_enter
         assert not states
-        for k, r in RANDOMS_TO_MANAGE.items():
+        # access .data.copy().items() instead of .items() to avoid a "dictionary
+        # changed size during iteration" error under multithreading.
+        #
+        # I initially expected this to be fixed by
+        # https://github.com/python/cpython/commit/96d37dbcd23e65a7a57819aeced9034296ef747e,
+        # but I believe that is addressing the size change from weakrefs expiring
+        # during c, not from the user adding new elements to the dict.
+        #
+        # Since we're accessing .data, we have to manually handle checking for
+        # expired ref instances during iteration. Normally WeakValueDictionary
+        # handles this for us.
+        #
+        # This command reproduces at time of writing:
+        #   pytest hypothesis-python/tests/ -k test_intervals_are_equivalent_to_their_lists
+        #   --parallel-threads 2
+        for k, ref in RANDOMS_TO_MANAGE.data.copy().items():
+            r = ref()
+            if r is None:
+                # ie the random instance has been gc'd
+                continue
             states[k] = r.getstate()
             r.seed(seed)
             if k == _global_random_rkey:
