@@ -514,7 +514,7 @@ class SearchStrategy(Generic[Ex]):
             assert self.__label is None
             self.__label = calculating
             self.__label = self.calc_label()
-        return cast(int, self.__label)
+        return self.__label
 
     def calc_label(self) -> int:
         return self.class_label

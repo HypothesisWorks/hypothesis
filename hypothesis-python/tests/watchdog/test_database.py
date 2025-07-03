@@ -13,6 +13,8 @@ import sys
 import time
 from collections import Counter
 
+import pytest
+
 from hypothesis import Phase, settings
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
@@ -166,7 +168,10 @@ def test_database_listener_directory_explicit(tmp_path):
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
 
-# seen flaky on windows CI (timeout in wait_for)
+# seen flaky on windows CI (timeout in wait_for).
+# when this happens it seems to occur consistently within that run, so the
+# @flaky doesn't help.
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="too flaky on windows")
 @flaky(max_runs=5, min_passes=1)
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
