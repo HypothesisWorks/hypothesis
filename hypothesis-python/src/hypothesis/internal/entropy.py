@@ -195,7 +195,7 @@ def get_seeder_and_restorer(
         # I initially expected this to be fixed by
         # https://github.com/python/cpython/commit/96d37dbcd23e65a7a57819aeced9034296ef747e,
         # but I believe that is addressing the size change from weakrefs expiring
-        # during c, not from the user adding new elements to the dict.
+        # during gc, not from the user adding new elements to the dict.
         #
         # Since we're accessing .data, we have to manually handle checking for
         # expired ref instances during iteration. Normally WeakValueDictionary
