@@ -118,7 +118,7 @@ def register_random(r: RandomLike) -> None:
 
     if r in [
         random
-        for ref in RANDOMS_TO_MANAGE.data.copy().values()
+        for ref in RANDOMS_TO_MANAGE.data.copy().values()  # type: ignore
         if (random := ref()) is not None
     ]:
         return
@@ -204,7 +204,7 @@ def get_seeder_and_restorer(
         # This command reproduces at time of writing:
         #   pytest hypothesis-python/tests/ -k test_intervals_are_equivalent_to_their_lists
         #   --parallel-threads 2
-        for k, ref in RANDOMS_TO_MANAGE.data.copy().items():
+        for k, ref in RANDOMS_TO_MANAGE.data.copy().items():  # type: ignore
             r = ref()
             if r is None:
                 # ie the random instance has been gc'd
