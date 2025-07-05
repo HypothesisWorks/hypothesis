@@ -14,6 +14,7 @@ from collections import abc, defaultdict
 from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
+from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -76,6 +77,8 @@ MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "single loop iteration in FilteredStrategy"
 )
+
+label_lock = RLock()
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -501,12 +504,16 @@ class SearchStrategy(Generic[Ex]):
 
     @property
     def label(self) -> int:
-        if self.__label is calculating:
-            return 0
-        if self.__label is None:
+        if isinstance(self.__label, int):
+            # avoid locking if we've already completely computed the label.
+            return self.__label
+
+        with label_lock:
+            if self.__label is calculating:
+                return 0
             self.__label = calculating
             self.__label = self.calc_label()
-        return cast(int, self.__label)
+        return self.__label
 
     def calc_label(self) -> int:
         return self.class_label
