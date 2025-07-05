@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.26:
+
+---------------------
+6.135.26 - 2025-07-05
+---------------------
+
+Fix a "dictionary changed size during iteration" error that could occur under with |register_random| under multiple threads.
+
 .. _v6.135.25:
 
 ---------------------
