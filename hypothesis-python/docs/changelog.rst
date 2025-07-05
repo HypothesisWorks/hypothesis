@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.25:
+
+---------------------
+6.135.25 - 2025-07-05
+---------------------
+
+Improve thread safety of our :mod:`sys.monitoring` usage (by the |Phase.shrink| and |Phase.explain| phases), as well as the internal computation of strategy labels.
+
 .. _v6.135.24:
 
 ---------------------
