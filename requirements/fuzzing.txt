@@ -110,7 +110,7 @@ pyarrow==19.0.1
     # via -r requirements/coverage.in
 pygments==2.19.1
     # via rich
-pytest==8.3.5
+pytest==8.4.0
     # via
     #   -r requirements/test.in
     #   hypofuzz

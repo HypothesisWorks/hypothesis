@@ -34,7 +34,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "hoverxref.extension",
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
     "sphinx-jsonschema",
@@ -114,6 +113,25 @@ def setup(app):
     assert "xps" not in sys.modules
     sys.modules["xps"] = mod
 
+    def process_signature(app, what, name, obj, options, signature, return_annotation):
+        # manually override an ugly signature from .. autofunction. Alternative we
+        # could manually document with `.. function:: run_conformance_test(...)`,
+        # but that's less likely to stay up to date.
+        if (
+            name
+            == "hypothesis.internal.conjecture.provider_conformance.run_conformance_test"
+        ):
+            # so we know if this ever becomes obsolete
+            assert "_realize_objects" in signature
+            signature = re.sub(
+                r"_realize_objects=.*",
+                "_realize_objects=st.from_type(object) | st.from_type(type).flatmap(st.from_type))",
+                signature,
+            )
+        return signature, return_annotation
+
+    app.connect("autodoc-process-signature", process_signature)
+
 
 language = "en"
 exclude_patterns = ["_build", "prolog.rst"]
@@ -130,22 +148,6 @@ linkcheck_ignore = [
     r"https://github.com/HypothesisWorks/hypothesis/pull/\d+",
 ]
 
-# See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
-hoverxref_auto_ref = True
-hoverxref_domains = ["py"]
-hoverxref_role_types = {
-    "attr": "tooltip",
-    "class": "tooltip",
-    "const": "tooltip",
-    "exc": "tooltip",
-    "func": "tooltip",
-    "meth": "tooltip",
-    "mod": "tooltip",
-    "obj": "tooltip",
-    "ref": "tooltip",
-    "data": "tooltip",
-}
-
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
@@ -156,7 +158,7 @@ intersphinx_mapping = {
         "http://docs.djangoproject.com/en/stable/_objects/",
     ),
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
-    "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
+    "redis": ("https://redis.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),

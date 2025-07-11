@@ -112,10 +112,40 @@ class _Checker:
 
 @contextmanager
 def deprecate_random_in_strategy(fmt, *args):
-    _global_rand_state = random.getstate()
+    from hypothesis.internal import entropy
+
+    state_before = random.getstate()
     yield (checker := _Checker())
-    if _global_rand_state != random.getstate() and not checker.saw_global_random:
-        # raise InvalidDefinition
+    state_after = random.getstate()
+    if (
+        # there is a threading race condition here with deterministic_PRNG. Say
+        # we have two threads 1 and 2. We start in global random state A, and
+        # deterministic_PRNG sets to global random state B (which is constant across
+        # threads since we seed to 0 unconditionally). Then we might have state
+        # transitions:
+        #
+        #  [1]        [2]
+        # A -> B                           deterministic_PRNG().__enter__
+        #            B ->B                 deterministic_PRNG().__enter__
+        #            state_before = B      deprecate_random_in_strategy.__enter__
+        # B -> A                           deterministic_PRNG().__exit__
+        #            state_after  = A      deprecate_random_in_strategy.__exit__
+        #
+        # where state_before != state_after because a different thread has reset
+        # the global random state.
+        #
+        # To fix this, we track the latest set global random state in
+        # deterministic_PRNG, and will not note a deprecation (or error, in the
+        # future) if the state afterwards is the same as the state that
+        # deterministic_PRNG set to.
+        state_after
+        not in [
+            state_before,
+            entropy._most_recent_random_state_enter,
+            entropy._most_recent_random_state_exit,
+        ]
+        and not checker.saw_global_random
+    ):
         note_deprecation(
             "Do not use the `random` module inside strategies; instead "
             "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),

@@ -54,11 +54,17 @@ if sys.version_info[:2] >= (3, 12):
 class Tracer:
     """A super-simple branch coverage tracer."""
 
-    __slots__ = ("_previous_location", "_should_trace", "branches")
+    __slots__ = (
+        "_previous_location",
+        "_should_trace",
+        "_tried_and_failed_to_trace",
+        "branches",
+    )
 
     def __init__(self, *, should_trace: bool) -> None:
         self.branches: Trace = set()
         self._previous_location: Optional[Location] = None
+        self._tried_and_failed_to_trace = False
         self._should_trace = should_trace and self.can_trace()
 
     @staticmethod
@@ -96,6 +102,8 @@ class Tracer:
         self._previous_location = current_location
 
     def __enter__(self):
+        self._tried_and_failed_to_trace = False
+
         if not self._should_trace:
             return self
 
@@ -103,7 +111,14 @@ class Tracer:
             sys.settrace(self.trace)
             return self
 
-        sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+        try:
+            sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+        except ValueError:
+            # another thread may have registered a tool for MONITORING_TOOL_ID
+            # since we checked in can_trace.
+            self._tried_and_failed_to_trace = True
+            return self
+
         for event, callback_name in MONITORING_EVENTS.items():
             sys.monitoring.set_events(MONITORING_TOOL_ID, event)
             callback = getattr(self, callback_name)
@@ -117,6 +132,9 @@ class Tracer:
 
         if sys.version_info[:2] < (3, 12):
             sys.settrace(None)
+            return
+
+        if self._tried_and_failed_to_trace:
             return
 
         sys.monitoring.free_tool_id(MONITORING_TOOL_ID)

@@ -328,15 +328,15 @@ def _hypothesis_parse_gufunc_signature(signature):
                     raise InvalidArgument(
                         f"Got dimension {name!r}, but handling of frozen optional dimensions "
                         "is ambiguous.  If you known how this should work, please "
-                        "contact us to get this fixed and documented ({signature=})."
+                        f"contact us to get this fixed and documented ({signature=})."
                     )
             except ValueError:
                 names_in = {n.strip("?") for shp in input_shapes for n in shp}
                 names_out = {n.strip("?") for n in result_shape}
                 if name.strip("?") in (names_out - names_in):
                     raise InvalidArgument(
-                        "The {name!r} dimension only appears in the output shape, and is "
-                        "not frozen, so the size is not determined ({signature=})."
+                        f"The {name!r} dimension only appears in the output shape, and is "
+                        f"not frozen, so the size is not determined ({signature=})."
                     ) from None
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 

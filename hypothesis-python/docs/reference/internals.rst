@@ -22,6 +22,8 @@ Alternative backends
 .. autodata:: hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS
     :no-value:
 
+.. autofunction:: hypothesis.internal.conjecture.provider_conformance.run_conformance_test
+
 .. autoclass:: hypothesis.errors.BackendCannotProceed
 .. autoclass:: hypothesis.internal.intervalsets.IntervalSet
 
@@ -30,7 +32,7 @@ Observability
 
 .. autodata:: hypothesis.internal.observability.TESTCASE_CALLBACKS
 .. autodata:: hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
-
+.. autodata:: hypothesis.internal.observability.OBSERVABILITY_CHOICES
 
 Engine constants
 ----------------

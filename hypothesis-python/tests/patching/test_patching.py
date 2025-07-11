@@ -155,10 +155,11 @@ UNDEF_NAME_PATCH_BODY = f"""\
 def test_make_full_patch(tst, example, expected, body, remove):
     when = datetime.now()
     msg = "a message from the test"
-    expected = HEADER.format(when=when, msg=msg) + body.format(expected)
+    author = "the patch author"
+    expected = HEADER.format(when=when, msg=msg, author=author) + body.format(expected)
 
     triple = get_patch_for(tst, [example], strip_via=remove)
-    got = make_patch([triple], when=when, msg=msg)
+    got = make_patch([triple], when=when, msg=msg, author=author)
     stripped = strip_trailing_whitespace(got)
 
     assert stripped.splitlines() == expected.splitlines()

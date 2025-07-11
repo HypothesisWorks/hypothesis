@@ -27,6 +27,9 @@ class Thing_with_a_subThing(unittest.TestCase):
     def thing(self, lst):
         for i, b in enumerate(lst):
             with pytest.warns(HypothesisWarning):
+                # NOTE: For compatibility with Python 3.9's LL(1)
+                # parser, this is written as a nested with-statement,
+                # instead of a compound one.
                 with self.subTest((i, b)):
                     self.assertTrue(b)
 

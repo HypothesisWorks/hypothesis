@@ -362,12 +362,13 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
-        cls._rules_per_class[cls] = []
+        rules = []
         for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
-                cls._rules_per_class[cls].append(r)
-        return cls._rules_per_class[cls]
+                rules.append(r)
+        cls._rules_per_class[cls] = rules
+        return rules
 
     @classmethod
     def invariants(cls) -> list["Invariant"]:
@@ -504,8 +505,12 @@ class Rule:
         self.bundles = tuple(bundles)
 
     def __repr__(self) -> str:
-        rep = get_pretty_function_description
-        bits = [f"{k}={rep(v)}" for k, v in dataclasses.asdict(self).items() if v]
+        bits = [
+            f"{field.name}="
+            f"{get_pretty_function_description(getattr(self, field.name))}"
+            for field in dataclasses.fields(self)
+            if getattr(self, field.name)
+        ]
         return f"{self.__class__.__name__}({', '.join(bits)})"
 
 
@@ -1038,7 +1043,11 @@ class RuleStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
-            msg = f"No progress can be made from state {self.machine!r}"
+            rules = ", ".join([rule.function.__name__ for rule in self.rules])
+            msg = (
+                f"No progress can be made from state {self.machine!r}, because no "
+                f"available rule had a True precondition. rules: {rules}"
+            )
             raise InvalidDefinition(msg) from None
 
         feature_flags = data.draw(self.enabled_rules_strategy)

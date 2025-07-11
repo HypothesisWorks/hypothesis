@@ -283,12 +283,30 @@ def stack_depth_of_caller() -> int:
     return size
 
 
+# With a single thread, calls to ensure_free_stackframes form a stack, so it is
+# sufficient to require that the recursion limit on exit be:
+#
+# * the recursion limit on enter.
+#
+# With multiple threads, we relax this requirement. We instead require the
+# recursion limit on exit to be any of the following:
+#
+# * the recursion limit on enter.
+# * the recursion limit as set by the enter of the most recent
+#   ensure_free_stackframes.
+# * the recursion limit as set by the exit of the most recent
+#   ensure_free_stackframes.
+_most_recent_maxdepth_enter: Optional[int] = None
+_most_recent_maxdepth_exit: Optional[int] = None
+
+
 class ensure_free_stackframes:
     """Context manager that ensures there are at least N free stackframes (for
     a reasonable value of N).
     """
 
     def __enter__(self) -> None:
+        global _most_recent_maxdepth_enter
         cur_depth = stack_depth_of_caller()
         self.old_maxdepth = sys.getrecursionlimit()
         # The default CPython recursionlimit is 1000, but pytest seems to bump
@@ -305,15 +323,26 @@ class ensure_free_stackframes:
             "avoid extending the stack limit in an infinite loop..."
             % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
         )
+        _most_recent_maxdepth_enter = self.new_maxdepth
         sys.setrecursionlimit(self.new_maxdepth)
 
     def __exit__(self, *args, **kwargs):
-        if self.new_maxdepth == sys.getrecursionlimit():
+        global _most_recent_maxdepth_exit
+
+        # in single-threaded uses, we expect sys.getrecursionlimit == self.maxdepth.
+        # The other checks are to avoid spurious warnings in multi-threaded
+        # environments. Adding them slightly weakens this check, but acceptably so.
+        if sys.getrecursionlimit() in [
+            self.new_maxdepth,
+            _most_recent_maxdepth_enter,
+            _most_recent_maxdepth_exit,
+        ]:
+            _most_recent_maxdepth_exit = self.old_maxdepth
             sys.setrecursionlimit(self.old_maxdepth)
         else:  # pragma: no cover
             warnings.warn(
                 "The recursion limit will not be reset, since it was changed "
-                "from another thread or during execution of a test.",
+                "during test execution.",
                 HypothesisWarning,
                 stacklevel=2,
             )
@@ -411,6 +440,11 @@ _perf_counter = time.perf_counter
 
 def gc_cumulative_time() -> float:
     global _gc_initialized
+
+    # I don't believe we need a lock for the _gc_cumulative_time increment here,
+    # since afaik each gc callback is only executed once when the garbage collector
+    # runs, by the thread which initiated the gc.
+
     if not _gc_initialized:
         if hasattr(gc, "callbacks"):
             # CPython

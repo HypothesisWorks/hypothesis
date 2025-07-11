@@ -447,11 +447,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         kp = self._key_path(key)
         if not kp.is_dir():
             return
-        for path in os.listdir(kp):
-            try:
-                yield (kp / path).read_bytes()
-            except OSError:
-                pass
+
+        try:
+            for path in os.listdir(kp):
+                try:
+                    yield (kp / path).read_bytes()
+                except OSError:
+                    pass
+        except OSError:  # pragma: no cover
+            # the `kp` directory might have been deleted in the meantime
+            pass
 
     def save(self, key: bytes, value: bytes) -> None:
         key_path = self._key_path(key)
@@ -512,7 +517,19 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         try:
             self._value_path(key, value).unlink()
         except OSError:
+            return
+
+        # try deleting the key dir, which will only succeed if the dir is empty
+        # (i.e. ``value`` was the last value in this key).
+        try:
+            self._key_path(key).rmdir()
+        except OSError:
             pass
+        else:
+            # if the deletion succeeded, also delete this key entry from metakeys.
+            # (if this key happens to be the metakey itself, this deletion will
+            # fail; that's ok and faster than checking for this rare case.)
+            self.delete(self._metakeys_name, key)
 
     def _start_listening(self) -> None:
         try:
@@ -555,7 +572,13 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 key_hash = value_path.parent.name
 
                 if key_hash == _metakeys_hash:
-                    hash_to_key[value_path.name] = value_path.read_bytes()
+                    try:
+                        hash_to_key[value_path.name] = value_path.read_bytes()
+                    except OSError:  # pragma: no cover
+                        # this might occur if all the values in a key have been
+                        # deleted and DirectoryBasedExampleDatabase removes its
+                        # metakeys entry (which is `value_path` here`).
+                        pass
                     return
 
                 key = hash_to_key.get(key_hash)

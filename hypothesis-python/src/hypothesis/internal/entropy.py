@@ -35,12 +35,13 @@ if TYPE_CHECKING:
 else:  # pragma: no cover
     RandomLike = random.Random
 
+_RKEY = count()
+_global_random_rkey = next(_RKEY)
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
-_RKEY = count()
 RANDOMS_TO_MANAGE: WeakValueDictionary[int, RandomLike] = WeakValueDictionary(
-    {next(_RKEY): random}
+    {_global_random_rkey: random}
 )
 
 
@@ -115,7 +116,11 @@ def register_random(r: RandomLike) -> None:
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"{r=} does not have all the required methods")
 
-    if r in RANDOMS_TO_MANAGE.values():
+    if r in [
+        random
+        for ref in RANDOMS_TO_MANAGE.data.copy().values()  # type: ignore
+        if (random := ref()) is not None
+    ]:
         return
 
     if not (PYPY or GRAALPY):  # pragma: no branch
@@ -148,6 +153,17 @@ def register_random(r: RandomLike) -> None:
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
+# the most recent state of the global random instance, as set by hypothesis.
+# This might not be the current state of the global random instance if its
+# state changed since hypothesis seeded it. If nobody other than hypothesis
+# is touching the global random instance, then this will be the state of the global
+# random instance.
+#
+# This is used to address a threading race condition in deprecate_random_in_strategy.
+_most_recent_random_state_enter: Optional[Any] = None
+_most_recent_random_state_exit: Optional[Any] = None
+
+
 def get_seeder_and_restorer(
     seed: Hashable = 0,
 ) -> tuple[Callable[[], None], Callable[[], None]]:
@@ -171,16 +187,53 @@ def get_seeder_and_restorer(
             NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
     def seed_all() -> None:
+        global _most_recent_random_state_enter
         assert not states
-        for k, r in RANDOMS_TO_MANAGE.items():
+        # access .data.copy().items() instead of .items() to avoid a "dictionary
+        # changed size during iteration" error under multithreading.
+        #
+        # I initially expected this to be fixed by
+        # https://github.com/python/cpython/commit/96d37dbcd23e65a7a57819aeced9034296ef747e,
+        # but I believe that is addressing the size change from weakrefs expiring
+        # during gc, not from the user adding new elements to the dict.
+        #
+        # Since we're accessing .data, we have to manually handle checking for
+        # expired ref instances during iteration. Normally WeakValueDictionary
+        # handles this for us.
+        #
+        # This command reproduces at time of writing:
+        #   pytest hypothesis-python/tests/ -k test_intervals_are_equivalent_to_their_lists
+        #   --parallel-threads 2
+        for k, ref in RANDOMS_TO_MANAGE.data.copy().items():  # type: ignore
+            r = ref()
+            if r is None:
+                # ie the random instance has been gc'd
+                continue  # pragma: no cover
             states[k] = r.getstate()
             r.seed(seed)
+            if k == _global_random_rkey:
+                # setting a seed is equivalent to setting setstate, so we need
+                # to track it globally for race conditions.
+                #
+                # I think there's still a race here if a thread switch occurs
+                # after r.seed but before we set _most_recent_random_state_enter.
+                # We'd need to seed a dummy Random instance to figure out the
+                # seed -> state mapping, then set _most_recent_random_state_enter,
+                # then call setstate (or equivalently .seed) on the real random.
+                _most_recent_random_state_enter = r.getstate()
 
     def restore_all() -> None:
+        global _most_recent_random_state_exit
+
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
-            if r is not None:  # i.e., hasn't been garbage-collected
-                r.setstate(state)
+            if r is None:  # i.e., has been garbage-collected
+                continue
+
+            if k == _global_random_rkey:
+                _most_recent_random_state_exit = state
+            r.setstate(state)
+
         states.clear()
 
     return seed_all, restore_all
@@ -195,9 +248,11 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-        hypothesis.core._hypothesis_global_random = random.Random()
-        register_random(hypothesis.core._hypothesis_global_random)
+    if (
+        hypothesis.core.threadlocal._hypothesis_global_random is None
+    ):  # pragma: no cover
+        hypothesis.core.threadlocal._hypothesis_global_random = random.Random()
+        register_random(hypothesis.core.threadlocal._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()

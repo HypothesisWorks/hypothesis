@@ -687,9 +687,11 @@ def _valid_syntax_repr(strategy):
                     elems.append(s)
                     seen.add(repr(s))
             strategy = st.one_of(elems or st.nothing())
-        # Trivial special case because the wrapped repr for text() is terrible.
+        # hardcode some special cases for nicer reprs
         if strategy == st.text().wrapped_strategy:
             return set(), "text()"
+        if strategy == st.from_type(type):
+            return set(), "from_type(type)"
         # Remove any typevars; we don't exploit them so they're just clutter here
         if (
             isinstance(strategy, LazyStrategy)

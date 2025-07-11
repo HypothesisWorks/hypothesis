@@ -17,7 +17,7 @@ from typing import Any, Callable, TypeVar, Union
 
 import django
 from django import forms as df
-from django.contrib.auth.forms import UsernameField
+from django.conf import settings
 from django.core.validators import (
     validate_ipv4_address,
     validate_ipv6_address,
@@ -231,7 +231,6 @@ def _for_binary(field):
 @register_for(dm.TextField)
 @register_for(df.CharField)
 @register_for(df.RegexField)
-@register_for(UsernameField)
 def _for_text(field):
     # We can infer a vastly more precise strategy by considering the
     # validators as well as the field type.  This is a minimal proof of
@@ -260,6 +259,12 @@ def _for_text(field):
     if getattr(field, "blank", False) or not getattr(field, "required", True):
         return st.just("") | strategy
     return strategy
+
+
+if "django.contrib.auth" in settings.INSTALLED_APPS:
+    from django.contrib.auth.forms import UsernameField
+
+    register_for(UsernameField)(_for_text)
 
 
 @register_for(df.BooleanField)

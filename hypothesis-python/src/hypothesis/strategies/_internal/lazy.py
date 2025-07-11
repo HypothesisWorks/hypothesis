@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import MutableMapping, Sequence
+from collections.abc import Sequence
 from inspect import signature
 from typing import Any, Callable, Optional
 from weakref import WeakKeyDictionary
@@ -23,29 +23,27 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
+from hypothesis.utils.threading import ThreadLocal
 
-unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
-unwrap_depth = 0
+threadlocal = ThreadLocal(unwrap_depth=int, unwrap_cache=WeakKeyDictionary)
 
 
 def unwrap_strategies(s):
-    global unwrap_depth
-
     # optimization
     if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
 
     try:
-        return unwrap_cache[s]
+        return threadlocal.unwrap_cache[s]
     except KeyError:
         pass
 
-    unwrap_cache[s] = s
-    unwrap_depth += 1
+    threadlocal.unwrap_cache[s] = s
+    threadlocal.unwrap_depth += 1
 
     try:
         result = unwrap_strategies(s.wrapped_strategy)
-        unwrap_cache[s] = result
+        threadlocal.unwrap_cache[s] = result
 
         try:
             assert result.force_has_reusable_values == s.force_has_reusable_values
@@ -59,10 +57,10 @@ def unwrap_strategies(s):
 
         return result
     finally:
-        unwrap_depth -= 1
-        if unwrap_depth <= 0:
-            unwrap_cache.clear()
-        assert unwrap_depth >= 0
+        threadlocal.unwrap_depth -= 1
+        if threadlocal.unwrap_depth <= 0:
+            threadlocal.unwrap_cache.clear()
+        assert threadlocal.unwrap_depth >= 0
 
 
 class LazyStrategy(SearchStrategy[Ex]):
@@ -121,13 +119,12 @@ class LazyStrategy(SearchStrategy[Ex]):
 
             base = self.function(*self.__args, **self.__kwargs)
             if unwrapped_args == self.__args and unwrapped_kwargs == self.__kwargs:
-                self.__wrapped_strategy = base
+                _wrapped_strategy = base
             else:
-                self.__wrapped_strategy = self.function(
-                    *unwrapped_args, **unwrapped_kwargs
-                )
+                _wrapped_strategy = self.function(*unwrapped_args, **unwrapped_kwargs)
             for method, fn in self._transformations:
-                self.__wrapped_strategy = getattr(self.__wrapped_strategy, method)(fn)
+                _wrapped_strategy = getattr(_wrapped_strategy, method)(fn)
+            self.__wrapped_strategy = _wrapped_strategy
         assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 

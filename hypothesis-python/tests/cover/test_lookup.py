@@ -1149,6 +1149,7 @@ def test_resolves_builtin_types(t):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 @given(data=st.data())
+@settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
@@ -1258,8 +1259,9 @@ def test_issue_4194_regression():
     inner = typing.Union[typing.Sequence["A"], MyProtocol]
     A = typing.Union[typing.Sequence[inner], MyProtocol]
 
-    with (
-        temp_registered(MyProtocol, st.just(b"")),
-        temp_registered(typing.ForwardRef("A"), st.integers()),
-    ):
-        find_any(st.from_type(A))
+    with temp_registered(MyProtocol, st.just(b"")):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with temp_registered(typing.ForwardRef("A"), st.integers()):
+            find_any(st.from_type(A))

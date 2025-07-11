@@ -250,6 +250,7 @@ if you're still getting security patches, you can test with Hypothesis.
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
+:class:`hypothesis.extra.django.SimpleTestCase` or
 :class:`hypothesis.extra.django.TransactionTestCase` or
 :class:`~hypothesis.extra.django.LiveServerTestCase` or
 :class:`~hypothesis.extra.django.StaticLiveServerTestCase`
@@ -261,6 +262,7 @@ multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 |@given| will be run as normal for :class:`django:django.test.TestCase` or :class:`django:django.test.TransactionTestCase`.
 
+.. autoclass:: hypothesis.extra.django.SimpleTestCase
 .. autoclass:: hypothesis.extra.django.TransactionTestCase
 .. autoclass:: hypothesis.extra.django.LiveServerTestCase
 .. autoclass:: hypothesis.extra.django.StaticLiveServerTestCase

@@ -44,7 +44,7 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
-from hypothesis.internal.conjecture.shrinker import Shrinker
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.entropy import deterministic_PRNG
 
@@ -456,8 +456,8 @@ def test_fails_health_check_for_large_base():
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
-        if data.draw_integer(0, 2**8 - 1):
-            data.draw_bytes(10**6, 10**6)
+        if data.draw_boolean():
+            data.draw_bytes(10_000, 10_000)
 
 
 def test_fails_health_check_for_slow_draws():
@@ -868,7 +868,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
         if n == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (False, 1)
 
 
@@ -881,7 +881,7 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_integer(0, 2**8 - 1)
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
 
 
 def test_block_may_grow_during_lexical_shrinking():
@@ -895,7 +895,7 @@ def test_block_may_grow_during_lexical_shrinking():
             data.draw_integer(0, 2**16 - 1)
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (0, 0)
 
 
@@ -1065,16 +1065,20 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
 
-    with deterministic_PRNG(), buffer_size_limit(buffer_size):
+    with deterministic_PRNG():
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with buffer_size_limit(buffer_size):
 
-        def test(data):
-            while data.draw_boolean():
+            def test(data):
+                while data.draw_boolean():
+                    assert data.length <= buffer_size
                 assert data.length <= buffer_size
-            assert data.length <= buffer_size
 
-        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
-        runner.run()
-        assert runner.valid_examples == buffer_size
+            runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+            runner.run()
+            assert runner.valid_examples == buffer_size
 
 
 def test_does_not_shrink_multiple_bugs_when_told_not_to():

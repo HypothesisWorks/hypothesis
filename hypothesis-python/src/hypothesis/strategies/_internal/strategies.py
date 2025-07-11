@@ -14,6 +14,7 @@ from collections import abc, defaultdict
 from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
+from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -76,6 +77,8 @@ MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "single loop iteration in FilteredStrategy"
 )
+
+label_lock = RLock()
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -501,12 +504,16 @@ class SearchStrategy(Generic[Ex]):
 
     @property
     def label(self) -> int:
-        if self.__label is calculating:
-            return 0
-        if self.__label is None:
+        if isinstance(self.__label, int):
+            # avoid locking if we've already completely computed the label.
+            return self.__label
+
+        with label_lock:
+            if self.__label is calculating:
+                return 0
             self.__label = calculating
             self.__label = self.calc_label()
-        return cast(int, self.__label)
+        return self.__label
 
     def calc_label(self) -> int:
         return self.class_label
@@ -537,7 +544,9 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def __init__(
         self,
         elements: Sequence[Ex],
-        repr_: Optional[str] = None,
+        *,
+        force_repr: Optional[str] = None,
+        force_repr_braces: Optional[tuple[str, str]] = None,
         transformations: tuple[
             tuple[Literal["filter", "map"], Callable[[Ex], Any]],
             ...,
@@ -546,13 +555,17 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
-        self.repr_ = repr_
+        self.force_repr = force_repr
+        self.force_repr_braces = force_repr_braces
         self._transformations = transformations
+
+        self._cached_repr: Optional[str] = None
 
     def map(self, pack: Callable[[Ex], T]) -> SearchStrategy[T]:
         s = type(self)(
             self.elements,
-            repr_=self.repr_,
+            force_repr=self.force_repr,
+            force_repr_braces=self.force_repr_braces,
             transformations=(*self._transformations, ("map", pack)),
         )
         # guaranteed by the ("map", pack) transformation
@@ -561,20 +574,30 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return type(self)(
             self.elements,
-            repr_=self.repr_,
+            force_repr=self.force_repr,
+            force_repr_braces=self.force_repr_braces,
             transformations=(*self._transformations, ("filter", condition)),
         )
 
-    def __repr__(self) -> str:
-        return (
-            self.repr_
-            or "sampled_from(["
-            + ", ".join(map(get_pretty_function_description, self.elements))
-            + "])"
-        ) + "".join(
-            f".{name}({get_pretty_function_description(f)})"
-            for name, f in self._transformations
-        )
+    def __repr__(self):
+        if self._cached_repr is None:
+            rep = get_pretty_function_description
+            elements_s = (
+                ", ".join(rep(v) for v in self.elements[:512]) + ", ..."
+                if len(self.elements) > 512
+                else ", ".join(rep(v) for v in self.elements)
+            )
+            braces = self.force_repr_braces or ("(", ")")
+            instance_s = (
+                self.force_repr or f"sampled_from({braces[0]}{elements_s}{braces[1]})"
+            )
+            transforms_s = "".join(
+                f".{name}({get_pretty_function_description(f)})"
+                for name, f in self._transformations
+            )
+            repr_s = instance_s + transforms_s
+            self._cached_repr = repr_s
+        return self._cached_repr
 
     def calc_label(self) -> int:
         # strategy.label is effectively an under-approximation of structural

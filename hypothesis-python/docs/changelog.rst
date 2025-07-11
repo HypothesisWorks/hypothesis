@@ -18,6 +18,243 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.26:
+
+---------------------
+6.135.26 - 2025-07-05
+---------------------
+
+Fix a "dictionary changed size during iteration" error that could occur under with |register_random| under multiple threads.
+
+.. _v6.135.25:
+
+---------------------
+6.135.25 - 2025-07-05
+---------------------
+
+Improve thread safety of our :mod:`sys.monitoring` usage (by the |Phase.shrink| and |Phase.explain| phases), as well as the internal computation of strategy labels.
+
+.. _v6.135.24:
+
+---------------------
+6.135.24 - 2025-07-03
+---------------------
+
+Makes the deprecation warning for using the global random instance thread-safe, as part of our work towards thread safety (:issue:`4451`).
+
+.. _v6.135.23:
+
+---------------------
+6.135.23 - 2025-07-02
+---------------------
+
+In order to de-flake ``RecursionError`` failures, Hypothesis sets a deterministic limit on ``sys.setrecursionlimit``. This patch makes the setting of this limit aware of uses by Hypothesis from multiple threads, so it does not produce spurious warnings in multithreaded environments.
+
+.. _v6.135.22:
+
+---------------------
+6.135.22 - 2025-07-02
+---------------------
+
+Improves the thread safety of caching strategy definitions, as well as usage of strategy transformations like |.map| and |.filter|.
+
+.. _v6.135.21:
+
+---------------------
+6.135.21 - 2025-07-02
+---------------------
+
+Fix the thread safety of |@rule| definitions in |RuleBasedStateMachine|.
+
+.. _v6.135.20:
+
+---------------------
+6.135.20 - 2025-06-30
+---------------------
+
+Fixes ``reproduction_decorator`` being missing under :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in many :ref:`observability <observability>` observations, when it should have been present.
+
+.. _v6.135.19:
+
+---------------------
+6.135.19 - 2025-06-30
+---------------------
+
+Improve threading compatibility of an internal helper for managing deterministic rng seeding.
+
+.. _v6.135.18:
+
+---------------------
+6.135.18 - 2025-06-30
+---------------------
+
+Remove an internal assertion which could trigger if (1) a lambda was present in the source code of a test, (2) and the source code file was edited on disk between the start of the python process and when Hypothesis runs the property.
+
+.. _v6.135.17:
+
+---------------------
+6.135.17 - 2025-06-30
+---------------------
+
+Refactor some internals related to the shrinker for better compatibility with free-threading (:issue:`4451`).
+
+.. _v6.135.16:
+
+---------------------
+6.135.16 - 2025-06-26
+---------------------
+
+Fixes an error when the ``_pytest`` module is present in ``sys.modules``, but *not* the ``_pytest.outcomes`` or ``_pytest.fixtures`` modules. This can happen with code that imports just ``_pytest``, without importing ``pytest``.
+
+.. _v6.135.15:
+
+---------------------
+6.135.15 - 2025-06-25
+---------------------
+
+Temporarily disable the warning when |st.shared| strategies with the same ``key`` draw from different base strategies, due to false alarms. Once we fix the false alarms in a future release, the warning will be re-enabled.
+
+.. _v6.135.14:
+
+---------------------
+6.135.14 - 2025-06-20
+---------------------
+
+Speed up usages of |st.sampled_from| by deferring evaluation of its repr, and truncating its repr for large collections (over 512 elements). This is especially noticeable when using |st.sampled_from| with large collections. The repr of |st.sampled_from| strategies involving sequence classes with custom reprs may change as a result of this release.
+
+.. _v6.135.13:
+
+---------------------
+6.135.13 - 2025-06-20
+---------------------
+
+Fixes a substantial performance regression in stateful tests from computing string representations, present since :ref:`version 6.131.20 <v6.131.20>`.
+
+.. _v6.135.12:
+
+---------------------
+6.135.12 - 2025-06-19
+---------------------
+
+Fix a rare race condition in internal cache eviction logic.
+
+.. _v6.135.11:
+
+---------------------
+6.135.11 - 2025-06-17
+---------------------
+
+This patch fixes an error when importing :ref:`our django extra <hypothesis-django>` (via ``hypothesis.extra.django``) if ``django.contrib.auth`` was not in ``INSTALLED_APPS`` (:issue:`3716`).
+
+Thanks to Chris Wesseling for this fix!
+
+.. _v6.135.10:
+
+---------------------
+6.135.10 - 2025-06-15
+---------------------
+
+Fix a rare race condition in |ExampleDatabase.fetch|, where we might have read from a non-existent directory.
+
+.. _v6.135.9:
+
+--------------------
+6.135.9 - 2025-06-13
+--------------------
+
+Refactor some internal code related to patches to make it easier to test.
+
+.. _v6.135.8:
+
+--------------------
+6.135.8 - 2025-06-13
+--------------------
+
+Add type hints to internal code for patching.
+
+.. _v6.135.7:
+
+--------------------
+6.135.7 - 2025-06-12
+--------------------
+
+Fixes a race condition in |ExampleDatabase.add_listener| for |DirectoryBasedExampleDatabase| after version :ref:`6.135.1 <v6.135.1>` where the listener might have tried to read a file that doesn't exist.
+
+.. _v6.135.6:
+
+--------------------
+6.135.6 - 2025-06-11
+--------------------
+
+This patch corrects the f-string formatting of a few array-related error messages.
+
+.. _v6.135.5:
+
+--------------------
+6.135.5 - 2025-06-10
+--------------------
+
+Improve the error message when applying |@given| to a :pypi:`pytest` fixture with pytest 8.4.0.
+
+.. _v6.135.4:
+
+--------------------
+6.135.4 - 2025-06-09
+--------------------
+
+Further improve the performance of the constants-collection feature introduced in :ref:`version 6.131.1 <v6.131.1>`, by ignoring large files and files with many constants.
+
+.. _v6.135.3:
+
+--------------------
+6.135.3 - 2025-06-08
+--------------------
+
+This release adds the experimental and unstable |OBSERVABILITY_CHOICES| option for :ref:`observability <observability>`. If set, the choice sequence is included in ``metadata.choice_nodes``, and choice sequence spans are included in ``metadata.choice_spans``.
+
+These are relatively low-level implementation detail of Hypothesis, and are exposed in observability for users building tools or research on top of Hypothesis. See |PrimitiveProvider| for more details about the choice sequence and choice spans.
+
+We are actively working towards a better interface for this. Feel free to use |OBSERVABILITY_CHOICES| to experiment, but don't rely on it yet!
+
+.. _v6.135.2:
+
+--------------------
+6.135.2 - 2025-06-08
+--------------------
+
+This patch restores compatibility when using `the legacy Python 3.9 LL(1)
+parser <https://docs.python.org/3/whatsnew/3.9.html#new-parser>`__ yet
+again, because the fix in :ref:`version 6.131.33 <v6.131.33>` was too
+brittle.
+
+Thanks to Marco Ricci for this fix!
+
+.. _v6.135.1:
+
+--------------------
+6.135.1 - 2025-06-05
+--------------------
+
+|DirectoryBasedExampleDatabase| now removes empty directories after |ExampleDatabase.delete| is called.
+
+.. _v6.135.0:
+
+--------------------
+6.135.0 - 2025-06-03
+--------------------
+
+This release adds :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`, for use in testing implementations of :ref:`alternative backends <alternative-backends>`.
+
+.. _v6.134.0:
+
+--------------------
+6.134.0 - 2025-06-03
+--------------------
+
+This patch adds :class:`hypothesis.extra.django.SimpleTestCase` (:issue:`4117`)
+
+Thanks to Chris Wesseling for this contribution!
+
 .. _v6.133.2:
 
 --------------------

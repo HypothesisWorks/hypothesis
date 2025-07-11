@@ -330,9 +330,13 @@ def _extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(" ", source)
     source = WHITESPACE.sub(" ", source)
     source = source.strip()
-    if "lambda" not in source and sys.platform == "emscripten":  # pragma: no cover
-        return if_confused  # work around Pyodide bug in inspect.getsource()
-    assert "lambda" in source, source
+    if "lambda" not in source:  # pragma: no cover
+        # If a user starts a hypothesis process, then edits their code, the lines
+        # in the parsed source code might not match the live __code__ objects.
+        #
+        # (and on sys.platform == "emscripten", this can happen regardless
+        # due to a pyodide bug in inspect.getsource()).
+        return if_confused
 
     tree = None
 
@@ -453,7 +457,7 @@ def get_pretty_function_description(f: object) -> str:
         return pretty(f)
     if not hasattr(f, "__name__"):
         return repr(f)
-    name = f.__name__  # type: ignore # validated by hasattr above
+    name = f.__name__  # type: ignore
     if name == "<lambda>":
         return extract_lambda_source(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
