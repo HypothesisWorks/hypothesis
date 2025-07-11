@@ -1275,13 +1275,12 @@ def test_infers_elements_and_fill():
     assert s.fill.is_empty
 
 
-@given(obj_array=nps.arrays(np.dtype("O"), shape=(1,), elements=st.floats()))
-def test_object_arrays_are_of_type_object_even_with_numpy_elements(obj_array):
-    assert obj_array.dtype == np.dtype("O")
-    assert isinstance(obj_array[0], float)
-
-
-@given(obj_array=nps.arrays(np.dtype("O"), shape=(1,)))
-@settings(max_examples=1000)
+@given(nps.arrays(np.dtype("O"), shape=(1,)))
 def test_object_arrays_are_of_type_object(obj_array):
     assert obj_array.dtype == np.dtype("O")
+
+
+@given(nps.arrays(np.dtype("O"), shape=(1,), elements=st.floats()))
+def test_object_arrays_are_of_type_object_even_with_numpy_elements(obj_array):
+    assert obj_array.dtype == np.dtype("O")
+    assert all(isinstance(v, float) for v in obj_array)

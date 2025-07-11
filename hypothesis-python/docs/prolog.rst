@@ -92,6 +92,8 @@
 .. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 .. |register_random| replace:: :func:`~hypothesis.register_random`
 
+.. |nps.from_dtype| replace:: :func:`~hypothesis.extra.numpy.from_dtype`
+
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
 .. |django.from_field| replace:: :func:`~hypothesis.extra.django.from_field`
@@ -162,6 +164,10 @@
 
 .. |is_hypothesis_test| replace:: :func:`~hypothesis.is_hypothesis_test`
 .. |currently_in_test_context| replace:: :func:`~hypothesis.currently_in_test_context`
+
+.. |numpy| replace:: :ref:`NumPy <hypothesis-numpy>`
+.. |pandas| replace:: :ref:`pandas <hypothesis-pandas>`
+.. |django| replace:: :ref:`Django <hypothesis-django>`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`

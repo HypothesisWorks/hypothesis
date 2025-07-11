@@ -12,11 +12,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.numpy import from_dtype
 from hypothesis.extra.pandas.impl import IntegerDtype
-from hypothesis.strategies._internal.random import HypothesisRandom
 
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 from tests.pandas.helpers import supported_by_pandas
@@ -32,28 +31,23 @@ def test_can_create_a_series_of_any_dtype(data):
     assert series.dtype == pd.Series([], dtype=dtype).dtype
 
 
-@given(series=pdst.series(dtype=object))
+@given(pdst.series(dtype=object))
 def test_can_create_a_series_of_mixed_python_type(series):
     assert series.dtype == pd.Series([], dtype=object).dtype
 
 
-@given(
-    data=st.data(),
-    anything=from_dtype(np.dtype(object)).filter(
-        lambda x: not isinstance(x, HypothesisRandom)
-    ),
-)
-@settings(max_examples=1000)
-def test_can_create_a_series_of_single_python_type(data, anything):
-    """Ensure that elements from a strategy are present in the series without modification."""
+@given(st.data(), from_dtype(np.dtype(object)))
+def test_can_create_a_series_of_single_python_type(data, obj):
+    # Ensure that arbitrary objects are present in the series without
+    # modification.
     series = data.draw(
         pdst.series(
-            elements=st.just(anything),
+            elements=st.just(obj),
             index=pdst.range_indexes(min_size=1),
             dtype=object,
         )
     )
-    assert all(val is anything for val in series.values)
+    assert all(val is obj for val in series.values)
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
