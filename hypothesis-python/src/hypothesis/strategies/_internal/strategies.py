@@ -107,6 +107,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
     (2016): 224-236.
     """
+    assert name in {"is_empty", "has_reusable_values", "is_cacheable"}
     cache_key = "cached_" + name
     calculation = "calc_" + name
     force_key = "force_" + name
