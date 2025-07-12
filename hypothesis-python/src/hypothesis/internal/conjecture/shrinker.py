@@ -890,24 +890,28 @@ class Shrinker:
             self.distinct_labels, lambda l: len(self.spans_by_label[l]) >= 2
         )
 
-        ls = self.spans_by_label[label]
-        i = chooser.choose(range(len(ls) - 1))
-        ancestor = ls[i]
+        spans = self.spans_by_label[label]
+        i = chooser.choose(range(len(spans) - 1))
+        ancestor = spans[i]
 
-        if i + 1 == len(ls) or ls[i + 1].start >= ancestor.end:
+        if i + 1 == len(spans) or spans[i + 1].start >= ancestor.end:
             return
 
         @self.cached(label, i)
         def descendants():
             lo = i + 1
-            hi = len(ls)
+            hi = len(spans)
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
-                if ls[mid].start >= ancestor.end:
+                if spans[mid].start >= ancestor.end:
                     hi = mid
                 else:
                     lo = mid
-            return [t for t in ls[i + 1 : hi] if t.choice_count < ancestor.choice_count]
+            return [
+                span
+                for span in spans[i + 1 : hi]
+                if span.choice_count < ancestor.choice_count
+            ]
 
         descendant = chooser.choose(descendants, lambda ex: ex.choice_count > 0)
 
