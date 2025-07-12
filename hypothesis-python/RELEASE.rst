@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-Improve threading support for stateful |@initialize| rules.
+Improve thread-safety for stateful |@initialize| rules.
