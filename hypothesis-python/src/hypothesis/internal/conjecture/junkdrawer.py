@@ -19,7 +19,17 @@ import time
 import warnings
 from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from sortedcontainers import SortedList
 
@@ -58,8 +68,8 @@ class IntList(Sequence[int]):
     we upgrade the array to the smallest word size needed to store
     the new value."""
 
-    ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
-    NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+    ARRAY_CODES: ClassVar[list[str]] = ["B", "H", "I", "L", "Q", "O"]
+    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
     __slots__ = ("__underlying",)
 
