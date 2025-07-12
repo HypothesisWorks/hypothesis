@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.29:
+
+---------------------
+6.135.29 - 2025-07-12
+---------------------
+
+Optimize performance of |st.sampled_from| and internal selection of :ref:`stateful testing <stateful>` rules.
+
 .. _v6.135.28:
 
 ---------------------
