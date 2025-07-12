@@ -491,6 +491,8 @@ class Rule:
     arguments: Any
     preconditions: Any
     bundles: tuple["Bundle", ...] = field(init=False)
+    _cached_hash: Optional[int] = field(init=False, default=None)
+    _cached_repr: Optional[str] = field(init=False, default=None)
 
     def __post_init__(self):
         self.arguments_strategies = {}
@@ -505,13 +507,30 @@ class Rule:
         self.bundles = tuple(bundles)
 
     def __repr__(self) -> str:
-        bits = [
-            f"{field.name}="
-            f"{get_pretty_function_description(getattr(self, field.name))}"
-            for field in dataclasses.fields(self)
-            if getattr(self, field.name)
-        ]
-        return f"{self.__class__.__name__}({', '.join(bits)})"
+        if self._cached_repr is None:
+            bits = [
+                f"{field.name}="
+                f"{get_pretty_function_description(getattr(self, field.name))}"
+                for field in dataclasses.fields(self)
+                if getattr(self, field.name)
+            ]
+            self._cached_repr = f"{self.__class__.__name__}({', '.join(bits)})"
+        return self._cached_repr
+
+    def __hash__(self):
+        # sampled_from uses hash in calc_label, and we want this to be fast when
+        # sampling stateful rules, so we cache here.
+        if self._cached_hash is None:
+            self._cached_hash = hash(
+                (
+                    self.targets,
+                    self.function,
+                    tuple(self.arguments.items()),
+                    self.preconditions,
+                    self.bundles,
+                )
+            )
+        return self._cached_hash
 
 
 self_strategy = st.runner()
@@ -596,6 +615,12 @@ class Bundle(SearchStrategy[Ex]):
                 draw_references=False,
             ).flatmap(expand)
         return super().flatmap(expand)
+
+    def __hash__(self):
+        # We sample from lists of bundles often in stateful testing, and making
+        # this hashable improves the performance of label calculation in
+        # st.sampled_from.
+        return hash((self.name,))
 
 
 class BundleConsumer(Bundle[Ex]):
