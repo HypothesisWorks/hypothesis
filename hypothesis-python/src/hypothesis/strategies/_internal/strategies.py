@@ -526,12 +526,17 @@ class SearchStrategy(Generic[Ex]):
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
 
-def is_hashable(value: object) -> bool:
+def _is_hashable(value: object) -> tuple[bool, Optional[int]]:
+    # hashing can be expensive; return the hash value if we compute it, so that
+    # callers don't have to recompute.
     try:
-        hash(value)
-        return True
+        return (True, hash(value))
     except TypeError:
-        return False
+        return (False, None)
+
+
+def is_hashable(value: object) -> bool:
+    return _is_hashable(value)[0]
 
 
 class SampledFromStrategy(SearchStrategy[Ex]):
@@ -629,12 +634,14 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # The worst case performance of this scheme is
         # itertools.chain(range(2**100), [st.none()]), where it degrades to
         # hashing every int in the range.
-
+        (elements_is_hashable, hash_value) = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
-            is_hashable(self.elements)
+            elements_is_hashable
             and not any(isinstance(e, SearchStrategy) for e in self.elements)
         ):
-            return combine_labels(self.class_label, calc_label_from_hash(self.elements))
+            return combine_labels(
+                self.class_label, calc_label_from_name(str(hash_value))
+            )
 
         labels = [self.class_label]
         for element in self.elements:
