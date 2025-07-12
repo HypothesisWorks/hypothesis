@@ -617,9 +617,9 @@ class Bundle(SearchStrategy[Ex]):
         return super().flatmap(expand)
 
     def __hash__(self):
-        # We sample from lists of bundles often in stateful testing, and making
-        # this hashable improves the performance of label calculation in
-        # st.sampled_from.
+        # Making this hashable means we hit the fast path of "everything is
+        # hashable" in st.sampled_from label calculation when sampling which rule
+        # to invoke next
         return hash((self.name,))
 
 
