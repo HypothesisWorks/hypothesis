@@ -619,8 +619,10 @@ class Bundle(SearchStrategy[Ex]):
     def __hash__(self):
         # Making this hashable means we hit the fast path of "everything is
         # hashable" in st.sampled_from label calculation when sampling which rule
-        # to invoke next
-        return hash((self.name,))
+        # to invoke next.
+
+        # Mix in "Bundle" for collision resistance
+        return hash(("Bundle", self.name))
 
 
 class BundleConsumer(Bundle[Ex]):
