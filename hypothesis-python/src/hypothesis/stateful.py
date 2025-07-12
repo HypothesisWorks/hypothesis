@@ -1062,6 +1062,7 @@ class RuleStrategy(SearchStrategy):
                 rule.function.__name__,
             )
         )
+        self.rules_strategy = st.sampled_from(self.rules)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
@@ -1086,7 +1087,7 @@ class RuleStrategy(SearchStrategy):
             # be artificially large.
             return self.is_valid(r) and feature_flags.is_enabled(r.function.__name__)
 
-        rule = data.draw(st.sampled_from(self.rules).filter(rule_is_enabled))
+        rule = data.draw(self.rules_strategy.filter(rule_is_enabled))
 
         arguments = {}
         for k, strat in rule.arguments_strategies.items():
