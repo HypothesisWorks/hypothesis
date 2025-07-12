@@ -19,23 +19,23 @@ import time
 import warnings
 from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
 
-ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
-
 T = TypeVar("T")
-
-
-def array_or_list(
-    code: str, contents: Iterable[int]
-) -> Union[list[int], "ArrayType[int]"]:
-    if code == "O":
-        return list(contents)
-    return array.array(code, contents)
 
 
 def replace_all(
@@ -60,9 +60,6 @@ def replace_all(
     return result
 
 
-NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
-
-
 class IntList(Sequence[int]):
     """Class for storing a list of non-negative integers compactly.
 
@@ -71,14 +68,15 @@ class IntList(Sequence[int]):
     we upgrade the array to the smallest word size needed to store
     the new value."""
 
+    ARRAY_CODES: ClassVar[list[str]] = ["B", "H", "I", "L", "Q", "O"]
+    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+
     __slots__ = ("__underlying",)
 
-    __underlying: Union[list[int], "ArrayType[int]"]
-
     def __init__(self, values: Sequence[int] = ()):
-        for code in ARRAY_CODES:
+        for code in self.ARRAY_CODES:
             try:
-                underlying = array_or_list(code, values)
+                underlying = self._array_or_list(code, values)
                 break
             except OverflowError:
                 pass
@@ -88,11 +86,19 @@ class IntList(Sequence[int]):
             for v in underlying:
                 if not isinstance(v, int) or v < 0:
                     raise ValueError(f"Could not create IntList for {values!r}")
-        self.__underlying = underlying
+        self.__underlying: Union[list[int], "ArrayType[int]"] = underlying
 
     @classmethod
     def of_length(cls, n: int) -> "IntList":
-        return cls(array_or_list("B", [0]) * n)
+        return cls(array.array("B", [0]) * n)
+
+    @staticmethod
+    def _array_or_list(
+        code: str, contents: Iterable[int]
+    ) -> Union[list[int], "ArrayType[int]"]:
+        if code == "O":
+            return list(contents)
+        return array.array(code, contents)
 
     def count(self, value: int) -> int:
         return self.__underlying.count(value)
@@ -140,9 +146,14 @@ class IntList(Sequence[int]):
         return self.__underlying != other.__underlying
 
     def append(self, n: int) -> None:
-        i = len(self)
-        self.__underlying.append(0)
-        self[i] = n
+        # try the fast path of appending n first. If this overflows, use the
+        # __setitem__ path, which will upgrade the underlying array.
+        try:
+            self.__underlying.append(n)
+        except OverflowError:
+            i = len(self.__underlying)
+            self.__underlying.append(0)
+            self[i] = n
 
     def __setitem__(self, i: int, n: int) -> None:
         while True:
@@ -159,8 +170,8 @@ class IntList(Sequence[int]):
 
     def __upgrade(self) -> None:
         assert isinstance(self.__underlying, array.array)
-        code = NEXT_ARRAY_CODE[self.__underlying.typecode]
-        self.__underlying = array_or_list(code, self.__underlying)
+        code = self.NEXT_ARRAY_CODE[self.__underlying.typecode]
+        self.__underlying = self._array_or_list(code, self.__underlying)
 
 
 def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
