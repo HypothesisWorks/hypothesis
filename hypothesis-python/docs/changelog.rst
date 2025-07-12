@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.27:
+
+---------------------
+6.135.27 - 2025-07-12
+---------------------
+
+Improve thread-safety for stateful |@initialize| rules.
+
 .. _v6.135.26:
 
 ---------------------
