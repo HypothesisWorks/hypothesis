@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.28:
+
+---------------------
+6.135.28 - 2025-07-12
+---------------------
+
+Optimize the memory and speed of an internal datastructure for compactly storing integers.
+
 .. _v6.135.27:
 
 ---------------------
