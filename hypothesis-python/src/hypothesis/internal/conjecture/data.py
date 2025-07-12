@@ -276,16 +276,16 @@ class SpanProperty:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
         for record in self.spans.trail:
-            if record == TrailType.CHOICE:
+            if record == TrailType.STOP_SPAN_DISCARD:
+                self.__pop(discarded=True)
+            elif record == TrailType.STOP_SPAN_NO_DISCARD:
+                self.__pop(discarded=False)
+            elif record == TrailType.CHOICE:
                 self.choice_count += 1
-            elif record >= TrailType.START_SPAN:
-                self.__push(record - TrailType.START_SPAN)
             else:
-                assert record in (
-                    TrailType.STOP_SPAN_DISCARD,
-                    TrailType.STOP_SPAN_NO_DISCARD,
-                )
-                self.__pop(discarded=record == TrailType.STOP_SPAN_DISCARD)
+                # everything after TrailType.CHOICE is the label of a span start.
+                self.__push(record - TrailType.CHOICE - 1)
+
         return self.finish()
 
     def __push(self, label_index: int) -> None:
@@ -316,8 +316,10 @@ class SpanProperty:
 class TrailType(IntEnum):
     STOP_SPAN_DISCARD = 1
     STOP_SPAN_NO_DISCARD = 2
-    START_SPAN = 3
-    CHOICE = calc_label_from_name("ir draw record")
+    CHOICE = 3
+    # every trail element larger than TrailType.CHOICE is the label of a span
+    # start, offset by its index. So the first span label is stored as 4, the
+    # second as 5, etc, regardless of its actual integer label.
 
 
 class SpanRecord:
@@ -350,7 +352,7 @@ class SpanRecord:
         except KeyError:
             i = self.__index_of_labels.setdefault(label, len(self.labels))
             self.labels.append(label)
-        self.trail.append(TrailType.START_SPAN + i)
+        self.trail.append(TrailType.CHOICE + 1 + i)
 
     def stop_span(self, *, discard: bool) -> None:
         if discard:
