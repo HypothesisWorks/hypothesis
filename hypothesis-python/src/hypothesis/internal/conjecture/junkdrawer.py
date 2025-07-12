@@ -146,12 +146,12 @@ class IntList(Sequence[int]):
         return self.__underlying != other.__underlying
 
     def append(self, n: int) -> None:
-        i = len(self.__underlying)
         # try the fast path of appending n first. If this overflows, use the
         # __setitem__ path, which will upgrade the underlying array.
         try:
             self.__underlying.append(n)
         except OverflowError:
+            i = len(self.__underlying)
             self.__underlying.append(0)
             self[i] = n
 
