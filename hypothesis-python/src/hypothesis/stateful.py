@@ -348,12 +348,13 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
-        cls._initializers_per_class[cls] = []
+        initializers = []
         for _, v in inspect.getmembers(cls):
             r = getattr(v, INITIALIZE_RULE_MARKER, None)
             if r is not None:
-                cls._initializers_per_class[cls].append(r)
-        return cls._initializers_per_class[cls]
+                initializers.append(r)
+        cls._initializers_per_class[cls] = initializers
+        return initializers
 
     @classmethod
     def rules(cls) -> list["Rule"]:
@@ -377,13 +378,13 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
-        target = []
+        invariants = []
         for _, v in inspect.getmembers(cls):
-            i = getattr(v, INVARIANT_MARKER, None)
-            if i is not None:
-                target.append(i)
-        cls._invariants_per_class[cls] = target
-        return cls._invariants_per_class[cls]
+            invariant = getattr(v, INVARIANT_MARKER, None)
+            if invariant is not None:
+                invariants.append(invariant)
+        cls._invariants_per_class[cls] = invariants
+        return invariants
 
     def _repr_step(self, rule: "Rule", data: Any, result: Any) -> str:
         output_assignment = ""

@@ -134,6 +134,7 @@
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
 .. |@precondition| replace:: :func:`@precondition <hypothesis.stateful.precondition>`
+.. |@initialize| replace:: :func:`@initialize <hypothesis.stateful.initialize>`
 .. |RuleBasedStateMachine| replace:: :class:`~hypothesis.stateful.RuleBasedStateMachine`
 .. |run_state_machine_as_test| replace:: :func:`~hypothesis.stateful.run_state_machine_as_test`
 
