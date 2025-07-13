@@ -1138,6 +1138,25 @@ class StateForActualGivenExecution:
         # instead raise an appropriate diagnostic error.
         if expected_failure is not None:
             exception, traceback = expected_failure
+            # If a custom backend exceeds the deadline, we replay it under the
+            # standard backend="hypothesis" backend. Since the slowdown is likely
+            # due to the custom backend, it would be confusing to report unreliable
+            # test timings or a FlakyFailure to the user, who assumes that the backend
+            # is the only executor of their test function.
+            #
+            # As a result, if a DeadlineExceeded from a custom backend does not
+            # reproduce, simply pretend that it did by re-raising the original
+            # error.
+            #
+            # This does produce a mismatch between the reported note()s in the error
+            # (which are from the non-reproducing replay), and the reported
+            # traceback and error (which are from the initial failing input).
+            if (
+                isinstance(exception, DeadlineExceeded)
+                and self._runner._backend_exceeded_deadline
+            ):
+                raise exception
+
             if isinstance(exception, DeadlineExceeded) and (
                 runtime_secs := math.fsum(
                     v

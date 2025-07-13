@@ -202,7 +202,9 @@ def __getattr__(name: str) -> Any:
 
 
 class DeadlineExceeded(_Trimmable):
-    """Raised when an individual test body has taken too long to run."""
+    """
+    Raised when an input takes longer than the |settings.deadline| setting to run.
+    """
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(

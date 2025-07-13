@@ -231,6 +231,7 @@ Custom exceptions raised by Hypothesis.
 .. autoclass:: hypothesis.errors.ResolutionFailed
 .. autoclass:: hypothesis.errors.Unsatisfiable
 .. autoclass:: hypothesis.errors.DidNotReproduce
+.. autoclass:: hypothesis.errors.DeadlineExceeded
 
 .. _hypothesis-django:
 

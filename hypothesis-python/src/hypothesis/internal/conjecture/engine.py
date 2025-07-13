@@ -27,6 +27,7 @@ from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
+    DeadlineExceeded,
     FlakyReplay,
     HypothesisException,
     InvalidArgument,
@@ -344,6 +345,7 @@ class ConjectureRunner:
 
         self.__pending_call_explanation: Optional[str] = None
         self._backend_found_failure: bool = False
+        self._backend_exceeded_deadline: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
@@ -603,7 +605,18 @@ class ConjectureRunner:
             self.overrun_examples += 1
 
         if data.status == Status.INTERESTING:
-            if not self.using_hypothesis_backend:
+            # Don't attempt to replay DeadlineExceeded failures from backends.
+            # Just re-raise it.
+            if (
+                not self.using_hypothesis_backend
+                and data.interesting_origin.exc_type is DeadlineExceeded
+            ):
+                self._backend_exceeded_deadline = True
+
+            if (
+                not self.using_hypothesis_backend
+                and data.interesting_origin.exc_type is not DeadlineExceeded
+            ):
                 # replay this failure on the hypothesis backend to ensure it still
                 # finds a failure. otherwise, it is flaky.
                 initial_origin = data.interesting_origin

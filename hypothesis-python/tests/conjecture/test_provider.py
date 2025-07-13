@@ -12,6 +12,7 @@ import dataclasses
 import itertools
 import math
 import sys
+import time
 from contextlib import contextmanager, nullcontext
 from random import Random
 from typing import Optional
@@ -31,6 +32,7 @@ from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     BackendCannotProceed,
+    DeadlineExceeded,
     Flaky,
     HypothesisException,
     HypothesisWarning,
@@ -780,3 +782,17 @@ def test_provider_conformance(provider):
     run_conformance_test(
         provider, settings=settings(max_examples=20, stateful_step_count=20)
     )
+
+
+# regression test for https://github.com/HypothesisWorks/hypothesis/issues/4462
+def test_backend_deadline_exceeded_is_not_flaky():
+    with temp_register_backend("trivial", TrivialProvider):
+
+        @given(st.integers())
+        @settings(backend="trivial", database=None)
+        def f(n):
+            if isinstance(current_build_context().data.provider, TrivialProvider):
+                time.sleep(1)
+
+        with pytest.raises(DeadlineExceeded):
+            f()
