@@ -15,6 +15,7 @@ import sys
 import warnings
 from collections.abc import Generator, Hashable
 from itertools import count
+from random import Random
 from typing import TYPE_CHECKING, Any, Callable, Optional
 from weakref import WeakValueDictionary
 
@@ -153,15 +154,12 @@ def register_random(r: RandomLike) -> None:
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
-# the most recent state of the global random instance, as set by hypothesis.
-# This might not be the current state of the global random instance if its
-# state changed since hypothesis seeded it. If nobody other than hypothesis
-# is touching the global random instance, then this will be the state of the global
-# random instance.
-#
-# This is used to address a threading race condition in deprecate_random_in_strategy.
-_most_recent_random_state_enter: Optional[Any] = None
-_most_recent_random_state_exit: Optional[Any] = None
+# Used to make the warning issued by `deprecate_random_in_strategy` thread-safe,
+# as well as to avoid warning on uses of st.randoms().
+# Store just the hash to reduce memory consumption. This is an underapproximation
+# of membership (distinct items might have the same hash), which is fine for the
+# warning, as it results in missed alarms, not false alarms.
+_known_random_state_hashes: set[Any] = set()
 
 
 def get_seeder_and_restorer(
@@ -210,28 +208,32 @@ def get_seeder_and_restorer(
                 # ie the random instance has been gc'd
                 continue  # pragma: no cover
             states[k] = r.getstate()
-            r.seed(seed)
             if k == _global_random_rkey:
-                # setting a seed is equivalent to setting setstate, so we need
-                # to track it globally for race conditions.
+                # r.seed sets the random's state. We want to add that state to
+                # _known_random_states before calling r.seed, in case a thread
+                # switch occurs between the two. To figure out the seed -> state
+                # mapping, set the seed on a dummy random and add that state to
+                # _known_random_state.
                 #
-                # I think there's still a race here if a thread switch occurs
-                # after r.seed but before we set _most_recent_random_state_enter.
-                # We'd need to seed a dummy Random instance to figure out the
-                # seed -> state mapping, then set _most_recent_random_state_enter,
-                # then call setstate (or equivalently .seed) on the real random.
-                _most_recent_random_state_enter = r.getstate()
+                # we could use a global dummy random here, but then we'd have to
+                # put a lock around it, and it's not clear to me if that's more
+                # efficient than constructing a new instance each time.
+                dummy_random = Random()
+                dummy_random.seed(seed)
+                _known_random_state_hashes.add(hash(dummy_random.getstate()))
+                # we expect `assert r.getstate() == dummy_random.getstate()` to
+                # hold here, but thread switches means it might not.
+
+            r.seed(seed)
 
     def restore_all() -> None:
-        global _most_recent_random_state_exit
-
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
             if r is None:  # i.e., has been garbage-collected
                 continue
 
             if k == _global_random_rkey:
-                _most_recent_random_state_exit = state
+                _known_random_state_hashes.add(hash(state))
             r.setstate(state)
 
         states.clear()
@@ -251,7 +253,7 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     if (
         hypothesis.core.threadlocal._hypothesis_global_random is None
     ):  # pragma: no cover
-        hypothesis.core.threadlocal._hypothesis_global_random = random.Random()
+        hypothesis.core.threadlocal._hypothesis_global_random = Random()
         register_random(hypothesis.core.threadlocal._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
@@ -260,3 +262,7 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
         yield
     finally:
         restore_all()
+        # TODO it would be nice to clean up _known_random_state_hashes when no
+        # active deterministic_PRNG contexts remain, to free memory (see similar
+        # logic in StackframeLimiter). But it's a bit annoying to get right, and
+        # likely not a big deal.
