@@ -290,3 +290,12 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
         return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
     return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
+
+
+@contextlib.contextmanager
+def restore_recursion_limit():
+    original_limit = sys.getrecursionlimit()
+    try:
+        yield
+    finally:
+        sys.setrecursionlimit(original_limit)
