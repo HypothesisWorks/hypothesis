@@ -539,6 +539,7 @@ self_strategy = st.runner()
 
 class BundleReferenceStrategy(SearchStrategy):
     def __init__(self, name: str, *, consume: bool = False):
+        super().__init__()
         self.name = name
         self.consume = consume
 
@@ -582,6 +583,7 @@ class Bundle(SearchStrategy[Ex]):
     def __init__(
         self, name: str, *, consume: bool = False, draw_references: bool = True
     ) -> None:
+        super().__init__()
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
         self.draw_references = draw_references

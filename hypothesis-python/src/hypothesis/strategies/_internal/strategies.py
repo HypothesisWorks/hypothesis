@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import threading
 import warnings
 from collections import abc, defaultdict
 from collections.abc import Sequence
@@ -231,9 +232,12 @@ class SearchStrategy(Generic[Ex]):
     ``builds(Foo, ...)``.  Do not inherit from or directly instantiate this class.
     """
 
-    validate_called: bool = False
-    __label: Union[int, UniqueIdentifier, None] = None
     __module__: str = "hypothesis.strategies"
+    LABELS: ClassVar[dict[type, int]] = {}
+
+    def __init__(self):
+        self.validate_called: dict[int, bool] = {}
+        self.__label: Union[int, UniqueIdentifier, None] = None
 
     def _available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
@@ -480,9 +484,13 @@ class SearchStrategy(Generic[Ex]):
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
 
-        This can happen due to lazy construction
+        Strategies should implement ``do_validate``, which is called by this
+        method. They should not override ``validate``.
+
+        This can happen due to invalid arguments, or lazy construction.
         """
-        if self.validate_called:
+        thread_id = threading.get_ident()
+        if self.validate_called.get(thread_id, False):
             return
         # we need to set validate_called before calling do_validate, for
         # recursive / deferred strategies. But if a thread switches after
@@ -491,29 +499,23 @@ class SearchStrategy(Generic[Ex]):
         # its params are technically valid (e.g. a param was passed as 1.0
         # instead of 1) and get into weird internal states.
         #
-        # To fix this we track a lock per strategy.
+        # There are two ways to fix this.
+        # (1) The first is a per-strategy lock around do_validate. Even though we
+        #   expect near-zero lock contention, this still adds the lock overhead.
+        # (2) The second is allowing concurrent .validate calls. Since validation
+        #   is (assumed to be) deterministic, both threads will produce the same
+        #   end state, so the validation order or race conditions does not matter.
         #
-        # We also maintain a single lock for creating these locks, because we
-        # don't want two threads to create two different locks which they both
-        # think is canonical for their strategy.
-        with validate_locks_lock:
-            try:
-                validate_lock = validate_locks[self]
-            except KeyError:
-                validate_lock = Lock()
-                validate_locks[self] = validate_lock
-
-        with validate_lock:
-            try:
-                self.validate_called = True
-                self.do_validate()
-                self.is_empty
-                self.has_reusable_values
-            except Exception:
-                self.validate_called = False
-                raise
-
-    LABELS: ClassVar[dict[type, int]] = {}
+        # In order to avoid the lock overhead of (1), we use (2) here. See also
+        # discussion in https://github.com/HypothesisWorks/hypothesis/pull/4473.
+        try:
+            self.validate_called[thread_id] = True
+            self.do_validate()
+            self.is_empty
+            self.has_reusable_values
+        except Exception:
+            self.validate_called[thread_id] = False
+            raise
 
     @property
     def class_label(self) -> int:
