@@ -15,7 +15,7 @@ from collections import abc, defaultdict
 from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
-from threading import Lock, RLock
+from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,7 +29,6 @@ from typing import (
     cast,
     overload,
 )
-from weakref import WeakKeyDictionary
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
@@ -81,8 +80,6 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 label_lock = RLock()
-validate_locks = WeakKeyDictionary()
-validate_locks_lock = Lock()
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -234,10 +231,13 @@ class SearchStrategy(Generic[Ex]):
 
     __module__: str = "hypothesis.strategies"
     LABELS: ClassVar[dict[type, int]] = {}
+    # triggers `assert isinstance(label, int)` under threading when setting this
+    # in init instead of a classvar. I'm not sure why, init should be safe. But
+    # this works so I'm not looking into it further atm.
+    __label: Union[int, UniqueIdentifier, None] = None
 
     def __init__(self):
         self.validate_called: dict[int, bool] = {}
-        self.__label: Union[int, UniqueIdentifier, None] = None
 
     def _available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
