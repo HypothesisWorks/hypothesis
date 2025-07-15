@@ -14,7 +14,7 @@ from collections import abc, defaultdict
 from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
-from threading import RLock
+from threading import Lock, RLock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -28,6 +28,7 @@ from typing import (
     cast,
     overload,
 )
+from weakref import WeakKeyDictionary
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
@@ -79,6 +80,8 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 label_lock = RLock()
+validate_locks = WeakKeyDictionary()
+validate_locks_lock = Lock()
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -481,14 +484,34 @@ class SearchStrategy(Generic[Ex]):
         """
         if self.validate_called:
             return
-        try:
-            self.validate_called = True
-            self.do_validate()
-            self.is_empty
-            self.has_reusable_values
-        except Exception:
-            self.validate_called = False
-            raise
+        # we need to set validate_called before calling do_validate, for
+        # recursive / deferred strategies. But if a thread switches after
+        # validate_called but before do_validate, we might have a strategy
+        # which does weird things like drawing when do_validate would error but
+        # its params are technically valid (e.g. a param was passed as 1.0
+        # instead of 1) and get into weird internal states.
+        #
+        # To fix this we track a lock per strategy.
+        #
+        # We also maintain a single lock for creating these locks, because we
+        # don't want two threads to create two different locks which they both
+        # think is canonical for their strategy.
+        with validate_locks_lock:
+            try:
+                validate_lock = validate_locks[self]
+            except KeyError:
+                validate_lock = Lock()
+                validate_locks[self] = validate_lock
+
+        with validate_lock:
+            try:
+                self.validate_called = True
+                self.do_validate()
+                self.is_empty
+                self.has_reusable_values
+            except Exception:
+                self.validate_called = False
+                raise
 
     LABELS: ClassVar[dict[type, int]] = {}
 
