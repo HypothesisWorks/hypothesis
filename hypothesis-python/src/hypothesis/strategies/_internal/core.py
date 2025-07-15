@@ -1070,7 +1070,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
         current_build_context().record_call(obj, self.target, args, kwargs)
         return obj
 
-    def validate(self) -> None:
+    def do_validate(self) -> None:
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
 
