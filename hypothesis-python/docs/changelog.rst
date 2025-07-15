@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.32:
+
+---------------------
+6.135.32 - 2025-07-15
+---------------------
+
+Improve the thread-safety of strategy validation.
+
+Before this release, Hypothesis did not require that ``super().__init__()`` be called in ``SearchStrategy`` subclasses. Subclassing ``SearchStrategy`` is not supported or part of the public API, but if you are subclassing it anyway, you will need to make sure to call ``super().__init__()`` after this release.
+
 .. _v6.135.31:
 
 ---------------------
