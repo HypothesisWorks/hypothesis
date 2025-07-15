@@ -48,7 +48,6 @@ import attr
 
 from hypothesis._settings import note_deprecation
 from hypothesis.control import (
-    RandomSeeder,
     cleanup,
     current_build_context,
     deprecate_random_in_strategy,
@@ -983,8 +982,16 @@ def randoms(
     )
 
 
+class RandomSeeder:
+    def __init__(self, seed):
+        self.seed = seed
+
+    def __repr__(self):
+        return f"RandomSeeder({self.seed!r})"
+
+
 class RandomModule(SearchStrategy):
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> RandomSeeder:
         # It would be unsafe to do run this method more than once per test case,
         # because cleanup() runs tasks in FIFO order (at time of writing!).
         # Fortunately, the random_module() strategy wraps us in shared(), so
