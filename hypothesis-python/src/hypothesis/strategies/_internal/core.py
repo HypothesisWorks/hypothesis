@@ -1029,6 +1029,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
         args: tuple[SearchStrategy[Any], ...],
         kwargs: dict[str, SearchStrategy[Any]],
     ):
+        super().__init__()
         self.target = target
         self.args = args
         self.kwargs = kwargs
@@ -1070,7 +1071,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
         current_build_context().record_call(obj, self.target, args, kwargs)
         return obj
 
-    def validate(self) -> None:
+    def do_validate(self) -> None:
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
 
@@ -1798,6 +1799,7 @@ def recursive(
 
 class PermutationStrategy(SearchStrategy):
     def __init__(self, values):
+        super().__init__()
         self.values = values
 
     def do_draw(self, data):
@@ -1828,6 +1830,7 @@ def permutations(values: Sequence[T]) -> SearchStrategy[list[T]]:
 
 class CompositeStrategy(SearchStrategy):
     def __init__(self, definition, args, kwargs):
+        super().__init__()
         self.definition = definition
         self.args = args
         self.kwargs = kwargs
@@ -2173,6 +2176,7 @@ def uuids(
 
 class RunnerStrategy(SearchStrategy):
     def __init__(self, default):
+        super().__init__()
         self.default = default
 
     def do_draw(self, data):

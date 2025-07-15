@@ -352,6 +352,7 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         *,
         optional: Optional[dict[Any, SearchStrategy[Any]]],
     ):
+        super().__init__()
         dict_type = type(mapping)
         self.mapping = mapping
         keys = tuple(mapping.keys())

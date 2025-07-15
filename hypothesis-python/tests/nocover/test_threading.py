@@ -14,8 +14,11 @@ from threading import Barrier, Thread
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+
+from tests.common.debug import check_can_generate_examples
 
 pytestmark = pytest.mark.skipif(
     settings._current_profile == "crosshair", reason="crosshair is not thread safe"
@@ -125,3 +128,27 @@ def test_stackframes_restores_original_recursion_limit():
         thread.join()
 
     assert sys.getrecursionlimit() == original_recursionlimit
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.recursive(st.none(), st.lists, max_leaves=-1),
+        st.recursive(st.none(), st.lists, max_leaves=0),
+        st.recursive(st.none(), st.lists, max_leaves=1.0),
+    ],
+)
+def test_handles_invalid_args_cleanly(strategy):
+    # we previously had a race in SearchStrategy.validate, where one thread would
+    # set `validate_called = True` (which it has to do first for recursive
+    # strategies), then another thread would try to generate before the validation
+    # finished and errored, and would get into weird technically-valid states
+    # like interpreting 1.0 as 1. I saw FlakyStrategyDefinition here because the
+    # validating + errored thread drew zero choices, but the other thread drew
+    # 1 choice, for the same shared strategy.
+
+    def check():
+        with pytest.raises(InvalidArgument):
+            check_can_generate_examples(strategy)
+
+    run_concurrently(check, n=4)

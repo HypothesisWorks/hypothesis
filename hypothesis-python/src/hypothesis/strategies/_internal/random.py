@@ -434,6 +434,7 @@ class TrueRandom(HypothesisRandom):
 
 class RandomStrategy(SearchStrategy[HypothesisRandom]):
     def __init__(self, *, note_method_calls: bool, use_true_random: bool) -> None:
+        super().__init__()
         self.__note_method_calls = note_method_calls
         self.__use_true_random = use_true_random
 
