@@ -1,3 +1,3 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-Improve the reporting of |DeadlineExceeded| errors when using :ref:`alternative backends <alternative-backends>`.
+When a failure found by an :ref:`alternative backend <alternative-backends>` does not reproduce under the Hypothesis backend, we now raise |FlakyBackendFailure| instead of an internal ``FlakyReplay`` exception.

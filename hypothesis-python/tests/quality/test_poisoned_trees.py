@@ -16,6 +16,8 @@ from hypothesis import HealthCheck, settings
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
+from tests.conjecture.common import interesting_origin
+
 POISON = "POISON"
 MAX_INT = 2**32 - 1
 
@@ -75,7 +77,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
     def test_function(data):
         v = data.draw(strat)
         if len(v) >= size:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
     runner.generate_new_examples()
@@ -103,7 +105,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             v = data.draw(strat)
             m = data.draw_bytes(len(marker), len(marker))
             if POISON in v and m == marker:
-                data.mark_interesting()
+                data.mark_interesting(interesting_origin())
 
         runner = ConjectureRunner(
             test_function_with_poison, random=random, settings=TEST_SETTINGS

@@ -178,7 +178,7 @@ def test_stops_loading_pareto_front_if_interesting():
         def test(data):
             data.draw_integer()
             data.draw_integer()
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
         db = InMemoryExampleDatabase()
 
@@ -248,7 +248,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
         n = data.draw_integer(0, 2**8 - 1)
         data.target_observations[""] = n
         if n == 255:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(
         test,
@@ -270,7 +270,7 @@ def test_stops_optimising_once_interesting():
         n = data.draw_integer(0, 2**16 - 1)
         data.target_observations[""] = n
         if n < hi:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(
         test,

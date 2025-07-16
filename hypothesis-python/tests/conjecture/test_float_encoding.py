@@ -19,6 +19,8 @@ from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int
 
+from tests.conjecture.common import interesting_origin
+
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
 
@@ -127,7 +129,7 @@ def float_runner(start, condition, *, constraints=None):
     def test_function(data):
         f = data.draw_float(**constraints)
         if condition(f):
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function)
     runner.cached_test_function((float(start),))

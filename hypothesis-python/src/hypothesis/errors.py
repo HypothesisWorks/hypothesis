@@ -122,6 +122,26 @@ class FlakyFailure(ExceptionGroup, Flaky):
                 group[i] = err
         return ExceptionGroup.__new__(cls, msg, group)
 
+    # defining `derive` is required for `split` to return an instance of FlakyFailure
+    # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
+    # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
+    def derive(self, excs):
+        return FlakyFailure(self.message, excs)
+
+
+class FlakyBackendFailure(FlakyFailure):
+    """
+    A failure was reported by an :ref:`alternative backend <alternative-backends>`,
+    but this failure did not reproduce when replayed under the Hypothesis backend.
+
+    When an alternative backend reports a failure, Hypothesis first replays it
+    under the standard Hypothesis backend to check for flakiness. If the failure
+    does not reproduce, Hypothesis raises this exception.
+    """
+
+    def derive(self, excs):
+        return FlakyBackendFailure(self.message, excs)
+
 
 class InvalidArgument(_Trimmable, TypeError):
     """Used to indicate that the arguments to a Hypothesis function were in

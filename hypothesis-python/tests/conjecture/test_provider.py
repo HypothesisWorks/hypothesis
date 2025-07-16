@@ -32,8 +32,8 @@ from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     BackendCannotProceed,
-    DeadlineExceeded,
     Flaky,
+    FlakyBackendFailure,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -784,8 +784,9 @@ def test_provider_conformance(provider):
     )
 
 
-# regression test for https://github.com/HypothesisWorks/hypothesis/issues/4462
-def test_backend_deadline_exceeded_is_not_flaky():
+# see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion
+# in https://github.com/HypothesisWorks/hypothesis/pull/4470
+def test_backend_deadline_exceeded_raised_as_flaky_backend_failure():
     with temp_register_backend("trivial", TrivialProvider):
 
         @given(st.integers())
@@ -794,5 +795,5 @@ def test_backend_deadline_exceeded_is_not_flaky():
             if isinstance(current_build_context().data.provider, TrivialProvider):
                 time.sleep(1)
 
-        with pytest.raises(DeadlineExceeded):
+        with pytest.raises(FlakyBackendFailure):
             f()
