@@ -8,9 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import suppress
+
 import pytest
 
-from hypothesis import errors, given, strategies as st
+from hypothesis import given, strategies as st
+from hypothesis.errors import Flaky, FlakyBackendFailure, FlakyFailure, Frozen, StopTest
 from hypothesis.internal.compat import BaseExceptionGroup, ExceptionGroup
 from hypothesis.strategies import DataObject
 
@@ -24,7 +27,7 @@ def test_discard_frozen() -> None:
         data.conjecture_data.freeze()
         # Raising Frozen doesn't actually do anything, what matters is
         # whether the data is frozen.
-        raise ExceptionGroup("", [errors.Frozen()])
+        raise ExceptionGroup("", [Frozen()])
 
     discard_frozen()
 
@@ -33,7 +36,7 @@ def test_discard_multiple_frozen() -> None:
     @given(st.data())
     def discard_multiple_frozen(data: DataObject) -> None:
         data.conjecture_data.freeze()
-        raise ExceptionGroup("", [errors.Frozen(), errors.Frozen()])
+        raise ExceptionGroup("", [Frozen(), Frozen()])
 
     discard_multiple_frozen()
 
@@ -41,14 +44,14 @@ def test_discard_multiple_frozen() -> None:
 def test_user_error_and_frozen() -> None:
     @given(st.data())
     def user_error_and_frozen(data: DataObject) -> None:
-        raise ExceptionGroup("", [errors.Frozen(), TypeError()])
+        raise ExceptionGroup("", [Frozen(), TypeError()])
 
     with pytest.raises(ExceptionGroup) as excinfo:
         user_error_and_frozen()
     e = excinfo.value
     assert isinstance(e, ExceptionGroup)
     assert len(e.exceptions) == 2
-    assert isinstance(e.exceptions[0], errors.Frozen)
+    assert isinstance(e.exceptions[0], Frozen)
     assert isinstance(e.exceptions[1], TypeError)
 
 
@@ -59,7 +62,7 @@ def test_user_error_and_stoptest() -> None:
     @given(st.data())
     def user_error_and_stoptest(data: DataObject) -> None:
         raise BaseExceptionGroup(
-            "", [errors.StopTest(data.conjecture_data.testcounter), TypeError()]
+            "", [StopTest(data.conjecture_data.testcounter), TypeError()]
         )
 
     with pytest.raises(BaseExceptionGroup) as excinfo:
@@ -67,7 +70,7 @@ def test_user_error_and_stoptest() -> None:
     e = excinfo.value
     assert isinstance(e, BaseExceptionGroup)
     assert len(e.exceptions) == 2
-    assert isinstance(e.exceptions[0], errors.StopTest)
+    assert isinstance(e.exceptions[0], StopTest)
     assert isinstance(e.exceptions[1], TypeError)
 
 
@@ -91,11 +94,7 @@ def test_nested_stoptest() -> None:
     def nested_stoptest(data: DataObject) -> None:
         raise BaseExceptionGroup(
             "",
-            [
-                BaseExceptionGroup(
-                    "", [errors.StopTest(data.conjecture_data.testcounter)]
-                )
-            ],
+            [BaseExceptionGroup("", [StopTest(data.conjecture_data.testcounter)])],
         )
 
     nested_stoptest()
@@ -107,7 +106,7 @@ def test_frozen_and_stoptest() -> None:
     @given(st.data())
     def frozen_and_stoptest(data: DataObject) -> None:
         raise BaseExceptionGroup(
-            "", [errors.StopTest(data.conjecture_data.testcounter), errors.Frozen()]
+            "", [StopTest(data.conjecture_data.testcounter), Frozen()]
         )
 
     frozen_and_stoptest()
@@ -118,7 +117,7 @@ def test_multiple_stoptest_1() -> None:
     @given(st.data())
     def multiple_stoptest(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c + 1)])
+        raise BaseExceptionGroup("", [StopTest(c), StopTest(c + 1)])
 
     multiple_stoptest()
 
@@ -129,9 +128,9 @@ def test_multiple_stoptest_2() -> None:
     @given(st.data())
     def multiple_stoptest_2(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c - 1)])
+        raise BaseExceptionGroup("", [StopTest(c), StopTest(c - 1)])
 
-    with pytest.raises(errors.StopTest):
+    with pytest.raises(StopTest):
         multiple_stoptest_2()
 
 
@@ -140,9 +139,9 @@ def test_stoptest_and_hypothesisexception() -> None:
     @given(st.data())
     def stoptest_and_hypothesisexception(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.Flaky()])
+        raise BaseExceptionGroup("", [StopTest(c), Flaky()])
 
-    with pytest.raises(errors.Flaky):
+    with pytest.raises(Flaky):
         stoptest_and_hypothesisexception()
 
 
@@ -151,7 +150,21 @@ def test_multiple_hypothesisexception() -> None:
     @given(st.data())
     def stoptest_and_hypothesisexception(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.Flaky()])
+        raise BaseExceptionGroup("", [StopTest(c), Flaky()])
 
-    with pytest.raises(errors.Flaky):
+    with pytest.raises(Flaky):
         stoptest_and_hypothesisexception()
+
+
+@pytest.mark.parametrize("ExceptionClass", [FlakyFailure, FlakyBackendFailure])
+def test_exceptiongroups_reconstruct_original_type(ExceptionClass):
+    # contextlib.suppress uses .split, and if ExceptionClass does not implement
+    # .derive, .split will return a standard ExceptionGroup instead of
+    # ExceptionClass.
+    # see https://github.com/python/cpython/issues/119287
+    class UnrelatedException(Exception):
+        pass
+
+    with pytest.raises(ExceptionClass):
+        with suppress(UnrelatedException):
+            raise ExceptionClass("exception message", [Exception()])
