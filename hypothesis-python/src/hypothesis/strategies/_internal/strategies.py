@@ -530,16 +530,16 @@ class SearchStrategy(Generic[Ex]):
 
     @property
     def label(self) -> int:
-        if isinstance(self.__label, int):
+        if isinstance((label := self.__label), int):
             # avoid locking if we've already completely computed the label.
-            return self.__label
+            return label
 
         with label_lock:
             if self.__label is calculating:
                 return 0
             self.__label = calculating
             self.__label = self.calc_label()
-        return self.__label
+            return self.__label
 
     def calc_label(self) -> int:
         return self.class_label
