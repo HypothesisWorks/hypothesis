@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.33:
+
+---------------------
+6.135.33 - 2025-07-18
+---------------------
+
+Speculative fix for a thread-safety issue in calculating strategy labels.
+
 .. _v6.135.32:
 
 ---------------------
