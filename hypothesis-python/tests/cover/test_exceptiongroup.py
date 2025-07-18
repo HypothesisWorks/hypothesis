@@ -168,3 +168,12 @@ def test_exceptiongroups_reconstruct_original_type(ExceptionClass):
     with pytest.raises(ExceptionClass):
         with suppress(UnrelatedException):
             raise ExceptionClass("exception message", [Exception()])
+
+
+@pytest.mark.parametrize("ExceptionClass", [FlakyFailure, FlakyBackendFailure])
+def test_derived_exception_group(ExceptionClass):
+    exception = ExceptionClass("exception message", [Exception()])
+    # we don't expect a match, we just want to test .derive.
+    match, rest = exception.split(())
+    assert match is None
+    assert isinstance(rest, ExceptionClass)
