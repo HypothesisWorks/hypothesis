@@ -39,14 +39,14 @@ from tests.conjecture.common import (
     run_to_nodes,
 )
 
-TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
+runner_settings = settings(
+    max_examples=100, database=None, suppress_health_check=list(HealthCheck)
 )
 
 
 def runner_for(*examples):
     def accept(tf):
-        runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
+        runner = ConjectureRunner(tf, settings=runner_settings, random=Random(0))
         runner.exit_with = lambda reason: None
         ran_examples = []
         for choices in examples:
@@ -123,7 +123,9 @@ def test_novel_prefixes_are_novel():
             data.draw_bytes(1, 1, forced=b"\0")
             data.draw_integer(0, 3)
 
-    runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
+    runner = ConjectureRunner(
+        tf, settings=settings(runner_settings, max_examples=1000), random=Random(0)
+    )
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
         extension = prefix + (ChoiceTemplate("simplest", count=100),)
@@ -135,7 +137,7 @@ def test_novel_prefixes_are_novel():
 def test_overruns_if_prefix():
     runner = ConjectureRunner(
         lambda data: [data.draw_boolean() for _ in range(2)],
-        settings=TEST_SETTINGS,
+        settings=runner_settings,
         random=Random(0),
     )
     runner.cached_test_function([False, False])
