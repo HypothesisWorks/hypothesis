@@ -126,7 +126,7 @@ class FlakyFailure(ExceptionGroup, Flaky):
     # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
     # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
     def derive(self, excs):
-        return FlakyFailure(self.message, excs)
+        return type(self)(self.message, excs)
 
 
 class FlakyBackendFailure(FlakyFailure):
@@ -138,9 +138,6 @@ class FlakyBackendFailure(FlakyFailure):
     under the standard Hypothesis backend to check for flakiness. If the failure
     does not reproduce, Hypothesis raises this exception.
     """
-
-    def derive(self, excs):
-        return FlakyBackendFailure(self.message, excs)
 
 
 class InvalidArgument(_Trimmable, TypeError):
@@ -223,7 +220,8 @@ def __getattr__(name: str) -> Any:
 
 class DeadlineExceeded(_Trimmable):
     """
-    Raised when an input takes longer than the |settings.deadline| setting to run.
+    Raised when an input takes too long to run, relative to the |settings.deadline|
+    setting.
     """
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:

@@ -607,7 +607,8 @@ class ConjectureRunner:
                 data = ConjectureData.for_choices(data.choices)
                 self.__stoppable_test_function(data)
                 data.freeze()
-                # TODO: Should same-origin also be checked?
+                # TODO: Should same-origin also be checked? (discussion in
+                # https://github.com/HypothesisWorks/hypothesis/pull/4470#discussion_r2217055487)
                 if data.status != Status.INTERESTING:
                     desc_new_status = {
                         data.status.VALID: "passed",
