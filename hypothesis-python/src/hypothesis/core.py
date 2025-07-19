@@ -1172,11 +1172,11 @@ class StateForActualGivenExecution:
         # _runner.interesting_examples - this is fine, as the context
         # (i.e., immediate exception) is appended.
         interesting_examples = [
-            self._runner.interesting_examples[io]
-            for io in err._interesting_origins
-            if io in self._runner.interesting_examples
+            self._runner.interesting_examples[origin]
+            for origin in err._interesting_origins
+            if origin in self._runner.interesting_examples
         ]
-        exceptions = [ie.expected_exception for ie in interesting_examples]
+        exceptions = [result.expected_exception for result in interesting_examples]
         exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 

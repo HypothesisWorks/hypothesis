@@ -122,6 +122,23 @@ class FlakyFailure(ExceptionGroup, Flaky):
                 group[i] = err
         return ExceptionGroup.__new__(cls, msg, group)
 
+    # defining `derive` is required for `split` to return an instance of FlakyFailure
+    # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
+    # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
+    def derive(self, excs):
+        return type(self)(self.message, excs)
+
+
+class FlakyBackendFailure(FlakyFailure):
+    """
+    A failure was reported by an :ref:`alternative backend <alternative-backends>`,
+    but this failure did not reproduce when replayed under the Hypothesis backend.
+
+    When an alternative backend reports a failure, Hypothesis first replays it
+    under the standard Hypothesis backend to check for flakiness. If the failure
+    does not reproduce, Hypothesis raises this exception.
+    """
+
 
 class InvalidArgument(_Trimmable, TypeError):
     """Used to indicate that the arguments to a Hypothesis function were in
@@ -202,7 +219,10 @@ def __getattr__(name: str) -> Any:
 
 
 class DeadlineExceeded(_Trimmable):
-    """Raised when an individual test body has taken too long to run."""
+    """
+    Raised when an input takes too long to run, relative to the |settings.deadline|
+    setting.
+    """
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(

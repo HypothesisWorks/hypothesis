@@ -62,6 +62,9 @@
 
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
 .. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
+.. |DeadlineExceeded| replace:: :obj:`DeadlineExceeded <hypothesis.errors.DeadlineExceeded>`
+.. |BackendCannotProceed| replace:: :obj:`~hypothesis.errors.BackendCannotProceed`
+.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
@@ -130,7 +133,6 @@
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`
-.. |BackendCannotProceed| replace:: :exc:`~hypothesis.errors.BackendCannotProceed`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
 .. |@precondition| replace:: :func:`@precondition <hypothesis.stateful.precondition>`

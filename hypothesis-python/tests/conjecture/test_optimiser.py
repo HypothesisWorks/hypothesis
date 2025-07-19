@@ -12,7 +12,7 @@ import math
 
 import pytest
 
-from hypothesis import assume, example, given, settings
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture.choice import ChoiceNode
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
@@ -21,10 +21,13 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import (
-    TEST_SETTINGS,
     buffer_size_limit,
     integer_constr,
     nodes,
+)
+
+runner_settings = settings(
+    max_examples=100, database=None, suppress_health_check=list(HealthCheck)
 )
 
 
@@ -34,7 +37,7 @@ def test_optimises_to_maximum():
         def test(data):
             data.target_observations["m"] = data.draw_integer(0, 2**8 - 1)
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(test, settings=runner_settings)
         runner.cached_test_function((0,))
 
         try:
@@ -57,7 +60,7 @@ def test_optimises_multiple_targets():
             data.target_observations["n"] = n
             data.target_observations["m + n"] = m + n
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(test, settings=runner_settings)
         runner.cached_test_function((200, 0))
         runner.cached_test_function((0, 200))
 
@@ -79,7 +82,7 @@ def test_optimises_when_last_element_is_empty():
             data.start_span(label=1)
             data.stop_span()
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(test, settings=runner_settings)
         runner.cached_test_function((250,))
 
         try:
@@ -101,7 +104,7 @@ def test_can_optimise_last_with_following_empty():
             data.stop_span()
 
         runner = ConjectureRunner(
-            test, settings=settings(TEST_SETTINGS, max_examples=100)
+            test, settings=settings(runner_settings, max_examples=100)
         )
         runner.cached_test_function((0,) * 101)
 
@@ -124,7 +127,7 @@ def test_can_find_endpoints_of_a_range(lower, upper, score_up):
             data.target_observations["n"] = n
 
         runner = ConjectureRunner(
-            test, settings=settings(TEST_SETTINGS, max_examples=1000)
+            test, settings=settings(runner_settings, max_examples=1000)
         )
         runner.cached_test_function(((lower + upper) // 2,))
 
@@ -147,7 +150,7 @@ def test_targeting_can_drive_length_very_high():
                 count += 1
             data.target_observations[""] = min(count, 100)
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(test, settings=runner_settings)
         # extend here to ensure we get a valid (non-overrun) test case. The
         # outcome of the test case doesn't really matter as long as we have
         # something for the runner to optimize.
@@ -171,7 +174,7 @@ def test_optimiser_when_test_grows_buffer_to_invalid():
                 data.draw_integer(0, 2**16 - 1)
                 data.mark_invalid()
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(test, settings=runner_settings)
         runner.cached_test_function((0,) * 10)
 
         try:
@@ -196,7 +199,9 @@ def test_can_patch_up_examples():
                 if i != data.draw_integer(0, 2**8 - 1):
                     data.mark_invalid()
 
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(
+            test, settings=settings(runner_settings, max_examples=1000)
+        )
         d = runner.cached_test_function((0, 0, 1, 2, 3, 4))
         assert d.status == Status.VALID
 
@@ -222,7 +227,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
                     data.draw_integer(0, 2**64 - 1)
                     data.mark_invalid()
 
-            runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+            runner = ConjectureRunner(test, settings=runner_settings)
             runner.cached_test_function((0,) * 10)
 
             try:
@@ -275,7 +280,7 @@ def test_optimising_all_nodes(node):
             data.target_observations["v"] = size_function[node.type](v)
 
         runner = ConjectureRunner(
-            test, settings=settings(TEST_SETTINGS, max_examples=50)
+            test, settings=settings(runner_settings, max_examples=50)
         )
         runner.cached_test_function([node.value])
 

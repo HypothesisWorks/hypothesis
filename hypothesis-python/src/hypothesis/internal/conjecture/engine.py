@@ -11,7 +11,6 @@
 import importlib
 import inspect
 import math
-import textwrap
 import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
@@ -27,7 +26,7 @@ from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
-    FlakyReplay,
+    FlakyBackendFailure,
     HypothesisException,
     InvalidArgument,
     StopTest,
@@ -299,10 +298,7 @@ class ConjectureRunner:
         self.statistics: StatisticsDict = {}
         self.stats_per_test_case: list[CallStats] = []
 
-        # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.interesting_examples: dict[
-            Optional[InterestingOrigin], ConjectureResult
-        ] = {}
+        self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
@@ -344,6 +340,7 @@ class ConjectureRunner:
 
         self.__pending_call_explanation: Optional[str] = None
         self._backend_found_failure: bool = False
+        self._backend_exceeded_deadline: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
@@ -606,33 +603,29 @@ class ConjectureRunner:
             if not self.using_hypothesis_backend:
                 # replay this failure on the hypothesis backend to ensure it still
                 # finds a failure. otherwise, it is flaky.
-                initial_origin = data.interesting_origin
-                initial_traceback = data.expected_traceback
+                initial_exception = data.expected_exception
                 data = ConjectureData.for_choices(data.choices)
                 self.__stoppable_test_function(data)
                 data.freeze()
-                # TODO: Convert to FlakyFailure on the way out. Should same-origin
-                #       also be checked?
+                # TODO: Should same-origin also be checked? (discussion in
+                # https://github.com/HypothesisWorks/hypothesis/pull/4470#discussion_r2217055487)
                 if data.status != Status.INTERESTING:
                     desc_new_status = {
                         data.status.VALID: "passed",
                         data.status.INVALID: "failed filters",
                         data.status.OVERRUN: "overran",
                     }[data.status]
-                    wrapped_tb = (
-                        ""
-                        if initial_traceback is None
-                        else textwrap.indent(initial_traceback, "  | ")
-                    )
-                    raise FlakyReplay(
-                        f"Inconsistent results from replaying a failing test case!\n"
-                        f"{wrapped_tb}on backend={self.settings.backend!r} but "
-                        f"{desc_new_status} under backend='hypothesis'",
-                        interesting_origins=[initial_origin],
+                    raise FlakyBackendFailure(
+                        f"Inconsistent results from replaying a failing test case! "
+                        f"Raised {type(initial_exception).__name__} on "
+                        f"backend={self.settings.backend!r}, but "
+                        f"{desc_new_status} under backend='hypothesis'.",
+                        [initial_exception],
                     )
 
                 self._cache(data)
 
+            assert data.interesting_origin is not None
             key = data.interesting_origin
             changed = False
             try:

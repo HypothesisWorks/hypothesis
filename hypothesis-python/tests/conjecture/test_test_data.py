@@ -65,7 +65,7 @@ def test_notes_repr():
 def test_can_mark_interesting():
     d = ConjectureData.for_choices([])
     with pytest.raises(StopTest):
-        d.mark_interesting()
+        d.mark_interesting(interesting_origin())
     assert d.frozen
     assert d.status == Status.INTERESTING
 
