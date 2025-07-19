@@ -10,7 +10,6 @@
 
 import sys
 import threading
-import warnings
 
 import pytest
 
@@ -123,7 +122,6 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(
         st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20
     )
-
     errors = []
 
     @settings(
@@ -136,28 +134,17 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
         except Exception as exc:
             errors.append(exc)
 
-    threads = []
-
     original_recursionlimit = sys.getrecursionlimit()
+    threads = []
+    for _ in range(4):
+        threads.append(threading.Thread(target=test))
 
-    # We may get a warning here about not resetting recursionlimit,
-    # since it was changed during execution; ignore it.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
-        for _ in range(4):
-            threads.append(threading.Thread(target=test))
-
-        for thread in threads:
-            thread.start()
-
-        for thread in threads:
-            thread.join()
-
-    # Cleanup: reset the recursion limit that was (probably) not reset
-    # automatically in the threaded test.
-    sys.setrecursionlimit(original_recursionlimit)
-
+    assert sys.getrecursionlimit() == original_recursionlimit
     assert not errors
 
 

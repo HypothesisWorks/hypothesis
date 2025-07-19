@@ -24,6 +24,7 @@ SLOW = _Slow()
 
 class HardToShrink(SearchStrategy):
     def __init__(self):
+        super().__init__()
         self.__last = None
         self.accepted = set()
 

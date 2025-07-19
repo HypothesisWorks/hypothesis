@@ -68,6 +68,7 @@ class LarkStrategy(st.SearchStrategy):
         explicit: dict[str, st.SearchStrategy[str]],
         alphabet: st.SearchStrategy[str],
     ) -> None:
+        super().__init__()
         assert isinstance(grammar, lark.lark.Lark)
         start: list[str] = grammar.options.start if start is None else [start]
 

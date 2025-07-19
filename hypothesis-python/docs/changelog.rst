@@ -18,6 +18,32 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.135.32:
+
+---------------------
+6.135.32 - 2025-07-15
+---------------------
+
+Improve the thread-safety of strategy validation.
+
+Before this release, Hypothesis did not require that ``super().__init__()`` be called in ``SearchStrategy`` subclasses. Subclassing ``SearchStrategy`` is not supported or part of the public API, but if you are subclassing it anyway, you will need to make sure to call ``super().__init__()`` after this release.
+
+.. _v6.135.31:
+
+---------------------
+6.135.31 - 2025-07-15
+---------------------
+
+Fix a remaining thread-safety issue with the deprecation warning for use of the global random instance (see :ref:`v6.135.24 <v6.135.24>`).
+
+.. _v6.135.30:
+
+---------------------
+6.135.30 - 2025-07-14
+---------------------
+
+Fix a remaining thread-safety issue with the recursion limit warning Hypothesis issues when an outside caller sets ``sys.setrecursionlimit`` (see :ref:`v6.135.23 <v6.135.23>`).
+
 .. _v6.135.29:
 
 ---------------------
