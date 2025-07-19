@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.0:
+
+--------------------
+6.136.0 - 2025-07-19
+--------------------
+
+When a failure found by an :ref:`alternative backend <alternative-backends>` does not reproduce under the Hypothesis backend, we now raise |FlakyBackendFailure| instead of an internal ``FlakyReplay`` exception.
+
 .. _v6.135.33:
 
 ---------------------
