@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
+from hypothesis.extra.numpy import from_dtype
 from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
@@ -28,6 +29,25 @@ def test_can_create_a_series_of_any_dtype(data):
     # https://github.com/pandas-dev/pandas/issues/27484
     series = data.conjecture_data.draw(pdst.series(dtype=dtype))
     assert series.dtype == pd.Series([], dtype=dtype).dtype
+
+
+@given(pdst.series(dtype=object))
+def test_can_create_a_series_of_mixed_python_type(series):
+    assert series.dtype == pd.Series([], dtype=object).dtype
+
+
+@given(st.data(), from_dtype(np.dtype(object)))
+def test_can_create_a_series_of_single_python_type(data, obj):
+    # Ensure that arbitrary objects are present in the series without
+    # modification.
+    series = data.draw(
+        pdst.series(
+            elements=st.just(obj),
+            index=pdst.range_indexes(min_size=1),
+            dtype=object,
+        )
+    )
+    assert all(val is obj for val in series.values)
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))

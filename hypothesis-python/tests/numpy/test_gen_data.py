@@ -1273,3 +1273,14 @@ def test_infers_elements_and_fill():
     assert not elems.has_reusable_values
     s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1, elements=elems))
     assert s.fill.is_empty
+
+
+@given(nps.arrays(np.dtype("O"), shape=(1,)))
+def test_object_arrays_are_of_type_object(obj_array):
+    assert obj_array.dtype == np.dtype("O")
+
+
+@given(nps.arrays(np.dtype("O"), shape=(1,), elements=st.floats()))
+def test_object_arrays_are_of_type_object_even_with_numpy_elements(obj_array):
+    assert obj_array.dtype == np.dtype("O")
+    assert all(isinstance(v, float) for v in obj_array)
