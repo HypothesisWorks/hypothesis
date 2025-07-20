@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.1:
+
+--------------------
+6.136.1 - 2025-07-20
+--------------------
+
+Fix |PrimitiveProvider.on_observation| being called with observations it wasn't responsible for generating if the test failed.
+
 .. _v6.136.0:
 
 --------------------
