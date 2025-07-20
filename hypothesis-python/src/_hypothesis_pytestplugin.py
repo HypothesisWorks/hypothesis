@@ -385,9 +385,9 @@ else:
                 stats = report.__dict__.get(STATS_KEY)
                 if stats and print_stats:
                     terminalreporter.write_line(stats + "\n\n")
-                fex = report.__dict__.get(FAILING_EXAMPLES_KEY)
-                if fex:
-                    failing_examples.append(json.loads(fex))
+                examples = report.__dict__.get(FAILING_EXAMPLES_KEY)
+                if examples:
+                    failing_examples.append(json.loads(examples))
 
         from hypothesis.internal.observability import _WROTE_TO
 

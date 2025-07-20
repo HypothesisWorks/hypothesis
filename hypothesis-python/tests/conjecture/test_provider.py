@@ -767,6 +767,20 @@ def test_on_observation_alternates():
     f()
 
 
+@temp_register_backend("observation", ObservationProvider)
+def test_on_observation_alternates_on_failure():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        # Hypothesis tries n == 0 first, and if that fails then we don't exercise
+        # any provider-specific paths.
+        if n == 1:
+            raise ValueError("unique identifier")
+
+    with pytest.raises(ValueError, match="unique identifier"):
+        f()
+
+
 @temp_register_backend("observation", TrivialProvider)
 def test_on_observation_no_override():
     @given(st.integers())

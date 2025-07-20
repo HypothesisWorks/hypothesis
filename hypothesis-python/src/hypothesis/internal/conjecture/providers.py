@@ -651,7 +651,7 @@ class PrimitiveProvider(abc.ABC):
         internally.
         """
 
-    def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
+    def span_end(self, discard: bool, /) -> None:  # noqa: B027
         """Marks the end of a semantically meaningful span of choices.
 
         ``discard`` is ``True`` when the draw was filtered out or otherwise marked

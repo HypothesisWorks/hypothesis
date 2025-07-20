@@ -83,8 +83,6 @@ if TYPE_CHECKING:
 
     from hypothesis.control import BuildContext
 
-# ruff: noqa: FBT001
-
 T = TypeVar("T")
 PrettyPrintFunction: "TypeAlias" = Callable[[Any, "RepresentationPrinter", bool], None]
 
