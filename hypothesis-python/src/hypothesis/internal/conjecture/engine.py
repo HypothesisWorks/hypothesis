@@ -347,6 +347,17 @@ class ConjectureRunner:
         # note unsound verification by alt backends
         self._verified_by: Optional[str] = None
 
+    @contextmanager
+    def _with_switch_to_hypothesis_provider(
+        self, value: bool
+    ) -> Generator[None, None, None]:
+        previous = self._switch_to_hypothesis_provider
+        try:
+            self._switch_to_hypothesis_provider = value
+            yield
+        finally:
+            self._switch_to_hypothesis_provider = previous
+
     @property
     def using_hypothesis_backend(self) -> bool:
         return (
@@ -605,7 +616,13 @@ class ConjectureRunner:
                 # finds a failure. otherwise, it is flaky.
                 initial_exception = data.expected_exception
                 data = ConjectureData.for_choices(data.choices)
-                self.__stoppable_test_function(data)
+                # we've already going to use the hypothesis provider for this
+                # data, so the verb "switch" is a bit misleading here. We're really
+                # setting this to inform our on_observation logic that the observation
+                # generated here was from a hypothesis backend, and shouldn't be
+                # sent to the on_observation of any alternative backend.
+                with self._with_switch_to_hypothesis_provider(True):
+                    self.__stoppable_test_function(data)
                 data.freeze()
                 # TODO: Should same-origin also be checked? (discussion in
                 # https://github.com/HypothesisWorks/hypothesis/pull/4470#discussion_r2217055487)
