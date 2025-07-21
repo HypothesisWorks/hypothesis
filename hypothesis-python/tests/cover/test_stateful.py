@@ -1437,3 +1437,21 @@ def test_use_bundle_within_other_strategies():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_precondition_cannot_be_used_without_rule():
+    with pytest.raises(
+        InvalidDefinition,
+        match=r"@precondition must be combined with @rule \(or @invariant\), since it has no effect alone.",
+    ):
+
+        class BadStateMachine(RuleBasedStateMachine):
+            @precondition(lambda: True)
+            def has_precondition_but_no_rule(self):
+                pass
+
+            @rule(n=st.integers())
+            def trivial(self, n):
+                pass
+
+        BadStateMachine.TestCase().runTest()
