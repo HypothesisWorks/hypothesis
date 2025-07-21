@@ -949,6 +949,20 @@ def test_initialize_rule_dont_mix_with_regular_rule():
             def initialize(self):
                 pass
 
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "@rule and @initialize"
+        ),
+    ):
+
+        class BadStateMachineReverseOrder(RuleBasedStateMachine):
+            @initialize()
+            @rule()
+            def initialize(self):
+                pass
+
 
 def test_initialize_rule_cannot_be_double_applied():
     with pytest.raises(
