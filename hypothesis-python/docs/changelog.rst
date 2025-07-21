@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.2:
+
+--------------------
+6.136.2 - 2025-07-21
+--------------------
+
+|@precondition| now errors if used without |@rule| or |@invariant|. Doing so has no effect and is indicative of a user error (:issue:`4413`).
+
 .. _v6.136.1:
 
 --------------------
