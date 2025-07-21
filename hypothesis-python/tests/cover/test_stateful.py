@@ -906,7 +906,8 @@ state.teardown()
 
 
 def test_initialize_rule_dont_mix_with_precondition():
-    with pytest.raises(InvalidDefinition) as exc:
+    match = "An initialization rule cannot have a precondition."
+    with pytest.raises(InvalidDefinition, match=match):
 
         class BadStateMachine(RuleBasedStateMachine):
             @precondition(lambda self: True)
@@ -914,11 +915,9 @@ def test_initialize_rule_dont_mix_with_precondition():
             def initialize(self):
                 pass
 
-    assert "An initialization rule cannot have a precondition." in str(exc.value)
-
     # Also test decorator application in reverse order
 
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(InvalidDefinition, match=match):
 
         class BadStateMachineReverseOrder(RuleBasedStateMachine):
             @initialize()
@@ -926,11 +925,11 @@ def test_initialize_rule_dont_mix_with_precondition():
             def initialize(self):
                 pass
 
-    assert "An initialization rule cannot have a precondition." in str(exc.value)
-
 
 def test_initialize_rule_dont_mix_with_regular_rule():
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition, match="A function cannot be used for two distinct rules."
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @rule()
@@ -938,19 +937,17 @@ def test_initialize_rule_dont_mix_with_regular_rule():
             def initialize(self):
                 pass
 
-    assert "A function cannot be used for two distinct rules." in str(exc.value)
-
 
 def test_initialize_rule_cannot_be_double_applied():
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition, match="A function cannot be used for two distinct rules."
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @initialize()
             @initialize()
             def initialize(self):
                 pass
-
-    assert "A function cannot be used for two distinct rules." in str(exc.value)
 
 
 def test_initialize_rule_in_state_machine_with_inheritance():
