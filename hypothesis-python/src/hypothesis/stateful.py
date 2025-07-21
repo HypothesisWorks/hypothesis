@@ -381,9 +381,10 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 and invariant is None
             ):
                 raise InvalidDefinition(
-                    "@precondition must be combined with @rule (or @invariant), "
-                    "since it has no effect alone. "
-                    f"Function: {get_pretty_function_description(f)}"
+                    f"{_rule_qualname(f)} has been decorated with @precondition, "
+                    "but not @rule (or @invariant), which is not allowed. A "
+                    "precondition must be combined with a rule or an invariant, "
+                    "since it has no effect alone."
                 )
 
         state = _SetupState(
@@ -722,6 +723,16 @@ _RuleType = Callable[..., Union[MultipleResults[Ex], Ex]]
 _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 
 
+def _rule_qualname(f: Any) -> str:
+    # we define rules / invariants / initializes inside of wrapper functions, which
+    # makes f.__qualname__ look like:
+    #   test_precondition.<locals>.BadStateMachine.has_precondition_but_no_rule
+    # which is not ideal. This function returns just
+    #   BadStateMachine.has_precondition_but_no_rule
+    # instead.
+    return f.__qualname__.rsplit("<locals>.")[-1]
+
+
 # We cannot exclude `target` or `targets` from any of these signatures because
 # otherwise they would be matched against the `kwargs`, either leading to
 # overlapping overloads of incompatible return types, or a concrete
@@ -806,16 +817,23 @@ def rule(
     def accept(f):
         if getattr(f, INVARIANT_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} is used with both @rule and @invariant, "
+                "which is not allowed. A function may be either a rule or an "
+                "invariant, but not both."
             )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
-        if existing_rule is not None or existing_initialize_rule is not None:
+        if existing_rule is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct rules. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} has been decorated with @rule twice, which is "
+                "not allowed."
             )
+        if existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                f"{_rule_qualname(f)} has been decorated with both @rule and "
+                "@initialize, which is not allowed."
+            )
+
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         rule = Rule(
             targets=converted_targets,
@@ -883,21 +901,28 @@ def initialize(
     def accept(f):
         if getattr(f, INVARIANT_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} is used with both @initialize and @invariant, "
+                "which is not allowed. A function may be either an initialization "
+                "rule or an invariant, but not both."
             )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
-        if existing_rule is not None or existing_initialize_rule is not None:
+        if existing_rule is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct rules. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} has been decorated with both @rule and "
+                "@initialize, which is not allowed."
+            )
+        if existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                f"{_rule_qualname(f)} has been decorated with @initialize twice, "
+                "which is not allowed."
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         if preconditions:
             raise InvalidDefinition(
-                "An initialization rule cannot have a precondition. "
-                f"Rule: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} has been decorated with both @initialize and "
+                "@precondition, which is not allowed. An initialization rule "
+                "runs unconditionally and may not have a precondition."
             )
         rule = Rule(
             targets=converted_targets,
@@ -954,7 +979,9 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
         if existing_initialize_rule is not None:
             raise InvalidDefinition(
-                "An initialization rule cannot have a precondition. ", Settings.default
+                f"{_rule_qualname(f)} has been decorated with both @initialize and "
+                "@precondition, which is not allowed. An initialization rule "
+                "runs unconditionally and may not have a precondition."
             )
 
         rule = getattr(f, RULE_MARKER, None)
@@ -1022,14 +1049,14 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
     def accept(f):
         if getattr(f, RULE_MARKER, None) or getattr(f, INITIALIZE_RULE_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} has been decorated with both @invariant and "
+                "@rule, which is not allowed."
             )
         existing_invariant = getattr(f, INVARIANT_MARKER, None)
         if existing_invariant is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct invariants. "
-                f"Function: {get_pretty_function_description(f)}",
+                f"{_rule_qualname(f)} has been decorated with @invariant twice, "
+                "which is not allowed."
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         invar = Invariant(

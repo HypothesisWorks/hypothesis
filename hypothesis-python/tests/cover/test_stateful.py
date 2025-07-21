@@ -906,8 +906,13 @@ state.teardown()
 
 
 def test_initialize_rule_dont_mix_with_precondition():
-    match = "An initialization rule cannot have a precondition."
-    with pytest.raises(InvalidDefinition, match=match):
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachine.initialize has been decorated with both @initialize "
+            "and @precondition"
+        ),
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @precondition(lambda self: True)
@@ -917,7 +922,13 @@ def test_initialize_rule_dont_mix_with_precondition():
 
     # Also test decorator application in reverse order
 
-    with pytest.raises(InvalidDefinition, match=match):
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "@initialize and @precondition"
+        ),
+    ):
 
         class BadStateMachineReverseOrder(RuleBasedStateMachine):
             @initialize()
@@ -928,7 +939,8 @@ def test_initialize_rule_dont_mix_with_precondition():
 
 def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(
-        InvalidDefinition, match="A function cannot be used for two distinct rules."
+        InvalidDefinition,
+        match="BadStateMachine.initialize has been decorated with both @rule and @initialize",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -940,7 +952,8 @@ def test_initialize_rule_dont_mix_with_regular_rule():
 
 def test_initialize_rule_cannot_be_double_applied():
     with pytest.raises(
-        InvalidDefinition, match="A function cannot be used for two distinct rules."
+        InvalidDefinition,
+        match="BadStateMachine.initialize has been decorated with @initialize twice",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -1440,18 +1453,20 @@ def test_use_bundle_within_other_strategies():
 
 
 def test_precondition_cannot_be_used_without_rule():
+    class BadStateMachine(RuleBasedStateMachine):
+        @precondition(lambda: True)
+        def has_precondition_but_no_rule(self):
+            pass
+
+        @rule(n=st.integers())
+        def trivial(self, n):
+            pass
+
     with pytest.raises(
         InvalidDefinition,
-        match=r"@precondition must be combined with @rule \(or @invariant\), since it has no effect alone.",
+        match=(
+            "BadStateMachine.has_precondition_but_no_rule has been decorated "
+            "with @precondition, but not @rule"
+        ),
     ):
-
-        class BadStateMachine(RuleBasedStateMachine):
-            @precondition(lambda: True)
-            def has_precondition_but_no_rule(self):
-                pass
-
-            @rule(n=st.integers())
-            def trivial(self, n):
-                pass
-
         BadStateMachine.TestCase().runTest()
