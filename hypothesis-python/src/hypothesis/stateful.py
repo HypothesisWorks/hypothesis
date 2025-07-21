@@ -800,14 +800,15 @@ def rule(
     def accept(f):
         if getattr(f, INVARIANT_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant.",
-                Settings.default,
+                "A function cannot be used for both a rule and an invariant. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
         if existing_rule is not None or existing_initialize_rule is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct rules. ", Settings.default
+                "A function cannot be used for two distinct rules. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         rule = Rule(
@@ -876,19 +877,21 @@ def initialize(
     def accept(f):
         if getattr(f, INVARIANT_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant.",
-                Settings.default,
+                "A function cannot be used for both a rule and an invariant. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
         if existing_rule is not None or existing_initialize_rule is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct rules. ", Settings.default
+                "A function cannot be used for two distinct rules. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         if preconditions:
             raise InvalidDefinition(
-                "An initialization rule cannot have a precondition. ", Settings.default
+                "An initialization rule cannot have a precondition. "
+                f"Rule: {get_pretty_function_description(f)}",
             )
         rule = Rule(
             targets=converted_targets,
@@ -1013,14 +1016,14 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
     def accept(f):
         if getattr(f, RULE_MARKER, None) or getattr(f, INITIALIZE_RULE_MARKER, None):
             raise InvalidDefinition(
-                "A function cannot be used for both a rule and an invariant.",
-                Settings.default,
+                "A function cannot be used for both a rule and an invariant. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         existing_invariant = getattr(f, INVARIANT_MARKER, None)
         if existing_invariant is not None:
             raise InvalidDefinition(
-                "A function cannot be used for two distinct invariants.",
-                Settings.default,
+                "A function cannot be used for two distinct invariants. "
+                f"Function: {get_pretty_function_description(f)}",
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         invar = Invariant(
