@@ -15,6 +15,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.utils.threading import ThreadLocal
 
+from tests.common.utils import skipif_emscripten
+
 
 def test_threadlocal_setattr_and_getattr():
     threadlocal = ThreadLocal(a=lambda: 1, b=lambda: 2)
@@ -55,6 +57,7 @@ def test_raises_if_not_passed_callable():
         ThreadLocal(a=1)
 
 
+@skipif_emscripten
 def test_run_given_concurrently():
     # this is just a basic covering test. The more complicated and complete threading
     # tests are in nocover/test_threading.py.
