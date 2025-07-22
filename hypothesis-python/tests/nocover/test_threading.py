@@ -38,7 +38,7 @@ def run_concurrently(function, n: int) -> None:
         thread.start()
 
     for thread in threads:
-        thread.join()
+        thread.join(timeout=10)
 
 
 def test_can_run_given_in_thread():
@@ -126,7 +126,7 @@ def test_stackframes_restores_original_recursion_limit():
     for thread in threads:
         thread.start()
     for thread in threads:
-        thread.join()
+        thread.join(timeout=10)
 
     assert sys.getrecursionlimit() == original_recursionlimit
 
@@ -170,7 +170,7 @@ def test_single_thread_can_raise_deadline_exceeded():
 
     thread = Thread(target=target)
     thread.start()
-    thread.join()
+    thread.join(timeout=10)
 
 
 def test_deadline_exceeded_not_raised_under_concurrent_threads():
