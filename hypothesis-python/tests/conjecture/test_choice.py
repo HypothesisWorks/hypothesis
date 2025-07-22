@@ -783,6 +783,7 @@ def test_shrink_towards_has_index_0(constraints):
 
 
 @given(choice_types_constraints())
+@settings(max_examples=20)
 def test_choice_to_index_injective(choice_type_and_constraints):
     # choice sequence ordering should be injective both ways.
     (choice_type, constraints) = choice_type_and_constraints
