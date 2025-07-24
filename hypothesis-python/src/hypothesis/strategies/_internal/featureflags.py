@@ -124,7 +124,7 @@ class FeatureFlags:
 
 
 class FeatureStrategy(SearchStrategy[FeatureFlags]):
-    def __init__(self, at_least_one_of: Sequence[Hashable] = ()):
+    def __init__(self, at_least_one_of: Iterable[Hashable] = ()):
         super().__init__()
         self._at_least_one_of = frozenset(at_least_one_of)
 

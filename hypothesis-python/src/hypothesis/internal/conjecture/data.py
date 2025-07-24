@@ -1362,9 +1362,7 @@ class ConjectureData:
         self.freeze()
         raise StopTest(self.testcounter)
 
-    def mark_interesting(
-        self, interesting_origin: Optional[InterestingOrigin] = None
-    ) -> NoReturn:
+    def mark_interesting(self, interesting_origin: InterestingOrigin) -> NoReturn:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self, why: Optional[str] = None) -> NoReturn:

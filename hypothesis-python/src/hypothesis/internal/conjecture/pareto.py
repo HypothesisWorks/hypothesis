@@ -87,6 +87,7 @@ def dominance(left: ConjectureResult, right: ConjectureResult) -> DominanceRelat
     # the dominance relationship.
     if (
         left.status == Status.INTERESTING
+        and right.interesting_origin is not None
         and left.interesting_origin != right.interesting_origin
     ):
         return DominanceRelation.NO_DOMINANCE

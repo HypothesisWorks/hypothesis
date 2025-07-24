@@ -57,6 +57,8 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.shrinker import sort_key
 
+from tests.conjecture.common import interesting_origin
+
 T = TypeVar("T")
 
 pytestmark = pytest.mark.skipif(
@@ -108,7 +110,7 @@ def precisely_shrink(
         value = safe_draw(data, strategy)
         check_value = safe_draw(data, end_marker)
         if is_interesting(value) and check_value == target_check_value:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function, random=random)
     try:

@@ -10,10 +10,14 @@
 
 import copy
 import inspect
+import sys
+import warnings
 
 import pytest
 
 from hypothesis import example, given, strategies as st
+from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.conjecture import junkdrawer
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
     LazySequenceCopy,
@@ -21,11 +25,14 @@ from hypothesis.internal.conjecture.junkdrawer import (
     SelfOrganisingList,
     binary_search,
     endswith,
+    ensure_free_stackframes,
     replace_all,
     stack_depth_of_caller,
     startswith,
 )
 from hypothesis.internal.floats import clamp, float_to_int, sign_aware_lte
+
+from tests.common.utils import restore_recursion_limit
 
 
 def test_out_of_range():
@@ -226,3 +233,43 @@ def test_startswith(b1, b2):
 @given(st.binary(), st.binary())
 def test_endswith(b1, b2):
     assert b1.endswith(b2) == endswith(b1, b2)
+
+
+def test_stackframes_warns_when_recursion_limit_is_changed():
+    with restore_recursion_limit():
+        with pytest.warns(
+            HypothesisWarning,
+            match=(
+                "The recursion limit will not be reset, since it was changed during "
+                "test execution."
+            ),
+        ) as warnings:
+            with ensure_free_stackframes():
+                sys.setrecursionlimit(100)
+
+        # we only got the warning once
+        assert len(warnings) == 1
+
+
+def test_stackframes_cleans_up_on_werror():
+    limiter = junkdrawer._stackframe_limiter
+    with restore_recursion_limit():
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert limiter._active_contexts == 0
+
+            # the code for this cleanup case only triggers when the warning is raised
+            # on __enter__. set that up by entering one context, changing the limit,
+            # then entering another.
+            with pytest.raises(HypothesisWarning):
+                with ensure_free_stackframes():
+                    assert limiter._active_contexts == 1
+                    sys.setrecursionlimit(101)
+
+                    with ensure_free_stackframes():
+                        assert limiter._active_contexts == 2
+                        sys.setrecursionlimit(102)
+
+                    assert limiter._active_contexts == 1
+
+            assert limiter._active_contexts == 0

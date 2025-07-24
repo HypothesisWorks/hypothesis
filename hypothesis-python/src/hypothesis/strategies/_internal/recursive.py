@@ -73,6 +73,7 @@ class LimitedStrategy(SearchStrategy):
 
 class RecursiveStrategy(SearchStrategy):
     def __init__(self, base, extend, max_leaves):
+        super().__init__()
         self.max_leaves = max_leaves
         self.base = base
         self.limited_base = LimitedStrategy(base)

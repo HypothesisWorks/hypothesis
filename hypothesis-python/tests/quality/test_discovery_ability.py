@@ -42,6 +42,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.utils import no_shrink
+from tests.conjecture.common import interesting_origin
 
 RUNS = 100
 
@@ -82,7 +83,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 if not _condition(value):
                     data.mark_invalid()
                 if predicate(value):
-                    data.mark_interesting()
+                    data.mark_interesting(interesting_origin())
 
         successes = 0
         actual_runs = 0

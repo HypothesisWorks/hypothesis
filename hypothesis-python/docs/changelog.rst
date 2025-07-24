@@ -18,6 +18,64 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.2:
+
+--------------------
+6.136.2 - 2025-07-21
+--------------------
+
+|@precondition| now errors if used without |@rule| or |@invariant|. Doing so has no effect and is indicative of a user error (:issue:`4413`).
+
+.. _v6.136.1:
+
+--------------------
+6.136.1 - 2025-07-20
+--------------------
+
+Fix |PrimitiveProvider.on_observation| being called with observations it wasn't responsible for generating if the test failed.
+
+.. _v6.136.0:
+
+--------------------
+6.136.0 - 2025-07-19
+--------------------
+
+When a failure found by an :ref:`alternative backend <alternative-backends>` does not reproduce under the Hypothesis backend, we now raise |FlakyBackendFailure| instead of an internal ``FlakyReplay`` exception.
+
+.. _v6.135.33:
+
+---------------------
+6.135.33 - 2025-07-18
+---------------------
+
+Speculative fix for a thread-safety issue in calculating strategy labels.
+
+.. _v6.135.32:
+
+---------------------
+6.135.32 - 2025-07-15
+---------------------
+
+Improve the thread-safety of strategy validation.
+
+Before this release, Hypothesis did not require that ``super().__init__()`` be called in ``SearchStrategy`` subclasses. Subclassing ``SearchStrategy`` is not supported or part of the public API, but if you are subclassing it anyway, you will need to make sure to call ``super().__init__()`` after this release.
+
+.. _v6.135.31:
+
+---------------------
+6.135.31 - 2025-07-15
+---------------------
+
+Fix a remaining thread-safety issue with the deprecation warning for use of the global random instance (see :ref:`v6.135.24 <v6.135.24>`).
+
+.. _v6.135.30:
+
+---------------------
+6.135.30 - 2025-07-14
+---------------------
+
+Fix a remaining thread-safety issue with the recursion limit warning Hypothesis issues when an outside caller sets ``sys.setrecursionlimit`` (see :ref:`v6.135.23 <v6.135.23>`).
+
 .. _v6.135.29:
 
 ---------------------

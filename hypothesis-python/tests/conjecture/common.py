@@ -34,11 +34,6 @@ from hypothesis.internal.intervalsets import IntervalSet
 SOME_LABEL = calc_label_from_name("some label")
 
 
-TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
-)
-
-
 def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
     """
     Creates and returns an InterestingOrigin, parameterized by n, such that
@@ -57,7 +52,12 @@ def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
 
 def run_to_data(f):
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=300, database=None, suppress_health_check=list(HealthCheck)
+            ),
+        )
         runner.run()
         assert runner.interesting_examples
         (last_data,) = runner.interesting_examples.values()

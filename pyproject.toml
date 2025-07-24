@@ -43,6 +43,7 @@ ignore = [
   "E731",
   "E741",
   "FBT003",
+  "FBT001",
   "PD011",
   "PD901",
   "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
@@ -74,15 +75,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904", "FBT001"]
+"hypothesis-python/src/hypothesis/core.py" = ["B904"]
 "hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
-"hypothesis-python/src/hypothesis/internal/conjecture/data.py" = ["FBT001"]
-"hypothesis-python/src/hypothesis/internal/conjecture/datatree.py" = ["FBT001"]
 "hypothesis-python/tests/nocover/test_imports.py" = ["F403", "F405"]
 "hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]
 "hypothesis-python/src/hypothesis/internal/conjecture/*" = ["B023"]
 "hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
-"hypothesis-python/tests/conjecture/test_test_data.py" = ["FBT001"]
 
 [tool.mypy]
 python_version = "3.10"

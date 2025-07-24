@@ -19,6 +19,7 @@ import time
 import warnings
 from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
+from threading import Lock
 from typing import (
     Any,
     Callable,
@@ -294,21 +295,72 @@ def stack_depth_of_caller() -> int:
     return size
 
 
-# With a single thread, calls to ensure_free_stackframes form a stack, so it is
-# sufficient to require that the recursion limit on exit be:
-#
-# * the recursion limit on enter.
-#
-# With multiple threads, we relax this requirement. We instead require the
-# recursion limit on exit to be any of the following:
-#
-# * the recursion limit on enter.
-# * the recursion limit as set by the enter of the most recent
-#   ensure_free_stackframes.
-# * the recursion limit as set by the exit of the most recent
-#   ensure_free_stackframes.
-_most_recent_maxdepth_enter: Optional[int] = None
-_most_recent_maxdepth_exit: Optional[int] = None
+class StackframeLimiter:
+    # StackframeLimiter is used to make the recursion limit warning issued via
+    # ensure_free_stackframes thread-safe. We track the known values we have
+    # passed to sys.setrecursionlimit in _known_limits, and only issue a warning
+    # if sys.getrecursionlimit is not in _known_limits.
+    #
+    # This will always be an under-approximation of when we would ideally issue
+    # this warning, since a non-hypothesis caller could coincidentaly set the
+    # recursion limit to one of our known limits. Currently, StackframeLimiter
+    # resets _known_limits whenever all of the ensure_free_stackframes contexts
+    # have exited. We could increase the power of the warning by tracking a
+    # refcount for each limit, and removing it as soon as the refcount hits zero.
+    # I didn't think this extra complexity is worth the minor power increase for
+    # what is already only a "nice to have" warning.
+
+    def __init__(self):
+        self._active_contexts = 0
+        self._known_limits: set[int] = set()
+        self._original_limit: Optional[int] = None
+
+    def _setrecursionlimit(self, new_limit: int, *, check: bool = True) -> None:
+        if check and sys.getrecursionlimit() not in self._known_limits:
+            warnings.warn(
+                "The recursion limit will not be reset, since it was changed "
+                "during test execution.",
+                HypothesisWarning,
+                stacklevel=4,
+            )
+            return
+
+        self._known_limits.add(new_limit)
+        sys.setrecursionlimit(new_limit)
+
+    def enter_context(self, new_limit: int, *, current_limit: int) -> None:
+        if self._active_contexts == 0:
+            # this is the first context on the stack. Record the true original
+            # limit, to restore later.
+            assert self._original_limit is None
+            self._original_limit = current_limit
+            self._known_limits.add(self._original_limit)
+
+        self._active_contexts += 1
+        self._setrecursionlimit(new_limit)
+
+    def exit_context(self, new_limit: int, *, check: bool = True) -> None:
+        assert self._active_contexts > 0
+        self._active_contexts -= 1
+
+        if self._active_contexts == 0:
+            # this is the last context to exit. Restore the true original
+            # limit and clear our known limits.
+            original_limit = self._original_limit
+            assert original_limit is not None
+            try:
+                self._setrecursionlimit(original_limit, check=check)
+            finally:
+                self._original_limit = None
+                # we want to clear the known limits, but preserve the limit
+                # we just set it to as known.
+                self._known_limits = {original_limit}
+        else:
+            self._setrecursionlimit(new_limit, check=check)
+
+
+_stackframe_limiter = StackframeLimiter()
+_stackframe_limiter_lock = Lock()
 
 
 class ensure_free_stackframes:
@@ -317,46 +369,38 @@ class ensure_free_stackframes:
     """
 
     def __enter__(self) -> None:
-        global _most_recent_maxdepth_enter
         cur_depth = stack_depth_of_caller()
-        self.old_maxdepth = sys.getrecursionlimit()
-        # The default CPython recursionlimit is 1000, but pytest seems to bump
-        # it to 3000 during test execution. Let's make it something reasonable:
-        self.new_maxdepth = cur_depth + 2000
-        # Because we add to the recursion limit, to be good citizens we also
-        # add a check for unbounded recursion.  The default limit is typically
-        # 1000/3000, so this can only ever trigger if something really strange
-        # is happening and it's hard to imagine an
-        # intentionally-deeply-recursive use of this code.
-        assert cur_depth <= 1000, (
-            "Hypothesis would usually add %d to the stack depth of %d here, "
-            "but we are already much deeper than expected.  Aborting now, to "
-            "avoid extending the stack limit in an infinite loop..."
-            % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
-        )
-        _most_recent_maxdepth_enter = self.new_maxdepth
-        sys.setrecursionlimit(self.new_maxdepth)
+        with _stackframe_limiter_lock:
+            self.old_limit = sys.getrecursionlimit()
+            # The default CPython recursionlimit is 1000, but pytest seems to bump
+            # it to 3000 during test execution. Let's make it something reasonable:
+            self.new_limit = cur_depth + 2000
+            # Because we add to the recursion limit, to be good citizens we also
+            # add a check for unbounded recursion.  The default limit is typically
+            # 1000/3000, so this can only ever trigger if something really strange
+            # is happening and it's hard to imagine an
+            # intentionally-deeply-recursive use of this code.
+            assert cur_depth <= 1000, (
+                "Hypothesis would usually add %d to the stack depth of %d here, "
+                "but we are already much deeper than expected.  Aborting now, to "
+                "avoid extending the stack limit in an infinite loop..."
+                % (self.new_limit - self.old_limit, self.old_limit)
+            )
+            try:
+                _stackframe_limiter.enter_context(
+                    self.new_limit, current_limit=self.old_limit
+                )
+            except Exception:
+                # if the stackframe limiter raises a HypothesisWarning (under eg
+                # -Werror), __exit__ is not called, since we errored in __enter__.
+                # Preserve the state of the stackframe limiter by exiting, and
+                # avoid showing a duplicate warning with check=False.
+                _stackframe_limiter.exit_context(self.old_limit, check=False)
+                raise
 
     def __exit__(self, *args, **kwargs):
-        global _most_recent_maxdepth_exit
-
-        # in single-threaded uses, we expect sys.getrecursionlimit == self.maxdepth.
-        # The other checks are to avoid spurious warnings in multi-threaded
-        # environments. Adding them slightly weakens this check, but acceptably so.
-        if sys.getrecursionlimit() in [
-            self.new_maxdepth,
-            _most_recent_maxdepth_enter,
-            _most_recent_maxdepth_exit,
-        ]:
-            _most_recent_maxdepth_exit = self.old_maxdepth
-            sys.setrecursionlimit(self.old_maxdepth)
-        else:  # pragma: no cover
-            warnings.warn(
-                "The recursion limit will not be reset, since it was changed "
-                "during test execution.",
-                HypothesisWarning,
-                stacklevel=2,
-            )
+        with _stackframe_limiter_lock:
+            _stackframe_limiter.exit_context(self.old_limit)
 
 
 def find_integer(f: Callable[[int], bool]) -> int:
