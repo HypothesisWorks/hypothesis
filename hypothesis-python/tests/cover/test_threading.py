@@ -76,3 +76,12 @@ def test_run_given_concurrently():
 
     for thread in threads:
         thread.join(timeout=10)
+
+
+# rely on our pytest-run-parallel job to test this, since this only happens because
+# pytest instantiates a new class instance for each parametrization.
+class TestNoDifferingExecutorsHealthCheck:
+    @given(st.integers())
+    @pytest.mark.parametrize("x", range(2))
+    def test_a(self, x, i):
+        pass
