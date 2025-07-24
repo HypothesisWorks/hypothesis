@@ -142,6 +142,7 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
+from hypothesis.utils.conventions import not_set
 from hypothesis.utils.threading import ThreadLocal
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
@@ -1855,7 +1856,9 @@ def given(
                 )
             given_kwargs[name] = st.from_type(hints[name])
 
-        prev_self = Unset = object()
+        # only raise if the same thread uses two different executors, not if two
+        # different threads use different executors.
+        thread_local = ThreadLocal(prev_self=lambda: not_set)
         # maps thread_id to whether that thread overlaps in execution with any
         # other thread in this @given. We use this to detect whether an @given is
         # being run from multiple different threads at once, which informs whether
@@ -1935,16 +1938,16 @@ def given(
                         "database transaction."
                     )
 
-                nonlocal prev_self
+                nonlocal thread_local
                 # Check selfy really is self (not e.g. a mock) before we health-check
                 cur_self = (
                     stuff.selfy
                     if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
                     else None
                 )
-                if prev_self is Unset:
-                    prev_self = cur_self
-                elif cur_self is not prev_self:
+                if thread_local.prev_self is not_set:
+                    thread_local.prev_self = cur_self
+                elif cur_self is not thread_local.prev_self:
                     msg = (
                         f"The method {test.__qualname__} was called from multiple "
                         "different executors. This may lead to flaky tests and "
