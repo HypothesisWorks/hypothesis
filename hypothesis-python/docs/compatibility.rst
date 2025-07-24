@@ -44,7 +44,7 @@ Operating systems
 -----------------
 
 In theory, Hypothesis should work anywhere that Python does. In practice, it is
-known to work and regularly tested on macOS, Windows, Linux, and `emscripten <https://peps.python.org/pep-0776/>`_.
+known to work and regularly tested on macOS, Windows, Linux, and `Emscripten <https://peps.python.org/pep-0776/>`_.
 
 If you experience issues running Hypothesis on other operating systems, we are
 happy to accept bug reports which either clearly point to the problem or contain
@@ -58,9 +58,9 @@ Testing frameworks
 
 In general, Hypothesis goes to quite a lot of effort to return a function from |@given| that behaves as closely to a normal test function as possible. This means that most things should work sensibly with most testing frameworks.
 
-Maintainers of testing frameworks may be interested in our support for :ref:`custom function execution <custom-function-execution>`, which may make some interactions possible to support with Hypothesis.
+Maintainers of testing frameworks may be interested in our support for :ref:`custom function execution <custom-function-execution>`, which may make some Hypothesis interactions possible to support.
 
-Pytest
+pytest
 ~~~~~~
 
 The main interaction to be aware of between Hypothesis and :pypi:`pytest` is fixtures.
