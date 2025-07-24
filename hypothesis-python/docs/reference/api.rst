@@ -227,12 +227,16 @@ Hypothesis exceptions
 Custom exceptions raised by Hypothesis.
 
 .. autoclass:: hypothesis.errors.HypothesisException
+.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
+.. autoclass:: hypothesis.errors.Flaky
+.. autoclass:: hypothesis.errors.FlakyStrategyDefinition
+.. autoclass:: hypothesis.errors.FlakyFailure
+.. autoclass:: hypothesis.errors.FlakyBackendFailure
 .. autoclass:: hypothesis.errors.InvalidArgument
 .. autoclass:: hypothesis.errors.ResolutionFailed
 .. autoclass:: hypothesis.errors.Unsatisfiable
 .. autoclass:: hypothesis.errors.DidNotReproduce
 .. autoclass:: hypothesis.errors.DeadlineExceeded
-.. autoclass:: hypothesis.errors.FlakyBackendFailure
 
 .. _hypothesis-django:
 
