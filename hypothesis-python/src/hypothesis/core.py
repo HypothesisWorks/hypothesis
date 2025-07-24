@@ -1734,7 +1734,7 @@ def given(
         test(manual_string="x")
 
     The reason for this "from the right" behavior is to support using |@given|
-    with instance methods, by passing through ``self``:
+    with instance methods, by automatically passing through ``self``:
 
     .. code-block:: python
 

@@ -1,7 +1,7 @@
 How-to guides
 =============
 
-Practical guides for applying Hypothesis in specific scenarios. Each guide addresses a particular question about using Hypothesis.
+These how-to pages are practical guides for applying Hypothesis in specific scenarios. Each page addresses a particular question about using Hypothesis.
 
 .. toctree::
    :maxdepth: 1

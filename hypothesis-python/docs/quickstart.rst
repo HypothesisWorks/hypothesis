@@ -38,11 +38,11 @@ Create a new file called ``example.py``, containing a simple test:
     called with 32616
     ...
 
-We can just call ``test_integers()``, without passing a value for ``n``, because Hypothesis takes care of generating values of ``n`` for us.
+We just called ``test_integers()``, without passing a value for ``n``, because Hypothesis generates random values of ``n`` for us.
 
 .. note::
 
-    By default, Hypothesis generates 100 random examples. You can control this with the |max_examples| setting.
+    By default, Hypothesis generates 100 random inputs. You can control this with the |max_examples| setting.
 
 Running in a test suite
 -----------------------
