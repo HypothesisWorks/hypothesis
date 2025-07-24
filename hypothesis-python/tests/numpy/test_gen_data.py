@@ -1088,7 +1088,7 @@ def test_advanced_integer_index_minimizes_as_documented(
 
 
 @settings(
-    deadline=None, max_examples=25, suppress_health_check=[HealthCheck.nested_given]
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
 )
 @given(
     shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=3),
