@@ -15,3 +15,4 @@ If you're in a hurry, the :doc:`quickstart </quickstart>` is a much faster bare-
    settings
    replaying-failures
    adding-notes
+   flaky
