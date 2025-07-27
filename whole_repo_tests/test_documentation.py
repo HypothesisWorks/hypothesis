@@ -59,7 +59,11 @@ def get_all_exported_names():
 
 
 def test_documents_all_exported_strategies():
-    hp.build_docs()
+    # concurrent docs builds to the same output directory does bad things to
+    # sphinx. Build to a test-specific directory, so we don't overlap builds with
+    # any other test that is also building docs.
+    out_dir = "documents_all_exported_strategies"
+    hp.build_docs(to=out_dir)
     undocumented = get_all_exported_names() - {
         "hypothesis.extra.numpy.BroadcastableShapes",
     }
@@ -78,7 +82,7 @@ def test_documents_all_exported_strategies():
     #       ...
     #   }
     inventory_path = (
-        Path(hp.HYPOTHESIS_PYTHON) / "docs" / "_build" / "html" / "objects.inv"
+        Path(hp.HYPOTHESIS_PYTHON) / "docs" / "_build" / out_dir / "objects.inv"
     )
     with open(inventory_path, "rb") as f:
         inventory = InventoryFile.load(f, "", posixpath.join)

@@ -67,7 +67,7 @@ def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
 
-def build_docs(*, builder="html", only=()):
+def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
     tools.scripts.pip_tool(
         "sphinx-build",
@@ -77,7 +77,7 @@ def build_docs(*, builder="html", only=()):
         "--builder",
         builder,
         "docs",
-        "docs/_build/" + builder,
+        "docs/_build/" + (builder if to is None else to),
         *only,
         cwd=HYPOTHESIS_PYTHON,
     )
