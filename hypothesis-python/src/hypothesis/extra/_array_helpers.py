@@ -632,6 +632,7 @@ class BasicIndexStrategy(st.SearchStrategy):
         allow_newaxis,
         allow_fewer_indices_than_dims,
     ):
+        super().__init__()
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims

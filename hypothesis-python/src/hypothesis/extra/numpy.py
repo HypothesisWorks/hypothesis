@@ -220,6 +220,7 @@ def from_dtype(
 
 class ArrayStrategy(st.SearchStrategy):
     def __init__(self, element_strategy, shape, dtype, fill, unique):
+        super().__init__()
         self.shape = tuple(shape)
         self.fill = fill
         self.array_size = int(np.prod(shape))

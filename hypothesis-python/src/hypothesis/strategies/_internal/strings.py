@@ -50,6 +50,7 @@ class OneCharStringStrategy(SearchStrategy[str]):
     def __init__(
         self, intervals: IntervalSet, force_repr: Optional[str] = None
     ) -> None:
+        super().__init__()
         assert isinstance(intervals, IntervalSet)
         self.intervals = intervals
         self._force_repr = force_repr
@@ -349,6 +350,7 @@ def _identifier_characters():
 
 class BytesStrategy(SearchStrategy):
     def __init__(self, min_size: int, max_size: Optional[int]):
+        super().__init__()
         self.min_size = min_size
         self.max_size = (
             max_size if max_size is not None else COLLECTION_DEFAULT_MAX_SIZE

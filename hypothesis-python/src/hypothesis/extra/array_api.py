@@ -313,6 +313,7 @@ class ArrayStrategy(st.SearchStrategy):
     def __init__(
         self, *, xp, api_version, elements_strategy, dtype, shape, fill, unique
     ):
+        super().__init__()
         self.xp = xp
         self.elements_strategy = elements_strategy
         self.dtype = dtype

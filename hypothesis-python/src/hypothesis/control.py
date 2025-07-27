@@ -93,32 +93,38 @@ def current_build_context() -> "BuildContext":
     return context
 
 
-class RandomSeeder:
-    def __init__(self, seed):
-        self.seed = seed
-
-    def __repr__(self):
-        return f"RandomSeeder({self.seed!r})"
-
-
-class _Checker:
-    def __init__(self) -> None:
-        self.saw_global_random = False
-
-    def __call__(self, x):
-        self.saw_global_random |= isinstance(x, RandomSeeder)
-        return x
-
-
 @contextmanager
 def deprecate_random_in_strategy(fmt, *args):
-    _global_rand_state = random.getstate()
-    yield (checker := _Checker())
-    if _global_rand_state != random.getstate() and not checker.saw_global_random:
-        # raise InvalidDefinition
+    from hypothesis.internal import entropy
+
+    state_before = random.getstate()
+    yield
+    state_after = random.getstate()
+    if (
+        # there is a threading race condition here with deterministic_PRNG. Say
+        # we have two threads 1 and 2. We start in global random state A, and
+        # deterministic_PRNG sets to global random state B (which is constant across
+        # threads since we seed to 0 unconditionally). Then we might have state
+        # transitions:
+        #
+        #  [1]        [2]
+        # A -> B                           deterministic_PRNG().__enter__
+        #            B ->B                 deterministic_PRNG().__enter__
+        #            state_before = B      deprecate_random_in_strategy.__enter__
+        # B -> A                           deterministic_PRNG().__exit__
+        #            state_after  = A      deprecate_random_in_strategy.__exit__
+        #
+        # where state_before != state_after because a different thread has reset
+        # the global random state.
+        #
+        # To fix this, we track the known random states set by deterministic_PRNG,
+        # and will not note a deprecation if it matches one of those.
+        state_after != state_before
+        and hash(state_after) not in entropy._known_random_state_hashes
+    ):
         note_deprecation(
             "Do not use the `random` module inside strategies; instead "
-            "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
+            "consider `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
             since="2024-02-05",
             has_codemod=False,
             stacklevel=1,
@@ -165,8 +171,8 @@ class BuildContext:
         kwargs = {}
         for k, s in kwarg_strategies.items():
             start_idx = len(self.data.nodes)
-            with deprecate_random_in_strategy("from {}={!r}", k, s) as check:
-                obj = check(self.data.draw(s, observe_as=f"generate:{k}"))
+            with deprecate_random_in_strategy("from {}={!r}", k, s):
+                obj = self.data.draw(s, observe_as=f"generate:{k}")
             end_idx = len(self.data.nodes)
             kwargs[k] = obj
 

@@ -18,6 +18,7 @@ from hypothesis.strategies._internal.strategies import Ex
 
 class SharedStrategy(SearchStrategy[Ex]):
     def __init__(self, base: SearchStrategy[Ex], key: Optional[Hashable] = None):
+        super().__init__()
         self.key = key
         self.base = base
 

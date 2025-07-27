@@ -997,6 +997,7 @@ def resolve_Match(thing):
 
 class GeneratorStrategy(st.SearchStrategy):
     def __init__(self, yields, returns):
+        super().__init__()
         assert isinstance(yields, st.SearchStrategy)
         assert isinstance(returns, st.SearchStrategy)
         self.yields = yields

@@ -12,7 +12,7 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase, choices_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import Shrinker, node_program
+from hypothesis.internal.conjecture.shrinker import Shrinker
 
 from tests.common.utils import (
     Why,
@@ -20,7 +20,7 @@ from tests.common.utils import (
     non_covering_examples,
     xfail_on_crosshair,
 )
-from tests.conjecture.common import run_to_nodes, shrinking_from
+from tests.conjecture.common import interesting_origin, run_to_nodes, shrinking_from
 
 
 @xfail_on_crosshair(Why.nested_given)
@@ -30,7 +30,7 @@ def test_lot_of_dead_nodes():
         for i in range(4):
             if data.draw_integer(0, 2**8 - 1) != i:
                 data.mark_invalid()
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (0, 1, 2, 3)
 
@@ -53,7 +53,7 @@ def test_saves_data_while_shrinking(monkeypatch):
         if sum(x) >= 2000 and len(seen) < n:
             seen.add(x)
         if x in seen:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
@@ -81,7 +81,7 @@ def test_can_discard(monkeypatch):
         seen = set()
         while len(seen) < n:
             seen.add(data.draw_bytes())
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     assert len(nodes) == n
 
@@ -115,13 +115,13 @@ def test_node_programs_fail_efficiently(monkeypatch):
             v = data.draw_integer(0, 2**8 - 1)
             values.add(v)
         if len(values) == 256:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     monkeypatch.setattr(
         Shrinker, "run_node_program", counts_calls(Shrinker.run_node_program)
     )
     shrinker.max_stall = 500
-    shrinker.fixate_shrink_passes([node_program("XX")])
+    shrinker.fixate_shrink_passes([shrinker.node_program("XX")])
 
     assert shrinker.shrinks == 0
     assert 250 <= shrinker.calls <= 260

@@ -19,23 +19,24 @@ import time
 import warnings
 from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union, overload
+from threading import Lock
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
 
-ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
-
 T = TypeVar("T")
-
-
-def array_or_list(
-    code: str, contents: Iterable[int]
-) -> Union[list[int], "ArrayType[int]"]:
-    if code == "O":
-        return list(contents)
-    return array.array(code, contents)
 
 
 def replace_all(
@@ -60,9 +61,6 @@ def replace_all(
     return result
 
 
-NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
-
-
 class IntList(Sequence[int]):
     """Class for storing a list of non-negative integers compactly.
 
@@ -71,14 +69,15 @@ class IntList(Sequence[int]):
     we upgrade the array to the smallest word size needed to store
     the new value."""
 
+    ARRAY_CODES: ClassVar[list[str]] = ["B", "H", "I", "L", "Q", "O"]
+    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+
     __slots__ = ("__underlying",)
 
-    __underlying: Union[list[int], "ArrayType[int]"]
-
     def __init__(self, values: Sequence[int] = ()):
-        for code in ARRAY_CODES:
+        for code in self.ARRAY_CODES:
             try:
-                underlying = array_or_list(code, values)
+                underlying = self._array_or_list(code, values)
                 break
             except OverflowError:
                 pass
@@ -88,11 +87,19 @@ class IntList(Sequence[int]):
             for v in underlying:
                 if not isinstance(v, int) or v < 0:
                     raise ValueError(f"Could not create IntList for {values!r}")
-        self.__underlying = underlying
+        self.__underlying: Union[list[int], "ArrayType[int]"] = underlying
 
     @classmethod
     def of_length(cls, n: int) -> "IntList":
-        return cls(array_or_list("B", [0]) * n)
+        return cls(array.array("B", [0]) * n)
+
+    @staticmethod
+    def _array_or_list(
+        code: str, contents: Iterable[int]
+    ) -> Union[list[int], "ArrayType[int]"]:
+        if code == "O":
+            return list(contents)
+        return array.array(code, contents)
 
     def count(self, value: int) -> int:
         return self.__underlying.count(value)
@@ -140,9 +147,14 @@ class IntList(Sequence[int]):
         return self.__underlying != other.__underlying
 
     def append(self, n: int) -> None:
-        i = len(self)
-        self.__underlying.append(0)
-        self[i] = n
+        # try the fast path of appending n first. If this overflows, use the
+        # __setitem__ path, which will upgrade the underlying array.
+        try:
+            self.__underlying.append(n)
+        except OverflowError:
+            i = len(self.__underlying)
+            self.__underlying.append(0)
+            self[i] = n
 
     def __setitem__(self, i: int, n: int) -> None:
         while True:
@@ -159,8 +171,8 @@ class IntList(Sequence[int]):
 
     def __upgrade(self) -> None:
         assert isinstance(self.__underlying, array.array)
-        code = NEXT_ARRAY_CODE[self.__underlying.typecode]
-        self.__underlying = array_or_list(code, self.__underlying)
+        code = self.NEXT_ARRAY_CODE[self.__underlying.typecode]
+        self.__underlying = self._array_or_list(code, self.__underlying)
 
 
 def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
@@ -283,6 +295,74 @@ def stack_depth_of_caller() -> int:
     return size
 
 
+class StackframeLimiter:
+    # StackframeLimiter is used to make the recursion limit warning issued via
+    # ensure_free_stackframes thread-safe. We track the known values we have
+    # passed to sys.setrecursionlimit in _known_limits, and only issue a warning
+    # if sys.getrecursionlimit is not in _known_limits.
+    #
+    # This will always be an under-approximation of when we would ideally issue
+    # this warning, since a non-hypothesis caller could coincidentaly set the
+    # recursion limit to one of our known limits. Currently, StackframeLimiter
+    # resets _known_limits whenever all of the ensure_free_stackframes contexts
+    # have exited. We could increase the power of the warning by tracking a
+    # refcount for each limit, and removing it as soon as the refcount hits zero.
+    # I didn't think this extra complexity is worth the minor power increase for
+    # what is already only a "nice to have" warning.
+
+    def __init__(self):
+        self._active_contexts = 0
+        self._known_limits: set[int] = set()
+        self._original_limit: Optional[int] = None
+
+    def _setrecursionlimit(self, new_limit: int, *, check: bool = True) -> None:
+        if check and sys.getrecursionlimit() not in self._known_limits:
+            warnings.warn(
+                "The recursion limit will not be reset, since it was changed "
+                "during test execution.",
+                HypothesisWarning,
+                stacklevel=4,
+            )
+            return
+
+        self._known_limits.add(new_limit)
+        sys.setrecursionlimit(new_limit)
+
+    def enter_context(self, new_limit: int, *, current_limit: int) -> None:
+        if self._active_contexts == 0:
+            # this is the first context on the stack. Record the true original
+            # limit, to restore later.
+            assert self._original_limit is None
+            self._original_limit = current_limit
+            self._known_limits.add(self._original_limit)
+
+        self._active_contexts += 1
+        self._setrecursionlimit(new_limit)
+
+    def exit_context(self, new_limit: int, *, check: bool = True) -> None:
+        assert self._active_contexts > 0
+        self._active_contexts -= 1
+
+        if self._active_contexts == 0:
+            # this is the last context to exit. Restore the true original
+            # limit and clear our known limits.
+            original_limit = self._original_limit
+            assert original_limit is not None
+            try:
+                self._setrecursionlimit(original_limit, check=check)
+            finally:
+                self._original_limit = None
+                # we want to clear the known limits, but preserve the limit
+                # we just set it to as known.
+                self._known_limits = {original_limit}
+        else:
+            self._setrecursionlimit(new_limit, check=check)
+
+
+_stackframe_limiter = StackframeLimiter()
+_stackframe_limiter_lock = Lock()
+
+
 class ensure_free_stackframes:
     """Context manager that ensures there are at least N free stackframes (for
     a reasonable value of N).
@@ -290,33 +370,37 @@ class ensure_free_stackframes:
 
     def __enter__(self) -> None:
         cur_depth = stack_depth_of_caller()
-        self.old_maxdepth = sys.getrecursionlimit()
-        # The default CPython recursionlimit is 1000, but pytest seems to bump
-        # it to 3000 during test execution. Let's make it something reasonable:
-        self.new_maxdepth = cur_depth + 2000
-        # Because we add to the recursion limit, to be good citizens we also
-        # add a check for unbounded recursion.  The default limit is typically
-        # 1000/3000, so this can only ever trigger if something really strange
-        # is happening and it's hard to imagine an
-        # intentionally-deeply-recursive use of this code.
-        assert cur_depth <= 1000, (
-            "Hypothesis would usually add %d to the stack depth of %d here, "
-            "but we are already much deeper than expected.  Aborting now, to "
-            "avoid extending the stack limit in an infinite loop..."
-            % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
-        )
-        sys.setrecursionlimit(self.new_maxdepth)
+        with _stackframe_limiter_lock:
+            self.old_limit = sys.getrecursionlimit()
+            # The default CPython recursionlimit is 1000, but pytest seems to bump
+            # it to 3000 during test execution. Let's make it something reasonable:
+            self.new_limit = cur_depth + 2000
+            # Because we add to the recursion limit, to be good citizens we also
+            # add a check for unbounded recursion.  The default limit is typically
+            # 1000/3000, so this can only ever trigger if something really strange
+            # is happening and it's hard to imagine an
+            # intentionally-deeply-recursive use of this code.
+            assert cur_depth <= 1000, (
+                "Hypothesis would usually add %d to the stack depth of %d here, "
+                "but we are already much deeper than expected.  Aborting now, to "
+                "avoid extending the stack limit in an infinite loop..."
+                % (self.new_limit - self.old_limit, self.old_limit)
+            )
+            try:
+                _stackframe_limiter.enter_context(
+                    self.new_limit, current_limit=self.old_limit
+                )
+            except Exception:
+                # if the stackframe limiter raises a HypothesisWarning (under eg
+                # -Werror), __exit__ is not called, since we errored in __enter__.
+                # Preserve the state of the stackframe limiter by exiting, and
+                # avoid showing a duplicate warning with check=False.
+                _stackframe_limiter.exit_context(self.old_limit, check=False)
+                raise
 
     def __exit__(self, *args, **kwargs):
-        if self.new_maxdepth == sys.getrecursionlimit():
-            sys.setrecursionlimit(self.old_maxdepth)
-        else:  # pragma: no cover
-            warnings.warn(
-                "The recursion limit will not be reset, since it was changed "
-                "from another thread or during execution of a test.",
-                HypothesisWarning,
-                stacklevel=2,
-            )
+        with _stackframe_limiter_lock:
+            _stackframe_limiter.exit_context(self.old_limit)
 
 
 def find_integer(f: Callable[[int], bool]) -> int:
@@ -411,6 +495,11 @@ _perf_counter = time.perf_counter
 
 def gc_cumulative_time() -> float:
     global _gc_initialized
+
+    # I don't believe we need a lock for the _gc_cumulative_time increment here,
+    # since afaik each gc callback is only executed once when the garbage collector
+    # runs, by the thread which initiated the gc.
+
     if not _gc_initialized:
         if hasattr(gc, "callbacks"):
             # CPython

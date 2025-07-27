@@ -906,7 +906,13 @@ state.teardown()
 
 
 def test_initialize_rule_dont_mix_with_precondition():
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachine.initialize has been decorated with both @initialize "
+            "and @precondition"
+        ),
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @precondition(lambda self: True)
@@ -914,11 +920,15 @@ def test_initialize_rule_dont_mix_with_precondition():
             def initialize(self):
                 pass
 
-    assert "An initialization rule cannot have a precondition." in str(exc.value)
-
     # Also test decorator application in reverse order
 
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "@initialize and @precondition"
+        ),
+    ):
 
         class BadStateMachineReverseOrder(RuleBasedStateMachine):
             @initialize()
@@ -926,11 +936,12 @@ def test_initialize_rule_dont_mix_with_precondition():
             def initialize(self):
                 pass
 
-    assert "An initialization rule cannot have a precondition." in str(exc.value)
-
 
 def test_initialize_rule_dont_mix_with_regular_rule():
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition,
+        match="BadStateMachine.initialize has been decorated with both @rule and @initialize",
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @rule()
@@ -938,19 +949,32 @@ def test_initialize_rule_dont_mix_with_regular_rule():
             def initialize(self):
                 pass
 
-    assert "A function cannot be used for two distinct rules." in str(exc.value)
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "@rule and @initialize"
+        ),
+    ):
+
+        class BadStateMachineReverseOrder(RuleBasedStateMachine):
+            @initialize()
+            @rule()
+            def initialize(self):
+                pass
 
 
 def test_initialize_rule_cannot_be_double_applied():
-    with pytest.raises(InvalidDefinition) as exc:
+    with pytest.raises(
+        InvalidDefinition,
+        match="BadStateMachine.initialize has been decorated with @initialize twice",
+    ):
 
         class BadStateMachine(RuleBasedStateMachine):
             @initialize()
             @initialize()
             def initialize(self):
                 pass
-
-    assert "A function cannot be used for two distinct rules." in str(exc.value)
 
 
 def test_initialize_rule_in_state_machine_with_inheritance():
@@ -1440,3 +1464,23 @@ def test_use_bundle_within_other_strategies():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_precondition_cannot_be_used_without_rule():
+    class BadStateMachine(RuleBasedStateMachine):
+        @precondition(lambda: True)
+        def has_precondition_but_no_rule(self):
+            pass
+
+        @rule(n=st.integers())
+        def trivial(self, n):
+            pass
+
+    with pytest.raises(
+        InvalidDefinition,
+        match=(
+            "BadStateMachine.has_precondition_but_no_rule has been decorated "
+            "with @precondition, but not @rule"
+        ),
+    ):
+        BadStateMachine.TestCase().runTest()

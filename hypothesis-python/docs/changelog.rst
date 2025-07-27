@@ -18,6 +18,176 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.3:
+
+--------------------
+6.136.3 - 2025-07-23
+--------------------
+
+When a test is executed concurrently from multiple threads, |DeadlineExceeded| is now disabled, since the Python runtime may decide to switch away from a thread for longer than |settings.deadline|, and Hypothesis cannot track execution time per-thread. See :issue:`4478`.
+
+.. _v6.136.2:
+
+--------------------
+6.136.2 - 2025-07-21
+--------------------
+
+|@precondition| now errors if used without |@rule| or |@invariant|. Doing so has no effect and is indicative of a user error (:issue:`4413`).
+
+.. _v6.136.1:
+
+--------------------
+6.136.1 - 2025-07-20
+--------------------
+
+Fix |PrimitiveProvider.on_observation| being called with observations it wasn't responsible for generating if the test failed.
+
+.. _v6.136.0:
+
+--------------------
+6.136.0 - 2025-07-19
+--------------------
+
+When a failure found by an :ref:`alternative backend <alternative-backends>` does not reproduce under the Hypothesis backend, we now raise |FlakyBackendFailure| instead of an internal ``FlakyReplay`` exception.
+
+.. _v6.135.33:
+
+---------------------
+6.135.33 - 2025-07-18
+---------------------
+
+Speculative fix for a thread-safety issue in calculating strategy labels.
+
+.. _v6.135.32:
+
+---------------------
+6.135.32 - 2025-07-15
+---------------------
+
+Improve the thread-safety of strategy validation.
+
+Before this release, Hypothesis did not require that ``super().__init__()`` be called in ``SearchStrategy`` subclasses. Subclassing ``SearchStrategy`` is not supported or part of the public API, but if you are subclassing it anyway, you will need to make sure to call ``super().__init__()`` after this release.
+
+.. _v6.135.31:
+
+---------------------
+6.135.31 - 2025-07-15
+---------------------
+
+Fix a remaining thread-safety issue with the deprecation warning for use of the global random instance (see :ref:`v6.135.24 <v6.135.24>`).
+
+.. _v6.135.30:
+
+---------------------
+6.135.30 - 2025-07-14
+---------------------
+
+Fix a remaining thread-safety issue with the recursion limit warning Hypothesis issues when an outside caller sets ``sys.setrecursionlimit`` (see :ref:`v6.135.23 <v6.135.23>`).
+
+.. _v6.135.29:
+
+---------------------
+6.135.29 - 2025-07-12
+---------------------
+
+Optimize performance of |st.sampled_from| and internal selection of :ref:`stateful testing <stateful>` rules.
+
+.. _v6.135.28:
+
+---------------------
+6.135.28 - 2025-07-12
+---------------------
+
+Optimize the memory and speed of an internal datastructure for compactly storing integers.
+
+.. _v6.135.27:
+
+---------------------
+6.135.27 - 2025-07-12
+---------------------
+
+Improve thread-safety for stateful |@initialize| rules.
+
+.. _v6.135.26:
+
+---------------------
+6.135.26 - 2025-07-05
+---------------------
+
+Fix a "dictionary changed size during iteration" error that could occur under with |register_random| under multiple threads.
+
+.. _v6.135.25:
+
+---------------------
+6.135.25 - 2025-07-05
+---------------------
+
+Improve thread safety of our :mod:`sys.monitoring` usage (by the |Phase.shrink| and |Phase.explain| phases), as well as the internal computation of strategy labels.
+
+.. _v6.135.24:
+
+---------------------
+6.135.24 - 2025-07-03
+---------------------
+
+Makes the deprecation warning for using the global random instance thread-safe, as part of our work towards thread safety (:issue:`4451`).
+
+.. _v6.135.23:
+
+---------------------
+6.135.23 - 2025-07-02
+---------------------
+
+In order to de-flake ``RecursionError`` failures, Hypothesis sets a deterministic limit on ``sys.setrecursionlimit``. This patch makes the setting of this limit aware of uses by Hypothesis from multiple threads, so it does not produce spurious warnings in multithreaded environments.
+
+.. _v6.135.22:
+
+---------------------
+6.135.22 - 2025-07-02
+---------------------
+
+Improves the thread safety of caching strategy definitions, as well as usage of strategy transformations like |.map| and |.filter|.
+
+.. _v6.135.21:
+
+---------------------
+6.135.21 - 2025-07-02
+---------------------
+
+Fix the thread safety of |@rule| definitions in |RuleBasedStateMachine|.
+
+.. _v6.135.20:
+
+---------------------
+6.135.20 - 2025-06-30
+---------------------
+
+Fixes ``reproduction_decorator`` being missing under :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in many :ref:`observability <observability>` observations, when it should have been present.
+
+.. _v6.135.19:
+
+---------------------
+6.135.19 - 2025-06-30
+---------------------
+
+Improve threading compatibility of an internal helper for managing deterministic rng seeding.
+
+.. _v6.135.18:
+
+---------------------
+6.135.18 - 2025-06-30
+---------------------
+
+Remove an internal assertion which could trigger if (1) a lambda was present in the source code of a test, (2) and the source code file was edited on disk between the start of the python process and when Hypothesis runs the property.
+
+.. _v6.135.17:
+
+---------------------
+6.135.17 - 2025-06-30
+---------------------
+
+Refactor some internals related to the shrinker for better compatibility with free-threading (:issue:`4451`).
+
 .. _v6.135.16:
 
 ---------------------

@@ -1152,6 +1152,7 @@ def test_resolves_builtin_types(t):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 @given(data=st.data())
+@settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
