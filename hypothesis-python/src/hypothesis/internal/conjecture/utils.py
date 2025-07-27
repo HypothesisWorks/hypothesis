@@ -87,8 +87,8 @@ def check_sample(
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
-        # this is a type violation. we should fix this by making the return type
-        # `Sequence[T] | range`, and audit downstream uses.
+        # Pyright is unhappy with every way I've tried to type-annotate this
+        # function, so fine, we'll just ignore the analysis error.
         return values  # type: ignore
     return tuple(values)
 
