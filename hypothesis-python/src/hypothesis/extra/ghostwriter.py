@@ -90,7 +90,6 @@ from textwrap import dedent, indent
 from typing import (
     Any,
     Callable,
-    DefaultDict,
     ForwardRef,
     NamedTuple,
     Optional,
@@ -886,7 +885,7 @@ def _make_test_body(
 def _annotate_args(
     argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet
 ) -> Iterable[str]:
-    arg_parameters: DefaultDict[str, set[Any]] = defaultdict(set)
+    arg_parameters: defaultdict[str, set[Any]] = defaultdict(set)
     for func in funcs:
         try:
             params = tuple(get_signature(func, eval_str=True).parameters.values())

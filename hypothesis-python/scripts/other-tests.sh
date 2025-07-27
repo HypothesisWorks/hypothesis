@@ -33,8 +33,8 @@ $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
 $PYTEST tests/typing_extensions/
-if [[ "$HYPOTHESIS_PROFILE" != "crosshair" ]]; then
-  pip uninstall -y typing_extensions
+if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c 'import sys; print(sys.version_info[:2] > (3, 10))')" = "True" ]; then
+  pip uninstall -y typing-extensions
 fi
 
 pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"

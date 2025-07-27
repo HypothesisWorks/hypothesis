@@ -54,6 +54,9 @@ from tests.common.debug import (
 )
 from tests.common.utils import fails_with, temp_registered
 
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP006, UP035
+
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v

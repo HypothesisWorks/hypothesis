@@ -35,6 +35,9 @@ from tests.common.debug import (
 )
 from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
 
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP006, UP035
+
 types_with_core_strat = {
     type_
     for type_, strat in _global_type_lookup.items()
