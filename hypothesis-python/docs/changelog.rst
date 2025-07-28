@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.6:
+
+--------------------
+6.136.6 - 2025-07-28
+--------------------
+
+When a test is executed concurrently from multiple threads, |HealthCheck.too_slow| is now disabled, since the Python runtime may decide to switch away from a thread for arbitrarily long and Hypothesis cannot track execution time per-thread.
+
 .. _v6.136.5:
 
 --------------------
