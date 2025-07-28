@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.4:
+
+--------------------
+6.136.4 - 2025-07-25
+--------------------
+
+|HealthCheck.differing_executors| is no longer raised if a test is executed by different executors from different threads. |HealthCheck.differing_executors| will still be raised if a test is executed by different executors in the same thread.
+
 .. _v6.136.3:
 
 --------------------

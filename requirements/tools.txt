@@ -150,7 +150,7 @@ more-itertools==10.7.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.15.0
+mypy==1.16.1
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -258,7 +258,7 @@ rich==14.0.0
     # via
     #   pelican
     #   twine
-ruff==0.11.6
+ruff==0.12.5
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring

@@ -9,9 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from collections.abc import Generator
+from collections.abc import Generator, Set
 from random import Random
-from typing import TYPE_CHECKING, AbstractSet, Final, Optional, Union, cast
+from typing import TYPE_CHECKING, Final, Optional, Union, cast
 
 import attr
 
@@ -431,7 +431,7 @@ class TreeNode:
     is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
-    def forced(self) -> AbstractSet[int]:
+    def forced(self) -> Set[int]:
         if not self.__forced:
             return EMPTY
         return self.__forced
