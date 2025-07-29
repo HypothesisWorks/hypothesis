@@ -27,6 +27,8 @@ from hypothesis.internal import entropy
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
+from tests.common.utils import skipif_threading
+
 
 def gc_collect():
     # CPython uses reference counting, so objects (without circular refs)
@@ -54,6 +56,13 @@ def test_seed_random_twice(r, r2):
     assert repr(r) == repr(r2)
 
 
+# ideally we would actually raise the global random warning here, but random_module
+# calls seed_all and restore_all inside the deprecate_random_in_strategy context
+# manager, which never sees the global random interference.
+#
+# But it can sometimes see it under multithreading depending on timing. Until
+# we fix this to also warn in this case, just skip on threading.
+@skipif_threading
 @given(st.random_module())
 def test_does_not_fail_health_check_if_randomness_is_used(r):
     random.getrandbits(128)
@@ -116,6 +125,7 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
 
 
 @given(st.random_module())
+@skipif_threading  # writing to global random state
 def test_will_actually_use_the_random_seed(rnd):
     a = random.randint(0, 100)
     b = random.randint(0, 100)
@@ -143,6 +153,7 @@ def test_given_does_not_pollute_state():
         assert state_a2 != state_b2
 
 
+@skipif_threading  # modifying global random state
 def test_find_does_not_pollute_state():
     with deterministic_PRNG():
         find(st.random_module(), lambda r: True)
@@ -160,6 +171,7 @@ def test_find_does_not_pollute_state():
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
+@skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_evil_prng_registration_nonsense():
     # my guess is that other tests may register randoms that are then marked for
     # deletion (but not actually gc'd yet). Therefore, depending on the order tests

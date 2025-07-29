@@ -452,7 +452,8 @@ def test_will_terminate_stalled_shrinks():
     # Suppress the time based slow shrinking check - we only want
     # the one that checks if we're in a stall where we've shrunk
     # as far as we're going to get.
-    time.freeze()
+    if hasattr(time, "freeze"):
+        time.freeze()
 
     @shrinking_from((255,) * 100)
     def shrinker(data: ConjectureData):

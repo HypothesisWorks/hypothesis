@@ -13,6 +13,7 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
+from threading import RLock
 from unittest import TestCase
 
 import pytest
@@ -40,25 +41,38 @@ from tests.common.utils import (
     counts_calls,
     fails_with,
     skipif_emscripten,
+    skipif_threading,
     validate_deprecation,
 )
 
 original_default = settings.get_profile("default").max_examples
+_temp_register_profile_lock = RLock()
 
 
 @contextmanager
 def temp_register_profile(name, parent, **kwargs):
-    try:
-        settings.register_profile(name, parent, **kwargs)
-        yield
-    finally:
-        settings._profiles.pop(name)
+    with _temp_register_profile_lock:
+        try:
+            settings.register_profile(name, parent, **kwargs)
+            yield
+        finally:
+            settings._profiles.pop(name)
 
 
-def setup_function(fn):
-    settings.load_profile("default")
-    settings.register_profile("test_settings", settings())
-    settings.load_profile("test_settings")
+_restore_profile_lock = RLock()
+
+
+@contextmanager
+def restore_profile():
+    with _restore_profile_lock:
+        # avoid polluting global state by resetting the loaded profile back to its
+        # previous value in tests which use load_profile
+        current_profile = settings._current_profile
+        assert current_profile is not None
+        try:
+            yield
+        finally:
+            settings.load_profile(current_profile)
 
 
 def test_cannot_set_non_settings():
@@ -135,20 +149,23 @@ def test_will_reload_profile_when_default_is_absent():
 
 
 def test_load_profile():
-    settings.load_profile("default")
-    assert settings.default.max_examples == original_default
-    assert settings.default.stateful_step_count == 50
+    with restore_profile():
+        settings.load_profile("default")
+        assert settings.default.max_examples == original_default
+        assert settings.default.stateful_step_count == 50
 
-    settings.register_profile("test", settings(max_examples=10), stateful_step_count=5)
-    settings.load_profile("test")
+        settings.register_profile(
+            "test", settings(max_examples=10), stateful_step_count=5
+        )
+        settings.load_profile("test")
 
-    assert settings.default.max_examples == 10
-    assert settings.default.stateful_step_count == 5
+        assert settings.default.max_examples == 10
+        assert settings.default.stateful_step_count == 5
 
-    settings.load_profile("default")
+        settings.load_profile("default")
 
-    assert settings.default.max_examples == original_default
-    assert settings.default.stateful_step_count == 50
+        assert settings.default.max_examples == original_default
+        assert settings.default.stateful_step_count == 50
 
 
 def test_profile_names_must_be_strings():
@@ -161,12 +178,13 @@ def test_profile_names_must_be_strings():
 
 
 def test_loading_profile_keeps_expected_behaviour():
-    settings.register_profile("ci", settings(max_examples=10000))
-    settings.load_profile("ci")
-    assert settings().max_examples == 10000
-    with local_settings(settings(max_examples=5)):
-        assert settings().max_examples == 5
-    assert settings().max_examples == 10000
+    with restore_profile():
+        settings.register_profile("ci", settings(max_examples=10000))
+        settings.load_profile("ci")
+        assert settings().max_examples == 10000
+        with local_settings(settings(max_examples=5)):
+            assert settings().max_examples == 5
+        assert settings().max_examples == 10000
 
 
 def test_load_non_existent_profile():
@@ -220,6 +238,9 @@ def test_settings_alone():
 """
 
 
+# runpytest_inprocess uses invalidate_caches in pytest, which is not thread safe
+# (I presume; produces keyerrors).
+@skipif_threading
 def test_settings_alone(pytester):
     # Disable cacheprovider, since we don't need it and it's flaky on pyodide
     script = pytester.makepyfile(TEST_SETTINGS_ALONE)
@@ -314,6 +335,8 @@ class TestGivenExampleSettingsExplicitCalled(TestCase):
     @given(st.booleans())
     @example(True)
     @settings(phases=[Phase.explicit])
+    # counts_calls is not thread safe (modifying global f.calls attr)
+    @skipif_threading
     def test_example_explicit(self, x):
         self.call_target()
 
@@ -548,9 +571,9 @@ def test_check_defaults_to_randomize_when_not_running_on_ci():
     )
 
 
+@skipif_threading  # modifying global state (profiles) during testing
 def test_reloads_the_loaded_profile_if_registered_again():
-    prev_profile = settings._current_profile
-    try:
+    with restore_profile():
         test_profile = "some nonsense profile purely for this test"
         test_value = 123456
         settings.register_profile(test_profile, settings(max_examples=test_value))
@@ -559,9 +582,6 @@ def test_reloads_the_loaded_profile_if_registered_again():
         test_value_2 = 42
         settings.register_profile(test_profile, settings(max_examples=test_value_2))
         assert settings.default.max_examples == test_value_2
-    finally:
-        if prev_profile is not None:
-            settings.load_profile(prev_profile)
 
 
 CI_TESTING_SCRIPT = """

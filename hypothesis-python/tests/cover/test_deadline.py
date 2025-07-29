@@ -17,7 +17,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
-from tests.common.utils import assert_falsifying_output, fails_with
+from tests.common.utils import assert_falsifying_output, fails_with, skipif_threading
 
 
 def test_raises_deadline_on_slow_test():
@@ -30,6 +30,7 @@ def test_raises_deadline_on_slow_test():
         slow()
 
 
+@skipif_threading  # deadline disabled under threading
 @pytest.mark.skipif(
     settings.get_profile(settings._current_profile).deadline is None,
     reason="not expected to fail if deadline is disabled",

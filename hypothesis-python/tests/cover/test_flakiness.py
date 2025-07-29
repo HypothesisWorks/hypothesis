@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
 
-from tests.common.utils import Why, no_shrink, xfail_on_crosshair
+from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
 
 
 class Nope(Exception):
@@ -68,6 +68,7 @@ def test_fails_differently_is_flaky():
     assert set(map(type, exceptions)) == {Nope, DifferentNope}
 
 
+@skipif_threading  # executing into global scope
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="except* syntax")
 def test_exceptiongroup_wrapped_naked_exception_is_flaky():
 
