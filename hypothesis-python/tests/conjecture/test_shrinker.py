@@ -21,6 +21,7 @@ from hypothesis.internal.conjecture.shrinking.common import Shrinker as Shrinker
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
+from tests.common.utils import skipif_threading
 from tests.conjecture.common import (
     SOME_LABEL,
     float_constr,
@@ -448,12 +449,12 @@ def test_can_expand_deleted_region():
     assert shrinker.choices == (0, 0)
 
 
+@skipif_threading  # no _consistently_increment_time fixture under threading
 def test_will_terminate_stalled_shrinks():
     # Suppress the time based slow shrinking check - we only want
     # the one that checks if we're in a stall where we've shrunk
     # as far as we're going to get.
-    if hasattr(time, "freeze"):
-        time.freeze()
+    time.freeze()
 
     @shrinking_from((255,) * 100)
     def shrinker(data: ConjectureData):
