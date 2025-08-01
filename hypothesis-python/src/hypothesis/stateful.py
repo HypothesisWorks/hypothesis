@@ -41,7 +41,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
+from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
@@ -127,7 +127,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
         def output(s):
             if print_steps:
                 report(s)
-            if TESTCASE_CALLBACKS:
+            if observability_enabled():
                 cd._stateful_repr_parts.append(s)
 
         try:
@@ -180,7 +180,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                 # _add_results_to_targets, to avoid printing arguments which are also
                 # a return value using the variable name they are assigned to.
                 # See https://github.com/HypothesisWorks/hypothesis/issues/2341
-                if print_steps or TESTCASE_CALLBACKS:
+                if print_steps or observability_enabled():
                     data_to_print = {
                         k: machine._pretty_print(v) for k, v in data.items()
                     }
@@ -217,7 +217,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                             HealthCheck.return_value,
                         )
                 finally:
-                    if print_steps or TESTCASE_CALLBACKS:
+                    if print_steps or observability_enabled():
                         # 'result' is only used if the step has target bundles.
                         # If it does, and the result is a 'MultipleResult',
                         # then 'print_step' prints a multi-variable assignment.
@@ -451,7 +451,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             if (
                 current_build_context().is_final
                 or settings.verbosity >= Verbosity.debug
-                or TESTCASE_CALLBACKS
+                or observability_enabled()
             ):
                 output(f"state.{name}()")
             start = perf_counter()

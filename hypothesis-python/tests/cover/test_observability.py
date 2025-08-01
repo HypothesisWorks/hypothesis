@@ -9,13 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import contextlib
 import json
 import math
 import textwrap
+import threading
+import warnings
 from contextlib import nullcontext
 
 import pytest
 
+import hypothesis.internal.observability
 from hypothesis import (
     assume,
     event,
@@ -34,7 +38,14 @@ from hypothesis.internal.conjecture.data import Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import choices_to_json, nodes_to_json
+from hypothesis.internal.observability import (
+    TESTCASE_CALLBACKS,
+    add_observability_callback,
+    choices_to_json,
+    nodes_to_json,
+    observability_enabled,
+    remove_observability_callback,
+)
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -43,7 +54,13 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies._internal.utils import to_jsonable
 
-from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_observations,
+    checks_deprecated_behaviour,
+    run_concurrently,
+    xfail_on_crosshair,
+)
 from tests.conjecture.common import choices, integer_constr, nodes
 
 
@@ -565,3 +582,126 @@ def test_metadata_to_json():
             assert isinstance(span, Span)
             assert 0 <= span.start <= len(observation.metadata.choice_nodes)
             assert 0 <= span.end <= len(observation.metadata.choice_nodes)
+
+
+@contextlib.contextmanager
+def restore_callbacks():
+    original_callbacks = hypothesis.internal.observability._callbacks.copy()
+    try:
+        yield
+    finally:
+        hypothesis.internal.observability._callbacks = original_callbacks
+
+
+def _callbacks():
+    # respect changes from the restore_callbacks context manager by re-accessing
+    # its namespace, instead of keeping
+    # `from hypothesis.internal.observability import _callbacks` around
+    return hypothesis.internal.observability._callbacks
+
+
+def test_observability_callbacks():
+    def f(observation):
+        pass
+
+    def g(observation):
+        pass
+
+    thread_id = threading.get_ident()
+
+    with restore_callbacks():
+        assert not observability_enabled()
+        add_observability_callback(f)
+        assert _callbacks() == {thread_id: [f]}
+
+        assert observability_enabled()
+        add_observability_callback(g)
+        assert _callbacks() == {thread_id: [f, g]}
+
+        assert observability_enabled()
+        remove_observability_callback(g)
+        assert _callbacks() == {thread_id: [f]}
+
+        assert observability_enabled()
+        remove_observability_callback(f)
+        assert _callbacks() == {}
+
+        assert not observability_enabled()
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_bool():
+    bool(TESTCASE_CALLBACKS)
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_append():
+    with restore_callbacks():
+        TESTCASE_CALLBACKS.append(lambda x: None)
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_remove():
+    with restore_callbacks():
+        TESTCASE_CALLBACKS.remove(lambda x: None)
+
+
+def test_testcase_callbacks():
+    def f(observation):
+        pass
+
+    def g(observation):
+        pass
+
+    thread_id = threading.get_ident()
+
+    with restore_callbacks():
+        with warnings.catch_warnings():
+            # ignore TESTCASE_CALLBACKS deprecation warnings
+            warnings.simplefilter("ignore")
+
+            assert not bool(TESTCASE_CALLBACKS)
+            add_observability_callback(f)
+            assert _callbacks() == {thread_id: [f]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            add_observability_callback(g)
+            assert _callbacks() == {thread_id: [f, g]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            remove_observability_callback(g)
+            assert _callbacks() == {thread_id: [f]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            remove_observability_callback(f)
+            assert _callbacks() == {}
+
+            assert not bool(TESTCASE_CALLBACKS)
+
+
+def test_only_receives_callbacks_from_this_thread():
+    @given(st.integers())
+    def g(n):
+        pass
+
+    def test():
+        count_observations = 0
+
+        def callback(observation):
+            nonlocal count_observations
+            count_observations += 1
+
+        add_observability_callback(callback)
+
+        with warnings.catch_warnings():
+            # observability tries to record coverage, but concurrent coverage
+            # collection is not possible before 3.12 sys.monitoring.
+            warnings.filterwarnings(
+                "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+            )
+            g()
+
+        assert count_observations == 101
+
+    with restore_callbacks():
+        run_concurrently(test, 5)
