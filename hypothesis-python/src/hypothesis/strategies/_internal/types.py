@@ -587,7 +587,7 @@ def from_typing_type(thing):
         sys.version_info[:2] >= (3, 14)
         and try_issubclass(thing, collections.abc.Collection)
         and allows_integer_elements
-    ):
+    ):  # pragma: no cover  # 3.14+
         # consider a SortedKeyList if we continue needing to sort in-place. This
         # is cheaper than the abstraction overhead for now.
         strategies.append(st.binary())
