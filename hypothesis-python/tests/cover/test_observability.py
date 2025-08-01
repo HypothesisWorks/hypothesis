@@ -59,7 +59,6 @@ from tests.common.utils import (
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
-    skipif_emscripten,
     xfail_on_crosshair,
 )
 from tests.conjecture.common import choices, integer_constr, nodes
@@ -624,10 +623,10 @@ def test_observability_callbacks():
         assert _callbacks() == {thread_id: [f]}
 
         assert observability_enabled()
-        remove_observability_callback(f)
-        assert _callbacks() == {}
+        remove_observability_callback(g)
+        assert _callbacks() == {thread_id: [g]}
 
-        assert not observability_enabled()
+        assert observability_enabled()
         remove_observability_callback(f)
         assert _callbacks() == {}
 
@@ -684,7 +683,6 @@ def test_testcase_callbacks():
             assert not bool(TESTCASE_CALLBACKS)
 
 
-@skipif_emscripten
 def test_only_receives_callbacks_from_this_thread():
     @given(st.integers())
     def g(n):

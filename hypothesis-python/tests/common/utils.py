@@ -307,6 +307,13 @@ def restore_recursion_limit():
 
 
 def run_concurrently(function, n: int) -> None:
+    import pytest
+
+    if settings._current_profile == "crosshair":
+        pytest.skip("crosshair is not thread safe")
+    if sys.platform == "emscripten":
+        pytest.skip("no threads on emscripten")
+
     def run():
         barrier.wait()
         function()
