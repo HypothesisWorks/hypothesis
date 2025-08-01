@@ -1120,9 +1120,17 @@ def builds(
     the callable.
     """
     if not callable(target):
+        from .types import is_a_union
+
+        # before 3.14, unions were callable, so it got an error message in
+        # BuildsStrategy.do_draw instead. In 3.14+, unions are not callable, so
+        # we can error earlier here instead.
+        suggestion = (
+            f" Try using from_type({target}) instead?" if is_a_union(target) else ""
+        )
         raise InvalidArgument(
             "The first positional argument to builds() must be a callable "
-            "target to construct."
+            f"target to construct.{suggestion}"
         )
 
     if ... in args:  # type: ignore  # we only annotated the allowed types
