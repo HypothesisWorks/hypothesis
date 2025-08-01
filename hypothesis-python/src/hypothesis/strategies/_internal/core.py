@@ -242,10 +242,19 @@ def sampled_from(
             ]
         return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=force_repr)
     if not values:
+
+        def has_annotations():
+            if sys.version_info[:2] < (3, 14):
+                return vars(elements).get("__annotations__")
+
+            import annotationlib
+
+            return bool(annotationlib.get_annotations(elements))
+
         if (
             isinstance(elements, type)
             and issubclass(elements, enum.Enum)
-            and vars(elements).get("__annotations__")
+            and has_annotations()
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2923
             raise InvalidArgument(
