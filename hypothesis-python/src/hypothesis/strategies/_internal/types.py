@@ -289,7 +289,9 @@ def is_a_union(thing: object) -> bool:
 
 
 def is_a_type(thing: object) -> bool:
-    """Return True if thing is a type or a generic type like thing."""
+    """
+    Return True if thing is a type or a typing-like thing (union, generic type, etc).
+    """
     return (
         isinstance(thing, type)
         or is_generic_type(thing)
