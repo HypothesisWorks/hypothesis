@@ -624,7 +624,7 @@ def test_observability_callbacks():
 
         assert observability_enabled()
         remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [g]}
+        assert _callbacks() == {thread_id: [f]}
 
         assert observability_enabled()
         remove_observability_callback(f)
