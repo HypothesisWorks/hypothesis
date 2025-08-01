@@ -59,6 +59,7 @@ from tests.common.utils import (
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
+    skipif_emscripten,
     xfail_on_crosshair,
 )
 from tests.conjecture.common import choices, integer_constr, nodes
@@ -679,6 +680,7 @@ def test_testcase_callbacks():
             assert not bool(TESTCASE_CALLBACKS)
 
 
+@skipif_emscripten
 def test_only_receives_callbacks_from_this_thread():
     @given(st.integers())
     def g(n):
