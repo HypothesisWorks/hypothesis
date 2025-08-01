@@ -531,7 +531,7 @@ def from_typing_type(thing):
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque)
-    if memoryview in mapping and len(mapping) > 1:
+    if memoryview in mapping and len(mapping) > 1:  # pragma: no cover  # 3.14+
         # memoryview is a subclass of e.g. collections.abc.Collection (only on
         # 3.14+; see https://github.com/python/cpython/issues/126012). But since
         # we fib by registering memoryview as st.binary().map(memoryview), we can't
@@ -591,7 +591,7 @@ def from_typing_type(thing):
         # consider a SortedKeyList if we continue needing to sort in-place. This
         # is cheaper than the abstraction overhead for now.
         strategies.append(st.binary())
-        strategies.sort(type_sorting_key)
+        strategies.sort(key=type_sorting_key)
 
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty or not strategies:

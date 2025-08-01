@@ -246,10 +246,10 @@ def sampled_from(
         def has_annotations():
             if sys.version_info[:2] < (3, 14):
                 return vars(elements).get("__annotations__")
+            else:  # pragma: no cover  # covered by 3.14 tests
+                import annotationlib
 
-            import annotationlib
-
-            return bool(annotationlib.get_annotations(elements))
+                return bool(annotationlib.get_annotations(elements))
 
         if (
             isinstance(elements, type)
