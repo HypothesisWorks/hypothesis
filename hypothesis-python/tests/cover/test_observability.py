@@ -628,6 +628,10 @@ def test_observability_callbacks():
         assert _callbacks() == {}
 
         assert not observability_enabled()
+        remove_observability_callback(f)
+        assert _callbacks() == {}
+
+        assert not observability_enabled()
 
 
 @checks_deprecated_behaviour
