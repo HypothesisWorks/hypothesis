@@ -297,6 +297,10 @@ def is_a_type(thing: object) -> bool:
         or is_generic_type(thing)
         or is_a_new_type(thing)
         or is_a_type_alias_type(thing)
+        # union and forwardref checks necessary from 3.14+. Before 3.14, they
+        # were covered by is_generic_type(thing).
+        or is_a_union(thing)
+        or isinstance(thing, typing.ForwardRef)
     )
 
 
