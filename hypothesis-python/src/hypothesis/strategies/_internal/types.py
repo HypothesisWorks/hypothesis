@@ -458,7 +458,7 @@ def _try_import_forward_ref(thing, typ, *, type_params):  # pragma: no cover
 
 
 def from_typing_type(thing):
-    # We start with Final, Literal, and Annotated since they don't support `isinstance`.
+    # We start with Final, Literal, and Annotated, since they don't support `isinstance`.
     #
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
@@ -512,6 +512,7 @@ def from_typing_type(thing):
     if len(mapping) > 1:
         _Environ = getattr(os, "_Environ", None)
         mapping.pop(_Environ, None)
+
     tuple_types = [
         t
         for t in mapping
@@ -526,7 +527,7 @@ def from_typing_type(thing):
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if {collections.deque}.intersection(mapping) and len(mapping) > 1:
+    if collections.deque in mapping and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque, None)
@@ -561,11 +562,12 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
-    # Sort strategies according to our type-sorting heuristic for stable output
+
     strategies = [
         s
         for s in (
             v if isinstance(v, st.SearchStrategy) else v(thing)
+            # Sort strategies according to our type-sorting heuristic for stable output
             for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
             if sum(try_issubclass(k, T) for T in mapping) == 1
         )
