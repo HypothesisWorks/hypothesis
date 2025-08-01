@@ -1327,23 +1327,22 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
-        return _from_type(thing.__supertype__)
+        return _from_type(thing.__supertype__)  # type: ignore
     if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
         if thing in types._global_type_lookup:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
-        return _from_type(thing.__value__)
-    # Unions are not instances of `type` - but we still want to resolve them!
+        return _from_type(thing.__value__)  # type: ignore
     if types.is_a_union(thing):
-        args = sorted(thing.__args__, key=types.type_sorting_key)
+        args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
         return one_of([_from_type(t) for t in args])
     if thing in types.LiteralStringTypes:  # pragma: no cover
         # We can't really cover this because it needs either
         # typing-extensions or python3.11+ typing.
         # `LiteralString` from runtime's point of view is just a string.
         # Fallback to regular text.
-        return text()
+        return text()  # type: ignore
 
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
