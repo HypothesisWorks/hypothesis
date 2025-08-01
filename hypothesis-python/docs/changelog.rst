@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.7:
+
+--------------------
+6.136.7 - 2025-08-01
+--------------------
+
+Improve detection of sys.monitoring to avoid errors on GraalPy.
+
 .. _v6.136.6:
 
 --------------------
