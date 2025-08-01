@@ -1434,7 +1434,7 @@ class StateForActualGivenExecution:
         # If we have not traced executions, warn about that now (but only when
         # we'd expect to do so reliably, i.e. on CPython>=3.12)
         if (
-            sys.version_info[:2] >= (3, 12)
+            hasattr(sys, "monitoring")
             and not PYPY
             and self._should_trace()
             and not Tracer.can_trace()
