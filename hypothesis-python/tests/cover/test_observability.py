@@ -698,14 +698,15 @@ def test_only_receives_callbacks_from_this_thread():
         add_observability_callback(callback)
 
         with warnings.catch_warnings():
-            # observability tries to record coverage, but concurrent coverage
-            # collection is not possible before 3.12 sys.monitoring.
+            # observability tries to record coverage, but we don't currently
+            # support concurrent coverage collection.
             warnings.filterwarnings(
                 "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
             )
             g()
 
-        assert count_observations == 101
+        # one per example, plus one for the overall run
+        assert count_observations == settings().max_examples + 1
 
     with restore_callbacks():
         run_concurrently(test, 5)
