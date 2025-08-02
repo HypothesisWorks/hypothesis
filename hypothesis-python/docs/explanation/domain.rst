@@ -3,7 +3,7 @@ Domain and distribution
 
 .. note::
 
-    This page is mainly for users who are familiar with other property-based testing libraries, and who expect a way to control the distribution of inputs in Hypothesis, via e.g. a scale parameter for size or a frequency parameter for relative probabilities.
+    This page is primarily for users who may be familiar with other property-based testing libraries, and who expect control over the distribution of inputs in Hypothesis, via e.g. a ``scale`` parameter for size or a ``frequency`` parameter for relative probabilities.
 
 Hypothesis makes a distinction between the *domain* of a strategy, and the *distribution* of a strategy.
 
@@ -11,14 +11,17 @@ The *domain* is the set of inputs that should be possible to generate. For insta
 
 The *distribution* is the probability with which different elements in the domain should be generated. For ``lists(integers())``, should Hypothesis generate many small lists? Large lists? More positive or more negative numbers? etc.
 
-Hypothesis takes a philosophical stance that property-based testing libraries, not the user, should be responsible for selecting the distribution. As an intentional design choice, Hypothesis therefore lets you control the domain of inputs to your test, but not the distribution.
+Hypothesis takes a philosophical stance that while users may be responsible for selecting the domain, the property-based testing library—not the user—should be responsible for selecting the distribution. As an intentional design choice, Hypothesis therefore lets you control the domain of inputs to your test, but not the distribution.
 
-There are a few reasons for this. One is that humans are pretty bad at choosing bug-finding distributions! Some bugs are "known unknowns": you had a good idea that some part of the code was buggy in a particular way. Others are "unknown unknowns": you had no idea that a certain kind of bug was even possible until you stumbled across it. Humans tend to overtune distributions for the former kind of bug, and not enough for the latter.
+Why not let users control the distribution?
+-------------------------------------------
 
-To complicate things, the ideal distribution of a strategy depends not only on your project, but also on the property being tested. A strategy used in many places may be well-tuned by hand for one property, but badly tuned for another.
+There are a few reasons Hypothesis doesn't let users control the distribution. One is that humans are pretty bad at choosing bug-finding distributions! Some bugs are "known unknowns": you suspected that a part of the codebase was buggy in a particular way. Others are "unknown unknowns": you didn't know that a certain kind of bug was even possible until stumbling across it. Humans tend to overtune distributions for the former kind of bug, and not enough for the latter.
+
+To complicate things, the ideal distribution of a strategy depends not only on the project, but also on the property being tested. A strategy used in many places may have a good distribution for one property, but not for another.
 
 Another reason is that the distribution of inputs is a deeply internal implementation detail. We frequently make changes to the distributions of strategies, either in an explicit change for that strategy, or as an implicit consequence from other work on the Hypothesis engine. Exposing control over the distribution would lock us into a public API that may make improvements to Hypothesis more difficult.
 
 We're not saying that control over the distribution isn't useful! We occasionally receive requests to expose the distribution in Hypothesis (`e.g. <https://github.com/HypothesisWorks/hypothesis/issues/4205>`__), and users wouldn't be asking for it if it wasn't.
 
-However, adding this would make it easy for users to unknowingly weaken their tests and would add maintenance overhead to Hypothesis, and so we haven't yet done so.
+However, adding this would make it easy for users to unknowingly weaken their tests, and would add maintenance overhead to Hypothesis, and so we haven't yet done so.
