@@ -68,7 +68,7 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import Observation, with_observation_callback
+from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report
 
 #: The maximum number of times the shrinker will reduce the complexity of a failing
@@ -866,7 +866,7 @@ class ConjectureRunner:
             # and the provider opted-in to observations
             and self.provider.add_observability_callback
         ):
-            return with_observation_callback(on_observation)
+            return with_observability_callback(on_observation)
         return nullcontext()
 
     def run(self) -> None:

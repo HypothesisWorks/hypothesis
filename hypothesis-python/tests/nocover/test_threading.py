@@ -20,25 +20,11 @@ from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 from tests.common.debug import check_can_generate_examples
+from tests.common.utils import run_concurrently
 
 pytestmark = pytest.mark.skipif(
     settings._current_profile == "crosshair", reason="crosshair is not thread safe"
 )
-
-
-def run_concurrently(function, n: int) -> None:
-    def run():
-        barrier.wait()
-        function()
-
-    threads = [Thread(target=run) for _ in range(n)]
-    barrier = Barrier(n)
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join(timeout=10)
 
 
 def test_can_run_given_in_thread():

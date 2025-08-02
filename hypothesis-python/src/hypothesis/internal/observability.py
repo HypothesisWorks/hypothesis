@@ -16,6 +16,7 @@ import json
 import math
 import os
 import sys
+import threading
 import time
 import warnings
 from collections.abc import Generator
@@ -23,6 +24,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 from hypothesis.configuration import storage_directory
@@ -234,31 +236,128 @@ class TestCaseObservation(BaseObservation):
 
 
 Observation: "TypeAlias" = Union[InfoObservation, TestCaseObservation]
+CallbackT: "TypeAlias" = Callable[[Observation], None]
 
-#: A list of callback functions for :ref:`observability <observability>`. Whenever
-#: a new observation is created, each function in this list will be called with a
-#: single value, which is a dictionary representing that observation.
-#:
-#: You can append a function to this list to receive observability reports, and
-#: remove that function from the list to stop receiving observability reports.
-#: Observability is considered enabled if this list is nonempty.
-TESTCASE_CALLBACKS: list[Callable[[Observation], None]] = []
+# thread_id: list[callback]
+_callbacks: dict[int, list[CallbackT]] = {}
+
+
+def add_observability_callback(f: CallbackT, /) -> None:
+    """
+    Adds ``f`` as a callback for :ref:`observability <observability>`. ``f``
+    should accept one argument, which is an observation. Whenever Hypothesis
+    produces a new observation, it calls each callback with that observation.
+
+    If Hypothesis tests are being run from multiple threads, callbacks are tracked
+    per-thread. In other words, ``add_observability_callback(f)`` only adds ``f``
+    as an observability callback for observations produced on that thread.
+
+    Observability is considered "enabled" if there is at least one callback.
+    """
+    thread_id = threading.get_ident()
+    if thread_id not in _callbacks:
+        _callbacks[thread_id] = []
+
+    _callbacks[thread_id].append(f)
+
+
+def remove_observability_callback(f: CallbackT, /) -> None:
+    """
+    Removes ``f`` from the :ref:`observability <observability>` callbacks.
+
+    If ``f`` is not in the list of observability callbacks, silently do nothing.
+
+    If running under multiple threads, ``f`` will only be removed from the
+    callbacks for the thread which added it.
+    """
+    thread_id = threading.get_ident()
+    if thread_id not in _callbacks:
+        return
+
+    callbacks = _callbacks[thread_id]
+    if f in callbacks:
+        callbacks.remove(f)
+
+    if not callbacks:
+        del _callbacks[thread_id]
+
+
+def observability_enabled() -> bool:
+    """
+    Returns whether or not Hypothesis considers :ref:`observability <observability>`
+    to be enabled. Observability is enabled if there is at least one observability
+    callback.
+
+    Callers might use this method to determine whether they should compute an
+    expensive representation that is only used under observability, for instance
+    by :ref:`alternative backends <alternative-backends>`.
+    """
+    return bool(_callbacks)
 
 
 @contextmanager
-def with_observation_callback(
-    callback: Callable[[Observation], None],
+def with_observability_callback(
+    f: Callable[[Observation], None], /
 ) -> Generator[None, None, None]:
-    TESTCASE_CALLBACKS.append(callback)
+    """
+    A simple context manager which calls |add_observability_callback| on ``f``
+    when it enters and |remove_observability_callback| on ``f`` when it exits.
+    """
+    add_observability_callback(f)
     try:
         yield
     finally:
-        TESTCASE_CALLBACKS.remove(callback)
+        remove_observability_callback(f)
 
 
 def deliver_observation(observation: Observation) -> None:
-    for callback in TESTCASE_CALLBACKS:
+    thread_id = threading.get_ident()
+    if thread_id not in _callbacks:
+        return
+
+    for callback in _callbacks[thread_id]:
         callback(observation)
+
+
+class _TestcaseCallbacks:
+    def __bool__(self):
+        self._note_deprecation()
+        return bool(_callbacks)
+
+    def _note_deprecation(self):
+        from hypothesis._settings import note_deprecation
+
+        note_deprecation(
+            "hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated. "
+            "Replace TESTCASE_CALLBACKS.append with add_observability_callback, "
+            "TESTCASE_CALLBACKS.remove with remove_observability_callback, and "
+            "bool(TESTCASE_CALLBACKS) with observability_enabled().",
+            since="2025-08-01",
+            has_codemod=False,
+        )
+
+    def append(self, f):
+        self._note_deprecation()
+        add_observability_callback(f)
+
+    def remove(self, f):
+        self._note_deprecation()
+        remove_observability_callback(f)
+
+
+#: .. warning::
+#:
+#:   Deprecated in favor of |add_observability_callback|,
+#:   |remove_observability_callback|, and |observability_enabled|.
+#:
+#:   |TESTCASE_CALLBACKS| remains a thin compatibility
+#:   shim which forwards ``.append``, ``.remove``, and ``bool()`` to those
+#:   three methods. It is not an attempt to be fully compatible with the previous
+#:   ``TESTCASE_CALLBACKS = []``, so iteration or other usages will not work
+#:   anymore. Please update to using the new methods instead.
+#:
+#:   |TESTCASE_CALLBACKS| will eventually be removed.
+TESTCASE_CALLBACKS = _TestcaseCallbacks()
 
 
 def make_testcase(
@@ -349,6 +448,7 @@ def make_testcase(
 
 
 _WROTE_TO = set()
+_deliver_to_file_lock = Lock()
 
 
 def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
@@ -357,9 +457,19 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     kind = "testcases" if observation.type == "test_case" else "info"
     fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
     fname.parent.mkdir(exist_ok=True, parents=True)
-    _WROTE_TO.add(fname)
-    with fname.open(mode="a") as f:
-        f.write(json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n")
+
+    # only allow one conccurent file write to avoid write races. This is likely to make
+    # HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY quite slow under threading. A queue
+    # would be an improvement, but that requires a background thread, and I
+    # would prefer to avoid a thread in the single-threaded case. We could
+    # switch over to a queue if we detect multithreading, but it's tricky to get
+    # right.
+    with _deliver_to_file_lock:
+        _WROTE_TO.add(fname)
+        with fname.open(mode="a") as f:
+            f.write(
+                json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
+            )
 
 
 _imported_at = time.time()
@@ -411,7 +521,7 @@ if (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ
     or OBSERVABILITY_COLLECT_COVERAGE is False
 ):  # pragma: no cover
-    TESTCASE_CALLBACKS.append(_deliver_to_file)
+    add_observability_callback(_deliver_to_file)
 
     # Remove files more than a week old, to cap the size on disk
     max_age = (date.today() - timedelta(days=8)).isoformat()
