@@ -147,6 +147,7 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
+@skipif_threading
 def test_two_directory_databases_can_interact(tmp_path):
     db1 = DirectoryBasedExampleDatabase(tmp_path)
     db2 = DirectoryBasedExampleDatabase(tmp_path)

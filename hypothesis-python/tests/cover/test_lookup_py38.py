@@ -28,7 +28,7 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
-from tests.common.utils import fails_with, temp_registered
+from tests.common.utils import fails_with, skipif_threading, temp_registered
 
 
 @given(st.data())
@@ -200,6 +200,9 @@ def has_posonly_args(x, /, y):
     pass
 
 
+# dynamic @example applications modify the shared
+# has_posonly_args.hypothesis._given_kwargs.
+@skipif_threading
 def test_example_argument_validation():
     example(y=None)(has_posonly_args)(1)  # Basic case is OK
 
