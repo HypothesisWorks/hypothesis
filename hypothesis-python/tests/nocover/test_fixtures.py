@@ -11,8 +11,10 @@
 import time
 
 from tests.common import TIME_INCREMENT
+from tests.common.utils import skipif_threading
 
 
+@skipif_threading  # not using time monkeypatch
 def test_time_consistently_increments_in_tests():
     x = time.time()
     y = time.time()

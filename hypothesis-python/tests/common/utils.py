@@ -13,6 +13,7 @@ import enum
 import sys
 import warnings
 from io import StringIO
+from threading import Lock, RLock
 from types import SimpleNamespace
 
 from hypothesis import Phase, settings
@@ -91,16 +92,22 @@ def flaky(max_runs, min_passes):
     return accept
 
 
+capture_out_lock = Lock()
+
+
 @contextlib.contextmanager
 def capture_out():
-    old_out = sys.stdout
-    try:
-        new_out = StringIO()
-        sys.stdout = new_out
-        with with_reporter(default):
-            yield new_out
-    finally:
-        sys.stdout = old_out
+    # replacing the singleton sys.stdout can't be made thread safe. Disallow
+    # concurrency by wrapping a lock around the entire block
+    with capture_out_lock:
+        old_out = sys.stdout
+        try:
+            new_out = StringIO()
+            sys.stdout = new_out
+            with with_reporter(default):
+                yield new_out
+        finally:
+            sys.stdout = old_out
 
 
 class ExcInfo:
@@ -136,6 +143,12 @@ class NotDeprecated(Exception):
 
 @contextlib.contextmanager
 def validate_deprecation():
+
+    if settings._current_profile == "threading":
+        import pytest
+
+        pytest.skip("warnings module is not thread-safe before 3.14")
+
     import warnings
 
     try:
@@ -211,22 +224,26 @@ def assert_falsifying_output(
     assert_output_contains_failure(output, test, **kwargs)
 
 
+temp_registered_lock = RLock()
+
+
 @contextlib.contextmanager
 def temp_registered(type_, strat_or_factory):
     """Register and un-register a type for st.from_type().
 
-    This not too hard, but there's a subtlety in restoring the
+    This is not too hard, but there's a subtlety in restoring the
     previously-registered strategy which we got wrong in a few places.
     """
-    prev = _global_type_lookup.get(type_)
-    register_type_strategy(type_, strat_or_factory)
-    try:
-        yield
-    finally:
-        del _global_type_lookup[type_]
-        from_type.__clear_cache()
-        if prev is not None:
-            register_type_strategy(type_, prev)
+    with temp_registered_lock:
+        prev = _global_type_lookup.get(type_)
+        register_type_strategy(type_, strat_or_factory)
+        try:
+            yield
+        finally:
+            del _global_type_lookup[type_]
+            from_type.__clear_cache()
+            if prev is not None:
+                register_type_strategy(type_, prev)
 
 
 @contextlib.contextmanager
@@ -292,10 +309,25 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
 
 
+def skipif_threading(f):
+    try:
+        import pytest
+    except ImportError:
+        return f
+
+    return pytest.mark.skipif(
+        settings._current_profile == "threading", reason="not thread safe"
+    )(f)
+
+
+_restore_recursion_limit_lock = RLock()
+
+
 @contextlib.contextmanager
 def restore_recursion_limit():
-    original_limit = sys.getrecursionlimit()
-    try:
-        yield
-    finally:
-        sys.setrecursionlimit(original_limit)
+    with _restore_recursion_limit_lock:
+        original_limit = sys.getrecursionlimit()
+        try:
+            yield
+        finally:
+            sys.setrecursionlimit(original_limit)

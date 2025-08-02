@@ -62,8 +62,16 @@ def run():
             phases=list(Phase),  # Dogfooding the explain phase
         ),
     )
-    settings.register_profile("speedy", settings(max_examples=5))
-    settings.register_profile("debug", settings(verbosity=Verbosity.debug))
+    settings.register_profile("speedy", max_examples=5)
+    settings.register_profile("debug", verbosity=Verbosity.debug)
+    settings.register_profile(
+        "threading",
+        # we would normally not disable the deadline here, but we disable the
+        # _consistently_increment_time fixture under threading tests (since
+        # monkeypatching is not thread safe), which leads to real deadline errors
+        # that are normally masked by that fixture.
+        deadline=None,
+    )
 
     if "crosshair" in AVAILABLE_PROVIDERS:
         settings.register_profile(

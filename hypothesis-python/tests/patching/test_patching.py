@@ -25,6 +25,7 @@ from hypothesis.internal.compat import WINDOWS
 
 from .callables import WHERE, Cases, covered, fn, undef_name
 from .toplevel import WHERE_TOP, fn_top
+from tests.common.utils import skipif_threading
 
 SIMPLE = (
     fn,
@@ -223,6 +224,7 @@ ADDED_LINES = """
 """
 
 
+@skipif_threading
 @pytest.mark.skipif(WINDOWS, reason="backslash support is tricky")
 def test_pytest_reports_patch_file_location(pytester):
     script = pytester.makepyfile(TESTSCRIPT_DUMPS_PATCH)

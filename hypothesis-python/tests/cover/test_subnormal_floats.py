@@ -75,6 +75,8 @@ def test_subnormal_validation(kwargs):
     ],
 )
 def test_allow_subnormal_defaults_correctly(kwargs):
+    # copy to support our threading CI tests
+    kwargs = kwargs.copy()
     allow_subnormal = kwargs.pop("allow_subnormal")
     strat = floats(**kwargs).filter(lambda x: x != 0)
     if allow_subnormal:

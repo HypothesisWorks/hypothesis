@@ -18,7 +18,7 @@ import sys
 
 import pytest
 
-from hypothesis import strategies as st
+from hypothesis import settings, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.extra.ghostwriter import (
     binary_operation,
@@ -29,6 +29,11 @@ from hypothesis.extra.ghostwriter import (
     roundtrip,
 )
 from hypothesis.internal.reflection import get_pretty_function_description
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="ghostwriter is not thread safe",
+)
 
 
 def run(cmd, *, cwd=None):

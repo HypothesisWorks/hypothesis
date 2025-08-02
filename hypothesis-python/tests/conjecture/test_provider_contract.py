@@ -58,6 +58,8 @@ def test_provider_contract_bytestring(bytestring, choice_type_and_constraints):
     )
 
     for choice_type, constraints in choice_type_and_constraints:
+        # for the threading ci tests
+        constraints = constraints.copy()
         try:
             value = getattr(data, f"draw_{choice_type}")(**constraints)
         except StopTest:

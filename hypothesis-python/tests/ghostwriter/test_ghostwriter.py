@@ -37,6 +37,12 @@ from hypothesis.strategies._internal.lazy import LazyStrategy
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
 
 
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="ghostwriter is not thread safe",
+)
+
+
 def get_test_function(source_code, settings_decorator=lambda fn: fn):
     # A helper function to get the dynamically-defined test function.
     # Note that this also tests that the module is syntatically-valid,

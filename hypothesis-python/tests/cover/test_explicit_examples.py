@@ -27,7 +27,12 @@ from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgume
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
-from tests.common.utils import assert_falsifying_output, capture_out, fails_with
+from tests.common.utils import (
+    assert_falsifying_output,
+    capture_out,
+    fails_with,
+    skipif_threading,
+)
 
 
 class TestInstanceMethods(TestCase):
@@ -228,6 +233,7 @@ def test_must_agree_with_number_of_arguments():
         test()
 
 
+@skipif_threading  # deadline disabled under threading
 @fails_with(DeadlineExceeded)
 @example(10)
 @settings(phases=[Phase.explicit], deadline=1)

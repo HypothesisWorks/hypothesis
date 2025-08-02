@@ -133,6 +133,7 @@ def test_forced_many(data):
 @given(choice_types_constraints(use_forced=True))
 def test_forced_values(choice_type_and_constraints):
     (choice_type, constraints) = choice_type_and_constraints
+    constraints = constraints.copy()
     forced = constraints["forced"]
     data = fresh_data()
     assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)

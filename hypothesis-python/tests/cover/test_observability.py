@@ -43,7 +43,12 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies._internal.utils import to_jsonable
 
-from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_observations,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 from tests.conjecture.common import choices, integer_constr, nodes
 
 
@@ -63,6 +68,7 @@ def do_it_all(l, a, x, data):
 
 
 @xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
+@skipif_threading  # captures observations from other threads
 def test_observability():
     with capture_observations() as ls:
         # NOTE: For compatibility with Python 3.9's LL(1)

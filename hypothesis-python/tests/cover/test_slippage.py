@@ -17,9 +17,11 @@ from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 
 from tests.common.utils import (
+    Why,
     assert_output_contains_failure,
     capture_out,
     non_covering_examples,
+    xfail_on_crosshair,
 )
 
 
@@ -37,6 +39,7 @@ def capture_reports(test):
     )
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_raises_multiple_failures_with_varying_type():
     target = None
 
@@ -59,6 +62,8 @@ def test_raises_multiple_failures_with_varying_type():
     assert "ValueError" in output
 
 
+# no multiple failures on backend (yet?)
+@xfail_on_crosshair(Why.other)
 def test_shows_target_scores_with_multiple_failures():
     @settings(derandomize=True, max_examples=10_000)
     @given(st.integers())
@@ -70,6 +75,7 @@ def test_shows_target_scores_with_multiple_failures():
     assert "Highest target score:" in capture_reports(test)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_raises_multiple_failures_when_position_varies():
     target = None
 
@@ -91,6 +97,7 @@ def test_raises_multiple_failures_when_position_varies():
     assert "loc 2" in output
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_replays_both_failing_values():
     target = None
 
@@ -114,6 +121,7 @@ def test_replays_both_failing_values():
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("fix", [TypeError, ValueError])
 def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
     target = []
@@ -148,6 +156,7 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_garbage_collects_the_secondary_key():
     target = []
     bug_fixed = False
@@ -219,6 +228,7 @@ def test_shrinks_both_failures():
     assert_output_contains_failure(output, test, i=second_target)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_handles_flaky_tests_where_only_one_is_flaky():
     flaky_fixed = False
 
@@ -256,6 +266,8 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
     assert not any(isinstance(e, FlakyFailure) for e in err.value.exceptions)
 
 
+# no multiple failures on backend (yet?)
+@xfail_on_crosshair(Why.other, strict=False)
 @pytest.mark.parametrize("allow_multi", [True, False])
 def test_can_disable_multiple_error_reporting(allow_multi):
     seen = set()
@@ -277,6 +289,7 @@ def test_can_disable_multiple_error_reporting(allow_multi):
     assert seen == {TypeError, ValueError}
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_finds_multiple_failures_in_generation():
     special = None
     seen = set()
@@ -325,6 +338,8 @@ def test_stops_immediately_if_not_report_multiple_bugs():
     assert len(seen) == 1
 
 
+# unclear backend semantics
+@xfail_on_crosshair(Why.other)
 def test_stops_immediately_on_replay():
     seen = set()
 

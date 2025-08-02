@@ -12,6 +12,8 @@ import re
 
 import pytest
 
+from tests.common.utils import skipif_threading
+
 pytest_plugins = "pytester"
 
 
@@ -37,6 +39,7 @@ def test_fails_once(some_int):
 CONTAINS_SEED_INSTRUCTION = re.compile(r"--hypothesis-seed=\d+", re.MULTILINE)
 
 
+@skipif_threading
 @pytest.mark.parametrize("seed", [0, 42, "foo"])
 def test_runs_repeatably_when_seed_is_set(seed, testdir):
     script = testdir.makepyfile(TEST_SUITE)
@@ -48,14 +51,16 @@ def test_runs_repeatably_when_seed_is_set(seed, testdir):
         for _ in range(2)
     ]
 
+    failure_lines = []
     for r in results:
-        for l in r.stdout.lines:
-            assert "--hypothesis-seed" not in l
+        assert all("--hypothesis-seed" not in l for l in r.stdout.lines)
+        failure_line = [l for l in r.stdout.lines if "some_int=" in l]
+        # each iteration should fail
+        assert len(failure_line) == 1
+        failure_lines.append(failure_line[0])
 
-    failure_lines = [l for r in results for l in r.stdout.lines if "some_int=" in l]
-
-    assert len(failure_lines) == 2
-    assert failure_lines[0] == failure_lines[1]
+    # all the same failure
+    assert len(set(failure_lines)) == 1
 
 
 HEALTH_CHECK_FAILURE = """

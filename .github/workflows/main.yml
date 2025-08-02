@@ -100,6 +100,7 @@ jobs:
           - check-crosshair-custom-nocover/test_[j-r]*
           - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
+          - check-threading
           - check-py39-oldestnumpy
           - check-numpy-nightly
       fail-fast: false
