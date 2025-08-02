@@ -142,18 +142,47 @@ class HealthCheckMeta(EnumMeta):
 
 @unique
 class HealthCheck(Enum, metaclass=HealthCheckMeta):
-    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
+    """
+    A |HealthCheck| is proactively raised by Hypothesis when Hypothesis detects
+    that your test has performance problems, which may result in less rigorous
+    testing than you expect. For example, if your test takes a long time to generate
+    inputs, or filters away too many  inputs using |assume| or |filter|, Hypothesis
+    will raise a corresponding health check.
 
-    Each member of this enum is a specific health check to suppress.
+    A health check is a proactive warning, not an error. We encourage suppressing
+    health checks where you have evaluated they will not pose a problem, or where
+    you have evaluated that fixing the underlying issue is not worthwhile.
 
-    Hypothesis' health checks are designed to detect and warn you about performance
-    problems where your tests are slow, inefficient, or generating very large examples.
+    With the exception of |HealthCheck.function_scoped_fixture| and
+    |HealthCheck.differing_executors|, all health checks warn about performance
+    problems, not correctness errors.
 
-    If this is expected, e.g. when generating large arrays or dataframes, you can selectively
-    disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
-    The argument for this parameter is a list with elements drawn from any of
-    the class-level attributes of the HealthCheck class.
-    Using a value of ``list(HealthCheck)`` will disable all health checks.
+    Disabling health checks
+    -----------------------
+
+    Health checks can be disabled by |settings.suppress_health_check|. To suppress
+    all health checks, you can pass ``suppress_health_check=list(HealthCheck)``.
+
+    .. seealso::
+
+        See also the :doc:`/how-to/suppress-healthchecks` how-to.
+
+    Correctness health checks
+    -------------------------
+
+    Some health checks report potential correctness errors, rather than performance
+    problems.
+
+    * |HealthCheck.function_scoped_fixture| indicates that a function-scoped
+      pytest fixture is used by an |@given| test. Many Hypothesis users expect
+      function-scoped fixtures to reset once per input, but they actually reset once
+      per test. We proactively raise |HealthCheck.function_scoped_fixture| to
+      ensure you have considered this case.
+    * |HealthCheck.differing_executors| indicates that the same |@given| test has
+      been executed multiple times with multiple distinct executors.
+
+    We recommend treating these particular health checks with more care, as
+    suppressing them may result in an unsound test.
     """
 
     def __repr__(self) -> str:
@@ -186,14 +215,21 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     internal reasons."""
 
     too_slow = 3
-    """Check for when your data generation is extremely slow and likely to hurt
-    testing."""
+    """
+    Check for when input generation is very slow. Since Hypothesis generates 100
+    (by default) inputs per test execution, a slowdown in generating each input
+    can result in very slow tests overall.
+    """
 
     return_value = 5
     """Deprecated; we always error if a test returns a non-None value."""
 
     large_base_example = 7
-    """Checks if the natural example to shrink towards is very large."""
+    """
+    Checks if the smallest natural input to your test is very large. This makes
+    it difficult for Hypothesis to generate good inputs, especially when trying to
+    shrink failing inputs.
+    """
 
     not_a_test_method = 8
     """Deprecated; we always error if |@given| is applied
@@ -792,7 +828,18 @@ class settings(metaclass=settingsMeta):
     @property
     def suppress_health_check(self):
         """
-        A list of |HealthCheck| items to disable.
+        Suppress the given |HealthCheck| exceptions. Those health checks will not
+        be raised by Hypothesis. To suppress all health checks, you can pass
+        ``suppress_health_check=list(HealthCheck)``.
+
+        Health checks are proactive warnings, not correctness errors, so we
+        encourage suppressing health checks where you have evaluated they will
+        not pose a problem, or where you have evaluated that fixing the underlying
+        issue is not worthwhile.
+
+        .. seealso::
+
+            See also the :doc:`/how-to/suppress-healthchecks` how-to.
         """
         return self._suppress_health_check
 
