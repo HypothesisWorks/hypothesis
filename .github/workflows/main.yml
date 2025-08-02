@@ -50,12 +50,15 @@ jobs:
           - check-py313t-cover
           - check-py313t-nocover
           - check-py313t-niche
-          # - check-py314-cover
-          # - check-py314-nocover
+          - check-py314-cover
+          - check-py314-nocover
+          # Blocked by a 3.14rc1 bug. see
+          # https://github.com/HypothesisWorks/hypothesis/pull/4490#issuecomment-3144989862.
+          # Can revisit in 3.14rc2.
           # - check-py314-niche
-          # - check-py314t-cover
-          # - check-py314t-nocover
-          # - check-py314t-niche
+          - check-py314t-cover
+          - check-py314t-nocover
+          - check-py314t-niche
           # - check-py315-cover
           # - check-py315-nocover
           # - check-py315-niche

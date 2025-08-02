@@ -123,7 +123,7 @@ or by using the :pypi:`sqlite-utils` and :pypi:`datasette` libraries::
 
 If you are experiencing a significant slow-down, you can try setting
 ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER`` instead; this will disable coverage information
-collection. This should not be necessary on Python 3.12 or later.
+collection. This should not be necessary on Python 3.12 or later, where coverage collection is very fast.
 
 
 Collecting more information

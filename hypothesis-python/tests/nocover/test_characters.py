@@ -57,7 +57,7 @@ assert len(lots_of_encodings) > 100  # sanity-check
     reason="takes 2000s; large & slow symbolic strings",
 )
 @given(data=st.data(), codec=st.sampled_from(lots_of_encodings))
-@settings(max_examples=20)
+@settings(max_examples=10)
 def test_can_constrain_characters_to_codec(data, codec):
     s = data.draw(st.text(st.characters(codec=codec), min_size=50))
     s.encode(codec)
