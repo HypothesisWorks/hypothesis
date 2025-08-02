@@ -26,7 +26,7 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies import SearchStrategy
 
-from tests.common.utils import Why, no_shrink, xfail_on_crosshair
+from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
 
 HEALTH_CHECK_SETTINGS = settings(
     max_examples=11, database=None, suppress_health_check=()
@@ -129,6 +129,7 @@ def test_returning_non_none_is_forbidden():
         a()
 
 
+@skipif_threading  # takes forever because we dont monkeypatch time
 def test_the_slow_test_health_check_can_be_disabled():
     @given(st.integers())
     @settings(deadline=None)
@@ -138,6 +139,7 @@ def test_the_slow_test_health_check_can_be_disabled():
     a()
 
 
+@skipif_threading  # takes forever because we dont monkeypatch time
 def test_the_slow_test_health_only_runs_if_health_checks_are_on():
     @given(st.integers())
     @settings(suppress_health_check=list(HealthCheck), deadline=None)

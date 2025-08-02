@@ -95,6 +95,10 @@ def test_respects_none_database():
     assert settings(database=None).database is None
 
 
+@pytest.mark.skipif(
+    settings._current_profile != "default",
+    reason="explicitly checks against settings.get_profile('default').max_examples",
+)
 def test_can_repeatedly_push_the_same_thing():
     s = settings(max_examples=12)
     t = settings(max_examples=17)

@@ -73,6 +73,7 @@ def test_cannot_register_non_Random():
         register_random("not a Random instance")
 
 
+@skipif_threading
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
