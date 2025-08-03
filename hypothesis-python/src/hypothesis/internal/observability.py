@@ -183,7 +183,7 @@ class ObservationMetadata:
                 else [
                     (
                         # span.label is an int, but cast to string to avoid conversion
-                        # to float  (and loss of precision) for large label values.
+                        # to float (and loss of precision) for large label values.
                         #
                         # The value of this label is opaque to consumers anyway, so its
                         # type shouldn't matter as long as it's consistent.
@@ -268,7 +268,7 @@ def remove_observability_callback(f: CallbackT, /) -> None:
     If ``f`` is not in the list of observability callbacks, silently do nothing.
 
     If running under multiple threads, ``f`` will only be removed from the
-    callbacks for the thread which added it.
+    callbacks for this thread.
     """
     thread_id = threading.get_ident()
     if thread_id not in _callbacks:
