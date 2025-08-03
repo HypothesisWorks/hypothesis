@@ -2248,9 +2248,9 @@ class DataStrategy(SearchStrategy):
     supports_find = False
 
     def do_draw(self, data):
-        if not hasattr(data, "hypothesis_shared_data_strategy"):
-            data.hypothesis_shared_data_strategy = DataObject(data)
-        return data.hypothesis_shared_data_strategy
+        if data._shared_data_strategy is None:
+            data._shared_data_strategy = DataObject(data)
+        return data._shared_data_strategy
 
     def __repr__(self) -> str:
         return "data()"

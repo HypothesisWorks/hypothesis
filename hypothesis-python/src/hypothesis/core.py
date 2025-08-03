@@ -1109,8 +1109,8 @@ class StateForActualGivenExecution:
                     add_note(e, msg.format(format_arg))
                 raise
             finally:
-                if parts := getattr(data, "_stateful_repr_parts", None):
-                    self._string_repr = "\n".join(parts)
+                if data._stateful_repr_parts is not None:
+                    self._string_repr = "\n".join(data._stateful_repr_parts)
 
                 if TESTCASE_CALLBACKS:
                     printer = RepresentationPrinter(context=context)
