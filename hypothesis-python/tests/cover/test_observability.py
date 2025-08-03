@@ -698,15 +698,24 @@ def test_only_receives_callbacks_from_this_thread():
         add_observability_callback(callback)
 
         with warnings.catch_warnings():
-            # observability tries to record coverage, but we don't currently
-            # support concurrent coverage collection.
-            warnings.filterwarnings(
-                "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
-            )
             g()
 
         # one per example, plus one for the overall run
         assert count_observations == settings().max_examples + 1
 
+    # Observability tries to record coverage, but we don't currently
+    # support concurrent coverage collection, and issue a warning instead.
+    #
+    # I tried to fix this with:
+    #
+    #    warnings.filterwarnings(
+    #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+    #    )
+    #
+    # but that had a race condition somehow and sometimes still didn't work?? The
+    # warnings module is not thread-safe until 3.14, I think.
+    previous = hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
+    hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = False
     with restore_callbacks():
         run_concurrently(test, 5)
+    hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = previous
