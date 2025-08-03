@@ -1938,8 +1938,8 @@ def given(
                     fail_health_check(
                         settings,
                         f"You have applied @given to the method {test.__name__}, which is "
-                        "used by the unittest runner but is not itself a test."
-                        "  This is not useful in any way.",
+                        "used by the unittest runner but is not itself a test. "
+                        "This is not useful in any way.",
                         HealthCheck.not_a_test_method,
                     )
                 if bad_django_TestCase(runner):  # pragma: no cover
@@ -1970,7 +1970,7 @@ def given(
                         "nonreproducible errors when replaying from database."
                         "\n\n"
                         "Unlike most health checks, HealthCheck.differing_executors "
-                        "warns you about a correctness issue with your test. We "
+                        "warns about a correctness issue with your test. We "
                         "therefore recommend fixing the underlying issue, rather "
                         "than suppressing this health check. However, if you are "
                         "confident this health check can be safely disabled, you can "
