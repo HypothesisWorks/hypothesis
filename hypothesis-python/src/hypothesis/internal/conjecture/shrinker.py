@@ -551,7 +551,7 @@ class Shrinker:
                     # However, it's really hard to write a simple and reliable covering
                     # test, because of our `seen_passing_buffers` check above.
                     break  # pragma: no cover
-                elif self.__predicate(result):  # pragma: no branch
+                if self.__predicate(result):  # pragma: no branch
                     n_same_failures += 1
                     if n_same_failures >= 100:
                         self.shrink_target.slice_comments[(start, end)] = note
@@ -582,7 +582,7 @@ class Shrinker:
                     "The test sometimes passed when commented parts were varied together."
                 )
                 break  # Test passed, this param can't vary freely.
-            elif self.__predicate(result):  # pragma: no branch
+            if self.__predicate(result):  # pragma: no branch
                 n_same_failures_together += 1
                 if n_same_failures_together >= 100:
                     self.shrink_target.slice_comments[(0, 0)] = (

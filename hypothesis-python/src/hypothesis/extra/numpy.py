@@ -349,8 +349,8 @@ class ArrayStrategy(st.SearchStrategy):
                     if result[i] in seen:
                         elements.reject()
                         continue
-                    else:
-                        seen.add(result[i])
+                    seen.add(result[i])
+
                 needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
