@@ -458,6 +458,9 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
     fname.parent.mkdir(exist_ok=True, parents=True)
 
+    observation_bytes = (
+        json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
+    )
     # only allow one conccurent file write to avoid write races. This is likely to make
     # HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY quite slow under threading. A queue
     # would be an improvement, but that requires a background thread, and I
@@ -467,9 +470,7 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     with _deliver_to_file_lock:
         _WROTE_TO.add(fname)
         with fname.open(mode="a") as f:
-            f.write(
-                json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
-            )
+            f.write(observation_bytes)
 
 
 _imported_at = time.time()
