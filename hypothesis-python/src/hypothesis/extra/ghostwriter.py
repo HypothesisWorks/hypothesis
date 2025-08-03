@@ -1089,7 +1089,15 @@ def _make_test(imports: ImportSet, body: str) -> str:
 def _is_probably_ufunc(obj):
     # See https://numpy.org/doc/stable/reference/ufuncs.html - there doesn't seem
     # to be an upstream function to detect this, so we just guess.
-    has_attributes = "nin nout nargs ntypes types identity signature".split()
+    has_attributes = [
+        "nin",
+        "nout",
+        "nargs",
+        "ntypes",
+        "types",
+        "identity",
+        "signature",
+    ]
     return callable(obj) and all(hasattr(obj, name) for name in has_attributes)
 
 
