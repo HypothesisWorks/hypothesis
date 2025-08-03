@@ -106,7 +106,6 @@ class fails_regularly(SearchStrategy):
     def do_draw(self, data):
         b = int_from_bytes(data.draw_bytes(2, 2))
         assume(b == 3)
-        print("ohai")
 
 
 def test_filtering_most_things_fails_a_health_check():
