@@ -1292,7 +1292,7 @@ class StateForActualGivenExecution:
                 if trace:  # pragma: no cover
                     # Trace collection is explicitly disabled under coverage.
                     self.explain_traces[interesting_origin].add(frozenset(trace))
-                if interesting_origin[0] == DeadlineExceeded:
+                if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
                 try:
