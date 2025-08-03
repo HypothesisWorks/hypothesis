@@ -1023,8 +1023,11 @@ class StateForActualGivenExecution:
                     }
 
                 if (
-                    current_deadline := self.settings.deadline
-                ) is not None and not self.thread_overlap[threading.get_ident()]:
+                    (current_deadline := self.settings.deadline) is not None
+                    # we disable the deadline check under concurrent threads, since
+                    # cpython may switch away from a thread for arbitrarily long.
+                    and not self.thread_overlap.get(threading.get_ident(), False)
+                ):
                     if not is_final:
                         current_deadline = (current_deadline // 4) * 5
                     if runtime >= current_deadline.total_seconds():
@@ -1373,6 +1376,7 @@ class StateForActualGivenExecution:
             settings=self.settings,
             random=self.random,
             database_key=database_key,
+            thread_overlap=self.thread_overlap,
         )
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
@@ -1430,7 +1434,7 @@ class StateForActualGivenExecution:
         # If we have not traced executions, warn about that now (but only when
         # we'd expect to do so reliably, i.e. on CPython>=3.12)
         if (
-            sys.version_info[:2] >= (3, 12)
+            hasattr(sys, "monitoring")
             and not PYPY
             and self._should_trace()
             and not Tracer.can_trace()
@@ -1861,8 +1865,8 @@ def given(
         thread_local = ThreadLocal(prev_self=lambda: not_set)
         # maps thread_id to whether that thread overlaps in execution with any
         # other thread in this @given. We use this to detect whether an @given is
-        # being run from multiple different threads at once, which informs whether
-        # decisions like whether to raise DeadlineExceeded.
+        # being run from multiple different threads at once, which informs
+        # decisions like whether to raise DeadlineExceeded or HealthCheck.too_slow.
         thread_overlap: dict[int, bool] = {}
         thread_overlap_lock = Lock()
 

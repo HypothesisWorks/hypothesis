@@ -18,6 +18,31 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.7:
+
+--------------------
+6.136.7 - 2025-08-01
+--------------------
+
+Improve detection of sys.monitoring to avoid errors on GraalPy.
+
+.. _v6.136.6:
+
+--------------------
+6.136.6 - 2025-07-28
+--------------------
+
+When a test is executed concurrently from multiple threads, |HealthCheck.too_slow| is now disabled, since the Python runtime may decide to switch away from a thread for arbitrarily long and Hypothesis cannot track execution time per-thread.
+
+.. _v6.136.5:
+
+--------------------
+6.136.5 - 2025-07-28
+--------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
 .. _v6.136.4:
 
 --------------------
