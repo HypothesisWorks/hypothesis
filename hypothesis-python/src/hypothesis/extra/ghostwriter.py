@@ -266,10 +266,7 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
         if match is None:
             continue
         doc_type = match.group(1)
-        if doc_type.endswith(", optional"):
-            # Convention to describe "argument may be omitted"
-            doc_type = doc_type[: -len(", optional")]
-        doc_type = doc_type.strip("}{")
+        doc_type = doc_type.removesuffix(", optional").strip("}{")
         elements = []
         types = []
         for token in re.split(r",? +or +| *, *", doc_type):
