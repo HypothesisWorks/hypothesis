@@ -332,7 +332,7 @@ class ConjectureRunner:
             self.pareto_front.on_evict(self.on_pareto_evict)
 
         # We want to be able to get the ConjectureData object that results
-        # from running a buffer without recalculating, especially during
+        # from running a choice sequence without recalculating, especially during
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache[
@@ -503,8 +503,7 @@ class ConjectureRunner:
                 pass
 
         data = self.new_conjecture_data(choices, max_choices=max_length)
-        # note that calling test_function caches `data` for us, for both an ir
-        # tree key and a buffer key.
+        # note that calling test_function caches `data` for us.
         self.test_function(data)
         return data.as_result()
 
