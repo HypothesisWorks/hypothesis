@@ -633,7 +633,7 @@ def test_shrinks_both_interesting_examples(monkeypatch):
         n = data.draw_integer(0, 2**8 - 1)
         data.mark_interesting(interesting_origin(n & 1))
 
-    runner = ConjectureRunner(f, database_key=b"key")
+    runner = ConjectureRunner(f)
     runner.run()
     assert runner.interesting_examples[interesting_origin(0)].choices == (0,)
     assert runner.interesting_examples[interesting_origin(1)].choices == (1,)
