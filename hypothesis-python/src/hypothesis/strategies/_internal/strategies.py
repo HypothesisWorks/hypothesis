@@ -801,6 +801,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         self.original_strategies = tuple(strategies)
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
+        self._branches_lock = RLock()
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
@@ -863,14 +864,15 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
-        if not self.__in_branches:
-            try:
-                self.__in_branches = True
-                return self.element_strategies
-            finally:
-                self.__in_branches = False
-        else:
-            return [self]
+        with self._branches_lock:
+            if not self.__in_branches:
+                try:
+                    self.__in_branches = True
+                    return self.element_strategies
+                finally:
+                    self.__in_branches = False
+            else:
+                return [self]
 
     def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return FilteredStrategy(

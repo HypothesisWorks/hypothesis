@@ -210,3 +210,17 @@ def test_deadline_exceeded_can_be_raised_after_threads():
     should_sleep = True
     with pytest.raises(DeadlineExceeded):
         slow_test()
+
+
+def test_one_of_branches_lock():
+    # I can't actually get this test to reproduce the race locally.
+    # This should in theory reproduce, but the timings here are very tight.
+    branch_counts = set()
+    s = st.one_of(st.integers(), st.integers(), st.integers())
+
+    def test():
+        branches = len(s.branches)
+        branch_counts.add(branches)
+
+    run_concurrently(test, n=10)
+    assert len(branch_counts) == 1
