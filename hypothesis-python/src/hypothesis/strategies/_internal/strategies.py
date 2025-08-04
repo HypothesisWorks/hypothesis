@@ -864,6 +864,10 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
+        if self.__element_strategies is not None:
+            # common fast path which avoids the lock
+            return self.element_strategies
+
         with self._branches_lock:
             if not self.__in_branches:
                 try:

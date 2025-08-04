@@ -18,6 +18,7 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.debug import check_can_generate_examples
 
@@ -72,9 +73,9 @@ def test_run_stateful_test_concurrently():
     run_concurrently(TestMyStateful, n=2)
 
 
-def do_work():
+def do_work(*, multiplier=1):
     # arbitrary moderately-expensive work
-    for x in range(500):
+    for x in range(500 * multiplier):
         _y = x**x
 
 
@@ -213,10 +214,15 @@ def test_deadline_exceeded_can_be_raised_after_threads():
 
 
 def test_one_of_branches_lock():
-    # I can't actually get this test to reproduce the race locally.
-    # This should in theory reproduce, but the timings here are very tight.
+    class SlowBranchesStrategy(SearchStrategy):
+        @property
+        def branches(self):
+            # multiplier=2 reproduces more consistently than multiplier=1 for me
+            do_work(multiplier=2)
+            return [st.integers(), st.text()]
+
     branch_counts = set()
-    s = st.one_of(st.integers(), st.integers(), st.integers())
+    s = st.one_of(SlowBranchesStrategy(), SlowBranchesStrategy())
 
     def test():
         branches = len(s.branches)
@@ -224,3 +230,6 @@ def test_one_of_branches_lock():
 
     run_concurrently(test, n=10)
     assert len(branch_counts) == 1
+    # there are 4 independent strategies, but only 2 distinct ones -
+    # st.integers(), and st.text().
+    assert branch_counts == {2}
