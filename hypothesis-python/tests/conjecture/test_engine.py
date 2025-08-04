@@ -470,6 +470,52 @@ def test_fails_health_check_for_slow_draws():
         data.draw(SLOW)
 
 
+def test_health_check_too_slow_with_invalid_examples():
+    @st.composite
+    def s(draw):
+        n = draw(st.integers())
+        if n > 0:
+            assume(False)
+
+        time.sleep(0.2)
+
+    @given(s())
+    @settings(derandomize=True, max_examples=100)
+    def test(x):
+        pass
+
+    with pytest.raises(FailedHealthCheck) as exc:
+        test()
+
+    assert str(HealthCheck.too_slow) in str(exc.value)
+    assert re.search(r"\d+ invalid inputs", str(exc.value))
+
+
+def test_health_check_too_slow_with_overrun_examples():
+    @st.composite
+    def s(draw):
+        n = draw(st.integers())
+        if n > 0:
+            draw(st.binary(min_size=50))
+            assume(False)
+
+        time.sleep(0.2)
+
+    @given(s())
+    @settings(derandomize=True, max_examples=100)
+    def test(x):
+        pass
+
+    with buffer_size_limit(10):
+        with pytest.raises(FailedHealthCheck) as exc:
+            test()
+
+    assert str(HealthCheck.too_slow) in str(exc.value)
+    assert re.search(
+        r"\d+ inputs which exceeded the maximum allowed entropy", str(exc.value)
+    )
+
+
 @pytest.mark.parametrize("n_large", [1, 5, 8, 15])
 def test_can_shrink_variable_draws(n_large):
     target = 128 * n_large

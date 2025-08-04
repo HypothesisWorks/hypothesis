@@ -18,6 +18,30 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.9:
+
+--------------------
+6.136.9 - 2025-08-04
+--------------------
+
+Fix a threading race condition in |st.one_of| initialization.
+
+.. _v6.136.8:
+
+--------------------
+6.136.8 - 2025-08-04
+--------------------
+
+Improve the error messages and documentation for |HealthCheck|. Among others, the messaging is now more clear that health checks are proactive warnings, not correctness errors.
+
+.. _v6.136.7:
+
+--------------------
+6.136.7 - 2025-08-01
+--------------------
+
+Improve detection of sys.monitoring to avoid errors on GraalPy.
+
 .. _v6.136.6:
 
 --------------------
