@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.8:
+
+--------------------
+6.136.8 - 2025-08-04
+--------------------
+
+Improve the error messages and documentation for |HealthCheck|. Among others, the messaging is now more clear that health checks are proactive warnings, not correctness errors.
+
 .. _v6.136.7:
 
 --------------------
