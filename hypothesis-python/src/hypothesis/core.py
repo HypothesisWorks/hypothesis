@@ -1590,8 +1590,11 @@ def _raise_to_user(
             add_note(the_error_hypothesis_found, line)
 
     if unsound_backend:
-        msg = f"backend={unsound_backend!r} claimed to verify this test passes - please send them a bug report!"
-        add_note(err, msg)
+        add_note(
+            err,
+            f"backend={unsound_backend!r} claimed to verify this test passes - "
+            "please send them a bug report!",
+        )
 
     raise the_error_hypothesis_found
 
@@ -1786,8 +1789,15 @@ def given(
         fail_health_check(
             Settings(),
             "Nesting @given tests results in quadratic generation and shrinking "
-            "behavior and can usually be more cleanly expressed by replacing the "
-            "inner function with an st.data() parameter on the outer @given.",
+            "behavior, and can usually be more cleanly expressed by replacing the "
+            "inner function with an st.data() parameter on the outer @given."
+            "\n\n"
+            "If it is difficult or impossible to refactor this test to remove the "
+            "nested @given, you can disable this health check with "
+            "@settings(suppress_health_check=[HealthCheck.nested_given]) on the "
+            "outer @given. See "
+            "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+            "for details.",
             HealthCheck.nested_given,
         )
 
@@ -1925,12 +1935,13 @@ def given(
 
                 runner = stuff.selfy
                 if isinstance(stuff.selfy, TestCase) and test.__name__ in dir(TestCase):
-                    msg = (
+                    fail_health_check(
+                        settings,
                         f"You have applied @given to the method {test.__name__}, which is "
-                        "used by the unittest runner but is not itself a test."
-                        "  This is not useful in any way."
+                        "used by the unittest runner but is not itself a test. "
+                        "This is not useful in any way.",
+                        HealthCheck.not_a_test_method,
                     )
-                    fail_health_check(settings, msg, HealthCheck.not_a_test_method)
                 if bad_django_TestCase(runner):  # pragma: no cover
                     # Covered by the Django tests, but not the pytest coverage task
                     raise InvalidArgument(
@@ -1952,12 +1963,24 @@ def given(
                 if thread_local.prev_self is not_set:
                     thread_local.prev_self = cur_self
                 elif cur_self is not thread_local.prev_self:
-                    msg = (
+                    fail_health_check(
+                        settings,
                         f"The method {test.__qualname__} was called from multiple "
                         "different executors. This may lead to flaky tests and "
                         "nonreproducible errors when replaying from database."
+                        "\n\n"
+                        "Unlike most health checks, HealthCheck.differing_executors "
+                        "warns about a correctness issue with your test. We "
+                        "therefore recommend fixing the underlying issue, rather "
+                        "than suppressing this health check. However, if you are "
+                        "confident this health check can be safely disabled, you can "
+                        "do so with "
+                        "@settings(suppress_health_check=[HealthCheck.differing_executors]). "
+                        "See "
+                        "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                        "for details.",
+                        HealthCheck.differing_executors,
                     )
-                    fail_health_check(settings, msg, HealthCheck.differing_executors)
 
                 state = StateForActualGivenExecution(
                     stuff,

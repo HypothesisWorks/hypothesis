@@ -36,7 +36,7 @@ def test_large_data_will_fail_a_health_check():
 
     with raises(FailedHealthCheck) as e:
         test()
-    assert "allowable size" in e.value.args[0]
+    assert "maximum allowed entropy" in e.value.args[0]
 
 
 def test_large_base_example_fails_health_check():
