@@ -10,6 +10,7 @@
 
 import gc
 import random
+import sys
 
 import pytest
 
@@ -66,6 +67,10 @@ def test_cannot_register_non_Random():
 
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
+@pytest.mark.xfail(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
 )
 def test_registering_a_Random_is_idempotent():
     gc_collect()
@@ -160,6 +165,10 @@ def test_find_does_not_pollute_state():
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
+)
 def test_evil_prng_registration_nonsense():
     # my guess is that other tests may register randoms that are then marked for
     # deletion (but not actually gc'd yet). Therefore, depending on the order tests
@@ -222,6 +231,10 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
+)
 def test_passing_referenced_instance_within_function_scope_warns():
     def f():
         r = random.Random(0)
@@ -240,6 +253,10 @@ def test_passing_referenced_instance_within_function_scope_warns():
 )
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
 )
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
