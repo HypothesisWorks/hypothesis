@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.136.9:
+
+--------------------
+6.136.9 - 2025-08-04
+--------------------
+
+Fix a threading race condition in |st.one_of| initialization.
+
 .. _v6.136.8:
 
 --------------------
