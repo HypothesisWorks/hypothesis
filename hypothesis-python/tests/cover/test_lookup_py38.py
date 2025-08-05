@@ -206,6 +206,7 @@ def has_posonly_args(x, /, y):
         "dynamic @example applications modify the shared "
         "has_posonly_args.hypothesis._given_kwargs."
     ),
+    strict=False,
 )
 def test_example_argument_validation():
     example(y=None)(has_posonly_args)(1)  # Basic case is OK
