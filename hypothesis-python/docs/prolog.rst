@@ -131,6 +131,11 @@
 .. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
+
+.. |add_observability_callback| replace:: :data:`~hypothesis.internal.observability.add_observability_callback`
+.. |remove_observability_callback| replace:: :data:`~hypothesis.internal.observability.remove_observability_callback`
+.. |with_observability_callback| replace:: :data:`~hypothesis.internal.observability.with_observability_callback`
+.. |observability_enabled| replace:: :data:`~hypothesis.internal.observability.observability_enabled`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
 .. |OBSERVABILITY_CHOICES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICES`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`

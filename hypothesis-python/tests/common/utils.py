@@ -13,7 +13,7 @@ import enum
 import sys
 import warnings
 from io import StringIO
-from threading import Lock, RLock
+from threading import Barrier, Lock, RLock, Thread
 from types import SimpleNamespace
 
 from hypothesis import Phase, settings
@@ -21,7 +21,11 @@ from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
-from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
+from hypothesis.internal.observability import (
+    Observation,
+    add_observability_callback,
+    remove_observability_callback,
+)
 from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
@@ -261,7 +265,7 @@ def raises_warning(expected_warning, match=None):
 @contextlib.contextmanager
 def capture_observations(*, choices=None):
     ls: list[Observation] = []
-    TESTCASE_CALLBACKS.append(ls.append)
+    add_observability_callback(ls.append)
     if choices is not None:
         old_choices = observability.OBSERVABILITY_CHOICES
         observability.OBSERVABILITY_CHOICES = choices
@@ -269,7 +273,7 @@ def capture_observations(*, choices=None):
     try:
         yield ls
     finally:
-        TESTCASE_CALLBACKS.remove(ls.append)
+        remove_observability_callback(ls.append)
         if choices is not None:
             observability.OBSERVABILITY_CHOICES = old_choices
 
@@ -331,3 +335,25 @@ def restore_recursion_limit():
             yield
         finally:
             sys.setrecursionlimit(original_limit)
+
+
+def run_concurrently(function, n: int) -> None:
+    import pytest
+
+    if settings._current_profile == "crosshair":
+        pytest.skip("crosshair is not thread safe")
+    if sys.platform == "emscripten":
+        pytest.skip("no threads on emscripten")
+
+    def run():
+        barrier.wait()
+        function()
+
+    threads = [Thread(target=run) for _ in range(n)]
+    barrier = Barrier(n)
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join(timeout=10)
