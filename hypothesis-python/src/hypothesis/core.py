@@ -103,11 +103,11 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
-    TESTCASE_CALLBACKS,
     InfoObservation,
     InfoObservationType,
     deliver_observation,
     make_testcase,
+    observability_enabled,
 )
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -948,7 +948,9 @@ class StateForActualGivenExecution:
     def _should_trace(self):
         # NOTE: we explicitly support monkeypatching this. Keep the namespace
         # access intact.
-        _trace_obs = TESTCASE_CALLBACKS and observability.OBSERVABILITY_COLLECT_COVERAGE
+        _trace_obs = (
+            observability_enabled() and observability.OBSERVABILITY_COLLECT_COVERAGE
+        )
         _trace_failure = (
             self.failed_normally
             and not self.failed_due_to_deadline
@@ -981,7 +983,7 @@ class StateForActualGivenExecution:
 
         self._string_repr = ""
         text_repr = None
-        if self.settings.deadline is None and not TESTCASE_CALLBACKS:
+        if self.settings.deadline is None and not observability_enabled():
 
             @proxies(self.test)
             def test(*args, **kwargs):
@@ -1079,7 +1081,7 @@ class StateForActualGivenExecution:
                     )
                 report(printer.getvalue())
 
-            if TESTCASE_CALLBACKS:
+            if observability_enabled():
                 printer = RepresentationPrinter(context=context)
                 printer.repr_call(
                     test.__name__,
@@ -1112,7 +1114,7 @@ class StateForActualGivenExecution:
                 if parts := getattr(data, "_stateful_repr_parts", None):
                     self._string_repr = "\n".join(parts)
 
-                if TESTCASE_CALLBACKS:
+                if observability_enabled():
                     printer = RepresentationPrinter(context=context)
                     for name, value in data._observability_args.items():
                         if name.startswith("generate:Draw "):
@@ -1303,7 +1305,7 @@ class StateForActualGivenExecution:
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.
-            if TESTCASE_CALLBACKS:
+            if observability_enabled():
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals
@@ -1382,7 +1384,7 @@ class StateForActualGivenExecution:
         # on different inputs.
         runner.run()
         note_statistics(runner.statistics)
-        if TESTCASE_CALLBACKS:
+        if observability_enabled():
             self._deliver_information_message(
                 type="info",
                 title="Hypothesis Statistics",
@@ -2186,7 +2188,7 @@ def given(
                     status = Status.INTERESTING
                     raise
                 finally:
-                    if TESTCASE_CALLBACKS:
+                    if observability_enabled():
                         data.freeze()
                         tc = make_testcase(
                             run_start=state._start_timestamp,

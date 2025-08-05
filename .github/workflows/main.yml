@@ -200,7 +200,8 @@ jobs:
         pip install -r requirements/crosshair.txt
         pip install hypothesis-python/
     - name: Run tests
-      run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
+      # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
+      run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
     runs-on: macos-latest
