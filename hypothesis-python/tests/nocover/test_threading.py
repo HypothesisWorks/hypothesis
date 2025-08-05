@@ -18,27 +18,14 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.debug import check_can_generate_examples
+from tests.common.utils import run_concurrently
 
 pytestmark = pytest.mark.skipif(
     settings._current_profile == "crosshair", reason="crosshair is not thread safe"
 )
-
-
-def run_concurrently(function, n: int) -> None:
-    def run():
-        barrier.wait()
-        function()
-
-    threads = [Thread(target=run) for _ in range(n)]
-    barrier = Barrier(n)
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join(timeout=10)
 
 
 def test_can_run_given_in_thread():
@@ -72,9 +59,9 @@ def test_run_stateful_test_concurrently():
     run_concurrently(TestMyStateful, n=2)
 
 
-def do_work():
+def do_work(*, multiplier=1):
     # arbitrary moderately-expensive work
-    for x in range(500):
+    for x in range(500 * multiplier):
         _y = x**x
 
 
@@ -210,3 +197,25 @@ def test_deadline_exceeded_can_be_raised_after_threads():
     should_sleep = True
     with pytest.raises(DeadlineExceeded):
         slow_test()
+
+
+def test_one_of_branches_lock():
+    class SlowBranchesStrategy(SearchStrategy):
+        @property
+        def branches(self):
+            # multiplier=2 reproduces more consistently than multiplier=1 for me
+            do_work(multiplier=2)
+            return [st.integers(), st.text()]
+
+    branch_counts = set()
+    s = st.one_of(SlowBranchesStrategy(), SlowBranchesStrategy())
+
+    def test():
+        branches = len(s.branches)
+        branch_counts.add(branches)
+
+    run_concurrently(test, n=10)
+    assert len(branch_counts) == 1
+    # there are 4 independent strategies, but only 2 distinct ones -
+    # st.integers(), and st.text().
+    assert branch_counts == {2}

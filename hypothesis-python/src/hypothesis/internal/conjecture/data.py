@@ -1198,7 +1198,7 @@ class ConjectureData:
         label: Optional[int] = None,
         observe_as: Optional[str] = None,
     ) -> "Ex":
-        from hypothesis.internal.observability import TESTCASE_CALLBACKS
+        from hypothesis.internal.observability import observability_enabled
         from hypothesis.strategies._internal.lazy import unwrap_strategies
         from hypothesis.strategies._internal.utils import to_jsonable
 
@@ -1253,7 +1253,7 @@ class ConjectureData:
                     f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
                 )
                 raise
-            if TESTCASE_CALLBACKS:
+            if observability_enabled():
                 avoid = self.provider.avoid_realization
                 self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
             return v

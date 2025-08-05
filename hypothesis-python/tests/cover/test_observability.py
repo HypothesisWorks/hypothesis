@@ -9,13 +9,18 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import contextlib
 import json
 import math
 import textwrap
+import threading
+import warnings
+from collections import defaultdict
 from contextlib import nullcontext
 
 import pytest
 
+import hypothesis.internal.observability
 from hypothesis import (
     assume,
     event,
@@ -34,7 +39,17 @@ from hypothesis.internal.conjecture.data import Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import choices_to_json, nodes_to_json
+from hypothesis.internal.observability import (
+    TESTCASE_CALLBACKS,
+    InfoObservation,
+    TestCaseObservation,
+    add_observability_callback,
+    choices_to_json,
+    nodes_to_json,
+    observability_enabled,
+    remove_observability_callback,
+    with_observability_callback,
+)
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -43,7 +58,13 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies._internal.utils import to_jsonable
 
-from tests.common.utils import Why, capture_observations, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_observations,
+    checks_deprecated_behaviour,
+    run_concurrently,
+    xfail_on_crosshair,
+)
 from tests.conjecture.common import choices, integer_constr, nodes
 
 
@@ -565,3 +586,206 @@ def test_metadata_to_json():
             assert isinstance(span, Span)
             assert 0 <= span.start <= len(observation.metadata.choice_nodes)
             assert 0 <= span.end <= len(observation.metadata.choice_nodes)
+
+
+@contextlib.contextmanager
+def restore_callbacks():
+    callbacks = hypothesis.internal.observability._callbacks.copy()
+    callbacks_all = hypothesis.internal.observability._callbacks_all_threads.copy()
+    try:
+        yield
+    finally:
+        hypothesis.internal.observability._callbacks = callbacks
+        hypothesis.internal.observability._callbacks_all_threads = callbacks_all
+
+
+@contextlib.contextmanager
+def with_collect_coverage(*, value: bool):
+    original_value = hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
+    hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = value
+    try:
+        yield
+    finally:
+        hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = (
+            original_value
+        )
+
+
+def _callbacks():
+    # respect changes from the restore_callbacks context manager by re-accessing
+    # its namespace, instead of keeping
+    # `from hypothesis.internal.observability import _callbacks` around
+    return hypothesis.internal.observability._callbacks
+
+
+def test_observability_callbacks():
+    def f(observation):
+        pass
+
+    def g(observation):
+        pass
+
+    thread_id = threading.get_ident()
+
+    with restore_callbacks():
+        assert not observability_enabled()
+
+        add_observability_callback(f)
+        assert _callbacks() == {thread_id: [f]}
+        assert observability_enabled()
+
+        add_observability_callback(g)
+        assert _callbacks() == {thread_id: [f, g]}
+        assert observability_enabled()
+
+        remove_observability_callback(g)
+        assert _callbacks() == {thread_id: [f]}
+        assert observability_enabled()
+
+        remove_observability_callback(g)
+        assert _callbacks() == {thread_id: [f]}
+        assert observability_enabled()
+
+        remove_observability_callback(f)
+        assert _callbacks() == {}
+        assert not observability_enabled()
+
+
+def test_observability_callbacks_all_threads():
+    thread_id = threading.get_ident()
+
+    def f(observation, thread_id):
+        pass
+
+    with restore_callbacks():
+        assert not observability_enabled()
+
+        add_observability_callback(f, all_threads=True)
+        assert hypothesis.internal.observability._callbacks_all_threads == [f]
+        assert _callbacks() == {}
+        assert observability_enabled()
+
+        add_observability_callback(f)
+        assert hypothesis.internal.observability._callbacks_all_threads == [f]
+        assert _callbacks() == {thread_id: [f]}
+        assert observability_enabled()
+
+        # remove_observability_callback removes it both from per-thread and
+        # all_threads. The semantics of duplicated callbacks is weird enough
+        # that I don't want to commit to anything here, so I'm leaving this as
+        # somewhat undefined behavior, and recommending that users simply not
+        # register a callback both normally and for all threads.
+        remove_observability_callback(f)
+        assert hypothesis.internal.observability._callbacks_all_threads == []
+        assert _callbacks() == {}
+        assert not observability_enabled()
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_bool():
+    bool(TESTCASE_CALLBACKS)
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_append():
+    with restore_callbacks():
+        TESTCASE_CALLBACKS.append(lambda x: None)
+
+
+@checks_deprecated_behaviour
+def test_testcase_callbacks_deprecation_remove():
+    with restore_callbacks():
+        TESTCASE_CALLBACKS.remove(lambda x: None)
+
+
+def test_testcase_callbacks():
+    def f(observation):
+        pass
+
+    def g(observation):
+        pass
+
+    thread_id = threading.get_ident()
+
+    with restore_callbacks():
+        with warnings.catch_warnings():
+            # ignore TESTCASE_CALLBACKS deprecation warnings
+            warnings.simplefilter("ignore")
+
+            assert not bool(TESTCASE_CALLBACKS)
+            add_observability_callback(f)
+            assert _callbacks() == {thread_id: [f]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            add_observability_callback(g)
+            assert _callbacks() == {thread_id: [f, g]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            remove_observability_callback(g)
+            assert _callbacks() == {thread_id: [f]}
+
+            assert bool(TESTCASE_CALLBACKS)
+            remove_observability_callback(f)
+            assert _callbacks() == {}
+
+            assert not bool(TESTCASE_CALLBACKS)
+
+
+def test_only_receives_callbacks_from_this_thread():
+    @given(st.integers())
+    def g(n):
+        pass
+
+    def test():
+        count_observations = 0
+
+        def callback(observation):
+            nonlocal count_observations
+            count_observations += 1
+
+        add_observability_callback(callback)
+
+        with warnings.catch_warnings():
+            g()
+
+        # one per example, plus one for the overall run
+        assert count_observations == settings().max_examples + 1
+
+    with restore_callbacks():
+        # Observability tries to record coverage, but we don't currently
+        # support concurrent coverage collection, and issue a warning instead.
+        #
+        # I tried to fix this with:
+        #
+        #    warnings.filterwarnings(
+        #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+        #    )
+        #
+        # but that had a race condition somehow and sometimes still didn't work?? The
+        # warnings module is not thread-safe until 3.14, I think.
+        with with_collect_coverage(value=False):
+            run_concurrently(test, 5)
+
+
+def test_all_threads_callback():
+    n_threads = 5
+
+    # thread_id: count
+    calls = defaultdict(int)
+
+    def global_callback(observation, thread_id):
+        assert isinstance(observation, (TestCaseObservation, InfoObservation))
+        assert isinstance(thread_id, int)
+
+        calls[thread_id] += 1
+
+    @given(st.integers())
+    def f(n):
+        pass
+
+    with with_collect_coverage(value=False):
+        with with_observability_callback(global_callback, all_threads=True):
+            run_concurrently(f, n_threads)
+
+    assert len(calls) == n_threads
+    assert all(count == (settings().max_examples + 1) for count in calls.values())
