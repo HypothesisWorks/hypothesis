@@ -3,7 +3,7 @@ Changelog
 =========
 
 This is a record of all past Hypothesis releases and what went into them,
-in reverse chronological order. All previous releases should still be available
+in reverse chronological order. All previous releases are still available
 :pypi:`on PyPI <hypothesis>`.
 
 
