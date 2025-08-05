@@ -13,11 +13,12 @@ import pytest
 from crosshair.core import IgnoreAttempt, NotDeterministic, UnexploredPath
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
-from hypothesis import Phase, Verbosity, given, settings, strategies as st
+from hypothesis import Phase, Verbosity, event, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import with_observability_callback
 from hypothesis.vendor.pretty import pretty
 
 from tests.common.utils import capture_observations
@@ -206,3 +207,28 @@ def test_provider_conformance_crosshair():
         settings=settings(max_examples=5, stateful_step_count=10),
         _realize_objects=_realize_objects,
     )
+
+
+def test_realizes_event():
+    saw_myevent = False
+
+    def callback(observation):
+        if observation.type != "test_case":
+            return
+
+        nonlocal saw_myevent
+        # crosshair might raise BackendCannotProceed(verified) during generation,
+        # which never reaches event().
+        if "myevent" in observation.features:
+            assert isinstance(observation.features["myevent"], int)
+            saw_myevent = True
+
+    @given(st.integers())
+    @settings(backend="crosshair", max_examples=5)
+    def test(n):
+        event("myevent", n)
+
+    with with_observability_callback(callback):
+        test()
+
+    assert saw_myevent

@@ -1321,10 +1321,18 @@ class StateForActualGivenExecution:
                     data._observability_args = data.provider.realize(
                         data._observability_args
                     )
-                    self._string_repr = data.provider.realize(self._string_repr)
                 except BackendCannotProceed:
                     data._observability_args = {}
+
+                try:
+                    self._string_repr = data.provider.realize(self._string_repr)
+                except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
+
+                try:
+                    data.events = data.provider.realize(data.events)
+                except BackendCannotProceed:
+                    data.events = {}
 
                 data.freeze()
                 tc = make_testcase(
