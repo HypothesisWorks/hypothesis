@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.137.1:
+
+--------------------
+6.137.1 - 2025-08-05
+--------------------
+
+Fixes a bug with solver-based :ref:`alternative backends <alternative-backends>` (like `crosshair <https://github.com/pschanely/CrossHair>`_) where symbolic values passed to |event| would not be realized to concrete values at the end of the test case.
+
 .. _v6.137.0:
 
 --------------------
