@@ -437,7 +437,8 @@ def make_testcase(
         pass
     else:
         try:
-            representation = black.format_str(representation, mode=black.Mode())
+            # strip since black appends a trailing newline.
+            representation = black.format_str(representation, mode=black.Mode()).strip()
         except InvalidInput:
             pass
 
