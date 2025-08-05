@@ -327,7 +327,7 @@ def test_ghostwriter_on_hypothesis(update_recorded_outputs):
     )
     # hypothesis._settings.settings wraps the line before replacement, and doesn't
     # after replacement
-    actual = black.format_str(actual, mode=black.FileMode())
+    actual = black.format_str(actual, mode=black.Mode())
     expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
     if sys.version_info[:2] == (3, 10):
         assert actual == expected

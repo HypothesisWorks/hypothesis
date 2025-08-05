@@ -1080,7 +1080,7 @@ def _make_test(imports: ImportSet, body: str) -> str:
         header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
     elif nothings >= 1:
         header += "# TODO: replace st.nothing() with appropriate strategies\n\n"
-    return black.format_str(header + body, mode=black.FileMode())
+    return black.format_str(header + body, mode=black.Mode())
 
 
 def _is_probably_ufunc(obj):
