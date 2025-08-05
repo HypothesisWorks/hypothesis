@@ -389,8 +389,8 @@ def make_testcase(
     data: "ConjectureData",
     how_generated: str,
     representation: str = "<unknown>",
-    arguments: Optional[dict] = None,
     timing: dict[str, float],
+    arguments: Optional[dict] = None,
     coverage: Optional[dict[str, list[int]]] = None,
     phase: Optional[str] = None,
     backend_metadata: Optional[dict[str, Any]] = None,
@@ -429,6 +429,17 @@ def make_testcase(
         status = status_map[status]
     if status is None:
         status = status_map[data.status]
+
+    try:
+        import black
+        from black.parsing import InvalidInput
+    except ImportError:
+        pass
+    else:
+        try:
+            representation = black.format_str(representation, mode=black.Mode())
+        except InvalidInput:
+            pass
 
     return TestCaseObservation(
         type="test_case",

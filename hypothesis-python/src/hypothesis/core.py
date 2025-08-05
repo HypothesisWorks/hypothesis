@@ -684,15 +684,16 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     )
 
                 empty_data.freeze()
-                tc = make_testcase(
-                    run_start=state._start_timestamp,
-                    property=state.test_identifier,
-                    data=empty_data,
-                    how_generated="explicit example",
-                    representation=state._string_repr,
-                    timing=state._timing_features,
-                )
-                deliver_observation(tc)
+                if observability_enabled():
+                    tc = make_testcase(
+                        run_start=state._start_timestamp,
+                        property=state.test_identifier,
+                        data=empty_data,
+                        how_generated="explicit example",
+                        representation=state._string_repr,
+                        timing=state._timing_features,
+                    )
+                    deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -1335,23 +1336,25 @@ class StateForActualGivenExecution:
                     data.events = {}
 
                 data.freeze()
-                tc = make_testcase(
-                    run_start=self._start_timestamp,
-                    property=self.test_identifier,
-                    data=data,
-                    how_generated=f"during {phase} phase{backend_desc}",
-                    representation=self._string_repr,
-                    arguments=data._observability_args,
-                    timing=self._timing_features,
-                    coverage=tractable_coverage_report(trace) or None,
-                    phase=phase,
-                    backend_metadata=data.provider.observe_test_case(),
-                )
-                deliver_observation(tc)
-                for msg in data.provider.observe_information_messages(
-                    lifetime="test_case"
-                ):
-                    self._deliver_information_message(**msg)
+                if observability_enabled():
+                    tc = make_testcase(
+                        run_start=self._start_timestamp,
+                        property=self.test_identifier,
+                        data=data,
+                        how_generated=f"during {phase} phase{backend_desc}",
+                        representation=self._string_repr,
+                        arguments=data._observability_args,
+                        timing=self._timing_features,
+                        coverage=tractable_coverage_report(trace) or None,
+                        phase=phase,
+                        backend_metadata=data.provider.observe_test_case(),
+                    )
+                    deliver_observation(tc)
+
+                    for msg in data.provider.observe_information_messages(
+                        lifetime="test_case"
+                    ):
+                        self._deliver_information_message(**msg)
             self._timing_features = {}
 
     def _deliver_information_message(
@@ -1533,21 +1536,23 @@ class StateForActualGivenExecution:
                 raise NotImplementedError("This should be unreachable")
             finally:
                 ran_example.freeze()
-                # log our observability line for the final failing example
-                tc = make_testcase(
-                    run_start=self._start_timestamp,
-                    property=self.test_identifier,
-                    data=ran_example,
-                    how_generated="minimal failing example",
-                    representation=self._string_repr,
-                    arguments=ran_example._observability_args,
-                    timing=self._timing_features,
-                    coverage=None,  # Not recorded when we're replaying the MFE
-                    status="passed" if sys.exc_info()[0] else "failed",
-                    status_reason=str(origin or "unexpected/flaky pass"),
-                    metadata={"traceback": tb},
-                )
-                deliver_observation(tc)
+                if observability_enabled():
+                    # log our observability line for the final failing example
+                    tc = make_testcase(
+                        run_start=self._start_timestamp,
+                        property=self.test_identifier,
+                        data=ran_example,
+                        how_generated="minimal failing example",
+                        representation=self._string_repr,
+                        arguments=ran_example._observability_args,
+                        timing=self._timing_features,
+                        coverage=None,  # Not recorded when we're replaying the MFE
+                        status="passed" if sys.exc_info()[0] else "failed",
+                        status_reason=str(origin or "unexpected/flaky pass"),
+                        metadata={"traceback": tb},
+                    )
+                    deliver_observation(tc)
+
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
