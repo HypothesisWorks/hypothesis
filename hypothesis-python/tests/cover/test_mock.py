@@ -27,7 +27,7 @@ from tests.common.utils import skipif_threading
 @given(thing=st.text())
 @mock.patch("math.atan")
 # mock.patch is thread-unsafe. pytest-run-parallel normally detects this and skips
-# the test, but because we set it inside of @given it can't (or doesn't?) peak
+# the test, but because we set it inside of @given it can't (or doesn't?) peek
 # inside the AST, resulting in a false negative.
 @skipif_threading
 def test_can_mock_inside_given_without_fixture(atan, thing):

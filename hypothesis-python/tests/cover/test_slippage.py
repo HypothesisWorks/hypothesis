@@ -62,8 +62,8 @@ def test_raises_multiple_failures_with_varying_type():
     assert "ValueError" in output
 
 
-# no multiple failures on backend (yet?)
-@xfail_on_crosshair(Why.other)
+# no multiple failures on backends (yet?)
+@pytest.mark.skip(settings().backend != "hypothesis")
 def test_shows_target_scores_with_multiple_failures():
     @settings(derandomize=True, max_examples=10_000)
     @given(st.integers())
@@ -266,8 +266,8 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
     assert not any(isinstance(e, FlakyFailure) for e in err.value.exceptions)
 
 
-# no multiple failures on backend (yet?)
-@xfail_on_crosshair(Why.other, strict=False)
+# no multiple failures on backends (yet?)
+@pytest.mark.skip(settings().backend != "hypothesis")
 @pytest.mark.parametrize("allow_multi", [True, False])
 def test_can_disable_multiple_error_reporting(allow_multi):
     seen = set()
@@ -339,7 +339,7 @@ def test_stops_immediately_if_not_report_multiple_bugs():
 
 
 # unclear backend semantics
-@xfail_on_crosshair(Why.other)
+@pytest.mark.skip(settings().backend != "hypothesis")
 def test_stops_immediately_on_replay():
     seen = set()
 
