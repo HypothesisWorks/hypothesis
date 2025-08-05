@@ -324,6 +324,10 @@ def skipif_threading(f):
     )(f)
 
 
+# we don't monkeypatch _consistently_increment_time under threading
+skipif_time_unpatched = skipif_threading
+
+
 _restore_recursion_limit_lock = RLock()
 
 
