@@ -22,7 +22,7 @@ import textwrap
 import types
 import warnings
 from collections.abc import MutableMapping, Sequence
-from functools import partial, wraps
+from functools import lru_cache, partial, wraps
 from inspect import Parameter, Signature
 from io import StringIO
 from keyword import iskeyword
@@ -281,19 +281,25 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
-def extract_all_lambdas(tree, matching_signature, lineno=None):
+def extract_all_lambdas(tree):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Lambda(self, node):
-            if (
-                lineno is None or node.lineno <= lineno <= node.end_lineno
-            ) and ast_arguments_matches_signature(node.args, matching_signature):
-                lambdas.append(node)
+            lambdas.append(node)
 
     Visitor().visit(tree)
-
     return lambdas
+
+
+@lru_cache
+def _parse_all_lambdas(sources):
+    try:
+        tree = ast.parse("".join(sources))
+    except SyntaxError:  # pragma: no cover
+        return []
+    else:
+        return extract_all_lambdas(tree)
 
 
 def _lambda_code_matches_node(f, node):
@@ -344,14 +350,16 @@ def _extract_lambda_source(f):
     except OSError:
         return format_lambda(unknown)
 
-    try:
-        tree = ast.parse("".join(sources))
-    except SyntaxError:  # pragma: no cover
-        return format_lambda(unknown)
+    all_lambdas = _parse_all_lambdas(tuple(sources))
+    aligned_lambdas = [
+        candidate
+        for candidate in all_lambdas
+        if (
+            candidate.lineno <= lineno0 + 1 <= candidate.end_lineno
+            and ast_arguments_matches_signature(candidate.args, sig)
+        )
+    ]
 
-    aligned_lambdas = extract_all_lambdas(
-        tree, matching_signature=sig, lineno=lineno0 + 1
-    )
     if len(aligned_lambdas) == 0:
         return format_lambda(unknown)
 
