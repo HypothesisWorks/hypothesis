@@ -300,7 +300,7 @@ def _lambda_code_matches_node(f, node):
     try:
         lambda_code = f.__code__
         node_code = eval(ast.unparse(node), f.__globals__).__code__
-    except (NameError, SyntaxError):
+    except (NameError, SyntaxError):  # pragma: no cover
         return False
     try:
         return (
@@ -309,7 +309,7 @@ def _lambda_code_matches_node(f, node):
             and lambda_code.co_varnames == node_code.co_varnames
             and lambda_code.co_freevars == node_code.co_freevars
         )
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         return False
 
 
@@ -346,7 +346,7 @@ def _extract_lambda_source(f):
 
     try:
         tree = ast.parse("".join(sources))
-    except SyntaxError:
+    except SyntaxError:  # pragma: no cover
         return format_lambda(unknown)
 
     aligned_lambdas = extract_all_lambdas(
