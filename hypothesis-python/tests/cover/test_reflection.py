@@ -548,29 +548,6 @@ def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
     assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
 
 
-def test_can_render_lambda_with_no_encoding(monkeypatch):
-    is_positive = lambda x: x > 0
-
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
-
-
-def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    # fmt: off
-    pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702
-    # fmt: on
-    assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
-
-
 def test_too_many_posargs_fails():
     with pytest.raises(TypeError):
         st.times(time.min, time.max, st.none(), st.none()).validate()

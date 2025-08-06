@@ -27,7 +27,7 @@ from inspect import Parameter, Signature
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
-from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
+from tokenize import COMMENT, generate_tokens, untokenize
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 from unittest.mock import _patch as PatchType
@@ -281,12 +281,14 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
-def extract_all_lambdas(tree, matching_signature):
+def extract_all_lambdas(tree, matching_signature, lineno=None):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Lambda(self, node):
-            if ast_arguments_matches_signature(node.args, matching_signature):
+            if (
+                lineno is None or node.lineno <= lineno <= node.end_lineno
+            ) and ast_arguments_matches_signature(node.args, matching_signature):
                 lambdas.append(node)
 
     Visitor().visit(tree)
@@ -294,11 +296,21 @@ def extract_all_lambdas(tree, matching_signature):
     return lambdas
 
 
-LINE_CONTINUATION = re.compile(r"\\\n")
-WHITESPACE = re.compile(r"\s+")
-PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
-SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
-SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r" \)")
+def _lambda_code_matches_node(f, node):
+    try:
+        lambda_code = f.__code__
+        node_code = eval(ast.unparse(node), f.__globals__).__code__
+    except (NameError, SyntaxError):
+        return False
+    try:
+        return (
+            lambda_code.co_code == node_code.co_code
+            and lambda_code.co_consts == node_code.co_consts
+            and lambda_code.co_varnames == node_code.co_varnames
+            and lambda_code.co_freevars == node_code.co_freevars
+        )
+    except AttributeError:
+        return False
 
 
 def _extract_lambda_source(f):
@@ -317,128 +329,63 @@ def _extract_lambda_source(f):
     # Using pytest-xdist on Python 3.13, there's an entry in the linecache for
     # file "<string>", which then returns nonsense to getsource.  Discard it.
     linecache.cache.pop("<string>", None)
+    unknown = "<unknown>"
 
-    if sig.parameters:
-        if_confused = f"lambda {str(sig)[1:-1]}: <unknown>"
-    else:
-        if_confused = "lambda: <unknown>"
-    try:
-        source = inspect.getsource(f)
-    except OSError:
-        return if_confused
-
-    source = LINE_CONTINUATION.sub(" ", source)
-    source = WHITESPACE.sub(" ", source)
-    source = source.strip()
-    if "lambda" not in source:  # pragma: no cover
-        # If a user starts a hypothesis process, then edits their code, the lines
-        # in the parsed source code might not match the live __code__ objects.
-        #
-        # (and on sys.platform == "emscripten", this can happen regardless
-        # due to a pyodide bug in inspect.getsource()).
-        return if_confused
-
-    tree = None
-
-    try:
-        tree = ast.parse(source)
-    except SyntaxError:
-        for i in range(len(source) - 1, len("lambda"), -1):
-            prefix = source[:i]
-            if "lambda" not in prefix:
-                break
-            try:
-                tree = ast.parse(prefix)
-                source = prefix
-                break
-            except SyntaxError:
-                continue
-    if tree is None and source.startswith(("@", ".")):
-        # This will always eventually find a valid expression because the
-        # decorator or chained operator must be a valid Python function call,
-        # so will eventually be syntactically valid and break out of the loop.
-        # Thus, this loop can never terminate normally.
-        for i in range(len(source) + 1):
-            p = source[1:i]
-            if "lambda" in p:
-                try:
-                    tree = ast.parse(p)
-                    source = p
-                    break
-                except SyntaxError:
-                    pass
+    # The signature is more informative than the corresponding ast.unparse output,
+    # so add the signature to the unparsed body
+    def format_lambda(body):
+        if sig.parameters:
+            return f"lambda {str(sig)[1:-1]}: {body}"
         else:
-            raise NotImplementedError("expected to be unreachable")
+            return f"lambda: {body}"
 
-    if tree is None:
-        return if_confused
-
-    aligned_lambdas = extract_all_lambdas(tree, matching_signature=sig)
-    if len(aligned_lambdas) != 1:
-        return if_confused
-    lambda_ast = aligned_lambdas[0]
-    assert lambda_ast.lineno == 1
-
-    # If the source code contains Unicode characters, the bytes of the original
-    # file don't line up with the string indexes, and `col_offset` doesn't match
-    # the string we're using.  We need to convert the source code into bytes
-    # before slicing.
-    #
-    # Under the hood, the inspect module is using `tokenize.detect_encoding` to
-    # detect the encoding of the original source file.  We'll use the same
-    # approach to get the source code as bytes.
-    #
-    # See https://github.com/HypothesisWorks/hypothesis/issues/1700 for an
-    # example of what happens if you don't correct for this.
-    #
-    # Note: if the code doesn't come from a file (but, for example, a doctest),
-    # `getsourcefile` will return `None` and the `open()` call will fail with
-    # an OSError.  Or if `f` is a built-in function, in which case we get a
-    # TypeError.  In both cases, fall back to splitting the Unicode string.
-    # It's not perfect, but it's the best we can do.
     try:
-        with open(inspect.getsourcefile(f), "rb") as src_f:
-            encoding, _ = detect_encoding(src_f.readline)
+        sources, lineno0 = inspect.findsource(f)
+    except OSError:
+        return format_lambda(unknown)
 
-        source_bytes = source.encode(encoding)
-        source_bytes = source_bytes[lambda_ast.col_offset :].strip()
-        source = source_bytes.decode(encoding)
-    except (OSError, TypeError):
-        source = source[lambda_ast.col_offset :].strip()
-
-    # This ValueError can be thrown in Python 3 if:
-    #
-    #  - There's a Unicode character in the line before the Lambda, and
-    #  - For some reason we can't detect the source encoding of the file
-    #
-    # because slicing on `lambda_ast.col_offset` will account for bytes, but
-    # the slice will be on Unicode characters.
-    #
-    # In practice this seems relatively rare, so we just give up rather than
-    # trying to recover.
     try:
-        source = source[source.index("lambda") :]
-    except ValueError:
-        return if_confused
+        tree = ast.parse("".join(sources))
+    except SyntaxError:
+        return format_lambda(unknown)
 
-    for i in range(len(source), len("lambda"), -1):  # pragma: no branch
-        try:
-            parsed = ast.parse(source[:i])
-            assert len(parsed.body) == 1
-            assert parsed.body
-            if isinstance(parsed.body[0].value, ast.Lambda):
-                source = source[:i]
-                break
-        except SyntaxError:
-            pass
-    lines = source.split("\n")
-    lines = [PROBABLY_A_COMMENT.sub("", l) for l in lines]
-    source = "\n".join(lines)
+    aligned_lambdas = extract_all_lambdas(
+        tree, matching_signature=sig, lineno=lineno0 + 1
+    )
+    if len(aligned_lambdas) == 0:
+        return format_lambda(unknown)
 
-    source = WHITESPACE.sub(" ", source)
-    source = SPACE_FOLLOWS_OPEN_BRACKET.sub("(", source)
-    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(")", source)
-    return source.strip()
+    # Best effort: The code-match check has a lot of false negatives, for reasons
+    # outlined below. So we only do that check if we really need to, i.e., if there
+    # are multiple aligned lambdas having different source representations. If there
+    # is only a single lambda source found, we use that without further checking.
+    #
+    # If a user starts a hypothesis process, then edits their code, the lines
+    # in the parsed source code might not match the live __code__ objects.
+    # (and on sys.platform == "emscripten", this can happen regardless
+    # due to a pyodide bug in inspect.getsource()).
+    # There is a risk of returning source for the wrong lambda without those further
+    # checks, if there is a lambda also on the shifted line *or* if the lambda itself
+    # is changed.
+    source_to_lambdas = {}
+    for candidate_lambda in aligned_lambdas:
+        lambdas = source_to_lambdas.setdefault(ast.unparse(candidate_lambda.body), [])
+        lambdas.append(candidate_lambda)
+
+    if len(source_to_lambdas) == 1:
+        return format_lambda(next(iter(source_to_lambdas.keys())))
+
+    for source, lambdas in source_to_lambdas.items():
+        for candidate_lambda in lambdas:
+            if _lambda_code_matches_node(f, candidate_lambda):
+                return format_lambda(source)
+
+    # None of the aligned lambdas match perfectly in generated code. This may be
+    # caused by differences in code generation, missing nested-scope closures,
+    # inner lambdas having different identities, etc. Although we could do better
+    # here, the majority of cases will have a unique aligned lambda so it doesn't
+    # matter that much.
+    return format_lambda(unknown)
 
 
 def extract_lambda_source(f):
