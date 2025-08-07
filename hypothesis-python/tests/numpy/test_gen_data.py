@@ -23,7 +23,7 @@ from hypothesis import (
     note,
     settings,
     strategies as st,
-    target, find,
+    target,
 )
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
