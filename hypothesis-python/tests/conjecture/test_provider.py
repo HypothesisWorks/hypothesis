@@ -15,6 +15,7 @@ import sys
 import time
 from contextlib import contextmanager, nullcontext
 from random import Random
+from threading import RLock
 from typing import Optional
 
 import pytest
@@ -170,13 +171,17 @@ class PrngProvider(PrimitiveProvider):
             return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
+_temp_register_backend_lock = RLock()
+
+
 @contextmanager
 def temp_register_backend(name, cls):
-    try:
-        AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
-        yield
-    finally:
-        AVAILABLE_PROVIDERS.pop(name)
+    with _temp_register_backend_lock:
+        try:
+            AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
+            yield
+        finally:
+            AVAILABLE_PROVIDERS.pop(name)
 
 
 @pytest.mark.parametrize(

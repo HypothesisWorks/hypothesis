@@ -29,6 +29,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.debug import check_can_generate_examples, find_any
+from tests.common.utils import skipif_threading
 
 
 @settings(suppress_health_check=list(HealthCheck))
@@ -198,6 +199,7 @@ def test_consistent_decimal_error():
         ),
     ],
 )
+@skipif_threading  # strategy instances are shared, which persists .validate_called
 def test_floats_message(s, msg):
     # https://github.com/HypothesisWorks/hypothesis/issues/3207
     with pytest.raises(InvalidArgument, match=msg):

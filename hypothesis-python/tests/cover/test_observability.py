@@ -63,6 +63,7 @@ from tests.common.utils import (
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
+    skipif_threading,
     xfail_on_crosshair,
 )
 from tests.conjecture.common import choices, integer_constr, nodes
@@ -84,6 +85,7 @@ def do_it_all(l, a, x, data):
 
 
 @xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
+@skipif_threading  # captures observations from other threads
 def test_observability():
     with capture_observations() as ls:
         # NOTE: For compatibility with Python 3.9's LL(1)
@@ -618,6 +620,7 @@ def _callbacks():
     return hypothesis.internal.observability._callbacks
 
 
+@skipif_threading
 def test_observability_callbacks():
     def f(observation):
         pass
@@ -651,6 +654,7 @@ def test_observability_callbacks():
         assert not observability_enabled()
 
 
+@skipif_threading
 def test_observability_callbacks_all_threads():
     thread_id = threading.get_ident()
 

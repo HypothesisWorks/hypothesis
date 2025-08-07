@@ -50,7 +50,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import no_shrink
+from tests.common.utils import no_shrink, skipif_time_unpatched
 from tests.conjecture.common import (
     SOME_LABEL,
     buffer_size_limit,
@@ -463,6 +463,7 @@ def test_fails_health_check_for_large_non_base():
             data.draw_bytes(10_000, 10_000)
 
 
+@skipif_time_unpatched
 def test_fails_health_check_for_slow_draws():
     @fails_health_check(HealthCheck.too_slow)
     def _(data):

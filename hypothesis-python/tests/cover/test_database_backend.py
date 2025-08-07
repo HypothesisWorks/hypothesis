@@ -59,7 +59,11 @@ from hypothesis.stateful import (
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    skipif_emscripten,
+    skipif_threading,
+)
 from tests.conjecture.common import nodes, nodes_inline
 
 
@@ -143,6 +147,7 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
+@skipif_threading
 def test_two_directory_databases_can_interact(tmp_path):
     db1 = DirectoryBasedExampleDatabase(tmp_path)
     db2 = DirectoryBasedExampleDatabase(tmp_path)
@@ -313,6 +318,7 @@ def test_ga_deletes_old_artifacts():
             assert not file_old.exists()
 
 
+@skipif_threading
 def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
@@ -715,6 +721,7 @@ def test_readonly_listener():
     db.save(b"b", b"b")
 
 
+@skipif_threading
 def test_metakeys_move_into_existing_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -726,6 +733,7 @@ def test_metakeys_move_into_existing_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys_move_into_nonexistent_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -735,6 +743,7 @@ def test_metakeys_move_into_nonexistent_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
 
@@ -857,6 +866,7 @@ def test_database_not_equal(db1, db2):
     assert db1 != db2
 
 
+@skipif_threading  # race in tmp_path
 def test_directory_db_removes_empty_dirs(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
