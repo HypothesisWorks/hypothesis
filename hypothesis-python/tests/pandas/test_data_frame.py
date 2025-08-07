@@ -27,11 +27,7 @@ def test_can_have_columns_of_distinct_types(df):
     assert df["b"].dtype == np.dtype(float)
 
 
-@given(
-    pdst.data_frames(
-        [pdst.column(dtype=int)], index=pdst.range_indexes(min_size=1, max_size=5)
-    )
-)
+@given(pdst.data_frames([pdst.column(dtype=int)], index=pdst.range_indexes(min_size=1, max_size=5)))
 def test_respects_size_bounds(df):
     assert 1 <= len(df) <= 5
 
@@ -48,11 +44,7 @@ def test_can_specify_just_column_count(df):
     df[1]
 
 
-@given(
-    pdst.data_frames(
-        rows=st.fixed_dictionaries({"A": st.integers(1, 10), "B": st.floats()})
-    )
-)
+@given(pdst.data_frames(rows=st.fixed_dictionaries({"A": st.integers(1, 10), "B": st.floats()})))
 def test_gets_the_correct_data_shape_for_just_rows(table):
     assert table["A"].dtype == np.dtype("int64")
     assert table["B"].dtype == np.dtype(float)
@@ -74,9 +66,7 @@ def test_can_specify_both_rows_and_columns_list(d):
 @given(
     pdst.data_frames(
         columns=pdst.columns(["A", "B"], dtype=int),
-        rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2)
-        .map(sorted)
-        .map(tuple),
+        rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2).map(sorted).map(tuple),
     )
 )
 def test_can_specify_both_rows_and_columns_tuple(d):
@@ -89,9 +79,7 @@ def test_can_specify_both_rows_and_columns_tuple(d):
 @given(
     pdst.data_frames(
         columns=pdst.columns(["A", "B"], dtype=int),
-        rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2).map(
-            lambda x: {"A": min(x), "B": max(x)}
-        ),
+        rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2).map(lambda x: {"A": min(x), "B": max(x)}),
     )
 )
 def test_can_specify_both_rows_and_columns_dict(d):
@@ -135,9 +123,7 @@ def column_strategy(draw):
     unique = draw(st.booleans())
     fill = st.nothing() if draw(st.booleans()) else None
 
-    return pdst.column(
-        name=name, dtype=dtype, unique=unique, fill=fill, elements=elements
-    )
+    return pdst.column(name=name, dtype=dtype, unique=unique, fill=fill, elements=elements)
 
 
 @given(pdst.data_frames(pdst.columns(1, dtype=np.dtype("M8[ns]"))))
@@ -145,11 +131,7 @@ def test_data_frames_with_timestamp_columns(df):
     pass
 
 
-@given(
-    pdst.data_frames(
-        pdst.columns(["A"], dtype=float, fill=st.just(np.nan), unique=True)
-    )
-)
+@given(pdst.data_frames(pdst.columns(["A"], dtype=float, fill=st.just(np.nan), unique=True)))
 def test_unique_column_with_fill(df):
     assert len(set(df["A"])) == len(df["A"])
 
@@ -201,11 +183,7 @@ def test_arbitrary_data_frames(data):
             assert len(set(non_na_values)) == len(non_na_values)
 
 
-@given(
-    pdst.data_frames(
-        pdst.columns(["A"], unique=True, dtype=int), rows=st.tuples(st.integers(0, 10))
-    )
-)
+@given(pdst.data_frames(pdst.columns(["A"], unique=True, dtype=int), rows=st.tuples(st.integers(0, 10))))
 def test_can_specify_unique_with_rows(df):
     column = df["A"]
     assert len(set(column)) == len(column)
@@ -235,9 +213,7 @@ def test_uniqueness_does_not_affect_other_rows_2():
     find_any(data_frames, lambda x: x["A"][0] == x["A"][1])
 
 
-@given(
-    pdst.data_frames(pdst.columns(["A"], dtype=int, fill=st.just(7)), rows=st.tuples())
-)
+@given(pdst.data_frames(pdst.columns(["A"], dtype=int, fill=st.just(7)), rows=st.tuples()))
 def test_will_fill_missing_columns_in_tuple_row(df):
     for d in df["A"]:
         assert d == 7
@@ -272,9 +248,7 @@ def test_expected_failure_from_omitted_object_dtype(dtype):
             works_with_object_dtype()
 
 
-@pytest.mark.skipif(
-    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
-)
+@pytest.mark.skipif(not IntegerDtype, reason="Nullable types not available in this version of Pandas")
 def test_pandas_nullable_types():
     st = pdst.data_frames(pdst.columns(2, dtype=pd.core.arrays.integer.Int8Dtype()))
     df = find_any(st, lambda s: s.isna().any().any())
@@ -282,37 +256,46 @@ def test_pandas_nullable_types():
         assert type(df[s].dtype) == pd.core.arrays.integer.Int8Dtype
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', all_elements, dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': all_elements}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(columns=[pdst.column("col", all_elements, dtype=object)], index=pdst.range_indexes(1)),
+        pdst.data_frames(rows=st.fixed_dictionaries({"col": all_elements}), index=pdst.range_indexes(1)),
+    ],
+)
 def test_can_generate_object_arrays_with_mixed_dtype_elements(strategy):
-    find_any(strategy, lambda df: len({type(x) for x in df['col'].values}) > 1)
+    find_any(strategy, lambda df: len({type(x) for x in df["col"].values}) > 1)
 
 
 def test_error_with_object_elements_in_numpy_dtype_arrays():
     with pytest.raises(InvalidArgument):
-        find_any(
-            pdst.data_frames(columns=[pdst.column('col', all_scalar_object_elements, dtype=all_numpy_dtype_elements)])
-        )
+        find_any(pdst.data_frames(columns=[pdst.column("col", all_scalar_object_elements, dtype=all_numpy_dtype_elements)]))
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', st.just(dataclass_instance), dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': st.just(dataclass_instance)}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(
+            columns=[pdst.column("col", st.just(dataclass_instance), dtype=object)], index=pdst.range_indexes(1)
+        ),
+        pdst.data_frames(rows=st.fixed_dictionaries({"col": st.just(dataclass_instance)}), index=pdst.range_indexes(1)),
+    ],
+)
 def test_can_hold_arbitrary_dataclass(strategy):
-    find_any(strategy, lambda df: len([x is dataclass_instance for x in df['col'].values]) > 0)
+    find_any(strategy, lambda df: len([x is dataclass_instance for x in df["col"].values]) > 0)
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', all_numpy_dtype_elements, dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': all_numpy_dtype_elements}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(columns=[pdst.column("col", all_numpy_dtype_elements, dtype=object)], index=pdst.range_indexes(1)),
+        pdst.data_frames(rows=st.fixed_dictionaries({"col": all_numpy_dtype_elements}), index=pdst.range_indexes(1)),
+    ],
+)
 def test_series_is_still_object_dtype_even_with_numpy_types(strategy):
     assert_no_examples(
         strategy,
-        lambda df: all(isinstance(e, np.dtype) for e in df['col'].values) and (df['col'].dtype != np.dtype('O')),
+        lambda df: all(isinstance(e, np.dtype) for e in df["col"].values) and (df["col"].dtype != np.dtype("O")),
     )
 
 
@@ -322,8 +305,8 @@ def test_can_create_a_series_of_single_python_type(data, obj):
     # modification.
     df = data.draw(
         pdst.data_frames(
-            columns=[pdst.column('col', elements=st.just(obj), dtype=object)],
+            columns=[pdst.column("col", elements=st.just(obj), dtype=object)],
             index=pdst.range_indexes(min_size=1),
         )
     )
-    assert all(val is obj for val in df['col'].values)
+    assert all(val is obj for val in df["col"].values)

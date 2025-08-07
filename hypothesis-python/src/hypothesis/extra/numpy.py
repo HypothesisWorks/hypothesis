@@ -197,9 +197,7 @@ def from_dtype(
         )
     elif dtype.kind == "c":
         result = st.complex_numbers(
-            width=cast(
-                Literal[32, 64, 128], min(8 * dtype.itemsize, 128)
-            ),  # convert from bytes to bits
+            width=cast(Literal[32, 64, 128], min(8 * dtype.itemsize, 128)),  # convert from bytes to bits
             **compat_kw(
                 "min_magnitude",
                 "max_magnitude",
@@ -212,9 +210,7 @@ def from_dtype(
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
         max_size = dtype.itemsize or None
-        result = st.binary(**compat_kw("min_size", max_size=max_size)).filter(
-            lambda b: b[-1:] != b"\0"
-        )
+        result = st.binary(**compat_kw("min_size", max_size=max_size)).filter(lambda b: b[-1:] != b"\0")
     elif dtype.kind == "u":
         kw = compat_kw(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
         result = st.integers(**kw)
@@ -226,9 +222,7 @@ def from_dtype(
         max_size = (dtype.itemsize or 0) // 4 or None
         if NP_FIXED_UNICODE and "alphabet" not in kwargs:
             kwargs["alphabet"] = st.characters()
-        result = st.text(**compat_kw("alphabet", "min_size", max_size=max_size)).filter(
-            lambda b: b[-1:] != "\0"
-        )
+        result = st.text(**compat_kw("alphabet", "min_size", max_size=max_size)).filter(lambda b: b[-1:] != "\0")
     elif dtype.kind in ("m", "M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
@@ -259,7 +253,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
-        if dtype == np.dtype('O') and not isinstance(element_strategy, SampledFromStrategy):  # to keep nice error messages
+        if dtype == np.dtype("O") and not isinstance(element_strategy, SampledFromStrategy):  # to keep nice error messages
             self.element_strategy = element_strategy.filter(_is_compatible_numpy_element_object)
         else:
             self.element_strategy = element_strategy
@@ -283,7 +277,7 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
         try:
             elem_changed = self._check_elements and (
-                    not _array_or_scalar_equal(val, result[idx]) and _array_or_scalar_equal(val, val)
+                not _array_or_scalar_equal(val, result[idx]) and _array_or_scalar_equal(val, val)
             )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
@@ -326,16 +320,12 @@ class ArrayStrategy(st.SearchStrategy):
 
         # Because Numpy allocates memory for strings at array creation, if we have
         # an unsized string dtype we'll fill an object array and then cast it back.
-        unsized_string_dtype = (
-            self.dtype.kind in ("S", "a", "U") and self.dtype.itemsize == 0
-        )
+        unsized_string_dtype = self.dtype.kind in ("S", "a", "U") and self.dtype.itemsize == 0
 
         # This could legitimately be a np.empty, but the performance gains for
         # that would be so marginal that there's really not much point risking
         # undefined behaviour shenanigans.
-        result = np.zeros(
-            shape=self.array_size, dtype=object if unsized_string_dtype else self.dtype
-        )
+        result = np.zeros(shape=self.array_size, dtype=object if unsized_string_dtype else self.dtype)
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly
@@ -404,9 +394,7 @@ class ArrayStrategy(st.SearchStrategy):
                 # single element, we both get an array with the right value in
                 # it and putmask will do the right thing by repeating the
                 # values of the array across the mask.
-                one_element = np.zeros(
-                    shape=1, dtype=object if unsized_string_dtype else self.dtype
-                )
+                one_element = np.zeros(shape=1, dtype=object if unsized_string_dtype else self.dtype)
                 self.set_element(data.draw(self.fill), one_element, 0, fill=True)
                 if unsized_string_dtype:
                     one_element = one_element.astype(self.dtype)
@@ -418,9 +406,7 @@ class ArrayStrategy(st.SearchStrategy):
                         is_nan = False
 
                     if not is_nan:
-                        raise InvalidArgument(
-                            f"Cannot fill unique array with non-NaN value {fill_value!r}"
-                        )
+                        raise InvalidArgument(f"Cannot fill unique array with non-NaN value {fill_value!r}")
 
                 np.putmask(result, needs_fill, one_element)
 
@@ -564,13 +550,9 @@ def arrays(
     # needed.  So we get the best of both worlds by recursing with flatmap,
     # but only when it's actually needed.
     if isinstance(dtype, st.SearchStrategy):
-        return dtype.flatmap(
-            lambda d: arrays(d, shape, elements=elements, fill=fill, unique=unique)
-        )
+        return dtype.flatmap(lambda d: arrays(d, shape, elements=elements, fill=fill, unique=unique))
     if isinstance(shape, st.SearchStrategy):
-        return shape.flatmap(
-            lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
-        )
+        return shape.flatmap(lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique))
     # From here on, we're only dealing with values and it's relatively simple.
     dtype = np.dtype(dtype)  # type: ignore[arg-type]
     assert isinstance(dtype, np.dtype)  # help mypy out a bit...
@@ -845,9 +827,7 @@ def floating_dtypes(
 def floating_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[
-        Literal[16, 32, 64, 96, 128], Sequence[Literal[16, 32, 64, 96, 128]]
-    ] = (16, 32, 64),
+    sizes: Union[Literal[16, 32, 64, 96, 128], Sequence[Literal[16, 32, 64, 96, 128]]] = (16, 32, 64),
 ) -> st.SearchStrategy["np.dtype[np.floating[Any]]"]:
     """Return a strategy for floating-point dtypes.
 
@@ -1031,9 +1011,7 @@ def array_dtypes(
     )
     elements: st.SearchStrategy[tuple] = st.tuples(name_titles, subtype_strategy)
     if allow_subarrays:
-        elements |= st.tuples(
-            name_titles, subtype_strategy, array_shapes(max_dims=2, max_side=2)
-        )
+        elements |= st.tuples(name_titles, subtype_strategy, array_shapes(max_dims=2, max_side=2))
     return st.lists(  # type: ignore[return-value]
         elements=elements,
         min_size=min_size,
@@ -1238,9 +1216,7 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any] | np.bool[bool]]" = np.dtype(
-        int
-    ),
+    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any] | np.bool[bool]]" = np.dtype(int),
 ) -> "st.SearchStrategy[tuple[NDArray[I], ...]]":
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
@@ -1287,9 +1263,7 @@ def integer_array_indices(
         f"{shape=} must be a non-empty tuple of integers > 0",
     )
     check_strategy(result_shape, "result_shape")
-    check_argument(
-        np.issubdtype(dtype, np.integer), f"{dtype=} must be an integer dtype"
-    )
+    check_argument(np.issubdtype(dtype, np.integer), f"{dtype=} must be an integer dtype")
     signed = np.issubdtype(dtype, np.signedinteger)
 
     def array_for(index_shape, size):
@@ -1299,9 +1273,7 @@ def integer_array_indices(
             elements=st.integers(-size if signed else 0, size - 1),
         )
 
-    return result_shape.flatmap(
-        lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
-    )
+    return result_shape.flatmap(lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape)))
 
 
 def _unpack_generic(thing):
