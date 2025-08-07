@@ -135,7 +135,7 @@ Cross-thread API calls
 
 In theory, Hypothesis supports cross-thread API calls, for instance spawning a thread inside of a test and using that to draw from |st.composite| or |st.data|, or to call |event|, |target|, or |assume|.
 
-However, we have not explicitly audited this behavior, and do not regularly test it in our CI. If you find a bug here, please report it. The answer might be "we investigated and this is not something we can support", in which case we will update this page.
+However, we have not explicitly audited this behavior, and do not regularly test it in our CI. If you find a bug here, please report it. If our investigation determines that we cannot support cross-thread calls for the feature in question, we will update this page accordingly.
 
 Type hints
 ----------
