@@ -277,11 +277,14 @@ class ArrayStrategy(st.SearchStrategy):
             result[idx] = val
         except TypeError as err:
             raise InvalidArgument(
-                f"Could not add element={getattr(val, 'dtype', type(val))!r} of {getattr(val, 'dtype', type(val))!r} to array of "
+                f"Could not add element={getattr(val, 'dtype', type(val))!r} of "
+                f"{getattr(val, 'dtype', type(val))!r} to array of "
                 f"{getattr(result, 'dtype', type(result))!r} - possible mismatch of time units in dtypes?"
             ) from err
         try:
-            elem_changed = self._check_elements and not _array_or_scalar_equal(val, result[idx]) and _array_or_scalar_equal(val, val)
+            elem_changed = self._check_elements and (
+                    not _array_or_scalar_equal(val, result[idx]) and _array_or_scalar_equal(val, val)
+            )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.

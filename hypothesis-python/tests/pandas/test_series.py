@@ -17,8 +17,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
-from tests.pandas.helpers import supported_by_pandas, dataclass_instance, all_elements, all_numpy_dtype_elements, \
-    all_scalar_object_elements
+from tests.pandas.helpers import supported_by_pandas
+from tests.numpy.helpers import dataclass_instance, all_scalar_object_elements, all_numpy_dtype_elements, all_elements
 
 
 @given(st.data())

@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
-from dataclasses import dataclass, field
 from functools import reduce
 from itertools import zip_longest
 
@@ -26,13 +25,13 @@ from hypothesis import (
     strategies as st,
     target, find,
 )
-from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption, NoSuchExample
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.debug import check_can_generate_examples, find_any, minimal, assert_no_examples
 from tests.common.utils import fails_with, flaky
-from tests.pandas.helpers import all_elements, dataclass_instance, all_scalar_object_elements
+from tests.numpy.helpers import dataclass_instance, all_scalar_object_elements, all_elements
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
