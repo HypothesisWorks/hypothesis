@@ -651,6 +651,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("py39-oldparser", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")

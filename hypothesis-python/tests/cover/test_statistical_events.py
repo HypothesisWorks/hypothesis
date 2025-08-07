@@ -28,6 +28,8 @@ from hypothesis import (
 )
 from hypothesis.statistics import collector, describe_statistics
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 def call_for_statistics(test_function):
     result = []
@@ -129,6 +131,7 @@ def test_apparently_instantaneous_tests():
     assert "< 1ms" in stats
 
 
+@xfail_on_crosshair(Why.other)  # crosshair re-executes for flakiness itself
 def test_flaky_exit():
     first = True
 
@@ -139,7 +142,6 @@ def test_flaky_exit():
         if i > 1001:
             if first:
                 first = False
-                print("Hi")
                 raise AssertionError
 
     stats = call_for_statistics(test)
@@ -252,6 +254,8 @@ def test_statistics_for_threshold_problem():
     assert stats["targets"]["error"] > 10
 
 
+# describe_statistics causes not-deterministic crosshair errors for some reason?
+@xfail_on_crosshair(Why.other)
 def test_statistics_with_events_and_target():
     @given(st.integers(0, 10_000))
     def test(value):

@@ -27,7 +27,7 @@ from hypothesis import (
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-from tests.common.utils import Why, xfail_on_crosshair
+from tests.common.utils import Why, skipif_threading, xfail_on_crosshair
 from tests.conjecture.common import interesting_origin
 
 
@@ -117,6 +117,10 @@ def run_language_test_for(root, data, seed):
     assume(runner.interesting_examples)
 
 
+# modifying global random, causing warnings from deprecate_random_in_strategy.
+# unclear why the warning doesn't trigger on a
+# single thread, but that was previous behavior so I'm not looking too deep into it.
+@skipif_threading
 @xfail_on_crosshair(Why.nested_given)  # technically nested-engine, but same problem
 @settings(
     suppress_health_check=list(HealthCheck),

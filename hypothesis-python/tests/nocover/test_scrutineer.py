@@ -19,6 +19,8 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import make_report
 from hypothesis.vendor import pretty
 
+from tests.common.utils import skipif_threading
+
 # We skip tracing for explanations under PyPy, where it has a large performance
 # impact, or if there is already a trace function (e.g. coverage or a debugger)
 pytestmark = pytest.mark.skipif(PYPY or sys.gettrace(), reason="See comment")
@@ -74,6 +76,7 @@ def get_reports(file_contents, *, testdir):
     return pytest_stdout, expected
 
 
+@skipif_threading  # runpytest_inprocess is not thread safe
 @pytest.mark.parametrize("code", FRAGMENTS)
 def test_explanations(code, testdir):
     pytest_stdout, expected = get_reports(PRELUDE + code, testdir=testdir)
@@ -82,6 +85,7 @@ def test_explanations(code, testdir):
         assert single in pytest_stdout or group in pytest_stdout
 
 
+@skipif_threading  # runpytest_inprocess is not thread safe
 @pytest.mark.parametrize("code", FRAGMENTS)
 def test_no_explanations_if_deadline_exceeded(code, testdir):
     code = code.replace("AssertionError", "DeadlineExceeded(timedelta(), timedelta())")
@@ -105,6 +109,7 @@ def test(x):
 """
 
 
+@skipif_threading  # runpytest_inprocess is not thread safe
 @pytest.mark.skipif(PYPY, reason="Tracing is slow under PyPy")
 def test_skips_uninformative_locations(testdir):
     pytest_stdout, _ = get_reports(NO_SHOW_CONTEXTLIB, testdir=testdir)
