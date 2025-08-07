@@ -620,6 +620,7 @@ def _callbacks():
     return hypothesis.internal.observability._callbacks
 
 
+@skipif_threading
 def test_observability_callbacks():
     def f(observation):
         pass
@@ -653,6 +654,7 @@ def test_observability_callbacks():
         assert not observability_enabled()
 
 
+@skipif_threading
 def test_observability_callbacks_all_threads():
     thread_id = threading.get_ident()
 

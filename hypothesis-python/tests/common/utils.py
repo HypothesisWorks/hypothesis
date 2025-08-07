@@ -151,10 +151,8 @@ def validate_deprecation():
     if settings._current_profile == "threading":
         import pytest
 
-        pytest.skipif(
-            sys.version_info[:2] < (3, 14),
-            reason="warnings module is not thread-safe before 3.14",
-        )
+        if sys.version_info[:2] < (3, 14):
+            pytest.skip("warnings module is not thread-safe before 3.14")
 
     import warnings
 
