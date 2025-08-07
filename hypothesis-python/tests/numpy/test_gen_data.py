@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+from dataclasses import dataclass, field
 from functools import reduce
 from itertools import zip_longest
 
@@ -23,14 +24,15 @@ from hypothesis import (
     note,
     settings,
     strategies as st,
-    target,
+    target, find,
 )
-from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption, NoSuchExample
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
-from tests.common.debug import check_can_generate_examples, find_any, minimal
+from tests.common.debug import check_can_generate_examples, find_any, minimal, assert_no_examples
 from tests.common.utils import fails_with, flaky
+from tests.pandas.helpers import all_elements, dataclass_instance, all_scalar_object_elements
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
@@ -1275,12 +1277,35 @@ def test_infers_elements_and_fill():
     assert s.fill.is_empty
 
 
-@given(nps.arrays(np.dtype("O"), shape=(1,)))
+@given(nps.arrays(np.dtype("O"), shape=(1,), elements=all_elements))
 def test_object_arrays_are_of_type_object(obj_array):
     assert obj_array.dtype == np.dtype("O")
 
 
-@given(nps.arrays(np.dtype("O"), shape=(1,), elements=st.floats()))
-def test_object_arrays_are_of_type_object_even_with_numpy_elements(obj_array):
-    assert obj_array.dtype == np.dtype("O")
-    assert all(isinstance(v, float) for v in obj_array)
+def test_error_with_object_elements_in_numpy_dtype_arrays():
+    with pytest.raises(InvalidArgument):
+        find_any(
+            nps.arrays(
+                nps.scalar_dtypes(), shape=nps.array_shapes(min_dims=1, min_side=1), elements=all_scalar_object_elements,
+            ),
+        )
+
+
+def test_can_generate_object_arrays_with_mixed_dtype_elements():
+    find_any(
+        nps.arrays(np.dtype('O'), shape=nps.array_shapes(min_dims=1, min_side=1), elements=all_elements),
+        lambda arr: len({type(x) for x in arr.ravel()}) > 1
+    )
+
+
+def test_can_hold_arbitrary_dataclass():
+    find_any(
+        nps.arrays(np.dtype("O"), shape=(1,), elements=st.just(dataclass_instance)),
+        lambda arr: len([x is dataclass_instance for x in arr.ravel()]) > 0)
+
+
+def test_series_with_mixed_dtypes_is_still_object_dtype_even_with_numpy_types():
+    assert_no_examples(
+        nps.arrays(np.dtype("O"), shape=(1,), elements=st.one_of(nps.array_dtypes(), nps.scalar_dtypes())),
+        lambda arr: all(isinstance(e, np.dtype) for e in arr.ravel()) and (arr.dtype != np.dtype('O'))
+    )

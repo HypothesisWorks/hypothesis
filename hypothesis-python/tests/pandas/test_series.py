@@ -13,12 +13,12 @@ import pandas as pd
 import pytest
 
 from hypothesis import assume, given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
-from hypothesis.extra.numpy import from_dtype
 from hypothesis.extra.pandas.impl import IntegerDtype
-
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
-from tests.pandas.helpers import supported_by_pandas
+from tests.pandas.helpers import supported_by_pandas, dataclass_instance, all_elements, all_numpy_dtype_elements, \
+    all_scalar_object_elements
 
 
 @given(st.data())
@@ -32,11 +32,34 @@ def test_can_create_a_series_of_any_dtype(data):
 
 
 @given(pdst.series(dtype=object))
-def test_can_create_a_series_of_mixed_python_type(series):
+def test_can_create_a_series_of_object_python_type(series):
     assert series.dtype == pd.Series([], dtype=object).dtype
 
 
-@given(st.data(), from_dtype(np.dtype(object)))
+def test_error_with_object_elements_in_numpy_dtype_arrays():
+    with pytest.raises(InvalidArgument):
+        find_any(
+            pdst.series(elements=all_scalar_object_elements, dtype=all_numpy_dtype_elements)
+        )
+
+
+def test_can_generate_object_arrays_with_mixed_dtype_elements():
+    find_any(pdst.series(elements=all_elements, dtype=object), lambda s: len({type(x) for x in s.values}) > 1)
+
+
+@given(pdst.series(elements=st.just(dataclass_instance), dtype=object))
+def test_can_hold_arbitrary_dataclass(series):
+    assert all(x is dataclass_instance for x in series.values)
+
+
+def test_series_is_still_object_dtype_even_with_numpy_types():
+    assert_no_examples(
+        pdst.series(elements=all_numpy_dtype_elements, dtype=object),
+        lambda s: all(isinstance(e, np.dtype) for e in s.values) and (s.dtype != np.dtype('O'))
+    )
+
+
+@given(st.data(), all_elements)
 def test_can_create_a_series_of_single_python_type(data, obj):
     # Ensure that arbitrary objects are present in the series without
     # modification.

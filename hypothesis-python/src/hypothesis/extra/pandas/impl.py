@@ -127,7 +127,7 @@ def elements_and_dtype(elements, dtype, source=None):
                 return None
             name = f"draw({prefix}elements)"
             if dtype.kind == "O":
-                return value  # for objects, just use the object
+                return value  # for objects, just use the object other numpy might convert it
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
