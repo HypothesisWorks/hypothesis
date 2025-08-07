@@ -60,11 +60,17 @@
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
 
+.. |HypothesisException| replace:: :obj:`HypothesisException <hypothesis.errors.HypothesisException>`
+.. |HypothesisDeprecationWarning| replace:: :obj:`HypothesisDeprecationWarning <hypothesis.errors.HypothesisDeprecationWarning>`
+.. |Flaky| replace:: :obj:`Flaky <hypothesis.errors.Flaky>`
+.. |FlakyStrategyDefinition| replace:: :obj:`FlakyStrategyDefinition <hypothesis.errors.FlakyStrategyDefinition>`
+.. |FlakyFailure| replace:: :obj:`FlakyFailure <hypothesis.errors.FlakyFailure>`
+.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
 .. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
 .. |DeadlineExceeded| replace:: :obj:`DeadlineExceeded <hypothesis.errors.DeadlineExceeded>`
 .. |BackendCannotProceed| replace:: :obj:`~hypothesis.errors.BackendCannotProceed`
-.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
+
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
