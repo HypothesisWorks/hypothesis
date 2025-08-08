@@ -16,8 +16,14 @@ from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
+
 from tests.common.debug import find_any, assert_no_examples
-from tests.numpy.helpers import dataclass_instance, all_scalar_object_elements, all_numpy_dtype_elements, all_elements
+from tests.numpy.helpers import (
+    dataclass_instance,
+    all_scalar_object_elements,
+    all_numpy_dtype_elements,
+    all_elements
+)
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -282,37 +288,76 @@ def test_pandas_nullable_types():
         assert type(df[s].dtype) == pd.core.arrays.integer.Int8Dtype
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', all_elements, dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': all_elements}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(
+            columns=[pdst.column("col", all_elements, dtype=object)],
+            index=pdst.range_indexes(1)
+        ),
+        pdst.data_frames(
+            rows=st.fixed_dictionaries({"col": all_elements}),
+            index=pdst.range_indexes(1)
+        ),
+    ]
+)
 def test_can_generate_object_arrays_with_mixed_dtype_elements(strategy):
-    find_any(strategy, lambda df: len({type(x) for x in df['col'].values}) > 1)
+    find_any(strategy, lambda df: len({type(x) for x in df["col"].values}) > 1)
 
 
 def test_error_with_object_elements_in_numpy_dtype_arrays():
     with pytest.raises(InvalidArgument):
         find_any(
-            pdst.data_frames(columns=[pdst.column('col', all_scalar_object_elements, dtype=all_numpy_dtype_elements)])
+            pdst.data_frames(
+                columns=[
+                    pdst.column(
+                        "col",
+                        all_scalar_object_elements,
+                        dtype=all_numpy_dtype_elements
+                    )
+                ]
+            )
         )
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', st.just(dataclass_instance), dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': st.just(dataclass_instance)}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(
+            columns=[pdst.column("col", st.just(dataclass_instance), dtype=object)],
+            index=pdst.range_indexes(1)
+        ),
+        pdst.data_frames(
+            rows=st.fixed_dictionaries({"col": st.just(dataclass_instance)}),
+            index=pdst.range_indexes(1)
+        ),
+    ]
+)
 def test_can_hold_arbitrary_dataclass(strategy):
-    find_any(strategy, lambda df: len([x is dataclass_instance for x in df['col'].values]) > 0)
+    find_any(
+        strategy,
+        lambda df: len([x is dataclass_instance for x in df['col'].values]) > 0
+    )
 
 
-@pytest.mark.parametrize('strategy', [
-    pdst.data_frames(columns=[pdst.column('col', all_numpy_dtype_elements, dtype=object)], index=pdst.range_indexes(1)),
-    pdst.data_frames(rows=st.fixed_dictionaries({'col': all_numpy_dtype_elements}), index=pdst.range_indexes(1)),
-])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pdst.data_frames(
+            columns=[pdst.column("col", all_numpy_dtype_elements, dtype=object)],
+            index=pdst.range_indexes(1)
+        ),
+        pdst.data_frames(
+            rows=st.fixed_dictionaries({"col": all_numpy_dtype_elements}),
+            index=pdst.range_indexes(1)
+        ),
+    ]
+)
 def test_series_is_still_object_dtype_even_with_numpy_types(strategy):
     assert_no_examples(
         strategy,
-        lambda df: all(isinstance(e, np.dtype) for e in df['col'].values) and (df['col'].dtype != np.dtype('O')),
+        lambda df: all(isinstance(e, np.dtype) for e in df["col"].values)
+        and (df["col"].dtype != np.dtype("O")),
     )
 
 
@@ -322,8 +367,8 @@ def test_can_create_a_series_of_single_python_type(data, obj):
     # modification.
     df = data.draw(
         pdst.data_frames(
-            columns=[pdst.column('col', elements=st.just(obj), dtype=object)],
+            columns=[pdst.column("col", elements=st.just(obj), dtype=object)],
             index=pdst.range_indexes(min_size=1),
         )
     )
-    assert all(val is obj for val in df['col'].values)
+    assert all(val is obj for val in df["col"].values)

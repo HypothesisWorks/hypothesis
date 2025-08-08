@@ -16,9 +16,15 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
+
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
+from tests.numpy.helpers import (
+    dataclass_instance,
+    all_scalar_object_elements,
+    all_numpy_dtype_elements,
+    all_elements
+)
 from tests.pandas.helpers import supported_by_pandas
-from tests.numpy.helpers import dataclass_instance, all_scalar_object_elements, all_numpy_dtype_elements, all_elements
 
 
 @given(st.data())
@@ -39,12 +45,17 @@ def test_can_create_a_series_of_object_python_type(series):
 def test_error_with_object_elements_in_numpy_dtype_arrays():
     with pytest.raises(InvalidArgument):
         find_any(
-            pdst.series(elements=all_scalar_object_elements, dtype=all_numpy_dtype_elements)
+            pdst.series(
+                elements=all_scalar_object_elements, dtype=all_numpy_dtype_elements
+            )
         )
 
 
 def test_can_generate_object_arrays_with_mixed_dtype_elements():
-    find_any(pdst.series(elements=all_elements, dtype=object), lambda s: len({type(x) for x in s.values}) > 1)
+    find_any(
+        pdst.series(elements=all_elements, dtype=object),
+        lambda s: len({type(x) for x in s.values}) > 1
+    )
 
 
 @given(pdst.series(elements=st.just(dataclass_instance), dtype=object))
@@ -55,7 +66,8 @@ def test_can_hold_arbitrary_dataclass(series):
 def test_series_is_still_object_dtype_even_with_numpy_types():
     assert_no_examples(
         pdst.series(elements=all_numpy_dtype_elements, dtype=object),
-        lambda s: all(isinstance(e, np.dtype) for e in s.values) and (s.dtype != np.dtype('O'))
+        lambda s: all(isinstance(e, np.dtype) for e in s.values)
+        and (s.dtype != np.dtype("O"))
     )
 
 

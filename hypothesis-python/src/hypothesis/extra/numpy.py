@@ -42,9 +42,9 @@ from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import (
     Ex,
     MappedStrategy,
+    SampledFromStrategy,
     T,
     check_strategy,
-    SampledFromStrategy,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
 
@@ -243,7 +243,11 @@ def from_dtype(
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
     elif dtype.kind == "O":
-        return st.from_type(type).flatmap(st.from_type).filter(_is_compatible_numpy_element_object)
+        return (
+            st.from_type(type)
+            .flatmap(st.from_type)
+            .filter(_is_compatible_numpy_element_object)
+        )
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
@@ -259,8 +263,12 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
-        if dtype == np.dtype('O') and not isinstance(element_strategy, SampledFromStrategy):  # to keep nice error messages
-            self.element_strategy = element_strategy.filter(_is_compatible_numpy_element_object)
+        if dtype == np.dtype("O") and not isinstance(
+                element_strategy, SampledFromStrategy
+        ):  # to keep nice error messages
+            self.element_strategy = element_strategy.filter(
+                _is_compatible_numpy_element_object
+            )
         else:
             self.element_strategy = element_strategy
         self.unique = unique
@@ -283,7 +291,8 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
         try:
             elem_changed = self._check_elements and (
-                    not _array_or_scalar_equal(val, result[idx]) and _array_or_scalar_equal(val, val)
+                    not _array_or_scalar_equal(val, result[idx])
+                    and _array_or_scalar_equal(val, val)
             )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
