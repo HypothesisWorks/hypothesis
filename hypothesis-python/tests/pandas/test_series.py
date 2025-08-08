@@ -38,7 +38,9 @@ def test_can_create_a_series_of_object_python_type(series):
 
 def test_error_with_object_elements_in_numpy_dtype_arrays():
     with pytest.raises(InvalidArgument):
-        find_any(pdst.series(elements=all_scalar_object_elements, dtype=all_numpy_dtype_elements))
+        find_any(
+            pdst.series(elements=all_scalar_object_elements, dtype=all_numpy_dtype_elements)
+        )
 
 
 def test_can_generate_object_arrays_with_mixed_dtype_elements():
@@ -53,7 +55,7 @@ def test_can_hold_arbitrary_dataclass(series):
 def test_series_is_still_object_dtype_even_with_numpy_types():
     assert_no_examples(
         pdst.series(elements=all_numpy_dtype_elements, dtype=object),
-        lambda s: all(isinstance(e, np.dtype) for e in s.values) and (s.dtype != np.dtype("O")),
+        lambda s: all(isinstance(e, np.dtype) for e in s.values) and (s.dtype != np.dtype('O'))
     )
 
 
@@ -106,8 +108,12 @@ def test_name_passed_on(s):
     assert s.name == "test_name"
 
 
-@pytest.mark.skipif(not IntegerDtype, reason="Nullable types not available in this version of Pandas")
-@pytest.mark.parametrize("dtype", ["Int8", pd.core.arrays.integer.Int8Dtype() if IntegerDtype else None])
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
+)
+@pytest.mark.parametrize(
+    "dtype", ["Int8", pd.core.arrays.integer.Int8Dtype() if IntegerDtype else None]
+)
 def test_pandas_nullable_types(dtype):
     assert_no_examples(
         pdst.series(dtype=dtype, elements=st.just(0)),
