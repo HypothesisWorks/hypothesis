@@ -264,7 +264,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
         if dtype == np.dtype("O") and not isinstance(
-                element_strategy, SampledFromStrategy
+            element_strategy, SampledFromStrategy
         ):  # to keep nice error messages
             self.element_strategy = element_strategy.filter(
                 _is_compatible_numpy_element_object
@@ -291,8 +291,8 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
         try:
             elem_changed = self._check_elements and (
-                    not _array_or_scalar_equal(val, result[idx])
-                    and _array_or_scalar_equal(val, val)
+                not _array_or_scalar_equal(val, result[idx])
+                and _array_or_scalar_equal(val, val)
             )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,

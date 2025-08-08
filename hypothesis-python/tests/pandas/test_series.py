@@ -19,10 +19,10 @@ from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 from tests.numpy.helpers import (
-    dataclass_instance,
-    all_scalar_object_elements,
+    all_elements,
     all_numpy_dtype_elements,
-    all_elements
+    all_scalar_object_elements,
+    dataclass_instance,
 )
 from tests.pandas.helpers import supported_by_pandas
 
@@ -54,7 +54,7 @@ def test_error_with_object_elements_in_numpy_dtype_arrays():
 def test_can_generate_object_arrays_with_mixed_dtype_elements():
     find_any(
         pdst.series(elements=all_elements, dtype=object),
-        lambda s: len({type(x) for x in s.values}) > 1
+        lambda s: len({type(x) for x in s.values}) > 1,
     )
 
 
@@ -67,7 +67,7 @@ def test_series_is_still_object_dtype_even_with_numpy_types():
     assert_no_examples(
         pdst.series(elements=all_numpy_dtype_elements, dtype=object),
         lambda s: all(isinstance(e, np.dtype) for e in s.values)
-        and (s.dtype != np.dtype("O"))
+        and (s.dtype != np.dtype("O")),
     )
 
 

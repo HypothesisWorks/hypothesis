@@ -40,6 +40,6 @@ all_scalar_elements = st.one_of(all_numpy_dtype_elements, all_scalar_object_elem
 all_object_arrays = npst.arrays(
     np.dtype("O"),
     elements=all_scalar_elements,
-    shape=npst.array_shapes(min_dims=1, min_side=1)
+    shape=npst.array_shapes(min_dims=1, min_side=1),
 )
 all_elements = st.one_of(all_scalar_elements, all_object_arrays)

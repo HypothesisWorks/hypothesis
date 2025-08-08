@@ -17,12 +17,12 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
-from tests.common.debug import find_any, assert_no_examples
+from tests.common.debug import assert_no_examples, find_any
 from tests.numpy.helpers import (
-    dataclass_instance,
-    all_scalar_object_elements,
+    all_elements,
     all_numpy_dtype_elements,
-    all_elements
+    all_scalar_object_elements,
+    dataclass_instance,
 )
 from tests.pandas.helpers import supported_by_pandas
 
@@ -293,13 +293,13 @@ def test_pandas_nullable_types():
     [
         pdst.data_frames(
             columns=[pdst.column("col", all_elements, dtype=object)],
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
         pdst.data_frames(
             rows=st.fixed_dictionaries({"col": all_elements}),
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
-    ]
+    ],
 )
 def test_can_generate_object_arrays_with_mixed_dtype_elements(strategy):
     find_any(strategy, lambda df: len({type(x) for x in df["col"].values}) > 1)
@@ -313,7 +313,7 @@ def test_error_with_object_elements_in_numpy_dtype_arrays():
                     pdst.column(
                         "col",
                         all_scalar_object_elements,
-                        dtype=all_numpy_dtype_elements
+                        dtype=all_numpy_dtype_elements,
                     )
                 ]
             )
@@ -325,18 +325,18 @@ def test_error_with_object_elements_in_numpy_dtype_arrays():
     [
         pdst.data_frames(
             columns=[pdst.column("col", st.just(dataclass_instance), dtype=object)],
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
         pdst.data_frames(
             rows=st.fixed_dictionaries({"col": st.just(dataclass_instance)}),
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
-    ]
+    ],
 )
 def test_can_hold_arbitrary_dataclass(strategy):
     find_any(
         strategy,
-        lambda df: len([x is dataclass_instance for x in df['col'].values]) > 0
+        lambda df: len([x is dataclass_instance for x in df["col"].values]) > 0,
     )
 
 
@@ -345,13 +345,13 @@ def test_can_hold_arbitrary_dataclass(strategy):
     [
         pdst.data_frames(
             columns=[pdst.column("col", all_numpy_dtype_elements, dtype=object)],
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
         pdst.data_frames(
             rows=st.fixed_dictionaries({"col": all_numpy_dtype_elements}),
-            index=pdst.range_indexes(1)
+            index=pdst.range_indexes(1),
         ),
-    ]
+    ],
 )
 def test_series_is_still_object_dtype_even_with_numpy_types(strategy):
     assert_no_examples(
