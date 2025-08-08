@@ -296,7 +296,7 @@ def extract_all_lambdas(tree):
     return lambdas
 
 
-def _lambda_source_key(f, bounded_size=False):
+def _lambda_source_key(f, *, bounded_size=False):
     """Returns a digest that differentiates lambdas that have different sources."""
     consts_repr = repr(f.__code__.co_consts)
     if bounded_size:
