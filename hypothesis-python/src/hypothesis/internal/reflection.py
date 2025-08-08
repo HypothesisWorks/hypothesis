@@ -686,5 +686,23 @@ def proxies(target: T) -> Callable[[Callable], T]:
 
 
 def is_identity_function(f: object) -> bool:
-    # TODO: pattern-match the AST to handle `def ...` identity functions too
-    return bool(re.fullmatch(r"lambda (\w+): \1", get_pretty_function_description(f)))
+    try:
+        code = f.__code__
+    except AttributeError:
+        try:
+            f = f.__call__
+            code = f.__code__
+        except AttributeError:
+            return False
+
+    # We only accept a single unbound argument. While it would be possible to
+    # accept extra defaulted arguments, it would be pointless as they couldn't
+    # be referenced at all in the code object (or the check below would fail).
+    bound_args = int(inspect.ismethod(f))
+    if code.co_argcount != bound_args + 1 or code.co_kwonlyargcount > 0:
+        return False
+
+    # We know that f accepts a single positional argument, now check that its
+    # code object is simply "return first unbound argument".
+    template = (lambda self, x: x) if bound_args else (lambda x: x)
+    return code.co_code == template.__code__.co_code
