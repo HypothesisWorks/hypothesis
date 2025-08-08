@@ -98,8 +98,8 @@ def test_can_distinguish_between_two_lambdas_with_different_args():
 
 def test_can_distinguish_between_two_lambdas_with_different_constants():
     a, b = (lambda x: 1, lambda x: 2)
-    assert "lambda x: 1" in get_pretty_function_description(a)
-    assert "lambda x: 2" in get_pretty_function_description(b)
+    assert get_pretty_function_description(a) == "lambda x: 1"
+    assert get_pretty_function_description(b) == "lambda x: 2"
 
 
 def test_does_not_get_confused_by_identical_lambdas():
@@ -129,8 +129,8 @@ def test_can_distinguish_between_two_lambdas_with_different_captures():
     a = 1; f1 = lambda x=a: x; a=2; f2=lambda x=a: x  # noqa: E702
     # fmt: on
 
-    assert "lambda x=1: x" in get_pretty_function_description(f1)
-    assert "lambda x=2: x" in get_pretty_function_description(f2)
+    assert get_pretty_function_description(f1) == "lambda x=1: x"
+    assert get_pretty_function_description(f2) == "lambda x=2: x"
 
 
 def test_lambda_source_break_after_bracket():

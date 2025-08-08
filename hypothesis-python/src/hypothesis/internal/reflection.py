@@ -440,13 +440,15 @@ def extract_lambda_source(f):
     try:
         return LAMBDA_SOURCE_CACHE[f]
     except KeyError:
-        key = _lambda_source_key(f, bounded_size=True)
-        try:
-            source = LAMBDA_DIGEST_SOURCE_CACHE[key]
-            LAMBDA_SOURCE_CACHE[f] = source
-            return source
-        except KeyError:
-            pass
+        pass
+
+    key = _lambda_source_key(f, bounded_size=True)
+    try:
+        source = LAMBDA_DIGEST_SOURCE_CACHE[key]
+        LAMBDA_SOURCE_CACHE[f] = source
+        return source
+    except KeyError:
+        pass
 
     source = _extract_lambda_source(f)
     LAMBDA_SOURCE_CACHE[f] = source
