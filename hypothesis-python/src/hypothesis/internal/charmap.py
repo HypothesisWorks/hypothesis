@@ -120,9 +120,9 @@ def charmap() -> dict[CategoryName, IntervalsT]:
                 fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
-                with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
+                with gzip.GzipFile(tmpfile, "wb", mtime=1) as fp:
                     result = json.dumps(sorted(tmp_charmap.items()))
-                    o.write(result.encode())
+                    fp.write(result.encode())
 
                 os.renames(tmpfile, f)
             except Exception:
@@ -173,8 +173,8 @@ def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
         fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
         os.close(fd)
         # Explicitly set the mtime to get reproducible output
-        with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
-            o.write(json.dumps(res.intervals).encode())
+        with gzip.GzipFile(tmpfile, "wb", mtime=1) as f:
+            f.write(json.dumps(res.intervals).encode())
         os.renames(tmpfile, fname)
     except Exception:
         pass

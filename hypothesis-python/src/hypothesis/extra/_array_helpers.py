@@ -241,7 +241,7 @@ def broadcastable_shapes(
             if s < min_side and s != 1:
                 max_dims = n
                 break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
+            if not (min_side <= 1 <= max_side or s <= max_side):
                 max_dims = n
                 break
 
@@ -466,7 +466,7 @@ def mutually_broadcastable_shapes(
             if s < min_side and s != 1:
                 max_dims = n
                 break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
+            if not (min_side <= 1 <= max_side or s <= max_side):
                 max_dims = n
                 break
 

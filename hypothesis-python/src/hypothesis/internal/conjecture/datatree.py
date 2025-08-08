@@ -769,55 +769,55 @@ class DataTree:
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
                     return tuple(prefix)
-            else:
-                assert not isinstance(current_node.transition, (Conclusion, Killed))
-                if current_node.transition is None:
-                    return tuple(prefix)
-                branch = current_node.transition
-                assert isinstance(branch, Branch)
 
-                attempts = 0
-                while True:
-                    if attempts <= 10:
-                        try:
-                            node_value = self._draw(
-                                branch.choice_type, branch.constraints, random=random
-                            )
-                        except StopTest:  # pragma: no cover
-                            attempts += 1
-                            continue
-                    else:
-                        node_value = self._draw_from_cache(
-                            branch.choice_type,
-                            branch.constraints,
-                            key=id(branch),
-                            random=random,
-                        )
+            assert not isinstance(current_node.transition, (Conclusion, Killed))
+            if current_node.transition is None:
+                return tuple(prefix)
+            branch = current_node.transition
+            assert isinstance(branch, Branch)
+
+            attempts = 0
+            while True:
+                if attempts <= 10:
                     try:
-                        child = branch.children[node_value]
-                    except KeyError:
-                        append_choice(branch.choice_type, node_value)
-                        return tuple(prefix)
-                    if not child.is_exhausted:
-                        append_choice(branch.choice_type, node_value)
-                        current_node = child
-                        break
-                    attempts += 1
-                    self._reject_child(
+                        node_value = self._draw(
+                            branch.choice_type, branch.constraints, random=random
+                        )
+                    except StopTest:  # pragma: no cover
+                        attempts += 1
+                        continue
+                else:
+                    node_value = self._draw_from_cache(
                         branch.choice_type,
                         branch.constraints,
-                        child=node_value,
                         key=id(branch),
+                        random=random,
                     )
+                try:
+                    child = branch.children[node_value]
+                except KeyError:
+                    append_choice(branch.choice_type, node_value)
+                    return tuple(prefix)
+                if not child.is_exhausted:
+                    append_choice(branch.choice_type, node_value)
+                    current_node = child
+                    break
+                attempts += 1
+                self._reject_child(
+                    branch.choice_type,
+                    branch.constraints,
+                    child=node_value,
+                    key=id(branch),
+                )
 
-                    # We don't expect this assertion to ever fire, but coverage
-                    # wants the loop inside to run if you have branch checking
-                    # on, hence the pragma.
-                    assert (  # pragma: no cover
-                        attempts != 1000
-                        or len(branch.children) < branch.max_children
-                        or any(not v.is_exhausted for v in branch.children.values())
-                    )
+                # We don't expect this assertion to ever fire, but coverage
+                # wants the loop inside to run if you have branch checking
+                # on, hence the pragma.
+                assert (  # pragma: no cover
+                    attempts != 1000
+                    or len(branch.children) < branch.max_children
+                    or any(not v.is_exhausted for v in branch.children.values())
+                )
 
     def rewrite(self, choices):
         """Use previously seen ConjectureData objects to return a tuple of

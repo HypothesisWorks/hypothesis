@@ -90,7 +90,7 @@ __all__ = [
     "valid_tuple_axes",
 ]
 
-TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
+TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as")
 
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
@@ -349,8 +349,8 @@ class ArrayStrategy(st.SearchStrategy):
                     if result[i] in seen:
                         elements.reject()
                         continue
-                    else:
-                        seen.add(result[i])
+                    seen.add(result[i])
+
                 needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we

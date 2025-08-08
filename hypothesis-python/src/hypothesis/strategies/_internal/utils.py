@@ -13,7 +13,7 @@ import sys
 import threading
 from functools import partial
 from inspect import signature
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 import attr
 
@@ -23,39 +23,32 @@ from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
 
 if TYPE_CHECKING:
-    from hypothesis.strategies._internal.strategies import SearchStrategy, T
+    from typing import TypeAlias
+
+    from hypothesis.strategies._internal.strategies import SearchStrategy
+
+T = TypeVar("T")
+ValueKey: "TypeAlias" = tuple[type, object]
+# (fn, args, kwargs)
+StrategyCacheKey: "TypeAlias" = tuple[
+    object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
+]
 
 _strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
-
-
-class FloatKey:
-    def __init__(self, f):
-        self.value = float_to_int(f)
-
-    def __eq__(self, other):
-        return isinstance(other, FloatKey) and (other.value == self.value)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.value)
-
-
-def convert_value(v):
-    if isinstance(v, float):
-        return FloatKey(v)
-    return (type(v), v)
-
-
 _CACHE = threading.local()
 
 
-def get_cache() -> LRUReusedCache:
+def convert_value(v: object) -> ValueKey:
+    if isinstance(v, float):
+        return (float, float_to_int(v))
+    return (type(v), v)
+
+
+def get_cache() -> LRUReusedCache[StrategyCacheKey, object]:
     try:
         return _CACHE.STRATEGY_CACHE
     except AttributeError:
-        _CACHE.STRATEGY_CACHE = LRUReusedCache(1024)
+        _CACHE.STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
         return _CACHE.STRATEGY_CACHE
 
 
@@ -64,7 +57,7 @@ def clear_cache() -> None:
     cache.clear()
 
 
-def cacheable(fn: "T") -> "T":
+def cacheable(fn: T) -> T:
     from hypothesis.control import _current_build_context
     from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -101,7 +94,7 @@ def defines_strategy(
     force_reusable_values: bool = False,
     try_non_lazy: bool = False,
     never_lazy: bool = False,
-) -> Callable[["T"], "T"]:
+) -> Callable[[T], T]:
     """Returns a decorator for strategy functions.
 
     If ``force_reusable_values`` is True, the returned strategy will be marked

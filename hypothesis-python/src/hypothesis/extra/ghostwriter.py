@@ -266,10 +266,7 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
         if match is None:
             continue
         doc_type = match.group(1)
-        if doc_type.endswith(", optional"):
-            # Convention to describe "argument may be omitted"
-            doc_type = doc_type[: -len(", optional")]
-        doc_type = doc_type.strip("}{")
+        doc_type = doc_type.removesuffix(", optional").strip("}{")
         elements = []
         types = []
         for token in re.split(r",? +or +| *, *", doc_type):
@@ -1083,13 +1080,21 @@ def _make_test(imports: ImportSet, body: str) -> str:
         header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
     elif nothings >= 1:
         header += "# TODO: replace st.nothing() with appropriate strategies\n\n"
-    return black.format_str(header + body, mode=black.FileMode())
+    return black.format_str(header + body, mode=black.Mode())
 
 
 def _is_probably_ufunc(obj):
     # See https://numpy.org/doc/stable/reference/ufuncs.html - there doesn't seem
     # to be an upstream function to detect this, so we just guess.
-    has_attributes = "nin nout nargs ntypes types identity signature".split()
+    has_attributes = [
+        "nin",
+        "nout",
+        "nargs",
+        "ntypes",
+        "types",
+        "identity",
+        "signature",
+    ]
     return callable(obj) and all(hasattr(obj, name) for name in has_attributes)
 
 

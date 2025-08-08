@@ -15,8 +15,6 @@ from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
 
 if TYPE_CHECKING:
     from typing import TypeAlias
-else:
-    TypeAlias = object
 
 SignedIntFormat: "TypeAlias" = Literal["!h", "!i", "!q"]
 UnsignedIntFormat: "TypeAlias" = Literal["!H", "!I", "!Q"]
