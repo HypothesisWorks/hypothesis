@@ -471,14 +471,19 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(
         configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
     )
-    tmp_path.chmod(0o000)
-    with (
-        nullcontext()
-        if WINDOWS
-        else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
-    ):
-        database = _db_for_path(not_set)
-    database.save(b"fizz", b"buzz")
+    try:
+        tmp_path.chmod(0o000)
+        with (
+            nullcontext()
+            if WINDOWS
+            else pytest.warns(
+                HypothesisWarning, match=".*the default location is unusable"
+            )
+        ):
+            database = _db_for_path(not_set)
+        database.save(b"fizz", b"buzz")
+    finally:
+        tmp_path.chmod(0o600)  # So that pytest can clean up tmp_path later
 
 
 @skipif_emscripten
