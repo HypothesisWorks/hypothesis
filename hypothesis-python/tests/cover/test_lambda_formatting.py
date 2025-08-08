@@ -120,11 +120,8 @@ def test_lambda_capturing_globals():
 def test_lambda_capturing_locals():
     const = 1
     a, b = (lambda: const, lambda: 1)
-    c = lambda: const
-    assert get_pretty_function_description(a) == "lambda: <unknown>"
+    assert get_pretty_function_description(a) == "lambda: const"
     assert get_pretty_function_description(b) == "lambda: 1"
-    # Next one works because it is unique on that line, no compile-test
-    assert get_pretty_function_description(c) == "lambda: const"
 
 
 def test_can_distinguish_between_two_lambdas_with_different_captures():

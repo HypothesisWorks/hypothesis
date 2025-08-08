@@ -22,7 +22,7 @@ import textwrap
 import types
 import warnings
 from collections.abc import MutableMapping, Sequence
-from functools import lru_cache, partial, wraps
+from functools import partial, wraps
 from inspect import Parameter, Signature
 from io import StringIO
 from keyword import iskeyword
@@ -34,6 +34,7 @@ from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import EllipsisType, is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
@@ -44,7 +45,10 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
+
 LAMBDA_SOURCE_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
+LAMBDA_DIGEST_SOURCE_CACHE: LRUCache[tuple[Any], str] = LRUCache(max_size=1000)
+AST_LAMBDAS_CACHE: LRUCache[tuple[str], list[ast.Lambda]] = LRUCache(max_size=100)
 
 
 def is_mock(obj: object) -> bool:
@@ -292,39 +296,49 @@ def extract_all_lambdas(tree):
     return lambdas
 
 
-@lru_cache
-def _parse_all_lambdas(sources):
-    try:
-        tree = ast.parse("".join(sources))
-    except SyntaxError:  # pragma: no cover
-        return []
+def _lambda_source_key(f, bounded_size=False):
+    """Returns a digest that differentiates lambdas that have different sources."""
+    consts_repr = repr(f.__code__.co_consts)
+    if bounded_size:
+        consts_repr = hashlib.sha384(consts_repr.encode()).digest()
+    return (
+        consts_repr,
+        inspect.signature(f),
+        f.__code__.co_names,
+        f.__code__.co_code,
+        f.__code__.co_varnames,
+        f.__code__.co_freevars,
+    )
+
+
+def _mimic_lambda_from_source(f, source):
+    # Compile a lambda from source where the compiled lambda mimics f as far as
+    # possible in terms of __code__ and __closure__. The mimicry is far from perfect.
+    if f.__closure__ is None:
+        compiled = eval(source, f.__globals__)
     else:
-        return extract_all_lambdas(tree)
+        # Hack to mimic the capture of vars from local closure. In terms of code
+        # generation they don't *need* to have the same values (cell_contents),
+        # just the same names bound to some closure, but hey.
+        closure = {f"___fv{i}": c.cell_contents for i, c in enumerate(f.__closure__)}
+        assigns = [f"{name}=___fv{i}" for i, name in enumerate(f.__code__.co_freevars)]
+        fake_globals = f.__globals__ | closure
+        exec(f"def construct(): {';'.join(assigns)}; return ({source})", fake_globals)
+        compiled = fake_globals["construct"]()
+    return compiled
 
 
-def _lambda_code_matches_node(f, node):
+def _lambda_code_matches_source(f, source):
     try:
-        lambda_code = f.__code__
-        node_code = eval(ast.unparse(node), f.__globals__).__code__
+        compiled = _mimic_lambda_from_source(f, source)
     except (NameError, SyntaxError):  # pragma: no cover
         return False
-    try:
-        return (
-            lambda_code.co_code == node_code.co_code
-            and lambda_code.co_consts == node_code.co_consts
-            and lambda_code.co_varnames == node_code.co_varnames
-            and lambda_code.co_freevars == node_code.co_freevars
-        )
-    except AttributeError:  # pragma: no cover
-        return False
+    return _lambda_source_key(f) == _lambda_source_key(compiled)
 
 
 def _extract_lambda_source(f):
     """Extracts a single lambda expression from the string source. Returns a
     string indicating an unknown body if it gets confused in any way.
-
-    This is not a good function and I am sorry for it. Forgive me my
-    sins, oh lord
     """
     # You might be wondering how a lambda can have a return-type annotation?
     # The answer is that we add this at runtime, in new_given_signature(),
@@ -335,7 +349,6 @@ def _extract_lambda_source(f):
     # Using pytest-xdist on Python 3.13, there's an entry in the linecache for
     # file "<string>", which then returns nonsense to getsource.  Discard it.
     linecache.cache.pop("<string>", None)
-    unknown = "<unknown>"
 
     # The signature is more informative than the corresponding ast.unparse output,
     # so add the signature to the unparsed body
@@ -345,65 +358,99 @@ def _extract_lambda_source(f):
         else:
             return f"lambda: {body}"
 
-    try:
-        sources, lineno0 = inspect.findsource(f)
-    except OSError:
-        return format_lambda(unknown)
+    if_unknown = format_lambda("<unknown>")
 
-    all_lambdas = _parse_all_lambdas(tuple(sources))
-    aligned_lambdas = [
-        candidate
+    try:
+        source_lines, lineno0 = inspect.findsource(f)
+        source_lines = tuple(source_lines)  # make it hashable
+    except OSError:
+        return if_unknown
+
+    try:
+        all_lambdas = AST_LAMBDAS_CACHE[source_lines]
+    except KeyError:
+        # The source isn't already parsed, so we try to shortcut by parsing just
+        # the local block. If that fails to produce a code-identical lambda,
+        # fall through to the full parse.
+        local_lines = inspect.getblock(source_lines[lineno0:])
+        local_block = textwrap.dedent("".join(local_lines))
+        if local_block.startswith("."):
+            # The fairly common ".map(lambda x: ...)" case. This partial block
+            # isn't valid syntax, but it might be if we remove the leading ".".
+            local_block = local_block[1:]
+        try:
+            local_tree = ast.parse(local_block)
+        except SyntaxError:
+            pass
+        else:
+            local_lambdas = extract_all_lambdas(local_tree)
+            for candidate in local_lambdas:
+                source = format_lambda(ast.unparse(candidate.body))
+                if ast_arguments_matches_signature(
+                    candidate.args, sig
+                ) and _lambda_code_matches_source(f, source):
+                    return source
+        # Local parse failed or didn't produce a match, go ahead with the full parse
+        try:
+            tree = ast.parse("".join(source_lines))
+        except SyntaxError:  # pragma: no cover
+            all_lambdas = []
+        else:
+            all_lambdas = extract_all_lambdas(tree)
+        AST_LAMBDAS_CACHE[source_lines] = all_lambdas
+
+    # Filter the lambda nodes down to those that match in signature and position,
+    # and only consider their unique source representations.
+    aligned_sources = {
+        format_lambda(ast.unparse(candidate.body))
         for candidate in all_lambdas
         if (
             candidate.lineno <= lineno0 + 1 <= candidate.end_lineno
             and ast_arguments_matches_signature(candidate.args, sig)
         )
-    ]
+    }
 
-    if len(aligned_lambdas) == 0:
-        return format_lambda(unknown)
+    # The code-match check has a lot of false negatives in general, so we only do
+    # that check if we really need to, i.e., if there are multiple aligned lambdas
+    # having different source representations. If there is only a single lambda
+    # source found, we use that one without further checking.
 
-    # Best effort: The code-match check has a lot of false negatives, for reasons
-    # outlined below. So we only do that check if we really need to, i.e., if there
-    # are multiple aligned lambdas having different source representations. If there
-    # is only a single lambda source found, we use that without further checking.
-    #
-    # If a user starts a hypothesis process, then edits their code, the lines
-    # in the parsed source code might not match the live __code__ objects.
-    # (and on sys.platform == "emscripten", this can happen regardless
-    # due to a pyodide bug in inspect.getsource()).
-    # There is a risk of returning source for the wrong lambda without those further
-    # checks, if there is a lambda also on the shifted line *or* if the lambda itself
-    # is changed.
-    source_to_lambdas = {}
-    for candidate_lambda in aligned_lambdas:
-        lambdas = source_to_lambdas.setdefault(ast.unparse(candidate_lambda.body), [])
-        lambdas.append(candidate_lambda)
+    # If a user starts a hypothesis process, then edits their code, the lines in the
+    # parsed source code might not match the live __code__ objects.
+    # (and on sys.platform == "emscripten", this can happen regardless due to a
+    # pyodide bug in inspect.getsource()).
+    # There is a risk of returning source for the wrong lambda, if there is a lambda
+    # also on the shifted line *or* if the lambda itself is changed.
 
-    if len(source_to_lambdas) == 1:
-        return format_lambda(next(iter(source_to_lambdas.keys())))
+    if len(aligned_sources) == 1:
+        return next(iter(aligned_sources))
 
-    for source, lambdas in source_to_lambdas.items():
-        for candidate_lambda in lambdas:
-            if _lambda_code_matches_node(f, candidate_lambda):
-                return format_lambda(source)
+    for source in aligned_sources:
+        if _lambda_code_matches_source(f, source):
+            return source
 
     # None of the aligned lambdas match perfectly in generated code. This may be
     # caused by differences in code generation, missing nested-scope closures,
-    # inner lambdas having different identities, etc. Although we could do better
-    # here, the majority of cases will have a unique aligned lambda so it doesn't
-    # matter that much.
-    return format_lambda(unknown)
+    # inner lambdas having different identities, etc. The majority of cases will
+    # have a unique aligned lambda so it doesn't matter that much.
+    return if_unknown
 
 
 def extract_lambda_source(f):
     try:
         return LAMBDA_SOURCE_CACHE[f]
     except KeyError:
-        pass
+        key = _lambda_source_key(f, bounded_size=True)
+        try:
+            source = LAMBDA_DIGEST_SOURCE_CACHE[key]
+            LAMBDA_SOURCE_CACHE[f] = source
+            return source
+        except KeyError:
+            pass
 
     source = _extract_lambda_source(f)
     LAMBDA_SOURCE_CACHE[f] = source
+    LAMBDA_DIGEST_SOURCE_CACHE[key] = source
     return source
 
 
