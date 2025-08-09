@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 import pytest
 from pytest import raises
 
-from hypothesis import given, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
@@ -30,6 +30,7 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     get_signature,
     is_first_param_referenced_in_function,
+    is_identity_function,
     is_mock,
     proxies,
     repr_call,
@@ -548,29 +549,6 @@ def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
     assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
 
 
-def test_can_render_lambda_with_no_encoding(monkeypatch):
-    is_positive = lambda x: x > 0
-
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
-
-
-def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    # fmt: off
-    pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702
-    # fmt: on
-    assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
-
-
 def test_too_many_posargs_fails():
     with pytest.raises(TypeError):
         st.times(time.min, time.max, st.none(), st.none()).validate()
@@ -709,3 +687,54 @@ def test_clean_source(src, clean):
 def test_overlong_repr_warns():
     with pytest.warns(HypothesisWarning, match="overly large"):
         repr(LazyStrategy(st.one_of, [st.none()] * 10000, {}))
+
+
+def identity(x):
+    return x
+
+
+class Identity:
+    def __call__(self, x):
+        return x
+
+    def instance_identity(self, x):
+        return x
+
+    def instance_self(self):
+        return self
+
+    @staticmethod
+    def static_identity(x):
+        return x
+
+    @classmethod
+    def class_identity(cls, x):
+        return x
+
+
+@pytest.mark.parametrize(
+    "f",
+    [
+        lambda x: x,
+        identity,
+        Identity(),
+        Identity().instance_identity,
+        Identity.static_identity,
+        Identity.class_identity,
+    ],
+)
+def test_is_identity(f):
+    assert is_identity_function(f)
+
+
+@example(Identity().instance_self)
+@example(lambda x, y: x)
+@example(lambda: None)
+@given(st.functions(like=identity, returns=st.from_type(type).flatmap(st.from_type)))
+def test_is_not_identity(f):
+    obj = object()
+    try:
+        assume(f(obj) is not obj)  # not necessary but ...
+    except TypeError:
+        pass
+    assert not is_identity_function(f)
