@@ -860,7 +860,6 @@ def test_bytestring_not_treated_as_generic_sequence(val):
         assert isinstance(x, set)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 @pytest.mark.parametrize(
     "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
 )
@@ -1182,20 +1181,43 @@ def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
 
 
 @pytest.mark.parametrize(
-    # Old-style `List` because `list[int]() == list()`, so no need for the hint.
     "type_",
-    [getattr(typing, "List", None)[int], typing.Optional[int]],
+    [
+        # Old-style `List` because `list[int]() == list()`, so no need for the hint.
+        getattr(typing, "List", None)[int],
+        pytest.param(
+            typing.Optional[int],
+            marks=pytest.mark.skipif(
+                sys.version_info >= (3, 14), reason="different error on 3.14+"
+            ),
+        ),
+    ],
 )
 def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
     ):
         check_can_generate_examples(st.builds(type_))
+
     try:
         check_can_generate_examples(st.builds(type_, st.just("has an argument")))
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="different error on 3.14+")
+@pytest.mark.parametrize("type_", [typing.Optional[int]])
+def test_builds_suggests_from_type_on_construction(type_):
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_))
+
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_, st.just("has an argument")))
 
 
 def test_builds_mentions_no_type_check():

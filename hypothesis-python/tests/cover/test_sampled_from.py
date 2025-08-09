@@ -10,7 +10,6 @@
 
 import collections
 import enum
-import sys
 
 import pytest
 
@@ -203,7 +202,6 @@ class AnnotationsInsteadOfElements(enum.Enum):
     a: "int"
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_suggests_elements_instead_of_annotations():
     with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
         check_can_generate_examples(st.sampled_from(AnnotationsInsteadOfElements))

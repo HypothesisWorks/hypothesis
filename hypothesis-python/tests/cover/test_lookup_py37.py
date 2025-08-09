@@ -12,6 +12,7 @@ import collections
 import collections.abc
 import contextlib
 import re
+import sys
 
 import pytest
 
@@ -218,7 +219,10 @@ def test_resolving_standard_valuesview_as_generic(x: collections.abc.ValuesView[
     check(collections.abc.ValuesView, x)
 
 
-@pytest.mark.xfail  # Weird interaction with fixes in PR #2952
+# Weird interaction with fixes in PR #2952
+#
+# 2025-07-31: though that is now fixed by cpython typing refactors in 3.14.
+@pytest.mark.xfail(sys.version_info[:2] < (3, 14), reason="fixed again in 3.14+")
 @given(...)
 def test_resolving_standard_contextmanager_as_generic(
     x: contextlib.AbstractContextManager[Elem],

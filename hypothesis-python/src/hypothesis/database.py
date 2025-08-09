@@ -1016,6 +1016,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "This could be because because the repository "
                     "or artifact does not exist. "
                 )
+            # see https://github.com/python/cpython/issues/128734
+            e.close()
         except URLError:
             warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:
