@@ -358,13 +358,13 @@ def _extract_lambda_source(f):
         else:
             return f"lambda: {body}"
 
-    if_unknown = format_lambda("<unknown>")
+    if_confused = format_lambda("<unknown>")
 
     try:
         source_lines, lineno0 = inspect.findsource(f)
         source_lines = tuple(source_lines)  # make it hashable
     except OSError:
-        return if_unknown
+        return if_confused
 
     try:
         all_lambdas = AST_LAMBDAS_CACHE[source_lines]
@@ -433,7 +433,7 @@ def _extract_lambda_source(f):
     # caused by differences in code generation, missing nested-scope closures,
     # inner lambdas having different identities, etc. The majority of cases will
     # have a unique aligned lambda so it doesn't matter that much.
-    return if_unknown
+    return if_confused
 
 
 def extract_lambda_source(f):
@@ -685,13 +685,13 @@ def proxies(target: T) -> Callable[[Callable], T]:
     return accept
 
 
-def is_identity_function(f: object) -> bool:
+def is_identity_function(f: Callable) -> bool:
     try:
-        code = f.__code__  # type: ignore[attr-defined]
+        code = f.__code__
     except AttributeError:
         try:
-            f = f.__call__  # type: ignore[operator]
-            code = f.__code__  # type: ignore[attr-defined]
+            f = f.__call__  # type: ignore
+            code = f.__code__
         except AttributeError:
             return False
 
@@ -704,9 +704,9 @@ def is_identity_function(f: object) -> bool:
 
     # We know that f accepts a single positional argument, now check that its
     # code object is simply "return first unbound argument".
-    template = (lambda self, x: x) if bound_args else (lambda x: x)  # type: ignore[misc]
+    template = (lambda self, x: x) if bound_args else (lambda x: x)  # type: ignore
     try:
         return code.co_code == template.__code__.co_code
-    except AttributeError:  # pragma: no cover # pypy only
-        # PyPy: AttributeError: 'builtin-code' object has no attribute 'co_code'
+    except AttributeError:  # pragma: no cover
+        # PyPy only: AttributeError: 'builtin-code' object has no attribute 'co_code'
         return False  # there is no builtin identity function
