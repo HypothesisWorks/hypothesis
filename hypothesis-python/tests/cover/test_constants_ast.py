@@ -143,6 +143,7 @@ def test_frozenset_constants(value):
     assert set(constants_from_ast(tree)) == set(value)
 
 
+@skipif_threading
 @skipif_emscripten
 def test_constants_from_running_file(tmp_path):
     p = tmp_path / "my_constants.py"
@@ -220,6 +221,7 @@ def test_local_modules_ignores_test_modules(path):
     assert not is_local_module_file(path)
 
 
+@skipif_threading
 @pytest.mark.skipif(PYPY, reason="no memory error on pypy")
 def test_ignores_ast_parse_error(tmp_path):
     p = tmp_path / "errors_on_parse.py"
