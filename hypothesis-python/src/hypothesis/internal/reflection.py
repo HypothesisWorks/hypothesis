@@ -309,10 +309,10 @@ def extract_all_lambdas(tree):
 def _lambda_source_key(f, *, bounded_size=False):
     """Returns a digest that differentiates lambdas that have different sources."""
     consts_repr = repr(f.__code__.co_consts)
-    if bounded_size:
-        # compress repr to avoid consuming too much memory. We don't do this
-        # unconditionally because hashing takes time, and we don't always store
-        # the key result.
+    if bounded_size and len(consts_repr) > 48:
+        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
+        # keys. We don't do this unconditionally because hashing takes time, and is
+        # not necessary if the key is used just for comparison (and is not stored).
         consts_repr = hashlib.sha384(consts_repr.encode()).digest()
     return (
         consts_repr,

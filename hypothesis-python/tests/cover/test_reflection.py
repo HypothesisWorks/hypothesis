@@ -741,6 +741,17 @@ def test_is_not_identity(f):
     assert not is_identity_function(f)
 
 
+@pytest.mark.parametrize(
+    "f",
+    [
+        lambda x, y=None: x,  # this one would be fairly easy to recognize
+        lambda x, y=None: y or x,  # ... but the general case is impossible
+    ],
+)
+def test_is_unrecognized_identity(f):
+    assert not is_identity_function(f)
+
+
 def test_lambda_source_key_distinguishes_alpha_renames():
     # these terms are equivalent under the lambda calculus, but their
     # representations are not, so they should be cached differently.
