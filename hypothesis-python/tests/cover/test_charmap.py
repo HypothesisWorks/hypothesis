@@ -19,6 +19,8 @@ from hypothesis import given, strategies as st
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
 
+from tests.common.utils import skipif_threading
+
 
 def test_charmap_contains_all_unicode():
     n = 0
@@ -67,6 +69,8 @@ def test_query_matches_categories_codepoints(cats, m1, m2):
         assert v <= m2
 
 
+# any test which sets `_charmap = None` is thread-unsafe.
+@skipif_threading
 def test_reload_charmap():
     x = cm.charmap()
     assert x is cm.charmap()
@@ -76,6 +80,7 @@ def test_reload_charmap():
     assert x == y
 
 
+@skipif_threading
 def test_recreate_charmap():
     x = cm.charmap()
     assert x is cm.charmap()
@@ -86,6 +91,7 @@ def test_recreate_charmap():
     assert x == y
 
 
+@skipif_threading
 def test_uses_cached_charmap():
     cm.charmap()
 
@@ -133,6 +139,7 @@ def test_successive_union():
     assert x == ((0, sys.maxunicode),)
 
 
+@skipif_threading
 def test_can_handle_race_between_exist_and_create(monkeypatch):
     x = cm.charmap()
     cm._charmap = None
@@ -142,6 +149,7 @@ def test_can_handle_race_between_exist_and_create(monkeypatch):
     assert x == y
 
 
+@skipif_threading
 def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     def broken(*args, **kwargs):
         raise ValueError
@@ -154,6 +162,7 @@ def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     cm.charmap()
 
 
+@skipif_threading
 def test_regenerate_broken_charmap_file():
     cm.charmap()
 
@@ -167,6 +176,7 @@ def test_exclude_characters_are_included_in_key():
     assert cm.query().intervals != cm.query(exclude_characters="0").intervals
 
 
+@skipif_threading
 def test_error_writing_charmap_file_is_suppressed(monkeypatch):
     def broken_mkstemp(dir):
         raise RuntimeError

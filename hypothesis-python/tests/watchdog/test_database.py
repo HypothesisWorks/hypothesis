@@ -23,7 +23,7 @@ from hypothesis.database import (
 )
 from hypothesis.internal.reflection import get_pretty_function_description
 
-from tests.common.utils import flaky
+from tests.common.utils import flaky, skipif_threading
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
 
 # we need real time here, not monkeypatched for CI
@@ -48,6 +48,7 @@ def test_database_listener_directory():
 # assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
 @flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -99,6 +100,7 @@ def wait_for(condition, *, timeout=1, interval=0.01):
 
 # seen flaky on check-coverage (timeout in first wait_for)
 @flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -109,7 +111,7 @@ def test_database_listener_directory_explicit(tmp_path):
     db.add_listener(listener)
 
     db.save(b"k1", b"v1")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))])
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=5)
 
     db.remove_listener(listener)
     db.delete(b"k1", b"v1")
@@ -125,7 +127,8 @@ def test_database_listener_directory_explicit(tmp_path):
         == [
             ("delete", (b"k1", None)),
             ("save", (b"k1", b"v3")),
-        ]
+        ],
+        timeout=5,
     )
 
     # moving into a nonexistent key
@@ -173,6 +176,7 @@ def test_database_listener_directory_explicit(tmp_path):
 # @flaky doesn't help.
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="too flaky on windows")
 @flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -201,6 +205,7 @@ def test_database_listener_directory_move(tmp_path):
     )
 
 
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_still_listens_if_directory_did_not_exist(tmp_path):
     # if we start listening on a nonexistent path, we will create that path and
     # still listen for events

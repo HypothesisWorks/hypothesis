@@ -37,8 +37,14 @@ from example_code.future_annotations import (
 )
 
 import hypothesis
+from hypothesis import settings
 from hypothesis.extra import ghostwriter
 from hypothesis.utils.conventions import not_set
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="ghostwriter is not thread safe",
+)
 
 
 @pytest.fixture

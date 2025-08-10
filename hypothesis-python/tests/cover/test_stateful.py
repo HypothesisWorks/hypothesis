@@ -344,21 +344,30 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 def test_minimizes_errors_in_teardown():
+    # temporary debugging to try to narrow down a potential thread-safety issue
+    import threading
+
+    from hypothesis import Verbosity
+
     counter = 0
 
+    @Settings(database=None, verbosity=Verbosity.debug)
     class Foo(RuleBasedStateMachine):
         @initialize()
         def init(self):
             nonlocal counter
             counter = 0
+            print(f"[{threading.get_ident()}] init", counter)
 
         @rule()
         def increment(self):
             nonlocal counter
             counter += 1
+            print(f"[{threading.get_ident()}] increment", counter)
 
         def teardown(self):
             nonlocal counter
+            print(f"[{threading.get_ident()}] teardown", counter)
             assert not counter
 
     with raises(AssertionError):

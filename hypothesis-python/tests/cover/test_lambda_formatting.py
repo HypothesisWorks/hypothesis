@@ -13,6 +13,8 @@ import runpy
 from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.reflection import get_pretty_function_description
 
+from tests.common.utils import skipif_threading
+
 
 def test_bracket_whitespace_is_stripped():
     # fmt: off
@@ -213,6 +215,7 @@ def test_can_handle_nested_lambda_in_decorator_argument():
     )
 
 
+@skipif_threading  # concurrent writes to the same file
 def test_modifying_lambda_source_code_returns_unknown(tmp_path):
     # see https://github.com/HypothesisWorks/hypothesis/pull/4452
     test_module = tmp_path / "test_module.py"
