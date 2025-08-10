@@ -727,6 +727,9 @@ def is_identity_function(f: Callable) -> bool:
     template = (lambda self, x: x) if bound_args else (lambda x: x)  # type: ignore
     try:
         return code.co_code == template.__code__.co_code
-    except AttributeError:  # pragma: no cover
-        # PyPy only: AttributeError: 'builtin-code' object has no attribute 'co_code'
-        return False  # there is no builtin identity function
+    except AttributeError:  # pragma: no cover  # pypy only
+        # In PyPy, some builtin functions have a code object ('builtin-code')
+        # lacking co_code, perhaps because they are native-compiled and don't have
+        # a corresponding bytecode. Regardless, since Python doesn't have any
+        # builtin identity function it seems safe to say that this one isn't
+        return False
