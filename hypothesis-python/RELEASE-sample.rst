@@ -27,7 +27,7 @@ which should:
   - :class:`package.class` for link to classes (abbreviated as above).
   - :issue:`issue-number` for referencing issues.
   - Similarly, :pull:`pr-number` can be used for PRs, but it's usually
-    preferred to refer to version numbers such as :ref:`version 6.98.9 <v6.98.9>,
+    preferred to refer to version numbers with :v:`6.98.9`,
     as they are meaningful to end users.
   - :doc:`link text <chapter#anchor>` for documentation references.
   - `link text <https://hypothesis.readthedocs.io/en/latest/chapter.html#anchor>`__

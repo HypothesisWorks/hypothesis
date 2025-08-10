@@ -297,7 +297,7 @@ pre code {
 }
 
 .article-card__header {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .article-card__title {
@@ -312,6 +312,7 @@ pre code {
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .article-card-meta__separator {
@@ -352,7 +353,7 @@ pre code {
 .article__header {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 2px solid #e2e2e2;
 }
 
 .article__title {
