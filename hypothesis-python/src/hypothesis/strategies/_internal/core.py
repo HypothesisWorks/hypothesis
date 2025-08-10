@@ -243,7 +243,7 @@ def sampled_from(
         return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=force_repr)
     if not values:
 
-        def has_annotations():
+        def has_annotations(elements):
             if sys.version_info[:2] < (3, 14):
                 return vars(elements).get("__annotations__")
             else:  # pragma: no cover  # covered by 3.14 tests
@@ -254,7 +254,7 @@ def sampled_from(
         if (
             isinstance(elements, type)
             and issubclass(elements, enum.Enum)
-            and has_annotations()
+            and has_annotations(elements)
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2923
             raise InvalidArgument(
@@ -1120,11 +1120,11 @@ def builds(
     the callable.
     """
     if not callable(target):
-        from .types import is_a_union
+        from hypothesis.strategies._internal.types import is_a_union
 
         # before 3.14, unions were callable, so it got an error message in
-        # BuildsStrategy.do_draw instead. In 3.14+, unions are not callable, so
-        # we can error earlier here instead.
+        # BuildsStrategy.do_draw. In 3.14+, unions are not callable, so
+        # we error earlier here instead.
         suggestion = (
             f" Try using from_type({target}) instead?" if is_a_union(target) else ""
         )
