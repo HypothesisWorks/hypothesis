@@ -1,4 +1,4 @@
-RELEASE_TYPE: minor
+RELEASE_TYPE: patch
 
 This patch makes the stringification of lambdas, and as
 a result certain automatic filter rewriting operations,
