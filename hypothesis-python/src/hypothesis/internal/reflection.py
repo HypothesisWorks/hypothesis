@@ -15,7 +15,6 @@ import ast
 import hashlib
 import inspect
 import linecache
-import os
 import re
 import sys
 import textwrap
@@ -44,10 +43,21 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
-
-LAMBDA_SOURCE_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
-LAMBDA_DIGEST_SOURCE_CACHE: LRUCache[tuple[Any], str] = LRUCache(max_size=1000)
+# we have several levels of caching for lambda descriptions.
+# * LAMBDA_DESCRIPTION_CACHE maps a lambda f to its description _lambda_description(f).
+#   Note that _lambda_description(f) may not be identical to f as it appears in the
+#   source code file.
+# * LAMBDA_DIGEST_DESCRIPTION_CACHE maps _lambda_source_key(f) to _lambda_description(f).
+#   _lambda_source_key implements something close to "ast equality":
+#   two syntactically identical (minus whitespace etc) lambdas appearing in
+#   different files have the same key. Cache hits here provide a fast path which
+#   avoids ast-parsing syntactic lambdas we've seen before. Two lambdas with the
+#   same _lambda_source_key will not have different _lambda_descriptions - if
+#   they do, that's a bug here.
+# * AST_LAMBDAS_CACHE maps source code lines to a list of the lambdas found in
+#   that source code. A cache hit here avoids reparsing the ast.
+LAMBDA_DESCRIPTION_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
+LAMBDA_DIGEST_DESCRIPTION_CACHE: LRUCache[tuple[Any], str] = LRUCache(max_size=1000)
 AST_LAMBDAS_CACHE: LRUCache[tuple[str], list[ast.Lambda]] = LRUCache(max_size=100)
 
 
@@ -300,6 +310,9 @@ def _lambda_source_key(f, *, bounded_size=False):
     """Returns a digest that differentiates lambdas that have different sources."""
     consts_repr = repr(f.__code__.co_consts)
     if bounded_size:
+        # compress repr to avoid consuming too much memory. We don't do this
+        # unconditionally because hashing takes time, and we don't always store
+        # the key result.
         consts_repr = hashlib.sha384(consts_repr.encode()).digest()
     return (
         consts_repr,
@@ -336,10 +349,7 @@ def _lambda_code_matches_source(f, source):
     return _lambda_source_key(f) == _lambda_source_key(compiled)
 
 
-def _extract_lambda_source(f):
-    """Extracts a single lambda expression from the string source. Returns a
-    string indicating an unknown body if it gets confused in any way.
-    """
+def _lambda_description(f):
     # You might be wondering how a lambda can have a return-type annotation?
     # The answer is that we add this at runtime, in new_given_signature(),
     # and we do support strange choices as applying @given() to a lambda.
@@ -350,13 +360,12 @@ def _extract_lambda_source(f):
     # file "<string>", which then returns nonsense to getsource.  Discard it.
     linecache.cache.pop("<string>", None)
 
-    # The signature is more informative than the corresponding ast.unparse output,
-    # so add the signature to the unparsed body
     def format_lambda(body):
-        if sig.parameters:
-            return f"lambda {str(sig)[1:-1]}: {body}"
-        else:
-            return f"lambda: {body}"
+        # The signature is more informative than the corresponding ast.unparse
+        # output, so add the signature to the unparsed body
+        return (
+            f"lambda {str(sig)[1:-1]}: {body}" if sig.parameters else f"lambda: {body}"
+        )
 
     if_confused = format_lambda("<unknown>")
 
@@ -378,6 +387,7 @@ def _extract_lambda_source(f):
             # The fairly common ".map(lambda x: ...)" case. This partial block
             # isn't valid syntax, but it might be if we remove the leading ".".
             local_block = local_block[1:]
+
         try:
             local_tree = ast.parse(local_block)
         except SyntaxError:
@@ -390,6 +400,7 @@ def _extract_lambda_source(f):
                     candidate.args, sig
                 ) and _lambda_code_matches_source(f, source):
                     return source
+
         # Local parse failed or didn't produce a match, go ahead with the full parse
         try:
             tree = ast.parse("".join(source_lines))
@@ -436,24 +447,33 @@ def _extract_lambda_source(f):
     return if_confused
 
 
-def extract_lambda_source(f):
+def lambda_description(f):
+    """
+    Returns a syntactically-valid expression describing `f`. This is often, but
+    not always, the exact lambda definition string which appears in the source code.
+    The difference comes from parsing the lambda ast into `tree` and then returning
+    the result of `ast.unparse(tree)`, which may differ in whitespace, double vs
+    single quotes, etc.
+
+    Returns a string indicating an unknown body if the parsing gets confused in any way.
+    """
     try:
-        return LAMBDA_SOURCE_CACHE[f]
+        return LAMBDA_DESCRIPTION_CACHE[f]
     except KeyError:
         pass
 
     key = _lambda_source_key(f, bounded_size=True)
     try:
-        source = LAMBDA_DIGEST_SOURCE_CACHE[key]
-        LAMBDA_SOURCE_CACHE[f] = source
-        return source
+        description = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
+        LAMBDA_DESCRIPTION_CACHE[f] = description
+        return description
     except KeyError:
         pass
 
-    source = _extract_lambda_source(f)
-    LAMBDA_SOURCE_CACHE[f] = source
-    LAMBDA_DIGEST_SOURCE_CACHE[key] = source
-    return source
+    description = _lambda_description(f)
+    LAMBDA_DESCRIPTION_CACHE[f] = description
+    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description
+    return description
 
 
 def get_pretty_function_description(f: object) -> str:
@@ -463,7 +483,7 @@ def get_pretty_function_description(f: object) -> str:
         return repr(f)
     name = f.__name__  # type: ignore
     if name == "<lambda>":
-        return extract_lambda_source(f)
+        return lambda_description(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
         self = f.__self__
         # Some objects, like `builtins.abs` are of BuiltinMethodType but have

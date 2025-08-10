@@ -28,14 +28,12 @@ def test_can_have_unicode_in_lambda_sources():
     assert get_pretty_function_description(t) == "lambda x: 'é' not in x"
 
 
-# fmt: off
-ordered_pair = (
-    lambda right: [].map(
-        lambda length: ()))
-# fmt: on
-
-
 def test_can_get_descriptions_of_nested_lambdas_with_different_names():
+    # fmt: off
+    ordered_pair = (
+        lambda right: [].map(
+            lambda length: ()))
+    # fmt: on
     assert (
         get_pretty_function_description(ordered_pair)
         == "lambda right: [].map(lambda length: ())"
@@ -51,6 +49,23 @@ def test_does_not_error_on_unparsable_source():
         x][0]
     # fmt: on
     assert get_pretty_function_description(t) == "lambda x: x"
+
+
+def test_separate_line_map_filter():
+    # this isn't intentionally testing nested lambdas, but hey, it's a nice bonus.
+    # fmt: off
+    f1 = (
+        lambda x: x
+        .map(lambda y: y)
+    )
+    f2 = (
+        lambda x: x
+        .filter(lambda y: y)
+    )
+    # fmt: on
+
+    assert get_pretty_function_description(f1) == "lambda x: x.map(lambda y: y)"
+    assert get_pretty_function_description(f2) == "lambda x: x.filter(lambda y: y)"
 
 
 def test_source_of_lambda_is_pretty():

@@ -23,6 +23,7 @@ from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
+    _lambda_source_key,
     convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
@@ -738,3 +739,9 @@ def test_is_not_identity(f):
     except TypeError:
         pass
     assert not is_identity_function(f)
+
+
+def test_lambda_source_key_distinguishes_alpha_renames():
+    # these terms are equivalent under the lambda calculus, but their
+    # representations are not, so they should be cached differently.
+    assert _lambda_source_key(lambda x: x) != _lambda_source_key(lambda y: y)
