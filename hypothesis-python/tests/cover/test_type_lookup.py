@@ -33,7 +33,13 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
-from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    fails_with,
+    skipif_threading,
+    temp_registered,
+    xfail_on_crosshair,
+)
 
 # we'll continue testing the typing variants until their removal from the stdlib
 # ruff: noqa: UP006, UP035
@@ -200,6 +206,7 @@ def test_errors_if_generic_resolves_empty():
             check_can_generate_examples(fails_2)
 
 
+@skipif_threading
 def test_cannot_register_empty():
     # Cannot register and did not register
     with pytest.raises(InvalidArgument):

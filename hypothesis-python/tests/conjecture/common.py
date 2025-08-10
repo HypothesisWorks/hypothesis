@@ -12,6 +12,7 @@ import math
 import sys
 from contextlib import contextmanager
 from random import Random
+from threading import RLock
 from typing import Optional
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
@@ -68,14 +69,18 @@ def run_to_nodes(f):
     return run_to_data(f).nodes
 
 
+_buffer_size_lock = RLock()
+
+
 @contextmanager
 def buffer_size_limit(n):
-    original = engine_module.BUFFER_SIZE
-    try:
-        engine_module.BUFFER_SIZE = n
-        yield
-    finally:
-        engine_module.BUFFER_SIZE = original
+    with _buffer_size_lock:
+        original = engine_module.BUFFER_SIZE
+        try:
+            engine_module.BUFFER_SIZE = n
+            yield
+        finally:
+            engine_module.BUFFER_SIZE = original
 
 
 def shrinking_from(start):

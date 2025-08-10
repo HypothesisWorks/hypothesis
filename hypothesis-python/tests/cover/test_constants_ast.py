@@ -29,7 +29,7 @@ from hypothesis.internal.constants_ast import (
     is_local_module_file,
 )
 
-from tests.common.utils import skipif_emscripten
+from tests.common.utils import skipif_emscripten, skipif_threading
 
 constant_ints = st.integers(max_value=-101) | st.integers(min_value=101)
 constant_floats = st.floats(allow_nan=False, allow_infinity=False)
@@ -284,6 +284,7 @@ def test_too_many_constants():
     )
 
 
+@skipif_threading  # concurrent writes to the same file
 def test_module_too_large(tmp_path):
     constant = 11231783
 

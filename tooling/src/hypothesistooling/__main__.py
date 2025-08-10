@@ -534,12 +534,15 @@ def documentation():
 
 @task()
 def website():
-    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+    subprocess.call([sys.executable, "-m", "pelican"], cwd=tools.ROOT / "website")
 
 
 @task()
 def live_website():
-    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+    subprocess.call(
+        [sys.executable, "-m", "pelican", "--autoreload", "--listen"],
+        cwd=tools.ROOT / "website",
+    )
 
 
 def run_tox(task, version, *args):
@@ -648,6 +651,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("py39-oldparser", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")

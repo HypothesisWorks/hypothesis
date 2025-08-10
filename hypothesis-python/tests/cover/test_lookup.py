@@ -1153,6 +1153,15 @@ def test_resolves_builtin_types(t):
 @given(data=st.data())
 @settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
+    if t.__name__ == "object" and settings._current_profile == "threading":
+        # from_type(ForwardRef("object")) pulls from register_type_strategy,
+        # and depending on threading I've seen `st.builds(Bar, st.integers())`
+        # (from this file) be registered in one iteration and not the next,
+        # causing Hypothesis to raise FlakyStrategyDefinition.
+        #
+        # (I would also expect st.from_type(object) to have this problem, but
+        # I haven't seen that error under threading, yet).
+        pytest.skip("ForwardRef('object') is inherently flaky under concurrency")
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
     assert isinstance(v, t)

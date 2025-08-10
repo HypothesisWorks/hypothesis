@@ -47,7 +47,7 @@ def should_trace_file(fname: str) -> bool:
 # tool_id = 1 is designated for coverage, but we intentionally choose a
 # non-reserved tool id so we can co-exist with coverage tools.
 MONITORING_TOOL_ID = 3
-if sys.version_info[:2] >= (3, 12):
+if hasattr(sys, "monitoring"):
     MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
 
 
@@ -69,13 +69,11 @@ class Tracer:
 
     @staticmethod
     def can_trace() -> bool:
-        return (
-            (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
-            or (
-                sys.version_info[:2] >= (3, 12)
-                and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-            )
-        ) and not PYPY
+        if PYPY:
+            return False
+        if hasattr(sys, "monitoring"):
+            return sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
+        return sys.gettrace() is None
 
     def trace(self, frame, event, arg):
         try:
@@ -107,7 +105,7 @@ class Tracer:
         if not self._should_trace:
             return self
 
-        if sys.version_info[:2] < (3, 12):
+        if not hasattr(sys, "monitoring"):
             sys.settrace(self.trace)
             return self
 
@@ -130,7 +128,7 @@ class Tracer:
         if not self._should_trace:
             return
 
-        if sys.version_info[:2] < (3, 12):
+        if not hasattr(sys, "monitoring"):
             sys.settrace(None)
             return
 

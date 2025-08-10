@@ -14,7 +14,7 @@ from decimal import Decimal
 
 import pytest
 
-from hypothesis import example, find, given, strategies as st
+from hypothesis import example, find, given, settings, strategies as st
 from hypothesis.errors import (
     HypothesisException,
     InvalidArgument,
@@ -24,9 +24,23 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS
 
 from tests.common.debug import find_any
-from tests.common.utils import Why, fails_with, skipif_emscripten, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    fails_with,
+    skipif_emscripten,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 
 pytest_plugins = "pytester"
+# .example() uses random.shuffle, which changes the global random state and
+# produces "do not use the `random` module inside strategies" deprecation warnings.
+#
+# Since we recommend against using .example() interactively, fixing this is
+# an enhancement, not a bug.
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading", reason=".example() is not thread-safe"
+)
 
 
 # Allow calling .example() without warnings for all tests in this module
@@ -94,6 +108,7 @@ def test_interactive_example():
 """
 
 
+@skipif_threading  # pytester not thread safe
 def test_selftests_exception_contains_note(pytester):
     # The note is added by a pytest hook, so we need to run it under pytest in a
     # subenvironment with (effectively) the same toplevel conftest.

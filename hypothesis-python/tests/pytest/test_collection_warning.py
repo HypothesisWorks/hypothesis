@@ -10,6 +10,8 @@
 
 import pytest
 
+from tests.common.utils import skipif_threading
+
 pytest_plugins = "pytester"
 
 INI = """
@@ -24,6 +26,7 @@ def test_noop():
 
 
 @pytest.mark.skipif(int(pytest.__version__.split(".")[0]) < 7, reason="hook is new")
+@skipif_threading  # colliding test_bad.py file
 def test_collection_warning(pytester):
     pytester.mkdir(".hypothesis")
     pytester.path.joinpath("pytest.ini").write_text(INI, encoding="utf-8")

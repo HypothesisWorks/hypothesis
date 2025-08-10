@@ -12,7 +12,7 @@ from threading import Barrier, Thread
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.utils.threading import ThreadLocal
 
 from tests.common.utils import skipif_emscripten
@@ -58,6 +58,9 @@ def test_raises_if_not_passed_callable():
 
 
 @skipif_emscripten
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair", reason="crosshair is not thread-safe"
+)
 def test_run_given_concurrently():
     # this is just a basic covering test. The more complicated and complete threading
     # tests are in nocover/test_threading.py.
