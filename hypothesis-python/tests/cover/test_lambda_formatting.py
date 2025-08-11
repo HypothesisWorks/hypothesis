@@ -8,11 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
 import runpy
 
-from hypothesis.internal.conjecture.utils import identity
+import pytest
+
 from hypothesis.internal import reflection
+from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import skipif_threading
