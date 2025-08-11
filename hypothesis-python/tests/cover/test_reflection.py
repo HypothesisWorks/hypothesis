@@ -752,6 +752,16 @@ def test_is_unrecognized_identity(f):
     assert not is_identity_function(f)
 
 
+def test_cache_key_size_is_bounded():
+    # Modify co_consts because ("a" * 1000) may not be evaluated at compile time
+    f = lambda: "a"
+    f.__code__ = f.__code__.replace(
+        co_consts=tuple(c*1000 if c=="a" else c for c in f.__code__.co_consts)
+    )
+    assert len(repr(reflection._lambda_source_key(f))) > 1000
+    assert len(repr(reflection._lambda_source_key(f, bounded_size=True))) < 1000
+
+
 def test_lambda_source_key_distinguishes_alpha_renames():
     # these terms are equivalent under the lambda calculus, but their
     # representations are not, so they should be cached differently.
