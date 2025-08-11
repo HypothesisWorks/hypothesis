@@ -8,12 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
 import runpy
 
 from hypothesis.internal.conjecture.utils import identity
+from hypothesis.internal import reflection
 from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import skipif_threading
+
+
+@pytest.fixture(autouse=True, params=[True, False])
+def clear_lambda_caches(request, monkeypatch):
+    # Run all tests in this file twice, once using cache and once forcing
+    # from-scratch generation
+    if request.param:
+        monkeypatch.setattr(reflection, "LAMBDA_DESCRIPTION_CACHE", {})
+        monkeypatch.setattr(reflection, "LAMBDA_DIGEST_DESCRIPTION_CACHE", {})
+        monkeypatch.setattr(reflection, "AST_LAMBDAS_CACHE", {})
 
 
 def test_bracket_whitespace_is_stripped():
