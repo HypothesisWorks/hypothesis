@@ -395,11 +395,10 @@ def _lambda_description(f):
         else:
             local_lambdas = extract_all_lambdas(local_tree)
             for candidate in local_lambdas:
-                source = format_lambda(ast.unparse(candidate.body))
-                if ast_arguments_matches_signature(
-                    candidate.args, sig
-                ) and _lambda_code_matches_source(f, source):
-                    return source
+                if ast_arguments_matches_signature(candidate.args, sig):
+                    source = format_lambda(ast.unparse(candidate.body))
+                    if _lambda_code_matches_source(f, source):
+                        return source
 
         # Local parse failed or didn't produce a match, go ahead with the full parse
         try:
