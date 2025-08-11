@@ -12,15 +12,41 @@ import sys
 import time
 from collections import Counter
 
+import pytest
+
 from hypothesis import Phase, settings
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
+from hypothesis.internal.compat import WINDOWS
 
 from tests.common.utils import skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
+
+# e.g.
+# * FAILED hypothesis-python/tests/watchdog/test_database.py::
+#   test_database_listener_multiplexed -
+#   Exception: timing out after waiting 60s for condition lambda: events ==
+#   [("save", (b"a", b"a"))] * 2
+# * FAILED hypothesis-python/tests/watchdog/test_database.py::
+#   test_still_listens_if_directory_did_not_exist -
+#   Exception: timing out after waiting 60s for condition lambda: len(events) == 1
+#
+# It seems possible the failures are correlated on windows (ie if one db test fails,
+# another is more likely to). I suspect a watchdog or windows issue: possibly a
+# change handler is not being registered by watchdog correctly, or is registered
+# too late, or... . A timeout of 60 not firing means it's unlikely "the machine is
+# slow and takes a while to fire the event" is the problem here.
+#
+# It seems watchdog CI also has a similar problem:
+# * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
+# * cmd+f `def rerun_filter` in the watchdog repository
+pytestmark = pytest.mark.skipif(
+    WINDOWS, reason="watchdog tests are too flaky on windows"
+)
+
 
 # we need real time here, not monkeypatched for CI
 time_sleep = time.sleep
