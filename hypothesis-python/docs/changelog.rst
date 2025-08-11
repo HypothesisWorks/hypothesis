@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.137.2:
+
+--------------------
+6.137.2 - 2025-08-11
+--------------------
+
+Add support for Python 3.14, `which is currently in release candidate 1 <https://devguide.python.org/versions/>`_.
+
 .. _v6.137.1:
 
 --------------------
