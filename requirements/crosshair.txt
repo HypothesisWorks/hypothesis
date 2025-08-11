@@ -4,9 +4,8 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==24.1.0
+attrs==25.3.0
     # via
-    #   -r requirements/test.in
     #   cattrs
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)

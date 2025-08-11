@@ -51,7 +51,6 @@ types_with_core_strat = {
 }
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_generic_sequence_of_integers_may_be_lists_or_bytes():
     strat = st.from_type(Sequence[int])
     find_any(strat, lambda x: isinstance(x, bytes))

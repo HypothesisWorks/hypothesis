@@ -210,11 +210,7 @@ def type_sorting_key(t):
     if t is None or t is type(None):
         return (-1, repr(t))
     t = get_origin(t) or t
-    try:
-        is_container = int(issubclass(t, collections.abc.Container))
-    except Exception:  # pragma: no cover
-        # e.g. `typing_extensions.Literal` is not a container
-        is_container = 0
+    is_container = int(try_issubclass(t, collections.abc.Container))
     return (is_container, repr(t))
 
 
@@ -289,12 +285,18 @@ def is_a_union(thing: object) -> bool:
 
 
 def is_a_type(thing: object) -> bool:
-    """Return True if thing is a type or a generic type like thing."""
+    """
+    Return True if thing is a type or a typing-like thing (union, generic type, etc).
+    """
     return (
         isinstance(thing, type)
         or is_generic_type(thing)
         or is_a_new_type(thing)
         or is_a_type_alias_type(thing)
+        # union and forwardref checks necessary from 3.14+. Before 3.14, they
+        # were covered by is_generic_type(thing).
+        or is_a_union(thing)
+        or isinstance(thing, typing.ForwardRef)
     )
 
 
@@ -452,7 +454,7 @@ def _try_import_forward_ref(thing, typ, *, type_params):  # pragma: no cover
 
 
 def from_typing_type(thing):
-    # We start with Final, Literal, and Annotated since they don't support `isinstance`.
+    # We start with Final, Literal, and Annotated, since they don't support `isinstance`.
     #
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
@@ -506,6 +508,7 @@ def from_typing_type(thing):
     if len(mapping) > 1:
         _Environ = getattr(os, "_Environ", None)
         mapping.pop(_Environ, None)
+
     tuple_types = [
         t
         for t in mapping
@@ -520,10 +523,24 @@ def from_typing_type(thing):
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if {collections.deque}.intersection(mapping) and len(mapping) > 1:
+    if collections.deque in mapping and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
-        mapping.pop(collections.deque, None)
+        mapping.pop(collections.deque)
+    if memoryview in mapping and len(mapping) > 1:  # pragma: no cover  # 3.14+
+        # memoryview is a subclass of e.g. collections.abc.Collection (only on
+        # 3.14+; see https://github.com/python/cpython/issues/126012). But since
+        # we fib by registering memoryview as st.binary().map(memoryview), we can't
+        # resolve it for collections here, else we might return bytes for unrelated
+        # collections.
+        mapping.pop(memoryview)
+
+    elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
+    union_elems = elem_type.__args__ if is_a_union(elem_type) else ()
+    allows_integer_elements = any(
+        isinstance(T, type) and try_issubclass(int, get_origin(T) or T)
+        for T in [*union_elems, elem_type]
+    )
 
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
@@ -535,17 +552,7 @@ def from_typing_type(thing):
         # This block drops bytes from the types that can be generated
         # if there is more than one allowed type, and the element type is
         # not either `int` or a Union with `int` as one of its elements.
-        elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
-        if is_a_union(elem_type):
-            union_elems = elem_type.__args__
-        else:
-            union_elems = ()
-        if not any(
-            # see https://github.com/HypothesisWorks/hypothesis/issues/4194 for
-            # try_issubclass.
-            isinstance(T, type) and try_issubclass(int, get_origin(T) or T)
-            for T in [*union_elems, elem_type]
-        ):
+        if not allows_integer_elements:
             mapping.pop(bytes, None)
             if sys.version_info[:2] <= (3, 13):
                 mapping.pop(collections.abc.ByteString, None)
@@ -555,16 +562,51 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+
+    def is_maximal(t):
+        # For each k in the mapping, we use it if it's the most general type
+        # available, and exclude any more specific types. So if both
+        # Sequence and Collection are available, we use the most general Collection
+        # type.
+        #
+        # k being "the most general" is equivalent to saying that k is maximal
+        # in the partial ordering of types. Note that since the ordering is
+        # partial there may be multiple maximal elements. (This distinguishes
+        # maximal from maximum).
+        return sum(try_issubclass(t, T) for T in mapping) == 1
+
+    strategies = [
+        (t, s if isinstance(s, st.SearchStrategy) else s(thing))
+        for t, s in mapping.items()
+        if is_maximal(t)
+    ]
+    strategies = [(t, s) for t, s in strategies if s != NotImplemented]
+
+    # 3.14+ removes typing.ByteString. typing.ByteString was the only reason we
+    # previously generated bytes for Sequence[int]. There is no equivalent
+    # for typing.ByteString in 3.14+, but we would still like to generate bytes
+    # for Sequence[int] and its supertypes. Special case that here.
+    if (
+        sys.version_info[:2] >= (3, 14)
+        and allows_integer_elements
+        # For the same reason as the is_maximal check above, we only include
+        # this ByteString special case if it is not overridden by a more general
+        # available type.
+        #
+        # collections.abc.ByteString was a direct subclass of Sequence, so we
+        # use that as the standin type when checking. Note we compare to a count
+        # of 0, instead of 1, since in is_maximal `k` is already in `mapping`,
+        # and we expect `try_issubclass(k, k) == True`.
+        and try_issubclass(collections.abc.Sequence, thing)
+        and sum(try_issubclass(collections.abc.Sequence, T) for T in mapping) == 0
+    ):  # pragma: no cover  # covered on 3.14+
+        strategies.append((collections.abc.Sequence, st.binary()))
+
     # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
-        s
-        for s in (
-            v if isinstance(v, st.SearchStrategy) else v(thing)
-            for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
-            if sum(try_issubclass(k, T) for T in mapping) == 1
-        )
-        if s != NotImplemented
+        s for _k, s in sorted(strategies, key=lambda kv: type_sorting_key(kv[0]))
     ]
+
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty or not strategies:
         raise ResolutionFailed(
@@ -638,6 +680,11 @@ _global_type_lookup: dict[
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
+    # this is a pragmatic decision and not strictly correct. memoryview is
+    # generic in its element type, which is not necessarily bytes. However,
+    # most usages are memoryview[bytes].
+    #
+    # See https://docs.python.org/3/library/stdtypes.html#memoryview.
     memoryview: st.binary().map(memoryview),
     numbers.Real: st.floats(),
     numbers.Rational: st.fractions(),

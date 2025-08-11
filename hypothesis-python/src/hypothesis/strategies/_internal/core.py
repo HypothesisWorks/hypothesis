@@ -242,10 +242,19 @@ def sampled_from(
             ]
         return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=force_repr)
     if not values:
+
+        def has_annotations(elements):
+            if sys.version_info[:2] < (3, 14):
+                return vars(elements).get("__annotations__")
+            else:  # pragma: no cover  # covered by 3.14 tests
+                import annotationlib
+
+                return bool(annotationlib.get_annotations(elements))
+
         if (
             isinstance(elements, type)
             and issubclass(elements, enum.Enum)
-            and vars(elements).get("__annotations__")
+            and has_annotations(elements)
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2923
             raise InvalidArgument(
@@ -1111,9 +1120,17 @@ def builds(
     the callable.
     """
     if not callable(target):
+        from hypothesis.strategies._internal.types import is_a_union
+
+        # before 3.14, unions were callable, so it got an error message in
+        # BuildsStrategy.do_draw. In 3.14+, unions are not callable, so
+        # we error earlier here instead.
+        suggestion = (
+            f" Try using from_type({target}) instead?" if is_a_union(target) else ""
+        )
         raise InvalidArgument(
             "The first positional argument to builds() must be a callable "
-            "target to construct."
+            f"target to construct.{suggestion}"
         )
 
     if ... in args:  # type: ignore  # we only annotated the allowed types
@@ -1302,33 +1319,31 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                     strat = resolver(thing)
                     if strat is not None:
                         return strat
-    if not isinstance(thing, type):
-        if types.is_a_new_type(thing):
-            # Check if we have an explicitly registered strategy for this thing,
-            # resolve it so, and otherwise resolve as for the base type.
-            if thing in types._global_type_lookup:
-                strategy = as_strategy(types._global_type_lookup[thing], thing)
-                if strategy is not NotImplemented:
-                    return strategy
-            return _from_type(thing.__supertype__)
-        if types.is_a_type_alias_type(
-            thing
-        ):  # pragma: no cover # covered by 3.12+ tests
-            if thing in types._global_type_lookup:
-                strategy = as_strategy(types._global_type_lookup[thing], thing)
-                if strategy is not NotImplemented:
-                    return strategy
-            return _from_type(thing.__value__)
-        # Unions are not instances of `type` - but we still want to resolve them!
-        if types.is_a_union(thing):
-            args = sorted(thing.__args__, key=types.type_sorting_key)
-            return one_of([_from_type(t) for t in args])
-        if thing in types.LiteralStringTypes:  # pragma: no cover
-            # We can't really cover this because it needs either
-            # typing-extensions or python3.11+ typing.
-            # `LiteralString` from runtime's point of view is just a string.
-            # Fallback to regular text.
-            return text()
+
+    if types.is_a_new_type(thing):
+        # Check if we have an explicitly registered strategy for this thing,
+        # resolve it so, and otherwise resolve as for the base type.
+        if thing in types._global_type_lookup:
+            strategy = as_strategy(types._global_type_lookup[thing], thing)
+            if strategy is not NotImplemented:
+                return strategy
+        return _from_type(thing.__supertype__)  # type: ignore
+    if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
+        if thing in types._global_type_lookup:
+            strategy = as_strategy(types._global_type_lookup[thing], thing)
+            if strategy is not NotImplemented:
+                return strategy
+        return _from_type(thing.__value__)  # type: ignore
+    if types.is_a_union(thing):
+        args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
+        return one_of([_from_type(t) for t in args])
+    if thing in types.LiteralStringTypes:  # pragma: no cover
+        # We can't really cover this because it needs either
+        # typing-extensions or python3.11+ typing.
+        # `LiteralString` from runtime's point of view is just a string.
+        # Fallback to regular text.
+        return text()  # type: ignore
+
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
@@ -1336,6 +1351,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         strategy = as_strategy(types._global_type_lookup[type(thing)], thing)
         if strategy is not NotImplemented:
             return strategy
+
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
@@ -1346,6 +1362,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"{thing=} must be a type")  # pragma: no cover
+
     if thing in types.NON_RUNTIME_TYPES:
         # Some code like `st.from_type(TypeAlias)` does not make sense.
         # Because there are types in python that do not exist in runtime.
@@ -1353,6 +1370,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             f"Could not resolve {thing!r} to a strategy, "
             f"because there is no such thing as a runtime instance of {thing!r}"
         )
+
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1377,6 +1395,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         # We've kept it because we turn out to have more type errors from... somewhere.
         # FIXME: investigate that, maybe it should be fixed more precisely?
         pass
+
     if (hasattr(typing, "_TypedDictMeta") and type(thing) is typing._TypedDictMeta) or (
         hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
         and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
@@ -1459,10 +1478,13 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    if isinstance(thing, types.typing_root_type) or (
-        isinstance(get_origin(thing), type) and get_args(thing)
+    if (
+        isinstance(thing, types.typing_root_type)
+        or (isinstance(get_origin(thing), type) and get_args(thing))
+        or isinstance(thing, typing.ForwardRef)
     ):
         return types.from_typing_type(thing)
+
     # If it's not from the typing module, we get all registered types that are
     # a subclass of `thing` and are not themselves a subtype of any other such
     # type.  For example, `Number -> integers() | floats()`, but bools() is
@@ -1481,10 +1503,12 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     ]
     if any(not s.is_empty for s in strategies):
         return one_of(strategies)
+
     # If we don't have a strategy registered for this type or any subtype, we
     # may be able to fall back on type annotations.
     if issubclass(thing, enum.Enum):
         return sampled_from(thing)
+
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
     # That's because of the semantic different; builds() -> "call this with ..."
@@ -1548,6 +1572,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 stacklevel=2,
             )
         return builds(thing, *posonly_args, **kwargs)
+
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()
     if not subclasses:
@@ -1555,6 +1580,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             f"Could not resolve {thing!r} to a strategy, because it is an abstract "
             "type without any subclasses. Consider using register_type_strategy"
         )
+
     subclass_strategies: SearchStrategy = nothing()
     for sc in subclasses:
         try:
