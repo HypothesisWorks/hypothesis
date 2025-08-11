@@ -756,7 +756,7 @@ def test_cache_key_size_is_bounded():
     # Modify co_consts because ("a" * 1000) may not be evaluated at compile time
     f = lambda: "a"
     f.__code__ = f.__code__.replace(
-        co_consts=tuple(c*1000 if c=="a" else c for c in f.__code__.co_consts)
+        co_consts=tuple(c * 1000 if c == "a" else c for c in f.__code__.co_consts)
     )
     assert len(repr(reflection._lambda_source_key(f))) > 1000
     assert len(repr(reflection._lambda_source_key(f, bounded_size=True))) < 1000
