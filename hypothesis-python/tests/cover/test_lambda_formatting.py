@@ -119,6 +119,12 @@ def test_can_distinguish_between_two_lambdas_with_different_constants():
     assert get_pretty_function_description(b) == "lambda x: 2"
 
 
+def test_can_distinguish_between_two_lambdas_with_different_signatures():
+    a, b = (lambda x: x, lambda y: y)
+    assert get_pretty_function_description(a) == "lambda x: x"
+    assert get_pretty_function_description(b) == "lambda y: y"
+
+
 def test_does_not_get_confused_by_identical_lambdas():
     a, b = (lambda x: 1, lambda x: 1)
     assert get_pretty_function_description(a) == "lambda x: 1"
