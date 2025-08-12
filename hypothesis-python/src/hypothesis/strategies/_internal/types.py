@@ -780,12 +780,15 @@ _fallback_type_strategy = st.sampled_from(
 # includes this... but we don't actually ever want to build one.
 _global_type_lookup[os._Environ] = st.just(os.environ)
 
-if sys.version_info[:2] <= (3, 13):
+if sys.version_info[:2] < (3, 14):
     # Note: while ByteString notionally also represents the bytearray and
     # memoryview types, it is a subclass of Hashable and those types are not.
     # We therefore only generate the bytes type. type-ignored due to deprecation.
     _global_type_lookup[typing.ByteString] = st.binary()  # type: ignore
     _global_type_lookup[collections.abc.ByteString] = st.binary()  # type: ignore
+
+if sys.version_info[:2] < (3, 14):
+    _global_type_lookup[memoryview] = st.binary().map(memoryview)
 
 
 _global_type_lookup.update(
