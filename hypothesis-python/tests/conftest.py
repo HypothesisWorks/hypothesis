@@ -36,10 +36,11 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 10):
-    collect_ignore_glob.append("cover/*py310*")
-if sys.version_info < (3, 12):
-    collect_ignore_glob.append("cover/*py312*.py")
+# this checks up until py319
+for minor_increment in range(10):
+    minor = 10 + minor_increment
+    if sys.version_info < (3, minor):
+        collect_ignore_glob.append(f"cover/*py3{minor}*.py")
 
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
