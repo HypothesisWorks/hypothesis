@@ -123,10 +123,8 @@ class RedisExampleDatabase(ExampleDatabase):
 
         changed = pipe.execute()
         if changed[0] > 0:
-            # did the value set of the first key change?
             self._publish(("delete", (src, value)))
         if changed[1] > 0:
-            # did the value set of the second key change?
             self._publish(("save", (dest, value)))
 
     def _handle_message(self, message: dict) -> None:
