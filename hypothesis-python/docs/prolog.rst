@@ -181,6 +181,7 @@
 .. |bytes| replace:: :obj:`python:bytes`
 .. |float| replace:: :obj:`python:float`
 .. |assert| replace:: :keyword:`python:assert`
+.. |memoryview| replace:: :class:`python:memoryview`
 .. |dataclasses| replace:: :mod:`python:dataclasses`
 .. |random.random| replace:: :class:`python:random.Random`
 .. |random.Random| replace:: :class:`python:random.Random`

@@ -527,12 +527,28 @@ def from_typing_type(thing):
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque)
-    if memoryview in mapping and len(mapping) > 1:  # pragma: no cover  # 3.14+
-        # memoryview is a subclass of e.g. collections.abc.Collection (only on
-        # 3.14+; see https://github.com/python/cpython/issues/126012). But since
-        # we fib by registering memoryview as st.binary().map(memoryview), we can't
-        # resolve it for collections here, else we might return bytes for unrelated
-        # collections.
+
+    if (
+        memoryview in mapping
+        and getattr(thing, "__args__", None)
+        and not hasattr(thing.__args__[0], "__buffer__")
+    ):
+        # Both memoryview and list are direct subclasses of Sequence. If we ask for
+        # st.from_type(Sequence[A]), we will get both list[A] and memoryview[A].
+        # But unless A implements the buffer protocol with __buffer__, resolving
+        # memoryview[A] will error.
+        #
+        # Since the user didn't explicitly ask for memoryview, there's no reason
+        # to expect them to have implemented __buffer__. Remove memoryview in this
+        # case, before it can fail at resolution-time.
+        #
+        # Note: I intentionally did not add a `and len(mapping) > 1` condition here.
+        # If memoryview[A] is the only resolution for a strategy, but A is not a
+        # buffer protocol, our options are to (1) pop memoryview and raise
+        # ResolutionFailed, or (2) to keep memoryview in the mapping and error in
+        # resolve_memoryview. A failure in test_resolving_standard_contextmanager_as_generic
+        # (because memoryview is a context manager in 3.14) convinced me the former
+        # was less confusing to users.
         mapping.pop(memoryview)
 
     elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
@@ -680,12 +696,6 @@ _global_type_lookup: dict[
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
-    # this is a pragmatic decision and not strictly correct. memoryview is
-    # generic in its element type, which is not necessarily bytes. However,
-    # most usages are memoryview[bytes].
-    #
-    # See https://docs.python.org/3/library/stdtypes.html#memoryview.
-    memoryview: st.binary().map(memoryview),
     numbers.Real: st.floats(),
     numbers.Rational: st.fractions(),
     numbers.Number: st.complex_numbers(),
@@ -1151,3 +1161,13 @@ def resolve_TypeVar(thing):
         ),
         key=type_var_key,
     ).flatmap(st.from_type)
+
+
+if sys.version_info[:2] >= (3, 14):
+    # memoryview is newly generic in 3.14. see
+    # https://github.com/python/cpython/issues/126012
+    # and https://docs.python.org/3/library/stdtypes.html#memoryview
+
+    @register(memoryview, st.binary().map(memoryview))
+    def resolve_memoryview(thing):
+        return st.from_type(thing.__args__[0]).map(memoryview)
