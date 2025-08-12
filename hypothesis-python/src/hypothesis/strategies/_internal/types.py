@@ -787,7 +787,6 @@ if sys.version_info[:2] < (3, 14):
     _global_type_lookup[typing.ByteString] = st.binary()  # type: ignore
     _global_type_lookup[collections.abc.ByteString] = st.binary()  # type: ignore
 
-if sys.version_info[:2] < (3, 14):
     _global_type_lookup[memoryview] = st.binary().map(memoryview)
 
 
