@@ -532,7 +532,7 @@ def from_typing_type(thing):
         memoryview in mapping
         and getattr(thing, "__args__", None)
         and not hasattr(thing.__args__[0], "__buffer__")
-    ):
+    ):  # pragma: no cover  # covered by 3.14+
         # Both memoryview and list are direct subclasses of Sequence. If we ask for
         # st.from_type(Sequence[A]), we will get both list[A] and memoryview[A].
         # But unless A implements the buffer protocol with __buffer__, resolving
