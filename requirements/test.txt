@@ -4,10 +4,8 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==24.1.0
-    # via
-    #   -r requirements/test.in
-    #   hypothesis (hypothesis-python/pyproject.toml)
+attrs==25.3.0
+    # via hypothesis (hypothesis-python/pyproject.toml)
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/pyproject.toml)

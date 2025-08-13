@@ -18,6 +18,38 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.0:
+
+--------------------
+6.138.0 - 2025-08-13
+--------------------
+
+On Python 3.14, |memoryview| is newly generic. This release adds the ability for |st.from_type| to resolve generic |memoryview| types on 3.14, like ``st.from_type(memoryview[CustomBufferClass])`` . ``CustomBufferClass`` must implement ``__buffer__``, as expected by |memoryview|.
+
+.. _v6.137.3:
+
+--------------------
+6.137.3 - 2025-08-11
+--------------------
+
+This patch makes the stringification of lambdas, and as
+a result certain automatic filter rewriting operations,
+more robust. This fixes :issue:`4498`, where a lambda
+was mistakenly identified as the identity operator due
+to :func:`inspect.getsource` only returning the first
+line of the lambda definition.
+
+As a result, the ``repr`` of strategies filtered or
+mapped by lambda functions may change slightly.
+
+.. _v6.137.2:
+
+--------------------
+6.137.2 - 2025-08-11
+--------------------
+
+Add support for Python 3.14, `which is currently in release candidate 1 <https://devguide.python.org/versions/>`_.
+
 .. _v6.137.1:
 
 --------------------

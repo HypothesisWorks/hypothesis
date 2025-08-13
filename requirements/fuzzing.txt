@@ -10,9 +10,8 @@ anyio==4.9.0
     # via starlette
 async-timeout==5.0.1
     # via redis
-attrs==24.1.0
+attrs==25.3.0
     # via
-    #   -r requirements/test.in
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   outcome
