@@ -1305,6 +1305,16 @@ class StateForActualGivenExecution:
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.
+            #
+            # Note that we have to unconditionally realize data.events, because
+            # the statistics reported by the pytest plugin use a different flow
+            # than observability, but still access symbolic events.
+
+            try:
+                data.events = data.provider.realize(data.events)
+            except BackendCannotProceed:
+                data.events = {}
+
             if observability_enabled():
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
@@ -1328,11 +1338,6 @@ class StateForActualGivenExecution:
                     self._string_repr = data.provider.realize(self._string_repr)
                 except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
-
-                try:
-                    data.events = data.provider.realize(data.events)
-                except BackendCannotProceed:
-                    data.events = {}
 
                 data.freeze()
                 tc = make_testcase(
