@@ -586,7 +586,6 @@ def test_builds_error_messages(data):
     data.draw(st.sampled_from(AnEnum))
 
 
-@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
@@ -606,7 +605,6 @@ def test_builds_error_messages(data):
     ],
 )
 def test_incompatible_shared_strategies_warns(strat_a, strat_b):
-
     shared_a = st.shared(strat_a, key="share")
     shared_b = st.shared(strat_b, key="share")
 
@@ -629,7 +627,6 @@ def _composite2(draw):
     return draw(st.integers())
 
 
-@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
@@ -637,8 +634,8 @@ def _composite2(draw):
         (st.builds(float), st.builds(float)),
         (_composite1(), _composite1()),
         pytest.param(
-            st.floats(allow_nan=False),
-            st.floats(allow_nan=0),
+            st.floats(allow_nan=False, allow_infinity=False),
+            st.floats(allow_nan=False, allow_infinity=0),
             marks=pytest.mark.xfail(
                 raises=HypothesisWarning,
                 strict=True,
@@ -665,7 +662,7 @@ def _composite2(draw):
         ),
     ],
 )
-def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
+def test_compatible_shared_strategies_do_not_warn(strat_a, strat_b):
     shared_a = st.shared(strat_a, key="share")
     shared_b = st.shared(strat_b, key="share")
 
@@ -677,3 +674,16 @@ def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
     with warnings.catch_warnings():
         warnings.simplefilter("error", HypothesisWarning)
         test_it()
+
+
+def test_compatible_nested_shared_strategies_do_not_warn():
+    shared_a = st.shared(st.integers(), key="share")
+    shared_b = st.shared(st.integers(), key="share")
+    shared_c = st.shared(shared_a, key="share")
+
+    @given(shared_a, shared_b, shared_c)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b, c):
+        assert a == b == c
+
+    test_it()
