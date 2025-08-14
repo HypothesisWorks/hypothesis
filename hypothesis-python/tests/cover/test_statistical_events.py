@@ -254,8 +254,6 @@ def test_statistics_for_threshold_problem():
     assert stats["targets"]["error"] > 10
 
 
-# describe_statistics causes not-deterministic crosshair errors for some reason?
-@xfail_on_crosshair(Why.other)
 def test_statistics_with_events_and_target():
     @given(st.integers(0, 10_000))
     def test(value):

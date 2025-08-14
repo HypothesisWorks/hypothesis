@@ -77,6 +77,7 @@ def get_trimmed_traceback(
             is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
             and not isinstance(exception, _Trimmable)
         )
+        or True
     ):
         return tb
     while tb.tb_next is not None and (
