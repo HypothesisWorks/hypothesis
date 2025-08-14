@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   test:
+    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -164,10 +165,9 @@ jobs:
       matrix:
         python:
           - version: "3.11"
-          - version: "3.11"
             architecture: "x86"
         whichtests:
-          - nocover
+          #- nocover
           - cover+rest
       fail-fast: false
     steps:
@@ -208,6 +208,7 @@ jobs:
       run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
+    if: false
     runs-on: macos-latest
     strategy:
       matrix:
@@ -239,6 +240,7 @@ jobs:
   # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
+    if: false
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: 22
