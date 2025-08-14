@@ -117,15 +117,7 @@ class GenericCache(Generic[K, V]):
                     raise ValueError(
                         "Cannot increase size of cache where all keys have been pinned."
                     ) from None
-
-                # it's not clear to me how this can occur with a thread-local
-                # cache, but we've seen failures here before (specifically under
-                # the windows ci tests).
-                try:
-                    del self.keys_to_indices[evicted.key]
-                except KeyError:  # pragma: no cover
-                    pass
-
+                del self.keys_to_indices[evicted.key]
                 i = 0
                 self.data[0] = entry
             else:
