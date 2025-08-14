@@ -10,7 +10,9 @@
 
 import contextlib
 import enum
+import math
 import sys
+import time
 import warnings
 from io import StringIO
 from threading import Barrier, Lock, RLock, Thread
@@ -26,10 +28,13 @@ from hypothesis.internal.observability import (
     add_observability_callback,
     remove_observability_callback,
 )
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
 from hypothesis.strategies._internal.types import _global_type_lookup
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
 
 try:
     from pytest import raises
@@ -362,3 +367,14 @@ def run_concurrently(function, n: int) -> None:
 
     for thread in threads:
         thread.join(timeout=10)
+
+
+def wait_for(condition, *, timeout=1, interval=0.01):
+    for _ in range(math.ceil(timeout / interval)):
+        if condition():
+            return
+        time_sleep(interval)
+    raise Exception(
+        f"timing out after waiting {timeout}s for condition "
+        f"{get_pretty_function_description(condition)}"
+    )

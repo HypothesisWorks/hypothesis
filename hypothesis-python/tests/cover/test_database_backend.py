@@ -63,6 +63,7 @@ from tests.common.utils import (
     checks_deprecated_behaviour,
     skipif_emscripten,
     skipif_threading,
+    wait_for,
 )
 from tests.conjecture.common import nodes, nodes_inline
 
@@ -663,6 +664,10 @@ def _database_conforms_to_listener_api(
         def events_agree(self):
             if flush is not None:
                 flush(self.db)
+
+            wait_for(
+                lambda: len(self.expected_events) == len(self.actual_events), timeout=60
+            )
             # events *generally* don't arrive out of order, but we've had
             # flakes reported here, especially on weirder / older machines.
             # see https://github.com/HypothesisWorks/hypothesis/issues/4274
