@@ -847,21 +847,23 @@ def get_executor(runner):
     return default_executor
 
 
+# This function is a crude solution, a better way of resolving it would probably
+# be to rewrite a bunch of exception handlers to use except*.
+T = TypeVar("T", bound=BaseException)
+
+
+def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
+    found_exceptions: list[T] = []
+    for exc in excgroup.exceptions:
+        if isinstance(exc, BaseExceptionGroup):
+            found_exceptions.extend(_flatten_group(exc))
+        else:
+            found_exceptions.append(exc)
+    return found_exceptions
+
+
 @contextlib.contextmanager
 def unwrap_markers_from_group() -> Generator[None, None, None]:
-    # This function is a crude solution, a better way of resolving it would probably
-    # be to rewrite a bunch of exception handlers to use except*.
-    T = TypeVar("T", bound=BaseException)
-
-    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
-        found_exceptions: list[T] = []
-        for exc in excgroup.exceptions:
-            if isinstance(exc, BaseExceptionGroup):
-                found_exceptions.extend(_flatten_group(exc))
-            else:
-                found_exceptions.append(exc)
-        return found_exceptions
-
     try:
         yield
     except BaseExceptionGroup as excgroup:
