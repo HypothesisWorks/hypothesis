@@ -120,10 +120,20 @@ class GenericCache(Generic[K, V]):
                 try:
                     del self.keys_to_indices[evicted.key]
                 except KeyError:
+                    try:
+                        del self.keys_to_indices[evicted.key]
+                    except KeyError:
+                        print("Failed twice")
+                    else:
+                        print("Worked on second attempt")
                     print(f"{len(self.data)=}")
-                    print(f"desired key: {evicted.key}")
-                    for k in self.keys_to_indices.keys():
-                        print(f"\nkey={k}")
+                    print(f"new key: {hash(key)} {key[0]} {key[1]} {[(k, id(v), v) for k,v in key[2]]}")
+                    print(f"desired key: {hash(evicted.key)} {evicted.key[0]} {evicted.key[1]} {[(k, id(v), v) for k,v in evicted.key[2]]}")
+                    for ky in self.keys_to_indices.keys():
+                        print(f"\n{hash(ky)} {ky==evicted.key} {ky is evicted.key} key={ky[0]} {ky[1]}{[(k, id(v), v) for k,v in ky[2]]}")
+                    for entry in self.data:
+                        print(f"\n{hash(entry.key)} {entry.key==evicted.key} {entry.key is evicted.key} data.key={entry.key[0]} {entry.key[1]} {[(k, id(v), v) for k,v in entry.key[2]]}")
+                    self.clear()
                     #self.check_valid()
                     raise
                 i = 0
