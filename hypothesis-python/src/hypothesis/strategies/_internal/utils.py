@@ -35,7 +35,7 @@ StrategyCacheKey: "TypeAlias" = tuple[
 ]
 
 _strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
-_CACHE = LRUReusedCache[StrategyCacheKey, object](32)
+_CACHE = LRUReusedCache[StrategyCacheKey, object](16)
 
 
 def convert_value(v: object) -> ValueKey:
