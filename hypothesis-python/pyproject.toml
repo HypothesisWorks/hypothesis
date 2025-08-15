@@ -100,9 +100,9 @@ documentation = "https://hypothesis.readthedocs.io"
 issues = "https://github.com/HypothesisWorks/hypothesis/issues"
 
 [project.optional-dependencies]
-cli = ["click>=7.0", "black>=19.10b0", "rich>=9.0.0"]
+cli = ["click>=7.0", "black>=20.8b0", "rich>=9.0.0"]
 codemods = ["libcst>=0.3.16"]
-ghostwriter = ["black>=19.10b0"]
+ghostwriter = ["black>=20.8b0"]
 pytz = ["pytz>=2014.1"]
 dateutil = ["python-dateutil>=1.4"]
 lark = ["lark>=0.10.1"]  # probably still works with old `lark-parser` too
@@ -121,7 +121,7 @@ zoneinfo = ["tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscrip
 django = ["django>=4.2"]
 watchdog = ["watchdog>=4.0.0"]
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
-all = ["black>=19.10b0", "click>=7.0", "crosshair-tool>=0.0.93", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.24", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
+all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.93", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.24", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "hypothesis.version.__version__"}

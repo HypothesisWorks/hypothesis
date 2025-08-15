@@ -185,7 +185,6 @@ def get_seeder_and_restorer(
             NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
     def seed_all() -> None:
-        global _most_recent_random_state_enter
         assert not states
         # access .data.copy().items() instead of .items() to avoid a "dictionary
         # changed size during iteration" error under multithreading.

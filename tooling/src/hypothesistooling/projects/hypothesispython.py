@@ -44,8 +44,8 @@ __version_info__ = None
 
 VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
 
-with open(VERSION_FILE, encoding="utf-8") as o:
-    exec(o.read())
+with open(VERSION_FILE, encoding="utf-8") as fp:
+    exec(fp.read())
 
 assert __version__ is not None
 assert __version_info__ is not None

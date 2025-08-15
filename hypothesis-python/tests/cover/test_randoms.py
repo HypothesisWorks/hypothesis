@@ -17,8 +17,10 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
+    ArtificialRandom,
     HypothesisRandom,
     TrueRandom,
     convert_kwargs,
@@ -405,3 +407,11 @@ def test_betavariate_includes_zero_and_one():
     assert_all_examples(strat, lambda x: 0 <= x <= 1)
     find_any(strat, lambda x: x == 0)
     find_any(strat, lambda x: x == 1)
+
+
+def test_artificial_random_with_already_initialized_states_for_ids():
+    # covering test for calling .getstate when data.states_for_ids is not None.
+    data = ConjectureData.for_choices([])
+    data.states_for_ids = {}
+    r = ArtificialRandom(note_method_calls=False, data=data)
+    r.getstate()
