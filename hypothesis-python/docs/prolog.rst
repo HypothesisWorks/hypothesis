@@ -187,3 +187,7 @@
 .. |random.Random| replace:: :class:`python:random.Random`
 .. |ellipsis| replace:: :obj:`python:Ellipsis`
 .. |Ellipsis| replace:: :obj:`python:Ellipsis`
+
+.. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
+.. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
+.. |NewType| replace:: :class:`python:typing.NewType`
