@@ -117,7 +117,13 @@ class GenericCache(Generic[K, V]):
                     raise ValueError(
                         "Cannot increase size of cache where all keys have been pinned."
                     ) from None
-                del self.keys_to_indices[evicted.key]
+                try:
+                    del self.keys_to_indices[evicted.key]
+                except KeyError:
+                    print(f"{len(self.data)=}")
+                    print(f"{sorted(self.keys_to_indices.values())}")
+                    self.check_valid()
+                    raise
                 i = 0
                 self.data[0] = entry
             else:
