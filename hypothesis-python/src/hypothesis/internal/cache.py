@@ -121,8 +121,10 @@ class GenericCache(Generic[K, V]):
                     del self.keys_to_indices[evicted.key]
                 except KeyError:
                     print(f"{len(self.data)=}")
-                    print(f"{sorted(self.keys_to_indices.values())}")
-                    self.check_valid()
+                    print(f"desired key: {evicted.key}")
+                    for k in self.keys_to_indices.keys():
+                        print(f"\nkey={k}")
+                    #self.check_valid()
                     raise
                 i = 0
                 self.data[0] = entry
