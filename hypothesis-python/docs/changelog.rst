@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.1:
+
+--------------------
+6.138.1 - 2025-08-15
+--------------------
+
+Internal refactoring and cleanup. As a result, ``hypothesis[black]`` now requires ``black>=20.8b0`` instead of the previous ``black>=19.10b0``.
+
 .. _v6.138.0:
 
 --------------------
