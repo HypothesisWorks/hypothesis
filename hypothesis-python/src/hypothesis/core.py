@@ -1338,25 +1338,24 @@ class StateForActualGivenExecution:
                     data.events = {}
 
                 data.freeze()
-                if observability_enabled():
-                    tc = make_testcase(
-                        run_start=self._start_timestamp,
-                        property=self.test_identifier,
-                        data=data,
-                        how_generated=f"during {phase} phase{backend_desc}",
-                        representation=self._string_repr,
-                        arguments=data._observability_args,
-                        timing=self._timing_features,
-                        coverage=tractable_coverage_report(trace) or None,
-                        phase=phase,
-                        backend_metadata=data.provider.observe_test_case(),
-                    )
-                    deliver_observation(tc)
+                tc = make_testcase(
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
+                    data=data,
+                    how_generated=f"during {phase} phase{backend_desc}",
+                    representation=self._string_repr,
+                    arguments=data._observability_args,
+                    timing=self._timing_features,
+                    coverage=tractable_coverage_report(trace) or None,
+                    phase=phase,
+                    backend_metadata=data.provider.observe_test_case(),
+                )
+                deliver_observation(tc)
 
-                    for msg in data.provider.observe_information_messages(
-                        lifetime="test_case"
-                    ):
-                        self._deliver_information_message(**msg)
+                for msg in data.provider.observe_information_messages(
+                    lifetime="test_case"
+                ):
+                    self._deliver_information_message(**msg)
             self._timing_features = {}
 
     def _deliver_information_message(
