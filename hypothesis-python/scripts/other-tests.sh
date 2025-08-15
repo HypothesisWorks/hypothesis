@@ -64,7 +64,6 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip uninstall -y libcst
 
   $PYTEST tests/ghostwriter/
-  $PYTEST tests/black/
   pip uninstall -y black
 
   if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c "import platform; print(platform.python_implementation() not in {'PyPy', 'GraalVM'})")" = "True" ] ; then

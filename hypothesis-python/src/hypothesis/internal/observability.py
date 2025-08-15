@@ -430,18 +430,6 @@ def make_testcase(
     if status is None:
         status = status_map[data.status]
 
-    try:
-        import black
-        from black.parsing import InvalidInput
-    except ImportError:
-        pass
-    else:
-        try:
-            # strip since black appends a trailing newline.
-            representation = black.format_str(representation, mode=black.Mode()).strip()
-        except InvalidInput:
-            pass
-
     return TestCaseObservation(
         type="test_case",
         status=status,
