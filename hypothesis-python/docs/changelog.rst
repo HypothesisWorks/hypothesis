@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.2:
+
+--------------------
+6.138.2 - 2025-08-16
+--------------------
+
+The type annotations for |st.register_type_strategy| now indicate that it accepts registering types created with |TypeAliasType| (aka ``type MyType = int``).
+
 .. _v6.138.1:
 
 --------------------
