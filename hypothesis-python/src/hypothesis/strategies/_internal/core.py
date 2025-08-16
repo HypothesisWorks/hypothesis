@@ -2364,7 +2364,7 @@ def data() -> SearchStrategy[DataObject]:
 if sys.version_info < (3, 12):
     # TypeAliasType is new in 3.12
     RegisterTypeT: "TypeAlias" = type[Ex]
-else:
+else:  # pragma: no cover  # covered by test_mypy.py
     from typing import TypeAliasType
 
     # see https://github.com/HypothesisWorks/hypothesis/issues/4410
