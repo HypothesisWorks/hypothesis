@@ -25,9 +25,9 @@ def get_entry_points() -> Generator[EntryPoint, None, None]:
     try:
         eps: Sequence[EntryPoint] = importlib.metadata.entry_points(group="hypothesis")
     except TypeError:  # pragma: no cover
-        # Load-time selection requires Python >= 3.10.  See also
-        # https://importlib-metadata.readthedocs.io/en/latest/using.html
-        eps = importlib.metadata.entry_points().get("hypothesis", [])
+        # Load-time selection requires Python >= 3.10.
+        # type ignore since interface differs pre-3.10
+        eps = importlib.metadata.entry_points().get("hypothesis", [])  # type: ignore
     yield from eps
 
 

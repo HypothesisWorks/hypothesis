@@ -122,7 +122,8 @@ def valid_tuple_axes(
     min_size: int = 0,
     max_size: Optional[int] = None,
 ) -> st.SearchStrategy[tuple[int, ...]]:
-    """All tuples will have a length >= ``min_size`` and <= ``max_size``. The default
+    """
+    All tuples will have a length >= ``min_size`` and <= ``max_size``. The default
     value for ``max_size`` is ``ndim``.
 
     Examples from this strategy shrink towards an empty tuple, which render most
@@ -141,7 +142,6 @@ def valid_tuple_axes(
     .. code-block:: python
 
       any_axis_strategy = none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
-
     """
     check_type(int, ndim, "ndim")
     check_type(int, min_size, "min_size")
@@ -352,7 +352,8 @@ def mutually_broadcastable_shapes(
     min_side: int = 1,
     max_side: Optional[int] = None,
 ) -> st.SearchStrategy[BroadcastableShapes]:
-    """Return a strategy for a specified number of shapes N that are
+    """
+    Return a strategy for a specified number of shapes N that are
     mutually-broadcastable with one another and with the provided base shape.
 
     * ``num_shapes`` is the number of mutually broadcast-compatible shapes to generate.
@@ -385,7 +386,6 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((), (), ()), result_shape=())
         BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(3,))
         BroadcastableShapes(input_shapes=((1, 2, 3), (3,), ()), result_shape=(1, 2, 3))
-
     """
     arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
     if num_shapes is not not_set:
