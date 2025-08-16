@@ -99,7 +99,7 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
-    TypeGuardTypes += (typing.TypeIs,)  # type: ignore
+    TypeGuardTypes += (typing.TypeIs,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -110,7 +110,7 @@ except AttributeError:  # pragma: no cover
 
 RequiredTypes: tuple = ()
 try:
-    RequiredTypes += (typing.Required,)  # type: ignore
+    RequiredTypes += (typing.Required,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -121,7 +121,7 @@ except AttributeError:  # pragma: no cover
 
 NotRequiredTypes: tuple = ()
 try:
-    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
+    NotRequiredTypes += (typing.NotRequired,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -132,7 +132,7 @@ except AttributeError:  # pragma: no cover
 
 ReadOnlyTypes: tuple = ()
 try:
-    ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
+    ReadOnlyTypes += (typing.ReadOnly,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -143,7 +143,7 @@ except AttributeError:  # pragma: no cover
 
 LiteralStringTypes: tuple = ()
 try:
-    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
+    LiteralStringTypes += (typing.LiteralString,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:

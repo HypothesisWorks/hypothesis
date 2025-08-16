@@ -111,10 +111,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.13"
     - name: Restore cache
       uses: actions/cache@v3
       with:
@@ -221,10 +221,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.13"
     - name: Restore cache
       uses: actions/cache@v3
       with:
@@ -244,9 +244,9 @@ jobs:
       NODE_VERSION: 22
       # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
       # The versions of pyodide-build and the Pyodide runtime may differ.
-      PYODIDE_VERSION: 0.27.7
-      PYODIDE_BUILD_VERSION: 0.30.5
-      PYTHON_VERSION: 3.12.7
+      PYODIDE_VERSION: 0.28.1
+      PYODIDE_BUILD_VERSION: 0.30.6
+      PYTHON_VERSION: 3.13.2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -298,10 +298,10 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.13"
     - name: Restore cache
       uses: actions/cache@v3
       with:

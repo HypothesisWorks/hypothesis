@@ -89,7 +89,7 @@ ignore = [
 "hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.13"
 platform = "linux"
 
 allow_redefinition = true

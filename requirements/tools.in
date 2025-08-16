@@ -29,4 +29,5 @@ typing-extensions
 watchdog # for typing
 build
 sortedcontainers-stubs # for typing
+tomli # for update_pyproject_toml
 -r test.in

@@ -910,7 +910,7 @@ class settings(metaclass=settingsMeta):
                     )
                 setattr(test, attr_name, True)
                 _test.TestCase.settings = self
-                return test  # type: ignore
+                return test
             else:
                 raise InvalidArgument(
                     "@settings(...) can only be used as a decorator on "
