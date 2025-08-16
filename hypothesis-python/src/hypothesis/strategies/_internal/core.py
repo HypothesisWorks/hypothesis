@@ -27,6 +27,7 @@ from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
 from types import FunctionType, GenericAlias
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     AnyStr,
@@ -141,6 +142,9 @@ from hypothesis.strategies._internal.strings import (
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import RepresentationPrinter
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
 
 @cacheable
@@ -2357,8 +2361,18 @@ def data() -> SearchStrategy[DataObject]:
     return DataStrategy()
 
 
+if sys.version_info < (3, 12):
+    # TypeAliasType is new in 3.12
+    RegisterTypeT: "TypeAlias" = type[Ex]
+else:  # pragma: no cover  # covered by test_mypy.py
+    from typing import TypeAliasType
+
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4410
+    RegisterTypeT: "TypeAlias" = Union[type[Ex], TypeAliasType]
+
+
 def register_type_strategy(
-    custom_type: type[Ex],
+    custom_type: RegisterTypeT,
     strategy: Union[SearchStrategy[Ex], Callable[[type[Ex]], SearchStrategy[Ex]]],
 ) -> None:
     """Add an entry to the global type-to-strategy lookup.
