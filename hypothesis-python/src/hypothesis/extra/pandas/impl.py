@@ -126,6 +126,8 @@ def elements_and_dtype(elements, dtype, source=None):
             if is_na_dtype and value is None:
                 return None
             name = f"draw({prefix}elements)"
+            if dtype.kind == "O":
+                return value  # for objects, just use the object other numpy might convert it
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
@@ -638,7 +640,11 @@ def data_frames(
                         else:
                             value = draw(c.elements)
                         try:
-                            data[c.name].iloc[i] = value
+                            # we can't use `.iloc[i]` here because inserting python objects
+                            # like dicts leads to unexpected behaviour (dicts are interpreted
+                            # by pandas as a Series). Therefore, we use `.iat[i]`
+                            # to set a single value.
+                            data[c.name].iat[i] = value  # noqa: PD009
                         except ValueError as err:  # pragma: no cover
                             # This just works in Pandas 1.4 and later, but gives
                             # a confusing error on previous versions.

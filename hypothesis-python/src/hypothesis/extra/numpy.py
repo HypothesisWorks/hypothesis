@@ -42,6 +42,7 @@ from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import (
     Ex,
     MappedStrategy,
+    SampledFromStrategy,
     T,
     check_strategy,
 )
@@ -94,6 +95,34 @@ TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", 
 
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
+
+
+def _is_comparable(x: Any) -> bool:
+    """Returns True if the input can be compared."""
+    try:
+        return x == x or x != x
+    except Exception:
+        return False
+
+
+def _has_ssize_t_length_or_no_length(x: Any) -> bool:
+    """Returns True if the input has a __len__ method that returns an integer that fits into ssize_t.
+
+    This is used to so that we convert large object arrays to strings we don't get OverflowErrors when printing.
+    E.g. Pandas will test len() of an entry in order to print it. This will fail if the length is too large.
+    """
+    try:
+        len(x)
+    except OverflowError:
+        return False
+    except TypeError:
+        return True
+    else:
+        return True
+
+
+def _is_compatible_numpy_element_object(x: Any) -> bool:
+    return _is_comparable(x) and _has_ssize_t_length_or_no_length(x)
 
 
 @defines_strategy(force_reusable_values=True)
@@ -213,9 +242,19 @@ def from_dtype(
         else:  # NEP-7 defines the NaT value as integer -(2**63)
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
+    elif dtype.kind == "O":
+        return (
+            st.from_type(type)
+            .flatmap(st.from_type)
+            .filter(_is_compatible_numpy_element_object)
+        )
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
+
+
+def _array_or_scalar_equal(a: Any, b: Any) -> bool:
+    return bool(np.all([a == b]))
 
 
 class ArrayStrategy(st.SearchStrategy):
@@ -225,9 +264,16 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
-        self.element_strategy = element_strategy
+        if dtype == np.dtype("O") and not isinstance(
+            element_strategy, SampledFromStrategy
+        ):  # to keep nice error messages
+            self.element_strategy = element_strategy.filter(
+                _is_compatible_numpy_element_object
+            )
+        else:
+            self.element_strategy = element_strategy
         self.unique = unique
-        self._check_elements = dtype.kind not in ("O", "V")
+        self._check_elements = dtype.kind not in ("V",)
 
     def __repr__(self):
         return (
@@ -240,16 +286,20 @@ class ArrayStrategy(st.SearchStrategy):
             result[idx] = val
         except TypeError as err:
             raise InvalidArgument(
-                f"Could not add element={val!r} of {val.dtype!r} to array of "
-                f"{result.dtype!r} - possible mismatch of time units in dtypes?"
+                f"Could not add element={getattr(val, 'dtype', type(val))!r} of "
+                f"{getattr(val, 'dtype', type(val))!r} to array of "
+                f"{getattr(result, 'dtype', type(result))!r} - possible mismatch of time units in dtypes?"
             ) from err
         try:
-            elem_changed = self._check_elements and val != result[idx] and val == val
+            elem_changed = self._check_elements and (
+                not _array_or_scalar_equal(val, result[idx])
+                and _array_or_scalar_equal(val, val)
+            )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                f"Internal error when checking element={val!r} of {val.dtype!r} "
+                f"Internal error when checking element={val!r} of {getattr(val, 'dtype', type(val))!r} "
                 f"to array of {result.dtype!r}"
             ) from err
         if elem_changed:
