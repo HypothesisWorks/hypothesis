@@ -232,3 +232,11 @@ def test_realizes_event():
         test()
 
     assert saw_myevent
+
+
+# see https://github.com/pschanely/hypothesis-crosshair/issues/41
+@given(st.integers())
+@settings(backend="crosshair")
+def test_event_with_realization(value):
+    event(value)
+    float(value)
