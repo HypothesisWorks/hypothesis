@@ -88,14 +88,13 @@ class Foo:
 
 
 def test_formats_are_evaluated_only_once():
-    if current_build_context().data.provider.avoid_realization:
-        pytest.skip("event() cache is disabled under avoid_realization = True")
-
     global counter
     counter = 0
 
     @given(st.integers())
     def test(i):
+        if current_build_context().data.provider.avoid_realization:
+            pytest.skip("event() cache is disabled under avoid_realization = True")
         event(Foo())
 
     stats = call_for_statistics(test)
