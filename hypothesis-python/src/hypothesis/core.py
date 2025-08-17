@@ -684,15 +684,16 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     )
 
                 empty_data.freeze()
-                tc = make_testcase(
-                    run_start=state._start_timestamp,
-                    property=state.test_identifier,
-                    data=empty_data,
-                    how_generated="explicit example",
-                    representation=state._string_repr,
-                    timing=state._timing_features,
-                )
-                deliver_observation(tc)
+                if observability_enabled():
+                    tc = make_testcase(
+                        run_start=state._start_timestamp,
+                        property=state.test_identifier,
+                        data=empty_data,
+                        how_generated="explicit example",
+                        representation=state._string_repr,
+                        timing=state._timing_features,
+                    )
+                    deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -846,21 +847,23 @@ def get_executor(runner):
     return default_executor
 
 
+# This function is a crude solution, a better way of resolving it would probably
+# be to rewrite a bunch of exception handlers to use except*.
+T = TypeVar("T", bound=BaseException)
+
+
+def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
+    found_exceptions: list[T] = []
+    for exc in excgroup.exceptions:
+        if isinstance(exc, BaseExceptionGroup):
+            found_exceptions.extend(_flatten_group(exc))
+        else:
+            found_exceptions.append(exc)
+    return found_exceptions
+
+
 @contextlib.contextmanager
 def unwrap_markers_from_group() -> Generator[None, None, None]:
-    # This function is a crude solution, a better way of resolving it would probably
-    # be to rewrite a bunch of exception handlers to use except*.
-    T = TypeVar("T", bound=BaseException)
-
-    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
-        found_exceptions: list[T] = []
-        for exc in excgroup.exceptions:
-            if isinstance(exc, BaseExceptionGroup):
-                found_exceptions.extend(_flatten_group(exc))
-            else:
-                found_exceptions.append(exc)
-        return found_exceptions
-
     try:
         yield
     except BaseExceptionGroup as excgroup:
@@ -1111,8 +1114,8 @@ class StateForActualGivenExecution:
                     add_note(e, msg.format(format_arg))
                 raise
             finally:
-                if parts := getattr(data, "_stateful_repr_parts", None):
-                    self._string_repr = "\n".join(parts)
+                if data._stateful_repr_parts is not None:
+                    self._string_repr = "\n".join(data._stateful_repr_parts)
 
                 if observability_enabled():
                     printer = RepresentationPrinter(context=context)
@@ -1294,7 +1297,7 @@ class StateForActualGivenExecution:
                 if trace:  # pragma: no cover
                     # Trace collection is explicitly disabled under coverage.
                     self.explain_traces[interesting_origin].add(frozenset(trace))
-                if interesting_origin[0] == DeadlineExceeded:
+                if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
                 try:
@@ -1353,6 +1356,7 @@ class StateForActualGivenExecution:
                     backend_metadata=data.provider.observe_test_case(),
                 )
                 deliver_observation(tc)
+
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
                 ):
@@ -1538,21 +1542,23 @@ class StateForActualGivenExecution:
                 raise NotImplementedError("This should be unreachable")
             finally:
                 ran_example.freeze()
-                # log our observability line for the final failing example
-                tc = make_testcase(
-                    run_start=self._start_timestamp,
-                    property=self.test_identifier,
-                    data=ran_example,
-                    how_generated="minimal failing example",
-                    representation=self._string_repr,
-                    arguments=ran_example._observability_args,
-                    timing=self._timing_features,
-                    coverage=None,  # Not recorded when we're replaying the MFE
-                    status="passed" if sys.exc_info()[0] else "failed",
-                    status_reason=str(origin or "unexpected/flaky pass"),
-                    metadata={"traceback": tb},
-                )
-                deliver_observation(tc)
+                if observability_enabled():
+                    # log our observability line for the final failing example
+                    tc = make_testcase(
+                        run_start=self._start_timestamp,
+                        property=self.test_identifier,
+                        data=ran_example,
+                        how_generated="minimal failing example",
+                        representation=self._string_repr,
+                        arguments=ran_example._observability_args,
+                        timing=self._timing_features,
+                        coverage=None,  # Not recorded when we're replaying the MFE
+                        status="passed" if sys.exc_info()[0] else "failed",
+                        status_reason=str(origin or "unexpected/flaky pass"),
+                        metadata={"traceback": tb},
+                    )
+                    deliver_observation(tc)
+
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:

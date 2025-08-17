@@ -154,12 +154,10 @@ class RandomState:
 
 
 def state_for_seed(data, seed):
-    try:
-        seeds_to_states = data.seeds_to_states
-    except AttributeError:
-        seeds_to_states = {}
-        data.seeds_to_states = seeds_to_states
+    if data.seeds_to_states is None:
+        data.seeds_to_states = {}
 
+    seeds_to_states = data.seeds_to_states
     try:
         state = seeds_to_states[seed]
     except KeyError:
@@ -341,12 +339,9 @@ class ArtificialRandom(HypothesisRandom):
         if self.__state.state_id is not None:
             return self.__state.state_id
 
-        try:
-            states_for_ids = self.__data.states_for_ids
-        except AttributeError:
-            states_for_ids = {}
-            self.__data.states_for_ids = states_for_ids
-
+        if self.__data.states_for_ids is None:
+            self.__data.states_for_ids = {}
+        states_for_ids = self.__data.states_for_ids
         self.__state.state_id = len(states_for_ids)
         states_for_ids[self.__state.state_id] = self.__state
 

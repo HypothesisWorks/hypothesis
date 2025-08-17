@@ -213,11 +213,11 @@ def format():
 
     for f in files_to_format:
         lines = []
-        with open(f, encoding="utf-8") as o:
+        with open(f, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
-            for l in o.readlines():
+            for l in fp:
                 if first:
                     first = False
                     if l[:2] == "#!":
@@ -228,16 +228,17 @@ def format():
                     lines = []
                 else:
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
+
         source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as o:
+        with open(f, "w", encoding="utf-8") as fp:
             if shebang is not None:
-                o.write(shebang)
-                o.write("\n")
-            o.write(HEADER)
+                fp.write(shebang)
+                fp.write("\n")
+            fp.write(HEADER)
             if source:
-                o.write("\n\n")
-                o.write(source)
-            o.write("\n")
+                fp.write("\n\n")
+                fp.write(source)
+            fp.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
@@ -258,8 +259,8 @@ def check_format():
     for f in tools.all_files():
         if not f.endswith(".py"):
             continue
-        with open(f, encoding="utf-8") as i:
-            start = i.read(n)
+        with open(f, encoding="utf-8") as fp:
+            start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
                 print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True

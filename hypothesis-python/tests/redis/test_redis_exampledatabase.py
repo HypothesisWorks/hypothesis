@@ -144,6 +144,26 @@ def test_redis_listener_explicit():
     assert calls == 3
 
 
+def test_redis_move_from_key_without_value():
+    # explicit covering test for:
+    # * moving a value from a key without that value
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.save(b"a", b"x")
+    db.save(b"b", b"x")
+    db.move(b"a", b"b", b"y")
+
+
+def test_redis_move_into_key_with_value():
+    # explicit covering test for:
+    # * moving a value into a key with that value
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.save(b"a", b"y")
+    db.save(b"b", b"x")
+    db.move(b"a", b"b", b"x")
+
+
 def test_redis_equality():
     redis = FakeRedis()
     assert RedisExampleDatabase(redis) == RedisExampleDatabase(redis)
