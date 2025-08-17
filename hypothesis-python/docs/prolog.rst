@@ -62,6 +62,9 @@
 
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
 .. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
+.. |DeadlineExceeded| replace:: :obj:`DeadlineExceeded <hypothesis.errors.DeadlineExceeded>`
+.. |BackendCannotProceed| replace:: :obj:`~hypothesis.errors.BackendCannotProceed`
+.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
@@ -103,10 +106,13 @@
 .. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
+.. |filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
@@ -127,15 +133,21 @@
 .. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
+
+.. |add_observability_callback| replace:: :data:`~hypothesis.internal.observability.add_observability_callback`
+.. |remove_observability_callback| replace:: :data:`~hypothesis.internal.observability.remove_observability_callback`
+.. |with_observability_callback| replace:: :data:`~hypothesis.internal.observability.with_observability_callback`
+.. |observability_enabled| replace:: :data:`~hypothesis.internal.observability.observability_enabled`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
 .. |OBSERVABILITY_CHOICES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICES`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`
-.. |BackendCannotProceed| replace:: :exc:`~hypothesis.errors.BackendCannotProceed`
 
 .. |@rule| replace:: :func:`@rule <hypothesis.stateful.rule>`
 .. |@precondition| replace:: :func:`@precondition <hypothesis.stateful.precondition>`
+.. |@initialize| replace:: :func:`@initialize <hypothesis.stateful.initialize>`
+.. |@invariant| replace:: :func:`@invariant <hypothesis.stateful.invariant>`
 .. |RuleBasedStateMachine| replace:: :class:`~hypothesis.stateful.RuleBasedStateMachine`
 .. |run_state_machine_as_test| replace:: :func:`~hypothesis.stateful.run_state_machine_as_test`
 
@@ -175,8 +187,13 @@
 .. |bytes| replace:: :obj:`python:bytes`
 .. |float| replace:: :obj:`python:float`
 .. |assert| replace:: :keyword:`python:assert`
+.. |memoryview| replace:: :class:`python:memoryview`
 .. |dataclasses| replace:: :mod:`python:dataclasses`
 .. |random.random| replace:: :class:`python:random.Random`
 .. |random.Random| replace:: :class:`python:random.Random`
 .. |ellipsis| replace:: :obj:`python:Ellipsis`
 .. |Ellipsis| replace:: :obj:`python:Ellipsis`
+
+.. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
+.. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
+.. |NewType| replace:: :class:`python:typing.NewType`

@@ -11,7 +11,7 @@
 import importlib
 import inspect
 import math
-import textwrap
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Generator, Sequence
@@ -20,14 +20,14 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
-from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, cast
+from typing import Callable, Final, Literal, NoReturn, Optional, Union, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
-    FlakyReplay,
+    FlakyBackendFailure,
     HypothesisException,
     InvalidArgument,
     StopTest,
@@ -68,7 +68,7 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import Observation, with_observation_callback
+from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report
 
 #: The maximum number of times the shrinker will reduce the complexity of a failing
@@ -109,7 +109,7 @@ class HealthCheckState:
     valid_examples: int = field(default=0)
     invalid_examples: int = field(default=0)
     overrun_examples: int = field(default=0)
-    draw_times: "defaultdict[str, List[float]]" = field(
+    draw_times: defaultdict[str, list[float]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
@@ -279,6 +279,7 @@ class ConjectureRunner:
         random: Optional[Random] = None,
         database_key: Optional[bytes] = None,
         ignore_limits: bool = False,
+        thread_overlap: Optional[dict[int, bool]] = None,
     ) -> None:
         self._test_function: Callable[[ConjectureData], None] = test_function
         self.settings: Settings = settings or Settings()
@@ -292,6 +293,7 @@ class ConjectureRunner:
         self.random: Random = random or Random(getrandbits(128))
         self.database_key: Optional[bytes] = database_key
         self.ignore_limits: bool = ignore_limits
+        self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
         # Global dict of per-phase statistics, and a list of per-call stats
         # which transfer to the global dict at the end of each phase.
@@ -299,10 +301,7 @@ class ConjectureRunner:
         self.statistics: StatisticsDict = {}
         self.stats_per_test_case: list[CallStats] = []
 
-        # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.interesting_examples: dict[
-            Optional[InterestingOrigin], ConjectureResult
-        ] = {}
+        self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
@@ -333,7 +332,7 @@ class ConjectureRunner:
             self.pareto_front.on_evict(self.on_pareto_evict)
 
         # We want to be able to get the ConjectureData object that results
-        # from running a buffer without recalculating, especially during
+        # from running a choice sequence without recalculating, especially during
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache[
@@ -344,11 +343,23 @@ class ConjectureRunner:
 
         self.__pending_call_explanation: Optional[str] = None
         self._backend_found_failure: bool = False
+        self._backend_exceeded_deadline: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
         # note unsound verification by alt backends
         self._verified_by: Optional[str] = None
+
+    @contextmanager
+    def _with_switch_to_hypothesis_provider(
+        self, value: bool
+    ) -> Generator[None, None, None]:
+        previous = self._switch_to_hypothesis_provider
+        try:
+            self._switch_to_hypothesis_provider = value
+            yield
+        finally:
+            self._switch_to_hypothesis_provider = previous
 
     @property
     def using_hypothesis_backend(self) -> bool:
@@ -492,8 +503,7 @@ class ConjectureRunner:
                 pass
 
         data = self.new_conjecture_data(choices, max_choices=max_length)
-        # note that calling test_function caches `data` for us, for both an ir
-        # tree key and a buffer key.
+        # note that calling test_function caches `data` for us.
         self.test_function(data)
         return data.as_result()
 
@@ -606,33 +616,35 @@ class ConjectureRunner:
             if not self.using_hypothesis_backend:
                 # replay this failure on the hypothesis backend to ensure it still
                 # finds a failure. otherwise, it is flaky.
-                initial_origin = data.interesting_origin
-                initial_traceback = data.expected_traceback
+                initial_exception = data.expected_exception
                 data = ConjectureData.for_choices(data.choices)
-                self.__stoppable_test_function(data)
+                # we've already going to use the hypothesis provider for this
+                # data, so the verb "switch" is a bit misleading here. We're really
+                # setting this to inform our on_observation logic that the observation
+                # generated here was from a hypothesis backend, and shouldn't be
+                # sent to the on_observation of any alternative backend.
+                with self._with_switch_to_hypothesis_provider(True):
+                    self.__stoppable_test_function(data)
                 data.freeze()
-                # TODO: Convert to FlakyFailure on the way out. Should same-origin
-                #       also be checked?
+                # TODO: Should same-origin also be checked? (discussion in
+                # https://github.com/HypothesisWorks/hypothesis/pull/4470#discussion_r2217055487)
                 if data.status != Status.INTERESTING:
                     desc_new_status = {
                         data.status.VALID: "passed",
                         data.status.INVALID: "failed filters",
                         data.status.OVERRUN: "overran",
                     }[data.status]
-                    wrapped_tb = (
-                        ""
-                        if initial_traceback is None
-                        else textwrap.indent(initial_traceback, "  | ")
-                    )
-                    raise FlakyReplay(
-                        f"Inconsistent results from replaying a failing test case!\n"
-                        f"{wrapped_tb}on backend={self.settings.backend!r} but "
-                        f"{desc_new_status} under backend='hypothesis'",
-                        interesting_origins=[initial_origin],
+                    raise FlakyBackendFailure(
+                        f"Inconsistent results from replaying a failing test case! "
+                        f"Raised {type(initial_exception).__name__} on "
+                        f"backend={self.settings.backend!r}, but "
+                        f"{desc_new_status} under backend='hypothesis'.",
+                        [initial_exception],
                     )
 
                 self._cache(data)
 
+            assert data.interesting_origin is not None
             key = data.interesting_origin
             changed = False
             try:
@@ -744,40 +756,96 @@ class ConjectureRunner:
         if state.overrun_examples == max_overrun_draws:
             fail_health_check(
                 self.settings,
-                "Examples routinely exceeded the max allowable size. "
-                f"({state.overrun_examples} examples overran while generating "
-                f"{state.valid_examples} valid ones). Generating examples this large "
-                "will usually lead to bad results. You could try setting max_size "
-                "parameters on your collections and turning max_leaves down on "
-                "recursive() calls.",
+                "Generated inputs routinely consumed more than the maximum "
+                f"allowed entropy: {state.valid_examples} inputs were generated "
+                f"successfully, while {state.overrun_examples} inputs exceeded the "
+                f"maximum allowed entropy during generation."
+                "\n\n"
+                f"Testing with inputs this large tends to be slow, and to produce "
+                "failures that are both difficult to shrink and difficult to understand. "
+                "Try decreasing the amount of data generated, for example by "
+                "decreasing the minimum size of collection strategies like "
+                "st.lists()."
+                "\n\n"
+                "If you expect the average size of your input to be this large, "
+                "you can disable this health check with "
+                "@settings(suppress_health_check=[HealthCheck.data_too_large]). "
+                "See "
+                "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                "for details.",
                 HealthCheck.data_too_large,
             )
         if state.invalid_examples == max_invalid_draws:
             fail_health_check(
                 self.settings,
-                "It looks like your strategy is filtering out a lot of data. Health "
-                f"check found {state.invalid_examples} filtered examples but only "
-                f"{state.valid_examples} good ones. This will make your tests much "
-                "slower, and also will probably distort the data generation quite a "
-                "lot. You should adapt your strategy to filter less. This can also "
-                "be caused by a low max_leaves parameter in recursive() calls",
+                "It looks like this test is filtering out a lot of inputs. "
+                f"{state.valid_examples} inputs were generated successfully, "
+                f"while {state.invalid_examples} inputs were filtered out. "
+                "\n\n"
+                "An input might be filtered out by calls to assume(), "
+                "strategy.filter(...), or occasionally by Hypothesis internals."
+                "\n\n"
+                "Applying this much filtering makes input generation slow, since "
+                "Hypothesis must discard inputs which are filtered out and try "
+                "generating it again. It is also possible that applying this much "
+                "filtering will distort the domain and/or distribution of the test, "
+                "leaving your testing less rigorous than expected."
+                "\n\n"
+                "If you expect this many inputs to be filtered out during generation, "
+                "you can disable this health check with "
+                "@settings(suppress_health_check=[HealthCheck.filter_too_much]). See "
+                "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                "for details.",
                 HealthCheck.filter_too_much,
             )
 
-        draw_time = state.total_draw_time
-
         # Allow at least the greater of one second or 5x the deadline.  If deadline
         # is None, allow 30s - the user can disable the healthcheck too if desired.
+        draw_time = state.total_draw_time
         draw_time_limit = 5 * (self.settings.deadline or timedelta(seconds=6))
-        if draw_time > max(1.0, draw_time_limit.total_seconds()):
+        if (
+            draw_time > max(1.0, draw_time_limit.total_seconds())
+            # we disable HealthCheck.too_slow under concurrent threads, since
+            # cpython may switch away from a thread for arbitrarily long.
+            and not self.thread_overlap.get(threading.get_ident(), False)
+        ):
+            extra_str = []
+            if state.invalid_examples:
+                extra_str.append(f"{state.invalid_examples} invalid inputs")
+            if state.overrun_examples:
+                extra_str.append(
+                    f"{state.overrun_examples} inputs which exceeded the "
+                    "maximum allowed entropy"
+                )
+            extra_str = ", and ".join(extra_str)
+            extra_str = f" ({extra_str})" if extra_str else ""
+
             fail_health_check(
                 self.settings,
-                "Data generation is extremely slow: Only produced "
-                f"{state.valid_examples} valid examples in {draw_time:.2f} seconds "
-                f"({state.invalid_examples} invalid ones and {state.overrun_examples} "
-                "exceeded maximum size). Try decreasing size of the data you're "
-                "generating (with e.g. max_size or max_leaves parameters)."
-                + state.timing_report(),
+                "Input generation is slow: Hypothesis only generated "
+                f"{state.valid_examples} valid inputs after {draw_time:.2f} "
+                f"seconds{extra_str}."
+                "\n" + state.timing_report() + "\n\n"
+                "This could be for a few reasons:"
+                "\n"
+                "1. This strategy could be generating too much data per input. "
+                "Try decreasing the amount of data generated, for example by "
+                "decreasing the minimum size of collection strategies like "
+                "st.lists()."
+                "\n"
+                "2. Some other expensive computation could be running during input "
+                "generation. For example, "
+                "if @st.composite or st.data() is interspersed with an expensive "
+                "computation, HealthCheck.too_slow is likely to trigger. If this "
+                "computation is unrelated to input generation, move it elsewhere. "
+                "Otherwise, try making it more efficient, or disable this health "
+                "check if that is not possible."
+                "\n\n"
+                "If you expect input generation to take this long, you can disable "
+                "this health check with "
+                "@settings(suppress_health_check=[HealthCheck.too_slow]). See "
+                "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                "for details.",
                 HealthCheck.too_slow,
             )
 
@@ -848,7 +916,7 @@ class ConjectureRunner:
             # and the provider opted-in to observations
             and self.provider.add_observability_callback
         ):
-            return with_observation_callback(on_observation)
+            return with_observability_callback(on_observation)
         return nullcontext()
 
     def run(self) -> None:
@@ -1055,16 +1123,22 @@ class ConjectureRunner:
         ):
             fail_health_check(
                 self.settings,
-                "The smallest natural example for your test is extremely "
+                "The smallest natural input for this test is very "
                 "large. This makes it difficult for Hypothesis to generate "
-                "good examples, especially when trying to reduce failing ones "
-                "at the end. Consider reducing the size of your data if it is "
-                "of a fixed size. You could also fix this by improving how "
-                "your data shrinks (see https://hypothesis.readthedocs.io/en/"
-                "latest/data.html#shrinking for details), or by introducing "
-                "default values inside your strategy. e.g. could you replace "
-                "some arguments with their defaults by using "
-                "one_of(none(), some_complex_strategy)?",
+                "good inputs, especially when trying to shrink failing inputs."
+                "\n\n"
+                "Consider reducing the amount of data generated by the strategy. "
+                "Also consider introducing small alternative values for some "
+                "strategies. For example, could you "
+                "mark some arguments as optional by replacing `some_complex_strategy`"
+                "with `st.none() | some_complex_strategy`?"
+                "\n\n"
+                "If you are confident that the size of the smallest natural input "
+                "to your test cannot be reduced, you can suppress this health check "
+                "with @settings(suppress_health_check=[HealthCheck.large_base_example]). "
+                "See "
+                "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                "for details.",
                 HealthCheck.large_base_example,
             )
 

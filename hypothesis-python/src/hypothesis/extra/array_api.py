@@ -313,6 +313,7 @@ class ArrayStrategy(st.SearchStrategy):
     def __init__(
         self, *, xp, api_version, elements_strategy, dtype, shape, fill, unique
     ):
+        super().__init__()
         self.xp = xp
         self.elements_strategy = elements_strategy
         self.dtype = dtype
@@ -425,8 +426,8 @@ class ArrayStrategy(st.SearchStrategy):
                     if val in seen:
                         elements.reject("chose an element we've already used")
                         continue
-                    else:
-                        seen.add(val)
+                    seen.add(val)
+
                 result_obj[i] = val
                 assigned.add(i)
                 fill_mask[i] = False

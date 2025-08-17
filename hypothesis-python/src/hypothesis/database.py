@@ -138,9 +138,16 @@ class _EDMeta(abc.ABCMeta):
 # downstream ExampleDatabase subclasses too.
 if "sphinx" in sys.modules:
     try:
-        from sphinx.ext.autodoc import _METACLASS_CALL_BLACKLIST
+        import sphinx.ext.autodoc
 
-        _METACLASS_CALL_BLACKLIST.append("hypothesis.database._EDMeta.__call__")
+        signature = "hypothesis.database._EDMeta.__call__"
+        # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
+        if isinstance(sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST, frozenset):
+            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST = (
+                sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST | {signature}
+            )
+        else:
+            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST.append(signature)
     except Exception:
         pass
 
@@ -1009,6 +1016,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "This could be because because the repository "
                     "or artifact does not exist. "
                 )
+            # see https://github.com/python/cpython/issues/128734
+            e.close()
         except URLError:
             warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:

@@ -241,7 +241,7 @@ def broadcastable_shapes(
             if s < min_side and s != 1:
                 max_dims = n
                 break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
+            if not (min_side <= 1 <= max_side or s <= max_side):
                 max_dims = n
                 break
 
@@ -466,7 +466,7 @@ def mutually_broadcastable_shapes(
             if s < min_side and s != 1:
                 max_dims = n
                 break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
+            if not (min_side <= 1 <= max_side or s <= max_side):
                 max_dims = n
                 break
 
@@ -632,6 +632,7 @@ class BasicIndexStrategy(st.SearchStrategy):
         allow_newaxis,
         allow_fewer_indices_than_dims,
     ):
+        super().__init__()
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims

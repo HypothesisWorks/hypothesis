@@ -14,10 +14,15 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 
 from tests.common.utils import skipif_emscripten
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="bad interactions when mixing threads and asyncio",
+)
 
 
 def coro_decorator(f):

@@ -1,4 +1,3 @@
-=============
 Compatibility
 =============
 
@@ -7,7 +6,6 @@ possibly need it to be compatible with. Generally you should just try it and
 expect it to work. If it doesn't, you can be surprised and check this document
 for the details.
 
--------------------
 Hypothesis versions
 -------------------
 
@@ -24,7 +22,6 @@ changes in patch releases.
 
 .. _deprecation-policy:
 
-------------
 Deprecations
 ------------
 
@@ -41,7 +38,6 @@ exactly where an error came from, or turn only our warnings into errors.
 .. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
 
 
----------------
 Python versions
 ---------------
 
@@ -55,7 +51,6 @@ patch release of any version of Python it supports. Earlier releases should work
 and bugs in them will get fixed if reported, but they're not tested in CI and
 no guarantees are made.
 
------------------
 Operating systems
 -----------------
 
@@ -69,7 +64,6 @@ operating system it probably won't stay fixed due to the inevitable march of tim
 
 .. _framework-compatibility:
 
-------------------
 Testing frameworks
 ------------------
 
@@ -106,7 +100,6 @@ In terms of what's actually *known* to work:
 * :pypi:`coverage` works out of the box with Hypothesis; our own test suite has
   100% branch coverage.
 
------------------
 Optional packages
 -----------------
 
@@ -117,23 +110,33 @@ all versions that are supported upstream.
 
 .. _thread-safety-policy:
 
---------------------
 Thread-Safety Policy
 --------------------
 
-As discussed in :issue:`2719`, Hypothesis is not truly thread-safe and that's unlikely to change in the future.  This policy therefore describes what you *can* expect if you use Hypothesis with multiple threads.
+As of :version:`6.136.9`, Hypothesis is thread-safe. Each of the following is fully supported, and tested regularly in CI:
 
-**Running tests in multiple processes**, e.g. with ``pytest -n auto``, is fully supported and we test this regularly in CI - thanks to process isolation, we only need to ensure that :class:`~hypothesis.database.DirectoryBasedExampleDatabase` can't tread on its own toes too badly.  If you find a bug here we will fix it ASAP.
+* Running tests in multiple processes
+* Running separate tests in multiple threads
+* Running the same test in multiple threads
 
-**Running separate tests in multiple threads** is not something we design or test for, and is not formally supported.  That said, anecdotally it does mostly work and we would like it to keep working - we accept reasonable patches and low-priority bug reports.  The main risks here are global state, shared caches, and cached strategies.
+If you find a bug here, please report it. The main risks internally are global state, shared caches, and cached strategies.
 
-**Running the same test in multiple threads**, or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
+Thread usage inside tests
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis assumes that tests are single-threaded, or do a sufficiently-good job of pretending to be single-threaded.  Tests that use helper threads internally should be OK, but the user must be careful to ensure that test outcomes are still deterministic. In particular it counts as nondeterministic if helper-thread timing changes the sequence of dynamic draws using e.g. the |st.data| strategy.
+.. TODO_DOCS: link to not-yet-merged flaky failure tutorial page
 
-Interacting with any Hypothesis APIs from helper threads might do weird/bad things, so avoid that too - we rely on thread-local variables in a few places, and haven't explicitly tested/audited how they respond to cross-thread API calls.  While |st.data| and equivalents are the most obvious danger, other APIs might also be subtly affected.
+Tests that spawn threads internally are supported by Hypothesis.
 
-----------
+However, these as with any Hypothesis test, these tests must have deterministic test outcomes and data generation. For example, if timing changes in the threads change the sequence of dynamic draws from |st.composite| or |st.data|, Hypothesis may report the test as flaky. The solution here is to refactor data generation so it does not depend on test timings.
+
+Cross-thread API calls
+~~~~~~~~~~~~~~~~~~~~~~
+
+In theory, Hypothesis supports cross-thread API calls, for instance spawning a thread inside of a test and using that to draw from |st.composite| or |st.data|, or to call |event|, |target|, or |assume|.
+
+However, we have not explicitly audited this behavior, and do not regularly test it in our CI. If you find a bug here, please report it. If our investigation determines that we cannot support cross-thread calls for the feature in question, we will update this page accordingly.
+
 Type hints
 ----------
 

@@ -24,6 +24,7 @@ from tests.common.utils import (
     Why,
     all_values,
     non_covering_examples,
+    skipif_threading,
     xfail_on_crosshair,
 )
 
@@ -161,6 +162,7 @@ def test_does_not_use_database_when_seed_is_forced(monkeypatch):
     test()
 
 
+@skipif_threading  # pytest .mktemp is not thread safe
 @given(st.binary(), st.binary())
 def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     path = tmp_path_factory.mktemp("hypothesis") / "examples"
@@ -173,6 +175,7 @@ def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     assert list(database.fetch(key)) == [value]
 
 
+@skipif_threading
 def test_ga_database_not_created_when_not_used(tmp_path_factory):
     path = tmp_path_factory.mktemp("hypothesis") / "github-actions"
     assert not path.exists()

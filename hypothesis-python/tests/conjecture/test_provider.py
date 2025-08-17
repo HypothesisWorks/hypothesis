@@ -12,8 +12,10 @@ import dataclasses
 import itertools
 import math
 import sys
+import time
 from contextlib import contextmanager, nullcontext
 from random import Random
+from threading import RLock
 from typing import Optional
 
 import pytest
@@ -32,6 +34,7 @@ from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     BackendCannotProceed,
     Flaky,
+    FlakyBackendFailure,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -48,7 +51,7 @@ from hypothesis.internal.conjecture.providers import (
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
+from hypothesis.internal.observability import Observation, _callbacks
 
 from tests.common.debug import minimal
 from tests.common.utils import (
@@ -168,13 +171,17 @@ class PrngProvider(PrimitiveProvider):
             return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
+_temp_register_backend_lock = RLock()
+
+
 @contextmanager
 def temp_register_backend(name, cls):
-    try:
-        AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
-        yield
-    finally:
-        AVAILABLE_PROVIDERS.pop(name)
+    with _temp_register_backend_lock:
+        try:
+            AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
+            yield
+        finally:
+            AVAILABLE_PROVIDERS.pop(name)
 
 
 @pytest.mark.parametrize(
@@ -765,12 +772,26 @@ def test_on_observation_alternates():
     f()
 
 
+@temp_register_backend("observation", ObservationProvider)
+def test_on_observation_alternates_on_failure():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        # Hypothesis tries n == 0 first, and if that fails then we don't exercise
+        # any provider-specific paths.
+        if n == 1:
+            raise ValueError("unique identifier")
+
+    with pytest.raises(ValueError, match="unique identifier"):
+        f()
+
+
 @temp_register_backend("observation", TrivialProvider)
 def test_on_observation_no_override():
     @given(st.integers())
     @settings(backend="observation")
     def f(n):
-        assert TESTCASE_CALLBACKS == []
+        assert _callbacks == {}
 
     f()
 
@@ -780,3 +801,18 @@ def test_provider_conformance(provider):
     run_conformance_test(
         provider, settings=settings(max_examples=20, stateful_step_count=20)
     )
+
+
+# see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion
+# in https://github.com/HypothesisWorks/hypothesis/pull/4470
+def test_backend_deadline_exceeded_raised_as_flaky_backend_failure():
+    with temp_register_backend("trivial", TrivialProvider):
+
+        @given(st.integers())
+        @settings(backend="trivial", database=None)
+        def f(n):
+            if isinstance(current_build_context().data.provider, TrivialProvider):
+                time.sleep(1)
+
+        with pytest.raises(FlakyBackendFailure):
+            f()

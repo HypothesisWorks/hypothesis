@@ -47,10 +47,10 @@ Other settings options
 
 Here are a few of the more commonly used setting values:
 
-* |settings.derandomize| makes Hypothesis deterministic. (`Two kinds of testing <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ discusses when and why you might want that).
-* |settings.database| controls how and if Hypothesis replays failing examples.
-* |settings.verbosity| to print debug information.
 * |settings.phases| controls which phases of Hypothesis run, like replaying from the database or generating new inputs.
+* |settings.database| controls how and if Hypothesis replays failing examples.
+* |settings.verbosity| can print debug information.
+* |settings.derandomize| makes Hypothesis deterministic. (`Two kinds of testing <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ discusses when and why you might want that).
 
 .. note::
 

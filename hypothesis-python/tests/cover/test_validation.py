@@ -13,7 +13,7 @@ import warnings
 
 import pytest
 
-from hypothesis import find, given, strategies as st
+from hypothesis import find, given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
@@ -172,13 +172,13 @@ def test_recursion_validates_recursive_step():
 
 @fails_with(InvalidArgument)
 @given(x=integers())
-def test_stuff_keyword(x=1):
+def test_stuff_keyword(x=1):  # noqa: PT028
     pass
 
 
 @fails_with(InvalidArgument)
 @given(integers())
-def test_stuff_positional(x=1):
+def test_stuff_positional(x=1):  # noqa: PT028
     pass
 
 
@@ -278,6 +278,14 @@ def test_check_strategy_might_suggest_sampled_from():
     check_strategy_(integers(), "passes for our custom coverage check")
 
 
+@pytest.mark.xfail(
+    settings._current_profile == "crosshair",
+    reason=(
+        "conflicting warning filters. Remove when "
+        "https://github.com/pschanely/hypothesis-crosshair/issues/42 "
+        "is fixed"
+    ),
+)
 @pytest.mark.parametrize("codec", ["ascii", "utf-8"])
 def test_warn_on_strings_matching_common_codecs(codec):
     with pytest.warns(

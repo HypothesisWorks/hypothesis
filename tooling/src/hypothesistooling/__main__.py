@@ -213,11 +213,11 @@ def format():
 
     for f in files_to_format:
         lines = []
-        with open(f, encoding="utf-8") as o:
+        with open(f, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
-            for l in o.readlines():
+            for l in fp:
                 if first:
                     first = False
                     if l[:2] == "#!":
@@ -228,16 +228,17 @@ def format():
                     lines = []
                 else:
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
+
         source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as o:
+        with open(f, "w", encoding="utf-8") as fp:
             if shebang is not None:
-                o.write(shebang)
-                o.write("\n")
-            o.write(HEADER)
+                fp.write(shebang)
+                fp.write("\n")
+            fp.write(HEADER)
             if source:
-                o.write("\n\n")
-                o.write(source)
-            o.write("\n")
+                fp.write("\n\n")
+                fp.write(source)
+            fp.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
@@ -258,8 +259,8 @@ def check_format():
     for f in tools.all_files():
         if not f.endswith(".py"):
             continue
-        with open(f, encoding="utf-8") as i:
-            start = i.read(n)
+        with open(f, encoding="utf-8") as fp:
+            start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
                 print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
@@ -359,9 +360,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.20",
-    "5.1": "5.1.8",
-    "5.2": "5.2",
+    "4.2": "4.2.23",
+    "5.1": "5.1.11",
+    "5.2": "5.2.3",
 }
 
 
@@ -534,12 +535,15 @@ def documentation():
 
 @task()
 def website():
-    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+    subprocess.call([sys.executable, "-m", "pelican"], cwd=tools.ROOT / "website")
 
 
 @task()
 def live_website():
-    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+    subprocess.call(
+        [sys.executable, "-m", "pelican", "--autoreload", "--listen"],
+        cwd=tools.ROOT / "website",
+    )
 
 
 def run_tox(task, version, *args):
@@ -566,14 +570,16 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.22",
-    "3.10": "3.10.17",
-    "3.11": "3.11.12",
-    "3.12": "3.12.10",
-    "3.13": "3.13.3",
+    "3.9": "3.9.23",
+    "3.10": "3.10.18",
+    "3.11": "3.11.13",
+    "3.12": "3.12.11",
+    "3.13": "3.13.5",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0a7",
+    "3.14": "3.14.0rc1",
     "3.14t": "3.14t-dev",
+    "3.15": "3.15-dev",
+    "3.15t": "3.15t-dev",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.19",
@@ -646,6 +652,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("py39-oldparser", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")

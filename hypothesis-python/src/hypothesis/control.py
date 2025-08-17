@@ -22,7 +22,7 @@ from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
+from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
@@ -62,9 +62,9 @@ def assume(condition: object) -> bool:
             since="2023-09-25",
             has_codemod=False,
         )
-    if TESTCASE_CALLBACKS or not condition:
+    if observability_enabled() or not condition:
         where = _calling_function_location("assume", inspect.currentframe())
-        if TESTCASE_CALLBACKS and currently_in_test_context():
+        if observability_enabled() and currently_in_test_context():
             counts = current_build_context().data._observability_predicates[where]
             counts.update_count(condition=bool(condition))
         if not condition:
@@ -93,29 +93,12 @@ def current_build_context() -> "BuildContext":
     return context
 
 
-class RandomSeeder:
-    def __init__(self, seed):
-        self.seed = seed
-
-    def __repr__(self):
-        return f"RandomSeeder({self.seed!r})"
-
-
-class _Checker:
-    def __init__(self) -> None:
-        self.saw_global_random = False
-
-    def __call__(self, x):
-        self.saw_global_random |= isinstance(x, RandomSeeder)
-        return x
-
-
 @contextmanager
 def deprecate_random_in_strategy(fmt, *args):
     from hypothesis.internal import entropy
 
     state_before = random.getstate()
-    yield (checker := _Checker())
+    yield
     state_after = random.getstate()
     if (
         # there is a threading race condition here with deterministic_PRNG. Say
@@ -134,21 +117,14 @@ def deprecate_random_in_strategy(fmt, *args):
         # where state_before != state_after because a different thread has reset
         # the global random state.
         #
-        # To fix this, we track the latest set global random state in
-        # deterministic_PRNG, and will not note a deprecation (or error, in the
-        # future) if the state afterwards is the same as the state that
-        # deterministic_PRNG set to.
-        state_after
-        not in [
-            state_before,
-            entropy._most_recent_random_state_enter,
-            entropy._most_recent_random_state_exit,
-        ]
-        and not checker.saw_global_random
+        # To fix this, we track the known random states set by deterministic_PRNG,
+        # and will not note a deprecation if it matches one of those.
+        state_after != state_before
+        and hash(state_after) not in entropy._known_random_state_hashes
     ):
         note_deprecation(
             "Do not use the `random` module inside strategies; instead "
-            "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
+            "consider `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
             since="2024-02-05",
             has_codemod=False,
             stacklevel=1,
@@ -195,8 +171,8 @@ class BuildContext:
         kwargs = {}
         for k, s in kwarg_strategies.items():
             start_idx = len(self.data.nodes)
-            with deprecate_random_in_strategy("from {}={!r}", k, s) as check:
-                obj = check(self.data.draw(s, observe_as=f"generate:{k}"))
+            with deprecate_random_in_strategy("from {}={!r}", k, s):
+                obj = self.data.draw(s, observe_as=f"generate:{k}")
             end_idx = len(self.data.nodes)
             kwargs[k] = obj
 
