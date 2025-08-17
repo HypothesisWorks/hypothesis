@@ -28,7 +28,7 @@ execnet==2.1.1
     # via pytest-xdist
 hypothesis==6.135.14
     # via hypothesis-crosshair
-hypothesis-crosshair==0.0.24
+hypothesis-crosshair==0.0.25
     # via -r requirements/crosshair.in
 importlib-metadata==8.6.1
     # via crosshair-tool
