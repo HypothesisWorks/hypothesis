@@ -47,12 +47,12 @@ T = TypeVar("T")
 # * LAMBDA_DESCRIPTION_CACHE maps a lambda f to its description _lambda_description(f).
 #   Note that _lambda_description(f) may not be identical to f as it appears in the
 #   source code file.
-# * LAMBDA_DIGEST_DESCRIPTION_CACHE maps _lambda_source_key(f) to _lambda_description(f).
-#   _lambda_source_key implements something close to "ast equality":
+# * LAMBDA_DIGEST_DESCRIPTION_CACHE maps _function_key(f) to _lambda_description(f).
+#   _function_key implements something close to "ast equality":
 #   two syntactically identical (minus whitespace etc) lambdas appearing in
 #   different files have the same key. Cache hits here provide a fast path which
 #   avoids ast-parsing syntactic lambdas we've seen before. Two lambdas with the
-#   same _lambda_source_key will not have different _lambda_descriptions - if
+#   same _function_key will not have different _lambda_descriptions - if
 #   they do, that's a bug here.
 # * AST_LAMBDAS_CACHE maps source code lines to a list of the lambdas found in
 #   that source code. A cache hit here avoids reparsing the ast.
@@ -295,61 +295,217 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
-def extract_all_lambdas(tree):
+def extract_all_lambdas(tree, extract_nested=True):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
+
         def visit_Lambda(self, node):
             lambdas.append(node)
+            if extract_nested:
+                self.visit(node.body)
 
     Visitor().visit(tree)
     return lambdas
 
 
-def _lambda_source_key(f, *, bounded_size=False):
-    """Returns a digest that differentiates lambdas that have different sources."""
-    consts_repr = repr(f.__code__.co_consts)
-    if bounded_size and len(consts_repr) > 48:
-        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
-        # keys. We don't do this unconditionally because hashing takes time, and is
-        # not necessary if the key is used just for comparison (and is not stored).
-        consts_repr = hashlib.sha384(consts_repr.encode()).digest()
-    return (
-        consts_repr,
-        inspect.signature(f),
-        f.__code__.co_names,
-        f.__code__.co_code,
-        f.__code__.co_varnames,
-        f.__code__.co_freevars,
+def extract_all_attributes(tree, extract_nested=True):
+    attributes = []
+
+    class Visitor(ast.NodeVisitor):
+        def visit_Attribute(self, node):
+            attributes.append(node)
+            if extract_nested:
+                self.visit(node.value)
+
+    Visitor().visit(tree)
+    return attributes
+
+
+def _normalize_code(f, l):
+    NOP = 9  # dis.opmap["NOP"]
+    co_code = list(l.__code__.co_code)
+
+    # Equalize so that co_code gets the same NOP pattern as f_code.
+    # This assumes that each bytecode op is 2 bytes, which is true
+    # since Python 3.6.
+    f_code = f.__code__.co_code
+    for i in range(2, len(f_code), 2):
+        if i >= len(co_code):
+            break
+        if f_code[i] != co_code[i]:
+            if f_code[i] == NOP:
+                # add NOP at position
+                co_code = co_code[:i] + [NOP, 0] + co_code[i:]
+            elif co_code[i] == NOP:
+                # delete NOP at position
+                co_code = co_code[:i] + co_code[i + 2:]
+            else:
+                # no point in continuing since the bytecodes are different anyway
+                break
+
+    # Normalize consts, in particular replace any lambda consts with the
+    # corresponding const from the template function, IFF they have the same
+    # source key.
+
+    f_consts = f.__code__.co_consts
+    l_consts = l.__code__.co_consts
+    if (
+            len(f_consts) == len(l_consts)
+            and any(inspect.iscode(l_const) for l_const in l_consts)
+    ):
+        normalized_consts = []
+        for f_const, l_const in zip(f_consts, l_consts):
+            if (
+                    inspect.iscode(l_const)
+                    and inspect.iscode(f_const)
+                    and _function_key(f_const) == _function_key(l_const)
+            ):
+                # If the lambdas are compiled from the same source, make them be the
+                # same object so that the toplevel lambdas end up equal. Note that if
+                # the default arguments differ in this case then the bytecode must
+                # also differ, since the default arguments are set up by the bytecode.
+                # I.e., this appears to be safe wrt false positives.
+                normalized_consts.append(f_const)
+            else:
+                normalized_consts.append(l_const)
+    else:
+        normalized_consts = l_consts
+
+    return l.__code__.replace(
+        co_code=bytes(co_code),
+        co_consts=tuple(normalized_consts),
     )
 
 
-def _mimic_lambda_from_source(f, source):
-    # Compile a lambda from source where the compiled lambda mimics f as far as
-    # possible in terms of __code__ and __closure__. The mimicry is far from perfect.
-    if f.__closure__ is None:
-        compiled = eval(source, f.__globals__)
+def _function_key(f, *, bounded_size=False):
+    """Returns a digest that differentiates functions that have different sources.
+
+    Either a function or a code object may be passed. If code object, default
+    arg/kwarg values are not recoverable - this is the best we can do, and is
+    sufficient for the use case of comparing nested lambdas.
+    """
+    try:
+        code = f.__code__
+        defaults_repr = repr((f.__defaults__, f.__kwdefaults__))
+    except AttributeError:
+        code = f
+        defaults_repr = ()
+    consts_repr = repr(code.co_consts)
+    if bounded_size:
+        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
+        # keys. We don't do this unconditionally because hashing takes time, and is
+        # not necessary if the key is used just for comparison (and is not stored).
+        if len(consts_repr) > 48:
+            consts_repr = hashlib.sha384(consts_repr.encode()).digest()
+        if len(defaults_repr) > 48:
+            defaults_repr = hashlib.sha384(consts_repr.encode()).digest()
+    return (
+        consts_repr,
+        defaults_repr,
+        code.co_argcount,
+        code.co_kwonlyargcount,
+        code.co_code,
+        code.co_names,
+        code.co_varnames,
+        code.co_freevars,
+        code.co_name,
+    )
+
+
+_module_map = {}
+
+
+def _mimic_lambda_from_node(f, node):
+    # Compile the source (represented by an ast.Lambda node) in a context that
+    # as far as possible mimics the context that f was compiled in. If - and
+    # only if - this was the source of f then the result is indistinguishable
+    # from f itself (to a casual observer such as _function_key).
+    f_globals = f.__globals__.copy()
+    f_code = f.__code__
+    source = ast.unparse(node)
+
+    # Install values for non-literal argument defaults. Thankfully, these are
+    # always captured by value - so there is no interaction with the closure.
+    if f.__defaults__:
+        for f_default, l_default in zip(f.__defaults__, node.args.defaults):
+            if isinstance(l_default, ast.Name):
+                f_globals[l_default.id] = f_default
+    if f.__kwdefaults__:
+        for l_default, l_varname in zip(node.args.kw_defaults, node.args.kwonlyargs):
+            if isinstance(l_default, ast.Name):
+                f_globals[l_default.id] = f.__kwdefaults__[l_varname.arg]
+
+    # CPython's compiler treats known imports differently than normal globals,
+    # so check if we use attributes from globals that are modules (if so, we
+    # import them explicitly and redundantly in the exec below)
+    referenced_modules = [
+        (local_name, module)
+        for attr in extract_all_attributes(node)
+        if (
+            isinstance(attr.value, ast.Name)
+            and (local_name := attr.value.id)
+            and inspect.ismodule(module := f_globals.get(local_name))
+        )
+    ]
+
+    if not f_code.co_freevars and not referenced_modules:
+        compiled = eval(source, f_globals)
     else:
-        # Hack to mimic the capture of vars from local closure. In terms of code
-        # generation they don't *need* to have the same values (cell_contents),
-        # just the same names bound to some closure, but hey.
-        closure = {f"___fv{i}": c.cell_contents for i, c in enumerate(f.__closure__)}
-        assigns = [f"{name}=___fv{i}" for i, name in enumerate(f.__code__.co_freevars)]
-        fake_globals = f.__globals__ | closure
-        exec(f"def construct(): {';'.join(assigns)}; return ({source})", fake_globals)
-        compiled = fake_globals["construct"]()
+        if f_code.co_freevars:
+            # We have to reconstruct a local closure. The closure will have
+            # the same values as the original function, although this is not
+            # required for source/bytecode equality.
+            f_globals |= {
+                f"__lc{i}": c.cell_contents for i, c in enumerate(f.__closure__)
+            }
+            captures = [f"{name}=__lc{i}" for i, name in enumerate(f_code.co_freevars)]
+            capture_str = ";".join(captures) + ";"
+        else:
+            capture_str = ""
+        if referenced_modules:
+            # We add import statements for all referenced modules, since that
+            # influences the compiled code. The assumption is that these modules
+            # were explicitly imported, not assigned, in the source - if not,
+            # this may/will give a different compilation result.
+            global _module_map
+            if len(_module_map) != len(sys.modules):
+                _module_map = {
+                    id(module): name
+                    for name, module in sys.modules.items()
+                }
+            imports = [
+                (module_name, local_name)
+                for local_name, module in referenced_modules
+                if (module_name := _module_map.get(id(module))) is not None
+            ]
+            import_fragments = [
+                f"{name} as {asname}"
+                for name, asname in set(imports)
+            ]
+            import_str = f"import {','.join(import_fragments)}\n"
+        else:
+            import_str = ""
+        exec_str = f"{import_str}def __construct_lambda(): {capture_str} return ({source})"
+        exec(exec_str, f_globals)
+        compiled = f_globals["__construct_lambda"]()
+
+    compiled.__code__ = _normalize_code(f, compiled)
     return compiled
 
 
-def _lambda_code_matches_source(f, source):
+def _lambda_code_matches_node(f, node):
     try:
-        compiled = _mimic_lambda_from_source(f, source)
+        compiled = _mimic_lambda_from_node(f, node)
     except (NameError, SyntaxError):  # pragma: no cover
         return False
-    return _lambda_source_key(f) == _lambda_source_key(compiled)
+    return _function_key(f) == _function_key(compiled)
 
 
-def _lambda_description(f):
+def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=False):
+    if hasattr(f, "__wrapped_target"):
+        f = f.__wrapped_target
+
     # You might be wondering how a lambda can have a return-type annotation?
     # The answer is that we add this at runtime, in new_given_signature(),
     # and we do support strange choices as applying @given() to a lambda.
@@ -362,7 +518,8 @@ def _lambda_description(f):
 
     def format_lambda(body):
         # The signature is more informative than the corresponding ast.unparse
-        # output, so add the signature to the unparsed body
+        # output in the case of default argument values, so add the signature
+        # to the unparsed body
         return (
             f"lambda {str(sig)[1:-1]}: {body}" if sig.parameters else f"lambda: {body}"
         )
@@ -395,10 +552,11 @@ def _lambda_description(f):
         else:
             local_lambdas = extract_all_lambdas(local_tree)
             for candidate in local_lambdas:
-                if ast_arguments_matches_signature(candidate.args, sig):
-                    source = format_lambda(ast.unparse(candidate.body))
-                    if _lambda_code_matches_source(f, source):
-                        return source
+                if (
+                    ast_arguments_matches_signature(candidate.args, sig)
+                    and _lambda_code_matches_node(f, candidate)
+                ):
+                    return format_lambda(ast.unparse(candidate.body))
 
         # Local parse failed or didn't produce a match, go ahead with the full parse
         try:
@@ -409,40 +567,28 @@ def _lambda_description(f):
             all_lambdas = extract_all_lambdas(tree)
         AST_LAMBDAS_CACHE[source_lines] = all_lambdas
 
-    # Filter the lambda nodes down to those that match in signature and position,
-    # and only consider their unique source representations.
-    aligned_sources = {
-        format_lambda(ast.unparse(candidate.body))
-        for candidate in all_lambdas
+    aligned_lambdas = []
+    for candidate in all_lambdas:
         if (
-            candidate.lineno <= lineno0 + 1 <= candidate.end_lineno
+            candidate.lineno - leeway <= lineno0 + 1 <= candidate.lineno + leeway
             and ast_arguments_matches_signature(candidate.args, sig)
-        )
-    }
+        ):
+            aligned_lambdas.append(candidate)
 
-    # The code-match check has a lot of false negatives in general, so we only do
-    # that check if we really need to, i.e., if there are multiple aligned lambdas
-    # having different source representations. If there is only a single lambda
-    # source found, we use that one without further checking.
+    aligned_lambdas.sort(key=lambda c: abs(lineno0 + 1 - c.lineno))
+    for candidate in aligned_lambdas:
+        if _lambda_code_matches_node(f, candidate):
+            return format_lambda(ast.unparse(candidate.body))
 
-    # If a user starts a hypothesis process, then edits their code, the lines in the
-    # parsed source code might not match the live __code__ objects.
-    # (and on sys.platform == "emscripten", this can happen regardless due to a
-    # pyodide bug in inspect.getsource()).
-    # There is a risk of returning source for the wrong lambda, if there is a lambda
-    # also on the shifted line *or* if the lambda itself is changed.
-
-    if len(aligned_sources) == 1:
-        return next(iter(aligned_sources))
-
-    for source in aligned_sources:
-        if _lambda_code_matches_source(f, source):
-            return source
-
-    # None of the aligned lambdas match perfectly in generated code. This may be
-    # caused by differences in code generation, missing nested-scope closures,
-    # inner lambdas having different identities, etc. The majority of cases will
-    # have a unique aligned lambda so it doesn't matter that much.
+    # None of the aligned lambdas match perfectly in generated code.
+    if (
+            fail_if_confused_with_perfect_candidate
+            and aligned_lambdas
+            and aligned_lambdas[0].lineno == lineno0 + 1
+    ):
+        # This arg is forced on in conftest.py, to ensure we resolve all known
+        # cases.
+        raise ValueError(f"None of the source-file lambda candidates were matched")
     return if_confused
 
 
@@ -461,17 +607,26 @@ def lambda_description(f):
     except KeyError:
         pass
 
-    key = _lambda_source_key(f, bounded_size=True)
+    key = _function_key(f, bounded_size=True)
+    failed_fnames = []
     try:
-        description = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
-        LAMBDA_DESCRIPTION_CACHE[f] = description
-        return description
+        description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
+        if "<unknown>" not in description and f.__code__.co_filename in failed_fnames:
+            # Only accept the <unknown> description if it comes from parsing this
+            # file - otherwise, try again below, maybe we have more luck in another
+            # file. Once lucky, we keep keep using the successful description for *new*
+            # lambdas but not for this one - so it doesn't change name during its
+            # lifetime.
+            LAMBDA_DESCRIPTION_CACHE[f] = description
+            return description
     except KeyError:
-        pass
+        failed_fnames = []
 
     description = _lambda_description(f)
     LAMBDA_DESCRIPTION_CACHE[f] = description
-    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description
+    if "<unknown>" in description:
+        failed_fnames.append(f.__code__.co_filename)
+    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description, failed_fnames
     return description
 
 
@@ -686,6 +841,9 @@ def impersonate(target):
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
         f.__globals__["__hypothesistracebackhide__"] = True
+        # But leave an breadcrumb for _describe_lambda to follow, it's
+        # just confused by the lies above
+        f.__wrapped_target = target
         return f
 
     return accept
@@ -716,7 +874,7 @@ def is_identity_function(f: Callable) -> bool:
 
     # We only accept a single unbound argument. While it would be possible to
     # accept extra defaulted arguments, it would be pointless as they couldn't
-    # be referenced at all in the code object (or the check below would fail).
+    # be referenced at all in the code object (or the co_code check would fail).
     bound_args = int(inspect.ismethod(f))
     if code.co_argcount != bound_args + 1 or code.co_kwonlyargcount > 0:
         return False

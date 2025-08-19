@@ -24,6 +24,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from hypothesis import is_hypothesis_test, settings
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
+from hypothesis.internal import reflection
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import junkdrawer
 
@@ -98,6 +99,21 @@ try:
     import hypothesis_crosshair_provider.crosshair_provider  # noqa: F401
 except ImportError:
     pass
+
+
+@pytest.fixture(scope="function", autouse=True)
+def _make_unknown_lambdas_fail(monkeypatch):
+
+    @wraps(reflection._lambda_description)
+    def wrapper(*args, **kwargs):
+        return original(*args, **kwargs, fail_if_confused_with_perfect_candidate=True)
+
+    original=reflection._lambda_description
+    monkeypatch.setattr(
+        reflection,
+        "_lambda_description",
+        wrapper,
+    )
 
 
 # monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests

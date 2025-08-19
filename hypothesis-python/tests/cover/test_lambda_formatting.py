@@ -275,3 +275,19 @@ def test_modifying_lambda_source_code_returns_unknown(tmp_path):
         get_pretty_function_description(module_globals["test_lambda"])
         == "lambda x: <unknown>"
     )
+
+
+@skipif_threading  # concurrent writes to the same file
+def test_adding_other_lambda_does_not_confuse(tmp_path):
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text(
+        "# line one\ntest_lambda = lambda x: x * 2", encoding="utf-8"
+    )
+    module_globals = runpy.run_path(str(test_module))
+
+    test_module.write_text(
+        "# line one\nlambda x: x\n\n\ntest_lambda = lambda x: x * 2", encoding="utf-8"
+    )
+    f1 = module_globals["test_lambda"]
+    assert get_pretty_function_description(f1) == "lambda x: x * 2"
+
