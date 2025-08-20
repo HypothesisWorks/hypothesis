@@ -1379,7 +1379,7 @@ class Shrinker:
 
             # if we've increased node2 to the point that we're past max precision,
             # give up - things have become too unstable.
-            if node1.type == "float" and v2 >= MAX_PRECISE_INTEGER:
+            if node1.type == "float" and abs(v2) >= MAX_PRECISE_INTEGER:
                 return False
 
             return self.consider_new_nodes(
