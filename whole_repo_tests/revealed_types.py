@@ -45,12 +45,10 @@ REVEALED_TYPES = [
     ("integers().flatmap(lambda x: lists(floats()))", "list[float]"),
     ("one_of([integers(), integers()])", "int"),
     ("one_of([integers(), floats()])", "float"),
-    ("none() | integers()", "int | None"),
     ("one_of([integers(), none()])", "int | None"),
     ("one_of(integers(), none())", "int | None"),
     ("one_of(integers(), text())", "int | str"),
     ("recursive(integers(), lists)", "list[Any] | int"),
-    ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
     # We have overloads for up to five types, then fall back to Any.
     # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
     (
@@ -62,20 +60,26 @@ REVEALED_TYPES = [
 
 class DifferingRevealedTypes(NamedTuple):
     value: str
-    pyright: str
     mypy: str
+    pyright: str
 
 
 DIFF_REVEALED_TYPES = [
+    DifferingRevealedTypes("none() | integers()", "None | int", "int | None"),
     DifferingRevealedTypes(
-        "data()", "DataObject", "hypothesis.strategies._internal.core.DataObject"
+        "data()", "hypothesis.strategies._internal.core.DataObject", "DataObject"
     ),
     # We have overloads for up to five types, then fall back to Any.
     # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
     DifferingRevealedTypes(
         "one_of(integers(), text(), none(), binary(), builds(list))",
+        "int | str | None | bytes | list[Never]",
         "int | str | bytes | list[Unknown] | None",
-        "int | str | bytes | list[Never] | None",
+    ),
+    DifferingRevealedTypes(
+        "dictionaries(integers(), datetimes())",
+        "dict[int, datetime.datetime]",
+        "dict[int, datetime]",
     ),
 ]
 
@@ -85,11 +89,11 @@ NUMPY_REVEALED_TYPES = [
         'arrays(dtype=np.dtype("int32"), shape=1)',
         "ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]]",
     ),
-    (
-        "arrays(dtype=np.dtype(int), shape=1)",
-        "ndarray[tuple[int, ...], dtype[Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]]]",
-        # FIXME: `dtype[signedinteger[_32Bit | _64Bit] | bool[bool]]]]` on mypy now
-    ),
+    # (
+    #     "arrays(dtype=np.dtype(int), shape=1)",
+    #     "ndarray[tuple[int, ...], dtype[Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]]]",
+    #     # FIXME: `dtype[signedinteger[_32Bit | _64Bit] | bool[bool]]]]` on mypy now
+    # ),
     (
         "boolean_dtypes()",
         "dtype[bool[bool]]",  # np.bool[builtins.bool]

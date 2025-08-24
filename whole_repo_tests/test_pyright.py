@@ -181,7 +181,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
 
 @pytest.mark.parametrize(
     "val,expect",
-    [*REVEALED_TYPES, *((x.value, x.mypy) for x in DIFF_REVEALED_TYPES)],
+    [*REVEALED_TYPES, *((x.value, x.pyright) for x in DIFF_REVEALED_TYPES)],
 )
 def test_revealed_types(tmp_path, val, expect):
     """Check that Pyright picks up the expected `X` in SearchStrategy[`X`]."""
