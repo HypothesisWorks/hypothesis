@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.3:
+
+--------------------
+6.138.3 - 2025-08-24
+--------------------
+
+This patch slightly improves the cache-hit rate for
+|st.dictionaries| and certain unique |st.lists|.
+
 .. _v6.138.2:
 
 --------------------
