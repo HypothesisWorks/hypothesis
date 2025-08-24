@@ -16,7 +16,12 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
+from .revealed_types import (
+    DIFF_REVEALED_TYPES,
+    NUMPY_REVEALED_TYPES,
+    PYTHON_VERSIONS,
+    REVEALED_TYPES,
+)
 
 
 def test_mypy_passes_on_hypothesis():
@@ -78,8 +83,8 @@ def get_mypy_analysed_type(fname):
         .replace("numpy._typing.", "")
         .replace("_nbit_base.", "")
         .replace("numpy.", "")
-        .replace("List[", "list[")
-        .replace("Dict[", "dict[")
+        # .replace("List[", "list[")
+        # .replace("Dict[", "dict[")
     )
 
 
@@ -114,26 +119,7 @@ def assert_mypy_errors(fname, expected, python_version=None):
 
 @pytest.mark.parametrize(
     "val,expect",
-    [
-        *REVEALED_TYPES,  # shared with Pyright
-        ("data()", "hypothesis.strategies._internal.core.DataObject"),
-        ("none() | integers()", "Union[None, int]"),
-        ("recursive(integers(), lists)", "Union[list[Any], int]"),
-        # We have overloads for up to five types, then fall back to Any.
-        # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
-        ("one_of(integers(), text())", "Union[int, str]"),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list))",
-            "Union[int, str, None, bytes, list[Never]]",
-        ),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
-            "Any",
-        ),
-        ("one_of([integers(), none()])", "Union[int, None]"),
-        ("one_of(integers(), none())", "Union[int, None]"),
-        # Note: keep this in sync with the equivalent test for Pyright
-    ],
+    [*REVEALED_TYPES, *((x.value, x.mypy) for x in DIFF_REVEALED_TYPES)],
 )
 def test_revealed_types(tmp_path, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""

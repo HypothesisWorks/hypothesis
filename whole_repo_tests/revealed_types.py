@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+from typing import NamedTuple
 
 from hypothesistooling.__main__ import PYTHONS as pythons_map
 
@@ -44,7 +45,40 @@ REVEALED_TYPES = [
     ("integers().flatmap(lambda x: lists(floats()))", "list[float]"),
     ("one_of([integers(), integers()])", "int"),
     ("one_of([integers(), floats()])", "float"),
+    ("none() | integers()", "int | None"),
+    ("one_of([integers(), none()])", "int | None"),
+    ("one_of(integers(), none())", "int | None"),
+    ("one_of(integers(), text())", "int | str"),
+    ("recursive(integers(), lists)", "list[Any] | int"),
+    ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
+    # We have overloads for up to five types, then fall back to Any.
+    # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+    (
+        "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
+        "Any",
+    ),
 ]
+
+
+class DifferingRevealedTypes(NamedTuple):
+    value: str
+    pyright: str
+    mypy: str
+
+
+DIFF_REVEALED_TYPES = [
+    DifferingRevealedTypes(
+        "data()", "DataObject", "hypothesis.strategies._internal.core.DataObject"
+    ),
+    # We have overloads for up to five types, then fall back to Any.
+    # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+    DifferingRevealedTypes(
+        "one_of(integers(), text(), none(), binary(), builds(list))",
+        "int | str | bytes | list[Unknown] | None",
+        "int | str | bytes | list[Never] | None",
+    ),
+]
+
 
 NUMPY_REVEALED_TYPES = [
     (
@@ -54,6 +88,7 @@ NUMPY_REVEALED_TYPES = [
     (
         "arrays(dtype=np.dtype(int), shape=1)",
         "ndarray[tuple[int, ...], dtype[Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]]]",
+        # FIXME: `dtype[signedinteger[_32Bit | _64Bit] | bool[bool]]]]` on mypy now
     ),
     (
         "boolean_dtypes()",
