@@ -774,14 +774,3 @@ def test_import():
 
     f = lambda: t.ctime()
     assert get_pretty_function_description(f) == "lambda: t.ctime()"
-
-
-@pytest.mark.xfail
-def test_renamed_import():
-    # This test showcases a known weakness, that modules are assumed to be
-    # imported explicitly (this affects bytecode generation on python >= 3.11).
-    import time
-
-    t = time
-    f = lambda: t.ctime()
-    assert get_pretty_function_description() == "lambda: t.ctime()"

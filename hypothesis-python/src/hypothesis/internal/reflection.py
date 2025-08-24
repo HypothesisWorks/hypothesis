@@ -339,7 +339,7 @@ def _normalize_code(f, l):
                 co_code = co_code[:i] + [NOP, 0] + co_code[i:]
             elif co_code[i] == NOP:
                 # delete NOP at position
-                co_code = co_code[:i] + co_code[i + 2:]
+                co_code = co_code[:i] + co_code[i + 2 :]
             else:
                 # no point in continuing since the bytecodes are different anyway
                 break
@@ -350,16 +350,15 @@ def _normalize_code(f, l):
 
     f_consts = f.__code__.co_consts
     l_consts = l.__code__.co_consts
-    if (
-            len(f_consts) == len(l_consts)
-            and any(inspect.iscode(l_const) for l_const in l_consts)
+    if len(f_consts) == len(l_consts) and any(
+        inspect.iscode(l_const) for l_const in l_consts
     ):
         normalized_consts = []
         for f_const, l_const in zip(f_consts, l_consts):
             if (
-                    inspect.iscode(l_const)
-                    and inspect.iscode(f_const)
-                    and _function_key(f_const) == _function_key(l_const)
+                inspect.iscode(l_const)
+                and inspect.iscode(f_const)
+                and _function_key(f_const) == _function_key(l_const)
             ):
                 # If the lambdas are compiled from the same source, make them be the
                 # same object so that the toplevel lambdas end up equal. Note that if
@@ -470,27 +469,22 @@ def _mimic_lambda_from_node(f, node):
             # this may/will give a different compilation result.
             global _module_map
             if len(_module_map) != len(sys.modules):
-                _module_map = {
-                    id(module): name
-                    for name, module in sys.modules.items()
-                }
+                _module_map = {id(module): name for name, module in sys.modules.items()}
             imports = [
                 (module_name, local_name)
                 for local_name, module in referenced_modules
                 if (module_name := _module_map.get(id(module))) is not None
             ]
-            import_fragments = [
-                f"{name} as {asname}"
-                for name, asname in set(imports)
-            ]
+            import_fragments = [f"{name} as {asname}" for name, asname in set(imports)]
             import_str = f"import {','.join(import_fragments)}\n"
         else:
             import_str = ""
-        exec_str = f"{import_str}def __construct_lambda(): {capture_str} return ({source})"
+        exec_str = (
+            f"{import_str}def __construct_lambda(): {capture_str} return ({source})"
+        )
         exec(exec_str, f_globals)
         compiled = f_globals["__construct_lambda"]()
 
-    compiled.__code__ = _normalize_code(f, compiled)
     return compiled
 
 
@@ -499,7 +493,13 @@ def _lambda_code_matches_node(f, node):
         compiled = _mimic_lambda_from_node(f, node)
     except (NameError, SyntaxError):  # pragma: no cover
         return False
-    return _function_key(f) == _function_key(compiled)
+    if _function_key(f) == _function_key(compiled):
+        return True
+    # Try harder
+    compiled.__code__ = _normalize_code(f, compiled)
+    if _function_key(f) == _function_key(compiled):
+        return True
+    return False
 
 
 def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=False):
@@ -552,10 +552,9 @@ def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=Fa
         else:
             local_lambdas = extract_all_lambdas(local_tree)
             for candidate in local_lambdas:
-                if (
-                    ast_arguments_matches_signature(candidate.args, sig)
-                    and _lambda_code_matches_node(f, candidate)
-                ):
+                if ast_arguments_matches_signature(
+                    candidate.args, sig
+                ) and _lambda_code_matches_node(f, candidate):
                     return format_lambda(ast.unparse(candidate.body))
 
         # Local parse failed or didn't produce a match, go ahead with the full parse
@@ -582,9 +581,9 @@ def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=Fa
 
     # None of the aligned lambdas match perfectly in generated code.
     if (
-            fail_if_confused_with_perfect_candidate
-            and aligned_lambdas
-            and aligned_lambdas[0].lineno == lineno0 + 1
+        fail_if_confused_with_perfect_candidate
+        and aligned_lambdas
+        and aligned_lambdas[0].lineno == lineno0 + 1
     ):
         # This arg is forced on in conftest.py, to ensure we resolve all known
         # cases.

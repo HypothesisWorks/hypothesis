@@ -290,4 +290,3 @@ def test_adding_other_lambda_does_not_confuse(tmp_path):
     )
     f1 = module_globals["test_lambda"]
     assert get_pretty_function_description(f1) == "lambda x: x * 2"
-
