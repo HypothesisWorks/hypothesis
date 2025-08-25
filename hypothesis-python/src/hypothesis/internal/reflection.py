@@ -461,7 +461,7 @@ def _function_key(f, *, bounded_size=False):
     )
 
 
-_module_map = {}
+_module_map: dict[int, str] = {}
 
 
 def _mimic_lambda_from_node(f, node):
@@ -481,7 +481,7 @@ def _mimic_lambda_from_node(f, node):
                 f_globals[l_default.id] = f_default
     if f.__kwdefaults__:
         for l_default, l_varname in zip(node.args.kw_defaults, node.args.kwonlyargs):
-            if isinstance(l_default, ast.Name):
+            if isinstance(l_default, ast.Name):  # pragma: no cover # shouldn't be?
                 f_globals[l_default.id] = f.__kwdefaults__[l_varname.arg]
 
     # CPython's compiler treats known imports differently than normal globals,
@@ -517,7 +517,7 @@ def _mimic_lambda_from_node(f, node):
             # were explicitly imported, not assigned, in the source - if not,
             # this may/will give a different compilation result.
             global _module_map
-            if len(_module_map) != len(sys.modules):
+            if len(_module_map) != len(sys.modules):  # pragma: no branch
                 _module_map = {id(module): name for name, module in sys.modules.items()}
             imports = [
                 (module_name, local_name)
@@ -657,7 +657,9 @@ def lambda_description(f):
     failed_fnames = []
     try:
         description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
-        if "<unknown>" not in description and f.__code__.co_filename in failed_fnames:  # pragma: no cover
+        if (
+            "<unknown>" not in description and f.__code__.co_filename in failed_fnames
+        ):  # pragma: no cover
             # Only accept the <unknown> description if it comes from parsing this
             # file - otherwise, try again below, maybe we have more luck in another
             # file. Once lucky, we keep keep using the successful description for *new*

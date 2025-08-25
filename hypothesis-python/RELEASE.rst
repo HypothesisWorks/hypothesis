@@ -1,4 +1,4 @@
-TYPE: patch
+RELEASE_TYPE: patch
 
 This patch further improves stringification of lambdas, by
 never returning a lambda source unless it is confirmed to
