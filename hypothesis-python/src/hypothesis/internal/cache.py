@@ -158,7 +158,17 @@ class GenericCache(Generic[K, V]):
         d_keys = [entry.key for entry in self.data]
 
         assert set(id(k) for k in k2i_keys) == set(id(k) for k in d_keys)
+        if set(hash(k) for k in k2i_keys) != set(hash(k) for k in d_keys):
+            id_to_k2i = {id(k): k for k in k2i_keys}
+            for entry in self.data:
+                k2i_key = id_to_k2i[id(entry.key)]
+                assert id(entry.key) == id(k2i_key), repr(entry.key)
+                if hash(entry.key) != hash(k2i_key):
+                    for i in len(entry.key):
+                        assert id(entry.key[i]) == id(k2i_key[i])
+                        assert hash(entry.key[i]) == hash(k2i_key[i])
         assert set(hash(k) for k in k2i_keys) == set(hash(k) for k in d_keys)
+
 
     def __iter__(self):
         return iter(self.keys_to_indices)
