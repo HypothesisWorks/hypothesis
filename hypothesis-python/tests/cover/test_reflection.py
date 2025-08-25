@@ -774,3 +774,19 @@ def test_import():
 
     f = lambda: t.ctime()
     assert get_pretty_function_description(f) == "lambda: t.ctime()"
+
+
+@pytest.mark.parametrize("nop_on_f", [True, False])
+def test_code_normalization(nop_on_f):
+    f = lambda x: x
+    g = lambda x: x
+    h = f if nop_on_f else g
+    assert reflection._function_key(f) == reflection._function_key(g)
+
+    # Append a NOP to one of the bytecodes
+    h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + b'\x09\x00')
+    assert reflection._function_key(f) != reflection._function_key(g)
+
+    # ...and then normalize g to match f (adding or removing a NOP)
+    g.__code__ = reflection._normalize_code(f, g)
+    assert reflection._function_key(f) == reflection._function_key(g)

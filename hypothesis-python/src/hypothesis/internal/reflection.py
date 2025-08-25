@@ -295,27 +295,27 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
-def extract_all_lambdas(tree, extract_nested=True):
+def extract_all_lambdas(tree, *, extract_nested=True):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
 
         def visit_Lambda(self, node):
             lambdas.append(node)
-            if extract_nested:
+            if extract_nested:  # pragma: no branch
                 self.visit(node.body)
 
     Visitor().visit(tree)
     return lambdas
 
 
-def extract_all_attributes(tree, extract_nested=True):
+def extract_all_attributes(tree, *, extract_nested=True):
     attributes = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Attribute(self, node):
             attributes.append(node)
-            if extract_nested:
+            if extract_nested:  # pragma: no branch
                 self.visit(node.value)
 
     Visitor().visit(tree)
@@ -327,6 +327,8 @@ def _normalize_code(f, l):
     NOP = 9
     LOAD_FAST = 85
     LOAD_FAST_LOAD_FAST = 88
+    LOAD_FAST_BORROW = 86
+    LOAD_FAST_BORROW_LOAD_FAST_BORROW = 87
 
     # A small selection of possible keyhole code transformations, based on what
     # is actually seen to differ between compilations in our test suite. Each
@@ -340,10 +342,15 @@ def _normalize_code(f, l):
             [LOAD_FAST_LOAD_FAST],
             lambda a, b: a == [b[0] >> 4, b[0] & 15],
         ),
+        (
+            [LOAD_FAST_BORROW, LOAD_FAST_BORROW],
+            [LOAD_FAST_BORROW_LOAD_FAST_BORROW],
+            lambda a, b: a == [b[0] >> 4, b[0] & 15],
+        ),
     ]
     # augment with inverse
     transforms += [
-        (ops_b, ops_a, checker and (lambda a, b: checker(b, a)))
+        (ops_b, ops_a, checker and (lambda a, b, checker=checker: checker(b, a)))
         for ops_a, ops_b, checker in transforms
     ]
 
@@ -359,19 +366,20 @@ def _normalize_code(f, l):
         return code[i : i + 2 * n : 2]
 
     i = 2
-    while i < len(co_code) and i < len(f_code):
-        # co_code is mutated in loop
-        if f_code[i] == co_code[i]:
+    while i < max(len(co_code), len(f_code)):
+        # note that co_code is mutated in loop
+        if i < min(len(co_code), len(f_code)) and f_code[i] == co_code[i]:
             i += 2
         else:
             for op1, op2, checker in transforms:
                 if (
                     op1 == alternating(f_code, i, len(op1))
                     and op2 == alternating(co_code, i, len(op2))
-                    and checker is not None
-                    and checker(
-                        alternating(f_code, i + 1, len(op1)),
-                        alternating(co_code, i + 1, len(op2)),
+                    and (
+                        checker is None or checker(
+                            alternating(f_code, i + 1, len(op1)),
+                            alternating(co_code, i + 1, len(op2)),
+                        )
                     )
                 ):
                     break
@@ -537,12 +545,10 @@ def _lambda_code_matches_node(f, node):
         return True
     # Try harder
     compiled.__code__ = _normalize_code(f, compiled)
-    if _function_key(f) == _function_key(compiled):
-        return True
-    return False
+    return _function_key(f) == _function_key(compiled)
 
 
-def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=False):
+def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate=False):
     if hasattr(f, "__wrapped_target"):
         f = f.__wrapped_target
 
