@@ -376,7 +376,8 @@ def _normalize_code(f, l):
                     op1 == alternating(f_code, i, len(op1))
                     and op2 == alternating(co_code, i, len(op2))
                     and (
-                        checker is None or checker(
+                        checker is None
+                        or checker(
                             alternating(f_code, i + 1, len(op1)),
                             alternating(co_code, i + 1, len(op2)),
                         )
@@ -630,7 +631,7 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
         fail_if_confused_with_perfect_candidate
         and aligned_lambdas
         and aligned_lambdas[0].lineno == lineno0 + 1
-    ):
+    ):  # pragma: no cover
         # This arg is forced on in conftest.py, to ensure we resolve all known
         # cases.
         raise ValueError("None of the source-file lambda candidates were matched")
@@ -656,7 +657,7 @@ def lambda_description(f):
     failed_fnames = []
     try:
         description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
-        if "<unknown>" not in description and f.__code__.co_filename in failed_fnames:
+        if "<unknown>" not in description and f.__code__.co_filename in failed_fnames:  # pragma: no cover
             # Only accept the <unknown> description if it comes from parsing this
             # file - otherwise, try again below, maybe we have more luck in another
             # file. Once lucky, we keep keep using the successful description for *new*

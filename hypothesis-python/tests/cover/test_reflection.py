@@ -784,9 +784,14 @@ def test_code_normalization(nop_on_f):
     assert reflection._function_key(f) == reflection._function_key(g)
 
     # Append a NOP to one of the bytecodes
-    h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + b'\x09\x00')
+    h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + b"\x09\x00")
     assert reflection._function_key(f) != reflection._function_key(g)
 
     # ...and then normalize g to match f (adding or removing a NOP)
     g.__code__ = reflection._normalize_code(f, g)
     assert reflection._function_key(f) == reflection._function_key(g)
+
+
+def test_lambda_mimicry_with_arg_defaults():
+    f = lambda x=1, *, y=2: (x, y)
+    assert get_pretty_function_description(f) == "lambda x=1, *, y=2: (x, y)"
