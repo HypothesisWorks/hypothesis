@@ -154,6 +154,12 @@ class GenericCache(Generic[K, V]):
                 assert evicted.sort_key <= self.data[0].sort_key
             self.on_evict(evicted.key, evicted.value, evicted.score)
 
+        k2i_keys = list(self.keys_to_indices.keys())
+        d_keys = [entry.key for entry in self.data]
+
+        assert set(id(k) for k in k2i_keys) == set(id(k) for k in d_keys)
+        assert set(hash(k) for k in k2i_keys) == set(hash(k) for k in d_keys)
+
     def __iter__(self):
         return iter(self.keys_to_indices)
 
