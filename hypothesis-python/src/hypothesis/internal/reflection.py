@@ -627,7 +627,7 @@ def _lambda_description(f, leeway=10, fail_if_confused_with_perfect_candidate=Fa
     ):
         # This arg is forced on in conftest.py, to ensure we resolve all known
         # cases.
-        raise ValueError(f"None of the source-file lambda candidates were matched")
+        raise ValueError("None of the source-file lambda candidates were matched")
     return if_confused
 
 

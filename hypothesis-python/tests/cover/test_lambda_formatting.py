@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import runpy
+import sys
 
 import pytest
 
@@ -41,6 +42,9 @@ def test_can_have_unicode_in_lambda_sources():
     assert get_pretty_function_description(t) == "lambda x: 'é' not in x"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="nested lambdas fail compile-test"
+)
 def test_can_get_descriptions_of_nested_lambdas_with_different_names():
     # fmt: off
     ordered_pair = (
@@ -64,6 +68,9 @@ def test_does_not_error_on_unparsable_source():
     assert get_pretty_function_description(t) == "lambda x: x"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="nested lambdas fail compile-test"
+)
 def test_separate_line_map_filter():
     # this isn't intentionally testing nested lambdas, but hey, it's a nice bonus.
     # fmt: off

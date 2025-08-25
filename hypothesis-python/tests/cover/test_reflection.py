@@ -764,8 +764,8 @@ def test_cache_key_size_is_bounded():
 def test_function_key_distinguishes_alpha_renames():
     # these terms are equivalent under the lambda calculus, but their
     # representations are not, so they should be cached differently.
-    assert (
-        reflection._function_key(lambda x: x) != reflection._function_key(lambda y: y)
+    assert reflection._function_key(lambda x: x) != reflection._function_key(
+        lambda y: y
     )
 
 
