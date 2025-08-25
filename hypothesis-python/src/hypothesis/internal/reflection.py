@@ -323,26 +323,66 @@ def extract_all_attributes(tree, extract_nested=True):
 
 
 def _normalize_code(f, l):
-    NOP = 9  # dis.opmap["NOP"]
-    co_code = list(l.__code__.co_code)
+    # Opcodes, from dis.opmap (as of 3.13)
+    NOP = 9
+    LOAD_FAST = 85
+    LOAD_FAST_LOAD_FAST = 88
 
-    # Equalize so that co_code gets the same NOP pattern as f_code.
-    # This assumes that each bytecode op is 2 bytes, which is true
-    # since Python 3.6.
-    f_code = f.__code__.co_code
-    for i in range(2, len(f_code), 2):
-        if i >= len(co_code):
-            break
-        if f_code[i] != co_code[i]:
-            if f_code[i] == NOP:
-                # add NOP at position
-                co_code = co_code[:i] + [NOP, 0] + co_code[i:]
-            elif co_code[i] == NOP:
-                # delete NOP at position
-                co_code = co_code[:i] + co_code[i + 2 :]
+    # A small selection of possible keyhole code transformations, based on what
+    # is actually seen to differ between compilations in our test suite. Each
+    # entry contains two equivalent opcode sequences, plus an optional check
+    # function called with their respective oparg sequences.
+    Checker = Callable[[list[int], list[int]], bool]
+    transforms: tuple[list[int], list[int], Optional[Checker]] = [
+        ([NOP], [], None),
+        (
+            [LOAD_FAST, LOAD_FAST],
+            [LOAD_FAST_LOAD_FAST],
+            lambda a, b: a == [b[0] >> 4, b[0] & 15],
+        ),
+    ]
+    # augment with inverse
+    transforms += [
+        (ops_b, ops_a, checker and (lambda a, b: checker(b, a)))
+        for ops_a, ops_b, checker in transforms
+    ]
+
+    # Normalize equivalent code. We assume that each bytecode op is 2 bytes,
+    # which is the case since Python 3.6. Since the opcodes values may change
+    # between version, there is a risk that a transform may not be equivalent
+    # -- even so, the risk of a bad transform producing a false positive is
+    # minuscule.
+    co_code = list(l.__code__.co_code)
+    f_code = list(f.__code__.co_code)
+
+    def alternating(code, i, n):
+        return code[i : i + 2 * n : 2]
+
+    i = 2
+    while i < len(co_code) and i < len(f_code):
+        # co_code is mutated in loop
+        if f_code[i] == co_code[i]:
+            i += 2
+        else:
+            for op1, op2, checker in transforms:
+                if (
+                    op1 == alternating(f_code, i, len(op1))
+                    and op2 == alternating(co_code, i, len(op2))
+                    and checker is not None
+                    and checker(
+                        alternating(f_code, i + 1, len(op1)),
+                        alternating(co_code, i + 1, len(op2)),
+                    )
+                ):
+                    break
             else:
                 # no point in continuing since the bytecodes are different anyway
                 break
+            # Splice in the transform and continue
+            co_code = (
+                co_code[:i] + f_code[i : i + 2 * len(op1)] + co_code[i + 2 * len(op2) :]
+            )
+            i += 2 * len(op1)
 
     # Normalize consts, in particular replace any lambda consts with the
     # corresponding const from the template function, IFF they have the same

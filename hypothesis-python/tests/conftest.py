@@ -101,19 +101,25 @@ except ImportError:
     pass
 
 
-@pytest.fixture(scope="function", autouse=True)
-def _make_unknown_lambdas_fail(monkeypatch):
+if sys.version_info >= (3, 11):
+    # To detect if changes in code generation causes lambda test compilation
+    # to fail. Older versions (3.10 and earlier) have a few known false
+    # negatives which we ignore.
+    @pytest.fixture(scope="function", autouse=True)
+    def _make_unknown_lambdas_fail(monkeypatch):
 
-    @wraps(reflection._lambda_description)
-    def wrapper(*args, **kwargs):
-        return original(*args, **kwargs, fail_if_confused_with_perfect_candidate=True)
+        @wraps(reflection._lambda_description)
+        def wrapper(*args, **kwargs):
+            return original(
+                *args, **kwargs, fail_if_confused_with_perfect_candidate=True
+            )
 
-    original=reflection._lambda_description
-    monkeypatch.setattr(
-        reflection,
-        "_lambda_description",
-        wrapper,
-    )
+        original = reflection._lambda_description
+        monkeypatch.setattr(
+            reflection,
+            "_lambda_description",
+            wrapper,
+        )
 
 
 # monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests
