@@ -34,7 +34,8 @@ StrategyCacheKey: "TypeAlias" = tuple[
 ]
 
 _strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
-_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)  # is internally thread-local
+# note: LRUReusedCache is already thread-local internally
+_STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
 
 
 def convert_value(v: object) -> ValueKey:
@@ -43,13 +44,8 @@ def convert_value(v: object) -> ValueKey:
     return (type(v), v)
 
 
-def get_cache() -> LRUReusedCache[StrategyCacheKey, object]:
-    return _CACHE
-
-
 def clear_cache() -> None:
-    cache = get_cache()
-    cache.clear()
+    _STRATEGY_CACHE.clear()
 
 
 def cacheable(fn: T) -> T:
@@ -67,17 +63,16 @@ def cacheable(fn: T) -> T:
         except TypeError:
             return fn(*args, **kwargs)
         cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
-        cache = get_cache()
         try:
-            if cache_key in cache:
-                return cache[cache_key]
+            if cache_key in _STRATEGY_CACHE:
+                return _STRATEGY_CACHE[cache_key]
         except TypeError:
             return fn(*args, **kwargs)
         else:
             result = fn(*args, **kwargs)
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
                 result._is_singleton = True
-                cache[cache_key] = result
+                _STRATEGY_CACHE[cache_key] = result
             return result
 
     cached_strategy.__clear_cache = clear_cache  # type: ignore
