@@ -125,9 +125,11 @@ class GenericCache(Generic[K, V]):
                     # but
                     #   hash(key1) != hash(key2)
                     # See https://github.com/HypothesisWorks/hypothesis/issues/4442
-                    self.keys_to_indices = {
-                        entry.key: entry for entry in self.data if entry is not evicted
-                    }
+                    self.keys_to_indices.clear()
+                    self.keys_to_indices.update({
+                        entry.key: i for i, entry in enumerate(self.data)
+                        if entry is not evicted
+                    })
                     assert len(self.keys_to_indices) == len(self.data) - 1
                 i = 0
                 self.data[0] = entry
