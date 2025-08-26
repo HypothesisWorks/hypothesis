@@ -164,7 +164,18 @@ class GenericCache(Generic[K, V]):
                 k2i_key = id_to_k2i[id(entry.key)]
                 assert id(entry.key) == id(k2i_key), repr(entry.key)
                 if hash(entry.key) != hash(k2i_key):
-                    for i in len(entry.key):
+                    l1 = list(entry.key[2])
+                    l2 = list(k2i_key[2])
+                    for it1, it2 in zip(l1, l2):
+                        n1, (c1, v1) = it1
+                        n2, (c2, v2) = it2
+                        assert id(n1) == id(n2)
+                        assert hash(n1) == hash(n2)
+                        assert id(c1) == id(c2)
+                        assert hash(c1) == hash(c2)
+                        assert id(v1) == id(v2)
+                        assert hash(v1) == hash(v2)
+                    for i in range(len(entry.key)):
                         assert id(entry.key[i]) == id(k2i_key[i])
                         assert hash(entry.key[i]) == hash(k2i_key[i])
         assert set(hash(k) for k in k2i_keys) == set(hash(k) for k in d_keys)
