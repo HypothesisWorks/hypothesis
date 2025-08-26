@@ -22,15 +22,11 @@ changes in patch releases.
 Deprecations
 ------------
 
-Deprecated features will emit warnings for at least six
-months, and then be removed in the following major release.
+Deprecated features will emit |HypothesisDeprecationWarning| for at least six months, and then be removed in the following major release.
 
-Note however that not all warnings are subject to this grace period;
-sometimes we strengthen validation by adding a warning, and these may
-become errors immediately at a major release.
+Note however that not all warnings are subject to this grace period; sometimes we strengthen validation by adding a warning, and these may become errors immediately at a major release.
 
-We use custom exception and warning types, so you can see
-exactly where an error came from, or turn only our warnings into errors.
+We use custom exception and warning types, so you can see exactly where an error came from, or turn only our warnings into errors.
 
 Python versions
 ---------------
@@ -92,11 +88,6 @@ coverage.py
 
 :pypi:`coverage` works out of the box with Hypothesis. Our own test suite has 100% branch coverage.
 
-Nose
-~~~~
-
-:pypi:`nose` tests work with Hypothesis out of the box, except for ``yield``-based tests, which simply won't work.
-
 Optional packages
 -----------------
 
@@ -118,11 +109,21 @@ As of :version:`6.136.9`, Hypothesis is thread-safe. Each of the following is fu
 
 If you find a bug here, please report it. The main risks internally are global state, shared caches, and cached strategies.
 
-**Running the same test in multiple threads**, or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
+Thread usage inside tests
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis assumes that tests are single-threaded, or do a sufficiently-good job of pretending to be single-threaded.  Tests that use helper threads internally should be OK, but the user must be careful to ensure that test outcomes are still deterministic. In particular it counts as nondeterministic if helper-thread timing changes the sequence of dynamic draws using e.g. the |st.data| strategy.
+.. TODO_DOCS: link to not-yet-merged flaky failure tutorial page
 
-Interacting with any Hypothesis APIs from helper threads might do weird/bad things, so avoid that too - we rely on thread-local variables in a few places, and haven't explicitly tested/audited how they respond to cross-thread API calls.  While |st.data| and equivalents are the most obvious danger, other APIs might also be subtly affected.
+Tests that spawn threads internally are supported by Hypothesis.
+
+However, these as with any Hypothesis test, these tests must have deterministic test outcomes and data generation. For example, if timing changes in the threads change the sequence of dynamic draws from |st.composite| or |st.data|, Hypothesis may report the test as flaky. The solution here is to refactor data generation so it does not depend on test timings.
+
+Cross-thread API calls
+~~~~~~~~~~~~~~~~~~~~~~
+
+In theory, Hypothesis supports cross-thread API calls, for instance spawning a thread inside of a test and using that to draw from |st.composite| or |st.data|, or to call |event|, |target|, or |assume|.
+
+However, we have not explicitly audited this behavior, and do not regularly test it in our CI. If you find a bug here, please report it. If our investigation determines that we cannot support cross-thread calls for the feature in question, we will update this page accordingly.
 
 Type hints
 ----------

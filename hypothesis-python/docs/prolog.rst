@@ -100,6 +100,7 @@
 .. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
 .. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 .. |register_random| replace:: :func:`~hypothesis.register_random`
+.. |st.register_random| replace:: :func:`~hypothesis.register_random`
 
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
