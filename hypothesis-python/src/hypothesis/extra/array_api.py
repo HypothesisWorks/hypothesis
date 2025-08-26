@@ -426,8 +426,8 @@ class ArrayStrategy(st.SearchStrategy):
                     if val in seen:
                         elements.reject("chose an element we've already used")
                         continue
-                    else:
-                        seen.add(val)
+                    seen.add(val)
+
                 result_obj[i] = val
                 assigned.add(i)
                 fill_mask[i] = False

@@ -1,6 +1,9 @@
 [tool.ruff]
 line-length = 125
-target-version = "py38"
+target-version = "py39"
+
+[tool.ruff.per-file-target-version]
+"test_typealias_py312.py" = "py312"
 
 [tool.ruff.lint]
 select = [
@@ -42,6 +45,7 @@ ignore = [
   "E721",
   "E731",
   "E741",
+  "FBT001",
   "FBT003",
   "FBT001",
   "PD011",
@@ -60,9 +64,11 @@ ignore = [
   "PT019",
   "PT023",
   "PT027",
+  "PT031",
   "RUF001",  # don't break our tests by rewriting confusables
   "RUF005",
   "RUF017",
+  "RUF028",  # we use fmt: off for black as well as ruff, with differing semantics
   "SIM102",
   "SIM105",
   "SIM108",
@@ -75,7 +81,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"hypothesis-python/src/hypothesis/core.py" = ["B904"]
+"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904"]
 "hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
 "hypothesis-python/tests/nocover/test_imports.py" = ["F403", "F405"]
 "hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]

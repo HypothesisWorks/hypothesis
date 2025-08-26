@@ -35,8 +35,8 @@ from typing import Any, Callable, NamedTuple, Optional, TypeVar
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import (
-    extract_lambda_source,
     get_pretty_function_description,
+    lambda_description,
 )
 
 Ex = TypeVar("Ex")
@@ -253,7 +253,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     # and fall back to standard rejection sampling (a running theme).
     try:
         if predicate.__name__ == "<lambda>":
-            source = extract_lambda_source(predicate)
+            source = lambda_description(predicate)
         else:
             source = inspect.getsource(predicate)
         tree: ast.AST = ast.parse(source)

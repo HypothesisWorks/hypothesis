@@ -37,6 +37,9 @@ from tests.common.debug import (
     find_any,
 )
 
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP035, UP006
+
 # See also nocover/test_type_lookup.py
 
 
@@ -96,7 +99,7 @@ def test_resolves_NewType():
     find_any(from_type(uni), lambda x: isinstance(x, type(None)))
 
 
-@given(from_type(DefaultDict[int, int]))
+@given(from_type(DefaultDict[int, int]) | from_type(collections.defaultdict[int, int]))
 def test_defaultdict(ex):
     assert isinstance(ex, collections.defaultdict)
     assume(ex)

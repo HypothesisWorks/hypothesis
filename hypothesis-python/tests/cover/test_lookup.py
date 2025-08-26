@@ -54,6 +54,9 @@ from tests.common.debug import (
 )
 from tests.common.utils import fails_with, temp_registered
 
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP006, UP035
+
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v
@@ -857,7 +860,6 @@ def test_bytestring_not_treated_as_generic_sequence(val):
         assert isinstance(x, set)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 @pytest.mark.parametrize(
     "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
 )
@@ -1151,6 +1153,15 @@ def test_resolves_builtin_types(t):
 @given(data=st.data())
 @settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
+    if t.__name__ == "object" and settings._current_profile == "threading":
+        # from_type(ForwardRef("object")) pulls from register_type_strategy,
+        # and depending on threading I've seen `st.builds(Bar, st.integers())`
+        # (from this file) be registered in one iteration and not the next,
+        # causing Hypothesis to raise FlakyStrategyDefinition.
+        #
+        # (I would also expect st.from_type(object) to have this problem, but
+        # I haven't seen that error under threading, yet).
+        pytest.skip("ForwardRef('object') is inherently flaky under concurrency")
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
     assert isinstance(v, t)
@@ -1170,20 +1181,43 @@ def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
 
 
 @pytest.mark.parametrize(
-    # Old-style `List` because `list[int]() == list()`, so no need for the hint.
     "type_",
-    [getattr(typing, "List", None)[int], typing.Optional[int]],
+    [
+        # Old-style `List` because `list[int]() == list()`, so no need for the hint.
+        getattr(typing, "List", None)[int],
+        pytest.param(
+            typing.Optional[int],
+            marks=pytest.mark.skipif(
+                sys.version_info >= (3, 14), reason="different error on 3.14+"
+            ),
+        ),
+    ],
 )
 def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
     ):
         check_can_generate_examples(st.builds(type_))
+
     try:
         check_can_generate_examples(st.builds(type_, st.just("has an argument")))
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="different error on 3.14+")
+@pytest.mark.parametrize("type_", [typing.Optional[int]])
+def test_builds_suggests_from_type_on_construction(type_):
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_))
+
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_, st.just("has an argument")))
 
 
 def test_builds_mentions_no_type_check():

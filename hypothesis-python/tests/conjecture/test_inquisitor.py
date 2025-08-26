@@ -17,11 +17,11 @@ from hypothesis import given, settings, strategies as st
 from tests.common.utils import fails_with
 
 
-def fails_with_output(expected, error=AssertionError, **kw):
+def fails_with_output(expected):
     def _inner(f):
         def _new():
-            with pytest.raises(error) as err:
-                settings(print_blob=False, derandomize=True, **kw)(f)()
+            with pytest.raises(AssertionError) as err:
+                f()
 
             if not hasattr(err.value, "__notes__"):
                 traceback.print_exception(err.value)
@@ -50,6 +50,7 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_either(
 )
 """
 )
+@settings(print_blob=False, derandomize=True)
 @given(st.booleans(), st.booleans(), st.lists(st.none()), st.booleans(), st.booleans())
 def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
     assert not (b and d)
@@ -65,6 +66,7 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_not_all(
 )
 """
 )
+@settings(print_blob=False, derandomize=True)
 @given(st.text(), st.text(), st.text())
 def test_inquisitor_comments_basic_fail_if_not_all(a, b, c):
     condition = a and b and c
@@ -79,6 +81,7 @@ Falsifying example: test_inquisitor_no_together_comment_if_single_argument(
 )
 """
 )
+@settings(print_blob=False, derandomize=True)
 @given(st.text(), st.text())
 def test_inquisitor_no_together_comment_if_single_argument(a, b):
     assert a
@@ -100,6 +103,7 @@ Falsifying example: test_inquisitor_doesnt_break_on_varying_forced_nodes(
 )
 """
 )
+@settings(print_blob=False, derandomize=True)
 @given(st.integers(), ints_with_forced_draw())
 def test_inquisitor_doesnt_break_on_varying_forced_nodes(n1, n2):
     assert n1 < 100

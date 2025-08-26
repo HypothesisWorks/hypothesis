@@ -13,12 +13,18 @@ from unittest import SkipTest
 from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.control import _current_build_context
-from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
+from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.00001
+
+
+# don't use hypothesis.errors.Found, which inherits from HypothesisException
+# and therefore has weird semantics around e.g. backend="crosshair".
+class Found(Exception):
+    pass
 
 
 def minimal(definition, condition=lambda x: True, settings=None):

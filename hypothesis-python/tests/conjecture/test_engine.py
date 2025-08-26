@@ -50,7 +50,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import no_shrink
+from tests.common.utils import no_shrink, skipif_time_unpatched
 from tests.conjecture.common import (
     SOME_LABEL,
     buffer_size_limit,
@@ -463,10 +463,57 @@ def test_fails_health_check_for_large_non_base():
             data.draw_bytes(10_000, 10_000)
 
 
+@skipif_time_unpatched
 def test_fails_health_check_for_slow_draws():
     @fails_health_check(HealthCheck.too_slow)
     def _(data):
         data.draw(SLOW)
+
+
+def test_health_check_too_slow_with_invalid_examples():
+    @st.composite
+    def s(draw):
+        n = draw(st.integers())
+        if n > 0:
+            assume(False)
+
+        time.sleep(0.2)
+
+    @given(s())
+    @settings(derandomize=True, max_examples=100)
+    def test(x):
+        pass
+
+    with pytest.raises(FailedHealthCheck) as exc:
+        test()
+
+    assert str(HealthCheck.too_slow) in str(exc.value)
+    assert re.search(r"\d+ invalid inputs", str(exc.value))
+
+
+def test_health_check_too_slow_with_overrun_examples():
+    @st.composite
+    def s(draw):
+        n = draw(st.integers())
+        if n > 0:
+            draw(st.binary(min_size=50))
+            assume(False)
+
+        time.sleep(0.2)
+
+    @given(s())
+    @settings(derandomize=True, max_examples=100)
+    def test(x):
+        pass
+
+    with buffer_size_limit(10):
+        with pytest.raises(FailedHealthCheck) as exc:
+            test()
+
+    assert str(HealthCheck.too_slow) in str(exc.value)
+    assert re.search(
+        r"\d+ inputs which exceeded the maximum allowed entropy", str(exc.value)
+    )
 
 
 @pytest.mark.parametrize("n_large", [1, 5, 8, 15])
@@ -633,7 +680,7 @@ def test_shrinks_both_interesting_examples(monkeypatch):
         n = data.draw_integer(0, 2**8 - 1)
         data.mark_interesting(interesting_origin(n & 1))
 
-    runner = ConjectureRunner(f, database_key=b"key")
+    runner = ConjectureRunner(f)
     runner.run()
     assert runner.interesting_examples[interesting_origin(0)].choices == (0,)
     assert runner.interesting_examples[interesting_origin(1)].choices == (1,)

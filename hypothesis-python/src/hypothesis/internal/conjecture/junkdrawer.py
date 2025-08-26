@@ -87,7 +87,7 @@ class IntList(Sequence[int]):
             for v in underlying:
                 if not isinstance(v, int) or v < 0:
                     raise ValueError(f"Could not create IntList for {values!r}")
-        self.__underlying: Union[list[int], "ArrayType[int]"] = underlying
+        self.__underlying: Union[list[int], ArrayType[int]] = underlying
 
     @classmethod
     def of_length(cls, n: int) -> "IntList":

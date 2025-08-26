@@ -614,7 +614,7 @@ def test_raises_for_mixed_pos_kwargs_in_given(tmp_path, python_version):
 
 
 def test_register_random_interface(tmp_path):
-    f = tmp_path / "check_mypy_on_pos_arg_only_strats.py"
+    f = tmp_path / "test_register_random_interface.py"
     f.write_text(
         textwrap.dedent(
             """
@@ -635,3 +635,26 @@ def test_register_random_interface(tmp_path):
         encoding="utf-8",
     )
     assert_mypy_errors(f, [])
+
+
+def test_register_type_strategy_type_alias_type(tmp_path):
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4410
+    f = tmp_path / "test_register_type_strategy_type_alias_type.py"
+    f.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis import strategies as st
+            from typing import TypeAliasType
+
+            def ints() -> st.SearchStrategy[int]:
+                return st.from_type(int)
+
+            Ints = TypeAliasType("Ints", int)  # or `type Ints = int`
+
+            # this previous failed type-checking
+            st.register_type_strategy(Ints, ints())
+            """
+        ),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [], python_version="3.12")

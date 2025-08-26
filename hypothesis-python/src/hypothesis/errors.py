@@ -184,7 +184,7 @@ class HypothesisWarning(HypothesisException, Warning):
 
 
 class FailedHealthCheck(_Trimmable):
-    """Raised when a test fails a healthcheck."""
+    """Raised when a test fails a health check. See |HealthCheck|."""
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):

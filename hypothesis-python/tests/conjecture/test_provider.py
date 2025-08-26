@@ -15,6 +15,7 @@ import sys
 import time
 from contextlib import contextmanager, nullcontext
 from random import Random
+from threading import RLock
 from typing import Optional
 
 import pytest
@@ -50,7 +51,7 @@ from hypothesis.internal.conjecture.providers import (
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import TESTCASE_CALLBACKS, Observation
+from hypothesis.internal.observability import Observation, _callbacks
 
 from tests.common.debug import minimal
 from tests.common.utils import (
@@ -170,13 +171,17 @@ class PrngProvider(PrimitiveProvider):
             return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
+_temp_register_backend_lock = RLock()
+
+
 @contextmanager
 def temp_register_backend(name, cls):
-    try:
-        AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
-        yield
-    finally:
-        AVAILABLE_PROVIDERS.pop(name)
+    with _temp_register_backend_lock:
+        try:
+            AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
+            yield
+        finally:
+            AVAILABLE_PROVIDERS.pop(name)
 
 
 @pytest.mark.parametrize(
@@ -786,7 +791,7 @@ def test_on_observation_no_override():
     @given(st.integers())
     @settings(backend="observation")
     def f(n):
-        assert TESTCASE_CALLBACKS == []
+        assert _callbacks == {}
 
     f()
 

@@ -87,7 +87,9 @@ def check_sample(
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
-        return values
+        # Pyright is unhappy with every way I've tried to type-annotate this
+        # function, so fine, we'll just ignore the analysis error.
+        return values  # type: ignore
     return tuple(values)
 
 

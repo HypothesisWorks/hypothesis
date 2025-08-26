@@ -110,11 +110,13 @@ all versions that are supported upstream.
 Thread-Safety Policy
 --------------------
 
-As discussed in :issue:`2719`, Hypothesis is not truly thread-safe and that's unlikely to change in the future.  This policy therefore describes what you *can* expect if you use Hypothesis with multiple threads.
+As of :version:`6.136.9`, Hypothesis is thread-safe. Each of the following is fully supported, and tested regularly in CI:
 
-**Running tests in multiple processes**, e.g. with ``pytest -n auto``, is fully supported and we test this regularly in CI - thanks to process isolation, we only need to ensure that :class:`~hypothesis.database.DirectoryBasedExampleDatabase` can't tread on its own toes too badly.  If you find a bug here we will fix it ASAP.
+* Running tests in multiple processes
+* Running separate tests in multiple threads
+* Running the same test in multiple threads
 
-**Running separate tests in multiple threads** is not something we design or test for, and is not formally supported.  That said, anecdotally it does mostly work and we would like it to keep working - we accept reasonable patches and low-priority bug reports.  The main risks here are global state, shared caches, and cached strategies.
+If you find a bug here, please report it. The main risks internally are global state, shared caches, and cached strategies.
 
 **Running the same test in multiple threads**, or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
 

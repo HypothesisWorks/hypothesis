@@ -47,7 +47,7 @@ h3 {
 
 code {
   background-color: #f5f5f5;
-  padding: 0.25rem 0.5rem;
+  padding: 0.15rem 0.25rem;
   border-radius: 4px;
   color: #c7254e;
 }
@@ -288,10 +288,8 @@ pre code {
   border: 1px solid #ddd;
   padding: 2rem;
   transition: transform 0.05s ease, box-shadow 0.05s ease;
-}
-
-.article-card {
   cursor: pointer;
+  box-shadow: 0 1.5px 4.5px rgba(0, 0, 0, 0.1);
 }
 
 .article-card:hover {
@@ -299,7 +297,7 @@ pre code {
 }
 
 .article-card__header {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .article-card__title {
@@ -309,15 +307,12 @@ pre code {
   color: var(--color-primary);
 }
 
-.article-card__meta {
-  margin-bottom: 1rem;
-}
-
 .article-card-meta {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .article-card-meta__separator {
@@ -358,7 +353,7 @@ pre code {
 .article__header {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 2px solid #e2e2e2;
 }
 
 .article__title {
@@ -402,7 +397,7 @@ pre code {
 }
 
 .article-content {
-  line-height: 1.7;
+  line-height: 1.6;
   font-size: 1.125rem;
   color: var(--text-color);
 }

@@ -59,7 +59,12 @@ from hypothesis.stateful import (
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    skipif_emscripten,
+    skipif_threading,
+    wait_for,
+)
 from tests.conjecture.common import nodes, nodes_inline
 
 
@@ -143,6 +148,7 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
+@skipif_threading
 def test_two_directory_databases_can_interact(tmp_path):
     db1 = DirectoryBasedExampleDatabase(tmp_path)
     db2 = DirectoryBasedExampleDatabase(tmp_path)
@@ -313,6 +319,7 @@ def test_ga_deletes_old_artifacts():
             assert not file_old.exists()
 
 
+@skipif_threading
 def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
@@ -471,14 +478,19 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(
         configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
     )
-    tmp_path.chmod(0o000)
-    with (
-        nullcontext()
-        if WINDOWS
-        else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
-    ):
-        database = _db_for_path(not_set)
-    database.save(b"fizz", b"buzz")
+    try:
+        tmp_path.chmod(0o000)
+        with (
+            nullcontext()
+            if WINDOWS
+            else pytest.warns(
+                HypothesisWarning, match=".*the default location is unusable"
+            )
+        ):
+            database = _db_for_path(not_set)
+        database.save(b"fizz", b"buzz")
+    finally:
+        tmp_path.chmod(0o600)  # So that pytest can clean up tmp_path later
 
 
 @skipif_emscripten
@@ -652,6 +664,10 @@ def _database_conforms_to_listener_api(
         def events_agree(self):
             if flush is not None:
                 flush(self.db)
+
+            wait_for(
+                lambda: len(self.expected_events) == len(self.actual_events), timeout=60
+            )
             # events *generally* don't arrive out of order, but we've had
             # flakes reported here, especially on weirder / older machines.
             # see https://github.com/HypothesisWorks/hypothesis/issues/4274
@@ -715,6 +731,7 @@ def test_readonly_listener():
     db.save(b"b", b"b")
 
 
+@skipif_threading
 def test_metakeys_move_into_existing_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -726,6 +743,7 @@ def test_metakeys_move_into_existing_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys_move_into_nonexistent_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -735,6 +753,7 @@ def test_metakeys_move_into_nonexistent_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
 
@@ -857,6 +876,7 @@ def test_database_not_equal(db1, db2):
     assert db1 != db2
 
 
+@skipif_threading  # race in tmp_path
 def test_directory_db_removes_empty_dirs(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")

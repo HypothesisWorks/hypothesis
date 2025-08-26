@@ -50,12 +50,15 @@ jobs:
           - check-py313t-cover
           - check-py313t-nocover
           - check-py313t-niche
-          # - check-py314-cover
-          # - check-py314-nocover
+          - check-py314-cover
+          - check-py314-nocover
+          # Blocked by a 3.14rc1 bug. see
+          # https://github.com/HypothesisWorks/hypothesis/pull/4490#issuecomment-3144989862.
+          # Can revisit in 3.14rc2.
           # - check-py314-niche
-          # - check-py314t-cover
-          # - check-py314t-nocover
-          # - check-py314t-niche
+          - check-py314t-cover
+          - check-py314t-nocover
+          - check-py314t-niche
           # - check-py315-cover
           # - check-py315-nocover
           # - check-py315-niche
@@ -100,6 +103,7 @@ jobs:
           - check-crosshair-custom-nocover/test_[j-r]*
           - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
+          - check-threading
           - check-py39-oldestnumpy
           - check-numpy-nightly
       fail-fast: false
@@ -139,7 +143,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -v "_py312" | xargs)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -200,7 +204,8 @@ jobs:
         pip install -r requirements/crosshair.txt
         pip install hypothesis-python/
     - name: Run tests
-      run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
+      # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
+      run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
     runs-on: macos-latest
@@ -239,8 +244,8 @@ jobs:
       NODE_VERSION: 22
       # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
       # The versions of pyodide-build and the Pyodide runtime may differ.
-      PYODIDE_VERSION: 0.27.5
-      PYODIDE_BUILD_VERSION: 0.30.0
+      PYODIDE_VERSION: 0.27.7
+      PYODIDE_BUILD_VERSION: 0.30.5
       PYTHON_VERSION: 3.12.7
     steps:
       - uses: actions/checkout@v3
@@ -274,7 +279,7 @@ jobs:
           source .venv-pyodide/bin/activate
           # pyodide can't run multiple processes internally, so parallelize explicitly over
           # discovered test files instead (20 at a time)
-          TEST_FILES=$(ls hypothesis-python/tests/cover/test*.py)
+          TEST_FILES=$(ls hypothesis-python/tests/cover/test*.py | grep -v "_py314")
           echo "test files: $TEST_FILES"
           parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
             python -m pytest -p no:cacheprovider <<< $TEST_FILES

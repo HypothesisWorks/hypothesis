@@ -9,35 +9,23 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import time
 from threading import Barrier, Thread
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.debug import check_can_generate_examples
+from tests.common.utils import run_concurrently
 
 pytestmark = pytest.mark.skipif(
     settings._current_profile == "crosshair", reason="crosshair is not thread safe"
 )
-
-
-def run_concurrently(function, n: int) -> None:
-    def run():
-        barrier.wait()
-        function()
-
-    threads = [Thread(target=run) for _ in range(n)]
-    barrier = Barrier(n)
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
 
 
 def test_can_run_given_in_thread():
@@ -71,9 +59,9 @@ def test_run_stateful_test_concurrently():
     run_concurrently(TestMyStateful, n=2)
 
 
-def do_work():
+def do_work(*, multiplier=1):
     # arbitrary moderately-expensive work
-    for x in range(500):
+    for x in range(500 * multiplier):
         _y = x**x
 
 
@@ -125,7 +113,7 @@ def test_stackframes_restores_original_recursion_limit():
     for thread in threads:
         thread.start()
     for thread in threads:
-        thread.join()
+        thread.join(timeout=10)
 
     assert sys.getrecursionlimit() == original_recursionlimit
 
@@ -152,3 +140,82 @@ def test_handles_invalid_args_cleanly(strategy):
             check_can_generate_examples(strategy)
 
     run_concurrently(check, n=4)
+
+
+def test_single_thread_can_raise_deadline_exceeded():
+    # a slow test running inside a thread, but not concurrently, should still
+    # be able to raise DeadlineExceeded.
+    @given(st.integers())
+    @settings(max_examples=5)
+    def slow_test(n):
+        do_work()
+        time.sleep(0.4)
+
+    def target():
+        with pytest.raises(DeadlineExceeded):
+            slow_test()
+
+    thread = Thread(target=target)
+    thread.start()
+    thread.join(timeout=10)
+
+
+def test_deadline_exceeded_not_raised_under_concurrent_threads():
+    # it's still possible for multithreaded calls to a slow function to raise
+    # DeadlineExceeded, if the first thread completes its entire test before
+    # any other thread starts. For this test, prevent this scenario with a barrier,
+    # forcing the threads to run in parallel.
+    n_threads = 8
+    barrier = Barrier(n_threads)
+
+    @given(st.integers())
+    @settings(max_examples=5)
+    def slow_test(n):
+        do_work()
+        time.sleep(0.4)
+        barrier.wait()
+
+    run_concurrently(slow_test, n=n_threads)
+
+
+def test_deadline_exceeded_can_be_raised_after_threads():
+    # if we had concurrent threads before, but they've finished now, we should
+    # still be able to raise DeadlineExceeded normally. Importantly, we test this
+    # for the same test as was running before, since concurrent thread use is
+    # tracked per-@given.
+
+    @given(st.integers())
+    @settings(max_examples=5)
+    def slow_test(n):
+        do_work()
+        if should_sleep:
+            time.sleep(0.4)
+
+    should_sleep = False
+    run_concurrently(slow_test, n=8)
+
+    should_sleep = True
+    with pytest.raises(DeadlineExceeded):
+        slow_test()
+
+
+def test_one_of_branches_lock():
+    class SlowBranchesStrategy(SearchStrategy):
+        @property
+        def branches(self):
+            # multiplier=2 reproduces more consistently than multiplier=1 for me
+            do_work(multiplier=2)
+            return [st.integers(), st.text()]
+
+    branch_counts = set()
+    s = st.one_of(SlowBranchesStrategy(), SlowBranchesStrategy())
+
+    def test():
+        branches = len(s.branches)
+        branch_counts.add(branches)
+
+    run_concurrently(test, n=10)
+    assert len(branch_counts) == 1
+    # there are 4 independent strategies, but only 2 distinct ones -
+    # st.integers(), and st.text().
+    assert branch_counts == {2}

@@ -44,8 +44,8 @@ __version_info__ = None
 
 VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
 
-with open(VERSION_FILE, encoding="utf-8") as o:
-    exec(o.read())
+with open(VERSION_FILE, encoding="utf-8") as fp:
+    exec(fp.read())
 
 assert __version__ is not None
 assert __version_info__ is not None
@@ -67,9 +67,8 @@ def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
 
-def build_docs(*, builder="html", only=()):
+def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-    # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
         "--fail-on-warning",
@@ -78,7 +77,7 @@ def build_docs(*, builder="html", only=()):
         "--builder",
         builder,
         "docs",
-        "docs/_build/" + builder,
+        "docs/_build/" + (builder if to is None else to),
         *only,
         cwd=HYPOTHESIS_PYTHON,
     )

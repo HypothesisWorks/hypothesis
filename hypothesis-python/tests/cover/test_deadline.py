@@ -19,6 +19,11 @@ from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
 from tests.common.utils import assert_falsifying_output, fails_with
 
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="takes a long time because we don't monkeypatch time",
+)
+
 
 def test_raises_deadline_on_slow_test():
     @settings(deadline=500)
