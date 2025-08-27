@@ -157,7 +157,7 @@ In more complex cases, you might need to interleave generation and test code. In
 Combining Hypothesis with pytest
 --------------------------------
 
-Hypothesis works with pytest features, like :ref:`pytest:pytest.mark.parametrize ref`:
+Hypothesis works with pytest features, like |pytest.mark.parametrize|:
 
 .. code-block:: python
 

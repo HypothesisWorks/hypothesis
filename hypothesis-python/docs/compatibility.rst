@@ -61,7 +61,7 @@ pytest
 
 The main interaction to be aware of between Hypothesis and :pypi:`pytest` is fixtures.
 
-pytest fixtures are automatically passed to |@given| tests, as usual. Note that |@given| supplies parameters from the right, so tests which use a fixture should be written with the fixture placed first:
+pytest fixtures are automatically passed to |@given| tests, as usual. Note that |@given| supplies parameters from the right, so tests which use a fixture should either be written with the fixture placed first, or with keyword arguments:
 
 .. code-block:: python
 
@@ -69,7 +69,21 @@ pytest fixtures are automatically passed to |@given| tests, as usual. Note that 
   def test_use_fixture(myfixture, n):
       pass
 
+  @given(n=st.integers())
+  def test_use_fixture(n, myfixture):
+      pass
+
 However, function-scoped fixtures run only once for the entire test, not per-input. This can be surprising for fixtures which are expected to set up per-input state. To proactively warn about this, we raise |HealthCheck.function_scoped_fixture| (unless suppressed with |settings.suppress_health_check|).
+
+Combining |@given| and |pytest.mark.parametrize| is fully supported, again keeping in mind that |@given| supplies parameters from the right:
+
+.. code-block:: python
+
+  @pytest.mark.parametrize("s", ["a", "b", "c"])
+  @given(st.integers())
+  def test_use_parametrize(s, n):
+      assert isinstance(s, str)
+      assert isinstance(n, int)
 
 unittest
 ~~~~~~~~
@@ -78,10 +92,14 @@ unittest
 
 The :func:`python:unittest.mock.patch` decorator works with |@given|, but we recommend using it as a context manager within the test instead, to ensure that the mock is per-input, and to avoid poor interactions with Pytest fixtures.
 
+:meth:`unittest.TestCase.subTest` is a no-op under Hypothesis, because it interacts poorly with Hypothesis generating hundreds of inputs at a time.
+
 Django
 ~~~~~~
 
 Integration with Django's testing requires use of the :ref:`hypothesis-django` extra. The issue is that Django tests reset the database once per test, rather than once per input.
+
+:pypi:`pytest-django` doesn't yet implement Hypothesis compatibility. You can follow issue `pytest-django#912 <https://github.com/pytest-dev/pytest-django/issues/912>`_ for updates.
 
 coverage.py
 ~~~~~~~~~~~

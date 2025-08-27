@@ -5,7 +5,7 @@ Have you ever had a test fail, and then you re-run it, only for the test to magi
 
 Any test can be flaky, but because Hypothesis runs your test many times, Hypothesis tests are particularly likely to uncover flaky behavior.
 
-Note that Hypothesis does not require tests to be fully deterministic. Only the sequence of calls to Hypothesis APIs like ``draw`` from |st.composite| and the outcome of the test (pass or fail) need to be deterministic. This means you can use randomness, threads, or nondeterminism in your test, as long as it doesn't impact anything Hypothesis can see. We jokingly call this requirement "morally deterministic".
+Note that Hypothesis does not require tests to be fully deterministic. Only the sequence of calls to Hypothesis APIs like ``draw`` from |st.composite| and the outcome of the test (pass or fail) need to be deterministic. This means you can use randomness, threads, or nondeterminism in your test, as long as it doesn't impact anything Hypothesis can see.
 
 Why is flakiness bad?
 ---------------------
@@ -40,7 +40,7 @@ When Hypothesis detects that a test is flaky, it will raise one of two |Flaky| e
 Flaky failure
 ~~~~~~~~~~~~~
 
-The most common form of flakiness is that Hypothesis finds a failure, but then replaying it does not reproduce that failure. For example, here is a contrived test which only fails the first time it is called:
+The most common form of flakiness is that Hypothesis finds a failure, but then replaying that input does not reproduce the failure. For example, here is a contrived test which only fails the first time it is called:
 
 .. code-block:: python
 
@@ -81,12 +81,12 @@ As a result, running ``test_fails_flakily()`` will raise |FlakyFailure|. |FlakyF
 
 The solution to seeing |FlakyFailure| is to refactor the test to not depend on external state. In this case, the external state is the variable ``called``.
 
-Flaky strategy
-~~~~~~~~~~~~~~
+Flaky strategy definition
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A more fundamental form of flakiness is if the strategy's data generation itself is flaky (or not deterministic). Since Hypothesis relies on this to replay and shrink failing inputs, it requires that data generation is not flaky.
+Each strategy must 'do the same thing' (again, as seen by Hypothesis) if we replay a previously-seen input.  Failing to do so is a more subtle but equally serious form of flakiness, which leaves us unable to shrink to a minimal failing input, or even reliably report the failure in future runs.
 
-One easy way for this to occur is if a strategy depends on external state. For example, this strategy generates a unique integer each iteration:
+One easy way for this to occur is if a strategy depends on external state. For example, this strategy filters out previously-generated integers, including those seen in any previous test case:
 
 .. code-block:: python
 
@@ -99,9 +99,19 @@ One easy way for this to occur is if a strategy depends on external state. For e
         seen.add(n)
         return n
 
-    @given(unique_ints())
-    def test_ints(n): ...
+    @given(unique_ints(), unique_ints())
+    def test_ints(x, y): ...
 
-By using ``seen``, this test is relying on outside state! On the first iteration where |st.integers| generates ``0``, ``unique_ints`` draws only one integer. But on the next iteration where |st.integers| generates ``0``, ``unique_ints`` draws two integers. This means data generation is not deterministic.
+By using ``seen``, this test is relying on outside state! In the first test case where |st.integers| generates ``0``, ``unique_ints`` draws only one integer. But if in the next test case |st.integers| generates ``0``, ``unique_ints`` has to draw two integers because ``0`` is already in ``seen``. This means data generation is not deterministic.
 
-As a result, running ``test_ints()`` will raise |FlakyStrategyDefinition|. The solution is to refactor the strategy to not depend on external state. One way to do this is using |st.shared|.
+As a result, running ``test_ints()`` will raise |FlakyStrategyDefinition|. The solution is to refactor the strategy to not depend on external state. One way to do this is using |st.shared|:
+
+.. code-block:: python
+
+    @st.composite
+    def unique_ints(draw):
+        seen_this_test = draw(st.shared(st.builds(set), key="seen_ints"))
+        while (n := draw(st.integers())) in seen_this_test:
+            pass
+        seen_this_test.add(n)
+        return n

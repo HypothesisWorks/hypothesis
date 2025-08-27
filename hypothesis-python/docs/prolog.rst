@@ -198,3 +198,5 @@
 .. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
 .. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
 .. |NewType| replace:: :class:`python:typing.NewType`
+
+.. |pytest.mark.parametrize| replace:: :ref:`pytest.mark.parametrize <pytest:pytest.mark.parametrize ref>`
