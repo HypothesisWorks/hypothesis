@@ -740,6 +740,33 @@ def test_redistribute_numeric_pairs_shrink_towards_explicit_float(start, invert)
     assert shrinker.choices == (0, target)
 
 
+@pytest.mark.parametrize(
+    "shrink_towards, start",
+    [
+        (5, (2, 10.0)),
+        (5, (2, 4.0)),
+        (5, (8, 10.0)),
+        (5, (5, 5.0)),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_combined(
+    shrink_towards, start
+):
+    # test case for one integer and one float draw. No `invert` parametrization
+    # because it moderately complicates things
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(shrink_towards=shrink_towards)
+        v2 = data.draw_float()
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
 @given(st.data(), st.integers(), st.integers())
 def test_redistribute_numeric_pairs_shrink_towards_integer(
     data, target, shrink_towards
