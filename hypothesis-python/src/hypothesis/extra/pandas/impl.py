@@ -627,7 +627,7 @@ def data_frames(
             if columns_without_fill:
                 seen = {c.name: set() for c in columns_without_fill if c.unique}
 
-                for i in range(len(index)):
+                for _ in range(len(index)):
                     for c in columns_without_fill:
                         if c.unique:
                             for _ in range(5):
