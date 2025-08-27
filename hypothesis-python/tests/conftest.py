@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from hypothesis import is_hypothesis_test
+from hypothesis import is_hypothesis_test, settings
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.compat import add_note
@@ -36,10 +36,11 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 10):
-    collect_ignore_glob.append("cover/*py310*")
-if sys.version_info < (3, 12):
-    collect_ignore_glob.append("cover/*py312*.py")
+# this checks up until py319
+for minor_increment in range(10):
+    minor = 10 + minor_increment
+    if sys.version_info < (3, minor):
+        collect_ignore_glob.append(f"cover/*py3{minor}*.py")
 
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
@@ -99,75 +100,81 @@ except ImportError:
     pass
 
 
-@pytest.fixture(scope="function", autouse=True)
-def _consistently_increment_time(monkeypatch):
-    """Rather than rely on real system time we monkey patch time.time so that
-    it passes at a consistent rate between calls.
+# monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests
+# if we define this.
+if settings._current_profile != "threading":
 
-    The reason for this is that when these tests run in CI, their performance is
-    extremely variable and the VM the tests are on might go to sleep for a bit,
-    introducing arbitrary delays. This can cause a number of tests to fail
-    flakily.
+    @pytest.fixture(scope="function", autouse=True)
+    def _consistently_increment_time(monkeypatch):
+        """Rather than rely on real system time we monkey patch time.time so that
+        it passes at a consistent rate between calls.
 
-    Replacing time with a fake version under our control avoids this problem.
-    """
-    frozen = False
+        The reason for this is that when these tests run in CI, their performance is
+        extremely variable and the VM the tests are on might go to sleep for a bit,
+        introducing arbitrary delays. This can cause a number of tests to fail
+        flakily.
 
-    current_time = time_module.time()
+        Replacing time with a fake version under our control avoids this problem.
+        """
+        frozen = False
 
-    def time():
-        nonlocal current_time
-        if not frozen:
-            current_time += TIME_INCREMENT
-        return current_time
+        current_time = time_module.time()
 
-    def sleep(naptime):
-        nonlocal current_time
-        current_time += naptime
+        def time():
+            nonlocal current_time
+            if not frozen:
+                current_time += TIME_INCREMENT
+            return current_time
 
-    def freeze():
-        nonlocal frozen
-        frozen = True
+        def sleep(naptime):
+            nonlocal current_time
+            current_time += naptime
 
-    def _patch(name, fn):
-        monkeypatch.setattr(time_module, name, wraps(getattr(time_module, name))(fn))
-
-    _patch("time", time)
-    _patch("monotonic", time)
-    _patch("perf_counter", time)
-    _patch("sleep", sleep)
-    monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
-
-    # In the patched time regime, observing it causes it to increment. To avoid reintroducing
-    # non-determinism due to GC running at arbitrary times, we patch the GC observer
-    # to NOT increment time.
-
-    monkeypatch.setattr(junkdrawer, "_perf_counter", time)
-
-    if hasattr(gc, "callbacks"):
-        # ensure timer callback is added, then bracket it by freeze/unfreeze below
-        junkdrawer.gc_cumulative_time()
-
-        _was_frozen = False
-
-        def _freezer(*_):
-            nonlocal _was_frozen, frozen
-            _was_frozen = frozen
+        def freeze():
+            nonlocal frozen
             frozen = True
 
-        def _unfreezer(*_):
-            nonlocal _was_frozen, frozen
-            frozen = _was_frozen
+        def _patch(name, fn):
+            monkeypatch.setattr(
+                time_module, name, wraps(getattr(time_module, name))(fn)
+            )
 
-        gc.callbacks.insert(0, _freezer)  # freeze before gc callback
-        gc.callbacks.append(_unfreezer)  # unfreeze after
+        _patch("time", time)
+        _patch("monotonic", time)
+        _patch("perf_counter", time)
+        _patch("sleep", sleep)
+        monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
 
-        yield
+        # In the patched time regime, observing it causes it to increment. To avoid reintroducing
+        # non-determinism due to GC running at arbitrary times, we patch the GC observer
+        # to NOT increment time.
 
-        assert gc.callbacks.pop(0) == _freezer
-        assert gc.callbacks.pop() == _unfreezer
-    else:  # pragma: no cover # branch never taken in CPython
-        yield
+        monkeypatch.setattr(junkdrawer, "_perf_counter", time)
+
+        if hasattr(gc, "callbacks"):
+            # ensure timer callback is added, then bracket it by freeze/unfreeze below
+            junkdrawer.gc_cumulative_time()
+
+            _was_frozen = False
+
+            def _freezer(*_):
+                nonlocal _was_frozen, frozen
+                _was_frozen = frozen
+                frozen = True
+
+            def _unfreezer(*_):
+                nonlocal _was_frozen, frozen
+                frozen = _was_frozen
+
+            gc.callbacks.insert(0, _freezer)  # freeze before gc callback
+            gc.callbacks.append(_unfreezer)  # unfreeze after
+
+            yield
+
+            assert gc.callbacks.pop(0) == _freezer
+            assert gc.callbacks.pop() == _unfreezer
+        else:  # pragma: no cover # branch never taken in CPython
+            yield
 
 
 random_states_after_tests = {}
@@ -185,7 +192,12 @@ def pytest_runtest_call(item):
         return
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
-    if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
+    if (
+        not (hasattr(item, "obj") and is_hypothesis_test(item.obj))
+        # we disable this check on the threading job, due to races in the global
+        # state.
+        or settings._current_profile == "threading"
+    ):
         outcome = yield
     elif "pytest_randomly" in sys.modules:
         # See https://github.com/HypothesisWorks/hypothesis/issues/3041 - this

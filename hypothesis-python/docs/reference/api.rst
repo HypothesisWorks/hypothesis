@@ -227,10 +227,16 @@ Hypothesis exceptions
 Custom exceptions raised by Hypothesis.
 
 .. autoclass:: hypothesis.errors.HypothesisException
+.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
+.. autoclass:: hypothesis.errors.Flaky
+.. autoclass:: hypothesis.errors.FlakyStrategyDefinition
+.. autoclass:: hypothesis.errors.FlakyFailure
+.. autoclass:: hypothesis.errors.FlakyBackendFailure
 .. autoclass:: hypothesis.errors.InvalidArgument
 .. autoclass:: hypothesis.errors.ResolutionFailed
 .. autoclass:: hypothesis.errors.Unsatisfiable
 .. autoclass:: hypothesis.errors.DidNotReproduce
+.. autoclass:: hypothesis.errors.DeadlineExceeded
 
 .. _hypothesis-django:
 
@@ -440,7 +446,7 @@ Use with external fuzzers
 .. tip::
 
     | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
-    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs without more tests!
+    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs with the same tests!
 
 Sometimes, you might want to point a traditional fuzzer such as `python-afl <https://github.com/jwilk/python-afl>`__, :pypi:`pythonfuzz`, or Google's :pypi:`atheris` (for Python *and* native extensions) at your code. Wouldn't it be nice if you could use any of your |@given| tests as fuzz targets, instead of converting bytestrings into your objects by hand?
 
@@ -476,7 +482,7 @@ Note that the interpretation of both input and output bytestrings is specific to
 Interaction with settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``fuzz_one_input`` uses just enough of Hypothesis' internals to drive your test function with a fuzzer-provided bytestring, and most settings therefore have no effect in this mode.  We recommend running your tests the usual way before fuzzing to get the benefits of healthchecks, as well as afterwards to replay, shrink, deduplicate, and report whatever errors were discovered.
+``fuzz_one_input`` uses just enough of Hypothesis' internals to drive your test function with a fuzzer-provided bytestring, and most settings therefore have no effect in this mode.  We recommend running your tests the usual way before fuzzing to get the benefits of health checks, as well as afterwards to replay, shrink, deduplicate, and report whatever errors were discovered.
 
 - The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode - adding failures to the database to be replayed when you next run your tests is our preferred reporting mechanism and response to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
 - The :obj:`~hypothesis.settings.verbosity` and :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.

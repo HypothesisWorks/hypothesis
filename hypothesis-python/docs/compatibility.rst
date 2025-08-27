@@ -1,13 +1,8 @@
-=============
 Compatibility
 =============
 
-Hypothesis does its level best to be compatible with everything you could
-possibly need it to be compatible with. Generally you should just try it and
-expect it to work. If it doesn't, you can be surprised and check this document
-for the details.
+Hypothesis generally does its level best to be compatible with everything you could need it to be compatible with. This document outlines our compatibility status and guarantees.
 
--------------------
 Hypothesis versions
 -------------------
 
@@ -16,7 +11,7 @@ Backwards compatibility is better than backporting fixes, so we use
 version of Hypothesis.
 
 Documented APIs will not break except between major version bumps.
-All APIs mentioned in this documentation are public unless explicitly
+All APIs mentioned in the Hypothesis documentation are public unless explicitly
 noted as provisional, in which case they may be changed in minor releases.
 Undocumented attributes, modules, and behaviour may include breaking
 changes in patch releases.
@@ -24,89 +19,98 @@ changes in patch releases.
 
 .. _deprecation-policy:
 
-------------
 Deprecations
 ------------
 
-Deprecated features will emit warnings for at least six
-months, and then be removed in the following major release.
+Deprecated features will emit |HypothesisDeprecationWarning| for at least six months, and then be removed in the following major release.
 
-Note however that not all warnings are subject to this grace period;
-sometimes we strengthen validation by adding a warning and these may
-become errors immediately at a major release.
+Note however that not all warnings are subject to this grace period; sometimes we strengthen validation by adding a warning, and these may become errors immediately at a major release.
 
-We use custom exception and warning types, so you can see
-exactly where an error came from, or turn only our warnings into errors.
+We use custom exception and warning types, so you can see exactly where an error came from, or turn only our warnings into errors.
 
-.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
-
-
----------------
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython 3.9+, i.e.
-`all versions of CPython with upstream support <https://devguide.python.org/versions/>`_,
-along with PyPy for the same versions.
+Hypothesis is supported and tested on CPython and PyPy 3.9+, i.e. all Python versions `that are still supported <https://devguide.python.org/versions/>`_.
 32-bit builds of CPython also work, though we only test them on Windows.
 
-In general Hypothesis does not officially support anything except the latest
-patch release of any version of Python it supports. Earlier releases should work
-and bugs in them will get fixed if reported, but they're not tested in CI and
-no guarantees are made.
+Hypothesis does not officially support anything except the latest patch release of each supported Python version. We will fix bugs in earlier patch releases if reported, but they're not tested in CI and no guarantees are made.
 
------------------
 Operating systems
 -----------------
 
-In theory Hypothesis should work anywhere that Python does. In practice it is
-only known to work and regularly tested on OS X, Windows and Linux, and you may
-experience issues running it elsewhere.
+In theory, Hypothesis should work anywhere that Python does. In practice, it is
+known to work and regularly tested on macOS, Windows, Linux, and `Emscripten <https://peps.python.org/pep-0776/>`_.
 
-If you're using something else and it doesn't work, do get in touch and I'll try
-to help, but unless you can come up with a way for me to run a CI server on that
-operating system it probably won't stay fixed due to the inevitable march of time.
+If you experience issues running Hypothesis on other operating systems, we are
+happy to accept bug reports which either clearly point to the problem or contain
+reproducing instructions for a Hypothesis maintainer who does not have the ability
+to run that OS. It's hard to fix something we can't reproduce!
 
 .. _framework-compatibility:
 
-------------------
 Testing frameworks
 ------------------
 
-In general Hypothesis goes to quite a lot of effort to generate things that
-look like normal Python test functions that behave as closely to the originals
-as possible, so it should work sensibly out of the box with every test framework.
+In general, Hypothesis goes to quite a lot of effort to return a function from |@given| that behaves as closely to a normal test function as possible. This means that most things should work sensibly with most testing frameworks.
 
-If your testing relies on doing something other than calling a function and seeing
-if it raises an exception then it probably *won't* work out of the box. In particular
-things like tests which return generators and expect you to do something with them
-(e.g. nose's yield based tests) will not work. Use a decorator or similar to wrap the
-test to take this form, or ask the framework maintainer to support our
-:ref:`hooks for inserting such a wrapper later <custom-function-execution>`.
+Maintainers of testing frameworks may be interested in our support for :ref:`custom function execution <custom-function-execution>`, which may make some Hypothesis interactions possible to support.
 
-In terms of what's actually *known* to work:
+pytest
+~~~~~~
 
-* Hypothesis integrates as smoothly with pytest and unittest as we can make it,
-  and this is verified as part of the CI.
-* :pypi:`pytest` fixtures work in the usual way for tests that have been decorated
-  with |@given| - just avoid passing a strategy for
-  each argument that will be supplied by a fixture.  However, function-scoped fixtures
-  will run only once for the whole function, not per example. To proactively warn you about
-  this case, we raise |HealthCheck.function_scoped_fixture|, unless suppressed with
-  |settings.suppress_health_check|.
-* The :func:`python:unittest.mock.patch` decorator works with
-  |@given|, but we recommend using it as a context
-  manager within the decorated test to ensure that the mock is per-test-case
-  and avoid poor interactions with Pytest fixtures.
-* Nose works fine with Hypothesis, and this is tested as part of the CI. ``yield`` based
-  tests simply won't work.
-* Integration with Django's testing requires use of the :ref:`hypothesis-django` extra.
-  The issue is that in Django's tests' normal mode of execution it will reset the
-  database once per test rather than once per example, which is not what you want.
-* :pypi:`coverage` works out of the box with Hypothesis; our own test suite has
-  100% branch coverage.
+The main interaction to be aware of between Hypothesis and :pypi:`pytest` is fixtures.
 
------------------
+pytest fixtures are automatically passed to |@given| tests, as usual. Note that |@given| supplies parameters from the right, so tests which use a fixture should either be written with the fixture placed first, or with keyword arguments:
+
+.. code-block:: python
+
+  @given(st.integers())
+  def test_use_fixture(myfixture, n):
+      pass
+
+  @given(n=st.integers())
+  def test_use_fixture(n, myfixture):
+      pass
+
+However, function-scoped fixtures run only once for the entire test, not per-input. This can be surprising for fixtures which are expected to set up per-input state. To proactively warn about this, we raise |HealthCheck.function_scoped_fixture| (unless suppressed with |settings.suppress_health_check|).
+
+Combining |@given| and |pytest.mark.parametrize| is fully supported, again keeping in mind that |@given| supplies parameters from the right:
+
+.. code-block:: python
+
+  @pytest.mark.parametrize("s", ["a", "b", "c"])
+  @given(st.integers())
+  def test_use_parametrize(s, n):
+      assert isinstance(s, str)
+      assert isinstance(n, int)
+
+unittest
+~~~~~~~~
+
+:pypi:`unittest` works out of the box with Hypothesis.
+
+The :func:`python:unittest.mock.patch` decorator works with |@given|, but we recommend using it as a context manager within the test instead, to ensure that the mock is per-input, and to avoid poor interactions with Pytest fixtures.
+
+:meth:`unittest.TestCase.subTest` is a no-op under Hypothesis, because it interacts poorly with Hypothesis generating hundreds of inputs at a time.
+
+Django
+~~~~~~
+
+Integration with Django's testing requires use of the :ref:`hypothesis-django` extra. The issue is that Django tests reset the database once per test, rather than once per input.
+
+:pypi:`pytest-django` doesn't yet implement Hypothesis compatibility. You can follow issue `pytest-django#912 <https://github.com/pytest-dev/pytest-django/issues/912>`_ for updates.
+
+coverage.py
+~~~~~~~~~~~
+
+:pypi:`coverage` works out of the box with Hypothesis. Our own test suite has 100% branch coverage.
+
+HypoFuzz
+~~~~~~~~
+
+`HypoFuzz <https://hypofuzz.com/>`_ is built on top of Hypothesis and has native support for it. See also the ``hypofuzz`` |alternative backend|.
+
 Optional packages
 -----------------
 
@@ -117,23 +121,33 @@ all versions that are supported upstream.
 
 .. _thread-safety-policy:
 
---------------------
 Thread-Safety Policy
 --------------------
 
-As discussed in :issue:`2719`, Hypothesis is not truly thread-safe and that's unlikely to change in the future.  This policy therefore describes what you *can* expect if you use Hypothesis with multiple threads.
+As of :version:`6.136.9`, Hypothesis is thread-safe. Each of the following is fully supported, and tested regularly in CI:
 
-**Running tests in multiple processes**, e.g. with ``pytest -n auto``, is fully supported and we test this regularly in CI - thanks to process isolation, we only need to ensure that :class:`~hypothesis.database.DirectoryBasedExampleDatabase` can't tread on its own toes too badly.  If you find a bug here we will fix it ASAP.
+* Running tests in multiple processes
+* Running separate tests in multiple threads
+* Running the same test in multiple threads
 
-**Running separate tests in multiple threads** is not something we design or test for, and is not formally supported.  That said, anecdotally it does mostly work and we would like it to keep working - we accept reasonable patches and low-priority bug reports.  The main risks here are global state, shared caches, and cached strategies.
+If you find a bug here, please report it. The main risks internally are global state, shared caches, and cached strategies.
 
-**Running the same test in multiple threads**, or using multiple threads within the same test, makes it pretty easy to trigger internal errors.  We usually accept patches for such issues unless readability or single-thread performance suffer.
+Thread usage inside tests
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis assumes that tests are single-threaded, or do a sufficiently-good job of pretending to be single-threaded.  Tests that use helper threads internally should be OK, but the user must be careful to ensure that test outcomes are still deterministic. In particular it counts as nondeterministic if helper-thread timing changes the sequence of dynamic draws using e.g. the |st.data| strategy.
+.. TODO_DOCS: link to not-yet-merged flaky failure tutorial page
 
-Interacting with any Hypothesis APIs from helper threads might do weird/bad things, so avoid that too - we rely on thread-local variables in a few places, and haven't explicitly tested/audited how they respond to cross-thread API calls.  While |st.data| and equivalents are the most obvious danger, other APIs might also be subtly affected.
+Tests that spawn threads internally are supported by Hypothesis.
 
-----------
+However, these as with any Hypothesis test, these tests must have deterministic test outcomes and data generation. For example, if timing changes in the threads change the sequence of dynamic draws from |st.composite| or |st.data|, Hypothesis may report the test as flaky. The solution here is to refactor data generation so it does not depend on test timings.
+
+Cross-thread API calls
+~~~~~~~~~~~~~~~~~~~~~~
+
+In theory, Hypothesis supports cross-thread API calls, for instance spawning a thread inside of a test and using that to draw from |st.composite| or |st.data|, or to call |event|, |target|, or |assume|.
+
+However, we have not explicitly audited this behavior, and do not regularly test it in our CI. If you find a bug here, please report it. If our investigation determines that we cannot support cross-thread calls for the feature in question, we will update this page accordingly.
+
 Type hints
 ----------
 

@@ -7,23 +7,19 @@
     </div>
   </div>
 
-  <div class="article-card__meta">
-    <div class="article-card-meta">
-
-      <div class="article-card-meta__item">
-        <span class="article-card-meta__value" title="{{ article.date.isoformat() }}">
-          {{ article.date.strftime('%B %d, %Y') }}
-        </span>
-      </div>
-
-      {% if article.author %}
-      <span class="article-card-meta__separator">•</span>
-      <div class="article-card-meta__item">
-        <span class="article-card-meta__value">{{ article.author }}</span>
-      </div>
-      {% endif %}
-
+  <div class="article-card-meta">
+    <div class="article-card-meta__item">
+      <span class="article-card-meta__value" title="{{ article.date.isoformat() }}">
+        {{ article.date.strftime('%B %d, %Y') }}
+      </span>
     </div>
+
+    {% if article.author %}
+    <span class="article-card-meta__separator">•</span>
+    <div class="article-card-meta__item">
+      <span class="article-card-meta__value">{{ article.author }}</span>
+    </div>
+    {% endif %}
   </div>
 
   <div class="article-card__content">

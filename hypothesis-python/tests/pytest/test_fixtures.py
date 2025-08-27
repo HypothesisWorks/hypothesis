@@ -15,7 +15,7 @@ import pytest
 from hypothesis import example, given
 from hypothesis.strategies import integers
 
-from tests.common.utils import fails
+from tests.common.utils import fails, skipif_threading
 
 pytest_plugins = "pytester"
 
@@ -121,6 +121,7 @@ settings.register_profile(
 """
 
 
+@skipif_threading
 def test_suppress_fixture_health_check_via_profile(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.makeconftest(CONFTEST_SUPPRESS)

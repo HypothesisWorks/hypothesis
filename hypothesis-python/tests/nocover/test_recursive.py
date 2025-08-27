@@ -10,14 +10,13 @@
 
 import sys
 import threading
-import warnings
 
 import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import Why, flaky, xfail_on_crosshair
+from tests.common.utils import Why, flaky, xfail_if_gil_disabled, xfail_on_crosshair
 
 
 def test_can_generate_with_large_branching():
@@ -123,7 +122,6 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(
         st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20
     )
-
     errors = []
 
     @settings(
@@ -136,28 +134,17 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
         except Exception as exc:
             errors.append(exc)
 
-    threads = []
-
     original_recursionlimit = sys.getrecursionlimit()
+    threads = []
+    for _ in range(4):
+        threads.append(threading.Thread(target=test))
 
-    # We may get a warning here about not resetting recursionlimit,
-    # since it was changed during execution; ignore it.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
-        for _ in range(4):
-            threads.append(threading.Thread(target=test))
-
-        for thread in threads:
-            thread.start()
-
-        for thread in threads:
-            thread.join()
-
-    # Cleanup: reset the recursion limit that was (probably) not reset
-    # automatically in the threaded test.
-    sys.setrecursionlimit(original_recursionlimit)
-
+    assert sys.getrecursionlimit() == original_recursionlimit
     assert not errors
 
 
@@ -174,6 +161,7 @@ def test_self_ref_regression(_):
     pass
 
 
+@xfail_if_gil_disabled
 @flaky(min_passes=1, max_runs=2)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):
     # We were concerned in #3979 that we might see bad results from a RecursionError

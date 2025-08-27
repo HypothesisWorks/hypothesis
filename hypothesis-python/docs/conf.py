@@ -14,6 +14,9 @@ import sys
 import types
 from pathlib import Path
 
+from docutils import nodes
+from sphinx.util.docutils import SphinxRole
+
 root = Path(__file__).parent.parent
 sys.path.append(str(root / "src"))
 sys.path.append(str(Path(__file__).parent / "_ext"))
@@ -87,6 +90,22 @@ version = _d["__version__"]
 release = _d["__version__"]
 
 
+# custom role for version syntaxes.
+# :v:`6.131.0`       = [v6.131.0](changelog.html#v6.13.0)
+# :version:`6.131.0` = [version 6.131.0](changelog.html#v6.13.0)
+class VersionRole(SphinxRole):
+    def __init__(self, prefix):
+        self.prefix = prefix
+
+    def run(self):
+        node = nodes.reference(
+            "",
+            f"{self.prefix}{self.text}",
+            refuri=f"changelog.html#v{self.text.replace('.', '-')}",
+        )
+        return [node], []
+
+
 def setup(app):
     if root.joinpath("RELEASE.rst").is_file():
         app.tags.add("has_release_file")
@@ -131,6 +150,8 @@ def setup(app):
         return signature, return_annotation
 
     app.connect("autodoc-process-signature", process_signature)
+    app.add_role("v", VersionRole(prefix="v"))
+    app.add_role("version", VersionRole(prefix="version "))
 
 
 language = "en"

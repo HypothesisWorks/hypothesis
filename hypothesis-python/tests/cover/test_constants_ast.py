@@ -17,7 +17,7 @@ from types import ModuleType
 
 import pytest
 
-from hypothesis import example, given, note, strategies as st
+from hypothesis import example, given, note, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
@@ -29,7 +29,7 @@ from hypothesis.internal.constants_ast import (
     is_local_module_file,
 )
 
-from tests.common.utils import skipif_emscripten
+from tests.common.utils import skipif_emscripten, skipif_threading
 
 constant_ints = st.integers(max_value=-101) | st.integers(min_value=101)
 constant_floats = st.floats(allow_nan=False, allow_infinity=False)
@@ -143,7 +143,13 @@ def test_frozenset_constants(value):
     assert set(constants_from_ast(tree)) == set(value)
 
 
+@skipif_threading
 @skipif_emscripten
+@pytest.mark.xfail(
+    condition=settings._current_profile != "ci",
+    strict=False,
+    reason="Requires clean environment",
+)
 def test_constants_from_running_file(tmp_path):
     p = tmp_path / "my_constants.py"
     p.write_text(
@@ -220,6 +226,7 @@ def test_local_modules_ignores_test_modules(path):
     assert not is_local_module_file(path)
 
 
+@skipif_threading
 @pytest.mark.skipif(PYPY, reason="no memory error on pypy")
 def test_ignores_ast_parse_error(tmp_path):
     p = tmp_path / "errors_on_parse.py"
@@ -284,6 +291,7 @@ def test_too_many_constants():
     )
 
 
+@skipif_threading  # concurrent writes to the same file
 def test_module_too_large(tmp_path):
     constant = 11231783
 

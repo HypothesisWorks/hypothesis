@@ -172,13 +172,13 @@ def test_recursion_validates_recursive_step():
 
 @fails_with(InvalidArgument)
 @given(x=integers())
-def test_stuff_keyword(x=1):
+def test_stuff_keyword(x=1):  # noqa: PT028
     pass
 
 
 @fails_with(InvalidArgument)
 @given(integers())
-def test_stuff_positional(x=1):
+def test_stuff_positional(x=1):  # noqa: PT028
     pass
 
 

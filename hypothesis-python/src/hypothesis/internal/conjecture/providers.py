@@ -362,9 +362,9 @@ class PrimitiveProvider(abc.ABC):
     avoid_realization: ClassVar[bool] = False
 
     #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
-    #: callback to |TESTCASE_CALLBACKS|, enabling observability during the lifetime
-    #: of this provider. If ``False``, |PrimitiveProvider.on_observation| will
-    #: never be called by Hypothesis.
+    #: callback via |add_observability_callback|, enabling observability during
+    # the lifetime of this provider. If ``False``, |PrimitiveProvider.on_observation|
+    #: will never be called by Hypothesis.
     #:
     #: The opt-in behavior of observability is because enabling observability
     #: might increase runtime or memory usage.
@@ -562,8 +562,9 @@ class PrimitiveProvider(abc.ABC):
         """
         Called at the end of each test case which uses this provider, with the same
         ``observation["type"] == "test_case"`` observation that is passed to
-        other callbacks in |TESTCASE_CALLBACKS|. This method is not called with
-        ``observation["type"] in {"info", "alert", "error"}`` observations.
+        other callbacks added via |add_observability_callback|. This method is not
+        called with ``observation["type"] in {"info", "alert", "error"}``
+        observations.
 
         .. important::
 
@@ -651,7 +652,7 @@ class PrimitiveProvider(abc.ABC):
         internally.
         """
 
-    def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
+    def span_end(self, discard: bool, /) -> None:  # noqa: B027
         """Marks the end of a semantically meaningful span of choices.
 
         ``discard`` is ``True`` when the draw was filtered out or otherwise marked

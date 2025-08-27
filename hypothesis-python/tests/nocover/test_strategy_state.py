@@ -34,8 +34,6 @@ from hypothesis.strategies import (
     tuples,
 )
 
-AVERAGE_LIST_LENGTH = 2
-
 
 class HypothesisSpec(RuleBasedStateMachine):
     def __init__(self):

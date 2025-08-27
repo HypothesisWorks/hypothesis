@@ -137,7 +137,7 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
             try:
                 pretty = black.format_str(
                     cst.Module([]).code_for_node(via),
-                    mode=black.FileMode(line_length=self.line_length),
+                    mode=black.Mode(line_length=self.line_length),
                 )
             except (ImportError, AttributeError):  # pragma: no cover
                 return None  # See https://github.com/psf/black/pull/4224

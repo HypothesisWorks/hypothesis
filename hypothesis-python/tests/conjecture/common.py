@@ -12,6 +12,7 @@ import math
 import sys
 from contextlib import contextmanager
 from random import Random
+from threading import RLock
 from typing import Optional
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
@@ -34,11 +35,6 @@ from hypothesis.internal.intervalsets import IntervalSet
 SOME_LABEL = calc_label_from_name("some label")
 
 
-TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
-)
-
-
 def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
     """
     Creates and returns an InterestingOrigin, parameterized by n, such that
@@ -57,7 +53,12 @@ def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
 
 def run_to_data(f):
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=300, database=None, suppress_health_check=list(HealthCheck)
+            ),
+        )
         runner.run()
         assert runner.interesting_examples
         (last_data,) = runner.interesting_examples.values()
@@ -68,14 +69,18 @@ def run_to_nodes(f):
     return run_to_data(f).nodes
 
 
+_buffer_size_lock = RLock()
+
+
 @contextmanager
 def buffer_size_limit(n):
-    original = engine_module.BUFFER_SIZE
-    try:
-        engine_module.BUFFER_SIZE = n
-        yield
-    finally:
-        engine_module.BUFFER_SIZE = original
+    with _buffer_size_lock:
+        original = engine_module.BUFFER_SIZE
+        try:
+            engine_module.BUFFER_SIZE = n
+            yield
+        finally:
+            engine_module.BUFFER_SIZE = original
 
 
 def shrinking_from(start):

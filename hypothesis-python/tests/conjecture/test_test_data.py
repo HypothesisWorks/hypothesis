@@ -65,7 +65,7 @@ def test_notes_repr():
 def test_can_mark_interesting():
     d = ConjectureData.for_choices([])
     with pytest.raises(StopTest):
-        d.mark_interesting()
+        d.mark_interesting(interesting_origin())
     assert d.frozen
     assert d.status == Status.INTERESTING
 
@@ -141,7 +141,7 @@ def test_triviality():
 def test_example_depth_marking():
     d = ConjectureData.for_choices((0,) * 6)
     d.draw(st.integers())  # v1
-    d.start_span("inner")
+    d.start_span(0)
     d.draw(st.integers())  # v2
     d.draw(st.integers())  # v3
     d.stop_span()

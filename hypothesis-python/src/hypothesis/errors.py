@@ -61,8 +61,14 @@ class ChoiceTooLarge(HypothesisException):
 
 
 class Flaky(_Trimmable):
-    """Base class for indeterministic failures. Usually one of the more
-    specific subclasses (FlakyFailure or FlakyStrategyDefinition) is raised."""
+    """
+    Base class for indeterministic failures. Usually one of the more
+    specific subclasses (|FlakyFailure| or |FlakyStrategyDefinition|) is raised.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
+    """
 
 
 class FlakyReplay(Flaky):
@@ -80,12 +86,17 @@ class FlakyReplay(Flaky):
 
 
 class FlakyStrategyDefinition(Flaky):
-    """This function appears to cause inconsistent data generation.
+    """
+    This function appears to cause inconsistent data generation.
 
     Common causes for this problem are:
         1. The strategy depends on external state. e.g. it uses an external
            random number generator. Try to make a version that passes all the
            relevant state in from Hypothesis.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
 
@@ -94,7 +105,8 @@ class _WrappedBaseException(Exception):
 
 
 class FlakyFailure(ExceptionGroup, Flaky):
-    """This function appears to fail non-deterministically: We have seen it
+    """
+    This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
     did not fail, or caused a distinct error.
 
@@ -107,6 +119,10 @@ class FlakyFailure(ExceptionGroup, Flaky):
         3. The function is timing sensitive and can fail or pass depending on
            how long it takes. Try breaking it up into smaller functions which
            don't do that and testing those instead.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
     def __new__(cls, msg, group):
@@ -121,6 +137,23 @@ class FlakyFailure(ExceptionGroup, Flaky):
                 err.__cause__ = err.__context__ = exc
                 group[i] = err
         return ExceptionGroup.__new__(cls, msg, group)
+
+    # defining `derive` is required for `split` to return an instance of FlakyFailure
+    # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
+    # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
+    def derive(self, excs):
+        return type(self)(self.message, excs)
+
+
+class FlakyBackendFailure(FlakyFailure):
+    """
+    A failure was reported by an |alternative backend|,
+    but this failure did not reproduce when replayed under the Hypothesis backend.
+
+    When an alternative backend reports a failure, Hypothesis first replays it
+    under the standard Hypothesis backend to check for flakiness. If the failure
+    does not reproduce, Hypothesis raises this exception.
+    """
 
 
 class InvalidArgument(_Trimmable, TypeError):
@@ -151,7 +184,7 @@ class HypothesisWarning(HypothesisException, Warning):
 
 
 class FailedHealthCheck(_Trimmable):
-    """Raised when a test fails a healthcheck."""
+    """Raised when a test fails a health check. See |HealthCheck|."""
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
@@ -166,7 +199,7 @@ class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
     Actually inherits from FutureWarning, because DeprecationWarning is
     hidden by the default warnings filter.
 
-    You can configure the Python :mod:`python:warnings` to handle these
+    You can configure the :mod:`python:warnings` module to handle these
     warnings differently to others, either turning them into errors or
     suppressing them entirely.  Obviously we would prefer the former!
     """
@@ -202,7 +235,10 @@ def __getattr__(name: str) -> Any:
 
 
 class DeadlineExceeded(_Trimmable):
-    """Raised when an individual test body has taken too long to run."""
+    """
+    Raised when an input takes too long to run, relative to the |settings.deadline|
+    setting.
+    """
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(

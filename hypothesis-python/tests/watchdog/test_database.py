@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import math
 import sys
 import time
 from collections import Counter
@@ -21,25 +20,49 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.compat import WINDOWS
 
-from tests.common.utils import flaky
+from tests.common.utils import skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
+
+# e.g.
+# * FAILED hypothesis-python/tests/watchdog/test_database.py::
+#   test_database_listener_multiplexed -
+#   Exception: timing out after waiting 60s for condition lambda: events ==
+#   [("save", (b"a", b"a"))] * 2
+# * FAILED hypothesis-python/tests/watchdog/test_database.py::
+#   test_still_listens_if_directory_did_not_exist -
+#   Exception: timing out after waiting 60s for condition lambda: len(events) == 1
+#
+# It seems possible the failures are correlated on windows (ie if one db test fails,
+# another is more likely to). I suspect a watchdog or windows issue: possibly a
+# change handler is not being registered by watchdog correctly, or is registered
+# too late, or... . A timeout of 60 not firing means it's unlikely "the machine is
+# slow and takes a while to fire the event" is the problem here.
+#
+# It seems watchdog CI also has a similar problem:
+# * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
+# * cmd+f `def rerun_filter` in the watchdog repository
+pytestmark = pytest.mark.skipif(
+    WINDOWS, reason="watchdog tests are too flaky on windows"
+)
+
 
 # we need real time here, not monkeypatched for CI
 time_sleep = time.sleep
 
 
 def test_database_listener_directory():
-    # this test is very expensive because we wait between every rule for the
-    # filesystem observer to fire. Limit examples/step count as much as possible.
     _database_conforms_to_listener_api(
         lambda path: DirectoryBasedExampleDatabase(path),
-        flush=lambda _db: time_sleep(0.2),
         supports_value_delete=False,
-        # expensive flush makes shrinking take forever
         parent_settings=settings(
-            max_examples=5, stateful_step_count=10, phases=set(Phase) - {Phase.shrink}
+            # this test is very expensive because we wait between every rule for
+            # the filesystem observer to fire.
+            max_examples=5,
+            stateful_step_count=10,
+            # expensive runtime makes shrinking take forever
+            phases=set(Phase) - {Phase.shrink},
         ),
     )
 
@@ -47,7 +70,7 @@ def test_database_listener_directory():
 # seen flaky on test-win; we get *three* of the same save events in the first
 # assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
-@flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -60,45 +83,34 @@ def test_database_listener_multiplexed(tmp_path):
     db.add_listener(listener)
 
     db.save(b"a", b"a")
-    time_sleep(0.2)
-    assert events == [("save", (b"a", b"a"))] * 2
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
 
     db.remove_listener(listener)
     db.delete(b"a", b"a")
     db.save(b"a", b"b")
-    time_sleep(0.2)
-    assert events == [("save", (b"a", b"a"))] * 2
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
 
     db.add_listener(listener)
     db.delete(b"a", b"b")
     db.save(b"a", b"c")
-    time_sleep(0.2)
     # InMemory database fires immediately, while DirectoryBased has to
     # wait for filesystem listeners. Therefore the events can arrive out of
     # order. Test a weaker multiset property, disregarding ordering.
-    assert Counter(events[2:]) == {
-        # InMemory
-        ("delete", (b"a", b"b")): 1,
-        # DirectoryBased
-        ("delete", (b"a", None)): 1,
-        # both
-        ("save", (b"a", b"c")): 2,
-    }
-
-
-def wait_for(condition, *, timeout=1, interval=0.01):
-    for _ in range(math.ceil(timeout / interval)):
-        if condition():
-            return
-        time_sleep(interval)
-    raise Exception(
-        f"timing out after waiting {timeout}s for condition "
-        f"{get_pretty_function_description(condition)}"
+    wait_for(
+        lambda: Counter(events[2:])
+        == {
+            # InMemory
+            ("delete", (b"a", b"b")): 1,
+            # DirectoryBased
+            ("delete", (b"a", None)): 1,
+            # both
+            ("save", (b"a", b"c")): 2,
+        },
+        timeout=60,
     )
 
 
-# seen flaky on check-coverage (timeout in first wait_for)
-@flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -109,13 +121,12 @@ def test_database_listener_directory_explicit(tmp_path):
     db.add_listener(listener)
 
     db.save(b"k1", b"v1")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))])
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
 
     db.remove_listener(listener)
     db.delete(b"k1", b"v1")
     db.save(b"k1", b"v2")
-    time_sleep(0.2)
-    assert events == [("save", (b"k1", b"v1"))]
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
 
     db.add_listener(listener)
     db.delete(b"k1", b"v2")
@@ -125,7 +136,8 @@ def test_database_listener_directory_explicit(tmp_path):
         == [
             ("delete", (b"k1", None)),
             ("save", (b"k1", b"v3")),
-        ]
+        ],
+        timeout=60,
     )
 
     # moving into a nonexistent key
@@ -168,11 +180,7 @@ def test_database_listener_directory_explicit(tmp_path):
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
 
-# seen flaky on windows CI (timeout in wait_for).
-# when this happens it seems to occur consistently within that run, so the
-# @flaky doesn't help.
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="too flaky on windows")
-@flaky(max_runs=5, min_passes=1)
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -197,10 +205,11 @@ def test_database_listener_directory_move(tmp_path):
             # windows doesn't fire move events, so value is None
             ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
         },
-        timeout=5,
+        timeout=60,
     )
 
 
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_still_listens_if_directory_did_not_exist(tmp_path):
     # if we start listening on a nonexistent path, we will create that path and
     # still listen for events
@@ -218,5 +227,4 @@ def test_still_listens_if_directory_did_not_exist(tmp_path):
 
     assert not events
     db.save(b"k1", b"v1")
-    time_sleep(0.2)
-    assert len(events) == 1
+    wait_for(lambda: len(events) == 1, timeout=60)

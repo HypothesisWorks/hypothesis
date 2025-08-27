@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import threading
 import warnings
 from collections import abc, defaultdict
 from collections.abc import Sequence
@@ -107,6 +108,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
     (2016): 224-236.
     """
+    assert name in {"is_empty", "has_reusable_values", "is_cacheable"}
     cache_key = "cached_" + name
     calculation = "calc_" + name
     force_key = "force_" + name
@@ -227,9 +229,15 @@ class SearchStrategy(Generic[Ex]):
     ``builds(Foo, ...)``.  Do not inherit from or directly instantiate this class.
     """
 
-    validate_called: bool = False
-    __label: Union[int, UniqueIdentifier, None] = None
     __module__: str = "hypothesis.strategies"
+    LABELS: ClassVar[dict[type, int]] = {}
+    # triggers `assert isinstance(label, int)` under threading when setting this
+    # in init instead of a classvar. I'm not sure why, init should be safe. But
+    # this works so I'm not looking into it further atm.
+    __label: Union[int, UniqueIdentifier, None] = None
+
+    def __init__(self):
+        self.validate_called: dict[int, bool] = {}
 
     def _available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
@@ -476,20 +484,38 @@ class SearchStrategy(Generic[Ex]):
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
 
-        This can happen due to lazy construction
+        Strategies should implement ``do_validate``, which is called by this
+        method. They should not override ``validate``.
+
+        This can happen due to invalid arguments, or lazy construction.
         """
-        if self.validate_called:
+        thread_id = threading.get_ident()
+        if self.validate_called.get(thread_id, False):
             return
+        # we need to set validate_called before calling do_validate, for
+        # recursive / deferred strategies. But if a thread switches after
+        # validate_called but before do_validate, we might have a strategy
+        # which does weird things like drawing when do_validate would error but
+        # its params are technically valid (e.g. a param was passed as 1.0
+        # instead of 1) and get into weird internal states.
+        #
+        # There are two ways to fix this.
+        # (1) The first is a per-strategy lock around do_validate. Even though we
+        #   expect near-zero lock contention, this still adds the lock overhead.
+        # (2) The second is allowing concurrent .validate calls. Since validation
+        #   is (assumed to be) deterministic, both threads will produce the same
+        #   end state, so the validation order or race conditions does not matter.
+        #
+        # In order to avoid the lock overhead of (1), we use (2) here. See also
+        # discussion in https://github.com/HypothesisWorks/hypothesis/pull/4473.
         try:
-            self.validate_called = True
+            self.validate_called[thread_id] = True
             self.do_validate()
             self.is_empty
             self.has_reusable_values
         except Exception:
-            self.validate_called = False
+            self.validate_called[thread_id] = False
             raise
-
-    LABELS: ClassVar[dict[type, int]] = {}
 
     @property
     def class_label(self) -> int:
@@ -504,16 +530,16 @@ class SearchStrategy(Generic[Ex]):
 
     @property
     def label(self) -> int:
-        if isinstance(self.__label, int):
+        if isinstance((label := self.__label), int):
             # avoid locking if we've already completely computed the label.
-            return self.__label
+            return label
 
         with label_lock:
             if self.__label is calculating:
                 return 0
             self.__label = calculating
             self.__label = self.calc_label()
-        return self.__label
+            return self.__label
 
     def calc_label(self) -> int:
         return self.class_label
@@ -525,12 +551,17 @@ class SearchStrategy(Generic[Ex]):
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
 
-def is_hashable(value: object) -> bool:
+def _is_hashable(value: object) -> tuple[bool, Optional[int]]:
+    # hashing can be expensive; return the hash value if we compute it, so that
+    # callers don't have to recompute.
     try:
-        hash(value)
-        return True
+        return (True, hash(value))
     except TypeError:
-        return False
+        return (False, None)
+
+
+def is_hashable(value: object) -> bool:
+    return _is_hashable(value)[0]
 
 
 class SampledFromStrategy(SearchStrategy[Ex]):
@@ -628,12 +659,14 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # The worst case performance of this scheme is
         # itertools.chain(range(2**100), [st.none()]), where it degrades to
         # hashing every int in the range.
-
+        (elements_is_hashable, hash_value) = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
-            is_hashable(self.elements)
+            elements_is_hashable
             and not any(isinstance(e, SearchStrategy) for e in self.elements)
         ):
-            return combine_labels(self.class_label, calc_label_from_hash(self.elements))
+            return combine_labels(
+                self.class_label, calc_label_from_name(str(hash_value))
+            )
 
         labels = [self.class_label]
         for element in self.elements:
@@ -768,6 +801,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         self.original_strategies = tuple(strategies)
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
+        self._branches_lock = RLock()
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
@@ -830,14 +864,19 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
-        if not self.__in_branches:
-            try:
-                self.__in_branches = True
-                return self.element_strategies
-            finally:
-                self.__in_branches = False
-        else:
-            return [self]
+        if self.__element_strategies is not None:
+            # common fast path which avoids the lock
+            return self.element_strategies
+
+        with self._branches_lock:
+            if not self.__in_branches:
+                try:
+                    self.__in_branches = True
+                    return self.element_strategies
+                finally:
+                    self.__in_branches = False
+            else:
+                return [self]
 
     def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return FilteredStrategy(
@@ -1142,18 +1181,24 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
     @property
     def condition(self) -> Callable[[Ex], Any]:
-        if self.__condition is None:
-            if len(self.flat_conditions) == 1:
-                # Avoid an extra indirection in the common case of only one condition.
-                self.__condition = self.flat_conditions[0]
-            elif len(self.flat_conditions) == 0:
-                # Possible, if unlikely, due to filter predicate rewriting
-                self.__condition = lambda _: True  # type: ignore # covariant type param
-            else:
-                self.__condition = lambda x: all(  # type: ignore # covariant type param
-                    cond(x) for cond in self.flat_conditions
-                )
-        return self.__condition
+        # We write this defensively to avoid any threading race conditions
+        # with our manual FilteredStrategy.__init__ for filter-rewriting.
+        # See https://github.com/HypothesisWorks/hypothesis/pull/4522.
+        if (condition := self.__condition) is not None:
+            return condition
+
+        if len(self.flat_conditions) == 1:
+            # Avoid an extra indirection in the common case of only one condition.
+            condition = self.flat_conditions[0]
+        elif len(self.flat_conditions) == 0:
+            # Possible, if unlikely, due to filter predicate rewriting
+            condition = lambda _: True  # type: ignore # covariant type param
+        else:
+            condition = lambda x: all(  # type: ignore # covariant type param
+                cond(x) for cond in self.flat_conditions
+            )
+        self.__condition = condition
+        return condition
 
     def do_draw(self, data: ConjectureData) -> Ex:
         result = self.do_filtered_draw(data)

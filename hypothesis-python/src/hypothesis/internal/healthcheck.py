@@ -18,11 +18,4 @@ def fail_health_check(settings, message, label):
 
     if label in settings.suppress_health_check:
         return
-    message += (
-        "\nSee "
-        "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
-        "for more information about this. "
-        f"If you want to disable just this health check, add {label} "
-        "to the suppress_health_check settings for this test."
-    )
     raise FailedHealthCheck(message)
