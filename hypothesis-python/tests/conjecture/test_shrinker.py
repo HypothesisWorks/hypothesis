@@ -614,10 +614,20 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     assert len(shrinker.choices) == 2
-    # we should always have lowered the first choice and raised the second choice
-    # - or left the choices the same.
-    assert shrinker.choices[0] <= node1.value
-    assert shrinker.choices[1] >= node2.value
+
+    shrink_towards = (
+        node1.constraints["shrink_towards"] if node1.type == "integer" else 0
+    )
+    # we should always have brought the first choice closer to shrink_towards,
+    # or left the choices the same. And the values should sum to where they started.
+    assert abs(shrinker.choices[0] - shrink_towards) <= abs(
+        node1.value - shrink_towards
+    )
+    assert (
+        # pytest.approx for differences in floating-point summations
+        pytest.approx(shrinker.choices[0] + shrinker.choices[1])
+        == node1.value + node2.value
+    )
 
 
 @pytest.mark.parametrize(
@@ -659,3 +669,117 @@ def test_shrinking_one_of_with_same_shape():
 
     shrinker.initial_coarse_reduction()
     assert shrinker.choices == (1, 0)
+
+
+@pytest.mark.parametrize("invert", [False, True])  # cover the negative case
+@pytest.mark.parametrize(
+    "min_value, max_value", [(None, None), (None, 15), (-15, None), (-15, 15)]
+)
+@pytest.mark.parametrize(
+    "shrink_towards, start",
+    [
+        # straddles shrink_towards
+        (5, (2, 10)),
+        # both below shrink_towards
+        (5, (2, 4)),
+        # both above shrink_towards
+        (5, (8, 10)),
+        # exactly shrink_towards
+        (5, (5, 5)),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_integer(
+    min_value, max_value, shrink_towards, start, invert
+):
+    if invert:
+        shrink_towards = -shrink_towards
+        start = (-start[1], -start[0])
+
+    # redistributing should redistribute towards shrink_towards, not 0
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(
+            shrink_towards=shrink_towards, min_value=min_value, max_value=max_value
+        )
+        v2 = data.draw_integer(
+            shrink_towards=shrink_towards, min_value=min_value, max_value=max_value
+        )
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@pytest.mark.parametrize("invert", [False, True])
+@pytest.mark.parametrize(
+    "start",
+    [
+        (2.0, 10.0),
+        (2.0, 4.0),
+        (8.0, 10.0),
+        (5.0, 5.0),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_float(start, invert):
+    if invert:
+        start = (-start[1], -start[0])
+
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_float()
+        v2 = data.draw_float()
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (0, target)
+
+
+@pytest.mark.parametrize(
+    "shrink_towards, start",
+    [
+        (5, (2, 10.0)),
+        (5, (2, 4.0)),
+        (5, (8, 10.0)),
+        (5, (5, 5.0)),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_combined(
+    shrink_towards, start
+):
+    # test case for one integer and one float draw. No `invert` parametrization
+    # because it moderately complicates things
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(shrink_towards=shrink_towards)
+        v2 = data.draw_float()
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@given(st.data(), st.integers(), st.integers())
+def test_redistribute_numeric_pairs_shrink_towards_integer(
+    data, target, shrink_towards
+):
+    start = data.draw(st.integers(max_value=target))
+    end = target - start
+
+    @shrinking_from([start, end])
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(shrink_towards=shrink_towards)
+        v2 = data.draw_integer(shrink_towards=shrink_towards)
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
