@@ -147,7 +147,7 @@ class FlakyFailure(ExceptionGroup, Flaky):
 
 class FlakyBackendFailure(FlakyFailure):
     """
-    A failure was reported by an :ref:`alternative backend <alternative-backends>`,
+    A failure was reported by an |alternative backend|,
     but this failure did not reproduce when replayed under the Hypothesis backend.
 
     When an alternative backend reports a failure, Hypothesis first replays it
