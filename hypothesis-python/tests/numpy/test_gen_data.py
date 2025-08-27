@@ -40,8 +40,8 @@ from tests.common.utils import fails_with, flaky
 from tests.numpy.helpers import (
     all_elements,
     all_scalar_object_elements,
-    dataclass_instance,
     paired_containers_and_elements,
+    dataclass_instance,
 )
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
@@ -1324,9 +1324,9 @@ def test_can_generate_object_arrays_with_mixed_dtype_elements():
         all_elements,
     )
 )
-@settings(max_examples=1000)
+@settings(max_examples=2000)
 def test_elements_in_object_array_remain_uncoerced(arr, elements):
-    assert arr.ravel().tolist() == elements
+    assert arr.tolist() == elements
 
 
 def test_can_hold_arbitrary_dataclass():

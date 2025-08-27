@@ -22,7 +22,6 @@ from tests.numpy.helpers import (
     all_elements,
     all_numpy_dtypes,
     all_scalar_elements,
-    assert_safe_equals,
     dataclass_instance,
     paired_containers_and_elements,
 )
@@ -333,7 +332,7 @@ def test_error_with_object_elements_in_numpy_dtype_arrays():
 )
 @settings(max_examples=2000)
 def test_elements_in_object_dataframe_remain_uncoerced(df, elements):
-    assert_safe_equals(df["col"].values.tolist(), elements)
+    assert df["col"].values.tolist() == elements
 
 
 @pytest.mark.parametrize(

@@ -23,7 +23,6 @@ from tests.numpy.helpers import (
     all_numpy_dtypes,
     all_object_arrays,
     all_scalar_object_elements,
-    assert_safe_equals,
     dataclass_instance,
     paired_containers_and_elements,
 )
@@ -67,9 +66,9 @@ def test_can_generate_object_arrays_with_mixed_dtype_elements():
         all_elements,
     )
 )
-@settings(max_examples=500)
+@settings(max_examples=2000)
 def test_elements_in_object_series_remain_uncoerced(series, elements):
-    assert_safe_equals(np.asarray(series.values.ravel().tolist()), np.asarray(elements))
+    assert series.values.tolist() == elements
 
 
 @given(pdst.series(elements=st.just(dataclass_instance), dtype=object))
