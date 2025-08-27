@@ -313,7 +313,7 @@ class TestErrorNoteBehavior3819:
             matching_messages = [
                 n
                 for n in notes
-                if n.startswith("sample_from was given a collection of strategies")
+                if n.startswith("sampled_from was given a collection of strategies")
                 and n.endswith("Was one_of intended?")
             ]
             assert len(matching_messages) == (1 if should_exp_msg else 0)
