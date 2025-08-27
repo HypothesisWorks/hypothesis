@@ -199,4 +199,7 @@
 .. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
 .. |NewType| replace:: :class:`python:typing.NewType`
 
+.. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
+.. |alternative backends| replace:: :ref:`alternative backends <alternative-backends>`
+
 .. |pytest.mark.parametrize| replace:: :ref:`pytest.mark.parametrize <pytest:pytest.mark.parametrize ref>`

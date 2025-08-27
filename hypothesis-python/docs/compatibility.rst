@@ -106,6 +106,11 @@ coverage.py
 
 :pypi:`coverage` works out of the box with Hypothesis. Our own test suite has 100% branch coverage.
 
+HypoFuzz
+~~~~~~~~
+
+`HypoFuzz <https://hypofuzz.com/>`_ is built on top of Hypothesis and has native support for it. See also the ``hypofuzz`` |alternative backend|.
+
 Optional packages
 -----------------
 
