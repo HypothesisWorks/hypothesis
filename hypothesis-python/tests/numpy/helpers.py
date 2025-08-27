@@ -61,9 +61,3 @@ def paired_containers_and_elements(container, elements_to_draw_from, *, key=None
     return containers, containers.flatmap(
         lambda arr: st.lists(elements, min_size=len(arr), max_size=len(arr))
     )
-
-
-def assert_safe_equals(a, b):
-    """Equals but able to deal with NaN and NaT."""
-    if not np.all((a == b) | ((a != b) & (a != a) & (b != b))):
-        np.testing.assert_array_equal(a, b)  # get nice message

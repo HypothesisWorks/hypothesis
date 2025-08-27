@@ -40,7 +40,6 @@ from tests.common.utils import fails_with, flaky
 from tests.numpy.helpers import (
     all_elements,
     all_scalar_object_elements,
-    assert_safe_equals,
     dataclass_instance,
     paired_containers_and_elements,
 )
@@ -1325,9 +1324,9 @@ def test_can_generate_object_arrays_with_mixed_dtype_elements():
         all_elements,
     )
 )
-@settings(max_examples=500)
+@settings(max_examples=1000)
 def test_elements_in_object_array_remain_uncoerced(arr, elements):
-    assert_safe_equals(np.asarray(arr.ravel().tolist()), np.asarray(elements))
+    assert arr.ravel().tolist() == elements
 
 
 def test_can_hold_arbitrary_dataclass():
