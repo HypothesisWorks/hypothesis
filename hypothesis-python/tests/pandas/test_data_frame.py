@@ -20,9 +20,11 @@ from hypothesis.extra.pandas.impl import IntegerDtype
 from tests.common.debug import assert_no_examples, find_any
 from tests.numpy.helpers import (
     all_elements,
-    all_numpy_dtype_elements,
-    all_scalar_object_elements,
+    all_numpy_dtypes,
+    all_scalar_elements,
+    assert_safe_equals,
     dataclass_instance,
+    paired_containers_and_elements,
 )
 from tests.pandas.helpers import supported_by_pandas
 
@@ -312,12 +314,26 @@ def test_error_with_object_elements_in_numpy_dtype_arrays():
                 columns=[
                     pdst.column(
                         "col",
-                        all_scalar_object_elements,
-                        dtype=all_numpy_dtype_elements,
+                        all_scalar_elements,
+                        dtype=all_numpy_dtypes,
                     )
                 ]
             )
         )
+
+
+@given(
+    *paired_containers_and_elements(
+        lambda elems: pdst.data_frames(
+            columns=[pdst.column("col", elems, dtype=object)],
+            index=pdst.range_indexes(min_size=1),
+        ),
+        all_elements,
+    )
+)
+@settings(max_examples=2000)
+def test_elements_in_object_dataframe_remain_uncoerced(df, elements):
+    assert_safe_equals(df["col"].values.tolist(), elements)
 
 
 @pytest.mark.parametrize(
@@ -344,11 +360,11 @@ def test_can_hold_arbitrary_dataclass(strategy):
     "strategy",
     [
         pdst.data_frames(
-            columns=[pdst.column("col", all_numpy_dtype_elements, dtype=object)],
+            columns=[pdst.column("col", all_numpy_dtypes, dtype=object)],
             index=pdst.range_indexes(1),
         ),
         pdst.data_frames(
-            rows=st.fixed_dictionaries({"col": all_numpy_dtype_elements}),
+            rows=st.fixed_dictionaries({"col": all_numpy_dtypes}),
             index=pdst.range_indexes(1),
         ),
     ],

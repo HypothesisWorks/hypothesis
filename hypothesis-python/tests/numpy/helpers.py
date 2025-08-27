@@ -25,21 +25,45 @@ class MyTestClass:
 
 
 dataclass_instance = MyTestClass()
-all_compatible_types = (
+all_compatible_type_elements = (
     st.from_type(type)
     .filter(lambda x: st.from_type(x).supports_find)
     .flatmap(st.from_type)
-    .filter(npst._is_compatible_numpy_element_object)
+    .filter(npst._is_comparable)
 )
 all_scalar_object_elements = st.one_of(
     st.just(dataclass_instance),
-    all_compatible_types,
+    all_compatible_type_elements,
 )
-all_numpy_dtype_elements = st.one_of(npst.scalar_dtypes(), npst.array_dtypes())
-all_scalar_elements = st.one_of(all_numpy_dtype_elements, all_scalar_object_elements)
+all_numpy_dtypes = st.one_of(npst.scalar_dtypes(), npst.array_dtypes())
+all_scalar_elements = st.one_of(
+    all_numpy_dtypes.flatmap(npst.from_dtype), all_scalar_object_elements
+)
 all_object_arrays = npst.arrays(
     np.dtype("O"),
     elements=all_scalar_elements,
     shape=npst.array_shapes(min_dims=1, min_side=1),
 )
 all_elements = st.one_of(all_scalar_elements, all_object_arrays)
+
+
+def paired_containers_and_elements(container, elements_to_draw_from, *, key=None):
+    """Returns a pair of search strategies for a given container and the elements that were put into it.
+    Example:
+        >>> containers, elements = paired_containers_and_elements(st.lists, st.sampled_from([1, 2, 3]))
+        >>> @given(containers, elements)
+        ... def test_lists_with_elements(containers, elements):
+        ...     assert containers == elements  # This is the simplest case, but it illustrates the pattern.
+    """
+    key = "" if key is None else f"_{key}"
+    elements = st.shared(elements_to_draw_from, key=f"element_pool{key}")
+    containers = st.shared(container(elements), key=f"array{key}")
+    return containers, containers.flatmap(
+        lambda arr: st.lists(elements, min_size=len(arr), max_size=len(arr))
+    )
+
+
+def assert_safe_equals(a, b):
+    """Equals but able to deal with NaN and NaT."""
+    if not np.all((a == b) | ((a != b) & (a != a) & (b != b))):
+        np.testing.assert_array_equal(a, b)  # get nice message
