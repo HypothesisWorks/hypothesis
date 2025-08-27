@@ -311,7 +311,7 @@ def observability_enabled() -> bool:
 
     Callers might use this method to determine whether they should compute an
     expensive representation that is only used under observability, for instance
-    by :ref:`alternative backends <alternative-backends>`.
+    by |alternative backends|.
     """
     return bool(_callbacks) or bool(_callbacks_all_threads)
 

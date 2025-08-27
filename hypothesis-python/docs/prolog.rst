@@ -60,11 +60,17 @@
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
 
+.. |HypothesisException| replace:: :obj:`HypothesisException <hypothesis.errors.HypothesisException>`
+.. |HypothesisDeprecationWarning| replace:: :obj:`HypothesisDeprecationWarning <hypothesis.errors.HypothesisDeprecationWarning>`
+.. |Flaky| replace:: :obj:`Flaky <hypothesis.errors.Flaky>`
+.. |FlakyStrategyDefinition| replace:: :obj:`FlakyStrategyDefinition <hypothesis.errors.FlakyStrategyDefinition>`
+.. |FlakyFailure| replace:: :obj:`FlakyFailure <hypothesis.errors.FlakyFailure>`
+.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
 .. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
 .. |DeadlineExceeded| replace:: :obj:`DeadlineExceeded <hypothesis.errors.DeadlineExceeded>`
 .. |BackendCannotProceed| replace:: :obj:`~hypothesis.errors.BackendCannotProceed`
-.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
+
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
@@ -94,6 +100,7 @@
 .. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
 .. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 .. |register_random| replace:: :func:`~hypothesis.register_random`
+.. |st.register_random| replace:: :func:`~hypothesis.register_random`
 
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
@@ -191,3 +198,8 @@
 .. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
 .. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
 .. |NewType| replace:: :class:`python:typing.NewType`
+
+.. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
+.. |alternative backends| replace:: :ref:`alternative backends <alternative-backends>`
+
+.. |pytest.mark.parametrize| replace:: :ref:`pytest.mark.parametrize <pytest:pytest.mark.parametrize ref>`
