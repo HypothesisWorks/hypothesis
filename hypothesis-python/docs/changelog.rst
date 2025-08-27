@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.5:
+
+--------------------
+6.138.5 - 2025-08-27
+--------------------
+
+Fixes a race condition under threading for strategies which trigger our filter-rewriting rules, like ``st.integers().filter(lambda x: abs(x) > 100)``.
+
 .. _v6.138.4:
 
 --------------------

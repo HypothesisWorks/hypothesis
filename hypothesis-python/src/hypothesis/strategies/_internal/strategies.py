@@ -1181,18 +1181,24 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
     @property
     def condition(self) -> Callable[[Ex], Any]:
-        if self.__condition is None:
-            if len(self.flat_conditions) == 1:
-                # Avoid an extra indirection in the common case of only one condition.
-                self.__condition = self.flat_conditions[0]
-            elif len(self.flat_conditions) == 0:
-                # Possible, if unlikely, due to filter predicate rewriting
-                self.__condition = lambda _: True  # type: ignore # covariant type param
-            else:
-                self.__condition = lambda x: all(  # type: ignore # covariant type param
-                    cond(x) for cond in self.flat_conditions
-                )
-        return self.__condition
+        # We write this defensively to avoid any threading race conditions
+        # with our manual FilteredStrategy.__init__ for filter-rewriting.
+        # See https://github.com/HypothesisWorks/hypothesis/pull/4522.
+        if (condition := self.__condition) is not None:
+            return condition
+
+        if len(self.flat_conditions) == 1:
+            # Avoid an extra indirection in the common case of only one condition.
+            condition = self.flat_conditions[0]
+        elif len(self.flat_conditions) == 0:
+            # Possible, if unlikely, due to filter predicate rewriting
+            condition = lambda _: True  # type: ignore # covariant type param
+        else:
+            condition = lambda x: all(  # type: ignore # covariant type param
+                cond(x) for cond in self.flat_conditions
+            )
+        self.__condition = condition
+        return condition
 
     def do_draw(self, data: ConjectureData) -> Ex:
         result = self.do_filtered_draw(data)
