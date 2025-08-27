@@ -40,8 +40,8 @@ from tests.common.utils import fails_with, flaky
 from tests.numpy.helpers import (
     all_elements,
     all_scalar_object_elements,
-    paired_containers_and_elements,
     dataclass_instance,
+    paired_containers_and_elements,
 )
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
