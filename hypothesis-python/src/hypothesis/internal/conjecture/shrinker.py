@@ -1355,8 +1355,19 @@ class Shrinker:
         n: Union[int, float] = node2.value
 
         def boost(k: int) -> bool:
-            if k > m:
+            # floats always shrink towards 0
+            shrink_towards = (
+                node1.constraints["shrink_towards"] if node1.type == "integer" else 0
+            )
+            if k > abs(m - shrink_towards):
                 return False
+
+            # We are trying to move node1 (m) closer to shrink_towards, and node2
+            # (n) farther away from shrink_towards. If m is below shrink_towards,
+            # we want to add to m and subtract from n, and vice versa if above
+            # shrink_towards.
+            if m < shrink_towards:
+                k = -k
 
             try:
                 v1 = m - k
@@ -1368,7 +1379,7 @@ class Shrinker:
 
             # if we've increased node2 to the point that we're past max precision,
             # give up - things have become too unstable.
-            if node1.type == "float" and v2 >= MAX_PRECISE_INTEGER:
+            if node1.type == "float" and abs(v2) >= MAX_PRECISE_INTEGER:
                 return False
 
             return self.consider_new_nodes(

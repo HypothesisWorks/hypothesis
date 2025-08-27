@@ -154,8 +154,9 @@ UNHELPFUL_LOCATIONS = (
     # Quite rarely, the first AFNP line is in Pytest's internals.
     "/_pytest/**",
     "/pluggy/_*.py",
-    # used by pytest for failure formatting in the terminal
-    "/pygments/lexer.py",
+    # used by pytest for failure formatting in the terminal.
+    # seen: pygments/lexer.py, pygments/formatters/, pygments/filter.py.
+    "/pygments/*",
     # used by pytest for failure formatting
     "/difflib.py",
     "/reprlib.py",
