@@ -34,10 +34,8 @@ from typing import Any, Callable, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
-from hypothesis.internal.reflection import (
-    get_pretty_function_description,
-    lambda_description,
-)
+from hypothesis.internal.lambda_sources import lambda_description
+from hypothesis.internal.reflection import get_pretty_function_description
 
 Ex = TypeVar("Ex")
 Predicate = Callable[[Ex], bool]

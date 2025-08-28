@@ -13,7 +13,7 @@ import sys
 
 import pytest
 
-from hypothesis.internal import reflection
+from hypothesis.internal import lambda_sources
 from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.reflection import get_pretty_function_description
 
@@ -25,9 +25,9 @@ def clear_lambda_caches(request, monkeypatch):
     # Run all tests in this file twice, once using cache and once forcing
     # from-scratch generation
     if request.param:
-        monkeypatch.setattr(reflection, "LAMBDA_DESCRIPTION_CACHE", {})
-        monkeypatch.setattr(reflection, "LAMBDA_DIGEST_DESCRIPTION_CACHE", {})
-        monkeypatch.setattr(reflection, "AST_LAMBDAS_CACHE", {})
+        monkeypatch.setattr(lambda_sources, "LAMBDA_DESCRIPTION_CACHE", {})
+        monkeypatch.setattr(lambda_sources, "LAMBDA_DIGEST_DESCRIPTION_CACHE", {})
+        monkeypatch.setattr(lambda_sources, "AST_LAMBDAS_CACHE", {})
 
 
 def test_bracket_whitespace_is_stripped():

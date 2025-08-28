@@ -24,7 +24,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from hypothesis import is_hypothesis_test, settings
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
-from hypothesis.internal import reflection
+from hypothesis.internal import lambda_sources
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import junkdrawer
 
@@ -108,15 +108,15 @@ if sys.version_info >= (3, 11):
     @pytest.fixture(scope="function", autouse=True)
     def _make_unknown_lambdas_fail(monkeypatch):
 
-        @wraps(reflection._lambda_description)
+        @wraps(lambda_sources._lambda_description)
         def wrapper(*args, **kwargs):
             return original(
                 *args, **kwargs, fail_if_confused_with_perfect_candidate=True
             )
 
-        original = reflection._lambda_description
+        original = lambda_sources._lambda_description
         monkeypatch.setattr(
-            reflection,
+            lambda_sources,
             "_lambda_description",
             wrapper,
         )

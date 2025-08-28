@@ -21,7 +21,7 @@ from pytest import raises
 
 from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal import reflection
+from hypothesis.internal import lambda_sources, reflection
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
@@ -788,7 +788,7 @@ def test_code_normalization(nop_on_f):
     assert reflection._function_key(f) != reflection._function_key(g)
 
     # ...and then normalize g to match f (adding or removing a NOP)
-    g.__code__ = reflection._normalize_code(f, g)
+    g.__code__ = lambda_sources._normalize_code(f, g)
     assert reflection._function_key(f) == reflection._function_key(g)
 
 
