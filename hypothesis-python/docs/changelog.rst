@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.7:
+
+--------------------
+6.138.7 - 2025-08-28
+--------------------
+
+Improves upon the cache eviction problem workaround
+of :v:`6.135.12`.
+
 .. _v6.138.6:
 
 --------------------
