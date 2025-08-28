@@ -757,14 +757,14 @@ def test_cache_key_size_is_bounded():
     f.__code__ = f.__code__.replace(
         co_consts=tuple(c * 1000 if c == "a" else c for c in f.__code__.co_consts)
     )
-    assert len(repr(reflection._function_key(f))) > 1000
-    assert len(repr(reflection._function_key(f, bounded_size=True))) < 1000
+    assert len(repr(lambda_sources._function_key(f))) > 1000
+    assert len(repr(lambda_sources._function_key(f, bounded_size=True))) < 1000
 
 
 def test_function_key_distinguishes_alpha_renames():
     # these terms are equivalent under the lambda calculus, but their
     # representations are not, so they should be cached differently.
-    assert reflection._function_key(lambda x: x) != reflection._function_key(
+    assert lambda_sources._function_key(lambda x: x) != lambda_sources._function_key(
         lambda y: y
     )
 
@@ -781,15 +781,15 @@ def test_code_normalization(nop_on_f):
     f = lambda x: x
     g = lambda x: x
     h = f if nop_on_f else g
-    assert reflection._function_key(f) == reflection._function_key(g)
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
 
     # Append a NOP to one of the bytecodes
     h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + b"\x09\x00")
-    assert reflection._function_key(f) != reflection._function_key(g)
+    assert lambda_sources._function_key(f) != lambda_sources._function_key(g)
 
     # ...and then normalize g to match f (adding or removing a NOP)
     g.__code__ = lambda_sources._normalize_code(f, g)
-    assert reflection._function_key(f) == reflection._function_key(g)
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
 
 
 def test_lambda_mimicry_with_arg_defaults():

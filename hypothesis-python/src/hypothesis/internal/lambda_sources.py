@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import hashlib
 import inspect
 import linecache
 import sys
@@ -64,6 +65,41 @@ def extract_all_attributes(tree, *, extract_nested=True):
 
     Visitor().visit(tree)
     return attributes
+
+
+def _function_key(f, *, bounded_size=False):
+    """Returns a digest that differentiates functions that have different sources.
+
+    Either a function or a code object may be passed. If code object, default
+    arg/kwarg values are not recoverable - this is the best we can do, and is
+    sufficient for the use case of comparing nested lambdas.
+    """
+    try:
+        code = f.__code__
+        defaults_repr = repr((f.__defaults__, f.__kwdefaults__))
+    except AttributeError:
+        code = f
+        defaults_repr = ()
+    consts_repr = repr(code.co_consts)
+    if bounded_size:
+        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
+        # keys. We don't do this unconditionally because hashing takes time, and is
+        # not necessary if the key is used just for comparison (and is not stored).
+        if len(consts_repr) > 48:
+            consts_repr = hashlib.sha384(consts_repr.encode()).digest()
+        if len(defaults_repr) > 48:
+            defaults_repr = hashlib.sha384(consts_repr.encode()).digest()
+    return (
+        consts_repr,
+        defaults_repr,
+        code.co_argcount,
+        code.co_kwonlyargcount,
+        code.co_code,
+        code.co_names,
+        code.co_varnames,
+        code.co_freevars,
+        code.co_name,
+    )
 
 
 def _normalize_code(f, l):
@@ -151,8 +187,7 @@ def _normalize_code(f, l):
             if (
                 inspect.iscode(l_const)
                 and inspect.iscode(f_const)
-                and reflection._function_key(f_const)
-                == reflection._function_key(l_const)
+                and _function_key(f_const) == _function_key(l_const)
             ):
                 # If the lambdas are compiled from the same source, make them be the
                 # same object so that the toplevel lambdas end up equal. Note that
@@ -253,11 +288,11 @@ def _lambda_code_matches_node(f, node):
         compiled = _mimic_lambda_from_node(f, node)
     except (NameError, SyntaxError):  # pragma: no cover
         return False
-    if reflection._function_key(f) == reflection._function_key(compiled):
+    if _function_key(f) == _function_key(compiled):
         return True
     # Try harder
     compiled.__code__ = _normalize_code(f, compiled)
-    return reflection._function_key(f) == reflection._function_key(compiled)
+    return _function_key(f) == _function_key(compiled)
 
 
 def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate=False):
@@ -364,7 +399,7 @@ def lambda_description(f):
     except KeyError:
         pass
 
-    key = reflection._function_key(f, bounded_size=True)
+    key = _function_key(f, bounded_size=True)
     failed_fnames = []
     try:
         description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]

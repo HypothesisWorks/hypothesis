@@ -117,41 +117,6 @@ def function_digest(function: Any) -> bytes:
     return hasher.digest()
 
 
-def _function_key(f, *, bounded_size=False):
-    """Returns a digest that differentiates functions that have different sources.
-
-    Either a function or a code object may be passed. If code object, default
-    arg/kwarg values are not recoverable - this is the best we can do, and is
-    sufficient for the use case of comparing nested lambdas.
-    """
-    try:
-        code = f.__code__
-        defaults_repr = repr((f.__defaults__, f.__kwdefaults__))
-    except AttributeError:
-        code = f
-        defaults_repr = ()
-    consts_repr = repr(code.co_consts)
-    if bounded_size:
-        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
-        # keys. We don't do this unconditionally because hashing takes time, and is
-        # not necessary if the key is used just for comparison (and is not stored).
-        if len(consts_repr) > 48:
-            consts_repr = hashlib.sha384(consts_repr.encode()).digest()
-        if len(defaults_repr) > 48:
-            defaults_repr = hashlib.sha384(consts_repr.encode()).digest()
-    return (
-        consts_repr,
-        defaults_repr,
-        code.co_argcount,
-        code.co_kwonlyargcount,
-        code.co_code,
-        code.co_names,
-        code.co_varnames,
-        code.co_freevars,
-        code.co_name,
-    )
-
-
 def check_signature(sig: Signature) -> None:
     # Backport from Python 3.11; see https://github.com/python/cpython/pull/92065
     for p in sig.parameters.values():
