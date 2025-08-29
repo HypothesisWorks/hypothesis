@@ -112,11 +112,12 @@ def _normalize_code(f, l):
 
     # A small selection of possible peephole code transformations, based on what
     # is actually seen to differ between compilations in our test suite. Each
-    # entry contains two equivalent opcode sequences, plus an optional check
-    # function called with their respective oparg sequences.
+    # entry contains two equivalent opcode sequences, plus a condition
+    # function called with their respective oparg sequences, which must return
+    # true for the transformation to be valid.
     Checker = Callable[[list[int], list[int]], bool]
     transforms: tuple[list[int], list[int], Optional[Checker]] = [
-        ([NOP], [], None),
+        ([NOP], [], lambda: True),
         (
             [LOAD_FAST, LOAD_FAST],
             [LOAD_FAST_LOAD_FAST],
@@ -128,10 +129,14 @@ def _normalize_code(f, l):
             lambda a, b: a == [b[0] >> 4, b[0] & 15],
         ),
     ]
-    # augment with inverse
+    # augment with converse
     transforms += [
-        (ops_b, ops_a, checker and (lambda a, b, checker=checker: checker(b, a)))
-        for ops_a, ops_b, checker in transforms
+        (
+            ops_b,
+            ops_a,
+            condition and (lambda a, b, condition=condition: condition(b, a)),
+        )
+        for ops_a, ops_b, condition in transforms
     ]
 
     # Normalize equivalent code. We assume that each bytecode op is 2 bytes,
@@ -151,16 +156,13 @@ def _normalize_code(f, l):
         if i < min(len(co_code), len(f_code)) and f_code[i] == co_code[i]:
             i += 2
         else:
-            for op1, op2, checker in transforms:
+            for op1, op2, condition in transforms:
                 if (
                     op1 == alternating(f_code, i, len(op1))
                     and op2 == alternating(co_code, i, len(op2))
-                    and (
-                        checker is None
-                        or checker(
-                            alternating(f_code, i + 1, len(op1)),
-                            alternating(co_code, i + 1, len(op2)),
-                        )
+                    and condition(
+                        alternating(f_code, i + 1, len(op1)),
+                        alternating(co_code, i + 1, len(op2)),
                     )
                 ):
                     break
@@ -333,10 +335,9 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
         # fall through to the full parse.
         local_lines = inspect.getblock(source_lines[lineno0:])
         local_block = textwrap.dedent("".join(local_lines))
-        if local_block.startswith("."):
-            # The fairly common ".map(lambda x: ...)" case. This partial block
-            # isn't valid syntax, but it might be if we remove the leading ".".
-            local_block = local_block[1:]
+        # The fairly common ".map(lambda x: ...)" case. This partial block
+        # isn't valid syntax, but it might be if we remove the leading ".".
+        local_block.removeprefix(".")
 
         try:
             local_tree = ast.parse(local_block)
