@@ -244,8 +244,8 @@ jobs:
       NODE_VERSION: 22
       # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
       # The versions of pyodide-build and the Pyodide runtime may differ.
-      PYODIDE_VERSION: 0.28.1
-      PYODIDE_BUILD_VERSION: 0.30.6
+      PYODIDE_VERSION: 0.28.2
+      PYODIDE_BUILD_VERSION: 0.30.7
       PYTHON_VERSION: 3.13.2
     steps:
       - uses: actions/checkout@v3

@@ -227,12 +227,16 @@ Hypothesis exceptions
 Custom exceptions raised by Hypothesis.
 
 .. autoclass:: hypothesis.errors.HypothesisException
+.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
+.. autoclass:: hypothesis.errors.Flaky
+.. autoclass:: hypothesis.errors.FlakyStrategyDefinition
+.. autoclass:: hypothesis.errors.FlakyFailure
+.. autoclass:: hypothesis.errors.FlakyBackendFailure
 .. autoclass:: hypothesis.errors.InvalidArgument
 .. autoclass:: hypothesis.errors.ResolutionFailed
 .. autoclass:: hypothesis.errors.Unsatisfiable
 .. autoclass:: hypothesis.errors.DidNotReproduce
 .. autoclass:: hypothesis.errors.DeadlineExceeded
-.. autoclass:: hypothesis.errors.FlakyBackendFailure
 
 .. _hypothesis-django:
 
@@ -442,7 +446,7 @@ Use with external fuzzers
 .. tip::
 
     | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
-    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs without more tests!
+    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs with the same tests!
 
 Sometimes, you might want to point a traditional fuzzer such as `python-afl <https://github.com/jwilk/python-afl>`__, :pypi:`pythonfuzz`, or Google's :pypi:`atheris` (for Python *and* native extensions) at your code. Wouldn't it be nice if you could use any of your |@given| tests as fuzz targets, instead of converting bytestrings into your objects by hand?
 

@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Optional, TypeVar
 from unittest import SkipTest
 
 from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
@@ -15,10 +16,12 @@ from hypothesis._settings import local_settings
 from hypothesis.control import _current_build_context
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.00001
+T = TypeVar("T")
 
 
 # don't use hypothesis.errors.Found, which inherits from HypothesisException
@@ -27,7 +30,11 @@ class Found(Exception):
     pass
 
 
-def minimal(definition, condition=lambda x: True, settings=None):
+def minimal(
+    definition: SearchStrategy[T],
+    condition=lambda x: True,
+    settings: Optional[Settings] = None,
+) -> T:
     from tests.conftest import in_shrinking_benchmark
 
     definition.validate()

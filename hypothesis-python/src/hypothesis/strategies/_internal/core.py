@@ -27,6 +27,7 @@ from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
 from types import FunctionType, GenericAlias
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     AnyStr,
@@ -141,6 +142,9 @@ from hypothesis.strategies._internal.strings import (
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import RepresentationPrinter
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
 
 @cacheable
@@ -270,6 +274,14 @@ def sampled_from(
     )
 
 
+def _gets_first_item(fn: Callable) -> bool:
+    # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
+    if isinstance(fn, FunctionType):
+        s = get_pretty_function_description(fn)
+        return bool(re.fullmatch(s, r"lambda ([a-z]+): \1\[0\]"))
+    return isinstance(fn, operator.itemgetter) and repr(fn) == "operator.itemgetter(0)"
+
+
 @cacheable
 @defines_strategy()
 def lists(
@@ -345,21 +357,7 @@ def lists(
             # our strategy somewhat to draw the first element then draw add the rest.
             isinstance(elements, TupleStrategy)
             and len(elements.element_strategies) >= 1
-            and len(unique_by) == 1
-            and (
-                # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
-                (
-                    isinstance(unique_by[0], operator.itemgetter)
-                    and repr(unique_by[0]) == "operator.itemgetter(0)"
-                )
-                or (
-                    isinstance(unique_by[0], FunctionType)
-                    and re.fullmatch(
-                        get_pretty_function_description(unique_by[0]),
-                        r"lambda ([a-z]+): \1\[0\]",
-                    )
-                )
-            )
+            and all(_gets_first_item(fn) for fn in unique_by)
         ):
             unique_by = (identity,)
             tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
@@ -568,6 +566,9 @@ def fixed_dictionaries(
     return FixedDictStrategy(mapping, optional=optional)
 
 
+_get_first_item = operator.itemgetter(0)
+
+
 @cacheable
 @defines_strategy()
 def dictionaries(
@@ -599,7 +600,7 @@ def dictionaries(
         tuples(keys, values),
         min_size=min_size,
         max_size=max_size,
-        unique_by=operator.itemgetter(0),
+        unique_by=_get_first_item,
     ).map(dict_class)
 
 
@@ -2357,8 +2358,18 @@ def data() -> SearchStrategy[DataObject]:
     return DataStrategy()
 
 
+if sys.version_info < (3, 12):
+    # TypeAliasType is new in 3.12
+    RegisterTypeT: "TypeAlias" = type[Ex]
+else:  # pragma: no cover  # covered by test_mypy.py
+    from typing import TypeAliasType
+
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4410
+    RegisterTypeT: "TypeAlias" = Union[type[Ex], TypeAliasType]
+
+
 def register_type_strategy(
-    custom_type: type[Ex],
+    custom_type: RegisterTypeT,
     strategy: Union[SearchStrategy[Ex], Callable[[type[Ex]], SearchStrategy[Ex]]],
 ) -> None:
     """Add an entry to the global type-to-strategy lookup.

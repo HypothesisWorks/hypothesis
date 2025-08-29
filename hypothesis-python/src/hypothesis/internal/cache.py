@@ -117,15 +117,24 @@ class GenericCache(Generic[K, V]):
                     raise ValueError(
                         "Cannot increase size of cache where all keys have been pinned."
                     ) from None
-
-                # it's not clear to me how this can occur with a thread-local
-                # cache, but we've seen failures here before (specifically under
-                # the windows ci tests).
                 try:
                     del self.keys_to_indices[evicted.key]
                 except KeyError:  # pragma: no cover
-                    pass
-
+                    # This can't happen, but happens nevertheless with
+                    #   id(key1) == id(key2)
+                    # but
+                    #   hash(key1) != hash(key2)
+                    # (see https://github.com/HypothesisWorks/hypothesis/issues/4442)
+                    # Rebuild keys_to_indices to match data.
+                    self.keys_to_indices.clear()
+                    self.keys_to_indices.update(
+                        {
+                            entry.key: i
+                            for i, entry in enumerate(self.data)
+                            if entry is not evicted
+                        }
+                    )
+                    assert len(self.keys_to_indices) == len(self.data) - 1
                 i = 0
                 self.data[0] = entry
             else:

@@ -66,7 +66,7 @@ Examples which are too large
 
 For performance reasons, Hypothesis places an internal limit on the size of a single example. If an example exceeds this size limit, we will retry generating it and will not count it towards the |max_examples| limit. (And if we see too many of these large examples, we will raise |HealthCheck.data_too_large|, unless suppressed with |settings.suppress_health_check|).
 
-The specific value of the size limit is an undocumented implementation detail. The majority of Hypothesis tests do not come close to hitting it.
+The specific value of this size limit is an undocumented implementation detail. The majority of Hypothesis tests do not come close to hitting it.
 
 Failing examples
 ----------------

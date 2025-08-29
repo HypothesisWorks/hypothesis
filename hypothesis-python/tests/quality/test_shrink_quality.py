@@ -537,3 +537,23 @@ def test_nasty_string_shrinks():
         minimal(st.text(), lambda s: "𝕿𝖍𝖊" in s, settings=settings(max_examples=10000))
         == "𝕿𝖍𝖊"
     )
+
+
+def test_bound5():
+    # redistribute_numeric_pairs should work for negative integers too
+    bounded_ints = st.lists(st.integers(-100, 0), max_size=1)
+
+    s = st.tuples(
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+    )
+    assert minimal(s, lambda v: sum(sum(v, []), 0) < -150) == (
+        [],
+        [],
+        [],
+        [-51],
+        [-100],
+    )
