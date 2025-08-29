@@ -311,6 +311,7 @@ def test_changing_lambda_confuses(tmp_path, allow_unknown_lambdas):
 
 
 @skipif_threading  # concurrent writes to the same file
+@pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="not checked before 3.11")
 def test_that_test_harness_raises_on_unknown_lambda(tmp_path):
     test_module = tmp_path / "test_module.py"
     test_module.write_text("test_lambda = lambda x: x * 2", encoding="utf-8")
