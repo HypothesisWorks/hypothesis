@@ -115,7 +115,7 @@ if sys.version_info >= (3, 11):
                 "or just a previously unknown case. To quickly resolve this "
                 "problem, use the `allow_unknown_lambdas` fixture."
             )
-            assert False, msg
+            raise AssertionError(msg)
 
         monkeypatch.setattr(
             lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail

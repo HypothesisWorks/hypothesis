@@ -800,13 +800,13 @@ def test_code_normalization(nop_on_f):
         (lambda x=1, *, y: (x, y), "lambda x=1, *, y: (x, y)"),
         (lambda x, *, y=2: (x, y), "lambda x, *, y=2: (x, y)"),
         (lambda x, *, y: (x, y), "lambda x, *, y: (x, y)"),
-        (lambda *, y=2: (x, y), "lambda *, y=2: (x, y)"),
-        (lambda *, y: (x, y), "lambda *, y: (x, y)"),
+        (lambda *, y=2: (x, y), "lambda *, y=2: (x, y)"),  # noqa: F821
+        (lambda *, y: (x, y), "lambda *, y: (x, y)"),  # noqa: F821
         (lambda x, /, y=1: (x, y), "lambda x, /, y=1: (x, y)"),
         (lambda x, /, y: (x, y), "lambda x, /, y: (x, y)"),
-        (lambda x, /: (x, y), "lambda x, /: (x, y)"),
+        (lambda x, /: (x, y), "lambda x, /: (x, y)"),  # noqa: F821
         (lambda x=1, /, y=2: (x, y), "lambda x=1, /, y=2: (x, y)"),
-        (lambda x=1, /: (x, y), "lambda x=1, /: (x, y)"),
+        (lambda x=1, /: (x, y), "lambda x=1, /: (x, y)"),  # noqa: F821
     ],
 )
 def test_lambda_mimicry_with_arg_defaults(f, source):
