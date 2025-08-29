@@ -28,6 +28,7 @@ def clear_lambda_caches(request, monkeypatch):
         monkeypatch.setattr(lambda_sources, "LAMBDA_DESCRIPTION_CACHE", {})
         monkeypatch.setattr(lambda_sources, "LAMBDA_DIGEST_DESCRIPTION_CACHE", {})
         monkeypatch.setattr(lambda_sources, "AST_LAMBDAS_CACHE", {})
+    return request.param
 
 
 def test_bracket_whitespace_is_stripped():
@@ -300,7 +301,9 @@ def test_adding_other_lambda_does_not_confuse(tmp_path):
 
 
 @skipif_threading  # concurrent writes to the same file
-def test_changing_lambda_confuses(tmp_path, allow_unknown_lambdas):
+def test_changing_lambda_confuses(tmp_path, allow_unknown_lambdas, clear_lambda_caches):
+    if not clear_lambda_caches:
+        pytest.skip("requires clean cache")
     test_module = tmp_path / "test_module.py"
     test_module.write_text("test_lambda = lambda x: x * 2", encoding="utf-8")
     module_globals = runpy.run_path(str(test_module))
@@ -321,3 +324,38 @@ def test_that_test_harness_raises_on_unknown_lambda(tmp_path):
     f1 = module_globals["test_lambda"]
     with pytest.raises(AssertionError):
         assert get_pretty_function_description(f1) == "lambda x: <unknown>"
+
+
+@skipif_threading  # concurrent writes to the same file
+def test_source_with_syntax_error(tmp_path, allow_unknown_lambdas, clear_lambda_caches):
+    if not clear_lambda_caches:
+        pytest.skip("requires clean cache")
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text("test_lambda = lambda x: x * 2", encoding="utf-8")
+    module_globals = runpy.run_path(str(test_module))
+    f1 = module_globals["test_lambda"]
+
+    test_module.write_text("line 1", encoding="utf-8")
+    assert get_pretty_function_description(f1) == "lambda x: <unknown>"
+
+
+@skipif_threading  # concurrent writes to the same file
+def test_unknown_is_not_stuck(tmp_path, allow_unknown_lambdas, clear_lambda_caches):
+    if not clear_lambda_caches:
+        pytest.skip("requires clean cache")
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text("test_lambda = lambda x: x * 2", encoding="utf-8")
+    module_globals = runpy.run_path(str(test_module))
+    f1 = module_globals["test_lambda"]
+
+    test_module.write_text("line 1", encoding="utf-8")
+    assert get_pretty_function_description(f1) == "lambda x: <unknown>"
+
+    test_module2 = tmp_path / "test_module2.py"
+    test_module2.write_text("test_lambda = lambda x: x * 2", encoding="utf-8")
+    module_globals2 = runpy.run_path(str(test_module2))
+    f2 = module_globals2["test_lambda"]
+
+    # f2 matches f1 in the digest cache, ensure that it gets a proper description
+    assert get_pretty_function_description(f1) == "lambda x: <unknown>"
+    assert get_pretty_function_description(f2) == "lambda x: x * 2"

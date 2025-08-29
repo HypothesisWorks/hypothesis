@@ -227,9 +227,9 @@ def _mimic_lambda_from_node(f, node):
         for f_default, l_default in zip(f.__defaults__, node.args.defaults):
             if isinstance(l_default, ast.Name):
                 f_globals[l_default.id] = f_default
-    if f.__kwdefaults__:
+    if f.__kwdefaults__:  # pragma: no cover
         for l_default, l_varname in zip(node.args.kw_defaults, node.args.kwonlyargs):
-            if isinstance(l_default, ast.Name):  # pragma: no cover # shouldn't be?
+            if isinstance(l_default, ast.Name):
                 f_globals[l_default.id] = f.__kwdefaults__[l_varname.arg]
 
     # CPython's compiler treats known imports differently than normal globals,
@@ -288,7 +288,7 @@ def _mimic_lambda_from_node(f, node):
 def _lambda_code_matches_node(f, node):
     try:
         compiled = _mimic_lambda_from_node(f, node)
-    except (NameError, SyntaxError):  # pragma: no cover
+    except (NameError, SyntaxError):  # pragma: no cover # source is generated from ast
         return False
     if _function_key(f) == _function_key(compiled):
         return True
@@ -360,7 +360,7 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
         # Local parse failed or didn't produce a match, go ahead with the full parse
         try:
             tree = ast.parse("".join(source_lines))
-        except SyntaxError:  # pragma: no cover
+        except SyntaxError:
             all_lambdas = []
         else:
             all_lambdas = extract_all_lambdas(tree)
@@ -380,7 +380,7 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
             return format_lambda(ast.unparse(candidate.body))
 
     # None of the aligned lambdas match perfectly in generated code.
-    if aligned_lambdas and aligned_lambdas[0].lineno == lineno0 + 1:  # pragma: no cover
+    if aligned_lambdas and aligned_lambdas[0].lineno == lineno0 + 1:
         _check_unknown_perfectly_aligned_lambda(aligned_lambdas[0])
 
     return if_confused
@@ -402,26 +402,25 @@ def lambda_description(f):
         pass
 
     key = _function_key(f, bounded_size=True)
-    failed_fnames = []
+    location = (f.__code__.co_filename, f.__code__.co_firstlineno)
     try:
-        description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
+        description, failed_locations = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
     except KeyError:
-        pass
+        failed_locations = set()
     else:
-        if (
-            "<unknown>" not in description and f.__code__.co_filename in failed_fnames
-        ):  # pragma: no cover
-            # Only accept the <unknown> description if it comes from parsing this
-            # file - otherwise, try again below, maybe we have more luck in another
-            # file. Once lucky, we keep keep using the successful description for *new*
-            # lambdas but not for this one - so it doesn't change name during its
-            # lifetime.
+        # We got a hit in the digests cache, but only use it if either it has
+        # a good (known) description, or if it is unknown but we already tried
+        # to parse its exact source location before.
+        if "<unknown>" not in description or location in failed_locations:
+            # use the cached result
             LAMBDA_DESCRIPTION_CACHE[f] = description
             return description
 
     description = _lambda_description(f)
     LAMBDA_DESCRIPTION_CACHE[f] = description
     if "<unknown>" in description:
-        failed_fnames.append(f.__code__.co_filename)
-    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description, failed_fnames
+        failed_locations.add(location)
+    else:
+        failed_locations.clear()  # we have a good description now
+    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description, failed_locations
     return description
