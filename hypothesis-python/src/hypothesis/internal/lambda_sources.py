@@ -117,7 +117,7 @@ def _normalize_code(f, l):
     # true for the transformation to be valid.
     Checker = Callable[[list[int], list[int]], bool]
     transforms: tuple[list[int], list[int], Optional[Checker]] = [
-        ([NOP], [], lambda: True),
+        ([NOP], [], lambda a, b: True),
         (
             [LOAD_FAST, LOAD_FAST],
             [LOAD_FAST_LOAD_FAST],
