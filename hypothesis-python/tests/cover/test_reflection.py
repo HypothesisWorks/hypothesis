@@ -793,7 +793,8 @@ def test_code_normalization(nop_on_f):
     assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
 
 
-@pytest.mark.parametrize("f, source",
+@pytest.mark.parametrize(
+    "f, source",
     [
         (lambda x=1, *, y=2: (x, y), "lambda x=1, *, y=2: (x, y)"),
         (lambda x=1, *, y: (x, y), "lambda x=1, *, y: (x, y)"),
@@ -806,7 +807,7 @@ def test_code_normalization(nop_on_f):
         (lambda x, /: (x, y), "lambda x, /: (x, y)"),
         (lambda x=1, /, y=2: (x, y), "lambda x=1, /, y=2: (x, y)"),
         (lambda x=1, /: (x, y), "lambda x=1, /: (x, y)"),
-    ]
+    ],
 )
 def test_lambda_mimicry_with_arg_defaults(f, source):
     assert get_pretty_function_description(f) == source

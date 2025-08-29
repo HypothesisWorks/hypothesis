@@ -121,6 +121,7 @@ if sys.version_info >= (3, 11):
             lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail
         )
 
+
 @pytest.fixture(scope="function")
 def allow_unknown_lambdas(monkeypatch):
     # Will run after make...fail since autouse are run first

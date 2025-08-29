@@ -302,6 +302,7 @@ def _check_unknown_perfectly_aligned_lambda(candidate):
     # lambdas raise.
     pass
 
+
 def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate=False):
     if hasattr(f, "__wrapped_target"):
         f = f.__wrapped_target
@@ -342,7 +343,7 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
         local_block = textwrap.dedent("".join(local_lines))
         # The fairly common ".map(lambda x: ...)" case. This partial block
         # isn't valid syntax, but it might be if we remove the leading ".".
-        local_block.removeprefix(".")
+        local_block = local_block.removeprefix(".")
 
         try:
             local_tree = ast.parse(local_block)
