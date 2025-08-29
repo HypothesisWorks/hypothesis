@@ -108,18 +108,29 @@ if sys.version_info >= (3, 11):
     @pytest.fixture(scope="function", autouse=True)
     def _make_unknown_lambdas_fail(monkeypatch):
 
-        @wraps(lambda_sources._lambda_description)
-        def wrapper(*args, **kwargs):
-            return original(
-                *args, **kwargs, fail_if_confused_with_perfect_candidate=True
+        def fail(candidate):
+            msg = (
+                f"Failed to find a matching source for {candidate}. "
+                "This could indicate changes in the Python code generator,\n"
+                "or just a previously unknown case. To quickly resolve this "
+                "problem, use the `allow_unknown_lambdas` fixture."
             )
+            assert False, msg
 
-        original = lambda_sources._lambda_description
         monkeypatch.setattr(
-            lambda_sources,
-            "_lambda_description",
-            wrapper,
+            lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail
         )
+
+@pytest.fixture(scope="function")
+def allow_unknown_lambdas(monkeypatch):
+    # Will run after make...fail since autouse are run first
+
+    def nofail(candidate):
+        pass
+
+    monkeypatch.setattr(
+        lambda_sources, "_check_unknown_perfectly_aligned_lambda", nofail
+    )
 
 
 # monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests

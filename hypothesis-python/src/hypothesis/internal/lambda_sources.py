@@ -40,28 +40,26 @@ LAMBDA_DIGEST_DESCRIPTION_CACHE: LRUCache[tuple[Any], str] = LRUCache(max_size=1
 AST_LAMBDAS_CACHE: LRUCache[tuple[str], list[ast.Lambda]] = LRUCache(max_size=100)
 
 
-def extract_all_lambdas(tree, *, extract_nested=True):
+def extract_all_lambdas(tree):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
 
         def visit_Lambda(self, node):
             lambdas.append(node)
-            if extract_nested:  # pragma: no branch
-                self.visit(node.body)
+            self.visit(node.body)
 
     Visitor().visit(tree)
     return lambdas
 
 
-def extract_all_attributes(tree, *, extract_nested=True):
+def extract_all_attributes(tree):
     attributes = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Attribute(self, node):
             attributes.append(node)
-            if extract_nested:  # pragma: no branch
-                self.visit(node.value)
+            self.visit(node.value)
 
     Visitor().visit(tree)
     return attributes
@@ -102,14 +100,16 @@ def _function_key(f, *, bounded_size=False):
     )
 
 
-def _normalize_code(f, l):
-    # Opcodes, from dis.opmap (as of 3.13)
+class _op:
+    # Opcodes, from dis.opmap. These may change between major versions.
     NOP = 9
     LOAD_FAST = 85
     LOAD_FAST_LOAD_FAST = 88
     LOAD_FAST_BORROW = 86
     LOAD_FAST_BORROW_LOAD_FAST_BORROW = 87
 
+
+def _normalize_code(f, l):
     # A small selection of possible peephole code transformations, based on what
     # is actually seen to differ between compilations in our test suite. Each
     # entry contains two equivalent opcode sequences, plus a condition
@@ -119,13 +119,13 @@ def _normalize_code(f, l):
     transforms: tuple[list[int], list[int], Optional[Checker]] = [
         ([NOP], [], lambda a, b: True),
         (
-            [LOAD_FAST, LOAD_FAST],
-            [LOAD_FAST_LOAD_FAST],
+            [_op.LOAD_FAST, _op.LOAD_FAST],
+            [_op.LOAD_FAST_LOAD_FAST],
             lambda a, b: a == [b[0] >> 4, b[0] & 15],
         ),
         (
-            [LOAD_FAST_BORROW, LOAD_FAST_BORROW],
-            [LOAD_FAST_BORROW_LOAD_FAST_BORROW],
+            [_op.LOAD_FAST_BORROW, _op.LOAD_FAST_BORROW],
+            [_op.LOAD_FAST_BORROW_LOAD_FAST_BORROW],
             lambda a, b: a == [b[0] >> 4, b[0] & 15],
         ),
     ]
@@ -297,6 +297,11 @@ def _lambda_code_matches_node(f, node):
     return _function_key(f) == _function_key(compiled)
 
 
+def _check_unknown_perfectly_aligned_lambda(candidate):
+    # This is a monkeypatch point for our self-tests, to make unknown
+    # lambdas raise.
+    pass
+
 def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate=False):
     if hasattr(f, "__wrapped_target"):
         f = f.__wrapped_target
@@ -374,14 +379,9 @@ def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate
             return format_lambda(ast.unparse(candidate.body))
 
     # None of the aligned lambdas match perfectly in generated code.
-    if (
-        fail_if_confused_with_perfect_candidate
-        and aligned_lambdas
-        and aligned_lambdas[0].lineno == lineno0 + 1
-    ):  # pragma: no cover
-        # This arg is forced on in conftest.py, to ensure we resolve all known
-        # cases.
-        raise ValueError("None of the source-file lambda candidates were matched")
+    if aligned_lambdas and aligned_lambdas[0].lineno == lineno0 + 1:  # pragma: no cover
+        _check_unknown_perfectly_aligned_lambda(aligned_lambdas[0])
+
     return if_confused
 
 
@@ -404,6 +404,9 @@ def lambda_description(f):
     failed_fnames = []
     try:
         description, failed_fnames = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
+    except KeyError:
+        pass
+    else:
         if (
             "<unknown>" not in description and f.__code__.co_filename in failed_fnames
         ):  # pragma: no cover
@@ -414,8 +417,6 @@ def lambda_description(f):
             # lifetime.
             LAMBDA_DESCRIPTION_CACHE[f] = description
             return description
-    except KeyError:
-        failed_fnames = []
 
     description = _lambda_description(f)
     LAMBDA_DESCRIPTION_CACHE[f] = description

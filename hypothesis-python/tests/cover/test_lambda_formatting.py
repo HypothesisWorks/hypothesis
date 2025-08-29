@@ -297,3 +297,34 @@ def test_adding_other_lambda_does_not_confuse(tmp_path):
     )
     f1 = module_globals["test_lambda"]
     assert get_pretty_function_description(f1) == "lambda x: x * 2"
+
+
+@skipif_threading  # concurrent writes to the same file
+def test_changing_lambda_confuses(tmp_path, allow_unknown_lambdas):
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text(
+        "test_lambda = lambda x: x * 2", encoding="utf-8"
+    )
+    module_globals = runpy.run_path(str(test_module))
+
+    test_module.write_text(
+        "lambda x: x", encoding="utf-8"
+    )
+    f1 = module_globals["test_lambda"]
+    assert get_pretty_function_description(f1) == "lambda x: <unknown>"
+
+
+@skipif_threading  # concurrent writes to the same file
+def test_that_test_harness_raises_on_unknown_lambda(tmp_path):
+    test_module = tmp_path / "test_module.py"
+    test_module.write_text(
+        "test_lambda = lambda x: x * 2", encoding="utf-8"
+    )
+    module_globals = runpy.run_path(str(test_module))
+
+    test_module.write_text(
+        "lambda x: x", encoding="utf-8"
+    )
+    f1 = module_globals["test_lambda"]
+    with pytest.raises(AssertionError):
+        assert get_pretty_function_description(f1) == "lambda x: <unknown>"
