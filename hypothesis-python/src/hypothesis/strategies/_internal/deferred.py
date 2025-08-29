@@ -35,15 +35,18 @@ class DeferredStrategy(SearchStrategy[Ex]):
 
     @property
     def wrapped_strategy(self) -> SearchStrategy[Ex]:
+        # we assign this before entering the condition to avoid a race condition
+        # under threading. See issue #4523.
+        definition = self.__definition
         if self.__wrapped_strategy is None:
             check_sideeffect_during_initialization("deferred evaluation of {!r}", self)
 
-            if not inspect.isfunction(self.__definition):
+            if not inspect.isfunction(definition):
                 raise InvalidArgument(
-                    f"Expected definition to be a function but got {self.__definition!r} "
-                    f"of type {type(self.__definition).__name__} instead."
+                    f"Expected definition to be a function but got {definition!r} "
+                    f"of type {type(definition).__name__} instead."
                 )
-            result = self.__definition()
+            result = definition()
             if result is self:
                 raise InvalidArgument("Cannot define a deferred strategy to be itself")
             check_strategy(result, "definition()")

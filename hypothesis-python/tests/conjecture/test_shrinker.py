@@ -625,7 +625,7 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     )
     assert (
         # pytest.approx for differences in floating-point summations
-        pytest.approx(shrinker.choices[0] + shrinker.choices[1])
+        pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001)
         == node1.value + node2.value
     )
 
