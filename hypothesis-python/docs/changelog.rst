@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.8:
+
+--------------------
+6.138.8 - 2025-08-29
+--------------------
+
+Fixes a race condition under threading when using |st.deferred|.
+
 .. _v6.138.7:
 
 --------------------
