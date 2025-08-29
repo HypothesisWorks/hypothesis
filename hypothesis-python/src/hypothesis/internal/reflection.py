@@ -14,13 +14,12 @@ to really unreasonable lengths to produce pretty output."""
 import ast
 import hashlib
 import inspect
-import linecache
 import re
 import sys
 import textwrap
 import types
 import warnings
-from collections.abc import MutableMapping, Sequence
+from collections.abc import Sequence
 from functools import partial, wraps
 from inspect import Parameter, Signature
 from io import StringIO
@@ -30,10 +29,9 @@ from tokenize import COMMENT, generate_tokens, untokenize
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 from unittest.mock import _patch as PatchType
-from weakref import WeakKeyDictionary
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.cache import LRUCache
+from hypothesis.internal import lambda_sources
 from hypothesis.internal.compat import EllipsisType, is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
@@ -42,23 +40,6 @@ if TYPE_CHECKING:
     from hypothesis.strategies._internal.strategies import SearchStrategy
 
 T = TypeVar("T")
-
-# we have several levels of caching for lambda descriptions.
-# * LAMBDA_DESCRIPTION_CACHE maps a lambda f to its description _lambda_description(f).
-#   Note that _lambda_description(f) may not be identical to f as it appears in the
-#   source code file.
-# * LAMBDA_DIGEST_DESCRIPTION_CACHE maps _lambda_source_key(f) to _lambda_description(f).
-#   _lambda_source_key implements something close to "ast equality":
-#   two syntactically identical (minus whitespace etc) lambdas appearing in
-#   different files have the same key. Cache hits here provide a fast path which
-#   avoids ast-parsing syntactic lambdas we've seen before. Two lambdas with the
-#   same _lambda_source_key will not have different _lambda_descriptions - if
-#   they do, that's a bug here.
-# * AST_LAMBDAS_CACHE maps source code lines to a list of the lambdas found in
-#   that source code. A cache hit here avoids reparsing the ast.
-LAMBDA_DESCRIPTION_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
-LAMBDA_DIGEST_DESCRIPTION_CACHE: LRUCache[tuple[Any], str] = LRUCache(max_size=1000)
-AST_LAMBDAS_CACHE: LRUCache[tuple[str], list[ast.Lambda]] = LRUCache(max_size=100)
 
 
 def is_mock(obj: object) -> bool:
@@ -295,186 +276,6 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
-def extract_all_lambdas(tree):
-    lambdas = []
-
-    class Visitor(ast.NodeVisitor):
-        def visit_Lambda(self, node):
-            lambdas.append(node)
-
-    Visitor().visit(tree)
-    return lambdas
-
-
-def _lambda_source_key(f, *, bounded_size=False):
-    """Returns a digest that differentiates lambdas that have different sources."""
-    consts_repr = repr(f.__code__.co_consts)
-    if bounded_size and len(consts_repr) > 48:
-        # Compress repr to avoid keeping arbitrarily large strings pinned as cache
-        # keys. We don't do this unconditionally because hashing takes time, and is
-        # not necessary if the key is used just for comparison (and is not stored).
-        consts_repr = hashlib.sha384(consts_repr.encode()).digest()
-    return (
-        consts_repr,
-        inspect.signature(f),
-        f.__code__.co_names,
-        f.__code__.co_code,
-        f.__code__.co_varnames,
-        f.__code__.co_freevars,
-    )
-
-
-def _mimic_lambda_from_source(f, source):
-    # Compile a lambda from source where the compiled lambda mimics f as far as
-    # possible in terms of __code__ and __closure__. The mimicry is far from perfect.
-    if f.__closure__ is None:
-        compiled = eval(source, f.__globals__)
-    else:
-        # Hack to mimic the capture of vars from local closure. In terms of code
-        # generation they don't *need* to have the same values (cell_contents),
-        # just the same names bound to some closure, but hey.
-        closure = {f"___fv{i}": c.cell_contents for i, c in enumerate(f.__closure__)}
-        assigns = [f"{name}=___fv{i}" for i, name in enumerate(f.__code__.co_freevars)]
-        fake_globals = f.__globals__ | closure
-        exec(f"def construct(): {';'.join(assigns)}; return ({source})", fake_globals)
-        compiled = fake_globals["construct"]()
-    return compiled
-
-
-def _lambda_code_matches_source(f, source):
-    try:
-        compiled = _mimic_lambda_from_source(f, source)
-    except (NameError, SyntaxError):  # pragma: no cover
-        return False
-    return _lambda_source_key(f) == _lambda_source_key(compiled)
-
-
-def _lambda_description(f):
-    # You might be wondering how a lambda can have a return-type annotation?
-    # The answer is that we add this at runtime, in new_given_signature(),
-    # and we do support strange choices as applying @given() to a lambda.
-    sig = inspect.signature(f)
-    assert sig.return_annotation in (Parameter.empty, None), sig
-
-    # Using pytest-xdist on Python 3.13, there's an entry in the linecache for
-    # file "<string>", which then returns nonsense to getsource.  Discard it.
-    linecache.cache.pop("<string>", None)
-
-    def format_lambda(body):
-        # The signature is more informative than the corresponding ast.unparse
-        # output, so add the signature to the unparsed body
-        return (
-            f"lambda {str(sig)[1:-1]}: {body}" if sig.parameters else f"lambda: {body}"
-        )
-
-    if_confused = format_lambda("<unknown>")
-
-    try:
-        source_lines, lineno0 = inspect.findsource(f)
-        source_lines = tuple(source_lines)  # make it hashable
-    except OSError:
-        return if_confused
-
-    try:
-        all_lambdas = AST_LAMBDAS_CACHE[source_lines]
-    except KeyError:
-        # The source isn't already parsed, so we try to shortcut by parsing just
-        # the local block. If that fails to produce a code-identical lambda,
-        # fall through to the full parse.
-        local_lines = inspect.getblock(source_lines[lineno0:])
-        local_block = textwrap.dedent("".join(local_lines))
-        if local_block.startswith("."):
-            # The fairly common ".map(lambda x: ...)" case. This partial block
-            # isn't valid syntax, but it might be if we remove the leading ".".
-            local_block = local_block[1:]
-
-        try:
-            local_tree = ast.parse(local_block)
-        except SyntaxError:
-            pass
-        else:
-            local_lambdas = extract_all_lambdas(local_tree)
-            for candidate in local_lambdas:
-                if ast_arguments_matches_signature(candidate.args, sig):
-                    source = format_lambda(ast.unparse(candidate.body))
-                    if _lambda_code_matches_source(f, source):
-                        return source
-
-        # Local parse failed or didn't produce a match, go ahead with the full parse
-        try:
-            tree = ast.parse("".join(source_lines))
-        except SyntaxError:  # pragma: no cover
-            all_lambdas = []
-        else:
-            all_lambdas = extract_all_lambdas(tree)
-        AST_LAMBDAS_CACHE[source_lines] = all_lambdas
-
-    # Filter the lambda nodes down to those that match in signature and position,
-    # and only consider their unique source representations.
-    aligned_sources = {
-        format_lambda(ast.unparse(candidate.body))
-        for candidate in all_lambdas
-        if (
-            candidate.lineno <= lineno0 + 1 <= candidate.end_lineno
-            and ast_arguments_matches_signature(candidate.args, sig)
-        )
-    }
-
-    # The code-match check has a lot of false negatives in general, so we only do
-    # that check if we really need to, i.e., if there are multiple aligned lambdas
-    # having different source representations. If there is only a single lambda
-    # source found, we use that one without further checking.
-
-    # If a user starts a hypothesis process, then edits their code, the lines in the
-    # parsed source code might not match the live __code__ objects.
-    # (and on sys.platform == "emscripten", this can happen regardless due to a
-    # pyodide bug in inspect.getsource()).
-    # There is a risk of returning source for the wrong lambda, if there is a lambda
-    # also on the shifted line *or* if the lambda itself is changed.
-
-    if len(aligned_sources) == 1:
-        return next(iter(aligned_sources))
-
-    for source in aligned_sources:
-        if _lambda_code_matches_source(f, source):
-            return source
-
-    # None of the aligned lambdas match perfectly in generated code. This may be
-    # caused by differences in code generation, missing nested-scope closures,
-    # inner lambdas having different identities, etc. The majority of cases will
-    # have a unique aligned lambda so it doesn't matter that much.
-    return if_confused
-
-
-def lambda_description(f):
-    """
-    Returns a syntactically-valid expression describing `f`. This is often, but
-    not always, the exact lambda definition string which appears in the source code.
-    The difference comes from parsing the lambda ast into `tree` and then returning
-    the result of `ast.unparse(tree)`, which may differ in whitespace, double vs
-    single quotes, etc.
-
-    Returns a string indicating an unknown body if the parsing gets confused in any way.
-    """
-    try:
-        return LAMBDA_DESCRIPTION_CACHE[f]
-    except KeyError:
-        pass
-
-    key = _lambda_source_key(f, bounded_size=True)
-    try:
-        description = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
-        LAMBDA_DESCRIPTION_CACHE[f] = description
-        return description
-    except KeyError:
-        pass
-
-    description = _lambda_description(f)
-    LAMBDA_DESCRIPTION_CACHE[f] = description
-    LAMBDA_DIGEST_DESCRIPTION_CACHE[key] = description
-    return description
-
-
 def get_pretty_function_description(f: object) -> str:
     if isinstance(f, partial):
         return pretty(f)
@@ -482,7 +283,7 @@ def get_pretty_function_description(f: object) -> str:
         return repr(f)
     name = f.__name__  # type: ignore
     if name == "<lambda>":
-        return lambda_description(f)
+        return lambda_sources.lambda_description(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
         self = f.__self__
         # Some objects, like `builtins.abs` are of BuiltinMethodType but have
@@ -686,6 +487,9 @@ def impersonate(target):
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
         f.__globals__["__hypothesistracebackhide__"] = True
+        # But leave an breadcrumb for _describe_lambda to follow, it's
+        # just confused by the lies above
+        f.__wrapped_target = target
         return f
 
     return accept
@@ -716,7 +520,7 @@ def is_identity_function(f: Callable) -> bool:
 
     # We only accept a single unbound argument. While it would be possible to
     # accept extra defaulted arguments, it would be pointless as they couldn't
-    # be referenced at all in the code object (or the check below would fail).
+    # be referenced at all in the code object (or the co_code check would fail).
     bound_args = int(inspect.ismethod(f))
     if code.co_argcount != bound_args + 1 or code.co_kwonlyargcount > 0:
         return False
