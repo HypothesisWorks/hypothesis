@@ -11,19 +11,17 @@
 import pytest
 
 from hypothesis import assume, given, reject, settings
+from hypothesis._settings import all_settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers, nothing
 
 from tests.common.utils import fails_with
 
 
-def test_raises_unsatisfiable_if_all_false_in_finite_set():
-    @given(booleans())
-    def test_assume_false(x):
-        reject()
-
-    with pytest.raises(Unsatisfiable):
-        test_assume_false()
+@fails_with(Unsatisfiable)
+@given(booleans())
+def test_raises_unsatisfiable_if_all_false_in_finite_set(x):
+    reject()
 
 
 def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
@@ -112,3 +110,28 @@ def test_specific_error_for_coroutine_functions():
         match="Hypothesis doesn't know how to run async test functions",
     ):
         foo()
+
+
+@pytest.mark.parametrize("setting_name", all_settings)
+def test_suggests_at_settings_if_extra_kwarg_matches_setting_name(setting_name):
+    val = 1
+
+    # dynamically create functions with an extra kwarg argument which happens to
+    # match a settings variable. The user probably meant @settings.
+    # exec is pretty cursed here, but it does work.
+    namespace = {}
+    exec(
+        f"""
+@given(a=1, {setting_name}={val})
+def foo(a):
+    pass
+    """,
+        globals(),
+        namespace,
+    )
+
+    with pytest.raises(
+        InvalidArgument,
+        match=rf"Did you mean @settings\({setting_name}={val}\)\?",
+    ):
+        namespace["foo"]()

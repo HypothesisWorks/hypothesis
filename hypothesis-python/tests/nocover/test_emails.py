@@ -8,10 +8,17 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given
+import pytest
+
+from hypothesis import given, settings
 from hypothesis.strategies import emails, just
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~7 mins; first barrier: the `sampled_from(get_top_level_domains())` decision is "
+    "realized via iterative comparisons; see https://github.com/pschanely/CrossHair/issues/332",
+)
 @given(emails())
 def test_is_valid_email(address: str):
     local, at_, domain = address.rpartition("@")

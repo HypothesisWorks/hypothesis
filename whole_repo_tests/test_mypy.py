@@ -16,7 +16,12 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
+from .revealed_types import (
+    DIFF_REVEALED_TYPES,
+    NUMPY_REVEALED_TYPES,
+    PYTHON_VERSIONS,
+    REVEALED_TYPES,
+)
 
 
 def test_mypy_passes_on_hypothesis():
@@ -32,12 +37,17 @@ def test_mypy_passes_on_hypothesis_strict():
 
 
 def get_mypy_output(fname, *extra_args):
-    return subprocess.run(
-        [tool_path("mypy"), *extra_args, str(fname)],
+    proc = subprocess.run(
+        # --no-incremental is substantially slower, but works around a mypy cache
+        # bug https://github.com/HypothesisWorks/hypothesis/pull/4256
+        [tool_path("mypy"), "--no-incremental", *extra_args, str(fname)],
         encoding="utf-8",
         capture_output=True,
         text=True,
-    ).stdout
+    )
+    if proc.stderr:
+        raise AssertionError(f"{proc.returncode=}\n\n{proc.stdout}\n\n{proc.stderr}")
+    return proc.stdout
 
 
 def get_mypy_analysed_type(fname):
@@ -71,9 +81,10 @@ def get_mypy_analysed_type(fname):
             "SearchStrategy",
         )
         .replace("numpy._typing.", "")
+        .replace("_nbit_base.", "")
         .replace("numpy.", "")
-        .replace("List[", "list[")
-        .replace("Dict[", "dict[")
+        # .replace("List[", "list[")
+        # .replace("Dict[", "dict[")
     )
 
 
@@ -88,6 +99,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
     # Shell output looks like:
     # file.py:2: error: Incompatible types in assignment ... [assignment]
 
+    print(f"mypy output: {out}")
+
     def convert_lines():
         for error_line in out.splitlines():
             col, category = error_line.split(":")[-3:-1]
@@ -96,8 +109,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
                 # --hide-error-context. Don't include these
                 continue
 
-            # Intentional print so we can check mypy's output if a test fails
-            print(error_line)
             error_code = error_line.split("[")[-1].rstrip("]")
             if error_code == "empty-body":
                 continue
@@ -108,25 +119,7 @@ def assert_mypy_errors(fname, expected, python_version=None):
 
 @pytest.mark.parametrize(
     "val,expect",
-    [
-        *REVEALED_TYPES,  # shared with Pyright
-        ("lists(none())", "list[None]"),
-        ("data()", "hypothesis.strategies._internal.core.DataObject"),
-        ("none() | integers()", "Union[None, int]"),
-        ("recursive(integers(), lists)", "Union[list[Any], int]"),
-        # We have overloads for up to five types, then fall back to Any.
-        # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
-        ("one_of(integers(), text())", "Union[int, str]"),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list))",
-            "Union[int, str, None, bytes, list[Never]]",
-        ),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
-            "Any",
-        ),
-        # Note: keep this in sync with the equivalent test for Pyright
-    ],
+    [*REVEALED_TYPES, *((x.value, x.mypy) for x in DIFF_REVEALED_TYPES)],
 )
 def test_revealed_types(tmp_path, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
@@ -335,14 +328,7 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
 @pytest.mark.parametrize(
-    "target_args",
-    [
-        "target=b1",
-        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
-        pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
-        pytest.param("targets=(b1, b2)", marks=pytest.mark.xfail(strict=False)),
-        "",
-    ],
+    "target_args", ["", "target=b1", "targets=(b1,)", "targets=(b1, b2)"]
 )
 @pytest.mark.parametrize("returns", ["int", "MultipleResults[int]"])
 def test_stateful_target_params_return_type(tmp_path, decorator, target_args, returns):
@@ -614,7 +600,7 @@ def test_raises_for_mixed_pos_kwargs_in_given(tmp_path, python_version):
 
 
 def test_register_random_interface(tmp_path):
-    f = tmp_path / "check_mypy_on_pos_arg_only_strats.py"
+    f = tmp_path / "test_register_random_interface.py"
     f.write_text(
         textwrap.dedent(
             """
@@ -635,3 +621,26 @@ def test_register_random_interface(tmp_path):
         encoding="utf-8",
     )
     assert_mypy_errors(f, [])
+
+
+def test_register_type_strategy_type_alias_type(tmp_path):
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4410
+    f = tmp_path / "test_register_type_strategy_type_alias_type.py"
+    f.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis import strategies as st
+            from typing import TypeAliasType
+
+            def ints() -> st.SearchStrategy[int]:
+                return st.from_type(int)
+
+            Ints = TypeAliasType("Ints", int)  # or `type Ints = int`
+
+            # this previous failed type-checking
+            st.register_type_strategy(Ints, ints())
+            """
+        ),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [], python_version="3.12")

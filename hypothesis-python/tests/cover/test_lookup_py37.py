@@ -75,7 +75,7 @@ def test_resolving_standard_deque_as_generic(x: collections.deque[Elem]):
 
 @given(...)
 def test_resolving_standard_defaultdict_as_generic(
-    x: collections.defaultdict[Elem, Value]
+    x: collections.defaultdict[Elem, Value],
 ):
     check(collections.defaultdict, x)
     assert all(isinstance(e, Value) for e in x.values())
@@ -83,7 +83,7 @@ def test_resolving_standard_defaultdict_as_generic(
 
 @given(...)
 def test_resolving_standard_ordered_dict_as_generic(
-    x: collections.OrderedDict[Elem, Value]
+    x: collections.OrderedDict[Elem, Value],
 ):
     check(collections.OrderedDict, x)
     assert all(isinstance(e, Value) for e in x.values())
@@ -113,7 +113,7 @@ def test_resolving_standard_iterator_as_generic(x: collections.abc.Iterator[Elem
 
 @given(...)
 def test_resolving_standard_generator_as_generic(
-    x: collections.abc.Generator[Elem, None, Value]
+    x: collections.abc.Generator[Elem, None, Value],
 ):
     assert isinstance(x, collections.abc.Generator)
     try:
@@ -206,7 +206,7 @@ def test_resolving_standard_keysview_as_generic(x: collections.abc.KeysView[Elem
 
 @given(...)
 def test_resolving_standard_itemsview_as_generic(
-    x: collections.abc.ItemsView[Elem, Value]
+    x: collections.abc.ItemsView[Elem, Value],
 ):
     assert isinstance(x, collections.abc.ItemsView)
     assert all(isinstance(e, Elem) and isinstance(v, Value) for e, v in x)
@@ -218,7 +218,12 @@ def test_resolving_standard_valuesview_as_generic(x: collections.abc.ValuesView[
     check(collections.abc.ValuesView, x)
 
 
-@pytest.mark.xfail  # Weird interaction with fixes in PR #2952
+# Weird interaction with fixes in PR #2952
+#
+# 2025-08-11: this gets even weirder with 3.14, where memoryview is in fact a
+# context manager, and so gets resolved for AbstractContextManager[Elem] here.
+# (But then errors during generation, because Elem does not implement __buffer__).
+@pytest.mark.xfail
 @given(...)
 def test_resolving_standard_contextmanager_as_generic(
     x: contextlib.AbstractContextManager[Elem],

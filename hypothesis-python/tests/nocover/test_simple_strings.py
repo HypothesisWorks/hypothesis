@@ -10,10 +10,16 @@
 
 import unicodedata
 
+import pytest
+
 from hypothesis import given, settings
 from hypothesis.strategies import text
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~10 minutes; many-valued realization is slow",
+)
 @given(text(min_size=1, max_size=1))
 @settings(max_examples=2000)
 def test_does_not_generate_surrogates(t):

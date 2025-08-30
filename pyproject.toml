@@ -1,6 +1,9 @@
 [tool.ruff]
 line-length = 125
-target-version = "py38"
+target-version = "py39"
+
+[tool.ruff.per-file-target-version]
+"test_typealias_py312.py" = "py312"
 
 [tool.ruff.lint]
 select = [
@@ -35,52 +38,55 @@ ignore = [
   "B008",
   "B018",
   "C408",
+  "C420",
   "COM812",
   "DJ007",
   "DJ008",
   "E721",
   "E731",
   "E741",
+  "FBT001",
   "FBT003",
+  "FBT001",
   "PD011",
   "PD901",
   "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
   "PT001",
   "PT003",
-  "PT004",
   "PT006",
   "PT007",
   "PT009",
   "PT011",
   "PT012",
   "PT013",
+  "PT015",
   "PT017",
   "PT019",
   "PT023",
   "PT027",
+  "PT031",
   "RUF001",  # don't break our tests by rewriting confusables
   "RUF005",
   "RUF017",
+  "RUF028",  # we use fmt: off for black as well as ruff, with differing semantics
   "SIM102",
   "SIM105",
   "SIM108",
   "SIM114",
   "SIM117",
   "SIM300",
+  "SIM905",
   "UP031",
   "UP037",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904", "FBT001"]
+"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904"]
 "hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
-"hypothesis-python/src/hypothesis/internal/conjecture/data.py" = ["FBT001"]
-"hypothesis-python/src/hypothesis/internal/conjecture/datatree.py" = ["FBT001"]
 "hypothesis-python/tests/nocover/test_imports.py" = ["F403", "F405"]
 "hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]
 "hypothesis-python/src/hypothesis/internal/conjecture/*" = ["B023"]
 "hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
-"hypothesis-python/tests/conjecture/test_test_data.py" = ["FBT001"]
 
 [tool.mypy]
 python_version = "3.10"

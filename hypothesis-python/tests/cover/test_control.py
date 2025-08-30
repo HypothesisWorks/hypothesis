@@ -37,7 +37,7 @@ from tests.common.utils import capture_out
 
 
 def bc():
-    return BuildContext(ConjectureData.for_buffer(b""))
+    return BuildContext(ConjectureData.for_choices([]), wrapped_test=None)
 
 
 def test_cannot_cleanup_with_no_context():
@@ -75,6 +75,9 @@ def test_can_nest_build_context():
 
 def test_does_not_suppress_exceptions():
     with pytest.raises(AssertionError):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with bc():
             raise AssertionError
     assert _current_build_context.value is None
@@ -82,6 +85,9 @@ def test_does_not_suppress_exceptions():
 
 def test_suppresses_exceptions_in_teardown():
     with pytest.raises(ValueError) as exc_info:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with bc():
 
             def foo():
@@ -96,6 +102,9 @@ def test_suppresses_exceptions_in_teardown():
 
 def test_runs_multiple_cleanup_with_teardown():
     with pytest.raises(ExceptionGroup) as exc_info:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with bc():
 
             def foo():
@@ -116,6 +125,9 @@ def test_runs_multiple_cleanup_with_teardown():
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
     with pytest.raises(ValueError):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with bc():
 
             def foo():
@@ -170,6 +182,9 @@ def test_prints_all_notes_in_verbose_mode():
         assert x < 5
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with reporting.with_reporter(reporting.default):
             with pytest.raises(AssertionError):
                 test()

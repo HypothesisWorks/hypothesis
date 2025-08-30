@@ -9,17 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-----------------
-hypothesis[lark]
-----------------
-
 This extra can be used to generate strings matching any context-free grammar,
 using the `Lark parser library <https://github.com/lark-parser/lark>`_.
 
 It currently only supports Lark's native EBNF syntax, but we plan to extend
 this to support other common syntaxes such as ANTLR and :rfc:`5234` ABNF.
 Lark already `supports loading grammars
-<https://lark-parser.readthedocs.io/en/latest/nearley.html>`_
+<https://lark-parser.readthedocs.io/en/stable/tools.html#importing-grammars-from-nearley-js>`_
 from `nearley.js <https://nearley.js.org/>`_, so you may not have to write
 your own at all.
 """
@@ -28,10 +24,13 @@ from inspect import signature
 from typing import Optional
 
 import lark
-from lark.grammar import NonTerminal, Terminal
+from lark.grammar import NonTerminal, Rule, Symbol, Terminal
+from lark.lark import Lark
+from lark.lexer import TerminalDef
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.regex import IncompatibleWithAlphabet
@@ -40,7 +39,9 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 __all__ = ["from_lark"]
 
 
-def get_terminal_names(terminals, rules, ignore_names):
+def get_terminal_names(
+    terminals: list[TerminalDef], rules: list[Rule], ignore_names: list[str]
+) -> set[str]:
     """Get names of all terminals in the grammar.
 
     The arguments are the results of calling ``Lark.grammar.compile()``,
@@ -60,13 +61,16 @@ class LarkStrategy(st.SearchStrategy):
     See ``from_lark`` for details.
     """
 
-    def __init__(self, grammar, start, explicit, alphabet):
+    def __init__(
+        self,
+        grammar: Lark,
+        start: Optional[str],
+        explicit: dict[str, st.SearchStrategy[str]],
+        alphabet: st.SearchStrategy[str],
+    ) -> None:
+        super().__init__()
         assert isinstance(grammar, lark.lark.Lark)
-        if start is None:
-            start = grammar.options.start
-        if not isinstance(start, list):
-            start = [start]
-        self.grammar = grammar
+        start: list[str] = grammar.options.start if start is None else [start]
 
         # This is a total hack, but working around the changes is a nicer user
         # experience than breaking for anyone who doesn't instantly update their
@@ -76,19 +80,18 @@ class LarkStrategy(st.SearchStrategy):
             terminals, rules, ignore_names = grammar.grammar.compile(start, ())
         elif "start" in compile_args:  # pragma: no cover
             # Support lark <= 0.10.0, without the terminals_to_keep argument.
-            terminals, rules, ignore_names = grammar.grammar.compile(start)
+            terminals, rules, ignore_names = grammar.grammar.compile(start)  # type: ignore
         else:  # pragma: no cover
             # This branch is to support lark <= 0.7.1, without the start argument.
-            terminals, rules, ignore_names = grammar.grammar.compile()
+            terminals, rules, ignore_names = grammar.grammar.compile()  # type: ignore
 
-        self.names_to_symbols = {}
+        self.names_to_symbols: dict[str, Symbol] = {}
 
         for r in rules:
-            t = r.origin
-            self.names_to_symbols[t.name] = t
+            self.names_to_symbols[r.origin.name] = r.origin
 
         disallowed = set()
-        self.terminal_strategies = {}
+        self.terminal_strategies: dict[str, st.SearchStrategy[str]] = {}
         for t in terminals:
             self.names_to_symbols[t.name] = Terminal(t.name)
             s = st.from_regex(t.pattern.to_regexp(), fullmatch=True, alphabet=alphabet)
@@ -119,7 +122,8 @@ class LarkStrategy(st.SearchStrategy):
             )
         self.terminal_strategies.update(explicit)
 
-        nonterminals = {}
+        # can in fact contain any symbol, despite its name.
+        nonterminals: dict[str, list[tuple[Symbol, ...]]] = {}
 
         for rule in rules:
             if disallowed.isdisjoint(r.name for r in rule.expansion):
@@ -149,15 +153,15 @@ class LarkStrategy(st.SearchStrategy):
             k: st.sampled_from(sorted(v, key=len)) for k, v in nonterminals.items()
         }
 
-        self.__rule_labels = {}
+        self.__rule_labels: dict[str, int] = {}
 
-    def do_draw(self, data):
-        state = []
+    def do_draw(self, data: ConjectureData) -> str:
+        state: list[str] = []
         start = data.draw(self.start)
         self.draw_symbol(data, start, state)
         return "".join(state)
 
-    def rule_label(self, name):
+    def rule_label(self, name: str) -> int:
         try:
             return self.__rule_labels[name]
         except KeyError:
@@ -165,20 +169,25 @@ class LarkStrategy(st.SearchStrategy):
                 name, calc_label_from_name(f"LARK:{name}")
             )
 
-    def draw_symbol(self, data, symbol, draw_state):
+    def draw_symbol(
+        self,
+        data: ConjectureData,
+        symbol: Symbol,
+        draw_state: list[str],
+    ) -> None:
         if isinstance(symbol, Terminal):
             strategy = self.terminal_strategies[symbol.name]
             draw_state.append(data.draw(strategy))
         else:
             assert isinstance(symbol, NonTerminal)
-            data.start_example(self.rule_label(symbol.name))
+            data.start_span(self.rule_label(symbol.name))
             expansion = data.draw(self.nonterminal_strategies[symbol.name])
             for e in expansion:
                 self.draw_symbol(data, e, draw_state)
                 self.gen_ignore(data, draw_state)
-            data.stop_example()
+            data.stop_span()
 
-    def gen_ignore(self, data, draw_state):
+    def gen_ignore(self, data: ConjectureData, draw_state: list[str]) -> None:
         if self.ignored_symbols and data.draw_boolean(1 / 4):
             emit = data.draw(st.sampled_from(self.ignored_symbols))
             self.draw_symbol(data, emit, draw_state)

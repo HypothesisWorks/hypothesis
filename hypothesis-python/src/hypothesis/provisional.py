@@ -26,6 +26,8 @@ from typing import Optional
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies._internal.utils import defines_strategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
@@ -45,7 +47,17 @@ def get_top_level_domains() -> tuple[str, ...]:
     return ("COM", *sorted((d for d in _tlds if d != "ARPA"), key=len))
 
 
-class DomainNameStrategy(st.SearchStrategy):
+@st.composite
+def _recase_randomly(draw: DrawFn, tld: str) -> str:
+    tld = list(tld)
+    changes = draw(st.tuples(*(st.booleans() for _ in range(len(tld)))))
+    for i, change_case in enumerate(changes):
+        if change_case:
+            tld[i] = tld[i].lower() if tld[i].isupper() else tld[i].upper()
+    return "".join(tld)
+
+
+class DomainNameStrategy(st.SearchStrategy[str]):
     @staticmethod
     def clean_inputs(
         minimum: int, maximum: int, value: Optional[int], variable_name: str
@@ -89,34 +101,37 @@ class DomainNameStrategy(st.SearchStrategy):
         # information in https://tools.ietf.org/html/rfc1035#section-2.3.1
         # which defines the allowed syntax of a subdomain string.
         if self.max_element_length == 1:
-            self.label_regex = r"[a-zA-Z]"
+            label_regex = r"[a-zA-Z]"
         elif self.max_element_length == 2:
-            self.label_regex = r"[a-zA-Z][a-zA-Z0-9]?"
+            label_regex = r"[a-zA-Z][a-zA-Z0-9]?"
         else:
             maximum_center_character_pattern_repetitions = self.max_element_length - 2
-            self.label_regex = r"[a-zA-Z]([a-zA-Z0-9\-]{0,%d}[a-zA-Z0-9])?" % (
+            label_regex = r"[a-zA-Z]([a-zA-Z0-9\-]{0,%d}[a-zA-Z0-9])?" % (
                 maximum_center_character_pattern_repetitions,
             )
 
-    def do_draw(self, data):
+        # Construct reusable strategies here to avoid a performance hit by doing
+        # so repeatedly in do_draw.
+
         # 1 - Select a valid top-level domain (TLD) name
         # 2 - Check that the number of characters in our selected TLD won't
         # prevent us from generating at least a 1 character subdomain.
         # 3 - Randomize the TLD between upper and lower case characters.
-        domain = data.draw(
+
+        self.domain_strategy = (
             st.sampled_from(get_top_level_domains())
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
-            .flatmap(
-                lambda tld: st.tuples(
-                    *(st.sampled_from([c.lower(), c.upper()]) for c in tld)
-                ).map("".join)
-            )
+            .flatmap(_recase_randomly)
         )
+
         # RFC-5890 s2.3.1 says such labels are reserved, and since we don't
         # want to bother with xn-- punycode labels we'll exclude them all.
-        elem_st = st.from_regex(self.label_regex, fullmatch=True).filter(
+        self.elem_strategy = st.from_regex(label_regex, fullmatch=True).filter(
             lambda label: len(label) < 4 or label[2:4] != "--"
         )
+
+    def do_draw(self, data: ConjectureData) -> str:
+        domain = data.draw(self.domain_strategy)
         # The maximum possible number of subdomains is 126,
         # 1 character subdomain + 1 '.' character, * 126 = 252,
         # with a max of 255, that leaves 3 characters for a TLD.
@@ -125,9 +140,9 @@ class DomainNameStrategy(st.SearchStrategy):
         elements = cu.many(data, min_size=1, average_size=3, max_size=126)
         while elements.more():
             # Generate a new valid subdomain using the regex strategy.
-            sub_domain = data.draw(elem_st)
+            sub_domain = data.draw(self.elem_strategy)
             if len(domain) + len(sub_domain) >= self.max_length:
-                data.stop_example(discard=True)
+                data.stop_span(discard=True)
                 break
             domain = sub_domain + "." + domain
         return domain
@@ -174,7 +189,7 @@ def urls() -> st.SearchStrategy[str]:
     """
 
     def url_encode(s: str) -> str:
-        return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
+        return "".join(c if c in URL_SAFE_CHARACTERS else f"%{ord(c):02X}" for c in s)
 
     schemes = st.sampled_from(["http", "https"])
     ports = st.integers(min_value=1, max_value=2**16 - 1).map(":{}".format)

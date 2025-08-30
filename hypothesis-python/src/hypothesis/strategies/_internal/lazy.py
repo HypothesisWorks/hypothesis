@@ -8,94 +8,107 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import MutableMapping
+from collections.abc import Sequence
 from inspect import signature
+from typing import Any, Callable, Optional
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
     get_pretty_function_description,
     repr_call,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.deferred import DeferredStrategy
+from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
+from hypothesis.utils.threading import ThreadLocal
 
-unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
-unwrap_depth = 0
+threadlocal = ThreadLocal(unwrap_depth=int, unwrap_cache=WeakKeyDictionary)
 
 
 def unwrap_strategies(s):
-    global unwrap_depth
-
-    if not isinstance(s, SearchStrategy):
+    # optimization
+    if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
+
     try:
-        return unwrap_cache[s]
+        return threadlocal.unwrap_cache[s]
     except KeyError:
         pass
 
-    unwrap_cache[s] = s
+    threadlocal.unwrap_cache[s] = s
+    threadlocal.unwrap_depth += 1
 
     try:
-        unwrap_depth += 1
+        result = unwrap_strategies(s.wrapped_strategy)
+        threadlocal.unwrap_cache[s] = result
+
         try:
-            result = unwrap_strategies(s.wrapped_strategy)
-            unwrap_cache[s] = result
-            try:
-                assert result.force_has_reusable_values == s.force_has_reusable_values
-            except AttributeError:
-                pass
-
-            try:
-                result.force_has_reusable_values = s.force_has_reusable_values
-            except AttributeError:
-                pass
-            return result
+            assert result.force_has_reusable_values == s.force_has_reusable_values
         except AttributeError:
-            return s
+            pass
+
+        try:
+            result.force_has_reusable_values = s.force_has_reusable_values
+        except AttributeError:
+            pass
+
+        return result
     finally:
-        unwrap_depth -= 1
-        if unwrap_depth <= 0:
-            unwrap_cache.clear()
-        assert unwrap_depth >= 0
+        threadlocal.unwrap_depth -= 1
+        if threadlocal.unwrap_depth <= 0:
+            threadlocal.unwrap_cache.clear()
+        assert threadlocal.unwrap_depth >= 0
 
 
-class LazyStrategy(SearchStrategy):
+class LazyStrategy(SearchStrategy[Ex]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, function, args, kwargs, *, transforms=(), force_repr=None):
+    def __init__(
+        self,
+        function: Callable[..., SearchStrategy[Ex]],
+        args: Sequence[object],
+        kwargs: dict[str, object],
+        *,
+        transforms: tuple[tuple[str, Callable[..., Any]], ...] = (),
+        force_repr: Optional[str] = None,
+    ):
         super().__init__()
-        self.__wrapped_strategy = None
-        self.__representation = force_repr
+        self.__wrapped_strategy: Optional[SearchStrategy[Ex]] = None
+        self.__representation: Optional[str] = force_repr
         self.function = function
         self.__args = args
         self.__kwargs = kwargs
         self._transformations = transforms
 
     @property
-    def supports_find(self):
+    def supports_find(self) -> bool:
         return self.wrapped_strategy.supports_find
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         for source in (self.__args, self.__kwargs.values()):
             for v in source:
                 if isinstance(v, SearchStrategy) and not v.is_cacheable:
                     return False
         return True
 
+    def calc_label(self) -> int:
+        return self.wrapped_strategy.label
+
     @property
-    def wrapped_strategy(self):
+    def wrapped_strategy(self) -> SearchStrategy[Ex]:
         if self.__wrapped_strategy is None:
             check_sideeffect_during_initialization("lazy evaluation of {!r}", self)
 
@@ -106,20 +119,20 @@ class LazyStrategy(SearchStrategy):
 
             base = self.function(*self.__args, **self.__kwargs)
             if unwrapped_args == self.__args and unwrapped_kwargs == self.__kwargs:
-                self.__wrapped_strategy = base
+                _wrapped_strategy = base
             else:
-                self.__wrapped_strategy = self.function(
-                    *unwrapped_args, **unwrapped_kwargs
-                )
+                _wrapped_strategy = self.function(*unwrapped_args, **unwrapped_kwargs)
             for method, fn in self._transformations:
-                self.__wrapped_strategy = getattr(self.__wrapped_strategy, method)(fn)
+                _wrapped_strategy = getattr(_wrapped_strategy, method)(fn)
+            self.__wrapped_strategy = _wrapped_strategy
+        assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 
     def __with_transform(self, method, fn):
         repr_ = self.__representation
         if repr_:
             repr_ = f"{repr_}.{method}({get_pretty_function_description(fn)})"
-        return type(self)(
+        return LazyStrategy(
             self.function,
             self.__args,
             self.__kwargs,
@@ -133,12 +146,12 @@ class LazyStrategy(SearchStrategy):
     def filter(self, condition):
         return self.__with_transform("filter", condition)
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         w = self.wrapped_strategy
         assert isinstance(w, SearchStrategy), f"{self!r} returned non-strategy {w!r}"
         w.validate()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.__representation is None:
             sig = signature(self.function)
             pos = [p for p in sig.parameters.values() if "POSITIONAL" in p.kind.name]
@@ -163,9 +176,5 @@ class LazyStrategy(SearchStrategy):
             )
         return self.__representation
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)
-
-    @property
-    def label(self):
-        return self.wrapped_strategy.label

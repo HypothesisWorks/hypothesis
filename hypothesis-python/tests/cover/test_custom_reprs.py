@@ -13,6 +13,7 @@ import re
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
 def test_includes_non_default_args_in_repr():
@@ -165,3 +166,33 @@ Falsifying example: inner(
 )
 """
     assert "\n".join(err.value.__notes__).strip() == expected.strip()
+
+
+@pytest.mark.parametrize(
+    "strategy, expected_repr",
+    [
+        (st.characters(), "characters()"),
+        (st.characters(codec="utf-8"), "characters(codec='utf-8')"),
+        (st.characters(min_codepoint=65), "characters(min_codepoint=65)"),
+        (st.characters(max_codepoint=127), "characters(max_codepoint=127)"),
+        (st.characters(categories=["Lu", "Ll"]), "characters(categories=('Lu', 'Ll'))"),
+        (
+            st.characters(exclude_characters="abc"),
+            "characters(exclude_characters='abc')",
+        ),
+        (
+            st.characters(min_codepoint=65, max_codepoint=90),
+            "characters(min_codepoint=65, max_codepoint=90)",
+        ),
+        (
+            st.characters(codec="ascii", min_codepoint=32, max_codepoint=126),
+            "characters(min_codepoint=32, max_codepoint=126)",
+        ),
+        (
+            st.characters(categories=["Lu"], exclude_characters="AZ"),
+            "characters(categories=('Lu',), exclude_characters='AZ')",
+        ),
+    ],
+)
+def test_characters_repr(strategy, expected_repr):
+    assert repr(unwrap_strategies(strategy)) == expected_repr

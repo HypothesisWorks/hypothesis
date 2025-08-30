@@ -9,11 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import functools
+import warnings
 
 import pytest
 
-from hypothesis import find, given
-from hypothesis.errors import InvalidArgument
+from hypothesis import find, given, strategies as st
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
     SearchStrategy as ActualSearchStrategy,
@@ -171,13 +172,13 @@ def test_recursion_validates_recursive_step():
 
 @fails_with(InvalidArgument)
 @given(x=integers())
-def test_stuff_keyword(x=1):
+def test_stuff_keyword(x=1):  # noqa: PT028
     pass
 
 
 @fails_with(InvalidArgument)
 @given(integers())
-def test_stuff_positional(x=1):
+def test_stuff_positional(x=1):  # noqa: PT028
     pass
 
 
@@ -275,3 +276,27 @@ def test_check_strategy_might_suggest_sampled_from():
     with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
         check_strategy_((1, 2, 3))
     check_strategy_(integers(), "passes for our custom coverage check")
+
+
+@pytest.mark.parametrize("codec", ["ascii", "utf-8"])
+def test_warn_on_strings_matching_common_codecs(codec):
+    with pytest.warns(
+        HypothesisWarning,
+        match=f"it seems like you are trying to use the codec {codec!r}",
+    ):
+
+        @given(st.text(codec))
+        def f(s):
+            pass
+
+        f()
+
+    # if we reorder, it doesn't warn anymore
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        @given(st.text(codec[1:] + codec[:1]))
+        def f(s):
+            pass
+
+        f()

@@ -11,12 +11,10 @@
 import math
 import struct
 from sys import float_info
-from typing import TYPE_CHECKING, Callable, Literal, Optional, SupportsFloat, Union
+from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
 
 if TYPE_CHECKING:
     from typing import TypeAlias
-else:
-    TypeAlias = object
 
 SignedIntFormat: "TypeAlias" = Literal["!h", "!i", "!q"]
 UnsignedIntFormat: "TypeAlias" = Literal["!H", "!I", "!Q"]
@@ -136,38 +134,53 @@ width_smallest_normals: dict[int, float] = {
 }
 assert width_smallest_normals[64] == float_info.min
 
+mantissa_mask = (1 << 52) - 1
+
 
 def make_float_clamper(
-    min_float: float = 0.0,
-    max_float: float = math.inf,
+    min_value: float,
+    max_value: float,
     *,
-    allow_zero: bool = False,  # Allows +0.0 (even if minfloat > 0)
-) -> Optional[Callable[[float], float]]:
+    allow_nan: bool,
+    smallest_nonzero_magnitude: float,
+) -> Callable[[float], float]:
     """
     Return a function that clamps positive floats into the given bounds.
-
-    Returns None when no values are allowed (min > max and zero is not allowed).
     """
-    if max_float < min_float:
-        if allow_zero:
-            min_float = max_float = 0.0
-        else:
-            return None
+    from hypothesis.internal.conjecture.choice import choice_permitted
 
-    range_size = min(max_float - min_float, float_info.max)
-    mantissa_mask = (1 << 52) - 1
+    assert sign_aware_lte(min_value, max_value)
+    range_size = min(max_value - min_value, float_info.max)
 
-    def float_clamper(float_val: float) -> float:
-        if min_float <= float_val <= max_float:
-            return float_val
-        if float_val == 0.0 and allow_zero:
-            return float_val
+    def float_clamper(f: float) -> float:
+        if choice_permitted(
+            f,
+            {
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+            },
+        ):
+            return f
         # Outside bounds; pick a new value, sampled from the allowed range,
         # using the mantissa bits.
-        mant = float_to_int(float_val) & mantissa_mask
-        float_val = min_float + range_size * (mant / mantissa_mask)
+        mant = float_to_int(abs(f)) & mantissa_mask
+        f = min_value + range_size * (mant / mantissa_mask)
+
+        # if we resampled into the space disallowed by smallest_nonzero_magnitude,
+        # default to smallest_nonzero_magnitude.
+        if 0 < abs(f) < smallest_nonzero_magnitude:
+            f = smallest_nonzero_magnitude
+            # we must have either -smallest_nonzero_magnitude <= min_value or
+            # smallest_nonzero_magnitude >= max_value, or no values would be
+            # possible. If smallest_nonzero_magnitude is not valid (because it's
+            # larger than max_value), then -smallest_nonzero_magnitude must be valid.
+            if smallest_nonzero_magnitude > max_value:
+                f *= -1
+
         # Re-enforce the bounds (just in case of floating point arithmetic error)
-        return max(min_float, min(max_float, float_val))
+        return clamp(min_value, f, max_value)
 
     return float_clamper
 
@@ -180,7 +193,19 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return x <= y
 
 
+def clamp(lower: float, value: float, upper: float) -> float:
+    """Given a value and lower/upper bounds, 'clamp' the value so that
+    it satisfies lower <= value <= upper.  NaN is mapped to lower."""
+    # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
+    if not sign_aware_lte(lower, value):
+        return lower
+    if not sign_aware_lte(value, upper):
+        return upper
+    return value
+
+
 SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
+MAX_PRECISE_INTEGER = 2**53
 assert math.isnan(SIGNALING_NAN)
 assert math.copysign(1, SIGNALING_NAN) == 1

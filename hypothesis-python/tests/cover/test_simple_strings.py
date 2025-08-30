@@ -102,7 +102,7 @@ def test_can_restrict_to_ascii_only(s):
 def test_fixed_size_bytes_just_draw_bytes():
     from hypothesis.internal.conjecture.data import ConjectureData
 
-    x = ConjectureData.for_buffer(b"foo")
+    x = ConjectureData.for_choices([b"foo"])
     assert x.draw(binary(min_size=3, max_size=3)) == b"foo"
 
 

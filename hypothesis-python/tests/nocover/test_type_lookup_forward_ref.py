@@ -12,15 +12,25 @@ from typing import Dict as _Dict, ForwardRef, Union
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import ResolutionFailed
 
 from tests.common import utils
+from tests.common.utils import skipif_threading
+
+# error only occurs with typing variants
+# ruff: noqa: UP006, UP035
 
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722
 
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="slow with recursive strustures: https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 
+
+@skipif_threading  # weird errors around b_strategy scope?
 @given(st.data())
 def test_mutually_recursive_types_with_typevar(data):
     # The previously-failing example from the issue
@@ -40,6 +50,7 @@ def test_mutually_recursive_types_with_typevar(data):
         data.draw(st.from_type(B))
 
 
+@skipif_threading  # weird errors around d_strategy scope?
 @given(st.data())
 def test_mutually_recursive_types_with_typevar_alternate(data):
     # It's not particularly clear why this version passed when the previous

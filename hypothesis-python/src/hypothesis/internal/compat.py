@@ -12,12 +12,21 @@ import codecs
 import copy
 import dataclasses
 import inspect
+import itertools
 import platform
 import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ForwardRef,
+    Optional,
+    TypedDict as TypedDict,
+    Union,
+    get_args,
+)
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -27,7 +36,7 @@ except NameError:
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing_extensions import (
         Concatenate as Concatenate,
         NotRequired as NotRequired,
@@ -76,6 +85,13 @@ else:
             TypeAlias = None
             override = lambda f: f
 
+if sys.version_info >= (3, 10):
+    from types import EllipsisType as EllipsisType
+elif TYPE_CHECKING:
+    from builtins import ellipsis as EllipsisType
+else:  # pragma: no cover
+    EllipsisType = type(Ellipsis)
+
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
@@ -100,7 +116,7 @@ def escape_unicode_characters(s: str) -> str:
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
 
-def int_from_bytes(data: typing.Union[bytes, bytearray]) -> int:
+def int_from_bytes(data: Union[bytes, bytearray]) -> int:
     return int.from_bytes(data, "big")
 
 
@@ -292,3 +308,20 @@ def _asdict_inner(obj, dict_factory):
         )
     else:
         return copy.deepcopy(obj)
+
+
+if sys.version_info[:2] < (3, 13):
+    # batched was added in 3.12, strict flag in 3.13
+    # copied from 3.13 docs reference implementation
+
+    def batched(iterable, n, *, strict=False):
+        if n < 1:
+            raise ValueError("n must be at least one")
+        iterator = iter(iterable)
+        while batch := tuple(itertools.islice(iterator, n)):
+            if strict and len(batch) != n:  # pragma: no cover
+                raise ValueError("batched(): incomplete batch")
+            yield batch
+
+else:  # pragma: no cover
+    batched = itertools.batched

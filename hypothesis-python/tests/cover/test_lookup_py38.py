@@ -15,7 +15,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from hypothesis import example, given, strategies as st
+from hypothesis import example, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -126,6 +126,10 @@ class Node:
     right: typing.Union["Node", int]
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~11 mins; datastructure explosion: https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(st.builds(Node))
 def test_can_resolve_recursive_dataclass(val):
     assert isinstance(val, Node)
@@ -196,6 +200,14 @@ def has_posonly_args(x, /, y):
     pass
 
 
+@pytest.mark.xfail(
+    settings._current_profile == "threading",
+    reason=(
+        "dynamic @example applications modify the shared "
+        "has_posonly_args.hypothesis._given_kwargs."
+    ),
+    strict=False,
+)
 def test_example_argument_validation():
     example(y=None)(has_posonly_args)(1)  # Basic case is OK
 

@@ -30,6 +30,7 @@ jobs:
           - check-coverage
           - check-conjecture-coverage
           - check-py39-cover
+          - check-py39-oldparser
           - check-pypy39-cover
           - check-py310-cover
           - check-py310-nocover
@@ -39,21 +40,31 @@ jobs:
           - check-py311-cover
           - check-py311-nocover
           - check-py311-niche
+          - check-pypy311-cover
           - check-py312-cover
           - check-py312-nocover
           - check-py312-niche
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
-          # - check-py313t-cover
-          # - check-py313t-nocover
-          # - check-py313t-niche
-          # - check-py314-cover
-          # - check-py314-nocover
+          - check-py313t-cover
+          - check-py313t-nocover
+          - check-py313t-niche
+          - check-py314-cover
+          - check-py314-nocover
+          # Blocked by a 3.14rc1 bug. see
+          # https://github.com/HypothesisWorks/hypothesis/pull/4490#issuecomment-3144989862.
+          # Can revisit in 3.14rc2.
           # - check-py314-niche
-          # - check-py314t-cover
-          # - check-py314t-nocover
-          # - check-py314t-niche
+          - check-py314t-cover
+          - check-py314t-nocover
+          - check-py314t-niche
+          # - check-py315-cover
+          # - check-py315-nocover
+          # - check-py315-niche
+          # - check-py315t-cover
+          # - check-py315t-nocover
+          # - check-py315t-niche
           - check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby
@@ -69,8 +80,8 @@ jobs:
           - check-py39-pytest46
           - check-py39-pytest54
           - check-pytest62
+          - check-django52
           - check-django51
-          - check-django50
           - check-django42
           - check-pandas22
           - check-pandas21
@@ -78,16 +89,21 @@ jobs:
           - check-pandas15
           - check-pandas14
           - check-pandas13
-          - check-py39-pandas12
-          - check-py39-pandas11
+          ## FIXME: actions update means Python builds without eg _bz2, which was required
+          # - check-py39-pandas12
+          # - check-py39-pandas11
           ## `-cover` is too slow under crosshair; use a custom split
-          # - check-crosshair-custom-cover/test_[a-d]*
-          # - check-crosshair-custom-cover/test_[e-i]*
-          # - check-crosshair-custom-cover/test_[j-r]*
-          # - check-crosshair-custom-cover/test_[s-z]*
-          # - check-crosshair-custom-pytest/test_*
-          # - check-crosshair-nocover
+          - check-crosshair-custom-cover/test_[a-d]*
+          - check-crosshair-custom-cover/test_[e-i]*
+          - check-crosshair-custom-cover/test_[j-r]*
+          - check-crosshair-custom-cover/test_[s-z]*
+          - check-crosshair-custom-pytest/test_*
+          - check-crosshair-custom-nocover/test_[a-d]*
+          - check-crosshair-custom-nocover/test_[e-i]*
+          - check-crosshair-custom-nocover/test_[j-r]*
+          - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
+          - check-threading
           - check-py39-oldestnumpy
           - check-numpy-nightly
       fail-fast: false
@@ -127,7 +143,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python ; echo tests/$GROUP)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -185,9 +201,11 @@ jobs:
       run: |
         pip install --upgrade setuptools pip wheel
         pip install -r requirements/coverage.txt
-        pip install hypothesis-python/[all]
+        pip install -r requirements/crosshair.txt
+        pip install hypothesis-python/
     - name: Run tests
-      run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
+      # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
+      run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
     runs-on: macos-latest
@@ -218,17 +236,17 @@ jobs:
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
-  # See https://pyodide.org/en/stable/development/building-and-testing-packages.html#testing-packages-against-pyodide
+  # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
     runs-on: ubuntu-latest
     env:
-      NODE_VERSION: 18
-      # Note that the versions below must be updated in sync; we've automated
-      # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.26.4
-      PYTHON_VERSION: 3.12.1
-      EMSCRIPTEN_VERSION: 3.1.58
+      NODE_VERSION: 22
+      # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
+      # The versions of pyodide-build and the Pyodide runtime may differ.
+      PYODIDE_VERSION: 0.28.2
+      PYODIDE_BUILD_VERSION: 0.30.7
+      PYTHON_VERSION: 3.13.2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -241,19 +259,14 @@ jobs:
         uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Set up Emscripten
-        uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
-        with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-      - name: Build
+      - name: Install pyodide-build and Pyodide cross-build environment
         run: |
-          pip install pyodide-build==$PYODIDE_VERSION
-          cd hypothesis-python/
-          CFLAGS=-g2 LDFLAGS=-g2 pyodide build
+          pip install pyodide-build==$PYODIDE_BUILD_VERSION
+          pyodide xbuildenv install $PYODIDE_VERSION
       - name: Set up Pyodide venv and install dependencies
         run: |
-          pip install --upgrade setuptools pip wheel
-          python hypothesis-python/setup.py bdist_wheel
+          pip install --upgrade setuptools pip wheel build
+          python -m build --wheel hypothesis-python --outdir dist/
           pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
 
           rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
@@ -266,7 +279,8 @@ jobs:
           source .venv-pyodide/bin/activate
           # pyodide can't run multiple processes internally, so parallelize explicitly over
           # discovered test files instead (20 at a time)
-          TEST_FILES=$(python -m pytest -p no:cacheprovider --setup-plan hypothesis-python/tests/cover | grep ^hypothesis-python/ | cut -d " " -f 1)
+          TEST_FILES=$(ls hypothesis-python/tests/cover/test*.py | grep -v "_py314")
+          echo "test files: $TEST_FILES"
           parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
             python -m pytest -p no:cacheprovider <<< $TEST_FILES
 
@@ -306,4 +320,5 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: TASK=${{ matrix.task }} ./build.sh
+      run: |
+        TASK=${{ matrix.task }} ./build.sh

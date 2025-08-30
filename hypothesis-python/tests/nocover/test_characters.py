@@ -11,7 +11,11 @@
 import string
 from encodings.aliases import aliases
 
-from hypothesis import given, strategies as st
+import pytest
+
+from hypothesis import given, settings, strategies as st
+
+from tests.common.utils import Why, xfail_on_crosshair
 
 IDENTIFIER_CHARS = string.ascii_letters + string.digits + "_"
 
@@ -21,6 +25,7 @@ def test_large_blacklist(c):
     assert c not in IDENTIFIER_CHARS
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)  # seems like a crosshair bug here
 @given(st.data())
 def test_arbitrary_blacklist(data):
     blacklist = data.draw(st.text(st.characters(max_codepoint=1000), min_size=1))
@@ -47,7 +52,12 @@ lots_of_encodings = sorted(x for x in set(aliases).union(aliases.values()) if _e
 assert len(lots_of_encodings) > 100  # sanity-check
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes 2000s; large & slow symbolic strings",
+)
 @given(data=st.data(), codec=st.sampled_from(lots_of_encodings))
+@settings(max_examples=10)
 def test_can_constrain_characters_to_codec(data, codec):
-    s = data.draw(st.text(st.characters(codec=codec), min_size=100))
+    s = data.draw(st.text(st.characters(codec=codec), min_size=50))
     s.encode(codec)

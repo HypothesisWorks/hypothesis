@@ -14,6 +14,8 @@ from hypothesis import given
 from hypothesis.errors import Flaky, FlakyFailure
 from hypothesis.strategies import composite, integers, none
 
+from tests.common.utils import Why, skipif_threading, xfail_on_crosshair
+
 
 @pytest.mark.parametrize(
     "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
@@ -46,6 +48,7 @@ def test_exception_propagates_fine_from_strategy(e):
         test_do_nothing()
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # extra replay from backend switch
 @pytest.mark.parametrize("e", [KeyboardInterrupt, ValueError])
 def test_baseexception_no_rerun_no_flaky(e):
     runs = 0
@@ -69,6 +72,7 @@ def test_baseexception_no_rerun_no_flaky(e):
             test_raise_baseexception()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)  # KI and GE only
 @pytest.mark.parametrize(
     "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
 )
@@ -119,6 +123,7 @@ def test(data, x):
 """
 
 
+@skipif_threading  # something in pytest here is not thread safe
 @pytest.mark.parametrize("exc_name", ["SystemExit", "GeneratorExit"])
 @pytest.mark.parametrize("use_composite", [True, False])
 def test_explanations(testdir, exc_name, use_composite):

@@ -13,12 +13,13 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, example, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.data import ConjectureData, ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
-from tests.conjecture.common import fresh_data, ir_types_and_kwargs
+from tests.conjecture.common import choice_types_constraints, fresh_data
 
 
 @given(st.data())
@@ -46,7 +47,7 @@ def test_forced_many(data):
     assert not many.more()
 
     # ensure values written to the buffer do in fact generate the forced value
-    data = ConjectureData.for_buffer(data.buffer)
+    data = ConjectureData.for_choices(data.choices)
     many = cu.many(
         data,
         min_size=min_size,
@@ -129,26 +130,19 @@ def test_forced_many(data):
         {"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan},
     )
 )
-@given(ir_types_and_kwargs(use_forced=True))
-def test_forced_values(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-
-    if ir_type == "float":
-        # TODO intentionally avoid triggering a bug with forcing nan values
-        # while both min and max value have the opposite sign.
-        # Once we fix the aforementioned bug we can remove this intentional
-        # weakening of the test.
-        assume(not math.isnan(kwargs["forced"]))
-
-    forced = kwargs["forced"]
+@given(choice_types_constraints(use_forced=True))
+def test_forced_values(choice_type_and_constraints):
+    (choice_type, constraints) = choice_type_and_constraints
+    constraints = constraints.copy()
+    forced = constraints["forced"]
     data = fresh_data()
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)
 
     # now make sure the written buffer reproduces the forced value, even without
     # specifying forced=.
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    del constraints["forced"]
+    data = ConjectureData.for_choices(data.choices)
+    assert choice_equal(getattr(data, f"draw_{choice_type}")(**constraints), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

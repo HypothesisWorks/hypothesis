@@ -17,6 +17,8 @@ from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
+from tests.conjecture.common import interesting_origin
+
 POISON = "POISON"
 
 
@@ -75,12 +77,12 @@ def test_minimal_poisoned_containers(seed, size, p, strategy_class):
         v = data.draw(strategy)
         data.output = repr(v)
         if POISON in v:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(
         test_function, random=Random(seed), settings=TRIAL_SETTINGS
     )
     runner.run()
     (v,) = runner.interesting_examples.values()
-    result = ConjectureData.for_buffer(v.buffer).draw(strategy)
+    result = ConjectureData.for_choices(v.choices).draw(strategy)
     assert len(result) == 1

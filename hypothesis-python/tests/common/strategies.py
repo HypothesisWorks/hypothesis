@@ -8,12 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import time
-from itertools import islice
 
-from hypothesis import strategies as st
-from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal import SearchStrategy
 
 
@@ -28,6 +24,7 @@ SLOW = _Slow()
 
 class HardToShrink(SearchStrategy):
     def __init__(self):
+        super().__init__()
         self.__last = None
         self.accepted = set()
 
@@ -51,36 +48,3 @@ class HardToShrink(SearchStrategy):
                 self.accepted.add(x)
                 return True
         return False
-
-
-def build_intervals(intervals):
-    it = iter(intervals)
-    while batch := tuple(islice(it, 2)):
-        # To guarantee we return pairs of 2, drop the last batch if it's
-        # unbalanced.
-        # Dropping a random element if the list is odd would probably make for
-        # a better distribution, but a task for another day.
-        if len(batch) < 2:
-            continue
-        yield batch
-
-
-def interval_lists(*, min_codepoint=0, max_codepoint=sys.maxunicode, min_size=0):
-    return (
-        st.lists(
-            st.integers(min_codepoint, max_codepoint),
-            unique=True,
-            min_size=min_size * 2,
-        )
-        .map(sorted)
-        .map(build_intervals)
-    )
-
-
-def intervals(*, min_codepoint=0, max_codepoint=sys.maxunicode, min_size=0):
-    return st.builds(
-        IntervalSet,
-        interval_lists(
-            min_codepoint=min_codepoint, max_codepoint=max_codepoint, min_size=min_size
-        ),
-    )

@@ -1,14 +1,12 @@
-This directory contains code for benchmarking Hypothesis' shrinking. This was written for [pull/3962](https://github.com/HypothesisWorks/hypothesis/pull/3962) and is a manual process at the moment, though we may eventually integrate it more closely with ci for automated benchmarking.
+This directory contains plotting code for our shrinker benchmarking. The code for collecting the data is in `conftest.py`. This directory handles plotting the results.
+
+The plotting script (but not collecting benchmark data) requires additional dependencies: `pip install scipy vl-convert-python`.
 
 To run a benchmark:
 
-* Add the contents of `conftest.py` to the bottom of `hypothesis-python/tests/conftest.py`
-* In `hypothesis-python/tests/common/debug.py`, change `derandomize=True` to `derandomize=False` (if you are running more than one trial)
-* Run the tests: `pytest hypothesis-python/tests/`
-  * Note that the benchmarking script does not currently support xdist, so do not use `-n 8` or similar.
+- `pytest tests/ -n auto --hypothesis-benchmark-shrinks new --hypothesis-benchmark-output data.json` (starting on the newer version)
+- `pytest tests/ -n auto --hypothesis-benchmark-shrinks old --hypothesis-benchmark-output data.json` (after switching to the old version)
+  - Use the same `data.json` path, the benchmark will append data. You can append `-k ...` for both commands to subset the benchmark.
+- `python benchmark/graph.py data.json shrinking.png`
 
-When pytest finishes the output will contain a dictionary of the benchmarking results. Add that as a new entry in `data.json`. Repeat for however many trials you want; n=5 seems reasonable.
-
-Also repeat for both your baseline ("old") and your comparison ("new") code.
-
-Then run `python graph.py` to generate a graph comparing the old and new results.
+This hooks any `minimal()` calls any reports the number of shrinks. Default (and currently unchangeable) number of iterations is 5 per test.

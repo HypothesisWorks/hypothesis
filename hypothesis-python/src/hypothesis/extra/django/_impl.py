@@ -8,10 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import unittest
 from functools import partial
-from typing import TYPE_CHECKING, Optional, TypeVar, Union
+from typing import Optional, TypeVar, Union
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -21,14 +20,8 @@ from django.db import IntegrityError, models as dm
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
+from hypothesis.internal.compat import EllipsisType
 from hypothesis.strategies._internal.utils import defines_strategy
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
-elif TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:
-    EllipsisType = type(Ellipsis)
 
 ModelT = TypeVar("ModelT", bound=dm.Model)
 
@@ -46,6 +39,10 @@ class HypothesisTestCase:
             return unittest.TestCase.__call__(self, result)
         else:
             return dt.SimpleTestCase.__call__(self, result)
+
+
+class SimpleTestCase(HypothesisTestCase, dt.SimpleTestCase):
+    pass
 
 
 class TestCase(HypothesisTestCase, dt.TestCase):

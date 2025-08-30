@@ -13,7 +13,7 @@ from collections import Counter
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -26,6 +26,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.debug import find_any, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -47,15 +48,14 @@ def test_in_order(x):
     assert x[0] < x[1]
 
 
+@xfail_on_crosshair(
+    Why.undiscovered
+)  # (SampledFromStrategy.calc_label() hashes a symbolic float)
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = floats(0, 1).flatmap(lambda x: lists(just(x)))
-
     track = []
 
-    db = ExampleDatabase()
-
-    @given(constant_float_lists)
-    @settings(database=db)
+    @given(floats(0, 1).flatmap(lambda x: lists(just(x))))
+    @settings(database=InMemoryExampleDatabase())
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)
@@ -85,6 +85,10 @@ def test_flatmap_has_original_strategy_repr():
     assert repr(ints) in repr(ints_up)
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~6 mins in CI, but ~7 sec in isolation. Unsure why",
+)
 def test_mixed_list_flatmap():
     s = lists(booleans().flatmap(lambda b: booleans() if b else text()))
 
@@ -97,6 +101,7 @@ def test_mixed_list_flatmap():
     assert set(result) == {False, ""}
 
 
+@xfail_on_crosshair(Why.undiscovered)  # for n >= 8 at least
 @pytest.mark.parametrize("n", range(1, 10))
 def test_can_shrink_through_a_binding(n):
     bool_lists = integers(0, 100).flatmap(
@@ -105,6 +110,7 @@ def test_can_shrink_through_a_binding(n):
     assert minimal(bool_lists, lambda x: x.count(True) >= n) == [True] * n
 
 
+@xfail_on_crosshair(Why.undiscovered)  # for n >= 8 at least
 @pytest.mark.parametrize("n", range(1, 10))
 def test_can_delete_in_middle_of_a_binding(n):
     bool_lists = integers(1, 100).flatmap(

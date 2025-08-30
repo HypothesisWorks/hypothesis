@@ -11,7 +11,7 @@
 from random import Random
 
 from hypothesis import given, strategies as st
-from hypothesis.internal.conjecture.choicetree import (
+from hypothesis.internal.conjecture.shrinking.choicetree import (
     ChoiceTree,
     prefix_selection_order,
     random_selection_order,

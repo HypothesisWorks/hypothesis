@@ -5,10 +5,9 @@ Packaging guidelines
 Downstream packagers often want to package Hypothesis. Here are some guidelines.
 
 The primary guideline is this: If you are not prepared to keep up with the Hypothesis release schedule,
-don't. You will annoy me and are doing your users a disservice.
+don't. You will be doing your users a disservice.
 
-Hypothesis has a very frequent release schedule. It's rare that it goes a week without a release,
-and there are often multiple releases in a given week.
+Hypothesis has a very frequent release schedule. We often release new versions multiple times a week.
 
 If you *are* prepared to keep up with this schedule, you might find the rest of this document useful.
 
@@ -45,11 +44,10 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 Hypothesis has *optional* dependencies on the following libraries:
 
-.. literalinclude:: ../setup.py
-   :prepend: extras_require = {
-   :start-after: extras = {
-   :end-before: }
-   :append: }
+.. literalinclude:: ../pyproject.toml
+   :prepend: [project.optional-dependencies]
+   :start-after: [project.optional-dependencies]
+   :end-before: # Avoid changing this by hand
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.

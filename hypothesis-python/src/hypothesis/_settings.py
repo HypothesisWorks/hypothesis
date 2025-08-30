@@ -19,17 +19,22 @@ import datetime
 import inspect
 import os
 import warnings
-from collections.abc import Collection
+from collections.abc import Collection, Generator, Sequence
 from enum import Enum, EnumMeta, IntEnum, unique
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar, Union
-
-import attr
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
-    InvalidState,
 )
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
@@ -40,52 +45,368 @@ if TYPE_CHECKING:
 
 __all__ = ["settings"]
 
-all_settings: dict[str, "Setting"] = {}
-
 T = TypeVar("T")
+all_settings: list[str] = [
+    "max_examples",
+    "derandomize",
+    "database",
+    "verbosity",
+    "phases",
+    "stateful_step_count",
+    "report_multiple_bugs",
+    "suppress_health_check",
+    "deadline",
+    "print_blob",
+    "backend",
+]
 
 
-class settingsProperty:
-    def __init__(self, name, show_default):
-        self.name = name
-        self.show_default = show_default
+@unique
+class Verbosity(IntEnum):
+    """Options for the |settings.verbosity| argument to |@settings|."""
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        else:
-            try:
-                result = obj.__dict__[self.name]
-                # This is a gross hack, but it preserves the old behaviour that
-                # you can change the storage directory and it will be reflected
-                # in the default database.
-                if self.name == "database" and result is not_set:
-                    from hypothesis.database import ExampleDatabase
+    quiet = 0
+    """
+    Hypothesis will not print any output, not even the final falsifying example.
+    """
 
-                    result = ExampleDatabase(not_set)
-                assert result is not not_set
-                return result
-            except KeyError:
-                raise AttributeError(self.name) from None
+    normal = 1
+    """
+    Standard verbosity. Hypothesis will print the falsifying example, alongside
+    any notes made with |note| (only for the falsfying example).
+    """
 
-    def __set__(self, obj, value):
-        obj.__dict__[self.name] = value
+    verbose = 2
+    """
+    Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
+    will print each example as it tries it, as well as any notes made with |note|
+    for every example. Hypothesis will also print shrinking attempts.
+    """
 
-    def __delete__(self, obj):
-        raise AttributeError(f"Cannot delete attribute {self.name}")
+    debug = 3
+    """
+    Even more verbosity. Useful for debugging Hypothesis internals. You probably
+    don't want this.
+    """
 
-    @property
-    def __doc__(self):
-        description = all_settings[self.name].description
-        default = (
-            repr(getattr(settings.default, self.name))
-            if self.show_default
-            else "(dynamically calculated)"
+    def __repr__(self) -> str:
+        return f"Verbosity.{self.name}"
+
+
+@unique
+class Phase(IntEnum):
+    """Options for the |settings.phases| argument to |@settings|."""
+
+    explicit = 0
+    """
+    Controls whether explicit examples are run.
+    """
+
+    reuse = 1
+    """
+    Controls whether previous examples will be reused.
+    """
+
+    generate = 2
+    """
+    Controls whether new examples will be generated.
+    """
+
+    target = 3
+    """
+    Controls whether examples will be mutated for targeting.
+    """
+
+    shrink = 4
+    """
+    Controls whether examples will be shrunk.
+    """
+
+    explain = 5
+    """
+    Controls whether Hypothesis attempts to explain test failures.
+
+    The explain phase has two parts, each of which is best-effort - if Hypothesis
+    can't find a useful explanation, we'll just print the minimal failing example.
+    """
+
+    def __repr__(self) -> str:
+        return f"Phase.{self.name}"
+
+
+class HealthCheckMeta(EnumMeta):
+    def __iter__(self):
+        deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
+        return iter(x for x in super().__iter__() if x not in deprecated)
+
+
+@unique
+class HealthCheck(Enum, metaclass=HealthCheckMeta):
+    """
+    A |HealthCheck| is proactively raised by Hypothesis when Hypothesis detects
+    that your test has performance problems, which may result in less rigorous
+    testing than you expect. For example, if your test takes a long time to generate
+    inputs, or filters away too many  inputs using |assume| or |filter|, Hypothesis
+    will raise a corresponding health check.
+
+    A health check is a proactive warning, not an error. We encourage suppressing
+    health checks where you have evaluated they will not pose a problem, or where
+    you have evaluated that fixing the underlying issue is not worthwhile.
+
+    With the exception of |HealthCheck.function_scoped_fixture| and
+    |HealthCheck.differing_executors|, all health checks warn about performance
+    problems, not correctness errors.
+
+    Disabling health checks
+    -----------------------
+
+    Health checks can be disabled by |settings.suppress_health_check|. To suppress
+    all health checks, you can pass ``suppress_health_check=list(HealthCheck)``.
+
+    .. seealso::
+
+        See also the :doc:`/how-to/suppress-healthchecks` how-to.
+
+    Correctness health checks
+    -------------------------
+
+    Some health checks report potential correctness errors, rather than performance
+    problems.
+
+    * |HealthCheck.function_scoped_fixture| indicates that a function-scoped
+      pytest fixture is used by an |@given| test. Many Hypothesis users expect
+      function-scoped fixtures to reset once per input, but they actually reset once
+      per test. We proactively raise |HealthCheck.function_scoped_fixture| to
+      ensure you have considered this case.
+    * |HealthCheck.differing_executors| indicates that the same |@given| test has
+      been executed multiple times with multiple distinct executors.
+
+    We recommend treating these particular health checks with more care, as
+    suppressing them may result in an unsound test.
+    """
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
+
+    @classmethod
+    def all(cls) -> list["HealthCheck"]:
+        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
+        note_deprecation(
+            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
+            since="2023-04-16",
+            has_codemod=True,
+            stacklevel=1,
         )
-        return f"{description}\n\ndefault value: ``{default}``"
+        return list(HealthCheck)
+
+    data_too_large = 1
+    """Checks if too many examples are aborted for being too large.
+
+    This is measured by the number of random choices that Hypothesis makes
+    in order to generate something, not the size of the generated object.
+    For example, choosing a 100MB object from a predefined list would take
+    only a few bits, while generating 10KB of JSON from scratch might trigger
+    this health check.
+    """
+
+    filter_too_much = 2
+    """Check for when the test is filtering out too many examples, either
+    through use of |assume| or |.filter|, or occasionally for Hypothesis
+    internal reasons."""
+
+    too_slow = 3
+    """
+    Check for when input generation is very slow. Since Hypothesis generates 100
+    (by default) inputs per test execution, a slowdown in generating each input
+    can result in very slow tests overall.
+    """
+
+    return_value = 5
+    """Deprecated; we always error if a test returns a non-None value."""
+
+    large_base_example = 7
+    """
+    Checks if the smallest natural input to your test is very large. This makes
+    it difficult for Hypothesis to generate good inputs, especially when trying to
+    shrink failing inputs.
+    """
+
+    not_a_test_method = 8
+    """Deprecated; we always error if |@given| is applied
+    to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
+
+    function_scoped_fixture = 9
+    """Checks if |@given| has been applied to a test
+    with a pytest function-scoped fixture. Function-scoped fixtures run once
+    for the whole function, not once per example, and this is usually not what
+    you want.
+
+    Because of this limitation, tests that need to set up or reset
+    state for every example need to do so manually within the test itself,
+    typically using an appropriate context manager.
+
+    Suppress this health check only in the rare case that you are using a
+    function-scoped fixture that does not need to be reset between individual
+    examples, but for some reason you cannot use a wider fixture scope
+    (e.g. session scope, module scope, class scope).
+
+    This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
+    which is enabled by default when running Hypothesis inside pytest."""
+
+    differing_executors = 10
+    """Checks if |@given| has been applied to a test
+    which is executed by different :ref:`executors<custom-function-execution>`.
+    If your test function is defined as a method on a class, that class will be
+    your executor, and subclasses executing an inherited test is a common way
+    for things to go wrong.
+
+    The correct fix is often to bring the executor instance under the control
+    of hypothesis by explicit parametrization over, or sampling from,
+    subclasses, or to refactor so that |@given| is
+    specified on leaf subclasses."""
+
+    nested_given = 11
+    """Checks if |@given| is used inside another
+    |@given|. This results in quadratic generation and
+    shrinking behavior, and can usually be expressed more cleanly by using
+    :func:`~hypothesis.strategies.data` to replace the inner
+    |@given|.
+
+    Nesting @given can be appropriate if you set appropriate limits for the
+    quadratic behavior and cannot easily reexpress the inner function with
+    :func:`~hypothesis.strategies.data`. To suppress this health check, set
+    ``suppress_health_check=[HealthCheck.nested_given]`` on the outer
+    |@given|. Setting it on the inner
+    |@given| has no effect. If you have more than one
+    level of nesting, add a suppression for this health check to every
+    |@given| except the innermost one.
+    """
 
 
-default_variable = DynamicVariable(None)
+class duration(datetime.timedelta):
+    """A timedelta specifically measured in milliseconds."""
+
+    def __repr__(self) -> str:
+        ms = self.total_seconds() * 1000
+        return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
+
+
+def is_in_ci() -> bool:
+    # GitHub Actions, Travis CI and AppVeyor have "CI"
+    # Azure Pipelines has "TF_BUILD"
+    # GitLab CI has "GITLAB_CI"
+    return "CI" in os.environ or "TF_BUILD" in os.environ or "GITLAB_CI" in os.environ
+
+
+default_variable = DynamicVariable[Optional["settings"]](None)
+
+
+def _validate_choices(name: str, value: T, *, choices: Sequence[object]) -> T:
+    if value not in choices:
+        msg = f"Invalid {name}, {value!r}. Valid choices: {choices!r}"
+        raise InvalidArgument(msg)
+    return value
+
+
+def _validate_max_examples(max_examples: int) -> int:
+    check_type(int, max_examples, name="max_examples")
+    if max_examples < 1:
+        raise InvalidArgument(
+            f"max_examples={max_examples!r} must be at least one. If you want "
+            "to disable generation entirely, use phases=[Phase.explicit] instead."
+        )
+    return max_examples
+
+
+def _validate_database(
+    database: Optional["ExampleDatabase"],
+) -> Optional["ExampleDatabase"]:
+    from hypothesis.database import ExampleDatabase
+
+    if database is None or isinstance(database, ExampleDatabase):
+        return database
+    raise InvalidArgument(
+        "Arguments to the database setting must be None or an instance of "
+        "ExampleDatabase. Use one of the database classes in "
+        "hypothesis.database"
+    )
+
+
+def _validate_phases(phases: Collection[Phase]) -> Sequence[Phase]:
+    phases = tuple(phases)
+    for phase in phases:
+        if not isinstance(phase, Phase):
+            raise InvalidArgument(f"{phase!r} is not a valid phase")
+    return tuple(phase for phase in list(Phase) if phase in phases)
+
+
+def _validate_stateful_step_count(stateful_step_count: int) -> int:
+    check_type(int, stateful_step_count, name="stateful_step_count")
+    if stateful_step_count < 1:
+        raise InvalidArgument(
+            f"stateful_step_count={stateful_step_count!r} must be at least one."
+        )
+    return stateful_step_count
+
+
+def _validate_suppress_health_check(suppressions):
+    suppressions = try_convert(tuple, suppressions, "suppress_health_check")
+    for health_check in suppressions:
+        if not isinstance(health_check, HealthCheck):
+            raise InvalidArgument(
+                f"Non-HealthCheck value {health_check!r} of type {type(health_check).__name__} "
+                "is invalid in suppress_health_check."
+            )
+        if health_check in (HealthCheck.return_value, HealthCheck.not_a_test_method):
+            note_deprecation(
+                f"The {health_check.name} health check is deprecated, because this is always an error.",
+                since="2023-03-15",
+                has_codemod=False,
+                stacklevel=2,
+            )
+    return suppressions
+
+
+def _validate_deadline(
+    x: Union[int, float, datetime.timedelta, None],
+) -> Optional[duration]:
+    if x is None:
+        return x
+    invalid_deadline_error = InvalidArgument(
+        f"deadline={x!r} (type {type(x).__name__}) must be a timedelta object, "
+        "an integer or float number of milliseconds, or None to disable the "
+        "per-test-case deadline."
+    )
+    if isinstance(x, (int, float)):
+        if isinstance(x, bool):
+            raise invalid_deadline_error
+        try:
+            x = duration(milliseconds=x)
+        except OverflowError:
+            raise InvalidArgument(
+                f"deadline={x!r} is invalid, because it is too large to represent "
+                "as a timedelta. Use deadline=None to disable deadlines."
+            ) from None
+    if isinstance(x, datetime.timedelta):
+        if x <= datetime.timedelta(0):
+            raise InvalidArgument(
+                f"deadline={x!r} is invalid, because it is impossible to meet a "
+                "deadline <= 0. Use deadline=None to disable deadlines."
+            )
+        return duration(seconds=x.total_seconds())
+    raise invalid_deadline_error
+
+
+def _validate_backend(backend: str) -> str:
+    if backend not in AVAILABLE_PROVIDERS:
+        if backend == "crosshair":  # pragma: no cover
+            install = '`pip install "hypothesis[crosshair]"` and try again.'
+            raise InvalidArgument(f"backend={backend!r} is not available.  {install}")
+        raise InvalidArgument(
+            f"backend={backend!r} is not available - maybe you need to install a plugin?"
+            f"\n    Installed backends: {sorted(AVAILABLE_PROVIDERS)!r}"
+        )
+    return backend
 
 
 class settingsMeta(type):
@@ -93,52 +414,123 @@ class settingsMeta(type):
         super().__init__(*args, **kwargs)
 
     @property
-    def default(cls):
+    def default(cls) -> Optional["settings"]:
         v = default_variable.value
         if v is not None:
             return v
         if getattr(settings, "_current_profile", None) is not None:
+            assert settings._current_profile is not None
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
 
-    def _assign_default_internal(cls, value):
-        default_variable.value = value
-
-    def __setattr__(cls, name, value):
+    def __setattr__(cls, name: str, value: object) -> None:
         if name == "default":
             raise AttributeError(
                 "Cannot assign to the property settings.default - "
                 "consider using settings.load_profile instead."
             )
-        elif not (isinstance(value, settingsProperty) or name.startswith("_")):
+        elif not name.startswith("_"):
             raise AttributeError(
                 f"Cannot assign hypothesis.settings.{name}={value!r} - the settings "
                 "class is immutable.  You can change the global default "
                 "settings with settings.load_profile, or use @settings(...) "
                 "to decorate your test instead."
             )
-        return super().__setattr__(name, value)
+        super().__setattr__(name, value)
+
+    def __repr__(cls):
+        return "hypothesis.settings"
 
 
 class settings(metaclass=settingsMeta):
-    """A settings object configures options including verbosity, runtime controls,
-    persistence, determinism, and more.
+    """
+    A settings object controls the following aspects of test behavior:
+    |~settings.max_examples|, |~settings.derandomize|, |~settings.database|,
+    |~settings.verbosity|, |~settings.phases|, |~settings.stateful_step_count|,
+    |~settings.report_multiple_bugs|, |~settings.suppress_health_check|,
+    |~settings.deadline|, |~settings.print_blob|, and |~settings.backend|.
 
-    Default values are picked up from the settings.default object and
-    changes made there will be picked up in newly created settings.
+    A settings object can be applied as a decorator to a test function, in which
+    case that test function will use those settings. A test may only have one
+    settings object applied to it. A settings object can also be passed to
+    |settings.register_profile| or as a parent to another |settings|.
+
+    Attribute inheritance
+    ---------------------
+
+    Settings objects are immutable once created. When a settings object is created,
+    it uses the value specified for each attribute. Any attribute which is
+    not specified will inherit from its value in the ``parent`` settings object.
+    If ``parent`` is not passed, any attributes which are not specified will inherit
+    from the currently active settings profile instead.
+
+    For instance, ``settings(max_examples=10)`` will have a ``max_examples`` of ``10``,
+    and the value of all other attributes will be equal to its value in the
+    currently active settings profile.
+
+    A settings object is immutable once created. Changes made from activating a new
+    settings profile with |settings.load_profile| will be reflected in
+    settings objects created after the profile was made active, but not in existing
+    settings objects.
+
+    Built-in profiles
+    -----------------
+
+    While you can register additional profiles with |settings.register_profile|,
+    Hypothesis comes with two built-in profiles: ``default`` and ``ci``.
+
+    The ``default`` profile is active by default, unless one of the ``CI``,
+    ``TF_BUILD``, or ``GITLAB_CI`` environment variables are set (to any value),
+    in which case the ``CI`` profile will be active by default.
+
+    The attributes of the currently active settings profile can be retrieved with
+    ``settings()`` (so ``settings().max_examples`` is the currently active default
+    for |settings.max_examples|).
+
+    The settings attributes for the built-in profiles are as follows:
+
+    .. code-block:: python
+
+        default = settings.register_profile(
+            "default",
+            max_examples=100,
+            derandomize=False,
+            database=not_set,  # see settings.database for the default database
+            verbosity=Verbosity.normal,
+            phases=tuple(Phase),
+            stateful_step_count=50,
+            report_multiple_bugs=True,
+            suppress_health_check=(),
+            deadline=duration(milliseconds=200),
+            print_blob=False,
+            backend="hypothesis",
+        )
+
+        ci = settings.register_profile(
+            "ci",
+            parent=default,
+            derandomize=True,
+            deadline=None,
+            database=None,
+            print_blob=True,
+            suppress_health_check=[HealthCheck.too_slow],
+        )
+
+    You can configure either of the built-in profiles with |settings.register_profile|:
+
+    .. code-block:: python
+
+        # run more examples in CI
+        settings.register_profile(
+            "ci",
+            settings.get_profile("ci"),
+            max_examples=1000,
+        )
     """
 
-    __definitions_are_locked = False
     _profiles: ClassVar[dict[str, "settings"]] = {}
-    __module__ = "hypothesis"
-    _current_profile = None
-
-    def __getattr__(self, name):
-        if name in all_settings:
-            return all_settings[name].default
-        else:
-            raise AttributeError(f"settings has no attribute {name}")
+    _current_profile: ClassVar[Optional[str]] = None
 
     def __init__(
         self,
@@ -160,6 +552,8 @@ class settings(metaclass=settingsMeta):
         print_blob: bool = not_set,  # type: ignore
         backend: str = not_set,  # type: ignore
     ) -> None:
+        self._in_definition = True
+
         if parent is not None:
             check_type(settings, parent, "parent")
         if derandomize not in (not_set, False):
@@ -170,16 +564,322 @@ class settings(metaclass=settingsMeta):
                 )
             database = None
 
-        defaults = parent or settings.default
-        if defaults is not None:
-            for setting in all_settings.values():
-                value = locals()[setting.name]
-                if value is not_set:
-                    object.__setattr__(
-                        self, setting.name, getattr(defaults, setting.name)
-                    )
-                else:
-                    object.__setattr__(self, setting.name, setting.validator(value))
+        # fallback is None if we're creating the default settings object, and
+        # the parent (or default settings object) otherwise
+        self._fallback = parent or settings.default
+        self._max_examples = (
+            self._fallback.max_examples  # type: ignore
+            if max_examples is not_set  # type: ignore
+            else _validate_max_examples(max_examples)
+        )
+        self._derandomize = (
+            self._fallback.derandomize  # type: ignore
+            if derandomize is not_set  # type: ignore
+            else _validate_choices("derandomize", derandomize, choices=[True, False])
+        )
+        if database is not not_set:  # type: ignore
+            database = _validate_database(database)
+        self._database = database
+        self._cached_database = None
+        self._verbosity = (
+            self._fallback.verbosity  # type: ignore
+            if verbosity is not_set  # type: ignore
+            else _validate_choices("verbosity", verbosity, choices=tuple(Verbosity))
+        )
+        self._phases = (
+            self._fallback.phases  # type: ignore
+            if phases is not_set  # type: ignore
+            else _validate_phases(phases)
+        )
+        self._stateful_step_count = (
+            self._fallback.stateful_step_count  # type: ignore
+            if stateful_step_count is not_set  # type: ignore
+            else _validate_stateful_step_count(stateful_step_count)
+        )
+        self._report_multiple_bugs = (
+            self._fallback.report_multiple_bugs  # type: ignore
+            if report_multiple_bugs is not_set  # type: ignore
+            else _validate_choices(
+                "report_multiple_bugs", report_multiple_bugs, choices=[True, False]
+            )
+        )
+        self._suppress_health_check = (
+            self._fallback.suppress_health_check  # type: ignore
+            if suppress_health_check is not_set  # type: ignore
+            else _validate_suppress_health_check(suppress_health_check)
+        )
+        self._deadline = (
+            self._fallback.deadline  # type: ignore
+            if deadline is not_set
+            else _validate_deadline(deadline)
+        )
+        self._print_blob = (
+            self._fallback.print_blob  # type: ignore
+            if print_blob is not_set  # type: ignore
+            else _validate_choices("print_blob", print_blob, choices=[True, False])
+        )
+        self._backend = (
+            self._fallback.backend  # type: ignore
+            if backend is not_set  # type: ignore
+            else _validate_backend(backend)
+        )
+
+        self._in_definition = False
+
+    @property
+    def max_examples(self):
+        """
+        Once this many satisfying examples have been considered without finding any
+        counter-example, Hypothesis will stop looking.
+
+        Note that we might call your test function fewer times if we find a bug early
+        or can tell that we've exhausted the search space; or more if we discard some
+        examples due to use of .filter(), assume(), or a few other things that can
+        prevent the test case from completing successfully.
+
+        The default value is chosen to suit a workflow where the test will be part of
+        a suite that is regularly executed locally or on a CI server, balancing total
+        running time against the chance of missing a bug.
+
+        If you are writing one-off tests, running tens of thousands of examples is
+        quite reasonable as Hypothesis may miss uncommon bugs with default settings.
+        For very complex code, we have observed Hypothesis finding novel bugs after
+        *several million* examples while testing :pypi:`SymPy <sympy>`.
+        If you are running more than 100k examples for a test, consider using our
+        :ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
+        shines when given minutes or hours to run.
+
+        The default max examples is ``100``.
+        """
+        return self._max_examples
+
+    @property
+    def derandomize(self):
+        """
+        If True, seed Hypothesis' random number generator using a hash of the test
+        function, so that every run will test the same set of examples until you
+        update Hypothesis, Python, or the test function.
+
+        This allows you to `check for regressions and look for bugs
+        <https://blog.nelhage.com/post/two-kinds-of-testing/>`__ using separate
+        settings profiles - for example running
+        quick deterministic tests on every commit, and a longer non-deterministic
+        nightly testing run.
+
+        The default is ``False``. If running on CI, the default is ``True`` instead.
+        """
+        return self._derandomize
+
+    @property
+    def database(self):
+        """
+        An instance of |ExampleDatabase| that will be used to save examples to
+        and load previous examples from.
+
+        If not set, a |DirectoryBasedExampleDatabase| is created in the current
+        working directory under ``.hypothesis/examples``. If this location is
+        unusable, e.g. due to the lack of read or write permissions, Hypothesis
+        will emit a warning and fall back to an |InMemoryExampleDatabase|.
+
+        If ``None``, no storage will be used.
+
+        See the :ref:`database documentation <database>` for a list of database
+        classes, and how to define custom database classes.
+        """
+        from hypothesis.database import _db_for_path
+
+        # settings.database has two conflicting requirements:
+        # * The default settings should respect changes to set_hypothesis_home_dir
+        #   in-between accesses
+        # * `s.database is s.database` should be true, except for the default settings
+        #
+        # We therefore cache s.database for everything except the default settings,
+        # which always recomputes dynamically.
+        if self._fallback is None:
+            # if self._fallback is None, we are the default settings, at which point
+            # we should recompute the database dynamically
+            assert self._database is not_set
+            return _db_for_path(not_set)
+
+        # otherwise, we cache the database
+        if self._cached_database is None:
+            self._cached_database = (
+                self._fallback.database if self._database is not_set else self._database
+            )
+        return self._cached_database
+
+    @property
+    def verbosity(self):
+        """
+        Control the verbosity level of Hypothesis messages.
+
+        To see what's going on while Hypothesis runs your tests, you can turn
+        up the verbosity setting.
+
+        .. code-block:: pycon
+
+            >>> from hypothesis import settings, Verbosity
+            >>> from hypothesis.strategies import lists, integers
+            >>> @given(lists(integers()))
+            ... @settings(verbosity=Verbosity.verbose)
+            ... def f(x):
+            ...     assert not any(x)
+            ... f()
+            Trying example: []
+            Falsifying example: [-1198601713, -67, 116, -29578]
+            Shrunk example to [-1198601713]
+            Shrunk example to [-128]
+            Shrunk example to [32]
+            Shrunk example to [1]
+            [1]
+
+        The four levels are |Verbosity.quiet|, |Verbosity.normal|,
+        |Verbosity.verbose|, and |Verbosity.debug|. |Verbosity.normal| is the
+        default. For |Verbosity.quiet|, Hypothesis will not print anything out,
+        not even the final falsifying example. |Verbosity.debug| is basically
+        |Verbosity.verbose| but a bit more so. You probably don't want it.
+
+        If you are using :pypi:`pytest`, you may also need to :doc:`disable
+        output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`
+        to see verbose output as tests run.
+        """
+        return self._verbosity
+
+    @property
+    def phases(self):
+        """
+        Control which phases should be run.
+
+        Hypothesis divides tests into logically distinct phases.
+
+        - |Phase.explicit|: Running explicit examples from |@example|.
+        - |Phase.reuse|: Running examples from the database which previously failed.
+        - |Phase.generate|: Generating new random examples.
+        - |Phase.target|: Mutating examples for :ref:`targeted property-based
+          testing <targeted>`. Requires |Phase.generate|.
+        - |Phase.shrink|: Shrinking failing examples.
+        - |Phase.explain|: Attempting to explain why a failure occurred.
+          Requires |Phase.shrink|.
+
+        Following the first failure, Hypothesis will (usually, depending on
+        which |Phase| is enabled) track which lines of code are always run on
+        failing but never on passing inputs. On 3.12+, this uses
+        :mod:`sys.monitoring`, while 3.11 and earlier uses :func:`python:sys.settrace`.
+        For python 3.11 and earlier, we therefore automatically disable the explain
+        phase on PyPy, or if you are using :pypi:`coverage` or a debugger. If
+        there are no clearly suspicious lines of code, :pep:`we refuse the
+        temptation to guess <20>`.
+
+        After shrinking to a minimal failing example, Hypothesis will try to find
+        parts of the example -- e.g. separate args to |@given|
+        -- which can vary freely without changing the result
+        of that minimal failing example. If the automated experiments run without
+        finding a passing variation, we leave a comment in the final report:
+
+        .. code-block:: python
+
+            test_x_divided_by_y(
+                x=0,  # or any other generated value
+                y=0,
+            )
+
+        Just remember that the *lack* of an explanation sometimes just means that
+        Hypothesis couldn't efficiently find one, not that no explanation (or
+        simpler failing example) exists.
+
+
+        The phases setting provides you with fine grained control over which of
+        these run, with each phase corresponding to a value on the |Phase| enum.
+
+        The phases argument accepts a collection with any subset of these. e.g.
+        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
+        and shrink them, but will not run explicit examples or reuse previous failures,
+        while ``settings(phases=[Phase.explicit])`` will only run the explicit
+        examples.
+        """
+
+        return self._phases
+
+    @property
+    def stateful_step_count(self):
+        """
+        The maximum number of times to call an additional |@rule| method in
+        :ref:`stateful testing <stateful>` before we give up on finding a bug.
+
+        Note that this setting is effectively multiplicative with max_examples,
+        as each example will run for a maximum of ``stateful_step_count`` steps.
+
+        The default stateful step count is ``50``.
+        """
+        return self._stateful_step_count
+
+    @property
+    def report_multiple_bugs(self):
+        """
+        Because Hypothesis runs the test many times, it can sometimes find multiple
+        bugs in a single run.  Reporting all of them at once is usually very useful,
+        but replacing the exceptions can occasionally clash with debuggers.
+        If disabled, only the exception with the smallest minimal example is raised.
+
+        The default value is ``True``.
+        """
+        return self._report_multiple_bugs
+
+    @property
+    def suppress_health_check(self):
+        """
+        Suppress the given |HealthCheck| exceptions. Those health checks will not
+        be raised by Hypothesis. To suppress all health checks, you can pass
+        ``suppress_health_check=list(HealthCheck)``.
+
+        Health checks are proactive warnings, not correctness errors, so we
+        encourage suppressing health checks where you have evaluated they will
+        not pose a problem, or where you have evaluated that fixing the underlying
+        issue is not worthwhile.
+
+        .. seealso::
+
+            See also the :doc:`/how-to/suppress-healthchecks` how-to.
+        """
+        return self._suppress_health_check
+
+    @property
+    def deadline(self):
+        """
+        The maximum allowed duration of an individual test case, in milliseconds.
+        You can pass an integer, float, or timedelta. If ``None``, the deadline
+        is disabled entirely.
+
+        We treat the deadline as a soft limit in some cases, where that would
+        avoid flakiness due to timing variability.
+
+        The default deadline is 200 milliseconds. If running on CI, the default is
+        ``None`` instead.
+        """
+        return self._deadline
+
+    @property
+    def print_blob(self):
+        """
+        If set to ``True``, Hypothesis will print code for failing examples that
+        can be used with |@reproduce_failure| to reproduce the failing example.
+
+        The default value is ``False``. If running on CI, the default is ``True`` instead.
+        """
+        return self._print_blob
+
+    @property
+    def backend(self):
+        """
+        .. warning::
+
+            EXPERIMENTAL AND UNSTABLE - see :ref:`alternative-backends`.
+
+        The importable name of a backend which Hypothesis should use to generate
+        primitive types. We support heuristic-random, solver-based, and fuzzing-based
+        backends.
+        """
+        return self._backend
 
     def __call__(self, test: T) -> T:
         """Make the settings object (self) an attribute of the test.
@@ -210,7 +910,7 @@ class settings(metaclass=settingsMeta):
                     )
                 setattr(test, attr_name, True)
                 _test.TestCase.settings = self
-                return test  # type: ignore
+                return test
             else:
                 raise InvalidArgument(
                     "@settings(...) can only be used as a decorator on "
@@ -230,61 +930,12 @@ class settings(metaclass=settingsMeta):
         _test._hypothesis_internal_settings_applied = True
         return test
 
-    @classmethod
-    def _define_setting(
-        cls,
-        name,
-        description,
-        *,
-        default,
-        options=None,
-        validator=None,
-        show_default=True,
-    ):
-        """Add a new setting.
+    def __setattr__(self, name: str, value: object) -> None:
+        if not name.startswith("_") and not self._in_definition:
+            raise AttributeError("settings objects are immutable")
+        return super().__setattr__(name, value)
 
-        - name is the name of the property that will be used to access the
-          setting. This must be a valid python identifier.
-        - description will appear in the property's docstring
-        - default is the default value. This may be a zero argument
-          function in which case it is evaluated and its result is stored
-          the first time it is accessed on any given settings object.
-        """
-        if settings.__definitions_are_locked:
-            raise InvalidState(
-                "settings have been locked and may no longer be defined."
-            )
-        if options is not None:
-            options = tuple(options)
-            assert default in options
-
-            def validator(value):
-                if value not in options:
-                    msg = f"Invalid {name}, {value!r}. Valid options: {options!r}"
-                    raise InvalidArgument(msg)
-                return value
-
-        else:
-            assert validator is not None
-
-        all_settings[name] = Setting(
-            name=name,
-            description=description.strip(),
-            default=default,
-            validator=validator,
-        )
-        setattr(settings, name, settingsProperty(name, show_default))
-
-    @classmethod
-    def lock_further_definitions(cls):
-        settings.__definitions_are_locked = True
-
-    def __setattr__(self, name, value):
-        raise AttributeError("settings objects are immutable")
-
-    def __repr__(self):
-        from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
-
+    def __repr__(self) -> str:
         bits = sorted(
             f"{name}={getattr(self, name)!r}"
             for name in all_settings
@@ -292,11 +943,11 @@ class settings(metaclass=settingsMeta):
         )
         return "settings({})".format(", ".join(bits))
 
-    def show_changed(self):
+    def show_changed(self) -> str:
         bits = []
-        for name, setting in all_settings.items():
+        for name in all_settings:
             value = getattr(self, name)
-            if value != setting.default:
+            if value != getattr(default, name):
                 bits.append(f"{name}={value!r}")
         return ", ".join(sorted(bits, key=len))
 
@@ -306,30 +957,38 @@ class settings(metaclass=settingsMeta):
         parent: Optional["settings"] = None,
         **kwargs: Any,
     ) -> None:
-        """Registers a collection of values to be used as a settings profile.
+        """
+        Register a settings object as a settings profile, under the name ``name``.
+        The ``parent`` and ``kwargs`` arguments to this method are as for
+        |settings|.
 
-        Settings profiles can be loaded by name - for example, you might
-        create a 'fast' profile which runs fewer examples, keep the 'default'
-        profile, and create a 'ci' profile that increases the number of
-        examples and uses a different database to store failures.
-
-        The arguments to this method are exactly as for
-        :class:`~hypothesis.settings`: optional ``parent`` settings, and
-        keyword arguments for each setting that will be set differently to
-        parent (or settings.default, if parent is None).
-
-        If you register a profile that has already been defined and that profile
-        is the currently loaded profile, the new changes will take effect immediately,
+        If a settings profile already exists under ``name``, it will be overwritten.
+        Registering a profile with the same name as the currently active profile
+        will cause those changes to take effect in the active profile immediately,
         and do not require reloading the profile.
+
+        Registered settings profiles can be retrieved later by name with
+        |settings.get_profile|.
         """
         check_type(str, name, "name")
-        settings._profiles[name] = settings(parent=parent, **kwargs)
+        # if we just pass the parent and no kwargs, like
+        #   settings.register_profile(settings(max_examples=10))
+        # then optimize out the pointless intermediate settings object which
+        # would just forward everything to the parent.
+        settings._profiles[name] = (
+            parent
+            if parent is not None and not kwargs
+            else settings(parent=parent, **kwargs)
+        )
         if settings._current_profile == name:
             settings.load_profile(name)
 
     @staticmethod
     def get_profile(name: str) -> "settings":
-        """Return the profile with the given name."""
+        """
+        Returns the settings profile registered under ``name``. If no settings
+        profile is registered under ``name``, raises |InvalidArgument|.
+        """
         check_type(str, name, "name")
         try:
             return settings._profiles[name]
@@ -338,410 +997,20 @@ class settings(metaclass=settingsMeta):
 
     @staticmethod
     def load_profile(name: str) -> None:
-        """Loads in the settings defined in the profile provided.
+        """
+        Makes the settings profile registered under ``name`` the active profile.
 
-        If the profile does not exist, InvalidArgument will be raised.
-        Any setting not defined in the profile will be the library
-        defined default for that setting.
+        If no settings profile is registered under ``name``, raises |InvalidArgument|.
         """
         check_type(str, name, "name")
         settings._current_profile = name
-        settings._assign_default_internal(settings.get_profile(name))
+        default_variable.value = settings.get_profile(name)
 
 
 @contextlib.contextmanager
-def local_settings(s):
+def local_settings(s: settings) -> Generator[settings, None, None]:
     with default_variable.with_value(s):
         yield s
-
-
-@attr.s()
-class Setting:
-    name = attr.ib()
-    description = attr.ib()
-    default = attr.ib()
-    validator = attr.ib()
-
-
-def _max_examples_validator(x):
-    check_type(int, x, name="max_examples")
-    if x < 1:
-        raise InvalidArgument(
-            f"max_examples={x!r} should be at least one. You can disable "
-            "example generation with the `phases` setting instead."
-        )
-    return x
-
-
-settings._define_setting(
-    "max_examples",
-    default=100,
-    validator=_max_examples_validator,
-    description="""
-Once this many satisfying examples have been considered without finding any
-counter-example, Hypothesis will stop looking.
-
-Note that we might call your test function fewer times if we find a bug early
-or can tell that we've exhausted the search space; or more if we discard some
-examples due to use of .filter(), assume(), or a few other things that can
-prevent the test case from completing successfully.
-
-The default value is chosen to suit a workflow where the test will be part of
-a suite that is regularly executed locally or on a CI server, balancing total
-running time against the chance of missing a bug.
-
-If you are writing one-off tests, running tens of thousands of examples is
-quite reasonable as Hypothesis may miss uncommon bugs with default settings.
-For very complex code, we have observed Hypothesis finding novel bugs after
-*several million* examples while testing :pypi:`SymPy`.
-If you are running more than 100k examples for a test, consider using our
-:ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
-shines when given minutes or hours to run.
-""",
-)
-
-
-settings._define_setting(
-    "derandomize",
-    default=False,
-    options=(True, False),
-    description="""
-If True, seed Hypothesis' random number generator using a hash of the test
-function, so that every run will test the same set of examples until you
-update Hypothesis, Python, or the test function.
-
-This allows you to `check for regressions and look for bugs
-<https://blog.nelhage.com/post/two-kinds-of-testing/>`__ using
-:ref:`separate settings profiles <settings_profiles>` - for example running
-quick deterministic tests on every commit, and a longer non-deterministic
-nightly testing run.
-
-By default when running on CI, this will be set to True.
-""",
-)
-
-
-def _validate_database(db):
-    from hypothesis.database import ExampleDatabase
-
-    if db is None or isinstance(db, ExampleDatabase):
-        return db
-    raise InvalidArgument(
-        "Arguments to the database setting must be None or an instance of "
-        f"ExampleDatabase.  Try passing database=ExampleDatabase({db!r}), or "
-        "construct and use one of the specific subclasses in "
-        "hypothesis.database"
-    )
-
-
-settings._define_setting(
-    "database",
-    default=not_set,
-    show_default=False,
-    description="""
-An instance of :class:`~hypothesis.database.ExampleDatabase` that will be
-used to save examples to and load previous examples from. May be ``None``
-in which case no storage will be used.
-
-See the :doc:`example database documentation <database>` for a list of built-in
-example database implementations, and how to define custom implementations.
-""",
-    validator=_validate_database,
-)
-
-
-@unique
-class Phase(IntEnum):
-    explicit = 0  #: controls whether explicit examples are run.
-    reuse = 1  #: controls whether previous examples will be reused.
-    generate = 2  #: controls whether new examples will be generated.
-    target = 3  #: controls whether examples will be mutated for targeting.
-    shrink = 4  #: controls whether examples will be shrunk.
-    explain = 5  #: controls whether Hypothesis attempts to explain test failures.
-
-    def __repr__(self):
-        return f"Phase.{self.name}"
-
-
-class HealthCheckMeta(EnumMeta):
-    def __iter__(self):
-        deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
-        return iter(x for x in super().__iter__() if x not in deprecated)
-
-
-@unique
-class HealthCheck(Enum, metaclass=HealthCheckMeta):
-    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
-
-    Each member of this enum is a type of health check to suppress.
-    """
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}.{self.name}"
-
-    @classmethod
-    def all(cls) -> list["HealthCheck"]:
-        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
-        note_deprecation(
-            "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",
-            since="2023-04-16",
-            has_codemod=True,
-            stacklevel=1,
-        )
-        return list(HealthCheck)
-
-    data_too_large = 1
-    """Checks if too many examples are aborted for being too large.
-
-    This is measured by the number of random choices that Hypothesis makes
-    in order to generate something, not the size of the generated object.
-    For example, choosing a 100MB object from a predefined list would take
-    only a few bits, while generating 10KB of JSON from scratch might trigger
-    this health check.
-    """
-
-    filter_too_much = 2
-    """Check for when the test is filtering out too many examples, either
-    through use of :func:`~hypothesis.assume()` or :ref:`filter() <filtering>`,
-    or occasionally for Hypothesis internal reasons."""
-
-    too_slow = 3
-    """Check for when your data generation is extremely slow and likely to hurt
-    testing."""
-
-    return_value = 5
-    """Deprecated; we always error if a test returns a non-None value."""
-
-    large_base_example = 7
-    """Checks if the natural example to shrink towards is very large."""
-
-    not_a_test_method = 8
-    """Deprecated; we always error if :func:`@given <hypothesis.given>` is applied
-    to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
-
-    function_scoped_fixture = 9
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    with a pytest function-scoped fixture. Function-scoped fixtures run once
-    for the whole function, not once per example, and this is usually not what
-    you want.
-
-    Because of this limitation, tests that need to set up or reset
-    state for every example need to do so manually within the test itself,
-    typically using an appropriate context manager.
-
-    Suppress this health check only in the rare case that you are using a
-    function-scoped fixture that does not need to be reset between individual
-    examples, but for some reason you cannot use a wider fixture scope
-    (e.g. session scope, module scope, class scope).
-
-    This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
-    which is enabled by default when running Hypothesis inside pytest."""
-
-    differing_executors = 10
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    which is executed by different :ref:`executors<custom-function-execution>`.
-    If your test function is defined as a method on a class, that class will be
-    your executor, and subclasses executing an inherited test is a common way
-    for things to go wrong.
-
-    The correct fix is often to bring the executor instance under the control
-    of hypothesis by explicit parametrization over, or sampling from,
-    subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
-    specified on leaf subclasses."""
-
-
-@unique
-class Verbosity(IntEnum):
-    quiet = 0
-    normal = 1
-    verbose = 2
-    debug = 3
-
-    def __repr__(self):
-        return f"Verbosity.{self.name}"
-
-
-settings._define_setting(
-    "verbosity",
-    options=tuple(Verbosity),
-    default=Verbosity.normal,
-    description="Control the verbosity level of Hypothesis messages",
-)
-
-
-def _validate_phases(phases):
-    phases = tuple(phases)
-    for a in phases:
-        if not isinstance(a, Phase):
-            raise InvalidArgument(f"{a!r} is not a valid phase")
-    return tuple(p for p in list(Phase) if p in phases)
-
-
-settings._define_setting(
-    "phases",
-    default=tuple(Phase),
-    description=(
-        "Control which phases should be run. "
-        "See :ref:`the full documentation for more details <phases>`"
-    ),
-    validator=_validate_phases,
-)
-
-
-def _validate_stateful_step_count(x):
-    check_type(int, x, name="stateful_step_count")
-    if x < 1:
-        raise InvalidArgument(f"stateful_step_count={x!r} must be at least one.")
-    return x
-
-
-settings._define_setting(
-    name="stateful_step_count",
-    default=50,
-    validator=_validate_stateful_step_count,
-    description="""
-Number of steps to run a stateful program for before giving up on it breaking.
-""",
-)
-
-settings._define_setting(
-    name="report_multiple_bugs",
-    default=True,
-    options=(True, False),
-    description="""
-Because Hypothesis runs the test many times, it can sometimes find multiple
-bugs in a single run.  Reporting all of them at once is usually very useful,
-but replacing the exceptions can occasionally clash with debuggers.
-If disabled, only the exception with the smallest minimal example is raised.
-""",
-)
-
-
-def validate_health_check_suppressions(suppressions):
-    suppressions = try_convert(list, suppressions, "suppress_health_check")
-    for s in suppressions:
-        if not isinstance(s, HealthCheck):
-            raise InvalidArgument(
-                f"Non-HealthCheck value {s!r} of type {type(s).__name__} "
-                "is invalid in suppress_health_check."
-            )
-        if s in (HealthCheck.return_value, HealthCheck.not_a_test_method):
-            note_deprecation(
-                f"The {s.name} health check is deprecated, because this is always an error.",
-                since="2023-03-15",
-                has_codemod=False,
-                stacklevel=2,
-            )
-    return suppressions
-
-
-settings._define_setting(
-    "suppress_health_check",
-    default=(),
-    description="""A list of :class:`~hypothesis.HealthCheck` items to disable.""",
-    validator=validate_health_check_suppressions,
-)
-
-
-class duration(datetime.timedelta):
-    """A timedelta specifically measured in milliseconds."""
-
-    def __repr__(self):
-        ms = self.total_seconds() * 1000
-        return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
-
-
-def _validate_deadline(x):
-    if x is None:
-        return x
-    invalid_deadline_error = InvalidArgument(
-        f"deadline={x!r} (type {type(x).__name__}) must be a timedelta object, "
-        "an integer or float number of milliseconds, or None to disable the "
-        "per-test-case deadline."
-    )
-    if isinstance(x, (int, float)):
-        if isinstance(x, bool):
-            raise invalid_deadline_error
-        try:
-            x = duration(milliseconds=x)
-        except OverflowError:
-            raise InvalidArgument(
-                f"deadline={x!r} is invalid, because it is too large to represent "
-                "as a timedelta. Use deadline=None to disable deadlines."
-            ) from None
-    if isinstance(x, datetime.timedelta):
-        if x <= datetime.timedelta(0):
-            raise InvalidArgument(
-                f"deadline={x!r} is invalid, because it is impossible to meet a "
-                "deadline <= 0. Use deadline=None to disable deadlines."
-            )
-        return duration(seconds=x.total_seconds())
-    raise invalid_deadline_error
-
-
-settings._define_setting(
-    "deadline",
-    default=duration(milliseconds=200),
-    validator=_validate_deadline,
-    description="""
-If set, a duration (as timedelta, or integer or float number of milliseconds)
-that each individual example (i.e. each time your test
-function is called, not the whole decorated test) within a test is not
-allowed to exceed. Tests which take longer than that may be converted into
-errors (but will not necessarily be if close to the deadline, to allow some
-variability in test run time).
-
-Set this to ``None`` to disable this behaviour entirely.
-
-By default when running on CI, this will be set to None.
-""",
-)
-
-
-def is_in_ci() -> bool:
-    # GitHub Actions, Travis CI and AppVeyor have "CI"
-    # Azure Pipelines has "TF_BUILD"
-    return "CI" in os.environ or "TF_BUILD" in os.environ
-
-
-settings._define_setting(
-    "print_blob",
-    default=False,
-    options=(True, False),
-    description="""
-If set to ``True``, Hypothesis will print code for failing examples that can be used with
-:func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
-""",
-)
-
-
-def _backend_validator(value):
-    from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
-
-    if value not in AVAILABLE_PROVIDERS:
-        if value == "crosshair":  # pragma: no cover
-            install = '`pip install "hypothesis[crosshair]"` and try again.'
-            raise InvalidArgument(f"backend={value!r} is not available.  {install}")
-        raise InvalidArgument(
-            f"backend={value!r} is not available - maybe you need to install a plugin?"
-            f"\n    Installed backends: {sorted(AVAILABLE_PROVIDERS)!r}"
-        )
-    return value
-
-
-settings._define_setting(
-    "backend",
-    default="hypothesis",
-    show_default=False,
-    validator=_backend_validator,
-    description="""
-EXPERIMENTAL AND UNSTABLE - see :ref:`alternative-backends`.
-The importable name of a backend which Hypothesis should use to generate primitive
-types.  We aim to support heuristic-random, solver-based, and fuzzing-based backends.
-""",
-)
-
-settings.lock_further_definitions()
 
 
 def note_deprecation(
@@ -758,7 +1027,20 @@ def note_deprecation(
     warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2 + stacklevel)
 
 
-settings.register_profile("default", settings())
+default = settings(
+    max_examples=100,
+    derandomize=False,
+    database=not_set,  # type: ignore
+    verbosity=Verbosity.normal,
+    phases=tuple(Phase),
+    stateful_step_count=50,
+    report_multiple_bugs=True,
+    suppress_health_check=(),
+    deadline=duration(milliseconds=200),
+    print_blob=False,
+    backend="hypothesis",
+)
+settings.register_profile("default", default)
 settings.load_profile("default")
 
 assert settings.default is not None
@@ -774,7 +1056,7 @@ CI = settings(
 settings.register_profile("ci", CI)
 
 
-if is_in_ci():
+if is_in_ci():  # pragma: no cover # covered in ci, but not locally
     settings.load_profile("ci")
 
 assert settings.default is not None

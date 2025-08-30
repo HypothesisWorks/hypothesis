@@ -15,7 +15,7 @@ import operator
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import bit_count
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
@@ -81,6 +81,12 @@ def test_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
 
 
+def test_repr_truncates_with_many_elements():
+    s = st.sampled_from(list(range(10_000)))
+    repr_limit = 512
+    assert repr(s) == f"sampled_from([{', '.join(map(str, range(repr_limit)))}, ...])"
+
+
 class AFlag(enum.Flag):
     a = enum.auto()
     b = enum.auto()
@@ -130,6 +136,10 @@ def test_flags_minimizes_bit_count():
     )
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~10 mins; path tree is too large",
+)
 def test_flags_finds_all_bits_set():
     assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))
 

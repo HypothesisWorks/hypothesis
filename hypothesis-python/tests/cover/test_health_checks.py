@@ -24,9 +24,9 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy
 
-from tests.common.utils import no_shrink
+from tests.common.utils import Why, no_shrink, skipif_time_unpatched, xfail_on_crosshair
 
 HEALTH_CHECK_SETTINGS = settings(
     max_examples=11, database=None, suppress_health_check=()
@@ -106,7 +106,6 @@ class fails_regularly(SearchStrategy):
     def do_draw(self, data):
         b = int_from_bytes(data.draw_bytes(2, 2))
         assume(b == 3)
-        print("ohai")
 
 
 def test_filtering_most_things_fails_a_health_check():
@@ -129,6 +128,7 @@ def test_returning_non_none_is_forbidden():
         a()
 
 
+@skipif_time_unpatched  # takes forever
 def test_the_slow_test_health_check_can_be_disabled():
     @given(st.integers())
     @settings(deadline=None)
@@ -138,6 +138,7 @@ def test_the_slow_test_health_check_can_be_disabled():
     a()
 
 
+@skipif_time_unpatched  # takes forever
 def test_the_slow_test_health_only_runs_if_health_checks_are_on():
     @given(st.integers())
     @settings(suppress_health_check=list(HealthCheck), deadline=None)
@@ -198,3 +199,96 @@ class ReturningInvariantMachine(RuleBasedStateMachine):
 def test_stateful_returnvalue_healthcheck(cls):
     with pytest.raises(FailedHealthCheck):
         run_state_machine_as_test(cls, settings=settings())
+
+
+def test_nested_given_raises_healthcheck():
+    @given(st.integers())
+    def f(n1):
+        @given(st.integers())
+        def g(n2):
+            pass
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+def test_triply_nested_given_raises_healthcheck():
+    @given(st.integers())
+    @settings(max_examples=10)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(max_examples=10)
+        def g(n2):
+
+            @given(st.integers())
+            @settings(max_examples=10)
+            def h(n3):
+                pass
+
+            h()
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+@xfail_on_crosshair(Why.nested_given)
+def test_can_suppress_nested_given():
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(max_examples=5)
+        def g(n2):
+            pass
+
+        g()
+
+    f()
+
+
+def test_cant_suppress_nested_given_on_inner():
+    # nested_given has to be suppressed at the function right above the nesting.
+    # this isn't a principled design choice, but a limitation of how we access
+    # the current settings.
+    @given(st.integers())
+    @settings(max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+        def g(n2):
+            pass
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+@xfail_on_crosshair(Why.nested_given)
+def test_suppress_triply_nested_given():
+    # both suppressions are necessary here
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+        def g(n2):
+
+            @given(st.integers())
+            @settings(max_examples=5)
+            def h(n3):
+                pass
+
+            h()
+
+        g()
+
+    f()

@@ -1,90 +1,118 @@
-======================
+.. raw:: html
+
+     <!-- adapted from https://docs.django-cms.org/en/release-4.1.x/, with thanks -->
+
+    <style>
+        .row {
+           clear: both;
+        }
+
+        .column img {border: 1px solid gray;}
+
+        @media only screen and (min-width: 1000px) {
+
+            .column {
+                padding-left: 5px;
+                padding-right: 5px;
+                float: left;
+            }
+
+            .column2  {
+                width: calc(50% - 11px);
+                position: relative;
+            }
+            .column2:before {
+                padding-top: 61.8%;
+                content: "";
+                display: block;
+                float: left;
+            }
+            .top-left {
+                border-right: 1px solid var(--color-background-border);
+                border-bottom: 1px solid var(--color-background-border);
+            }
+            .top-right {
+                border-bottom: 1px solid var(--color-background-border);
+            }
+            .bottom-left {
+                border-right: 1px solid var(--color-background-border);
+            }
+        }
+    </style>
+
 Welcome to Hypothesis!
 ======================
 
-`Hypothesis <https://hypothesis.works>`_ is a Python library for
-creating unit tests which are simpler to write and more powerful when run,
-finding edge cases in your code you wouldn't have thought to look for. It is
-stable, powerful and easy to add to any existing test suite.
+Hypothesis is the property-based testing library for Python. With Hypothesis, you write tests which should pass for all inputs in whatever range you describe, and let Hypothesis randomly choose which of those inputs to check - including edge cases you might not have thought about. For example:
 
-It works by letting you write tests that assert that something should be true
-for every case, not just the ones you happen to think of.
+.. code-block:: python
 
-Think of a normal unit test as being something like the following:
+    from hypothesis import given, strategies as st
 
-1. Set up some data.
-2. Perform some operations on the data.
-3. Assert something about the result.
+    @given(st.lists(st.integers() | st.floats()))
+    def test_sort_correct(lst):
+        # lst is a random list of numbers
+        assert my_sort(lst) == sorted(lst)
 
-Hypothesis lets you write tests which instead look like this:
+    test_sort_correct()
 
-1. For all data matching some specification.
-2. Perform some operations on the data.
-3. Assert something about the result.
+You should start with the :doc:`tutorial <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
 
-This is often called property-based testing, and was popularised by the
-Haskell library `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
+.. rst-class:: row
 
-It works by generating arbitrary data matching your specification and checking
-that your guarantee still holds in that case. If it finds an example where it doesn't,
-it takes that example and cuts it down to size, simplifying it until it finds a
-much smaller example that still causes the problem. It then saves that example
-for later, so that once it has found a problem with your code it will not forget
-it in the future.
+.. rst-class:: column column2 top-left
 
-Writing tests of this form usually consists of deciding on guarantees that
-your code should make - properties that should always hold true,
-regardless of what the world throws at you. Examples of such guarantees
-might be:
+:doc:`Tutorial <tutorial/index>`
+---------------------------------
 
-* Your code shouldn't throw an exception, or should only throw a particular
-  type of exception (this works particularly well if you have a lot of internal
-  assertions).
-* If you delete an object, it is no longer visible.
-* If you serialize and then deserialize a value, then you get the same value back.
+An introduction to Hypothesis.
 
-Now you know the basics of what Hypothesis does, the rest of this
-documentation will take you through how and why. It's divided into a
-number of sections, which you can see in the sidebar (or the
-menu at the top if you're on mobile), but you probably want to begin with
-the :doc:`Quick start guide <quickstart>`, which will give you a worked
-example of how to use Hypothesis and a detailed outline
-of the things you need to know to begin testing your code with it, or
-check out some of the
-`introductory articles <https://hypothesis.works/articles/intro/>`_.
+New users should start here, or with the more condensed :doc:`quickstart <quickstart>`.
 
+.. rst-class:: column column2 top-right
+
+:doc:`How-to guides <how-to/index>`
+-----------------------------------
+
+Practical guides for applying Hypothesis in specific scenarios.
+
+.. rst-class:: column column2 bottom-left
+
+:doc:`Explanations <explanation/index>`
+---------------------------------------
+
+Commentary oriented towards deepening your understanding of Hypothesis.
+
+.. rst-class:: column column2 bottom-right
+
+:doc:`API Reference <reference/index>`
+--------------------------------------
+
+Technical API reference.
+
+.. rst-class:: row
 
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Hypothesis
 
   quickstart
-  details
-  data
-  settings
-  database
+  tutorial/index
+  how-to/index
+  explanation/index
+  reference/index
   stateful
-  reproducing
-  ghostwriter
-  examples
-  extras
-  django
-  numpy
-  observability
-  supported
-  changes
+  Extras <extras>
+  changelog
 
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Community
+  :caption: About Hypothesis
 
   development
-  manifesto
+  compatibility
   usage
-  strategies
+  extensions
   packaging
   community
-  support
-  endorsements

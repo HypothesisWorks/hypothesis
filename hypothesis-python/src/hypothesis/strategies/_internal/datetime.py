@@ -12,7 +12,7 @@ import datetime as dt
 import operator as op
 import zoneinfo
 from calendar import monthrange
-from functools import lru_cache, partial
+from functools import cache, partial
 from importlib import resources
 from pathlib import Path
 from typing import Optional
@@ -120,6 +120,7 @@ def draw_capped_multipart(
 
 class DatetimeStrategy(SearchStrategy):
     def __init__(self, min_value, max_value, timezones_strat, allow_imaginary):
+        super().__init__()
         assert isinstance(min_value, dt.datetime)
         assert isinstance(max_value, dt.datetime)
         assert min_value.tzinfo is None
@@ -219,6 +220,7 @@ def datetimes(
 
 class TimeStrategy(SearchStrategy):
     def __init__(self, min_value, max_value, timezones_strat):
+        super().__init__()
         self.min_value = min_value
         self.max_value = max_value
         self.tz_strat = timezones_strat
@@ -257,6 +259,7 @@ def times(
 
 class DateStrategy(SearchStrategy):
     def __init__(self, min_value, max_value):
+        super().__init__()
         assert isinstance(min_value, dt.date)
         assert isinstance(max_value, dt.date)
         assert min_value < max_value
@@ -320,6 +323,7 @@ def dates(
 
 class TimedeltaStrategy(SearchStrategy):
     def __init__(self, min_value, max_value):
+        super().__init__()
         assert isinstance(min_value, dt.timedelta)
         assert isinstance(max_value, dt.timedelta)
         assert min_value < max_value
@@ -359,7 +363,7 @@ def timedeltas(
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _valid_key_cacheable(tzpath, key):
     assert isinstance(tzpath, tuple)  # zoneinfo changed, better update this function!
     for root in tzpath:

@@ -17,9 +17,8 @@ ruff
 shed==2024.1.1
 sphinx
 sphinx-codeautolink
-sphinx-hoverxref
 sphinx-jsonschema
-sphinx-rtd-theme
+furo
 sphinx-selective-exclude
 tox
 twine
@@ -27,4 +26,7 @@ types-click
 types-pytz
 types-redis
 typing-extensions
+watchdog # for typing
+build
+sortedcontainers-stubs # for typing
 -r test.in

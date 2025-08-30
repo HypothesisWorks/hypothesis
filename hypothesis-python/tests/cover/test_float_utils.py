@@ -14,12 +14,17 @@ from sys import float_info
 import pytest
 
 from hypothesis import example, given, strategies as st
+from hypothesis.internal.conjecture.choice import choice_equal, choice_permitted
+from hypothesis.internal.conjecture.provider_conformance import float_constraints
 from hypothesis.internal.floats import (
     count_between_floats,
     make_float_clamper,
     next_down,
     next_up,
+    sign_aware_lte,
 )
+
+from tests.conjecture.common import float_constr
 
 
 def test_can_handle_straddling_zero():
@@ -44,40 +49,60 @@ def test_next_float_equal(func, val):
         assert func(val) == val
 
 
-# invalid order -> clamper is None:
-@example(2.0, 1.0, 3.0)
 # exponent comparisons:
-@example(1, float_info.max, 0)
-@example(1, float_info.max, 1)
-@example(1, float_info.max, 10)
-@example(1, float_info.max, float_info.max)
-@example(1, float_info.max, math.inf)
+@example(float_constr(1, float_info.max), 0)
+@example(float_constr(1, float_info.max), 1)
+@example(float_constr(1, float_info.max), 10)
+@example(float_constr(1, float_info.max), float_info.max)
+@example(float_constr(1, float_info.max), math.inf)
 # mantissa comparisons:
-@example(100.0001, 100.0003, 100.0001)
-@example(100.0001, 100.0003, 100.0002)
-@example(100.0001, 100.0003, 100.0003)
-@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
-def test_float_clamper(min_value, max_value, input_value):
-    clamper = make_float_clamper(min_value, max_value, allow_zero=False)
-    if max_value < min_value:
-        assert clamper is None
-        return
+@example(float_constr(100.0001, 100.0003), 100.0001)
+@example(float_constr(100.0001, 100.0003), 100.0002)
+@example(float_constr(100.0001, 100.0003), 100.0003)
+@example(float_constr(100.0001, 100.0003, allow_nan=False), math.nan)
+@example(float_constr(0, 10, allow_nan=False), math.nan)
+@example(float_constr(0, 10, allow_nan=True), math.nan)
+# the branch coverage of resampling in the "out of range of smallest magnitude" case
+# relies on randomness from the mantissa. try a few different values.
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 4)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 5)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 6)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -4)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -5)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -6)
+@example(float_constr(-5e-324, -0.0), 3.0)
+@example(float_constr(0.0, 0.0), -0.0)
+@example(float_constr(-0.0, -0.0), 0.0)
+@given(float_constraints(), st.floats())
+def test_float_clamper(constraints, input_value):
+    min_value = constraints["min_value"]
+    max_value = constraints["max_value"]
+    allow_nan = constraints["allow_nan"]
+    smallest_nonzero_magnitude = constraints["smallest_nonzero_magnitude"]
+    clamper = make_float_clamper(
+        min_value,
+        max_value,
+        smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+        allow_nan=allow_nan,
+    )
     clamped = clamper(input_value)
-    if min_value <= input_value <= max_value:
-        assert input_value == clamped
+    if math.isnan(clamped):
+        # we should only clamp to nan if nans are allowed.
+        assert allow_nan
     else:
-        assert min_value <= clamped <= max_value
+        # otherwise, we should have clamped to something in the permitted range.
+        assert sign_aware_lte(min_value, clamped)
+        assert sign_aware_lte(clamped, max_value)
 
-
-@example(0.01, math.inf, 0.0)
-@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
-def test_float_clamper_with_allowed_zeros(min_value, max_value, input_value):
-    clamper = make_float_clamper(min_value, max_value, allow_zero=True)
-    assert clamper is not None
-    clamped = clamper(input_value)
-    if input_value == 0.0 or max_value < min_value:
-        assert clamped == 0.0
-    elif min_value <= input_value <= max_value:
-        assert input_value == clamped
-    else:
-        assert min_value <= clamped <= max_value
+    # if input_value was permitted in the first place, then the clamped value should
+    # be the same as the input value.
+    if choice_permitted(
+        input_value,
+        {
+            "min_value": min_value,
+            "max_value": max_value,
+            "allow_nan": allow_nan,
+            "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+        },
+    ):
+        assert choice_equal(input_value, clamped)

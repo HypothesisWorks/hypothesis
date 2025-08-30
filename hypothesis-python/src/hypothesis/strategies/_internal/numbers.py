@@ -15,6 +15,7 @@ from typing import Literal, Optional, Union
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
@@ -47,15 +48,16 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 Real = Union[int, float, Fraction, Decimal]
 
 
-class IntegersStrategy(SearchStrategy):
-    def __init__(self, start, end):
+class IntegersStrategy(SearchStrategy[int]):
+    def __init__(self, start: Optional[int], end: Optional[int]) -> None:
+        super().__init__()
         assert isinstance(start, int) or start is None
         assert isinstance(end, int) or end is None
         assert start is None or end is None or start <= end
         self.start = start
         self.end = end
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.start is None and self.end is None:
             return "integers()"
         if self.end is None:
@@ -64,7 +66,7 @@ class IntegersStrategy(SearchStrategy):
             return f"integers(max_value={self.end})"
         return f"integers({self.start}, {self.end})"
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> int:
         # For bounded integers, make the bounds and near-bounds more likely.
         weights = None
         if (
@@ -88,13 +90,13 @@ class IntegersStrategy(SearchStrategy):
             return self
         if condition in [math.isinf, math.isnan]:
             return nothing()
-        kwargs, pred = get_integer_predicate_bounds(condition)
+        constraints, pred = get_integer_predicate_bounds(condition)
 
         start, end = self.start, self.end
-        if "min_value" in kwargs:
-            start = max(kwargs["min_value"], -math.inf if start is None else start)
-        if "max_value" in kwargs:
-            end = min(kwargs["max_value"], math.inf if end is None else end)
+        if "min_value" in constraints:
+            start = max(constraints["min_value"], -math.inf if start is None else start)
+        if "max_value" in constraints:
+            end = min(constraints["max_value"], math.inf if end is None else end)
 
         if start != self.start or end != self.end:
             if start is not None and end is not None and start > end:
@@ -126,22 +128,22 @@ def integers(
     if min_value is not None:
         if min_value != int(min_value):
             raise InvalidArgument(
-                "min_value=%r of type %r cannot be exactly represented as an integer."
-                % (min_value, type(min_value))
+                f"min_value={min_value!r} of type {type(min_value)!r} "
+                "cannot be exactly represented as an integer."
             )
         min_value = int(min_value)
     if max_value is not None:
         if max_value != int(max_value):
             raise InvalidArgument(
-                "max_value=%r of type %r cannot be exactly represented as an integer."
-                % (max_value, type(max_value))
+                f"max_value={max_value!r} of type {type(max_value)!r} "
+                "cannot be exactly represented as an integer."
             )
         max_value = int(max_value)
 
     return IntegersStrategy(min_value, max_value)
 
 
-class FloatStrategy(SearchStrategy):
+class FloatStrategy(SearchStrategy[float]):
     """A strategy for floating point numbers."""
 
     def __init__(
@@ -173,13 +175,13 @@ class FloatStrategy(SearchStrategy):
         self.allow_nan = allow_nan
         self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self.min_value=}, {self.max_value=}, "
             f"{self.allow_nan=}, {self.smallest_nonzero_magnitude=})"
         ).replace("self.", "")
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> float:
         return data.draw_float(
             min_value=self.min_value,
             max_value=self.max_value,
@@ -209,11 +211,11 @@ class FloatStrategy(SearchStrategy):
                 return nothing()
             return NanStrategy()
 
-        kwargs, pred = get_float_predicate_bounds(condition)
-        if not kwargs:
+        constraints, pred = get_float_predicate_bounds(condition)
+        if not constraints:
             return super().filter(pred)
-        min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
-        max_bound = min(kwargs.get("max_value", math.inf), self.max_value)
+        min_bound = max(constraints.get("min_value", -math.inf), self.min_value)
+        max_bound = min(constraints.get("max_value", math.inf), self.max_value)
 
         # Adjustments for allow_subnormal=False, if any need to be made
         if -self.smallest_nonzero_magnitude < min_bound < 0:
@@ -421,8 +423,8 @@ def floats(
         # This is a custom alternative to check_valid_interval, because we want
         # to include the bit-width and exclusion information in the message.
         msg = (
-            "There are no %s-bit floating-point values between min_value=%r "
-            "and max_value=%r" % (width, min_arg, max_arg)
+            f"There are no {width}-bit floating-point values between "
+            f"min_value={min_arg!r} and max_value={max_arg!r}"
         )
         if exclude_min or exclude_max:
             msg += f", {exclude_min=} and {exclude_max=}"
@@ -500,7 +502,7 @@ def floats(
 
     if width < 64:
 
-        def downcast(x):
+        def downcast(x: float) -> float:
             try:
                 return float_of(x, width)
             except OverflowError:  # pragma: no cover
@@ -510,10 +512,10 @@ def floats(
     return result
 
 
-class NanStrategy(SearchStrategy):
+class NanStrategy(SearchStrategy[float]):
     """Strategy for sampling the space of nan float values."""
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> float:
         # Nans must have all exponent bits and the first mantissa bit set, so
         # we generate by taking 64 random bits and setting the required ones.
         sign_bit = int(data.draw_boolean()) << 63

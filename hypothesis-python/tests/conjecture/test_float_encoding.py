@@ -8,18 +8,18 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 import sys
 
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.compat import ceil, extract_bits, floor, int_to_bytes
+from hypothesis.internal.compat import ceil, extract_bits, floor
 from hypothesis.internal.conjecture import floats as flt
-from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.floats import float_to_int
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int
 
-from tests.conjecture.common import ir
+from tests.conjecture.common import interesting_origin
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -123,30 +123,27 @@ def test_reverse_bits_table_has_right_elements():
     assert sorted(flt.REVERSE_BITS_TABLE) == list(range(256))
 
 
-def float_runner(start, condition, *, kwargs=None):
-    kwargs = {} if kwargs is None else kwargs
+def float_runner(start, condition, *, constraints=None):
+    constraints = {} if constraints is None else constraints
 
     def test_function(data):
-        f = data.draw_float(**kwargs)
+        f = data.draw_float(**constraints)
         if condition(f):
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function_ir(ir((float(start), kwargs)))
+    runner.cached_test_function((float(start),))
     assert runner.interesting_examples
     return runner
 
 
-def minimal_from(start, condition, *, kwargs=None):
-    kwargs = {} if kwargs is None else kwargs
-
-    runner = float_runner(start, condition, kwargs=kwargs)
+def minimal_from(start, condition, *, constraints=None):
+    runner = float_runner(start, condition, constraints=constraints)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
-    data = ConjectureData.for_ir_tree(v.ir_nodes)
-    result = data.draw_float(**kwargs)
-    assert condition(result)
-    return result
+    f = v.choices[0]
+    assert condition(f)
+    return f
 
 
 INTERESTING_FLOATS = [0.0, 1.0, 2.0, sys.float_info.max, float("inf"), float("nan")]
@@ -201,19 +198,14 @@ def test_does_not_shrink_across_one():
     assert minimal_from(1.1, lambda x: x == 1.1 or 0 < x < 1) == 1.1
 
 
-@pytest.mark.parametrize("f", [2.0, 10000000.0])
-def test_converts_floats_to_integer_form(f):
-    assert flt.is_simple(f)
-    buf = int_to_bytes(flt.base_float_to_lex(f), 8)
-
-    runner = float_runner(f, lambda g: g == f)
-    runner.shrink_interesting_examples()
-    (v,) = runner.interesting_examples.values()
-    assert v.buffer[:-1] < buf
-
-
 def test_reject_out_of_bounds_floats_while_shrinking():
     # coverage test for rejecting out of bounds floats while shrinking
-    kwargs = {"min_value": 103.0}
-    g = minimal_from(103.1, lambda x: x >= 100, kwargs=kwargs)
+    constraints = {"min_value": 103.0}
+    g = minimal_from(103.1, lambda x: x >= 100, constraints=constraints)
     assert g == 103.0
+
+
+@pytest.mark.parametrize("nan", [-math.nan, SIGNALING_NAN, -SIGNALING_NAN])
+def test_shrinks_to_canonical_nan(nan):
+    shrunk = minimal_from(nan, math.isnan)
+    assert float_to_int(shrunk) == float_to_int(math.nan)

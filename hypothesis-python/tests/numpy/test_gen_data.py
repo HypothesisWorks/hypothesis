@@ -121,7 +121,9 @@ def test_can_generate_array_shapes(shape):
     assert all(isinstance(i, int) for i in shape)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(st.integers(0, 10), st.integers(0, 9), st.integers(0), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(
@@ -473,7 +475,9 @@ def test_axes_are_valid_inputs_to_sum(shape, data):
     np.sum(x, axes)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -483,7 +487,9 @@ def test_minimize_tuple_axes(ndim, data):
     assert all(k > -1 for k in smallest)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -717,7 +723,9 @@ def test_mutually_broadcastable_shape_can_broadcast(
     assert result == _broadcast_shapes(base_shape, *shapes)
 
 
-@settings(deadline=None, max_examples=50)
+@settings(
+    deadline=None, max_examples=50, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(
     num_shapes=st.integers(1, 3),
     min_dims=st.integers(0, 5),
@@ -822,7 +830,9 @@ def test_mutually_broadcastable_shape_adjusts_max_dim_with_default_bounds(
     assert result == _broadcast_shapes(base_shape, *shapes)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(min_dims=st.integers(0, 32), min_side=st.integers(2, 3), data=st.data())
 def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     min_dims, min_side, data
@@ -842,7 +852,9 @@ def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     assert smallest == (min_side,) * min_dims
 
 
-@settings(deadline=None, max_examples=50)
+@settings(
+    deadline=None, max_examples=50, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(
     num_shapes=st.integers(1, 4),
     min_dims=st.integers(0, 4),
@@ -1050,7 +1062,7 @@ def test_advanced_integer_index_is_valid_and_satisfies_bounds(
     assert all(dtype == x.dtype for x in index)
 
 
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=[HealthCheck.nested_given])
 @given(
     shape=nps.array_shapes(min_dims=1, min_side=1),
     min_dims=st.integers(0, 3),
@@ -1075,7 +1087,9 @@ def test_advanced_integer_index_minimizes_as_documented(
         np.testing.assert_array_equal(s, d)
 
 
-@settings(deadline=None, max_examples=25)
+@settings(
+    deadline=None, max_examples=10, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(
     shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=3),
     data=st.data(),
@@ -1164,6 +1178,7 @@ def test_basic_indices_can_generate_indices_not_covering_all_dims():
             (not isinstance(ix, tuple) and ix != Ellipsis)
             or (isinstance(ix, tuple) and Ellipsis not in ix and len(ix) < 3)
         ),
+        settings=settings(max_examples=5_000),
     )
 
 

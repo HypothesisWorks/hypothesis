@@ -8,24 +8,35 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Optional, TypeVar
 from unittest import SkipTest
 
 from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.control import _current_build_context
-from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
+from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.strategies import SearchStrategy
 
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.00001
+T = TypeVar("T")
 
 
-class Timeout(BaseException):
+# don't use hypothesis.errors.Found, which inherits from HypothesisException
+# and therefore has weird semantics around e.g. backend="crosshair".
+class Found(Exception):
     pass
 
 
-def minimal(definition, condition=lambda x: True, settings=None):
+def minimal(
+    definition: SearchStrategy[T],
+    condition=lambda x: True,
+    settings: Optional[Settings] = None,
+) -> T:
+    from tests.conftest import in_shrinking_benchmark
+
     definition.validate()
     result = None
 
@@ -50,7 +61,9 @@ def minimal(definition, condition=lambda x: True, settings=None):
         parent=settings,
         suppress_health_check=list(HealthCheck),
         report_multiple_bugs=False,
-        derandomize=True,
+        # we derandomize in general to avoid flaky tests, but we do want to
+        # measure this variation while benchmarking.
+        derandomize=not in_shrinking_benchmark,
         database=None,
         verbosity=verbosity,
     )
@@ -65,8 +78,8 @@ def minimal(definition, condition=lambda x: True, settings=None):
     except Found:
         return result
     raise Unsatisfiable(
-        "Could not find any examples from %r that satisfied %s"
-        % (definition, get_pretty_function_description(condition))
+        f"Could not find any examples from {definition!r} that satisfied "
+        f"{get_pretty_function_description(condition)}"
     )
 
 

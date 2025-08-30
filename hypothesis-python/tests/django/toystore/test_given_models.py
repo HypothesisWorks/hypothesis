@@ -9,15 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+from unittest import skipIf
 from uuid import UUID
 
 import django
 from django.conf import settings as django_settings
-from django.contrib.auth.models import User
 
-from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.control import current_build_context, reject
-from hypothesis.errors import HypothesisException, InvalidArgument
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import (
     TestCase,
     TransactionTestCase,
@@ -25,7 +24,12 @@ from hypothesis.extra.django import (
     register_field_strategy,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.strategies import binary, just, lists
+from hypothesis.strategies import just, lists
+
+if "django.contrib.auth" in django_settings.INSTALLED_APPS:
+    from django.contrib.auth.models import User
+else:
+    User = None
 
 from tests.common.debug import check_can_generate_examples
 from tests.django.toystore.models import (
@@ -146,23 +150,19 @@ class TestGetsBasicModels(TestCase):
         # regression test for #1045.  Company just has a convenient CharField.
         assert "\x00" not in x.name
 
-    @given(binary(min_size=10))
-    def test_foreign_key_primary(self, buf):
+    @given(st.data())
+    def test_foreign_key_primary(self, data):
         # Regression test for #1307
         company_strategy = from_model(Company, name=just("test"))
         strategy = from_model(
             CompanyExtension, company=company_strategy, self_modifying=just(2)
         )
-        context = current_build_context()
-        try:
-            context.data = ConjectureData.for_buffer(buf)
-            context.data.draw(strategy)
-        except HypothesisException:
-            reject()
-        # Draw again with the same buffer. This will cause a duplicate
+        data.draw(strategy)
+
+        # Draw again with the same choice sequence. This will cause a duplicate
         # primary key.
-        context.data = ConjectureData.for_buffer(buf)
-        context.data.draw(strategy)
+        d = ConjectureData.for_choices(data.conjecture_data.choices)
+        d.draw(strategy)
         assert CompanyExtension.objects.all().count() == 1
 
 
@@ -189,6 +189,7 @@ class TestRestrictedFields(TestCase):
         self.assertTrue(instance.non_blank_text_field)
 
 
+@skipIf(User is None, "contrib.auth not installed")
 class TestValidatorInference(TestCase):
     @given(from_model(User))
     def test_user_issue_1112_regression(self, user):

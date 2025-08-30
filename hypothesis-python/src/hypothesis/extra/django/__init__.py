@@ -11,6 +11,7 @@
 from hypothesis.extra.django._fields import from_field, register_field_strategy
 from hypothesis.extra.django._impl import (
     LiveServerTestCase,
+    SimpleTestCase,
     StaticLiveServerTestCase,
     TestCase,
     TransactionTestCase,
@@ -20,6 +21,7 @@ from hypothesis.extra.django._impl import (
 
 __all__ = [
     "LiveServerTestCase",
+    "SimpleTestCase",
     "StaticLiveServerTestCase",
     "TestCase",
     "TransactionTestCase",

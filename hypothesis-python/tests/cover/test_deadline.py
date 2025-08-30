@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import gc
+import re
 import time
 
 import pytest
@@ -17,6 +18,11 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
 from tests.common.utils import assert_falsifying_output, fails_with
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="takes a long time because we don't monkeypatch time",
+)
 
 
 def test_raises_deadline_on_slow_test():
@@ -66,7 +72,7 @@ def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
 
 
 def test_deadlines_participate_in_shrinking():
-    @settings(deadline=500, max_examples=1000)
+    @settings(deadline=500, max_examples=1000, database=None)
     @given(st.integers(min_value=0))
     def slow_if_large(i):
         if i >= 1000:
@@ -119,7 +125,11 @@ def test_gives_a_deadline_specific_flaky_error_message():
     with pytest.raises(FlakyFailure) as err:
         slow_once()
     assert "Unreliable test timing" in "\n".join(err.value.__notes__)
-    assert "took 2" in "\n".join(err.value.__notes__)
+    # this used to be "took 2", but we saw that flake (on pypy, though unsure if
+    # that means anything) with "took 199.59ms". It's possible our gc accounting
+    # is incorrect, or we could just be running into rare non-guarantees of
+    # time.sleep.
+    assert re.search(r"took \d", "\n".join(err.value.__notes__))
 
 
 @pytest.mark.parametrize("slow_strategy", [False, True])

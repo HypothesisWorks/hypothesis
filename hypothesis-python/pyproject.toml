@@ -1,0 +1,136 @@
+[build-system]
+# require a recent setuptools for `license = ` support
+requires = ["setuptools >= 78.1.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hypothesis"
+# see [tool.setuptools.dynamic]
+dynamic = ["version"]
+authors = [
+    { name = "David R. MacIver and Zac Hatfield-Dodds", email = "david@drmaciver.com" }
+]
+description = "A library for property-based testing"
+# Avoid changing this by hand. This is automatically updated by update_changelog_and_version
+readme = {"text" = """<div align="center">
+  <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
+</div>
+
+# Hypothesis
+
+* [Website](https://hypothesis.works/)
+* [Documentation](https://hypothesis.readthedocs.io/en/latest/)
+* [Source code](https://github.com/hypothesisWorks/hypothesis/)
+* [Contributing](https://github.com/HypothesisWorks/hypothesis/blob/master/CONTRIBUTING.rst)
+* [Community](https://hypothesis.readthedocs.io/en/latest/community.html)
+
+Hypothesis is the property-based testing library for Python. With Hypothesis, you write tests which should pass for all inputs in whatever range you describe, and let Hypothesis randomly choose which of those inputs to check - including edge cases you might not have thought about. For example:
+
+```python
+from hypothesis import given, strategies as st
+
+
+@given(st.lists(st.integers()))
+def test_matches_builtin(ls):
+    assert sorted(ls) == my_sort(ls)
+```
+
+This randomized testing can catch bugs and edge cases that you didn't think of and wouldn't have found. In addition, when Hypothesis does find a bug, it doesn't just report any failing example — it reports the simplest possible one. This makes property-based tests a powerful tool for debugging, as well as testing.
+
+For instance,
+
+```python
+def my_sort(ls):
+    return sorted(set(ls))
+```
+
+fails with the simplest possible failing example:
+
+```
+Falsifying example: test_matches_builtin(ls=[0, 0])
+```
+
+### Installation
+
+To install Hypothesis:
+
+```
+pip install hypothesis
+```
+
+There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).
+""", "content-type" = "text/markdown"}
+license = "MPL-2.0"
+requires-python = ">= 3.9"
+keywords = ["python", "testing", "fuzzing", "property-based-testing"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Hypothesis",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Education :: Testing",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "attrs>=22.2.0",
+    "exceptiongroup>=1.0.0; python_version<'3.11'",
+    "sortedcontainers>=2.1.0,<3.0.0",
+]
+
+[project.urls]
+homepage = "https://hypothesis.works"
+source = "https://github.com/HypothesisWorks/hypothesis"
+changelog = "https://hypothesis.readthedocs.io/en/latest/changelog.html"
+documentation = "https://hypothesis.readthedocs.io"
+issues = "https://github.com/HypothesisWorks/hypothesis/issues"
+
+[project.optional-dependencies]
+cli = ["click>=7.0", "black>=20.8b0", "rich>=9.0.0"]
+codemods = ["libcst>=0.3.16"]
+ghostwriter = ["black>=20.8b0"]
+pytz = ["pytz>=2014.1"]
+dateutil = ["python-dateutil>=1.4"]
+lark = ["lark>=0.10.1"]  # probably still works with old `lark-parser` too
+numpy = ["numpy>=1.19.3"]  # oldest with wheels for non-EOL Python (for now)
+pandas = ["pandas>=1.1"]
+pytest = ["pytest>=4.6"]
+dpcontracts = ["dpcontracts>=0.4"]
+redis = ["redis>=3.0.0"]
+crosshair = ["hypothesis-crosshair>=0.0.25", "crosshair-tool>=0.0.95"]
+# zoneinfo is an odd one: every dependency is platform-conditional.
+zoneinfo = ["tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'"]
+# We only support Django versions with upstream support - see
+# https://www.djangoproject.com/download/#supported-versions
+# We also leave the choice of timezone library to the user, since it
+# might be zoneinfo or pytz depending on version and configuration.
+django = ["django>=4.2"]
+watchdog = ["watchdog>=4.0.0"]
+# Avoid changing this by hand. This is automatically updated by update_changelog_and_version
+all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.95", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.25", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
+
+[tool.setuptools.dynamic]
+version = {attr = "hypothesis.version.__version__"}
+
+[tool.setuptools.package-data]
+hypothesis = ["vendor/tlds-alpha-by-domain.txt"]
+
+[project.scripts]
+hypothesis = "hypothesis.extra.cli:main"
+
+[project.entry-points.pytest11]
+hypothesispytest = "_hypothesis_pytestplugin"

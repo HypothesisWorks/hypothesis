@@ -177,7 +177,7 @@ class DFA:
                     assert not self.is_dead(k)
                     cache[k] = inf
                     break
-                elif k not in cache and not self.is_dead(k):
+                if k not in cache and not self.is_dead(k):
                     stack.append(k)
                     stack_set.add(k)
                     break
@@ -541,7 +541,7 @@ class DFA:
 
         alphabet = sorted(set(self.alphabet) | set(other.alphabet))
 
-        queue = deque([((self.start, other.start))])
+        queue = deque([(self.start, other.start)])
         while queue:
             self_state, other_state = queue.popleft()
 

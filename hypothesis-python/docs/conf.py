@@ -14,8 +14,12 @@ import sys
 import types
 from pathlib import Path
 
+from docutils import nodes
+from sphinx.util.docutils import SphinxRole
+
 root = Path(__file__).parent.parent
 sys.path.append(str(root / "src"))
+sys.path.append(str(Path(__file__).parent / "_ext"))
 
 needs_sphinx = re.search(
     r"sphinx==([0-9\.]+)", root.joinpath("../requirements/tools.txt").read_text()
@@ -32,13 +36,42 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    "hoverxref.extension",
+    "sphinx.ext.napoleon",
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
     "sphinx-jsonschema",
+    # loading this extension overrides the default -b linkcheck behavior with
+    # custom url ignore logic. see hypothesis_linkcheck.py for details.
+    "hypothesis_linkcheck",
+    "hypothesis_redirects",
 ]
 
 templates_path = ["_templates"]
+
+# config for hypothesis_redirects
+redirects = {
+    "details": "reference/index.html",
+    "data": "reference/strategies.html",
+    "database": "reference/api.html#database",
+    # "stateful": "reference/api.html#stateful-tests",
+    "reproducing": "reference/api.html",
+    "ghostwriter": "reference/integrations.html#ghostwriter",
+    "django": "reference/strategies.html#django",
+    "numpy": "reference/strategies.html#numpy",
+    "observability": "reference/integrations.html#observability",
+    "settings": "reference/api.html#settings",
+    "endorsements": "usage.html#testimonials",
+    # TODO enable when we actually rename them
+    # "extras": "extensions.html",
+    "supported": "compatibility.html",
+    "changes": "changelog.html",
+    "strategies": "extensions.html",
+    # these pages were removed without replacement
+    "support": "index.html",
+    "manifesto": "index.html",
+    "examples": "index.html",
+}
+redirect_html_template_file = "redirect.html.template"
 
 source_suffix = ".rst"
 
@@ -47,7 +80,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Hypothesis"
-author = "David R. MacIver"
+author = "the Hypothesis team"
 copyright = f"2013-{datetime.date.today().year}, {author}"
 
 _d = {}
@@ -55,6 +88,22 @@ _version_file = root.joinpath("src", "hypothesis", "version.py")
 exec(_version_file.read_text(encoding="utf-8"), _d)
 version = _d["__version__"]
 release = _d["__version__"]
+
+
+# custom role for version syntaxes.
+# :v:`6.131.0`       = [v6.131.0](changelog.html#v6.13.0)
+# :version:`6.131.0` = [version 6.131.0](changelog.html#v6.13.0)
+class VersionRole(SphinxRole):
+    def __init__(self, prefix):
+        self.prefix = prefix
+
+    def run(self):
+        node = nodes.reference(
+            "",
+            f"{self.prefix}{self.text}",
+            refuri=f"changelog.html#v{self.text.replace('.', '-')}",
+        )
+        return [node], []
 
 
 def setup(app):
@@ -83,45 +132,64 @@ def setup(app):
     assert "xps" not in sys.modules
     sys.modules["xps"] = mod
 
+    def process_signature(app, what, name, obj, options, signature, return_annotation):
+        # manually override an ugly signature from .. autofunction. Alternative we
+        # could manually document with `.. function:: run_conformance_test(...)`,
+        # but that's less likely to stay up to date.
+        if (
+            name
+            == "hypothesis.internal.conjecture.provider_conformance.run_conformance_test"
+        ):
+            # so we know if this ever becomes obsolete
+            assert "_realize_objects" in signature
+            signature = re.sub(
+                r"_realize_objects=.*",
+                "_realize_objects=st.from_type(object) | st.from_type(type).flatmap(st.from_type))",
+                signature,
+            )
+        return signature, return_annotation
+
+    app.connect("autodoc-process-signature", process_signature)
+    app.add_role("v", VersionRole(prefix="v"))
+    app.add_role("version", VersionRole(prefix="version "))
+
 
 language = "en"
-
-exclude_patterns = ["_build"]
-
+exclude_patterns = ["_build", "prolog.rst"]
 pygments_style = "sphinx"
-
 todo_include_todos = False
 
-# See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
-hoverxref_auto_ref = True
-hoverxref_domains = ["py"]
-hoverxref_role_types = {
-    "attr": "tooltip",
-    "class": "tooltip",
-    "const": "tooltip",
-    "exc": "tooltip",
-    "func": "tooltip",
-    "meth": "tooltip",
-    "mod": "tooltip",
-    "obj": "tooltip",
-    "ref": "tooltip",
-}
+# To run linkcheck (last argument is the output dir)
+#   sphinx-build --builder linkcheck hypothesis-python/docs linkcheck
+linkcheck_ignore = [
+    # we'll assume that python isn't going to break peps, and github isn't going
+    # to break issues/pulls. (and if they did, we'd hopefully notice quickly).
+    r"https://peps.python.org/pep-.*",
+    r"https://github.com/HypothesisWorks/hypothesis/issues/\d+",
+    r"https://github.com/HypothesisWorks/hypothesis/pull/\d+",
+]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
-    "django": ("https://django.readthedocs.io/en/stable/", None),
+    "django": (
+        "http://docs.djangoproject.com/en/stable/",
+        "http://docs.djangoproject.com/en/stable/_objects/",
+    ),
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
-    "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
+    "redis": ("https://redis.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
     "lark": ("https://lark-parser.readthedocs.io/en/stable/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
+
+rst_prolog = (Path(__file__).parent / "prolog.rst").read_text()
 
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """
@@ -148,28 +216,23 @@ extlinks = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "sphinx_rtd_theme"
-
+html_theme = "furo"
+# remove "Hypothesis <version> documentation" from just below logo on the sidebar
+html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
-
-html_css_files = ["better-signatures.css", "wrap-in-tables.css"]
-
+html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
 htmlhelp_basename = "Hypothesisdoc"
-
 html_favicon = "../../brand/favicon.ico"
-
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"
+
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {}
-
 latex_documents = [
     (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
-
 man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
-
 texinfo_documents = [
     (
         master_doc,

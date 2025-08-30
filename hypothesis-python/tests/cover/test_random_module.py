@@ -10,6 +10,7 @@
 
 import gc
 import random
+import sys
 
 import pytest
 
@@ -26,6 +27,8 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
+
+from tests.common.utils import skipif_threading, xfail_if_gil_disabled
 
 
 def gc_collect():
@@ -54,6 +57,13 @@ def test_seed_random_twice(r, r2):
     assert repr(r) == repr(r2)
 
 
+# ideally we would actually raise the global random warning here, but random_module
+# calls seed_all and restore_all inside the deprecate_random_in_strategy context
+# manager, which never sees the global random interference.
+#
+# But it can sometimes see it under multithreading depending on timing. Until
+# we fix this to also warn in this case, just skip on threading.
+@skipif_threading
 @given(st.random_module())
 def test_does_not_fail_health_check_if_randomness_is_used(r):
     random.getrandbits(128)
@@ -64,8 +74,13 @@ def test_cannot_register_non_Random():
         register_random("not a Random instance")
 
 
+@skipif_threading
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
+@pytest.mark.xfail(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
 )
 def test_registering_a_Random_is_idempotent():
     gc_collect()
@@ -116,6 +131,7 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
 
 
 @given(st.random_module())
+@skipif_threading  # writing to global random state
 def test_will_actually_use_the_random_seed(rnd):
     a = random.randint(0, 100)
     b = random.randint(0, 100)
@@ -133,25 +149,26 @@ def test_given_does_not_pollute_state():
 
         test()
         state_a = random.getstate()
-        state_a2 = core._hypothesis_global_random.getstate()
+        state_a2 = core.threadlocal._hypothesis_global_random.getstate()
 
         test()
         state_b = random.getstate()
-        state_b2 = core._hypothesis_global_random.getstate()
+        state_b2 = core.threadlocal._hypothesis_global_random.getstate()
 
         assert state_a == state_b
         assert state_a2 != state_b2
 
 
+@skipif_threading  # modifying global random state
 def test_find_does_not_pollute_state():
     with deterministic_PRNG():
         find(st.random_module(), lambda r: True)
         state_a = random.getstate()
-        state_a2 = core._hypothesis_global_random.getstate()
+        state_a2 = core.threadlocal._hypothesis_global_random.getstate()
 
         find(st.random_module(), lambda r: True)
         state_b = random.getstate()
-        state_b2 = core._hypothesis_global_random.getstate()
+        state_b2 = core.threadlocal._hypothesis_global_random.getstate()
 
         assert state_a == state_b
         assert state_a2 != state_b2
@@ -160,8 +177,23 @@ def test_find_does_not_pollute_state():
 @pytest.mark.filterwarnings(
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
+)
+@skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_evil_prng_registration_nonsense():
-    gc_collect()
+    # my guess is that other tests may register randoms that are then marked for
+    # deletion (but not actually gc'd yet). Therefore, depending on the order tests
+    # are run, RANDOMS_TO_MANAGE may start with more entries than after a gc. To
+    # force a clean slate for this test, unconditionally gc.
+    gc.collect()
+    # The first test to call deterministic_PRNG registers a new random instance.
+    # If that's this test, it will throw off our n_registered count in the middle.
+    # start with a no-op to ensure this registration has occurred.
+    with deterministic_PRNG(0):
+        pass
+
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
     r1, r2, r3 = random.Random(1), random.Random(2), random.Random(3)
     s2 = r2.getstate()
@@ -209,8 +241,13 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
         f()
 
 
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
 )
 def test_passing_referenced_instance_within_function_scope_warns():
     def f():
@@ -230,6 +267,10 @@ def test_passing_referenced_instance_within_function_scope_warns():
 )
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 14),
+    reason="TODO_314: is this intentional semantics of the new gc?",
 )
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)

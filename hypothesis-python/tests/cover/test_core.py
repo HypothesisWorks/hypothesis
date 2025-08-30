@@ -13,24 +13,25 @@ import unittest
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-from hypothesis import Phase, example, find, given, reject, settings, strategies as s
+from hypothesis import Phase, example, find, given, reject, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 
 
 def test_stops_after_max_examples_if_satisfying():
-    tracker = []
+    count = 0
 
     def track(x):
-        tracker.append(x)
+        nonlocal count
+        count += 1
         return False
 
     max_examples = 100
 
     with pytest.raises(NoSuchExample):
-        find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
+        find(st.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
-    assert len(tracker) == max_examples
+    assert count == max_examples
 
 
 def test_stops_after_ten_times_max_examples_if_not_satisfying():
@@ -42,9 +43,8 @@ def test_stops_after_ten_times_max_examples_if_not_satisfying():
         reject()
 
     max_examples = 100
-
     with pytest.raises(Unsatisfiable):
-        find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
+        find(st.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
     # Very occasionally we can generate overflows in generation, which also
     # count towards our example budget, which means that we don't hit the
@@ -59,7 +59,7 @@ def test_is_not_normally_default():
     assert settings.default is not some_normal_settings
 
 
-@given(s.booleans())
+@given(st.booleans())
 @some_normal_settings
 def test_settings_are_default_in_given(x):
     assert settings.default is some_normal_settings
@@ -69,7 +69,7 @@ def test_given_shrinks_pytest_helper_errors():
     final_value = None
 
     @settings(derandomize=True, max_examples=100)
-    @given(s.integers())
+    @given(st.integers())
     def inner(x):
         nonlocal final_value
         final_value = x
@@ -85,7 +85,7 @@ def test_pytest_skip_skips_shrinking():
     seen_large = False
 
     @settings(derandomize=True, max_examples=100)
-    @given(s.integers())
+    @given(st.integers())
     def inner(x):
         nonlocal seen_large
         if x > 100:
@@ -99,16 +99,16 @@ def test_pytest_skip_skips_shrinking():
 
 
 def test_can_find_with_db_eq_none():
-    find(s.integers(), bool, settings=settings(database=None, max_examples=100))
+    find(st.integers(), bool, settings=settings(database=None, max_examples=100))
 
 
 def test_no_such_example():
     with pytest.raises(NoSuchExample):
-        find(s.none(), bool, database_key=b"no such example")
+        find(st.none(), bool, database_key=b"no such example")
 
 
 def test_validates_strategies_for_test_method():
-    invalid_strategy = s.lists(s.nothing(), min_size=1)
+    invalid_strategy = st.lists(st.nothing(), min_size=1)
 
     class TestStrategyValidation:
         @given(invalid_strategy)
@@ -121,19 +121,19 @@ def test_validates_strategies_for_test_method():
 
 
 @example(1)
-@given(s.integers())
+@given(st.integers())
 @settings(phases=[Phase.target, Phase.shrink, Phase.explain])
 def no_phases(_):
     raise Exception
 
 
-@given(s.integers())
+@given(st.integers())
 @settings(phases=[Phase.explicit])
 def no_explicit(_):
     raise Exception
 
 
-@given(s.integers())
+@given(st.integers())
 @settings(phases=[Phase.reuse], database=InMemoryExampleDatabase())
 def empty_db(_):
     raise Exception
@@ -161,9 +161,9 @@ def test_non_executed_tests_raise_skipped(test_fn):
         ("utf-8", None, None, ["N"]),
     ],
 )
-@given(s.data())
+@given(st.data())
 def test_characters_codec(codec, max_codepoint, exclude_categories, categories, data):
-    strategy = s.characters(
+    strategy = st.characters(
         codec=codec,
         max_codepoint=max_codepoint,
         exclude_categories=exclude_categories,

@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import json
 import os
 import re
 import shutil
@@ -15,6 +16,7 @@ import subprocess
 import sys
 
 import requests
+import tomli
 
 import hypothesistooling as tools
 from hypothesistooling import releasemanagement as rm
@@ -42,8 +44,8 @@ __version_info__ = None
 
 VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
 
-with open(VERSION_FILE, encoding="utf-8") as o:
-    exec(o.read())
+with open(VERSION_FILE, encoding="utf-8") as fp:
+    exec(fp.read())
 
 assert __version__ is not None
 assert __version_info__ is not None
@@ -65,18 +67,17 @@ def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
 
-def build_docs(*, builder="html", only=()):
+def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-    # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
-        "-W",
-        "-T",
-        "-E",
-        "-b",
+        "--fail-on-warning",
+        "--show-traceback",
+        "--fresh-env",
+        "--builder",
         builder,
         "docs",
-        "docs/_build/" + builder,
+        "docs/_build/" + (builder if to is None else to),
         *only,
         cwd=HYPOTHESIS_PYTHON,
     )
@@ -84,7 +85,9 @@ def build_docs(*, builder="html", only=()):
 
 CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$", flags=re.MULTILINE)
 CHANGELOG_BORDER = re.compile(r"^-+$", flags=re.MULTILINE)
-CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.M)
+CHANGELOG_HEADER = re.compile(
+    r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.MULTILINE
+)
 
 
 def update_changelog_and_version():
@@ -155,8 +158,37 @@ def update_changelog_and_version():
                 with open(fname, "w", encoding="utf-8") as f:
                     f.write(contents.replace(before, after))
 
+    update_pyproject_toml()
 
-CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changes.rst"
+
+def update_pyproject_toml():
+    # manually write back these changes using regex instead of pulling in a
+    # toml dependency for writing. tomli doesn't support writing, and
+    # tomli-w doesn't support writing with comments.
+    toml_p = HYPOTHESIS_PYTHON / "pyproject.toml"
+    toml_data = tomli.loads(toml_p.read_text())
+    extras = toml_data["project"]["optional-dependencies"]
+    readme = (tools.ROOT / "README.md").read_text()
+    content = toml_p.read_text()
+    content = re.sub(
+        r'readme = {"text" = """.*""", "content-type" = "text/markdown"}',
+        f'readme = {{"text" = """{readme}""", "content-type" = "text/markdown"}}',
+        content,
+        flags=re.DOTALL,
+    )
+
+    all_extras = sorted(set(sum(extras.values(), [])))
+    all_extras = json.dumps(all_extras).replace("\n", "\\n")
+    content = re.sub(
+        r"^all = \[.*\]$",
+        f"all = {all_extras}",
+        content,
+        flags=re.MULTILINE,
+    )
+    toml_p.write_text(content)
+
+
+CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
 DIST = HYPOTHESIS_PYTHON / "dist"
 
 
@@ -167,9 +199,7 @@ def changelog():
 def build_distribution():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
-    subprocess.check_output(
-        [sys.executable, "setup.py", "sdist", "bdist_wheel", "--dist-dir", DIST]
-    )
+    subprocess.check_output([sys.executable, "-m", "build", "--outdir", DIST])
 
 
 def upload_distribution():
@@ -189,8 +219,10 @@ def upload_distribution():
 
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
-    build_docs(builder="text", only=["docs/changes.rst"])
-    textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
+    build_docs(builder="text", only=["docs/changelog.rst"])
+    textfile = os.path.join(
+        HYPOTHESIS_PYTHON, "docs", "_build", "text", "changelog.txt"
+    )
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
@@ -198,7 +230,7 @@ def upload_distribution():
     changelog_body = (
         "".join(lines[entries[0] + 2 : entries[1]]).strip()
         + "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
-        f"(https://hypothesis.readthedocs.io/en/latest/changes.html#v{anchor})*"
+        f"(https://hypothesis.readthedocs.io/en/latest/changelog.html#v{anchor})*"
     )
 
     # Create a GitHub release, to trigger Zenodo DOI minting.  See

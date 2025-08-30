@@ -42,6 +42,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.utils import no_shrink
+from tests.conjecture.common import interesting_origin
 
 RUNS = 100
 
@@ -74,7 +75,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             )
 
         def test_function(data):
-            with BuildContext(data):
+            with BuildContext(data, wrapped_test=None):
                 try:
                     value = data.draw(specifier)
                 except UnsatisfiedAssumption:
@@ -82,7 +83,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 if not _condition(value):
                     data.mark_invalid()
                 if predicate(value):
-                    data.mark_interesting()
+                    data.mark_interesting(interesting_origin())
 
         successes = 0
         actual_runs = 0
@@ -371,4 +372,8 @@ for i in range(4):
 
 test_long_duplicates_strings = define_test(
     tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1]
+)
+
+test_can_produce_nasty_strings = define_test(
+    text(), lambda s: s in {"NaN", "Inf", "undefined"}, p=0.01
 )

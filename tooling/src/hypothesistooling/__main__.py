@@ -67,7 +67,11 @@ def codespell(*files):
         "codespell",
         "--check-hidden",
         "--check-filenames",
-        "--ignore-words=./tooling/ignore-list.txt",
+        "--ignore-words=./tooling/codespell-ignore.txt",
+        # passing a custom --dictionary disables the default dictionary by default.
+        # Add it back in with --dictionary=-.
+        "--dictionary=-",
+        "--dictionary=./tooling/codespell-dict.txt",
         "--skip=__pycache__,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
         *files,
     )
@@ -144,6 +148,33 @@ HEADER = """
 # obtain one at https://mozilla.org/MPL/2.0/.
 """.strip()
 
+# this pattern is copied from shed
+# https://github.com/Zac-HD/shed/blob/6471da71c5b5cc443443ef5ed072799db275e7c0/src/shed/__init__.py#L297
+rst_pattern = re.compile(
+    r"(?P<before>"
+    r"^(?P<indent> *)\.\. "
+    r"(?P<block>jupyter-execute::|"
+    r"invisible-code-block: python|"  # magic rst comment for Sybil doctests
+    r"(code|code-block|sourcecode|ipython):: (python|py|sage|python3|py3|numpy))\n"
+    r"((?P=indent) +:.*\n)*"
+    r"\n*"
+    r")"
+    r"(?P<code>(^((?P=indent) +.*)?\n)+)",
+    flags=re.MULTILINE,
+)
+
+
+def remove_consecutive_newlines_in_rst(path):
+    # replace 2+ empty lines in `.. code-block:: python` blocks with just one empty
+    # line
+    path = Path(path)
+    content = path.read_text()
+    processed_content = rst_pattern.sub(
+        lambda m: m["before"] + re.sub(r"\n{3,}", "\n\n", m["code"]), content
+    )
+    if processed_content != content:
+        path.write_text(processed_content)
+
 
 @task()
 def format():
@@ -182,11 +213,11 @@ def format():
 
     for f in files_to_format:
         lines = []
-        with open(f, encoding="utf-8") as o:
+        with open(f, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
-            for l in o.readlines():
+            for l in fp:
                 if first:
                     first = False
                     if l[:2] == "#!":
@@ -197,20 +228,24 @@ def format():
                     lines = []
                 else:
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
+
         source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as o:
+        with open(f, "w", encoding="utf-8") as fp:
             if shebang is not None:
-                o.write(shebang)
-                o.write("\n")
-            o.write(HEADER)
+                fp.write(shebang)
+                fp.write("\n")
+            fp.write(HEADER)
             if source:
-                o.write("\n\n")
-                o.write(source)
-            o.write("\n")
+                fp.write("\n\n")
+                fp.write(source)
+            fp.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
+
+    for f in doc_files_to_format:
+        remove_consecutive_newlines_in_rst(f)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -224,8 +259,8 @@ def check_format():
     for f in tools.all_files():
         if not f.endswith(".py"):
             continue
-        with open(f, encoding="utf-8") as i:
-            start = i.read(n)
+        with open(f, encoding="utf-8") as fp:
+            start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
                 print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
@@ -252,7 +287,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/setup.py",
+            "hypothesis-python/pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -288,8 +323,8 @@ def update_python_versions():
     # (plus some special cases for the `t` suffix for free-threading builds)
     stable = re.compile(r".*3\.\d+.\d+t?$")
     min_minor_version = re.search(
-        r'python_requires=">= ?3.(\d+)"',
-        Path("hypothesis-python/setup.py").read_text(encoding="utf-8"),
+        r'requires-python = ">= ?3.(\d+)"',
+        Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
@@ -325,9 +360,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.16",
-    "5.0": "5.0.9",
-    "5.1": "5.1.3",
+    "4.2": "4.2.23",
+    "5.1": "5.1.11",
+    "5.2": "5.2.5",
 }
 
 
@@ -350,14 +385,14 @@ def update_django_versions():
     thisfile.write_text(after, encoding="utf-8")
     pip_tool("shed", str(thisfile))
 
-    # Update the minimum version in setup.py
-    setup_py = hp.BASE_DIR / "setup.py"
+    # Update the minimum version in pyproject.toml
+    pyproject_toml = hp.BASE_DIR / "pyproject.toml"
     content = re.sub(
         r"django>=\d+\.\d+",
         f"django>={min(versions, key=float)}",
-        setup_py.read_text(encoding="utf-8"),
+        pyproject_toml.read_text(encoding="utf-8"),
     )
-    setup_py.write_text(content, encoding="utf-8")
+    pyproject_toml.write_text(content, encoding="utf-8")
 
     # Automatically sync ci_version with the version in build.sh
     tox_ini = hp.BASE_DIR / "tox.ini"
@@ -365,39 +400,73 @@ def update_django_versions():
     print(versions)
     for short, full in versions.items():
         content = re.sub(
-            rf"(pip install django==){short}\.\d+",
-            rf"\g<1>{full}",
+            rf"django=={short}(\.\d+)?",
+            rf"django=={full}",
             content,
         )
     tox_ini.write_text(content, encoding="utf-8")
 
 
 def update_pyodide_versions():
+
+    def version_tuple(v: str) -> tuple[int, int, int]:
+        return tuple(int(x) for x in v.split("."))  # type: ignore
+
     vers_re = r"(\d+\.\d+\.\d+)"
-    all_versions = re.findall(
+    all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
         requests.get("https://pypi.org/simple/pyodide-build/").text,
     )
-    for pyodide_version in sorted(
+    pyodide_build_version = max(
         # Don't just pick the most recent version; find the highest stable version.
-        set(all_versions),
-        key=lambda version: tuple(int(x) for x in version.split(".")),
-        reverse=True,
-    ):
-        makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
-        match = re.search(
-            rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
-            requests.get(makefile_url).text,
+        set(all_pyodide_build_versions),
+        key=version_tuple,
+    )
+
+    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
+    cross_build_environments_data = requests.get(cross_build_environments_url).json()
+
+    # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
+    # with the pyodide-build version we found
+    stable_releases = [
+        release
+        for release in cross_build_environments_data["releases"].values()
+        if re.fullmatch(vers_re, release["version"])
+    ]
+
+    compatible_releases = []
+    for release in stable_releases:  # sufficiently large values
+        min_build_version = release.get("min_pyodide_build_version", "0.0.0")
+        max_build_version = release.get("max_pyodide_build_version", "999.999.999")
+
+        # Perform version comparisons to avoid getting an incompatible pyodide-build version
+        # with the Pyodide runtime
+        if (
+            version_tuple(min_build_version)
+            <= version_tuple(pyodide_build_version)
+            <= version_tuple(max_build_version)
+        ):
+            compatible_releases.append(release)
+
+    if not compatible_releases:
+        raise RuntimeError(
+            f"No compatible Pyodide release found for pyodide-build {pyodide_build_version}"
         )
-        if match is not None:
-            python_version, emscripten_version = match.groups()
-            break
+
+    pyodide_release = max(
+        compatible_releases,
+        key=lambda release: version_tuple(release["version"]),
+    )
+
+    pyodide_version = pyodide_release["version"]
+    python_version = pyodide_release["python_version"]
+
     ci_file = tools.ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
     for name, var in [
         ("PYODIDE", pyodide_version),
+        ("PYODIDE_BUILD", pyodide_build_version),
         ("PYTHON", python_version),
-        ("EMSCRIPTEN", emscripten_version),
     ]:
         config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
     ci_file.write_text(config, encoding="utf-8")
@@ -417,13 +486,13 @@ def update_vendored_files():
     # Always require the most recent version of tzdata - we don't need to worry about
     # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
     # Our crosshair extra is research-grade, so we require latest versions there too.
-    setup = pathlib.Path(hp.BASE_DIR, "setup.py")
-    new = setup.read_text(encoding="utf-8")
+    pyproject_toml = pathlib.Path(hp.BASE_DIR, "pyproject.toml")
+    new = pyproject_toml.read_text(encoding="utf-8")
     for pkgname in ("tzdata", "crosshair-tool", "hypothesis-crosshair"):
         pkg_url = f"https://pypi.org/pypi/{pkgname}/json"
         pkg_version = requests.get(pkg_url).json()["info"]["version"]
         new = re.sub(rf"{pkgname}>=([a-z0-9.]+)", f"{pkgname}>={pkg_version}", new)
-    setup.write_text(new, encoding="utf-8")
+    pyproject_toml.write_text(new, encoding="utf-8")
 
 
 def has_diff(file_or_directory):
@@ -459,19 +528,22 @@ def documentation():
         hp.build_docs()
     finally:
         subprocess.check_call(
-            ["git", "checkout", "docs/changes.rst", "src/hypothesis/version.py"],
+            ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
             cwd=hp.HYPOTHESIS_PYTHON,
         )
 
 
 @task()
 def website():
-    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+    subprocess.call([sys.executable, "-m", "pelican"], cwd=tools.ROOT / "website")
 
 
 @task()
 def live_website():
-    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+    subprocess.call(
+        [sys.executable, "-m", "pelican", "--autoreload", "--listen"],
+        cwd=tools.ROOT / "website",
+    )
 
 
 def run_tox(task, version, *args):
@@ -496,18 +568,21 @@ def run_tox(task, version, *args):
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
 # When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
+# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.20",
-    "3.10": "3.10.15",
-    "3.11": "3.11.10",
-    "3.12": "3.12.7",
-    "3.13": "3.13.0",
+    "3.9": "3.9.23",
+    "3.10": "3.10.18",
+    "3.11": "3.11.13",
+    "3.12": "3.12.11",
+    "3.13": "3.13.7",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0a2",
+    "3.14": "3.14.0rc2",
     "3.14t": "3.14t-dev",
+    "3.15": "3.15-dev",
+    "3.15t": "3.15t-dev",
     "pypy3.9": "pypy3.9-7.3.16",
-    "pypy3.10": "pypy3.10-7.3.17",
+    "pypy3.10": "pypy3.10-7.3.19",
+    "pypy3.11": "pypy3.11-7.3.20",
 }
 ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
@@ -566,6 +641,8 @@ standard_tox_task("pytest62")
 
 for n in DJANGO_VERSIONS:
     standard_tox_task(f"django{n.replace('.', '')}")
+# we also test no-contrib on the latest django version
+standard_tox_task("django-nocontrib")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
@@ -575,7 +652,9 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
+standard_tox_task("py39-oldparser", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")

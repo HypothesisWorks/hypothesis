@@ -10,9 +10,11 @@
 
 import os
 import re
+import shutil
 import tempfile
 import zipfile
-from collections.abc import Iterator
+from collections import Counter
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -21,7 +23,14 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import configuration, example, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    configuration,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import (
     BackgroundWriteDatabase,
     DirectoryBasedExampleDatabase,
@@ -30,24 +39,37 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
-    ir_from_bytes,
-    ir_to_bytes,
+    _db_for_path,
+    _pack_uleb128,
+    _unpack_uleb128,
+    choices_from_bytes,
+    choices_to_bytes,
 )
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import HypothesisDeprecationWarning, HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
-from hypothesis.internal.conjecture.data import ir_value_equal
-from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis.stateful import (
+    Bundle,
+    RuleBasedStateMachine,
+    invariant,
+    precondition,
+    rule,
+    run_state_machine_as_test,
+)
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import skipif_emscripten
-from tests.conjecture.common import ir, ir_nodes
-
-small_settings = settings(max_examples=50)
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    skipif_emscripten,
+    skipif_threading,
+    wait_for,
+)
+from tests.conjecture.common import nodes, nodes_inline
 
 
 @given(lists(tuples(binary(), binary())))
-@small_settings
+@settings(max_examples=50)
 def test_backend_returns_what_you_put_in(xs):
     backend = InMemoryExampleDatabase()
     mapping = {}
@@ -70,13 +92,15 @@ def test_can_delete_keys():
 
 
 def test_default_database_is_in_memory():
-    assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
 
 
 def test_default_on_disk_database_is_dir(tmp_path):
-    assert isinstance(
-        ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
-    )
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(
+            ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
+        )
 
 
 def test_does_not_error_when_fetching_when_not_exist(tmp_path):
@@ -87,7 +111,7 @@ def test_does_not_error_when_fetching_when_not_exist(tmp_path):
 @pytest.fixture(scope="function", params=["memory", "directory"])
 def exampledatabase(request, tmp_path):
     if request.param == "memory":
-        return ExampleDatabase()
+        return InMemoryExampleDatabase()
     assert request.param == "directory"
     return DirectoryBasedExampleDatabase(tmp_path / "examples")
 
@@ -124,6 +148,7 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
+@skipif_threading
 def test_two_directory_databases_can_interact(tmp_path):
     db1 = DirectoryBasedExampleDatabase(tmp_path)
     db2 = DirectoryBasedExampleDatabase(tmp_path)
@@ -261,6 +286,9 @@ def test_ga_no_artifact(tmp_path):
 
 def test_ga_corrupted_artifact():
     """Tests that corrupted artifacts are properly detected and warned about."""
+    # NOTE: For compatibility with Python 3.9's LL(1)
+    # parser, this is written as a nested with-statement,
+    # instead of a compound one.
     with ga_empty_artifact() as (path, zip_path):
         # Corrupt the CRC of the zip file
         with open(zip_path, "rb+") as f:
@@ -277,6 +305,9 @@ def test_ga_deletes_old_artifacts():
     """Tests that old artifacts are automatically deleted."""
     now = datetime.now(timezone.utc)
     with ga_empty_artifact(date=now) as (path, file_now):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
             _,
             file_old,
@@ -288,6 +319,7 @@ def test_ga_deletes_old_artifacts():
             assert not file_old.exists()
 
 
+@skipif_threading
 def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
@@ -426,6 +458,9 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
 
         assert v1 == v2
 
+    def teardown(self):
+        shutil.rmtree(self.temp_directory)
+
 
 TestGADReads = GitHubArtifactMocks.TestCase
 
@@ -443,14 +478,19 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(
         configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
     )
-    tmp_path.chmod(0o000)
-    with (
-        nullcontext()
-        if WINDOWS
-        else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
-    ):
-        database = ExampleDatabase(not_set)
-    database.save(b"fizz", b"buzz")
+    try:
+        tmp_path.chmod(0o000)
+        with (
+            nullcontext()
+            if WINDOWS
+            else pytest.warns(
+                HypothesisWarning, match=".*the default location is unusable"
+            )
+        ):
+            database = _db_for_path(not_set)
+        database.save(b"fizz", b"buzz")
+    finally:
+        tmp_path.chmod(0o600)  # So that pytest can clean up tmp_path later
 
 
 @skipif_emscripten
@@ -469,26 +509,385 @@ def test_background_write_database():
     assert set(db.fetch(b"a")) == {b"d"}
 
 
-@given(lists(ir_nodes()))
+@given(lists(nodes()))
 # covering examples
-@example(ir(True))
-@example(ir(1))
-@example(ir(0.0))
-@example(ir(-0.0))
-@example(ir("a"))
-@example(ir(b"a"))
-@example(ir(b"a" * 50))
-def test_ir_nodes_rountrips(nodes1):
-    s1 = ir_to_bytes([n.value for n in nodes1])
+@example(nodes_inline(True))
+@example(nodes_inline(1))
+@example(nodes_inline(0.0))
+@example(nodes_inline(-0.0))
+@example(nodes_inline("a"))
+@example(nodes_inline(b"a"))
+@example(nodes_inline(b"a" * 50))
+@example(nodes_inline(b"1" * 100_000))  # really long bytes
+def test_nodes_roundtrips(nodes1):
+    s1 = choices_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
-    ir2 = ir_from_bytes(s1)
+    ir2 = choices_from_bytes(s1)
     assert len(nodes1) == len(ir2)
 
     for n1, v2 in zip(nodes1, ir2):
-        v1 = n1.value
-        ir_type = n1.ir_type
-        assert type(v1) is type(v2)
-        assert ir_value_equal(ir_type, v1, v2)
+        assert choice_equal(n1.value, v2)
 
-    s2 = ir_to_bytes(ir2)
+    s2 = choices_to_bytes(ir2)
     assert s1 == s2
+
+
+@given(st.integers(min_value=0))
+def test_uleb_128_roundtrips(n1):
+    buffer1 = _pack_uleb128(n1)
+    idx, n2 = _unpack_uleb128(buffer1)
+    assert idx == len(buffer1)
+    assert n1 == n2
+
+
+def _database_conforms_to_listener_api(
+    create_db,
+    *,
+    flush=None,
+    supports_value_delete=True,
+    parent_settings=None,
+):
+    # this function is a big mess to support a bunch of different special cases
+    # for different databases, sorry. In return, we get one big stateful test
+    # we can use to test the listener api for all of our databases.
+    #
+    # * create_db is a callable which accepts one argument (a path to a temporary
+    #   directory) and returns a database instance.
+    # * flush is a callable which takes the instantiated db as an argument, and
+    #   is called on every step as an invariant. This lets the database do things
+    #   like, time.sleep to give time for events to fire.
+    # * suports_value_delete is True if the db supports passing
+    #   the exact value of a deleted key in "delete" events. The directory database
+    #   notably does not support this, and passes None instead.
+
+    @settings(parent_settings, suppress_health_check=[HealthCheck.too_slow])
+    class TestDatabaseListener(RuleBasedStateMachine):
+        # this tests that if we call .delete, .save, or .move in a database, and
+        # that operation changes the state of the database, any registered listeners
+        # get called a corresponding number of times.
+        keys = Bundle("keys")
+        values = Bundle("values")
+
+        def __init__(self):
+            super().__init__()
+
+            self.temp_dir = Path(tempfile.mkdtemp())
+            self.db = create_db(self.temp_dir)
+            self.expected_events = []
+            self.actual_events = []
+
+            def listener(event):
+                self.actual_events.append(event)
+
+            self.listener = listener
+            self.active_listeners = []
+            self.add_listener()
+
+        def _expect_event(self, event_type, args):
+            for _ in range(len(self.active_listeners)):
+                self.expected_events.append((event_type, args))
+
+        def _expect_delete(self, k, v):
+            if not supports_value_delete:
+                v = None
+            self._expect_event("delete", (k, v))
+
+        def _expect_save(self, k, v):
+            self._expect_event("save", (k, v))
+
+        @rule(target=keys, k=st.binary())
+        def k(self, k):
+            return k
+
+        @rule(target=values, v=st.binary())
+        def v(self, v):
+            return v
+
+        @precondition(lambda self: not self.active_listeners)
+        @rule()
+        def add_listener(self):
+            self.db.add_listener(self.listener)
+            self.active_listeners.append(self.listener)
+
+        @precondition(lambda self: self.listener in self.active_listeners)
+        @rule()
+        def remove_listener(self):
+            self.db.remove_listener(self.listener)
+            self.active_listeners.remove(self.listener)
+
+        @rule()
+        def clear_listeners(self):
+            self.db.clear_listeners()
+            self.active_listeners.clear()
+
+        @rule(k=keys)
+        def fetch(self, k):
+            # we don't expect this to do anything, but that's the point. if this
+            # fires a listener call then that's bad and will fail.
+            self.db.fetch(k)
+
+        @rule(k=keys, v=values)
+        def save(self, k, v):
+            changed = v not in set(self.db.fetch(k))
+            self.db.save(k, v)
+
+            if changed:
+                self._expect_save(k, v)
+
+        @rule(k=keys, v=values)
+        def delete(self, k, v):
+            changed = v in set(self.db.fetch(k))
+            self.db.delete(k, v)
+
+            if changed:
+                self._expect_delete(k, v)
+
+        @rule(k1=keys, k2=keys, v=values)
+        def move(self, k1, k2, v):
+            in_k1 = v in set(self.db.fetch(k1))
+            save_changed = v not in set(self.db.fetch(k2))
+            delete_changed = k1 != k2 and in_k1
+            self.db.move(k1, k2, v)
+
+            # A move gets emitted as a delete followed by a save.  The
+            # delete may be omitted if k1==k2, and the save if v in db.fetch(k2).
+            if delete_changed:
+                self._expect_delete(k1, v)
+            if save_changed:
+                self._expect_save(k2, v)
+
+        # it would be nice if this was an @rule, but that runs into race condition
+        # failures where an event listener is removed immediately after a
+        # save/delete/move operation, before the listener can fire. This is only
+        # relevant for DirectoryBasedExampleDatabase.
+        @invariant()
+        def events_agree(self):
+            if flush is not None:
+                flush(self.db)
+
+            wait_for(
+                lambda: len(self.expected_events) == len(self.actual_events), timeout=60
+            )
+            # events *generally* don't arrive out of order, but we've had
+            # flakes reported here, especially on weirder / older machines.
+            # see https://github.com/HypothesisWorks/hypothesis/issues/4274
+            assert Counter(self.expected_events) == Counter(self.actual_events)
+
+        def teardown(self):
+            shutil.rmtree(self.temp_dir)
+
+    run_state_machine_as_test(TestDatabaseListener)
+
+
+def test_database_listener_memory():
+    _database_conforms_to_listener_api(lambda path: InMemoryExampleDatabase())
+
+
+@skipif_emscripten
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ages")
+def test_database_listener_background_write():
+    _database_conforms_to_listener_api(
+        lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
+        flush=lambda db: db._join(),
+    )
+
+
+def test_can_remove_nonexistent_listener():
+    db = InMemoryExampleDatabase()
+    db.remove_listener(lambda event: event)
+
+
+class DoesNotSupportListening(ExampleDatabase):
+    def save(self, key: bytes, value: bytes) -> None: ...
+    def fetch(self, key: bytes) -> Iterable[bytes]: ...
+    def delete(self, key: bytes, value: bytes) -> None: ...
+
+
+def test_warns_when_listening_not_supported():
+    db = DoesNotSupportListening()
+    listener = lambda event: event
+
+    with pytest.warns(
+        HypothesisWarning, match="does not support listening for changes"
+    ):
+        db.add_listener(listener)
+
+    with pytest.warns(
+        HypothesisWarning, match="does not support stopping listening for changes"
+    ):
+        db.remove_listener(listener)
+
+
+def test_readonly_listener():
+    db = ReadOnlyDatabase(InMemoryExampleDatabase())
+
+    def listener(event):
+        raise AssertionError("ReadOnlyDatabase never fires change events")
+
+    db.add_listener(listener)
+    db.save(b"a", b"a")
+
+    db.remove_listener(listener)
+    db.save(b"b", b"b")
+
+
+@skipif_threading
+def test_metakeys_move_into_existing_key(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    db.save(b"k1", b"v2")
+    db.save(b"k2", b"v3")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+    db.move(b"k1", b"k2", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+
+@skipif_threading
+def test_metakeys_move_into_nonexistent_key(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.move(b"k1", b"k2", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+
+@skipif_threading
+def test_metakeys(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+
+    db.save(b"k1", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.save(b"k1", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    # deleting all the values from a key removes that metakey
+    db.delete(b"k1", b"v1")
+    db.delete(b"k1", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == set()
+
+    db.save(b"k2", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k2"}
+
+
+class TracksListens(ExampleDatabase):
+    def __init__(self):
+        super().__init__()
+        self.starts = 0
+        self.ends = 0
+
+    def save(self, key: bytes, value: bytes) -> None: ...
+    def fetch(self, key: bytes) -> Iterable[bytes]: ...
+    def delete(self, key: bytes, value: bytes) -> None: ...
+
+    def _start_listening(self):
+        self.starts += 1
+
+    def _stop_listening(self):
+        self.ends += 1
+
+
+def test_start_end_listening():
+    db = TracksListens()
+
+    def listener1(event):
+        pass
+
+    def listener2(event):
+        pass
+
+    assert db.starts == 0
+    db.add_listener(listener1)
+    assert db.starts == 1
+    db.add_listener(listener2)
+    assert db.starts == 1
+
+    assert db.ends == 0
+    db.remove_listener(listener2)
+    assert db.ends == 0
+    db.remove_listener(listener1)
+    assert db.ends == 1
+
+    db.clear_listeners()
+    assert db.ends == 1
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_path(tmp_path):
+    ExampleDatabase(tmp_path)
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_memory():
+    ExampleDatabase(":memory:")
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_no_args():
+    ExampleDatabase()
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("a")),
+        (
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+        ),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner1", "repo1"),
+        ),
+    ],
+)
+def test_database_equal(db1, db2):
+    assert db1 == db2
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (InMemoryExampleDatabase(), InMemoryExampleDatabase()),
+        (InMemoryExampleDatabase(), DirectoryBasedExampleDatabase("a")),
+        (BackgroundWriteDatabase(InMemoryExampleDatabase()), InMemoryExampleDatabase()),
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("b")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner2", "repo2"),
+        ),
+    ],
+)
+def test_database_not_equal(db1, db2):
+    assert db1 != db2
+
+
+@skipif_threading  # race in tmp_path
+def test_directory_db_removes_empty_dirs(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    db.save(b"k1", b"v2")
+    assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.delete(b"k1", b"v1")
+    assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.delete(b"k1", b"v2")
+    assert not db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == set()

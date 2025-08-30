@@ -9,20 +9,32 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import enum
+import math
 import sys
+import time
 import warnings
 from io import StringIO
+from threading import Barrier, Lock, RLock, Thread
 from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.internal import observability
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.observability import (
+    Observation,
+    add_observability_callback,
+    remove_observability_callback,
+)
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
 from hypothesis.strategies._internal.types import _global_type_lookup
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
 
 try:
     from pytest import raises
@@ -89,16 +101,22 @@ def flaky(max_runs, min_passes):
     return accept
 
 
+capture_out_lock = Lock()
+
+
 @contextlib.contextmanager
 def capture_out():
-    old_out = sys.stdout
-    try:
-        new_out = StringIO()
-        sys.stdout = new_out
-        with with_reporter(default):
-            yield new_out
-    finally:
-        sys.stdout = old_out
+    # replacing the singleton sys.stdout can't be made thread safe. Disallow
+    # concurrency by wrapping a lock around the entire block
+    with capture_out_lock:
+        old_out = sys.stdout
+        try:
+            new_out = StringIO()
+            sys.stdout = new_out
+            with with_reporter(default):
+                yield new_out
+        finally:
+            sys.stdout = old_out
 
 
 class ExcInfo:
@@ -114,6 +132,9 @@ def fails_with(e, *, match=None):
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
             with deterministic_PRNG():
+                # NOTE: For compatibility with Python 3.9's LL(1)
+                # parser, this is written as a nested with-statement,
+                # instead of a compound one.
                 with raises(e, match=match):
                     f(*arguments, **kwargs)
 
@@ -131,6 +152,13 @@ class NotDeprecated(Exception):
 
 @contextlib.contextmanager
 def validate_deprecation():
+
+    if settings._current_profile == "threading":
+        import pytest
+
+        if sys.version_info[:2] < (3, 14):
+            pytest.skip("warnings module is not thread-safe before 3.14")
+
     import warnings
 
     try:
@@ -206,41 +234,54 @@ def assert_falsifying_output(
     assert_output_contains_failure(output, test, **kwargs)
 
 
+temp_registered_lock = RLock()
+
+
 @contextlib.contextmanager
 def temp_registered(type_, strat_or_factory):
     """Register and un-register a type for st.from_type().
 
-    This not too hard, but there's a subtlety in restoring the
+    This is not too hard, but there's a subtlety in restoring the
     previously-registered strategy which we got wrong in a few places.
     """
-    prev = _global_type_lookup.get(type_)
-    register_type_strategy(type_, strat_or_factory)
-    try:
-        yield
-    finally:
-        del _global_type_lookup[type_]
-        from_type.__clear_cache()
-        if prev is not None:
-            register_type_strategy(type_, prev)
+    with temp_registered_lock:
+        prev = _global_type_lookup.get(type_)
+        register_type_strategy(type_, strat_or_factory)
+        try:
+            yield
+        finally:
+            del _global_type_lookup[type_]
+            from_type.__clear_cache()
+            if prev is not None:
+                register_type_strategy(type_, prev)
 
 
 @contextlib.contextmanager
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
     with raises(expected_warning, match=match) as r:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=expected_warning)
             yield r
 
 
 @contextlib.contextmanager
-def capture_observations():
-    ls = []
-    TESTCASE_CALLBACKS.append(ls.append)
+def capture_observations(*, choices=None):
+    ls: list[Observation] = []
+    add_observability_callback(ls.append)
+    if choices is not None:
+        old_choices = observability.OBSERVABILITY_CHOICES
+        observability.OBSERVABILITY_CHOICES = choices
+
     try:
         yield ls
     finally:
-        TESTCASE_CALLBACKS.remove(ls.append)
+        remove_observability_callback(ls.append)
+        if choices is not None:
+            observability.OBSERVABILITY_CHOICES = old_choices
 
 
 # Specifies whether we can represent subnormal floating point numbers.
@@ -249,3 +290,104 @@ def capture_observations():
 # config option, so *linking against* something built this way can break us.
 # Everything is terrible
 PYTHON_FTZ = next_down(sys.float_info.min) == 0.0
+
+
+class Why(enum.Enum):
+    # Categorizing known failures, to ease later follow-up investigation.
+    # Some are crosshair issues, some hypothesis issues, others truly ok-to-xfail tests.
+    symbolic_outside_context = "CrosshairInternal error (using value outside context)"
+    nested_given = "nested @given decorators don't work with crosshair"
+    undiscovered = "crosshair may not find the failing input"
+    other = "reasons not elsewhere categorized"
+
+
+def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
+    # run `pytest -m xf_crosshair` to select these tests!
+    try:
+        import pytest
+    except ImportError:
+        return lambda fn: fn
+
+    current_backend = settings.get_profile(settings._current_profile).backend
+    kw = {
+        "strict": strict and why != Why.undiscovered,
+        "reason": f"Expected failure due to: {why.value}",
+        "condition": current_backend == "crosshair",
+    }
+    if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
+        return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
+    return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
+
+
+def skipif_threading(f):
+    try:
+        import pytest
+    except ImportError:
+        return f
+
+    return pytest.mark.skipif(
+        settings._current_profile == "threading", reason="not thread safe"
+    )(f)
+
+
+def xfail_if_gil_disabled(f):
+    try:
+        if not sys._is_gil_enabled():  # 3.13+
+            import pytest
+
+            return pytest.mark.xfail(
+                reason="fails on free-threading build", strict=False
+            )(f)
+    except Exception:
+        pass
+    return f
+
+
+# we don't monkeypatch _consistently_increment_time under threading
+skipif_time_unpatched = skipif_threading
+
+
+_restore_recursion_limit_lock = RLock()
+
+
+@contextlib.contextmanager
+def restore_recursion_limit():
+    with _restore_recursion_limit_lock:
+        original_limit = sys.getrecursionlimit()
+        try:
+            yield
+        finally:
+            sys.setrecursionlimit(original_limit)
+
+
+def run_concurrently(function, n: int) -> None:
+    import pytest
+
+    if settings._current_profile == "crosshair":
+        pytest.skip("crosshair is not thread safe")
+    if sys.platform == "emscripten":
+        pytest.skip("no threads on emscripten")
+
+    def run():
+        barrier.wait()
+        function()
+
+    threads = [Thread(target=run) for _ in range(n)]
+    barrier = Barrier(n)
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join(timeout=10)
+
+
+def wait_for(condition, *, timeout=1, interval=0.01):
+    for _ in range(math.ceil(timeout / interval)):
+        if condition():
+            return
+        time_sleep(interval)
+    raise Exception(
+        f"timing out after waiting {timeout}s for condition "
+        f"{get_pretty_function_description(condition)}"
+    )

@@ -10,7 +10,7 @@
 
 import collections
 import enum
-import sys
+import operator
 
 import pytest
 
@@ -99,14 +99,17 @@ def test_efficient_dicts_with_sampled_keys(x):
     assert set(x) == set(range(50))
 
 
-@given(
-    st.lists(
-        st.tuples(st.sampled_from(range(20)), st.builds(list)),
-        min_size=20,
-        unique_by=lambda asdf: asdf[0],
-    )
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes 3-5 mins and raises Unsatisfiable",
 )
-def test_efficient_lists_of_tuples_first_element_sampled_from(x):
+@pytest.mark.parametrize(
+    "fn", [lambda asdf: asdf[0], (operator.itemgetter(0), lambda x: x[0])]
+)
+@given(st.data())
+def test_efficient_lists_of_tuples_first_element_sampled_from(fn, data):
+    elems = st.tuples(st.sampled_from(range(20)), st.builds(list))
+    x = data.draw(st.lists(elems, min_size=20, unique_by=fn))
     assert {first for first, *_ in x} == set(range(20))
 
 
@@ -157,7 +160,7 @@ def test_unsatisfiable_explicit_filteredstrategy_just(x):
 
 
 def test_transformed_just_strategy():
-    data = ConjectureData.for_buffer(bytes(100))
+    data = ConjectureData.for_choices([])
     s = JustStrategy([1]).map(lambda x: x * 2)
     assert s.do_draw(data) == 2
     sf = s.filter(lambda x: False)
@@ -199,7 +202,6 @@ class AnnotationsInsteadOfElements(enum.Enum):
     a: "int"
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_suggests_elements_instead_of_annotations():
     with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
         check_can_generate_examples(st.sampled_from(AnnotationsInsteadOfElements))

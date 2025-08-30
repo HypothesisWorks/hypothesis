@@ -9,17 +9,21 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import threading
 import warnings
 from collections import abc, defaultdict
 from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
+from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
     Generic,
+    Literal,
+    Optional,
     TypeVar,
     Union,
     cast,
@@ -39,6 +43,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
+    calc_label_from_hash,
     calc_label_from_name,
     combine_labels,
 )
@@ -50,22 +55,20 @@ from hypothesis.internal.reflection import (
 from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
-# TODO: Use `(3, 13)` once Python 3.13 is released.
-if sys.version_info >= (3, 13, 0, "final"):
-    Ex = TypeVar("Ex", covariant=True, default=Any)
-elif TYPE_CHECKING:
-    from typing_extensions import TypeVar  # type: ignore[assignment]
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
-    Ex = TypeVar("Ex", covariant=True, default=Any)  # type: ignore[call-arg,misc]
+    Ex = TypeVar("Ex", covariant=True, default=Any)
 else:
     Ex = TypeVar("Ex", covariant=True)
 
-Ex_Inv = TypeVar("Ex_Inv")
 T = TypeVar("T")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 T5 = TypeVar("T5")
-
+MappedFrom = TypeVar("MappedFrom")
+MappedTo = TypeVar("MappedTo")
+RecurT: "TypeAlias" = Callable[["SearchStrategy"], bool]
 calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
@@ -76,8 +79,10 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "single loop iteration in FilteredStrategy"
 )
 
+label_lock = RLock()
 
-def recursive_property(name, default):
+
+def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
     """Handle properties which may be mutually recursive among a set of
     strategies.
 
@@ -103,137 +108,138 @@ def recursive_property(name, default):
     and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
     (2016): 224-236.
     """
+    assert name in {"is_empty", "has_reusable_values", "is_cacheable"}
     cache_key = "cached_" + name
     calculation = "calc_" + name
     force_key = "force_" + name
 
-    def forced_value(target):
+    def forced_value(target: SearchStrategy) -> Any:
         try:
             return getattr(target, force_key)
         except AttributeError:
             return getattr(target, cache_key)
 
-    def accept(self):
+    try:
+        return forced_value(strategy)
+    except AttributeError:
+        pass
+
+    mapping: dict[SearchStrategy, Any] = {}
+    sentinel = object()
+    hit_recursion = False
+
+    # For a first pass we do a direct recursive calculation of the
+    # property, but we block recursively visiting a value in the
+    # computation of its property: When that happens, we simply
+    # note that it happened and return the default value.
+    def recur(strat: SearchStrategy) -> Any:
+        nonlocal hit_recursion
         try:
-            return forced_value(self)
+            return forced_value(strat)
         except AttributeError:
             pass
+        result = mapping.get(strat, sentinel)
+        if result is calculating:
+            hit_recursion = True
+            return default
+        elif result is sentinel:
+            mapping[strat] = calculating
+            mapping[strat] = getattr(strat, calculation)(recur)
+            return mapping[strat]
+        return result
 
-        mapping = {}
-        sentinel = object()
-        hit_recursion = False
+    recur(strategy)
 
-        # For a first pass we do a direct recursive calculation of the
-        # property, but we block recursively visiting a value in the
-        # computation of its property: When that happens, we simply
-        # note that it happened and return the default value.
-        def recur(strat):
-            nonlocal hit_recursion
+    # If we hit self-recursion in the computation of any strategy
+    # value, our mapping at the end is imprecise - it may or may
+    # not have the right values in it. We now need to proceed with
+    # a more careful fixed point calculation to get the exact
+    # values. Hopefully our mapping is still pretty good and it
+    # won't take a large number of updates to reach a fixed point.
+    if hit_recursion:
+        needs_update = set(mapping)
+
+        # We track which strategies use which in the course of
+        # calculating their property value. If A ever uses B in
+        # the course of calculating its value, then whenever the
+        # value of B changes we might need to update the value of
+        # A.
+        listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
+    else:
+        needs_update = None
+
+    def recur2(strat: SearchStrategy) -> Any:
+        def recur_inner(other: SearchStrategy) -> Any:
             try:
-                return forced_value(strat)
+                return forced_value(other)
             except AttributeError:
                 pass
-            result = mapping.get(strat, sentinel)
-            if result is calculating:
-                hit_recursion = True
+            listeners[other].add(strat)
+            result = mapping.get(other, sentinel)
+            if result is sentinel:
+                assert needs_update is not None
+                needs_update.add(other)
+                mapping[other] = default
                 return default
-            elif result is sentinel:
-                mapping[strat] = calculating
-                mapping[strat] = getattr(strat, calculation)(recur)
-                return mapping[strat]
             return result
 
-        recur(self)
+        return recur_inner
 
-        # If we hit self-recursion in the computation of any strategy
-        # value, our mapping at the end is imprecise - it may or may
-        # not have the right values in it. We now need to proceed with
-        # a more careful fixed point calculation to get the exact
-        # values. Hopefully our mapping is still pretty good and it
-        # won't take a large number of updates to reach a fixed point.
-        if hit_recursion:
-            needs_update = set(mapping)
+    count = 0
+    seen = set()
+    while needs_update:
+        count += 1
+        # If we seem to be taking a really long time to stabilize we
+        # start tracking seen values to attempt to detect an infinite
+        # loop. This should be impossible, and most code will never
+        # hit the count, but having an assertion for it means that
+        # testing is easier to debug and we don't just have a hung
+        # test.
+        # Note: This is actually covered, by test_very_deep_deferral
+        # in tests/cover/test_deferred_strategies.py. Unfortunately it
+        # runs into a coverage bug. See
+        # https://github.com/nedbat/coveragepy/issues/605
+        # for details.
+        if count > 50:  # pragma: no cover
+            key = frozenset(mapping.items())
+            assert key not in seen, (key, name)
+            seen.add(key)
+        to_update = needs_update
+        needs_update = set()
+        for strat in to_update:
+            new_value = getattr(strat, calculation)(recur2(strat))
+            if new_value != mapping[strat]:
+                needs_update.update(listeners[strat])
+                mapping[strat] = new_value
 
-            # We track which strategies use which in the course of
-            # calculating their property value. If A ever uses B in
-            # the course of calculating its value, then whenever the
-            # value of B changes we might need to update the value of
-            # A.
-            listeners = defaultdict(set)
-        else:
-            needs_update = None
-
-        def recur2(strat):
-            def recur_inner(other):
-                try:
-                    return forced_value(other)
-                except AttributeError:
-                    pass
-                listeners[other].add(strat)
-                result = mapping.get(other, sentinel)
-                if result is sentinel:
-                    needs_update.add(other)
-                    mapping[other] = default
-                    return default
-                return result
-
-            return recur_inner
-
-        count = 0
-        seen = set()
-        while needs_update:
-            count += 1
-            # If we seem to be taking a really long time to stabilize we
-            # start tracking seen values to attempt to detect an infinite
-            # loop. This should be impossible, and most code will never
-            # hit the count, but having an assertion for it means that
-            # testing is easier to debug and we don't just have a hung
-            # test.
-            # Note: This is actually covered, by test_very_deep_deferral
-            # in tests/cover/test_deferred_strategies.py. Unfortunately it
-            # runs into a coverage bug. See
-            # https://github.com/nedbat/coveragepy/issues/605
-            # for details.
-            if count > 50:  # pragma: no cover
-                key = frozenset(mapping.items())
-                assert key not in seen, (key, name)
-                seen.add(key)
-            to_update = needs_update
-            needs_update = set()
-            for strat in to_update:
-                new_value = getattr(strat, calculation)(recur2(strat))
-                if new_value != mapping[strat]:
-                    needs_update.update(listeners[strat])
-                    mapping[strat] = new_value
-
-        # We now have a complete and accurate calculation of the
-        # property values for everything we have seen in the course of
-        # running this calculation. We simultaneously update all of
-        # them (not just the strategy we started out with).
-        for k, v in mapping.items():
-            setattr(k, cache_key, v)
-        return getattr(self, cache_key)
-
-    accept.__name__ = name
-    return property(accept)
+    # We now have a complete and accurate calculation of the
+    # property values for everything we have seen in the course of
+    # running this calculation. We simultaneously update all of
+    # them (not just the strategy we started out with).
+    for k, v in mapping.items():
+        setattr(k, cache_key, v)
+    return getattr(strategy, cache_key)
 
 
 class SearchStrategy(Generic[Ex]):
-    """A SearchStrategy is an object that knows how to explore data of a given
-    type.
+    """A ``SearchStrategy`` tells Hypothesis how to generate that kind of input.
 
-    Except where noted otherwise, methods on this class are not part of
-    the public API and their behaviour may change significantly between
-    minor version releases. They will generally be stable between patch
-    releases.
+    This class is only part of the public API for use in type annotations, so that
+    you can write e.g. ``-> SearchStrategy[Foo]`` for your function which returns
+    ``builds(Foo, ...)``.  Do not inherit from or directly instantiate this class.
     """
 
-    supports_find = True
-    validate_called = False
-    __label = None
-    __module__ = "hypothesis.strategies"
+    __module__: str = "hypothesis.strategies"
+    LABELS: ClassVar[dict[type, int]] = {}
+    # triggers `assert isinstance(label, int)` under threading when setting this
+    # in init instead of a classvar. I'm not sure why, init should be safe. But
+    # this works so I'm not looking into it further atm.
+    __label: Union[int, UniqueIdentifier, None] = None
 
-    def available(self, data):
+    def __init__(self):
+        self.validate_called: dict[int, bool] = {}
+
+    def _available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
         values. This typically useful for stateful testing where ``Bundle``
         grows over time a list of value to choose from.
@@ -245,12 +251,18 @@ class SearchStrategy(Generic[Ex]):
         """
         return not self.is_empty
 
-    # Returns True if this strategy can never draw a value and will always
-    # result in the data being marked invalid.
-    # The fact that this returns False does not guarantee that a valid value
-    # can be drawn - this is not intended to be perfect, and is primarily
-    # intended to be an optimisation for some cases.
-    is_empty = recursive_property("is_empty", True)
+    @property
+    def is_empty(self) -> Any:
+        # Returns True if this strategy can never draw a value and will always
+        # result in the data being marked invalid.
+        # The fact that this returns False does not guarantee that a valid value
+        # can be drawn - this is not intended to be perfect, and is primarily
+        # intended to be an optimisation for some cases.
+        return recursive_property(self, "is_empty", True)
+
+    @property
+    def supports_find(self) -> bool:
+        return True
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
@@ -260,15 +272,19 @@ class SearchStrategy(Generic[Ex]):
     # user-visible behaviour. Should be false for built-in strategies that
     # produce mutable values, and for strategies that have been mapped/filtered
     # by arbitrary user-provided functions.
-    has_reusable_values = recursive_property("has_reusable_values", True)
+    @property
+    def has_reusable_values(self) -> Any:
+        return recursive_property(self, "has_reusable_values", True)
 
     # Whether this strategy is suitable for holding onto in a cache.
-    is_cacheable = recursive_property("is_cacheable", True)
+    @property
+    def is_cacheable(self) -> Any:
+        return recursive_property(self, "is_cacheable", True)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return True
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         # Note: It is correct and significant that the default return value
         # from calc_is_empty is False despite the default value for is_empty
         # being true. The reason for this is that strategies should be treated
@@ -277,18 +293,15 @@ class SearchStrategy(Generic[Ex]):
         # this method to show that.
         return False
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return False
 
-    def example(self) -> Ex:
-        """Provide an example of the sort of value that this strategy
-        generates. This is biased to be slightly simpler than is typical for
-        values from this strategy, for clarity purposes.
+    def example(self) -> Ex:  # FIXME
+        """Provide an example of the sort of value that this strategy generates.
 
-        This method shouldn't be taken too seriously. It's here for interactive
-        exploration of the API, not for any sort of real testing.
-
-        This method is part of the public API.
+        This method is designed for use in a REPL, and will raise an error if
+        called from inside |@given| or a strategy definition.  For serious use,
+        see |@composite| or |st.data|.
         """
         if getattr(sys, "ps1", None) is None:  # pragma: no branch
             # The other branch *is* covered in cover/test_examples.py; but as that
@@ -297,7 +310,7 @@ class SearchStrategy(Generic[Ex]):
                 "The `.example()` method is good for exploring strategies, but should "
                 "only be used interactively.  We recommend using `@given` for tests - "
                 "it performs better, saves and replays failures to avoid flakiness, "
-                "and reports minimal examples. (strategy: %r)" % (self,),
+                f"and reports minimal examples. (strategy: {self!r})",
                 NonInteractiveExampleWarning,
                 stacklevel=2,
             )
@@ -344,7 +357,9 @@ class SearchStrategy(Generic[Ex]):
             phases=(Phase.generate,),
             suppress_health_check=list(HealthCheck),
         )
-        def example_generating_inner_function(ex):
+        def example_generating_inner_function(
+            ex: Ex,  # type: ignore # mypy is overzealous in preventing covariant params
+        ) -> None:
             self.__examples.append(ex)
 
         example_generating_inner_function()
@@ -352,10 +367,9 @@ class SearchStrategy(Generic[Ex]):
         return self.__examples.pop()
 
     def map(self, pack: Callable[[Ex], T]) -> "SearchStrategy[T]":
-        """Returns a new strategy that generates values by generating a value
-        from this strategy and then calling pack() on the result, giving that.
-
-        This method is part of the public API.
+        """Returns a new strategy which generates a value from this one, and
+        then returns ``pack(value)``.  For example, ``integers().map(str)``
+        could generate ``str(5)`` == ``"5"``.
         """
         if is_identity_function(pack):
             return self  # type: ignore  # Mypy has no way to know that `Ex == T`
@@ -363,28 +377,57 @@ class SearchStrategy(Generic[Ex]):
 
     def flatmap(
         self, expand: Callable[[Ex], "SearchStrategy[T]"]
-    ) -> "SearchStrategy[T]":
-        """Returns a new strategy that generates values by generating a value
-        from this strategy, say x, then generating a value from
-        strategy(expand(x))
+    ) -> "SearchStrategy[T]":  # FIXME
+        """Old syntax for a special case of |@composite|:
 
-        This method is part of the public API.
+        .. code-block:: python
+
+            @st.composite
+            def flatmap_like(draw, base_strategy, expand):
+                value = draw(base_strategy)
+                new_strategy = expand(value)
+                return draw(new_strategy)
+
+        We find that the greater readability of |@composite| usually outweighs
+        the verbosity, with a few exceptions for simple cases or recipes like
+        ``from_type(type).flatmap(from_type)`` ("pick a type, get a strategy for
+        any instance of that type, and then generate one of those").
         """
         from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 
-        return FlatMapStrategy(expand=expand, strategy=self)
+        return FlatMapStrategy(self, expand=expand)
 
+    # Note that we previously had condition extracted to a type alias as
+    # PredicateT. However, that was only useful when not specifying a relationship
+    # between the generic Ts and some other function param / return value.
+    # If we do want to - like here, where we want to say that the Ex arg to condition
+    # is of the same type as the strategy's Ex - then you need to write out the
+    # entire Callable[[Ex], Any] expression rather than use a type alias.
+    # TypeAlias is *not* simply a macro that inserts the text. TypeAlias will not
+    # reference the local TypeVar context.
     def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
         """Returns a new strategy that generates values from this strategy
-        which satisfy the provided condition. Note that if the condition is too
-        hard to satisfy this might result in your tests failing with
-        Unsatisfiable.
+        which satisfy the provided condition.
 
-        This method is part of the public API.
+        Note that if the condition is too hard to satisfy this might result
+        in your tests failing with an Unsatisfiable exception.
+        A basic version of the filtering logic would look something like:
+
+        .. code-block:: python
+
+            @st.composite
+            def filter_like(draw, strategy, condition):
+                for _ in range(3):
+                    value = draw(strategy)
+                    if condition(value):
+                        return value
+                assume(False)
         """
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
-    def _filter_for_filtered_draw(self, condition):
+    def _filter_for_filtered_draw(
+        self, condition: Callable[[Ex], Any]
+    ) -> "FilteredStrategy[Ex]":
         # Hook for parent strategies that want to perform fallible filtering
         # on one of their internal strategies (e.g. UniqueListStrategy).
         # The returned object must have a `.do_filtered_draw(data)` method
@@ -397,7 +440,7 @@ class SearchStrategy(Generic[Ex]):
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
     @property
-    def branches(self) -> list["SearchStrategy[Ex]"]:
+    def branches(self) -> Sequence["SearchStrategy[Ex]"]:
         return [self]
 
     def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
@@ -408,7 +451,27 @@ class SearchStrategy(Generic[Ex]):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
-        return OneOfStrategy((self, other))
+
+        # Unwrap explicitly or'd strategies. This turns the
+        # common case of e.g. st.integers() | st.integers() | st.integers() from
+        #
+        #   one_of(one_of(integers(), integers()), integers())
+        #
+        # into
+        #
+        #   one_of(integers(), integers(), integers())
+        #
+        # This is purely an aesthetic unwrapping, for e.g. reprs. In practice
+        # we use .branches / .element_strategies to get the list of possible
+        # strategies, so this unwrapping is *not* necessary for correctness.
+        strategies: list[SearchStrategy] = []
+        strategies.extend(
+            self.original_strategies if isinstance(self, OneOfStrategy) else [self]
+        )
+        strategies.extend(
+            other.original_strategies if isinstance(other, OneOfStrategy) else [other]
+        )
+        return OneOfStrategy(strategies)
 
     def __bool__(self) -> bool:
         warnings.warn(
@@ -421,23 +484,41 @@ class SearchStrategy(Generic[Ex]):
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
 
-        This can happen due to lazy construction
+        Strategies should implement ``do_validate``, which is called by this
+        method. They should not override ``validate``.
+
+        This can happen due to invalid arguments, or lazy construction.
         """
-        if self.validate_called:
+        thread_id = threading.get_ident()
+        if self.validate_called.get(thread_id, False):
             return
+        # we need to set validate_called before calling do_validate, for
+        # recursive / deferred strategies. But if a thread switches after
+        # validate_called but before do_validate, we might have a strategy
+        # which does weird things like drawing when do_validate would error but
+        # its params are technically valid (e.g. a param was passed as 1.0
+        # instead of 1) and get into weird internal states.
+        #
+        # There are two ways to fix this.
+        # (1) The first is a per-strategy lock around do_validate. Even though we
+        #   expect near-zero lock contention, this still adds the lock overhead.
+        # (2) The second is allowing concurrent .validate calls. Since validation
+        #   is (assumed to be) deterministic, both threads will produce the same
+        #   end state, so the validation order or race conditions does not matter.
+        #
+        # In order to avoid the lock overhead of (1), we use (2) here. See also
+        # discussion in https://github.com/HypothesisWorks/hypothesis/pull/4473.
         try:
-            self.validate_called = True
+            self.validate_called[thread_id] = True
             self.do_validate()
             self.is_empty
             self.has_reusable_values
         except Exception:
-            self.validate_called = False
+            self.validate_called[thread_id] = False
             raise
 
-    LABELS: ClassVar[dict[type, int]] = {}
-
     @property
-    def class_label(self):
+    def class_label(self) -> int:
         cls = self.__class__
         try:
             return cls.LABELS[cls]
@@ -449,32 +530,38 @@ class SearchStrategy(Generic[Ex]):
 
     @property
     def label(self) -> int:
-        if self.__label is calculating:
-            return 0
-        if self.__label is None:
+        if isinstance((label := self.__label), int):
+            # avoid locking if we've already completely computed the label.
+            return label
+
+        with label_lock:
+            if self.__label is calculating:
+                return 0
             self.__label = calculating
             self.__label = self.calc_label()
-        return cast(int, self.__label)
+            return self.__label
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return self.class_label
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         pass
 
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
-    def __init__(self):
-        pass
 
-
-def is_simple_data(value):
+def _is_hashable(value: object) -> tuple[bool, Optional[int]]:
+    # hashing can be expensive; return the hash value if we compute it, so that
+    # callers don't have to recompute.
     try:
-        hash(value)
-        return True
+        return (True, hash(value))
     except TypeError:
-        return False
+        return (False, None)
+
+
+def is_hashable(value: object) -> bool:
+    return _is_hashable(value)[0]
 
 
 class SampledFromStrategy(SearchStrategy[Ex]):
@@ -483,51 +570,134 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     efficient and convenient.
     """
 
-    _MAX_FILTER_CALLS = 10_000
+    _MAX_FILTER_CALLS: ClassVar[int] = 10_000
 
-    def __init__(self, elements, repr_=None, transformations=()):
+    def __init__(
+        self,
+        elements: Sequence[Ex],
+        *,
+        force_repr: Optional[str] = None,
+        force_repr_braces: Optional[tuple[str, str]] = None,
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Ex], Any]],
+            ...,
+        ] = (),
+    ):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
-        self.repr_ = repr_
+        self.force_repr = force_repr
+        self.force_repr_braces = force_repr_braces
         self._transformations = transformations
 
-    def map(self, pack):
-        return type(self)(
+        self._cached_repr: Optional[str] = None
+
+    def map(self, pack: Callable[[Ex], T]) -> SearchStrategy[T]:
+        s = type(self)(
             self.elements,
-            repr_=self.repr_,
+            force_repr=self.force_repr,
+            force_repr_braces=self.force_repr_braces,
             transformations=(*self._transformations, ("map", pack)),
         )
+        # guaranteed by the ("map", pack) transformation
+        return cast(SearchStrategy[T], s)
 
-    def filter(self, condition):
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return type(self)(
             self.elements,
-            repr_=self.repr_,
+            force_repr=self.force_repr,
+            force_repr_braces=self.force_repr_braces,
             transformations=(*self._transformations, ("filter", condition)),
         )
 
     def __repr__(self):
-        return (
-            self.repr_
-            or "sampled_from(["
-            + ", ".join(map(get_pretty_function_description, self.elements))
-            + "])"
-        ) + "".join(
-            f".{name}({get_pretty_function_description(f)})"
-            for name, f in self._transformations
-        )
+        if self._cached_repr is None:
+            rep = get_pretty_function_description
+            elements_s = (
+                ", ".join(rep(v) for v in self.elements[:512]) + ", ..."
+                if len(self.elements) > 512
+                else ", ".join(rep(v) for v in self.elements)
+            )
+            braces = self.force_repr_braces or ("(", ")")
+            instance_s = (
+                self.force_repr or f"sampled_from({braces[0]}{elements_s}{braces[1]})"
+            )
+            transforms_s = "".join(
+                f".{name}({get_pretty_function_description(f)})"
+                for name, f in self._transformations
+            )
+            repr_s = instance_s + transforms_s
+            self._cached_repr = repr_s
+        return self._cached_repr
 
-    def calc_has_reusable_values(self, recur):
+    def calc_label(self) -> int:
+        # strategy.label is effectively an under-approximation of structural
+        # equality (i.e., some strategies may have the same label when they are not
+        # structurally identical). More importantly for calculating the
+        # SampledFromStrategy label, we might have hash(s1) != hash(s2) even
+        # when s1 and s2 are structurally identical. For instance:
+        #
+        #   s1 = st.sampled_from([st.none()])
+        #   s2 = st.sampled_from([st.none()])
+        #   assert hash(s1) != hash(s2)
+        #
+        # (see also test cases in test_labels.py).
+        #
+        # We therefore use the labels of any component strategies when calculating
+        # our label, and only use the hash if it is not a strategy.
+        #
+        # That's the ideal, anyway. In reality the logic is more complicated than
+        # necessary in order to be efficient in the presence of (very) large sequences:
+        # * add an unabashed special case for range, to avoid iteration over an
+        #   enormous range when we know it is entirely integers.
+        # * if there is at least one strategy in self.elements, use strategy label,
+        #   and the element hash otherwise.
+        # * if there are no strategies in self.elements, take the hash of the
+        #   entire sequence. This prevents worst-case performance of hashing each
+        #   element when a hash of the entire sequence would have sufficed.
+        #
+        # The worst case performance of this scheme is
+        # itertools.chain(range(2**100), [st.none()]), where it degrades to
+        # hashing every int in the range.
+        (elements_is_hashable, hash_value) = _is_hashable(self.elements)
+        if isinstance(self.elements, range) or (
+            elements_is_hashable
+            and not any(isinstance(e, SearchStrategy) for e in self.elements)
+        ):
+            return combine_labels(
+                self.class_label, calc_label_from_name(str(hash_value))
+            )
+
+        labels = [self.class_label]
+        for element in self.elements:
+            if not is_hashable(element):
+                continue
+
+            labels.append(
+                element.label
+                if isinstance(element, SearchStrategy)
+                else calc_label_from_hash(element)
+            )
+
+        return combine_labels(*labels)
+
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         # Because our custom .map/.filter implementations skip the normal
         # wrapper strategies (which would automatically return False for us),
         # we need to manually return False here if any transformations have
         # been applied.
         return not self._transformations
 
-    def calc_is_cacheable(self, recur):
-        return is_simple_data(self.elements)
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
+        return is_hashable(self.elements)
 
-    def _transform(self, element):
+    def _transform(
+        self,
+        # https://github.com/python/mypy/issues/7049, we're not writing `element`
+        # anywhere in the class so this is still type-safe. mypy is being more
+        # conservative than necessary
+        element: Ex,  # type: ignore
+    ) -> Union[Ex, UniqueIdentifier]:
         # Used in UniqueSampledListStrategy and BundleStrategy
         for name, f in self._transformations:
             if name == "map":
@@ -541,7 +711,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
                     return filter_not_satisfied
         return element
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         result = self.do_filtered_draw(data)
         if isinstance(result, SearchStrategy) and all(
             isinstance(x, SearchStrategy) for x in self.elements
@@ -553,15 +723,16 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             )
         if result is filter_not_satisfied:
             data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+        assert not isinstance(result, UniqueIdentifier)
         return result
 
-    def get_element(self, i):
+    def get_element(self, i: int) -> Union[Ex, UniqueIdentifier]:
         return self._transform(self.elements[i])
 
-    def do_filtered_draw(self, data):
+    def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
         # Set of indices that have been tried so far, so that we never test
         # the same element twice during a draw.
-        known_bad_indices = set()
+        known_bad_indices: set[int] = set()
 
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
@@ -593,11 +764,12 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # of them at random. But if we encounter the speculatively-chosen one,
         # just use that and return immediately.  Note that we also track the
         # allowed elements, in case of .map(some_stateful_function)
-        allowed = []
+        allowed: list[tuple[int, Ex]] = []
         for i in range(min(len(self.elements), self._MAX_FILTER_CALLS - 3)):
             if i not in known_bad_indices:
                 element = self.get_element(i)
                 if element is not filter_not_satisfied:
+                    assert not isinstance(element, UniqueIdentifier)
                     allowed.append((i, element))
                     if len(allowed) > speculative_index:
                         # Early-exit case: We reached the speculative index, so
@@ -628,24 +800,24 @@ class OneOfStrategy(SearchStrategy[Ex]):
     conditional distribution of that strategy.
     """
 
-    def __init__(self, strategies):
+    def __init__(self, strategies: Sequence[SearchStrategy[Ex]]):
         super().__init__()
-        strategies = tuple(strategies)
-        self.original_strategies = list(strategies)
-        self.__element_strategies = None
+        self.original_strategies = tuple(strategies)
+        self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
+        self._branches_lock = RLock()
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
     @property
-    def element_strategies(self):
+    def element_strategies(self) -> Sequence[SearchStrategy[Ex]]:
         if self.__element_strategies is None:
             # While strategies are hashable, they use object.__hash__ and are
             # therefore distinguished only by identity.
@@ -662,8 +834,8 @@ class OneOfStrategy(SearchStrategy[Ex]):
             # Having made several attempts, the minor benefits of making strategies
             # hashable are simply not worth the engineering effort it would take.
             # See also issues #2291 and #2327.
-            seen = {self}
-            strategies = []
+            seen: set[SearchStrategy] = {self}
+            strategies: list[SearchStrategy] = []
             for arg in self.original_strategies:
                 check_strategy(arg)
                 if not arg.is_empty:
@@ -674,7 +846,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
             self.__element_strategies = strategies
         return self.__element_strategies
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return combine_labels(
             self.class_label, *(p.label for p in self.original_strategies)
         )
@@ -682,30 +854,35 @@ class OneOfStrategy(SearchStrategy[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
-                lambda s: s.available(data)
+                lambda s: s._available(data)
             )
         )
         return data.draw(strategy)
 
-    def __repr__(self):
-        return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
+    def __repr__(self) -> str:
+        return "one_of({})".format(", ".join(map(repr, self.original_strategies)))
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         for e in self.element_strategies:
             e.validate()
 
     @property
-    def branches(self):
-        if not self.__in_branches:
-            try:
-                self.__in_branches = True
-                return self.element_strategies
-            finally:
-                self.__in_branches = False
-        else:
-            return [self]
+    def branches(self) -> Sequence[SearchStrategy[Ex]]:
+        if self.__element_strategies is not None:
+            # common fast path which avoids the lock
+            return self.element_strategies
 
-    def filter(self, condition):
+        with self._branches_lock:
+            if not self.__in_branches:
+                try:
+                    self.__in_branches = True
+                    return self.element_strategies
+                finally:
+                    self.__in_branches = False
+            else:
+                return [self]
+
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return FilteredStrategy(
             OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
             conditions=(),
@@ -714,8 +891,8 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
 @overload
 def one_of(
-    __args: Sequence[SearchStrategy[Any]],
-) -> SearchStrategy[Any]:  # pragma: no cover
+    __args: Sequence[SearchStrategy[Ex]],
+) -> SearchStrategy[Ex]:  # pragma: no cover
     ...
 
 
@@ -808,36 +985,43 @@ def one_of(
             f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
             "to combine strategies, but all of the arguments were of other types."
         )
+    # we've handled the case where args is a one-element sequence [(s1, s2, ...)]
+    # above, so we can assume it's an actual sequence of strategies.
+    args = cast(Sequence[SearchStrategy], args)
     return OneOfStrategy(args)
 
 
-class MappedStrategy(SearchStrategy[Ex]):
+class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, strategy, pack):
+    def __init__(
+        self,
+        strategy: SearchStrategy[MappedFrom],
+        pack: Callable[[MappedFrom], MappedTo],
+    ) -> None:
         super().__init__()
         self.mapped_strategy = strategy
         self.pack = pack
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):
             self._cached_repr = f"{self.mapped_strategy!r}.map({get_pretty_function_description(self.pack)})"
         return self._cached_repr
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         self.mapped_strategy.validate()
 
-    def do_draw(self, data: ConjectureData) -> Any:
+    def do_draw(self, data: ConjectureData) -> MappedTo:
         with warnings.catch_warnings():
             if isinstance(self.pack, type) and issubclass(
                 self.pack, (abc.Mapping, abc.Set)
@@ -845,24 +1029,26 @@ class MappedStrategy(SearchStrategy[Ex]):
                 warnings.simplefilter("ignore", BytesWarning)
             for _ in range(3):
                 try:
-                    data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                    data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
-                    result = self.pack(x)  # type: ignore
-                    data.stop_example()
+                    result = self.pack(x)
+                    data.stop_span()
                     current_build_context().record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
-                    data.stop_example(discard=True)
+                    data.stop_span(discard=True)
         raise UnsatisfiedAssumption
 
     @property
-    def branches(self) -> list[SearchStrategy[Ex]]:
+    def branches(self) -> Sequence[SearchStrategy[MappedTo]]:
         return [
             MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
         ]
 
-    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
+    def filter(
+        self, condition: Callable[[MappedTo], Any]
+    ) -> "SearchStrategy[MappedTo]":
         # Includes a special case so that we can rewrite filters on collection
         # lengths, when most collections are `st.lists(...).map(the_type)`.
         ListStrategy = _list_strategy_type()
@@ -884,13 +1070,13 @@ class MappedStrategy(SearchStrategy[Ex]):
 
 
 @lru_cache
-def _list_strategy_type():
+def _list_strategy_type() -> Any:
     from hypothesis.strategies._internal.collections import ListStrategy
 
     return ListStrategy
 
 
-def _collection_ish_functions():
+def _collection_ish_functions() -> Sequence[Any]:
     funcs = [sorted]
     if np := sys.modules.get("numpy"):
         # c.f. https://numpy.org/doc/stable/reference/routines.array-creation.html
@@ -924,12 +1110,16 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 
 class FilteredStrategy(SearchStrategy[Ex]):
-    def __init__(self, strategy, conditions):
+    def __init__(
+        self, strategy: SearchStrategy[Ex], conditions: tuple[Callable[[Ex], Any], ...]
+    ):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple conditions.
-            self.flat_conditions = strategy.flat_conditions + conditions
-            self.filtered_strategy = strategy.filtered_strategy
+            self.flat_conditions: tuple[Callable[[Ex], Any], ...] = (
+                strategy.flat_conditions + conditions
+            )
+            self.filtered_strategy: SearchStrategy[Ex] = strategy.filtered_strategy
         else:
             self.flat_conditions = conditions
             self.filtered_strategy = strategy
@@ -937,15 +1127,15 @@ class FilteredStrategy(SearchStrategy[Ex]):
         assert isinstance(self.flat_conditions, tuple)
         assert not isinstance(self.filtered_strategy, FilteredStrategy)
 
-        self.__condition = None
+        self.__condition: Optional[Callable[[Ex], Any]] = None
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):
             self._cached_repr = "{!r}{}".format(
                 self.filtered_strategy,
@@ -956,7 +1146,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             )
         return self._cached_repr
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         # Start by validating our inner filtered_strategy.  If this was a LazyStrategy,
         # validation also reifies it so that subsequent calls to e.g. `.filter()` will
         # be passed through.
@@ -978,7 +1168,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             # an in-place method so we still just re-initialize the strategy!
             FilteredStrategy.__init__(self, fresh, ())
 
-    def filter(self, condition):
+    def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]":
         # If we can, it's more efficient to rewrite our strategy to satisfy the
         # condition.  We therefore exploit the fact that the order of predicates
         # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply
@@ -994,44 +1184,49 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return FilteredStrategy(out, self.flat_conditions)
 
     @property
-    def condition(self):
-        if self.__condition is None:
-            if len(self.flat_conditions) == 1:
-                # Avoid an extra indirection in the common case of only one condition.
-                self.__condition = self.flat_conditions[0]
-            elif len(self.flat_conditions) == 0:
-                # Possible, if unlikely, due to filter predicate rewriting
-                self.__condition = lambda _: True
-            else:
-                self.__condition = lambda x: all(
-                    cond(x) for cond in self.flat_conditions
-                )
-        return self.__condition
+    def condition(self) -> Callable[[Ex], Any]:
+        # We write this defensively to avoid any threading race conditions
+        # with our manual FilteredStrategy.__init__ for filter-rewriting.
+        # See https://github.com/HypothesisWorks/hypothesis/pull/4522.
+        if (condition := self.__condition) is not None:
+            return condition
+
+        if len(self.flat_conditions) == 1:
+            # Avoid an extra indirection in the common case of only one condition.
+            condition = self.flat_conditions[0]
+        elif len(self.flat_conditions) == 0:
+            # Possible, if unlikely, due to filter predicate rewriting
+            condition = lambda _: True  # type: ignore # covariant type param
+        else:
+            condition = lambda x: all(  # type: ignore # covariant type param
+                cond(x) for cond in self.flat_conditions
+            )
+        self.__condition = condition
+        return condition
 
     def do_draw(self, data: ConjectureData) -> Ex:
         result = self.do_filtered_draw(data)
         if result is not filter_not_satisfied:
-            return result
+            return cast(Ex, result)
 
         data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
-        raise NotImplementedError("Unreachable, for Mypy")
 
-    def do_filtered_draw(self, data):
+    def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
         for i in range(3):
-            data.start_example(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+            data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
             if self.condition(value):
-                data.stop_example()
+                data.stop_span()
                 return value
             else:
-                data.stop_example(discard=True)
+                data.stop_span(discard=True)
                 if i == 0:
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 
         return filter_not_satisfied
 
     @property
-    def branches(self) -> list[SearchStrategy[Ex]]:
+    def branches(self) -> Sequence[SearchStrategy[Ex]]:
         return [
             FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches
@@ -1039,7 +1234,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
 
 @check_function
-def check_strategy(arg, name=""):
+def check_strategy(arg: object, name: str = "") -> None:
     assert isinstance(name, str)
     if not isinstance(arg, SearchStrategy):
         hint = ""
@@ -1048,6 +1243,6 @@ def check_strategy(arg, name=""):
         if name:
             name += "="
         raise InvalidArgument(
-            "Expected a SearchStrategy%s but got %s%r (type=%s)"
-            % (hint, name, arg, type(arg).__name__)
+            f"Expected a SearchStrategy{hint} but got {name}{arg!r} "
+            f"(type={type(arg).__name__})"
         )

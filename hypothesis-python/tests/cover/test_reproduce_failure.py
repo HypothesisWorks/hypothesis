@@ -26,20 +26,26 @@ from hypothesis import (
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.internal.conjecture.choice import choice_equal
 
-from tests.common.utils import capture_out, no_shrink
+from tests.common.utils import Why, capture_out, no_shrink, xfail_on_crosshair
+from tests.conjecture.common import nodes, nodes_inline
 
 
-@example(bytes(20))  # shorter compressed
-@example(bytes(3))  # shorter uncompressed
-@given(st.binary() | st.binary(min_size=100))
-def test_encoding_loop(b):
-    assert decode_failure(encode_failure(b)) == b
+@example(nodes_inline("0" * 100))  # shorter compressed than not
+@given(st.lists(nodes()))
+def test_encoding_loop(nodes):
+    choices = [n.value for n in nodes]
+    looped = decode_failure(encode_failure(choices))
+    assert len(choices) == len(looped)
+    for pre, post in zip(choices, looped):
+        assert choice_equal(pre, post)
 
 
 @example(base64.b64encode(b"\2\3\4"))
 @example(b"\t")
 @example(base64.b64encode(b"\1\0"))  # zlib error
+@example(base64.b64encode(b"\1" + zlib.compress(b"\xff")))  # choices_from_bytes error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
@@ -63,13 +69,13 @@ def test_reproduces_the_failure():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test_outer(x):
         assert x != b
 
     @given(st.binary(min_size=n, max_size=n))
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     def test_inner(x):
         assert x != b
 
@@ -83,7 +89,7 @@ def test_errors_if_provided_example_does_not_reproduce_failure():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         assert x == b
@@ -96,10 +102,10 @@ def test_errors_with_did_not_reproduce_if_the_shape_changes():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
-    @given(st.binary(min_size=n + 1, max_size=n + 1))
-    def test(x):
-        assert x == b
+    @reproduce_failure(__version__, encode_failure([b]))
+    @given(st.binary(min_size=n, max_size=n) | st.integers())
+    def test(v):
+        assert v == b
 
     with pytest.raises(DidNotReproduce):
         test()
@@ -109,7 +115,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         reject()
@@ -118,6 +124,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_prints_reproduction_if_requested():
     failing_example = None
 
@@ -150,6 +157,9 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -163,6 +173,9 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -177,6 +190,9 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
             raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -194,6 +210,9 @@ def test_does_not_print_reproduction_if_told_not_to():
         raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
 
@@ -204,7 +223,7 @@ def test_raises_invalid_if_wrong_version():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure("1.0.0", encode_failure(b))
+    @reproduce_failure("1.0.0", encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         pass
@@ -220,6 +239,9 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
         assert data.draw(st.just(False))
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_always_fails()
 

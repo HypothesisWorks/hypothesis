@@ -14,6 +14,7 @@ their individual contributions.
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Afrida Tabassum <https://github.com/oxfordhalfblood>`_ (afrida@gmail.com)
 * `Afonso Silva <https://github.com/ajcerejeira>`_ (ajcerejeira@gmail.com)
+* `Agriya Khetarpal <https://github.com/agriyakhetarpal>`_
 * `Agustín Covarrubias <https://github.com/agucova>`_ (gh@agucova.dev)
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
@@ -40,6 +41,7 @@ their individual contributions.
 * `Cheuk Ting Ho <https://github.com/Cheukting>`_
 * `Chris Down  <https://chrisdown.name>`_
 * `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
+* `Chris Wesseling <https://github.com/CharString>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
@@ -68,6 +70,7 @@ their individual contributions.
 * `Francesc Elies <https://www.github.com/FrancescElies>`_
 * `Gabe Joseph <https://github.com/gjoseph92>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
+* `Genevieve Mendoza <https://www.github.com/genevieve-me>`_
 * `George Macon <https://www.github.com/gmacon>`_
 * `Glenn Lehman <https://www.github.com/glnnlhmn>`_
 * `Graham Williamson <https://github.com/00willo>`_
@@ -118,6 +121,7 @@ their individual contributions.
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `Lundy Bernard <https://github.com/lundybernard>`_
+* `Marco Ricci <https://github.com/the-13th-letter>`_
 * `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)

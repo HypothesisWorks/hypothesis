@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+from typing import NamedTuple
 
 from hypothesistooling.__main__ import PYTHONS as pythons_map
 
@@ -37,20 +38,65 @@ REVEALED_TYPES = [
         "tuples(text(), text(), text(), text(), text(), text())",
         "tuple[Any, ...]",
     ),
+    ("lists(none())", "list[None]"),
+    ("integers().filter(lambda x: x > 0)", "int"),
+    ("booleans().filter(lambda x: x)", "bool"),
+    ("integers().map(bool).filter(lambda x: x)", "bool"),
+    ("integers().flatmap(lambda x: lists(floats()))", "list[float]"),
+    ("one_of([integers(), integers()])", "int"),
+    ("one_of([integers(), floats()])", "float"),
+    ("one_of([integers(), none()])", "int | None"),
+    ("one_of(integers(), none())", "int | None"),
+    ("one_of(integers(), text())", "int | str"),
+    ("recursive(integers(), lists)", "list[Any] | int"),
+    # We have overloads for up to five types, then fall back to Any.
+    # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+    (
+        "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
+        "Any",
+    ),
 ]
+
+
+class DifferingRevealedTypes(NamedTuple):
+    value: str
+    mypy: str
+    pyright: str
+
+
+DIFF_REVEALED_TYPES = [
+    DifferingRevealedTypes("none() | integers()", "None | int", "int | None"),
+    DifferingRevealedTypes(
+        "data()", "hypothesis.strategies._internal.core.DataObject", "DataObject"
+    ),
+    # We have overloads for up to five types, then fall back to Any.
+    # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+    DifferingRevealedTypes(
+        "one_of(integers(), text(), none(), binary(), builds(list))",
+        "int | str | None | bytes | list[Never]",
+        "int | str | bytes | list[Unknown] | None",
+    ),
+    DifferingRevealedTypes(
+        "dictionaries(integers(), datetimes())",
+        "dict[int, datetime.datetime]",
+        "dict[int, datetime]",
+    ),
+]
+
 
 NUMPY_REVEALED_TYPES = [
     (
         'arrays(dtype=np.dtype("int32"), shape=1)',
-        "ndarray[Any, dtype[signedinteger[_32Bit]]]",
+        "ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]]",
     ),
-    (
-        "arrays(dtype=np.dtype(int), shape=1)",
-        "ndarray[Any, dtype[signedinteger[Any]]]",
-    ),
+    # (
+    #     "arrays(dtype=np.dtype(int), shape=1)",
+    #     "ndarray[tuple[int, ...], dtype[Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]]]",
+    #     # FIXME: `dtype[signedinteger[_32Bit | _64Bit] | bool[bool]]]]` on mypy now
+    # ),
     (
         "boolean_dtypes()",
-        "dtype[bool_]" if NP1 else "dtype[bool]",
+        "dtype[bool[bool]]",  # np.bool[builtins.bool]
     ),
     (
         "unsigned_integer_dtypes(sizes=8)",
@@ -110,7 +156,7 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "floating_dtypes(sizes=64)",
-        "dtype[floating[_64Bit]]",
+        "dtype[float64]",
     ),
     (
         "floating_dtypes(sizes=128)",
@@ -130,7 +176,7 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "complex_number_dtypes(sizes=128)",
-        "dtype[complexfloating[_64Bit, _64Bit]]",
+        "dtype[complex128]",
     ),
     (
         "complex_number_dtypes(sizes=256)",
@@ -146,14 +192,14 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "integer_array_indices(shape=(2, 3))",
-        "tuple[ndarray[Any, dtype[signedinteger[Any]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[Any]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-        "tuple[ndarray[Any, dtype[signedinteger[_32Bit]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-        "tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
     ),
 ]

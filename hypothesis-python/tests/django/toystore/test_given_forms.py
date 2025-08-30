@@ -8,7 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from unittest import skipIf
+
 from django import forms
+from django.conf import settings
 
 from hypothesis import assume, given
 from hypothesis.extra.django import (
@@ -47,6 +50,8 @@ from tests.django.toystore.models import Company
 register_field_strategy(
     BroadBooleanField, booleans() | sampled_from(["1", "0", "True", "False"])
 )
+
+has_contrib_auth = "django.contrib.auth" in settings.INSTALLED_APPS
 
 
 class TestGetsBasicForms(TestCase):
@@ -130,10 +135,12 @@ class TestGetsBasicForms(TestCase):
         self.assertTrue(1 <= x.data["_float_one_to_five"] <= 5)
         self.assertTrue(5 <= len(x.data["_string_five_to_ten"]) <= 10)
 
+    @skipIf(not has_contrib_auth, "contrib.auth not installed")
     @given(from_form(UsernameForm))
     def test_username_form(self, username_form):
         self.assertTrue(username_form.is_valid())
 
+    @skipIf(not has_contrib_auth, "contrib.auth not installed")
     @given(from_form(UsernameForm))
     def test_read_only_password_hash_field_form(self, password_form):
         self.assertTrue(password_form.is_valid())

@@ -13,6 +13,7 @@ from weakref import WeakValueDictionary
 
 import pytest
 
+from hypothesis.control import settings
 from hypothesis.extra import array_api
 from hypothesis.extra.array_api import (
     NOMINAL_VERSIONS,
@@ -21,7 +22,13 @@ from hypothesis.extra.array_api import (
 )
 from hypothesis.strategies import SearchStrategy
 
-pytestmark = pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
+pytestmark = [
+    pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning"),
+    pytest.mark.skipif(
+        settings._current_profile == "threading",
+        reason="make_strategies_namespace is not thread safe",
+    ),
+]
 
 
 class HashableArrayModuleFactory:

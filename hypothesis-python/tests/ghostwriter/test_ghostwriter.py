@@ -37,6 +37,12 @@ from hypothesis.strategies._internal.lazy import LazyStrategy
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
 
 
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "threading",
+    reason="ghostwriter is not thread safe",
+)
+
+
 def get_test_function(source_code, settings_decorator=lambda fn: fn):
     # A helper function to get the dynamically-defined test function.
     # Note that this also tests that the module is syntatically-valid,
@@ -127,7 +133,7 @@ def non_resolvable_arg(x: NotResolvable):
 
 def test_flattens_one_of_repr():
     strat = from_type(Union[int, Sequence[int]])
-    assert repr(strat).count("one_of(") > 1
+    assert repr(strat).count("one_of(") == 2
     assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
 

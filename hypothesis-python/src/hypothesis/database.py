@@ -9,30 +9,41 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import abc
-import binascii
+import errno
 import json
 import os
 import struct
 import sys
+import tempfile
 import warnings
 import weakref
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha384
-from os import getenv
+from os import PathLike, getenv
 from pathlib import Path, PurePath
 from queue import Queue
 from threading import Thread
-from typing import Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
+from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
-from hypothesis.internal.conjecture.data import IRType
-from hypothesis.utils.conventions import not_set
+from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
     "DirectoryBasedExampleDatabase",
@@ -43,8 +54,21 @@ __all__ = [
     "ReadOnlyDatabase",
 ]
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
-def _usable_dir(path: os.PathLike) -> bool:
+    from watchdog.observers.api import BaseObserver
+
+StrPathT: "TypeAlias" = Union[str, PathLike[str]]
+SaveDataT: "TypeAlias" = tuple[bytes, bytes]  # key, value
+DeleteDataT: "TypeAlias" = tuple[bytes, Optional[bytes]]  # key, value
+ListenerEventT: "TypeAlias" = Union[
+    tuple[Literal["save"], SaveDataT], tuple[Literal["delete"], DeleteDataT]
+]
+ListenerT: "TypeAlias" = Callable[[ListenerEventT], Any]
+
+
+def _usable_dir(path: StrPathT) -> bool:
     """
     Returns True if the desired path can be used as database path because
     either the directory exists and can be used, or its root directory can
@@ -60,7 +84,9 @@ def _usable_dir(path: os.PathLike) -> bool:
         return False
 
 
-def _db_for_path(path=None):
+def _db_for_path(
+    path: Optional[Union[StrPathT, UniqueIdentifier, Literal[":memory:"]]] = None,
+) -> "ExampleDatabase":
     if path is not_set:
         if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
             raise HypothesisException(
@@ -81,12 +107,22 @@ def _db_for_path(path=None):
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
+    path = cast(StrPathT, path)
     return DirectoryBasedExampleDatabase(path)
 
 
 class _EDMeta(abc.ABCMeta):
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> "ExampleDatabase":
         if self is ExampleDatabase:
+            note_deprecation(
+                "Creating a database using the abstract ExampleDatabase() class "
+                "is deprecated. Prefer using a concrete subclass, like "
+                "InMemoryExampleDatabase() or DirectoryBasedExampleDatabase(path). "
+                'In particular, the special string ExampleDatabase(":memory:") '
+                "should be replaced by InMemoryExampleDatabase().",
+                since="2025-04-07",
+                has_codemod=False,
+            )
             return _db_for_path(*args, **kwargs)
         return super().__call__(*args, **kwargs)
 
@@ -102,25 +138,87 @@ class _EDMeta(abc.ABCMeta):
 # downstream ExampleDatabase subclasses too.
 if "sphinx" in sys.modules:
     try:
-        from sphinx.ext.autodoc import _METACLASS_CALL_BLACKLIST
+        import sphinx.ext.autodoc
 
-        _METACLASS_CALL_BLACKLIST.append("hypothesis.database._EDMeta.__call__")
+        signature = "hypothesis.database._EDMeta.__call__"
+        # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
+        if isinstance(sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST, frozenset):
+            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST = (
+                sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST | {signature}
+            )
+        else:
+            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST.append(signature)
     except Exception:
         pass
 
 
 class ExampleDatabase(metaclass=_EDMeta):
-    """An abstract base class for storing examples in Hypothesis' internal format.
-
-    An ExampleDatabase maps each ``bytes`` key to many distinct ``bytes``
-    values, like a ``Mapping[bytes, AbstractSet[bytes]]``.
     """
+    A Hypothesis database, for use in |settings.database|.
+
+    Hypothesis automatically saves failures to the database set in
+    |settings.database|. The next time the test is run, Hypothesis will replay
+    any failures from the database in |settings.database| for that test (in
+    |Phase.reuse|).
+
+    The database is best thought of as a cache that you never need to invalidate.
+    Entries may be transparently dropped when upgrading your Hypothesis version
+    or changing your test. Do not rely on the database for correctness; to ensure
+    Hypothesis always tries an input, use |@example|.
+
+    A Hypothesis database is a simple mapping of bytes to sets of bytes. Hypothesis
+    provides several concrete database subclasses. To write your own database class,
+    see :doc:`/how-to/custom-database`.
+
+    Change listening
+    ----------------
+
+    An optional extension to |ExampleDatabase| is change listening. On databases
+    which support change listening, calling |ExampleDatabase.add_listener| adds
+    a function as a change listener, which will be called whenever a value is
+    added, deleted, or moved inside the database. See |ExampleDatabase.add_listener|
+    for details.
+
+    All databases in Hypothesis support change listening. Custom database classes
+    are not required to support change listening, though they will not be compatible
+    with features that require change listening until they do so.
+
+    .. note::
+
+        While no Hypothesis features currently require change listening, change
+        listening is required by `HypoFuzz <https://hypofuzz.com/>`_.
+
+    Database methods
+    ----------------
+
+    Required methods:
+
+    * |ExampleDatabase.save|
+    * |ExampleDatabase.fetch|
+    * |ExampleDatabase.delete|
+
+    Optional methods:
+
+    * |ExampleDatabase.move|
+
+    Change listening methods:
+
+    * |ExampleDatabase.add_listener|
+    * |ExampleDatabase.remove_listener|
+    * |ExampleDatabase.clear_listeners|
+    * |ExampleDatabase._start_listening|
+    * |ExampleDatabase._stop_listening|
+    * |ExampleDatabase._broadcast_change|
+    """
+
+    def __init__(self) -> None:
+        self._listeners: list[ListenerT] = []
 
     @abc.abstractmethod
     def save(self, key: bytes, value: bytes) -> None:
         """Save ``value`` under ``key``.
 
-        If this value is already present for this key, silently do nothing.
+        If ``value`` is already present in ``key``, silently do nothing.
         """
         raise NotImplementedError(f"{type(self).__name__}.save")
 
@@ -131,16 +229,18 @@ class ExampleDatabase(metaclass=_EDMeta):
 
     @abc.abstractmethod
     def delete(self, key: bytes, value: bytes) -> None:
-        """Remove this value from this key.
+        """Remove ``value`` from ``key``.
 
-        If this value is not present, silently do nothing.
+        If ``value`` is not present in ``key``, silently do nothing.
         """
         raise NotImplementedError(f"{type(self).__name__}.delete")
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
-        """Move ``value`` from key ``src`` to key ``dest``. Equivalent to
-        ``delete(src, value)`` followed by ``save(src, value)``, but may
-        have a more efficient implementation.
+        """
+        Move ``value`` from key ``src`` to key ``dest``.
+
+        Equivalent to ``delete(src, value)`` followed by ``save(src, value)``,
+        but may have a more efficient implementation.
 
         Note that ``value`` will be inserted at ``dest`` regardless of whether
         it is currently present at ``src``.
@@ -151,32 +251,154 @@ class ExampleDatabase(metaclass=_EDMeta):
         self.delete(src, value)
         self.save(dest, value)
 
+    def add_listener(self, f: ListenerT, /) -> None:
+        """
+        Add a change listener. ``f`` will be called whenever a value is saved,
+        deleted, or moved in the database.
+
+        ``f`` can be called with two different event values:
+
+        * ``("save", (key, value))``
+        * ``("delete", (key, value))``
+
+        where ``key`` and ``value`` are both ``bytes``.
+
+        There is no ``move`` event. Instead, a move is broadcasted as a
+        ``delete`` event followed by a ``save`` event.
+
+        For the ``delete`` event, ``value`` may be ``None``. This might occur if
+        the database knows that a deletion has occurred in ``key``, but does not
+        know what value was deleted.
+        """
+        had_listeners = bool(self._listeners)
+        self._listeners.append(f)
+        if not had_listeners:
+            self._start_listening()
+
+    def remove_listener(self, f: ListenerT, /) -> None:
+        """
+        Removes ``f`` from the list of change listeners.
+
+        If ``f`` is not in the list of change listeners, silently do nothing.
+        """
+        if f not in self._listeners:
+            return
+        self._listeners.remove(f)
+        if not self._listeners:
+            self._stop_listening()
+
+    def clear_listeners(self) -> None:
+        """Remove all change listeners."""
+        had_listeners = bool(self._listeners)
+        self._listeners.clear()
+        if had_listeners:
+            self._stop_listening()
+
+    def _broadcast_change(self, event: ListenerEventT) -> None:
+        """
+        Called when a value has been either added to or deleted from a key in
+        the underlying database store. The possible values for ``event`` are:
+
+        * ``("save", (key, value))``
+        * ``("delete", (key, value))``
+
+        ``value`` may be ``None`` for the ``delete`` event, indicating we know
+        that some value was deleted under this key, but not its exact value.
+
+        Note that you should not assume your instance is the only reference to
+        the underlying database store. For example, if two instances of
+        |DirectoryBasedExampleDatabase| reference the same directory,
+        _broadcast_change should be called whenever a file is added or removed
+        from the directory, even if that database was not responsible for
+        changing the file.
+        """
+        for listener in self._listeners:
+            listener(event)
+
+    def _start_listening(self) -> None:
+        """
+        Called when the database adds a change listener, and did not previously
+        have any change listeners. Intended to allow databases to wait to start
+        expensive listening operations until necessary.
+
+        ``_start_listening`` and ``_stop_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_start_listening`` calls without an intermediate ``_stop_listening``
+        call.
+        """
+        warnings.warn(
+            f"{self.__class__} does not support listening for changes",
+            HypothesisWarning,
+            stacklevel=4,
+        )
+
+    def _stop_listening(self) -> None:
+        """
+        Called whenever no change listeners remain on the database.
+
+        ``_stop_listening`` and ``_start_listening`` are guaranteed to alternate,
+        so you do not need to handle the case of multiple consecutive
+        ``_stop_listening`` calls without an intermediate ``_start_listening``
+        call.
+        """
+        warnings.warn(
+            f"{self.__class__} does not support stopping listening for changes",
+            HypothesisWarning,
+            stacklevel=4,
+        )
+
 
 class InMemoryExampleDatabase(ExampleDatabase):
-    """A non-persistent example database, implemented in terms of a dict of sets.
+    """A non-persistent example database, implemented in terms of an in-memory
+    dictionary.
 
     This can be useful if you call a test function several times in a single
     session, or for testing other database implementations, but because it
     does not persist between runs we do not recommend it for general use.
     """
 
-    def __init__(self):
-        self.data = {}
+    def __init__(self) -> None:
+        super().__init__()
+        self.data: dict[bytes, set[bytes]] = {}
 
     def __repr__(self) -> str:
         return f"InMemoryExampleDatabase({self.data!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, InMemoryExampleDatabase) and self.data is other.data
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self.data.get(key, ())
 
     def save(self, key: bytes, value: bytes) -> None:
-        self.data.setdefault(key, set()).add(bytes(value))
+        value = bytes(value)
+        values = self.data.setdefault(key, set())
+        changed = value not in values
+        values.add(value)
+
+        if changed:
+            self._broadcast_change(("save", (key, value)))
 
     def delete(self, key: bytes, value: bytes) -> None:
-        self.data.get(key, set()).discard(bytes(value))
+        value = bytes(value)
+        values = self.data.get(key, set())
+        changed = value in values
+        values.discard(value)
+
+        if changed:
+            self._broadcast_change(("delete", (key, value)))
+
+    def _start_listening(self) -> None:
+        # declare compatibility with the listener api, but do the actual
+        # implementation in .delete and .save, since we know we are the only
+        # writer to .data.
+        pass
+
+    def _stop_listening(self) -> None:
+        pass
 
 
-def _hash(key):
+def _hash(key: bytes) -> str:
     return sha384(key).hexdigest()[:16]
 
 
@@ -185,7 +407,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     Each test corresponds to a directory, and each example to a file within that
     directory.  While the contents are fairly opaque, a
-    ``DirectoryBasedExampleDatabase`` can be shared by checking the directory
+    |DirectoryBasedExampleDatabase| can be shared by checking the directory
     into version control, for example with the following ``.gitignore``::
 
         # Ignore files cached by Hypothesis...
@@ -195,16 +417,27 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     Note however that this only makes sense if you also pin to an exact version of
     Hypothesis, and we would usually recommend implementing a shared database with
-    a network datastore - see :class:`~hypothesis.database.ExampleDatabase`, and
-    the :class:`~hypothesis.database.MultiplexedDatabase` helper.
+    a network datastore - see |ExampleDatabase|, and the |MultiplexedDatabase| helper.
     """
 
-    def __init__(self, path: os.PathLike) -> None:
+    # we keep a database entry of the full values of all the database keys.
+    # currently only used for inverse mapping of hash -> key in change listening.
+    _metakeys_name: ClassVar[bytes] = b".hypothesis-keys"
+    _metakeys_hash: ClassVar[str] = _hash(_metakeys_name)
+
+    def __init__(self, path: StrPathT) -> None:
+        super().__init__()
         self.path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
+        self._observer: BaseObserver | None = None
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, DirectoryBasedExampleDatabase) and self.path == other.path
+        )
 
     def _key_path(self, key: bytes) -> Path:
         try:
@@ -214,35 +447,58 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self.keypaths[key] = self.path / _hash(key)
         return self.keypaths[key]
 
-    def _value_path(self, key, value):
+    def _value_path(self, key: bytes, value: bytes) -> Path:
         return self._key_path(key) / _hash(value)
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         kp = self._key_path(key)
         if not kp.is_dir():
             return
-        for path in os.listdir(kp):
-            try:
-                yield (kp / path).read_bytes()
-            except OSError:
-                pass
+
+        try:
+            for path in os.listdir(kp):
+                try:
+                    yield (kp / path).read_bytes()
+                except OSError:
+                    pass
+        except OSError:  # pragma: no cover
+            # the `kp` directory might have been deleted in the meantime
+            pass
 
     def save(self, key: bytes, value: bytes) -> None:
+        key_path = self._key_path(key)
+        if key_path.name != self._metakeys_hash:
+            # add this key to our meta entry of all keys - taking care to avoid
+            # infinite recursion.
+            self.save(self._metakeys_name, key)
+
         # Note: we attempt to create the dir in question now. We
         # already checked for permissions, but there can still be other issues,
         # e.g. the disk is full, or permissions might have been changed.
         try:
-            self._key_path(key).mkdir(exist_ok=True, parents=True)
+            key_path.mkdir(exist_ok=True, parents=True)
             path = self._value_path(key, value)
             if not path.exists():
-                suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
-                tmpname = path.with_suffix(f"{path.suffix}.{suffix}")
-                tmpname.write_bytes(value)
+                # to mimic an atomic write, create and write in a temporary
+                # directory, and only move to the final path after. This avoids
+                # any intermediate state where the file is created (and empty)
+                # but not yet written to.
+                fd, tmpname = tempfile.mkstemp()
+                tmppath = Path(tmpname)
+                os.write(fd, value)
+                os.close(fd)
                 try:
-                    tmpname.rename(path)
-                except OSError:  # pragma: no cover
-                    tmpname.unlink()
-                assert not tmpname.exists()
+                    tmppath.rename(path)
+                except OSError as err:  # pragma: no cover
+                    if err.errno == errno.EXDEV:
+                        # Can't rename across filesystem boundaries, see e.g.
+                        # https://github.com/HypothesisWorks/hypothesis/issues/4335
+                        try:
+                            path.write_bytes(tmppath.read_bytes())
+                        except OSError:
+                            pass
+                    tmppath.unlink()
+                assert not tmppath.exists()
         except OSError:  # pragma: no cover
             pass
 
@@ -250,11 +506,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         if src == dest:
             self.save(src, value)
             return
+
+        src_path = self._value_path(src, value)
+        dest_path = self._value_path(dest, value)
+        # if the dest key path does not exist, os.renames will create it for us,
+        # and we will never track its creation in the meta keys entry. Do so now.
+        if not self._key_path(dest).exists():
+            self.save(self._metakeys_name, dest)
+
         try:
-            os.renames(
-                self._value_path(src, value),
-                self._value_path(dest, value),
-            )
+            os.renames(src_path, dest_path)
         except OSError:
             self.delete(src, value)
             self.save(dest, value)
@@ -263,7 +524,139 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         try:
             self._value_path(key, value).unlink()
         except OSError:
+            return
+
+        # try deleting the key dir, which will only succeed if the dir is empty
+        # (i.e. ``value`` was the last value in this key).
+        try:
+            self._key_path(key).rmdir()
+        except OSError:
             pass
+        else:
+            # if the deletion succeeded, also delete this key entry from metakeys.
+            # (if this key happens to be the metakey itself, this deletion will
+            # fail; that's ok and faster than checking for this rare case.)
+            self.delete(self._metakeys_name, key)
+
+    def _start_listening(self) -> None:
+        try:
+            from watchdog.events import (
+                DirCreatedEvent,
+                DirDeletedEvent,
+                DirMovedEvent,
+                FileCreatedEvent,
+                FileDeletedEvent,
+                FileMovedEvent,
+                FileSystemEventHandler,
+            )
+            from watchdog.observers import Observer
+        except ImportError:
+            warnings.warn(
+                f"listening for changes in a {self.__class__.__name__} "
+                "requires the watchdog library. To install, run "
+                "`pip install hypothesis[watchdog]`",
+                HypothesisWarning,
+                stacklevel=4,
+            )
+            return
+
+        hash_to_key = {_hash(key): key for key in self.fetch(self._metakeys_name)}
+        _metakeys_hash = self._metakeys_hash
+        _broadcast_change = self._broadcast_change
+
+        class Handler(FileSystemEventHandler):
+            def on_created(
+                _self, event: Union[FileCreatedEvent, DirCreatedEvent]
+            ) -> None:
+                # we only registered for the file creation event
+                assert not isinstance(event, DirCreatedEvent)
+                # watchdog events are only bytes if we passed a byte path to
+                # .schedule
+                assert isinstance(event.src_path, str)
+
+                value_path = Path(event.src_path)
+                # the parent dir represents the key, and its name is the key hash
+                key_hash = value_path.parent.name
+
+                if key_hash == _metakeys_hash:
+                    try:
+                        hash_to_key[value_path.name] = value_path.read_bytes()
+                    except OSError:  # pragma: no cover
+                        # this might occur if all the values in a key have been
+                        # deleted and DirectoryBasedExampleDatabase removes its
+                        # metakeys entry (which is `value_path` here`).
+                        pass
+                    return
+
+                key = hash_to_key.get(key_hash)
+                if key is None:  # pragma: no cover
+                    # we didn't recognize this key. This shouldn't ever happen,
+                    # but some race condition trickery might cause this.
+                    return
+
+                try:
+                    value = value_path.read_bytes()
+                except OSError:  # pragma: no cover
+                    return
+
+                _broadcast_change(("save", (key, value)))
+
+            def on_deleted(
+                self, event: Union[FileDeletedEvent, DirDeletedEvent]
+            ) -> None:
+                assert not isinstance(event, DirDeletedEvent)
+                assert isinstance(event.src_path, str)
+
+                value_path = Path(event.src_path)
+                key = hash_to_key.get(value_path.parent.name)
+                if key is None:  # pragma: no cover
+                    return
+
+                _broadcast_change(("delete", (key, None)))
+
+            def on_moved(self, event: Union[FileMovedEvent, DirMovedEvent]) -> None:
+                assert not isinstance(event, DirMovedEvent)
+                assert isinstance(event.src_path, str)
+                assert isinstance(event.dest_path, str)
+
+                src_path = Path(event.src_path)
+                dest_path = Path(event.dest_path)
+                k1 = hash_to_key.get(src_path.parent.name)
+                k2 = hash_to_key.get(dest_path.parent.name)
+
+                if k1 is None or k2 is None:  # pragma: no cover
+                    return
+
+                try:
+                    value = dest_path.read_bytes()
+                except OSError:  # pragma: no cover
+                    return
+
+                _broadcast_change(("delete", (k1, value)))
+                _broadcast_change(("save", (k2, value)))
+
+        # If we add a listener to a DirectoryBasedExampleDatabase whose database
+        # directory doesn't yet exist, the watchdog observer will not fire any
+        # events, even after the directory gets created.
+        #
+        # Ensure the directory exists before starting the observer.
+        self.path.mkdir(exist_ok=True, parents=True)
+        self._observer = Observer()
+        self._observer.schedule(
+            Handler(),
+            # remove type: ignore when released
+            # https://github.com/gorakhargosh/watchdog/pull/1096
+            self.path,  # type: ignore
+            recursive=True,
+            event_filter=[FileCreatedEvent, FileDeletedEvent, FileMovedEvent],
+        )
+        self._observer.start()
+
+    def _stop_listening(self) -> None:
+        assert self._observer is not None
+        self._observer.stop()
+        self._observer.join()
+        self._observer = None
 
 
 class ReadOnlyDatabase(ExampleDatabase):
@@ -278,11 +671,15 @@ class ReadOnlyDatabase(ExampleDatabase):
     """
 
     def __init__(self, db: ExampleDatabase) -> None:
+        super().__init__()
         assert isinstance(db, ExampleDatabase)
         self._wrapped = db
 
     def __repr__(self) -> str:
         return f"ReadOnlyDatabase({self._wrapped!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ReadOnlyDatabase) and self._wrapped == other._wrapped
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self._wrapped.fetch(key)
@@ -291,6 +688,13 @@ class ReadOnlyDatabase(ExampleDatabase):
         pass
 
     def delete(self, key: bytes, value: bytes) -> None:
+        pass
+
+    def _start_listening(self) -> None:
+        # we're read only, so there are no changes to broadcast.
+        pass
+
+    def _stop_listening(self) -> None:
         pass
 
 
@@ -321,11 +725,17 @@ class MultiplexedDatabase(ExampleDatabase):
     """
 
     def __init__(self, *dbs: ExampleDatabase) -> None:
+        super().__init__()
         assert all(isinstance(db, ExampleDatabase) for db in dbs)
         self._wrapped = dbs
 
     def __repr__(self) -> str:
         return "MultiplexedDatabase({})".format(", ".join(map(repr, self._wrapped)))
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, MultiplexedDatabase) and self._wrapped == other._wrapped
+        )
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         seen = set()
@@ -347,6 +757,14 @@ class MultiplexedDatabase(ExampleDatabase):
         for db in self._wrapped:
             db.move(src, dest, value)
 
+    def _start_listening(self) -> None:
+        for db in self._wrapped:
+            db.add_listener(self._broadcast_change)
+
+    def _stop_listening(self) -> None:
+        for db in self._wrapped:
+            db.remove_listener(self._broadcast_change)
+
 
 class GitHubArtifactDatabase(ExampleDatabase):
     """
@@ -361,7 +779,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. note::
         You must provide ``GITHUB_TOKEN`` as an environment variable. In CI, Github Actions provides
         this automatically, but it needs to be set manually for local usage. In a developer machine,
-        this would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_.
+        this would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens>`_.
         If the repository is private, it's necessary for the token to have ``repo`` scope
         in the case of a classic token, or ``actions:read`` in the case of a fine-grained token.
 
@@ -391,7 +809,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. code-block:: yaml
 
         - name: Download example database
-          uses: dawidd6/action-download-artifact@v2.24.3
+          uses: dawidd6/action-download-artifact@v9
           with:
             name: hypothesis-example-db
             path: .hypothesis/examples
@@ -424,8 +842,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
         repo: str,
         artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
-        path: Optional[os.PathLike] = None,
+        path: Optional[StrPathT] = None,
     ):
+        super().__init__()
         self.owner = owner
         self.repo = repo
         self.artifact_name = artifact_name
@@ -463,6 +882,15 @@ class GitHubArtifactDatabase(ExampleDatabase):
         return (
             f"GitHubArtifactDatabase(owner={self.owner!r}, "
             f"repo={self.repo!r}, artifact_name={self.artifact_name!r})"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, GitHubArtifactDatabase)
+            and self.owner == other.owner
+            and self.repo == other.repo
+            and self.artifact_name == other.artifact_name
+            and self.path == other.path
         )
 
     def _prepare_for_io(self) -> None:
@@ -588,6 +1016,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "This could be because because the repository "
                     "or artifact does not exist. "
                 )
+            # see https://github.com/python/cpython/issues/128734
+            e.close()
         except URLError:
             warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:
@@ -686,16 +1116,24 @@ class BackgroundWriteDatabase(ExampleDatabase):
     """
 
     def __init__(self, db: ExampleDatabase) -> None:
+        super().__init__()
         self._db = db
         self._queue: Queue[tuple[str, tuple[bytes, ...]]] = Queue()
-        self._thread = Thread(target=self._worker, daemon=True)
-        self._thread.start()
-        # avoid an unbounded timeout during gc. 0.1 should be plenty for most
-        # use cases.
-        weakref.finalize(self, self._join, 0.1)
+        self._thread: Optional[Thread] = None
+
+    def _ensure_thread(self):
+        if self._thread is None:
+            self._thread = Thread(target=self._worker, daemon=True)
+            self._thread.start()
+            # avoid an unbounded timeout during gc. 0.1 should be plenty for most
+            # use cases.
+            weakref.finalize(self, self._join, 0.1)
 
     def __repr__(self) -> str:
         return f"BackgroundWriteDatabase({self._db!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, BackgroundWriteDatabase) and self._db == other._db
 
     def _worker(self) -> None:
         while True:
@@ -714,17 +1152,65 @@ class BackgroundWriteDatabase(ExampleDatabase):
         return self._db.fetch(key)
 
     def save(self, key: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("save", (key, value)))
 
     def delete(self, key: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("delete", (key, value)))
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
+        self._ensure_thread()
         self._queue.put(("move", (src, dest, value)))
 
+    def _start_listening(self) -> None:
+        self._db.add_listener(self._broadcast_change)
 
-def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
-    """Serialize a list of IR elements to a bytestring.  Inverts ir_from_bytes."""
+    def _stop_listening(self) -> None:
+        self._db.remove_listener(self._broadcast_change)
+
+
+def _pack_uleb128(value: int) -> bytes:
+    """
+    Serialize an integer into variable-length bytes. For each byte, the first 7
+    bits represent (part of) the integer, while the last bit indicates whether the
+    integer continues into the next byte.
+
+    https://en.wikipedia.org/wiki/LEB128
+    """
+    parts = bytearray()
+    assert value >= 0
+    while True:
+        # chop off 7 bits
+        byte = value & ((1 << 7) - 1)
+        value >>= 7
+        # set the continuation bit if we have more left
+        if value:
+            byte |= 1 << 7
+
+        parts.append(byte)
+        if not value:
+            break
+    return bytes(parts)
+
+
+def _unpack_uleb128(buffer: bytes) -> tuple[int, int]:
+    """
+    Inverts _pack_uleb128, and also returns the index at which at which we stopped
+    reading.
+    """
+    value = 0
+    for i, byte in enumerate(buffer):
+        n = byte & ((1 << 7) - 1)
+        value |= n << (i * 7)
+
+        if not byte >> 7:
+            break
+    return (i + 1, value)
+
+
+def choices_to_bytes(choices: Iterable[ChoiceT], /) -> bytes:
+    """Serialize a list of choices to a bytestring.  Inverts choices_from_bytes."""
     # We use a custom serialization format for this, which might seem crazy - but our
     # data is a flat sequence of elements, and standard tools like protobuf or msgpack
     # don't deal well with e.g. nonstandard bit-pattern-NaNs, or invalid-utf8 unicode.
@@ -732,41 +1218,40 @@ def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
     # We simply encode each element with a metadata byte, if needed a uint16 size, and
     # then the payload bytes.  For booleans, the payload is inlined into the metadata.
     parts = []
-    for elem in ir:
-        if isinstance(elem, bool):
+    for choice in choices:
+        if isinstance(choice, bool):
             # `000_0000v` - tag zero, low bit payload.
-            parts.append(b"\1" if elem else b"\0")
+            parts.append(b"\1" if choice else b"\0")
             continue
 
         # `tag_ssss [uint16 size?] [payload]`
-        if isinstance(elem, float):
+        if isinstance(choice, float):
             tag = 1 << 5
-            elem = struct.pack("!d", elem)
-        elif isinstance(elem, int):
+            choice = struct.pack("!d", choice)
+        elif isinstance(choice, int):
             tag = 2 << 5
-            elem = elem.to_bytes(1 + elem.bit_length() // 8, "big", signed=True)
-        elif isinstance(elem, bytes):
+            choice = choice.to_bytes(1 + choice.bit_length() // 8, "big", signed=True)
+        elif isinstance(choice, bytes):
             tag = 3 << 5
         else:
-            assert isinstance(elem, str)
+            assert isinstance(choice, str)
             tag = 4 << 5
-            elem = elem.encode(errors="surrogatepass")
+            choice = choice.encode(errors="surrogatepass")
 
-        size = len(elem)
+        size = len(choice)
         if size < 0b11111:
             parts.append((tag | size).to_bytes(1, "big"))
         else:
             parts.append((tag | 0b11111).to_bytes(1, "big"))
-            parts.append(struct.pack("!H", size))
-        parts.append(elem)
+            parts.append(_pack_uleb128(size))
+        parts.append(choice)
 
     return b"".join(parts)
 
 
-def ir_from_bytes(buffer: bytes, /) -> list[IRType]:
-    """Deserialize a bytestring to a list of IR elements. Inverts ir_to_bytes."""
+def _choices_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
     # See above for an explanation of the format.
-    parts: list[IRType] = []
+    parts: list[ChoiceT] = []
     idx = 0
     while idx < len(buffer):
         tag = buffer[idx] >> 5
@@ -777,8 +1262,8 @@ def ir_from_bytes(buffer: bytes, /) -> list[IRType]:
             parts.append(bool(size))
             continue
         if size == 0b11111:
-            (size,) = struct.unpack_from("!H", buffer, offset=idx)
-            idx += 2
+            (offset, size) = _unpack_uleb128(buffer[idx:])
+            idx += offset
         chunk = buffer[idx : idx + size]
         idx += size
 
@@ -792,4 +1277,19 @@ def ir_from_bytes(buffer: bytes, /) -> list[IRType]:
         else:
             assert tag == 4
             parts.append(chunk.decode(errors="surrogatepass"))
-    return parts
+    return tuple(parts)
+
+
+def choices_from_bytes(buffer: bytes, /) -> Optional[tuple[ChoiceT, ...]]:
+    """
+    Deserialize a bytestring to a tuple of choices. Inverts choices_to_bytes.
+
+    Returns None if the given bytestring is not a valid serialization of choice
+    sequences.
+    """
+    try:
+        return _choices_from_bytes(buffer)
+    except Exception:
+        # deserialization error, eg because our format changed or someone put junk
+        # data in the db.
+        return None

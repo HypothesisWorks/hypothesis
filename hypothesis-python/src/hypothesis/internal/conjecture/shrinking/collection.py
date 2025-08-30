@@ -8,19 +8,28 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections import Counter
+
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 from hypothesis.internal.conjecture.utils import identity
 
 
 class Collection(Shrinker):
-    def setup(self, *, ElementShrinker, to_order=identity, from_order=identity):
+    def setup(
+        self, *, ElementShrinker, min_size, to_order=identity, from_order=identity
+    ):
         self.ElementShrinker = ElementShrinker
         self.to_order = to_order
         self.from_order = from_order
+        self.min_size = min_size
 
     def make_immutable(self, value):
         return tuple(value)
+
+    def short_circuit(self):
+        zero = self.from_order(0)
+        return self.consider([zero] * self.min_size)
 
     def left_is_better(self, left, right):
         if len(left) < len(right):
@@ -38,6 +47,11 @@ class Collection(Shrinker):
         return False
 
     def run_step(self):
+        # try all-zero first; we already considered all-zero-and-smallest in
+        # short_circuit.
+        zero = self.from_order(0)
+        self.consider([zero] * len(self.current))
+
         # try deleting each element in turn, starting from the back
         # TODO_BETTER_SHRINK: adaptively delete here by deleting larger chunks at once
         # if early deletes succeed. use find_integer. turns O(n) into O(log(n))
@@ -46,6 +60,17 @@ class Collection(Shrinker):
 
         # then try reordering
         Ordering.shrink(self.current, self.consider, key=self.to_order)
+
+        # then try minimizing all duplicated elements together simultaneously. This
+        # helps in cases like https://github.com/HypothesisWorks/hypothesis/issues/4286
+        duplicated = {val for val, count in Counter(self.current).items() if count > 1}
+        for val in duplicated:
+            self.ElementShrinker.shrink(
+                self.to_order(val),
+                lambda v: self.consider(
+                    tuple(self.from_order(v) if x == val else x for x in self.current)
+                ),
+            )
 
         # then try minimizing each element in turn
         for i, val in enumerate(self.current):

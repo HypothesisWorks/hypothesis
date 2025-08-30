@@ -8,7 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Hashable, Iterable, Sequence
+from typing import Any, Optional
+
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 FEATURE_LABEL = cu.calc_label_from_name("feature flag")
@@ -31,7 +35,13 @@ class FeatureFlags:
     required disabled features.
     """
 
-    def __init__(self, data=None, enabled=(), disabled=(), at_least_one_of=()):
+    def __init__(
+        self,
+        data: Optional[ConjectureData] = None,
+        enabled: Sequence[Any] = (),
+        disabled: Sequence[Any] = (),
+        at_least_one_of: Iterable[Hashable] = (),
+    ):
         self.__data = data
         self.__is_disabled = {}
 
@@ -52,7 +62,7 @@ class FeatureFlags:
         # features will be enabled. This is so that we shrink in the direction
         # of more features being enabled.
         if self.__data is not None:
-            self.__p_disabled = data.draw_integer(0, 254) / 255
+            self.__p_disabled = self.__data.draw_integer(0, 254) / 255
         else:
             # If data is None we're in example mode so all that matters is the
             # enabled/disabled lists above. We set this up so that everything
@@ -64,7 +74,7 @@ class FeatureFlags:
         # Track the set of possible names, and ensure that at least one is enabled.
         self.__at_least_one_of = set(at_least_one_of)
 
-    def is_enabled(self, name):
+    def is_enabled(self, name: Any) -> bool:
         """Tests whether the feature named ``name`` should be enabled on this
         test run."""
         if self.__data is None or self.__data.frozen:
@@ -77,7 +87,7 @@ class FeatureFlags:
 
         data = self.__data
 
-        data.start_example(label=FEATURE_LABEL)
+        data.start_span(label=FEATURE_LABEL)
 
         # If we've already decided on this feature then we don't actually
         # need to draw anything, but we do write the same decision to the
@@ -99,10 +109,10 @@ class FeatureFlags:
         if name in oneof and not is_disabled:
             oneof.clear()
         oneof.discard(name)
-        data.stop_example()
+        data.stop_span()
         return not is_disabled
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         enabled = []
         disabled = []
         for name, is_disabled in self.__is_disabled.items():
@@ -113,10 +123,10 @@ class FeatureFlags:
         return f"FeatureFlags({enabled=}, {disabled=})"
 
 
-class FeatureStrategy(SearchStrategy):
-    def __init__(self, at_least_one_of=()):
+class FeatureStrategy(SearchStrategy[FeatureFlags]):
+    def __init__(self, at_least_one_of: Iterable[Hashable] = ()):
         super().__init__()
         self._at_least_one_of = frozenset(at_least_one_of)
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> FeatureFlags:
         return FeatureFlags(data, at_least_one_of=self._at_least_one_of)

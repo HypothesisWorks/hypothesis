@@ -54,6 +54,9 @@ from tests.common.debug import (
 )
 from tests.common.utils import fails_with, temp_registered
 
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP006, UP035
+
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v
@@ -619,6 +622,10 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(tree=st.builds(Tree))
 def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
@@ -853,7 +860,6 @@ def test_bytestring_not_treated_as_generic_sequence(val):
         assert isinstance(x, set)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 @pytest.mark.parametrize(
     "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
 )
@@ -979,6 +985,10 @@ def test_no_byteswarning(_):
     pass
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="Crosshair is too much slower at hashing values",
+)
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320
@@ -1141,7 +1151,17 @@ def test_resolves_builtin_types(t):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 @given(data=st.data())
+@settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
+    if t.__name__ == "object" and settings._current_profile == "threading":
+        # from_type(ForwardRef("object")) pulls from register_type_strategy,
+        # and depending on threading I've seen `st.builds(Bar, st.integers())`
+        # (from this file) be registered in one iteration and not the next,
+        # causing Hypothesis to raise FlakyStrategyDefinition.
+        #
+        # (I would also expect st.from_type(object) to have this problem, but
+        # I haven't seen that error under threading, yet).
+        pytest.skip("ForwardRef('object') is inherently flaky under concurrency")
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
     assert isinstance(v, t)
@@ -1161,20 +1181,43 @@ def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
 
 
 @pytest.mark.parametrize(
-    # Old-style `List` because `list[int]() == list()`, so no need for the hint.
     "type_",
-    [getattr(typing, "List", None)[int], typing.Optional[int]],
+    [
+        # Old-style `List` because `list[int]() == list()`, so no need for the hint.
+        getattr(typing, "List", None)[int],
+        pytest.param(
+            typing.Optional[int],
+            marks=pytest.mark.skipif(
+                sys.version_info >= (3, 14), reason="different error on 3.14+"
+            ),
+        ),
+    ],
 )
 def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
     ):
         check_can_generate_examples(st.builds(type_))
+
     try:
         check_can_generate_examples(st.builds(type_, st.just("has an argument")))
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="different error on 3.14+")
+@pytest.mark.parametrize("type_", [typing.Optional[int]])
+def test_builds_suggests_from_type_on_construction(type_):
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_))
+
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_, st.just("has an argument")))
 
 
 def test_builds_mentions_no_type_check():
@@ -1224,3 +1267,35 @@ def test_custom_strategy_function_resolves_types_conditionally():
         assert_all_examples(st.from_type(A), lambda example: type(example) == C)
         assert_all_examples(st.from_type(B), lambda example: example is sentinel)
         assert_all_examples(st.from_type(C), lambda example: type(example) == C)
+
+
+class CustomInteger(int):
+    def __init__(self, value: int, /) -> None:
+        if not isinstance(value, int):
+            raise TypeError
+
+
+@given(...)
+def test_from_type_resolves_required_posonly_args(n: CustomInteger):
+    # st.builds() does not infer for positional arguments, but st.from_type()
+    # does.  See e.g. https://stackoverflow.com/q/79199376/ for motivation.
+    assert isinstance(n, CustomInteger)
+
+
+class MyProtocol(typing.Protocol):
+    pass
+
+
+def test_issue_4194_regression():
+    # this was an edge case where we were calling issubclass on something
+    # that was not a type, which errored. I don't have a more principled test
+    # case or name for this.
+    inner = typing.Union[typing.Sequence["A"], MyProtocol]
+    A = typing.Union[typing.Sequence[inner], MyProtocol]
+
+    with temp_registered(MyProtocol, st.just(b"")):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with temp_registered(typing.ForwardRef("A"), st.integers()):
+            find_any(st.from_type(A))

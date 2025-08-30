@@ -25,14 +25,16 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+# use pinned redis version instead of inheriting from fakeredis
+pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
 pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
 $PYTEST tests/typing_extensions/
-if [[ "$HYPOTHESIS_PROFILE" != "crosshair" ]]; then
-  pip uninstall -y typing_extensions
+if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c 'import sys; print(sys.version_info[:2] > (3, 10))')" = "True" ]; then
+  pip uninstall -y typing-extensions
 fi
 
 pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
@@ -40,7 +42,7 @@ $PYTEST tests/test_annotated_types.py
 pip uninstall -y annotated-types
 
 pip install ".[lark]"
-pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
 pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/

@@ -67,7 +67,7 @@ generally do their best to write you a useful test.  You can also use
     Legal questions?  While the ghostwriter fragments and logic is under the
     MPL-2.0 license like the rest of Hypothesis, the *output* from the ghostwriter
     is made available under the `Creative Commons Zero (CC0)
-    <https://creativecommons.org/share-your-work/public-domain/cc0/>`__
+    <https://creativecommons.org/public-domain/cc0/>`__
     public domain dedication, so you can use it without any restrictions.
 """
 
@@ -88,10 +88,8 @@ from keyword import iskeyword as _iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    DefaultDict,
     ForwardRef,
     NamedTuple,
     Optional,
@@ -105,7 +103,7 @@ import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument, SmallSearchSpaceWarning
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import EllipsisType, get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
@@ -121,14 +119,6 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
-elif TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:
-    EllipsisType = type(Ellipsis)
-
 
 IMPORT_SECTION = """
 # This test code was written by the `hypothesis.extra.ghostwriter` module
@@ -276,10 +266,7 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
         if match is None:
             continue
         doc_type = match.group(1)
-        if doc_type.endswith(", optional"):
-            # Convention to describe "argument may be omitted"
-            doc_type = doc_type[: -len(", optional")]
-        doc_type = doc_type.strip("}{")
+        doc_type = doc_type.removesuffix(", optional").strip("}{")
         elements = []
         types = []
         for token in re.split(r",? +or +| *, *", doc_type):
@@ -648,7 +635,7 @@ def _imports_for_strategy(strategy):
         for f in strategy.flat_conditions:
             imports |= _imports_for_object(f)
     if isinstance(strategy, FlatMapStrategy):
-        imports |= _imports_for_strategy(strategy.flatmapped_strategy)
+        imports |= _imports_for_strategy(strategy.base)
         imports |= _imports_for_object(strategy.expand)
 
     # recurse through one_of to handle e.g. from_type(Optional[Foo])
@@ -696,9 +683,11 @@ def _valid_syntax_repr(strategy):
                     elems.append(s)
                     seen.add(repr(s))
             strategy = st.one_of(elems or st.nothing())
-        # Trivial special case because the wrapped repr for text() is terrible.
+        # hardcode some special cases for nicer reprs
         if strategy == st.text().wrapped_strategy:
             return set(), "text()"
+        if strategy == st.from_type(type):
+            return set(), "from_type(type)"
         # Remove any typevars; we don't exploit them so they're just clutter here
         if (
             isinstance(strategy, LazyStrategy)
@@ -893,7 +882,7 @@ def _make_test_body(
 def _annotate_args(
     argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet
 ) -> Iterable[str]:
-    arg_parameters: DefaultDict[str, set[Any]] = defaultdict(set)
+    arg_parameters: defaultdict[str, set[Any]] = defaultdict(set)
     for func in funcs:
         try:
             params = tuple(get_signature(func, eval_str=True).parameters.values())
@@ -1091,13 +1080,21 @@ def _make_test(imports: ImportSet, body: str) -> str:
         header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
     elif nothings >= 1:
         header += "# TODO: replace st.nothing() with appropriate strategies\n\n"
-    return black.format_str(header + body, mode=black.FileMode())
+    return black.format_str(header + body, mode=black.Mode())
 
 
 def _is_probably_ufunc(obj):
     # See https://numpy.org/doc/stable/reference/ufuncs.html - there doesn't seem
     # to be an upstream function to detect this, so we just guess.
-    has_attributes = "nin nout nargs ntypes types identity signature".split()
+    has_attributes = [
+        "nin",
+        "nout",
+        "nargs",
+        "ntypes",
+        "types",
+        "identity",
+        "signature",
+    ]
     return callable(obj) and all(hasattr(obj, name) for name in has_attributes)
 
 

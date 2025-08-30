@@ -17,13 +17,14 @@ import gc
 import sys
 import time
 import warnings
+from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
-from random import Random
+from threading import Lock
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Generic,
-    List,
     Literal,
     Optional,
     TypeVar,
@@ -35,17 +36,7 @@ from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
 
-ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
-
 T = TypeVar("T")
-
-
-def array_or_list(
-    code: str, contents: Iterable[int]
-) -> "Union[List[int], array.ArrayType[int]]":
-    if code == "O":
-        return list(contents)
-    return array.array(code, contents)
 
 
 def replace_all(
@@ -70,9 +61,6 @@ def replace_all(
     return result
 
 
-NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
-
-
 class IntList(Sequence[int]):
     """Class for storing a list of non-negative integers compactly.
 
@@ -81,14 +69,15 @@ class IntList(Sequence[int]):
     we upgrade the array to the smallest word size needed to store
     the new value."""
 
+    ARRAY_CODES: ClassVar[list[str]] = ["B", "H", "I", "L", "Q", "O"]
+    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+
     __slots__ = ("__underlying",)
 
-    __underlying: "Union[List[int], array.ArrayType[int]]"
-
     def __init__(self, values: Sequence[int] = ()):
-        for code in ARRAY_CODES:
+        for code in self.ARRAY_CODES:
             try:
-                underlying = array_or_list(code, values)
+                underlying = self._array_or_list(code, values)
                 break
             except OverflowError:
                 pass
@@ -98,11 +87,19 @@ class IntList(Sequence[int]):
             for v in underlying:
                 if not isinstance(v, int) or v < 0:
                     raise ValueError(f"Could not create IntList for {values!r}")
-        self.__underlying = underlying
+        self.__underlying: Union[list[int], ArrayType[int]] = underlying
 
     @classmethod
     def of_length(cls, n: int) -> "IntList":
-        return cls(array_or_list("B", [0]) * n)
+        return cls(array.array("B", [0]) * n)
+
+    @staticmethod
+    def _array_or_list(
+        code: str, contents: Iterable[int]
+    ) -> Union[list[int], "ArrayType[int]"]:
+        if code == "O":
+            return list(contents)
+        return array.array(code, contents)
 
     def count(self, value: int) -> int:
         return self.__underlying.count(value)
@@ -117,14 +114,16 @@ class IntList(Sequence[int]):
     def __getitem__(self, i: int) -> int: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, i: slice) -> "IntList": ...  # pragma: no cover
+    def __getitem__(
+        self, i: slice
+    ) -> Union[list[int], "ArrayType[int]"]: ...  # pragma: no cover
 
-    def __getitem__(self, i: Union[int, slice]) -> "Union[int, IntList]":
-        if isinstance(i, slice):
-            return IntList(self.__underlying[i])
+    def __getitem__(
+        self, i: Union[int, slice]
+    ) -> Union[int, list[int], "ArrayType[int]"]:
         return self.__underlying[i]
 
-    def __delitem__(self, i: int) -> None:
+    def __delitem__(self, i: Union[int, slice]) -> None:
         del self.__underlying[i]
 
     def insert(self, i: int, v: int) -> None:
@@ -148,9 +147,14 @@ class IntList(Sequence[int]):
         return self.__underlying != other.__underlying
 
     def append(self, n: int) -> None:
-        i = len(self)
-        self.__underlying.append(0)
-        self[i] = n
+        # try the fast path of appending n first. If this overflows, use the
+        # __setitem__ path, which will upgrade the underlying array.
+        try:
+            self.__underlying.append(n)
+        except OverflowError:
+            i = len(self.__underlying)
+            self.__underlying.append(0)
+            self[i] = n
 
     def __setitem__(self, i: int, n: int) -> None:
         while True:
@@ -167,8 +171,8 @@ class IntList(Sequence[int]):
 
     def __upgrade(self) -> None:
         assert isinstance(self.__underlying, array.array)
-        code = NEXT_ARRAY_CODE[self.__underlying.typecode]
-        self.__underlying = array_or_list(code, self.__underlying)
+        code = self.NEXT_ARRAY_CODE[self.__underlying.typecode]
+        self.__underlying = self._array_or_list(code, self.__underlying)
 
 
 def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
@@ -189,30 +193,25 @@ def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
     return lo
 
 
-def uniform(random: Random, n: int) -> bytes:
-    """Returns a bytestring of length n, distributed uniformly at random."""
-    return random.getrandbits(n * 8).to_bytes(n, "big")
-
-
-class LazySequenceCopy:
+class LazySequenceCopy(Generic[T]):
     """A "copy" of a sequence that works by inserting a mask in front
     of the underlying sequence, so that you can mutate it without changing
     the underlying sequence. Effectively behaves as if you could do list(x)
     in O(1) time. The full list API is not supported yet but there's no reason
     in principle it couldn't be."""
 
-    def __init__(self, values: Sequence[int]):
+    def __init__(self, values: Sequence[T]):
         self.__values = values
         self.__len = len(values)
-        self.__mask: Optional[dict[int, int]] = None
-        self.__popped_indices: Optional[SortedList] = None
+        self.__mask: Optional[dict[int, T]] = None
+        self.__popped_indices: Optional[SortedList[int]] = None
 
     def __len__(self) -> int:
         if self.__popped_indices is None:
             return self.__len
         return self.__len - len(self.__popped_indices)
 
-    def pop(self, i: int = -1) -> int:
+    def pop(self, i: int = -1) -> T:
         if len(self) == 0:
             raise IndexError("Cannot pop from empty list")
         i = self.__underlying_index(i)
@@ -228,7 +227,13 @@ class LazySequenceCopy:
         self.__popped_indices.add(i)
         return v
 
-    def __getitem__(self, i: int) -> int:
+    def swap(self, i: int, j: int) -> None:
+        """Swap the elements ls[i], ls[j]."""
+        if i == j:
+            return
+        self[i], self[j] = self[j], self[i]
+
+    def __getitem__(self, i: int) -> T:
         i = self.__underlying_index(i)
 
         default = self.__values[i]
@@ -237,7 +242,7 @@ class LazySequenceCopy:
         else:
             return self.__mask.get(i, default)
 
-    def __setitem__(self, i: int, v: int) -> None:
+    def __setitem__(self, i: int, v: T) -> None:
         i = self.__underlying_index(i)
         if self.__mask is None:
             self.__mask = {}
@@ -268,18 +273,10 @@ class LazySequenceCopy:
                 i += 1
         return i
 
-
-def clamp(lower: float, value: float, upper: float) -> float:
-    """Given a value and lower/upper bounds, 'clamp' the value so that
-    it satisfies lower <= value <= upper."""
-    return max(lower, min(value, upper))
-
-
-def swap(ls: LazySequenceCopy, i: int, j: int) -> None:
-    """Swap the elements ls[i], ls[j]."""
-    if i == j:
-        return
-    ls[i], ls[j] = ls[j], ls[i]
+    # even though we have len + getitem, mypyc requires iter.
+    def __iter__(self) -> Iterable[T]:
+        for i in range(len(self)):
+            yield self[i]
 
 
 def stack_depth_of_caller() -> int:
@@ -298,6 +295,74 @@ def stack_depth_of_caller() -> int:
     return size
 
 
+class StackframeLimiter:
+    # StackframeLimiter is used to make the recursion limit warning issued via
+    # ensure_free_stackframes thread-safe. We track the known values we have
+    # passed to sys.setrecursionlimit in _known_limits, and only issue a warning
+    # if sys.getrecursionlimit is not in _known_limits.
+    #
+    # This will always be an under-approximation of when we would ideally issue
+    # this warning, since a non-hypothesis caller could coincidentaly set the
+    # recursion limit to one of our known limits. Currently, StackframeLimiter
+    # resets _known_limits whenever all of the ensure_free_stackframes contexts
+    # have exited. We could increase the power of the warning by tracking a
+    # refcount for each limit, and removing it as soon as the refcount hits zero.
+    # I didn't think this extra complexity is worth the minor power increase for
+    # what is already only a "nice to have" warning.
+
+    def __init__(self):
+        self._active_contexts = 0
+        self._known_limits: set[int] = set()
+        self._original_limit: Optional[int] = None
+
+    def _setrecursionlimit(self, new_limit: int, *, check: bool = True) -> None:
+        if check and sys.getrecursionlimit() not in self._known_limits:
+            warnings.warn(
+                "The recursion limit will not be reset, since it was changed "
+                "during test execution.",
+                HypothesisWarning,
+                stacklevel=4,
+            )
+            return
+
+        self._known_limits.add(new_limit)
+        sys.setrecursionlimit(new_limit)
+
+    def enter_context(self, new_limit: int, *, current_limit: int) -> None:
+        if self._active_contexts == 0:
+            # this is the first context on the stack. Record the true original
+            # limit, to restore later.
+            assert self._original_limit is None
+            self._original_limit = current_limit
+            self._known_limits.add(self._original_limit)
+
+        self._active_contexts += 1
+        self._setrecursionlimit(new_limit)
+
+    def exit_context(self, new_limit: int, *, check: bool = True) -> None:
+        assert self._active_contexts > 0
+        self._active_contexts -= 1
+
+        if self._active_contexts == 0:
+            # this is the last context to exit. Restore the true original
+            # limit and clear our known limits.
+            original_limit = self._original_limit
+            assert original_limit is not None
+            try:
+                self._setrecursionlimit(original_limit, check=check)
+            finally:
+                self._original_limit = None
+                # we want to clear the known limits, but preserve the limit
+                # we just set it to as known.
+                self._known_limits = {original_limit}
+        else:
+            self._setrecursionlimit(new_limit, check=check)
+
+
+_stackframe_limiter = StackframeLimiter()
+_stackframe_limiter_lock = Lock()
+
+
 class ensure_free_stackframes:
     """Context manager that ensures there are at least N free stackframes (for
     a reasonable value of N).
@@ -305,33 +370,37 @@ class ensure_free_stackframes:
 
     def __enter__(self) -> None:
         cur_depth = stack_depth_of_caller()
-        self.old_maxdepth = sys.getrecursionlimit()
-        # The default CPython recursionlimit is 1000, but pytest seems to bump
-        # it to 3000 during test execution. Let's make it something reasonable:
-        self.new_maxdepth = cur_depth + 2000
-        # Because we add to the recursion limit, to be good citizens we also
-        # add a check for unbounded recursion.  The default limit is typically
-        # 1000/3000, so this can only ever trigger if something really strange
-        # is happening and it's hard to imagine an
-        # intentionally-deeply-recursive use of this code.
-        assert cur_depth <= 1000, (
-            "Hypothesis would usually add %d to the stack depth of %d here, "
-            "but we are already much deeper than expected.  Aborting now, to "
-            "avoid extending the stack limit in an infinite loop..."
-            % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
-        )
-        sys.setrecursionlimit(self.new_maxdepth)
+        with _stackframe_limiter_lock:
+            self.old_limit = sys.getrecursionlimit()
+            # The default CPython recursionlimit is 1000, but pytest seems to bump
+            # it to 3000 during test execution. Let's make it something reasonable:
+            self.new_limit = cur_depth + 2000
+            # Because we add to the recursion limit, to be good citizens we also
+            # add a check for unbounded recursion.  The default limit is typically
+            # 1000/3000, so this can only ever trigger if something really strange
+            # is happening and it's hard to imagine an
+            # intentionally-deeply-recursive use of this code.
+            assert cur_depth <= 1000, (
+                "Hypothesis would usually add %d to the stack depth of %d here, "
+                "but we are already much deeper than expected.  Aborting now, to "
+                "avoid extending the stack limit in an infinite loop..."
+                % (self.new_limit - self.old_limit, self.old_limit)
+            )
+            try:
+                _stackframe_limiter.enter_context(
+                    self.new_limit, current_limit=self.old_limit
+                )
+            except Exception:
+                # if the stackframe limiter raises a HypothesisWarning (under eg
+                # -Werror), __exit__ is not called, since we errored in __enter__.
+                # Preserve the state of the stackframe limiter by exiting, and
+                # avoid showing a duplicate warning with check=False.
+                _stackframe_limiter.exit_context(self.old_limit, check=False)
+                raise
 
     def __exit__(self, *args, **kwargs):
-        if self.new_maxdepth == sys.getrecursionlimit():
-            sys.setrecursionlimit(self.old_maxdepth)
-        else:  # pragma: no cover
-            warnings.warn(
-                "The recursion limit will not be reset, since it was changed "
-                "from another thread or during execution of a test.",
-                HypothesisWarning,
-                stacklevel=2,
-            )
+        with _stackframe_limiter_lock:
+            _stackframe_limiter.exit_context(self.old_limit)
 
 
 def find_integer(f: Callable[[int], bool]) -> int:
@@ -426,6 +495,11 @@ _perf_counter = time.perf_counter
 
 def gc_cumulative_time() -> float:
     global _gc_initialized
+
+    # I don't believe we need a lock for the _gc_cumulative_time increment here,
+    # since afaik each gc callback is only executed once when the garbage collector
+    # runs, by the thread which initiated the gc.
+
     if not _gc_initialized:
         if hasattr(gc, "callbacks"):
             # CPython
@@ -480,3 +554,10 @@ def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
     if len(l1) < len(l2):
         return False
     return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))
+
+
+def bits_to_bytes(n: int) -> int:
+    """The number of bytes required to represent an n-bit number.
+    Equivalent to (n + 7) // 8, but slightly faster. This really is
+    called enough times that that matters."""
+    return (n + 7) >> 3

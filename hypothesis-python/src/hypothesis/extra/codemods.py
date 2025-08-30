@@ -9,12 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-.. _codemods:
-
---------------------
-hypothesis[codemods]
---------------------
-
 This module provides codemods based on the :pypi:`LibCST` library, which can
 both detect *and automatically fix* issues with code that uses Hypothesis,
 including upgrading from deprecated features to our recommended style.

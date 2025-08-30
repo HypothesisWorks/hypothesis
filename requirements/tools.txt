@@ -4,64 +4,68 @@
 #
 #    ./build.sh upgrade-requirements
 #
+accessible-pygments==0.0.5
+    # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.6.2.post1
+anyio==4.10.0
     # via watchfiles
-asgiref==3.8.1
+asgiref==3.9.1
     # via django
-asttokens==2.4.1
+asttokens==3.0.0
     # via stack-data
-attrs==24.1.0
-    # via
-    #   -r requirements/test.in
-    #   hypothesis (hypothesis-python/setup.py)
+attrs==25.3.0
+    # via hypothesis (hypothesis-python/pyproject.toml)
 autoflake==2.3.1
     # via shed
-babel==2.16.0
+babel==2.17.0
     # via sphinx
 backports-tarfile==1.2.0
     # via jaraco-context
-beautifulsoup4==4.12.3
-    # via sphinx-codeautolink
-black==24.10.0
+beautifulsoup4==4.13.4
+    # via
+    #   furo
+    #   sphinx-codeautolink
+black==25.1.0
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.2.2.post1
-    # via pip-tools
-cachetools==5.5.0
+build==1.3.0
+    # via
+    #   -r requirements/tools.in
+    #   pip-tools
+cachetools==6.1.0
     # via tox
-certifi==2024.8.30
+certifi==2025.8.3
     # via requests
 cffi==1.17.1
     # via cryptography
 chardet==5.2.0
     # via tox
-charset-normalizer==3.4.0
+charset-normalizer==3.4.3
     # via requests
-click==8.1.7
+click==8.2.1
     # via
     #   black
     #   pip-tools
-codespell==2.3.0
+codespell==2.4.1
     # via -r requirements/tools.in
 colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.8
+coverage==7.10.5
     # via -r requirements/tools.in
-cryptography==44.0.0
+cryptography==45.0.6
     # via
     #   secretstorage
     #   types-pyopenssl
     #   types-redis
-decorator==5.1.1
+decorator==5.2.1
     # via ipython
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-django==5.1.3
+django==5.2.5
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -70,70 +74,71 @@ docutils==0.21.2
     #   restructuredtext-lint
     #   sphinx
     #   sphinx-jsonschema
-    #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.2.2 ; python_version < "3.11"
+exceptiongroup==1.3.0 ; python_version < "3.11"
     # via
     #   anyio
-    #   hypothesis (hypothesis-python/setup.py)
+    #   hypothesis (hypothesis-python/pyproject.toml)
     #   ipython
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-executing==2.1.0
+executing==2.2.0
     # via stack-data
-feedgenerator==2.1.0
+feedgenerator==2.2.1
     # via pelican
-filelock==3.16.1
+filelock==3.19.1
     # via
     #   tox
     #   virtualenv
+furo==2025.7.19
+    # via -r requirements/tools.in
+id==1.5.0
+    # via twine
 idna==3.10
     # via
     #   anyio
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
-    # via
-    #   keyring
-    #   twine
-iniconfig==2.0.0
+importlib-metadata==8.7.0
+    # via keyring
+iniconfig==2.1.0
     # via pytest
-ipython==8.29.0
+ipython==8.37.0
     # via -r requirements/tools.in
-isort==5.13.2
+isort==6.0.1
     # via shed
 jaraco-classes==3.4.0
     # via keyring
 jaraco-context==6.0.1
     # via keyring
-jaraco-functools==4.1.0
+jaraco-functools==4.3.0
     # via keyring
 jedi==0.19.2
     # via ipython
-jeepney==0.8.0
+jeepney==0.9.0
     # via
     #   keyring
     #   secretstorage
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   pelican
     #   sphinx
 jsonpointer==3.0.0
     # via sphinx-jsonschema
-keyring==25.5.0
+keyring==25.6.0
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
-libcst==1.5.1
+libcst==1.8.2
     # via
     #   -r requirements/tools.in
     #   shed
-markdown==3.7
+markdown==3.8.2
     # via pelican
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
@@ -141,25 +146,25 @@ matplotlib-inline==0.1.7
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.5.0
+more-itertools==10.7.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.13.0
+mypy==1.17.1
     # via -r requirements/tools.in
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nh3==0.2.19
+nh3==0.3.0
     # via readme-renderer
 nodeenv==1.9.1
     # via pyright
-numpy==2.1.3
+numpy==2.2.6
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
-packaging==24.2
+packaging==25.0
     # via
     #   black
     #   build
@@ -167,30 +172,31 @@ packaging==24.2
     #   pytest
     #   sphinx
     #   tox
-parso==0.8.4
+    #   twine
+parso==0.8.5
     # via jedi
 pathspec==0.12.1
-    # via black
-pelican[markdown]==4.10.2
+    # via
+    #   black
+    #   mypy
+pelican[markdown]==4.11.0
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via
     #   -r requirements/test.in
     #   ipython
-pip-tools==7.4.1
+pip-tools==7.5.0
     # via -r requirements/tools.in
-pkginfo==1.10.0
-    # via twine
-platformdirs==4.3.6
+platformdirs==4.3.8
     # via
     #   black
     #   tox
     #   virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.51
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -198,36 +204,37 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
-pyflakes==3.2.0
+pyflakes==3.4.0
     # via autoflake
 pygments==2.18.0
     # via
+    #   accessible-pygments
+    #   furo
     #   ipython
     #   pelican
+    #   pytest
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.8.0
+pyproject-api==1.9.1
     # via tox
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.389
+pyright==1.1.404
     # via -r requirements/tools.in
-pytest==8.3.3
+pytest==8.4.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
-pytest-xdist==3.6.1
+pytest-xdist==3.8.0
     # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-pytz==2024.2
-    # via feedgenerator
-pyupgrade==3.19.0
+pyupgrade==3.20.0
     # via shed
 pyyaml==6.0.2
     # via
@@ -235,9 +242,10 @@ pyyaml==6.0.2
     #   sphinx-jsonschema
 readme-renderer==44.0
     # via twine
-requests==2.32.3
+requests==2.32.5
     # via
     #   -r requirements/tools.in
+    #   id
     #   requests-toolbelt
     #   sphinx
     #   sphinx-jsonschema
@@ -248,42 +256,41 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.9.4
+rich==14.1.0
     # via
     #   pelican
     #   twine
-ruff==0.8.1
+ruff==0.12.10
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
 shed==2024.1.1
     # via -r requirements/tools.in
-six==1.16.0
-    # via
-    #   asttokens
-    #   python-dateutil
+six==1.17.0
+    # via python-dateutil
 sniffio==1.3.1
     # via anyio
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
-    # via hypothesis (hypothesis-python/setup.py)
-soupsieve==2.6
+    # via
+    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   sortedcontainers-stubs
+sortedcontainers-stubs==2.4.3
+    # via -r requirements/tools.in
+soupsieve==2.7
     # via beautifulsoup4
 sphinx==8.1.3
     # via
     #   -r requirements/tools.in
+    #   furo
+    #   sphinx-basic-ng
     #   sphinx-codeautolink
-    #   sphinx-hoverxref
-    #   sphinx-rtd-theme
-    #   sphinxcontrib-jquery
-sphinx-codeautolink==0.15.2
-    # via -r requirements/tools.in
-sphinx-hoverxref==1.4.2
+sphinx-basic-ng==1.0.0b2
+    # via furo
+sphinx-codeautolink==0.17.5
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.1
-    # via -r requirements/tools.in
-sphinx-rtd-theme==3.0.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -293,21 +300,17 @@ sphinxcontrib-devhelp==2.0.0
     # via sphinx
 sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
-sphinxcontrib-jquery==4.1
-    # via
-    #   sphinx-hoverxref
-    #   sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sqlparse==0.5.2
+sqlparse==0.5.3
     # via django
 stack-data==0.6.3
     # via ipython
-tokenize-rt==6.1.0
+tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.2.1
     # via
@@ -320,56 +323,61 @@ tomli==2.2.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.23.2
+tox==4.28.4
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twine==5.1.1
+twine==6.1.0
     # via -r requirements/tools.in
-types-cffi==1.16.0.20240331
+types-cffi==1.17.0.20250822
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2024.2.0.20241003
+types-pytz==2025.2.0.20250809
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.6.0.20241126
+types-setuptools==80.9.0.20250822
     # via types-cffi
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -r requirements/tools.in
     #   anyio
     #   asgiref
+    #   beautifulsoup4
     #   black
+    #   exceptiongroup
     #   ipython
     #   mypy
     #   pyright
-    #   rich
+    #   sortedcontainers-stubs
     #   tox
-unidecode==1.3.8
+    #   virtualenv
+unidecode==1.4.0
     # via pelican
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   requests
     #   twine
-virtualenv==20.28.0
+virtualenv==20.34.0
     # via tox
-watchfiles==1.0.0
+watchdog==6.0.0
+    # via -r requirements/tools.in
+watchfiles==1.1.0
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit
 wheel==0.45.1
     # via pip-tools
-zipp==3.21.0
+zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.3.1
+pip==25.2
     # via pip-tools
-setuptools==75.6.0
+setuptools==80.9.0
     # via pip-tools

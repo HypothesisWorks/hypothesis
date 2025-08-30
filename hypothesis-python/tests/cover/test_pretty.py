@@ -50,7 +50,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import io
 import re
 import struct
-import sys
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
 from dataclasses import dataclass, field
@@ -563,6 +562,9 @@ class BigList(list):
             return "[...]"
         else:
             with printer.group(open="[", close="]"):
+                # NOTE: For compatibility with Python 3.9's LL(1)
+                # parser, this is written as a nested with-statement,
+                # instead of a compound one.
                 with printer.indent(5):
                     for v in self:
                         printer.pretty(v)
@@ -790,7 +792,6 @@ class SomeAttrsClass:
     x: ReprDetector
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_pretty_prints_attrs_classes():
     assert pretty.pretty(SomeAttrsClass(ReprDetector())) == "SomeAttrsClass(x=GOOD)"
 
@@ -829,7 +830,6 @@ class SomeAttrsClassWithLotsOfFields:
     s: int
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_will_line_break_between_fields():
     obj = SomeAttrsClassWithLotsOfFields(
         **{
@@ -874,7 +874,6 @@ class AttrsClassWithNoInitField:
     y: int = attrs.field(init=False)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 def test_does_not_include_no_init_fields_in_attrs_printing():
     record = AttrsClassWithNoInitField(x=1)
     assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"

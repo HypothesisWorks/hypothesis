@@ -13,12 +13,16 @@ import time
 import pytest
 from pytest import raises
 
-from hypothesis import HealthCheck, Phase, given, settings, strategies as st
+from hypothesis import HealthCheck, Phase, given, seed, settings, strategies as st
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
+
+pytestmark = pytest.mark.skipif(
+    settings._current_profile == "crosshair", reason="slow - large number of symbolics"
+)
 
 large_strategy = st.binary(min_size=7000, max_size=7000)
 too_large_strategy = st.tuples(large_strategy, large_strategy)
@@ -32,7 +36,7 @@ def test_large_data_will_fail_a_health_check():
 
     with raises(FailedHealthCheck) as e:
         test()
-    assert "allowable size" in e.value.args[0]
+    assert "maximum allowed entropy" in e.value.args[0]
 
 
 def test_large_base_example_fails_health_check():
@@ -79,16 +83,16 @@ def test_lazy_slow_initialization_issue_2108_regression(data):
 
 
 def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
-    existing_draw_bits = ConjectureData.draw_bits
+    existing_draw = ConjectureData.draw_integer
 
     # We need to make drawing data artificially slow in order to trigger this
     # effect. This isn't actually slow because time is fake in our CI, but
     # we need it to pretend to be.
-    def draw_bits(self, n, *, forced=None, fake_forced=False):
+    def draw_integer(*args, **kwargs):
         time.sleep(0.001)
-        return existing_draw_bits(self, n, forced=forced, fake_forced=fake_forced)
+        return existing_draw(*args, **kwargs)
 
-    monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
+    monkeypatch.setattr(ConjectureData, "draw_integer", draw_integer)
 
     with deterministic_PRNG():
         for _ in range(100):
@@ -96,28 +100,29 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
             # health checks to finish running, but cuts the generation short
             # after that point to allow this test to run in reasonable time.
             @settings(database=None, max_examples=11, phases=[Phase.generate])
-            @given(st.binary())
-            def test(b):
+            @given(st.integers())
+            def test(n):
                 pass
 
             test()
 
 
-def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch):
-    with deterministic_PRNG():
-        for _ in range(100):
-            # Setting max_examples=11 ensures we have enough examples for the
-            # health checks to finish running, but cuts the generation short
-            # after that point to allow this test to run in reasonable time.
-            @settings(database=None, max_examples=11, phases=[Phase.generate])
-            @given(
-                st.integers(0, 100).flatmap(
-                    lambda n: st.binary(
-                        min_size=min(n * 100, BUFFER_SIZE), max_size=n * 100
-                    )
+def test_does_not_trigger_health_check_when_most_examples_are_small():
+    for i in range(10):
+
+        @seed(i)
+        # Setting max_examples=11 ensures we have enough examples for the
+        # health checks to finish running, but cuts the generation short
+        # after that point to allow this test to run in reasonable time.
+        @settings(database=None, max_examples=11, phases=[Phase.generate])
+        @given(
+            st.integers(0, 100).flatmap(
+                lambda n: st.binary(
+                    min_size=min(n * 100, BUFFER_SIZE), max_size=n * 100
                 )
             )
-            def test(b):
-                pass
+        )
+        def test(b):
+            pass
 
-            test()
+        test()

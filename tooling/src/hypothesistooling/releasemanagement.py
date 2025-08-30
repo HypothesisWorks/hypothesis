@@ -17,7 +17,7 @@ like a nice tidy reusable set of functionality.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 import hypothesistooling as tools
 
@@ -30,7 +30,7 @@ def release_date_string():
     through a release."""
     global __RELEASE_DATE_STRING
     if __RELEASE_DATE_STRING is None:
-        __RELEASE_DATE_STRING = datetime.utcnow().strftime("%Y-%m-%d")
+        __RELEASE_DATE_STRING = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return __RELEASE_DATE_STRING
 
 
@@ -93,11 +93,11 @@ def replace_assignment(filename, name, value):
     the file format. The existing value is simply the rest of the line after
     the last space after the equals.
     """
-    with open(filename, encoding="utf-8") as i:
-        contents = i.read()
+    with open(filename, encoding="utf-8") as f:
+        contents = f.read()
     result = replace_assignment_in_string(contents, name, value)
-    with open(filename, "w", encoding="utf-8") as o:
-        o.write(result)
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(result)
 
 
 RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
@@ -150,16 +150,16 @@ def bump_version_info(version_info, release_type):
 
 
 def update_markdown_changelog(changelog, name, version, entry):
-    with open(changelog, encoding="utf-8") as i:
-        prev_contents = i.read()
+    with open(changelog, encoding="utf-8") as f:
+        prev_contents = f.read()
 
     title = f"# {name} {version} ({release_date_string()})\n\n"
 
-    with open(changelog, "w", encoding="utf-8") as o:
-        o.write(title)
-        o.write(entry.strip())
-        o.write("\n\n")
-        o.write(prev_contents)
+    with open(changelog, "w", encoding="utf-8") as f:
+        f.write(title)
+        f.write(entry.strip())
+        f.write("\n\n")
+        f.write(prev_contents)
 
 
 def parse_version(version):

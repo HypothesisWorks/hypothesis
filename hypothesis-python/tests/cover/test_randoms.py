@@ -17,15 +17,18 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
+    ArtificialRandom,
     HypothesisRandom,
     TrueRandom,
     convert_kwargs,
     normalize_zero,
 )
 
-from tests.common.debug import find_any
+from tests.common.debug import assert_all_examples, find_any
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def test_implements_all_random_methods():
@@ -180,6 +183,7 @@ def test_copying_synchronizes(r1, method_call):
     assert getattr(r1, method)(*args, **kwargs) == getattr(r2, method)(*args, **kwargs)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_seeding_to_different_values_does_not_synchronize(use_true_random):
     @given(
@@ -195,6 +199,7 @@ def test_seeding_to_different_values_does_not_synchronize(use_true_random):
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_unrelated_calls_desynchronizes(use_true_random):
     @given(
@@ -311,10 +316,6 @@ def test_samples_have_right_length(rnd, sample):
     assert len(rnd.sample(seq, k)) == k
 
 
-@pytest.mark.skipif(
-    "choices" not in RANDOM_METHODS,
-    reason="choices not supported on this Python version",
-)
 @given(st.randoms(use_true_random=False), any_call_of_method("choices"))
 def test_choices_have_right_length(rnd, choices):
     args, kwargs = choices
@@ -329,6 +330,10 @@ def test_randbytes_have_right_length(rnd, n):
     assert len(rnd.randbytes(n)) == n
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="takes hours; may get faster after https://github.com/pschanely/CrossHair/issues/332",
+)
 @given(any_random)
 def test_can_manage_very_long_ranges_with_step(rnd):
     i = rnd.randrange(0, 2**256, 3)
@@ -384,3 +389,29 @@ def test_can_sample_from_large_subset(rnd):
 @given(st.randoms(use_true_random=False))
 def test_can_draw_empty_from_empty_sequence(rnd):
     assert rnd.sample([], 0) == []
+
+
+def test_random_includes_zero_excludes_one():
+    strat = st.randoms(use_true_random=False).map(lambda r: r.random())
+    assert_all_examples(strat, lambda x: 0 <= x < 1)
+    find_any(strat, lambda x: x == 0)
+
+
+def test_betavariate_includes_zero_and_one():
+    # https://github.com/HypothesisWorks/hypothesis/issues/4297#issuecomment-2720144709
+    strat = st.randoms(use_true_random=False).flatmap(
+        lambda r: st.builds(
+            r.betavariate, alpha=st.just(1.0) | beta_param, beta=beta_param
+        )
+    )
+    assert_all_examples(strat, lambda x: 0 <= x <= 1)
+    find_any(strat, lambda x: x == 0)
+    find_any(strat, lambda x: x == 1)
+
+
+def test_artificial_random_with_already_initialized_states_for_ids():
+    # covering test for calling .getstate when data.states_for_ids is not None.
+    data = ConjectureData.for_choices([])
+    data.states_for_ids = {}
+    r = ArtificialRandom(note_method_calls=False, data=data)
+    r.getstate()
