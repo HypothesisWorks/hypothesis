@@ -514,7 +514,7 @@ class Rule:
                 v = BundleReferenceStrategy(
                     v.name,
                     consume=v.consume,
-                    repr_=v.repr_,
+                    force_repr=v.force_repr,
                     transformations=v.transformations,
                 )
             self.arguments_strategies[k] = v
@@ -557,14 +557,14 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         name: str,
         *,
         consume: bool = False,
-        repr_: Optional[str] = None,
+        force_repr: Optional[str] = None,
         transformations: Iterable[tuple[str, Callable]] = (),
     ):
         self.name = name
         self.consume = consume
         super().__init__(
             [...],
-            repr_=repr_,
+            force_repr=force_repr,
             transformations=transformations,
         )  # Some random items that'll get replaced in do_draw
 
@@ -634,13 +634,16 @@ class Bundle(SearchStrategy[Ex]):
         name: str,
         *,
         consume: bool = False,
-        repr_: Optional[str] = None,
+        force_repr: Optional[str] = None,
         transformations: Iterable[tuple[str, Callable]] = (),
     ) -> None:
         super().__init__()
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(
-            name, consume=consume, repr_=repr_, transformations=transformations
+            name,
+            consume=consume,
+            force_repr=force_repr,
+            transformations=transformations,
         )
 
     @property
@@ -648,8 +651,8 @@ class Bundle(SearchStrategy[Ex]):
         return self.__reference_strategy.consume
 
     @property
-    def repr_(self):
-        return self.__reference_strategy.repr_
+    def force_repr(self):
+        return self.__reference_strategy.force_repr
 
     @property
     def transformations(self):
@@ -669,7 +672,7 @@ class Bundle(SearchStrategy[Ex]):
                 *self.__reference_strategy._transformations,
                 ("filter", condition),
             ),
-            repr_=self.__reference_strategy.repr_,
+            force_repr=self.__reference_strategy.force_repr,
         )
 
     def map(self, pack):
@@ -680,7 +683,7 @@ class Bundle(SearchStrategy[Ex]):
                 *self.__reference_strategy._transformations,
                 ("map", pack),
             ),
-            repr_=self.__reference_strategy.repr_,
+            force_repr=self.__reference_strategy.force_repr,
         )
 
     def __repr__(self):
@@ -698,15 +701,6 @@ class Bundle(SearchStrategy[Ex]):
         # modifying the underlying buffer.
         machine = data.draw(self_strategy)
         return bool(machine.bundle(self.name))
-
-    def flatmap(self, expand):
-        if self.draw_references:
-            return type(self)(
-                self.name,
-                consume=self.__reference_strategy.consume,
-                draw_references=False,
-            ).flatmap(expand)
-        return super().flatmap(expand)
 
     def __hash__(self):
         # Making this hashable means we hit the fast path of "everything is
@@ -736,7 +730,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
         name=bundle.name,
         consume=True,
         transformations=bundle.transformations,
-        repr_=bundle.repr_,
+        force_repr=bundle.force_repr,
     )
 
 
