@@ -774,11 +774,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
                     if len(allowed) > speculative_index:
                         # Early-exit case: We reached the speculative index, so
                         # we just return the corresponding element.
-                        data.draw_integer(
-                            0,
-                            len(self.elements) - 1,
-                            forced=i,
-                        )
+                        data.draw_integer(0, len(self.elements) - 1, forced=i)
                         return element
 
         # The speculative index didn't work out, but at this point we've built

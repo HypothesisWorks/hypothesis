@@ -560,13 +560,13 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         force_repr: Optional[str] = None,
         transformations: Iterable[tuple[str, Callable]] = (),
     ):
-        self.name = name
-        self.consume = consume
         super().__init__(
             [...],
             force_repr=force_repr,
             transformations=transformations,
         )  # Some random items that'll get replaced in do_draw
+        self.name = name
+        self.consume = consume
 
     def get_transformed_value(self, reference):
         assert isinstance(reference, VarReference)
@@ -574,7 +574,6 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
 
     def get_element(self, i):
         idx = self.elements[i]
-        assert isinstance(idx, int)
         reference = self.bundle[idx]
         value = self.get_transformed_value(reference)
         if value is filter_not_satisfied:
@@ -598,7 +597,7 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         position = super().do_draw(data)
         reference = self.bundle[position]
         if self.consume:
-            self.bundle.pop(position)  # pragma: no cover # coverage is flaky here
+            self.bundle.pop(position)  # pragma: no cover  # coverage is flaky here
 
         value = self.get_transformed_value(reference)
 
@@ -661,29 +660,29 @@ class Bundle(SearchStrategy[Ex]):
     def do_draw(self, data):
         self.machine = data.draw(self_strategy)
         var_reference = data.draw(self.__reference_strategy)
-        assert type(var_reference) is VarReferenceMapping
+        assert isinstance(var_reference, VarReferenceMapping)
         return var_reference.value
 
     def filter(self, condition):
-        return type(self)(
+        return Bundle(
             self.name,
             consume=self.__reference_strategy.consume,
+            force_repr=self.__reference_strategy.force_repr,
             transformations=(
                 *self.__reference_strategy._transformations,
                 ("filter", condition),
             ),
-            force_repr=self.__reference_strategy.force_repr,
         )
 
     def map(self, pack):
-        return type(self)(
+        return Bundle(
             self.name,
             consume=self.__reference_strategy.consume,
+            force_repr=self.__reference_strategy.force_repr,
             transformations=(
                 *self.__reference_strategy._transformations,
                 ("map", pack),
             ),
-            force_repr=self.__reference_strategy.force_repr,
         )
 
     def __repr__(self):
@@ -726,8 +725,8 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return type(bundle)(
-        name=bundle.name,
+    return Bundle(
+        bundle.name,
         consume=True,
         transformations=bundle.transformations,
         force_repr=bundle.force_repr,
