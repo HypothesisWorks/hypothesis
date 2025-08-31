@@ -260,10 +260,6 @@ class SearchStrategy(Generic[Ex]):
         # intended to be an optimisation for some cases.
         return recursive_property(self, "is_empty", True)
 
-    @property
-    def supports_find(self) -> bool:
-        return True
-
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
 

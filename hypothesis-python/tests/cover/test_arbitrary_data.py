@@ -64,9 +64,9 @@ def test_given_twice_is_same():
     assert "Draw 2: 0" in err.value.__notes__
 
 
-def test_errors_when_used_in_find():
-    with raises(InvalidArgument):
-        find(st.data(), lambda x: x.draw(st.booleans()))
+def test_data_supports_find():
+    data = find(st.data(), lambda data: data.draw(st.integers()) >= 10)
+    assert data.conjecture_data.choices == (10,)
 
 
 @pytest.mark.parametrize("f", ["filter", "map", "flatmap"])
