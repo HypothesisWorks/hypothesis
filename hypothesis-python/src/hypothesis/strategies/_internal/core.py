@@ -2584,7 +2584,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 
@@ -2615,7 +2615,7 @@ else:  # pragma: no cover
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 
