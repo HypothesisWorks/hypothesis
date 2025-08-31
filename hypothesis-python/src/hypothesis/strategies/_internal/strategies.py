@@ -703,7 +703,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             if name == "map":
                 result = f(element)
                 if build_context := _current_build_context.value:
-                    build_context.record_call(result, f, [element], {})
+                    build_context.record_call(result, f, args=[element], kwargs={})
                 element = result
             else:
                 assert name == "filter"
@@ -1029,7 +1029,9 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
                     data.stop_span()
-                    current_build_context().record_call(result, self.pack, [x], {})
+                    current_build_context().record_call(
+                        result, self.pack, args=[x], kwargs={}
+                    )
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_span(discard=True)

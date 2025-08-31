@@ -1077,7 +1077,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args, kwargs)
+        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
         return obj
 
     def do_validate(self) -> None:
