@@ -38,6 +38,7 @@ from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import add_note, batched
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
 from hypothesis.internal.healthcheck import fail_health_check
@@ -193,10 +194,10 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                 try:
                     data = dict(data)
                     for k, v in list(data.items()):
-                        if isinstance(v, VarReferenceMapping):
+                        if isinstance(v, VarReference):
                             data[k] = v.value
                         elif isinstance(v, list) and all(
-                            isinstance(item, VarReferenceMapping) for item in v
+                            isinstance(item, VarReference) for item in v
                         ):
                             data[k] = [item.value for item in v]
 
@@ -313,7 +314,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         # copy since we pop from this as we run initialize rules.
         self._initialize_rules_to_run = setup_state.initializers.copy()
 
-        self.bundles: dict[str, list] = {}
+        self.bundles: dict[str, list[str]] = {}
         self.names_counters: collections.Counter = collections.Counter()
         self.names_list: list[str] = []
         self.names_to_values: dict[str, Any] = {}
@@ -324,12 +325,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         self._rules_strategy = RuleStrategy(self)
 
     def _pretty_print(self, value):
-        if isinstance(value, VarReferenceMapping):
-            return value.reference.name
+        if isinstance(value, VarReference):
+            return value.name
         elif isinstance(value, list) and all(
-            isinstance(item, VarReferenceMapping) for item in value
+            isinstance(item, VarReference) for item in value
         ):
-            return "[" + ", ".join([item.reference.name for item in value]) + "]"
+            return "[" + ", ".join([item.name for item in value]) + "]"
         self.__stream.seek(0)
         self.__stream.truncate(0)
         self.__printer.output_width = 0
@@ -442,7 +443,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 if not _is_singleton(result):
                     self.__printer.singleton_pprinters.setdefault(id(result), printer)
                 self.names_to_values[name] = result
-                self.bundles.setdefault(target, []).append(VarReference(name))
+                self.bundles.setdefault(target, []).append(name)
 
     def check_invariants(self, settings, output, runtimes):
         for invar in self.invariants:
@@ -516,7 +517,7 @@ class Rule:
                     v.name,
                     consume=v.consume,
                     force_repr=v.force_repr,
-                    transformations=v.transformations,
+                    transformations=v._transformations,
                 )
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
@@ -569,19 +570,19 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         self.name = name
         self.consume = consume
 
-    def get_transformed_value(self, reference):
-        assert isinstance(reference, VarReference)
-        return self._transform(self.machine.names_to_values.get(reference.name))
+    def get_transformed_value(self, name: str) -> Ex:
+        value = self.machine.names_to_values[name]
+        return self._transform(value)
 
-    def get_element(self, i):
+    def get_element(self, i: int) -> int:
         idx = self.elements[i]
-        reference = self.bundle[idx]
-        value = self.get_transformed_value(reference)
+        name = self.bundle[idx]
+        value = self.get_transformed_value(name)
         if value is filter_not_satisfied:
             return filter_not_satisfied
         return idx
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         self.machine = data.draw(self_strategy)
         self.bundle = self.machine.bundle(self.name)
         if not self.bundle:
@@ -596,15 +597,15 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         self.elements = range(len(self.bundle))[::-1]
 
         position = super().do_draw(data)
-        reference = self.bundle[position]
+        name = self.bundle[position]
         if self.consume:
             self.bundle.pop(position)  # pragma: no cover  # coverage is flaky here
 
-        value = self.get_transformed_value(reference)
+        value = self.get_transformed_value(name)
 
         # We need both reference and the value itself to pretty-print deterministically
         # and maintain any transformations that is bundle-specific
-        return VarReferenceMapping(reference, value)
+        return VarReference(name, value)
 
 
 class Bundle(SearchStrategy[Ex]):
@@ -674,30 +675,28 @@ class Bundle(SearchStrategy[Ex]):
         return self.__reference_strategy.force_repr
 
     @property
-    def transformations(self):
+    def _transformations(self):
         return self.__reference_strategy._transformations
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         self.machine = data.draw(self_strategy)
         var_reference = data.draw(self.__reference_strategy)
-        assert isinstance(var_reference, VarReferenceMapping)
+        assert isinstance(var_reference, VarReference)
         return var_reference.value
 
-    def filter(self, condition):
+    def __with_transform(self, method, fn):
         return Bundle(
             self.name,
             consume=self.consume,
             force_repr=self.force_repr,
-            transformations=(*self.transformations, ("filter", condition)),
+            transformations=(*self._transformations, (method, fn)),
         )
 
+    def filter(self, condition):
+        return self.__with_transform("filter", condition)
+
     def map(self, pack):
-        return Bundle(
-            self.name,
-            consume=self.consume,
-            force_repr=self.force_repr,
-            transformations=(*self.transformations, ("map", pack)),
-        )
+        return self.__with_transform("map", pack)
 
     def __repr__(self):
         if self.consume is False:
@@ -742,7 +741,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     return Bundle(
         bundle.name,
         consume=True,
-        transformations=bundle.transformations,
+        transformations=bundle._transformations,
         force_repr=bundle.force_repr,
     )
 
@@ -1033,11 +1032,6 @@ def initialize(
 @dataclass
 class VarReference:
     name: str
-
-
-@dataclass
-class VarReferenceMapping:
-    reference: VarReference
     value: Any
 
 
