@@ -58,10 +58,6 @@ class DeferredStrategy(SearchStrategy[Ex]):
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
         return self.wrapped_strategy.branches
 
-    @property
-    def supports_find(self) -> bool:
-        return self.wrapped_strategy.supports_find
-
     def calc_label(self) -> int:
         """Deferred strategies don't have a calculated label, because we would
         end up having to calculate the fixed point of some hash function in

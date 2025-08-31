@@ -87,10 +87,6 @@ class LazyStrategy(SearchStrategy[Ex]):
         self.__kwargs = kwargs
         self._transformations = transforms
 
-    @property
-    def supports_find(self) -> bool:
-        return self.wrapped_strategy.supports_find
-
     def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 

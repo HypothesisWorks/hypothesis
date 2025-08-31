@@ -141,8 +141,3 @@ def test_recursion_in_middle():
     # to determine the non-emptiness of the tuples.
     x = st.deferred(lambda: st.tuples(st.none(), x, st.integers().map(abs)) | st.none())
     assert not x.is_empty
-
-
-def test_deferred_supports_find():
-    nested = st.deferred(lambda: st.integers() | st.lists(nested))
-    assert nested.supports_find
