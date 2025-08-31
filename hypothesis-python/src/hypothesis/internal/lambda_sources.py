@@ -303,7 +303,7 @@ def _check_unknown_perfectly_aligned_lambda(candidate):
     pass
 
 
-def _lambda_description(f, leeway=10, *, fail_if_confused_with_perfect_candidate=False):
+def _lambda_description(f, leeway=50, *, fail_if_confused_with_perfect_candidate=False):
     if hasattr(f, "__wrapped_target"):
         f = f.__wrapped_target
 
