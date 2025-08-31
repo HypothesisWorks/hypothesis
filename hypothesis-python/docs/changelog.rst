@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.10:
+
+---------------------
+6.138.10 - 2025-08-31
+---------------------
+
+Internal refactor to simplify |SearchStrategy|.
+
 .. _v6.138.9:
 
 --------------------
