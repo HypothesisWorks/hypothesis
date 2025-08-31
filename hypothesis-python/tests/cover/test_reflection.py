@@ -21,9 +21,8 @@ from pytest import raises
 
 from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal import reflection
+from hypothesis.internal import lambda_sources, reflection
 from hypothesis.internal.reflection import (
-    _lambda_source_key,
     convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
@@ -758,11 +757,57 @@ def test_cache_key_size_is_bounded():
     f.__code__ = f.__code__.replace(
         co_consts=tuple(c * 1000 if c == "a" else c for c in f.__code__.co_consts)
     )
-    assert len(repr(reflection._lambda_source_key(f))) > 1000
-    assert len(repr(reflection._lambda_source_key(f, bounded_size=True))) < 1000
+    assert len(repr(lambda_sources._function_key(f))) > 1000
+    assert len(repr(lambda_sources._function_key(f, bounded_size=True))) < 1000
 
 
-def test_lambda_source_key_distinguishes_alpha_renames():
+def test_function_key_distinguishes_alpha_renames():
     # these terms are equivalent under the lambda calculus, but their
     # representations are not, so they should be cached differently.
-    assert _lambda_source_key(lambda x: x) != _lambda_source_key(lambda y: y)
+    assert lambda_sources._function_key(lambda x: x) != lambda_sources._function_key(
+        lambda y: y
+    )
+
+
+def test_import():
+    import time as t
+
+    f = lambda: t.ctime()
+    assert get_pretty_function_description(f) == "lambda: t.ctime()"
+
+
+@pytest.mark.parametrize("nop_on_f", [True, False])
+def test_code_normalization(nop_on_f):
+    f = lambda x: x
+    g = lambda x: x
+    h = f if nop_on_f else g
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
+
+    # Append a NOP to one of the bytecodes
+    NOP_instr = bytes([lambda_sources._op.NOP, 0])
+    h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + NOP_instr)
+    assert lambda_sources._function_key(f) != lambda_sources._function_key(g)
+
+    # ...and then normalize g to match f (adding or removing a NOP)
+    g.__code__ = lambda_sources._normalize_code(f, g)
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
+
+
+@pytest.mark.parametrize(
+    "f, source",
+    [
+        (lambda x=1, *, y=2: (x, y), "lambda x=1, *, y=2: (x, y)"),
+        (lambda x=1, *, y: (x, y), "lambda x=1, *, y: (x, y)"),
+        (lambda x, *, y=2: (x, y), "lambda x, *, y=2: (x, y)"),
+        (lambda x, *, y: (x, y), "lambda x, *, y: (x, y)"),
+        (lambda *, y=2: (x, y), "lambda *, y=2: (x, y)"),  # noqa: F821
+        (lambda *, y: (x, y), "lambda *, y: (x, y)"),  # noqa: F821
+        (lambda x, /, y=1: (x, y), "lambda x, /, y=1: (x, y)"),
+        (lambda x, /, y: (x, y), "lambda x, /, y: (x, y)"),
+        (lambda x, /: (x, y), "lambda x, /: (x, y)"),  # noqa: F821
+        (lambda x=1, /, y=2: (x, y), "lambda x=1, /, y=2: (x, y)"),
+        (lambda x=1, /: (x, y), "lambda x=1, /: (x, y)"),  # noqa: F821
+    ],
+)
+def test_lambda_mimicry_with_arg_defaults(f, source):
+    assert get_pretty_function_description(f) == source
