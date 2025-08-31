@@ -55,6 +55,7 @@ from hypothesis.strategies._internal.strategies import (
     Ex,
     OneOfStrategy,
     SampledFromStrategy,
+    SampledFromTransformationsT,
     SearchStrategy,
     check_strategy,
     filter_not_satisfied,
@@ -558,7 +559,7 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         *,
         consume: bool = False,
         force_repr: Optional[str] = None,
-        transformations: Iterable[tuple[str, Callable]] = (),
+        transformations: SampledFromTransformationsT = (),
     ):
         super().__init__(
             [...],
@@ -626,6 +627,25 @@ class Bundle(SearchStrategy[Ex]):
 
     If the ``consume`` argument is set to True, then all values that are
     drawn from this bundle will be consumed (as above) when requested.
+
+    Bundles can be combined with |.map| and |.filter|:
+
+    .. code-block:: python
+
+        class Machine(RuleBasedStateMachine):
+            values = Bundle("values")
+
+            @initialize(target=values)
+            def populate_values(self):
+                return multiple(1, 2)
+
+            @rule(n=buns.map(lambda x: -x))
+            def use_map(self, n):
+                pass
+
+            @rule(n=buns.filter(lambda x: x > 1))
+            def use_filter(self, n):
+                pass
     """
 
     def __init__(
@@ -634,7 +654,7 @@ class Bundle(SearchStrategy[Ex]):
         *,
         consume: bool = False,
         force_repr: Optional[str] = None,
-        transformations: Iterable[tuple[str, Callable]] = (),
+        transformations: SampledFromTransformationsT = (),
     ) -> None:
         super().__init__()
         self.name = name
@@ -666,23 +686,17 @@ class Bundle(SearchStrategy[Ex]):
     def filter(self, condition):
         return Bundle(
             self.name,
-            consume=self.__reference_strategy.consume,
-            force_repr=self.__reference_strategy.force_repr,
-            transformations=(
-                *self.__reference_strategy._transformations,
-                ("filter", condition),
-            ),
+            consume=self.consume,
+            force_repr=self.force_repr,
+            transformations=(*self.transformations, ("filter", condition)),
         )
 
     def map(self, pack):
         return Bundle(
             self.name,
-            consume=self.__reference_strategy.consume,
-            force_repr=self.__reference_strategy.force_repr,
-            transformations=(
-                *self.__reference_strategy._transformations,
-                ("map", pack),
-            ),
+            consume=self.consume,
+            force_repr=self.force_repr,
+            transformations=(*self.transformations, ("map", pack)),
         )
 
     def __repr__(self):
