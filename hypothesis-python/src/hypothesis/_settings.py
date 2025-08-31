@@ -292,10 +292,26 @@ class duration(datetime.timedelta):
 
 
 def is_in_ci() -> bool:
-    # GitHub Actions, Travis CI and AppVeyor have "CI"
-    # Azure Pipelines has "TF_BUILD"
-    # GitLab CI has "GITLAB_CI"
-    return "CI" in os.environ or "TF_BUILD" in os.environ or "GITLAB_CI" in os.environ
+    # see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
+    CI_VARS = {
+        "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
+        "TF_BUILD": "true",  # Azure Pipelines
+        "bamboo.buildKey": None,  # Bamboo
+        "BUILDKITE": "true",  # Buildkite
+        "CIRCLECI": "true",  # Circle CI
+        "CIRRUS_CI": "true",  # Cirrus CI
+        "CODEBUILD_BUILD_ID": None,  # CodeBuild
+        "GITHUB_ACTIONS": "true",  # GitHub Actions
+        "GITLAB_CI": None,  # GitLab CI
+        "HEROKU_TEST_RUN_ID": None,  # Heroku CI
+        "BUILD_ID": None,  # Hudson
+        "TEAMCITY_VERSION": None,  # TeamCity
+        "TRAVIS": "true",  # Travis CI
+    }
+    return any(
+        (value is None and key in os.environ) or os.environ.get(key) == value
+        for key, value in CI_VARS.items()
+    )
 
 
 default_variable = DynamicVariable[Optional["settings"]](None)
