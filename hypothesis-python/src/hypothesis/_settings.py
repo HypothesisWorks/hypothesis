@@ -491,15 +491,17 @@ class settings(metaclass=settingsMeta):
     settings objects created after the profile was made active, but not in existing
     settings objects.
 
+    .. _builtin-profiles:
+
     Built-in profiles
     -----------------
 
     While you can register additional profiles with |settings.register_profile|,
     Hypothesis comes with two built-in profiles: ``default`` and ``ci``.
 
-    The ``default`` profile is active by default, unless one of the ``CI``,
-    ``TF_BUILD``, or ``GITLAB_CI`` environment variables are set (to any value),
-    in which case the ``CI`` profile will be active by default.
+    By default, the ``default`` profile is active. If the ``CI`` environment
+    variable is set to any value, the ``ci`` profile is active by default. Hypothesis
+    also automatically detects various vendor-specific CI environment variables.
 
     The attributes of the currently active settings profile can be retrieved with
     ``settings()`` (so ``settings().max_examples`` is the currently active default
