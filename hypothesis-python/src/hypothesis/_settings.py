@@ -305,9 +305,7 @@ def is_in_ci() -> bool:
         "GITHUB_ACTIONS": "true",  # GitHub Actions
         "GITLAB_CI": None,  # GitLab CI
         "HEROKU_TEST_RUN_ID": None,  # Heroku CI
-        "BUILD_ID": None,  # Hudson
         "TEAMCITY_VERSION": None,  # TeamCity
-        "TRAVIS": "true",  # Travis CI
     }
     return any(
         key in os.environ and (value is None or os.environ[key] == value)
