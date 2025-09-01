@@ -13,6 +13,7 @@ import itertools
 import math
 import sys
 import time
+import warnings
 from contextlib import contextmanager, nullcontext
 from random import Random
 from threading import RLock
@@ -798,9 +799,15 @@ def test_on_observation_no_override():
 
 @pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
 def test_provider_conformance(provider):
-    run_conformance_test(
-        provider, settings=settings(max_examples=20, stateful_step_count=20)
-    )
+    with warnings.catch_warnings():
+        # emitted by available_timezones() from st.timezone_keys() on 3.11+
+        # with tzdata installed. see https://github.com/python/cpython/issues/137841.
+        # Once cpython fixes this, we can remove this.
+        if sys.version_info >= (3, 10):
+            warnings.simplefilter("ignore", EncodingWarning)  # noqa: F821
+        run_conformance_test(
+            provider, settings=settings(max_examples=20, stateful_step_count=20)
+        )
 
 
 # see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion
