@@ -597,6 +597,10 @@ numeric_nodes = nodes(choice_types=["integer", "float"])
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_redistribute_numeric_pairs(node1, node2, stop):
     assume(node1.value + node2.value > stop)
+    # don't test extreme shrink_towards values, which lead to this test flaking
+    # from floating point errors
+    assume(abs(node1.constraints.get("shrink_towards", 0)) <= 1e20)
+    assume(abs(node2.constraints.get("shrink_towards", 0)) <= 1e20)
     # avoid exhausting the tree while generating, which causes @shrinking_from's
     # runner to raise
     assume(
