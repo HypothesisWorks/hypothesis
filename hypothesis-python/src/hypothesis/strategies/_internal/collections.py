@@ -27,6 +27,7 @@ from hypothesis.strategies._internal.strategies import (
     T4,
     T5,
     Ex,
+    FilteredStrategy,
     RecurT,
     SampledFromStrategy,
     SearchStrategy,
@@ -187,8 +188,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
     def calc_is_empty(self, recur: RecurT) -> bool:
         if self.min_size == 0:
             return False
-        else:
-            return recur(self.element_strategy)
+        return recur(self.element_strategy)
 
     def do_draw(self, data: ConjectureData) -> list[Ex]:
         if self.element_strategy.is_empty:
@@ -286,8 +286,8 @@ class UniqueListStrategy(ListStrategy[Ex]):
         def not_yet_in_unique_list(val: Ex) -> bool:  # type: ignore # covariant type param
             return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
 
-        filtered = self.element_strategy._filter_for_filtered_draw(
-            not_yet_in_unique_list
+        filtered = FilteredStrategy(
+            self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
         while elements.more():
             value = filtered.do_filtered_draw(data)

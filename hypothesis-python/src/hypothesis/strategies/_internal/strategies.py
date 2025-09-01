@@ -426,21 +426,7 @@ class SearchStrategy(Generic[Ex]):
                         return value
                 assume(False)
         """
-        return FilteredStrategy(conditions=(condition,), strategy=self)
-
-    def _filter_for_filtered_draw(
-        self, condition: Callable[[Ex], Any]
-    ) -> "FilteredStrategy[Ex]":
-        # Hook for parent strategies that want to perform fallible filtering
-        # on one of their internal strategies (e.g. UniqueListStrategy).
-        # The returned object must have a `.do_filtered_draw(data)` method
-        # that behaves like `do_draw`, but returns the sentinel object
-        # `filter_not_satisfied` if the condition could not be satisfied.
-
-        # This is separate from the main `filter` method so that strategies
-        # can override `filter` without having to also guarantee a
-        # `do_filtered_draw` method.
-        return FilteredStrategy(conditions=(condition,), strategy=self)
+        return FilteredStrategy(self, conditions=(condition,))
 
     @property
     def branches(self) -> Sequence["SearchStrategy[Ex]"]:
