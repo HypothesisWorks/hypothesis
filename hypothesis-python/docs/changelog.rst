@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.11:
+
+---------------------
+6.138.11 - 2025-09-01
+---------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
 .. _v6.138.10:
 
 ---------------------
