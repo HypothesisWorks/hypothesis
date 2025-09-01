@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.13:
+
+---------------------
+6.138.13 - 2025-09-01
+---------------------
+
+Fix a typo affecting pretty-printing of lambdas with complex default
+arguments.
+
 .. _v6.138.12:
 
 ---------------------
