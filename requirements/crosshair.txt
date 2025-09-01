@@ -26,7 +26,7 @@ exceptiongroup==1.3.0 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.138.2
+hypothesis==6.138.8
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.25
     # via -r requirements/crosshair.in
@@ -68,7 +68,7 @@ tomli==2.2.1
     # via pytest
 typeshed-client==2.8.2
     # via crosshair-tool
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   cattrs
     #   crosshair-tool

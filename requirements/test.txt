@@ -34,5 +34,5 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/pyproject.toml)
 tomli==2.2.1
     # via pytest
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via exceptiongroup
