@@ -1077,7 +1077,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args, kwargs)
+        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
         return obj
 
     def do_validate(self) -> None:
@@ -2582,7 +2582,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 
@@ -2613,7 +2613,7 @@ else:  # pragma: no cover
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 

@@ -10,6 +10,7 @@
 
 import pytest
 
+from hypothesis._settings import _CI_VARS
 from hypothesis.internal.compat import WINDOWS, escape_unicode_characters
 
 pytest_plugins = "pytester"
@@ -94,7 +95,9 @@ def test_healthcheck_traceback_is_hidden(x):
 
 
 def test_healthcheck_traceback_is_hidden(testdir, monkeypatch):
-    monkeypatch.delenv("CI", raising=False)
+    for key in _CI_VARS:
+        monkeypatch.delenv(key, raising=False)
+
     script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
     lines = testdir.runpytest(script, "--verbose").stdout.lines
     def_token = "__ test_healthcheck_traceback_is_hidden __"

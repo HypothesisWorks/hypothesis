@@ -291,11 +291,28 @@ class duration(datetime.timedelta):
         return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
 
 
+# see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
+# initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
+_CI_VARS = {
+    "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
+    "TF_BUILD": "true",  # Azure Pipelines
+    "bamboo.buildKey": None,  # Bamboo
+    "BUILDKITE": "true",  # Buildkite
+    "CIRCLECI": "true",  # Circle CI
+    "CIRRUS_CI": "true",  # Cirrus CI
+    "CODEBUILD_BUILD_ID": None,  # CodeBuild
+    "GITHUB_ACTIONS": "true",  # GitHub Actions
+    "GITLAB_CI": None,  # GitLab CI
+    "HEROKU_TEST_RUN_ID": None,  # Heroku CI
+    "TEAMCITY_VERSION": None,  # TeamCity
+}
+
+
 def is_in_ci() -> bool:
-    # GitHub Actions, Travis CI and AppVeyor have "CI"
-    # Azure Pipelines has "TF_BUILD"
-    # GitLab CI has "GITLAB_CI"
-    return "CI" in os.environ or "TF_BUILD" in os.environ or "GITLAB_CI" in os.environ
+    return any(
+        key in os.environ and (value is None or os.environ[key] == value)
+        for key, value in _CI_VARS.items()
+    )
 
 
 default_variable = DynamicVariable[Optional["settings"]](None)
@@ -474,15 +491,17 @@ class settings(metaclass=settingsMeta):
     settings objects created after the profile was made active, but not in existing
     settings objects.
 
+    .. _builtin-profiles:
+
     Built-in profiles
     -----------------
 
     While you can register additional profiles with |settings.register_profile|,
     Hypothesis comes with two built-in profiles: ``default`` and ``ci``.
 
-    The ``default`` profile is active by default, unless one of the ``CI``,
-    ``TF_BUILD``, or ``GITLAB_CI`` environment variables are set (to any value),
-    in which case the ``CI`` profile will be active by default.
+    By default, the ``default`` profile is active. If the ``CI`` environment
+    variable is set to any value, the ``ci`` profile is active by default. Hypothesis
+    also automatically detects various vendor-specific CI environment variables.
 
     The attributes of the currently active settings profile can be retrieved with
     ``settings()`` (so ``settings().max_examples`` is the currently active default

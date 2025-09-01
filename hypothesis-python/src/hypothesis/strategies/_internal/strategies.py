@@ -239,17 +239,20 @@ class SearchStrategy(Generic[Ex]):
     def __init__(self):
         self.validate_called: dict[int, bool] = {}
 
-    def _available(self, data: ConjectureData) -> bool:
-        """Returns whether this strategy can *currently* draw any
-        values. This typically useful for stateful testing where ``Bundle``
-        grows over time a list of value to choose from.
-
-        Unlike ``empty`` property, this method's return value may change
-        over time.
-        Note: ``data`` parameter will only be used for introspection and no
-        value drawn from it.
+    def is_currently_empty(self, data: ConjectureData) -> bool:
         """
-        return not self.is_empty
+        Returns whether this strategy is currently empty. Unlike ``empty``,
+        which is computed based on static information and cannot change,
+        ``is_currently_empty`` may change over time based on choices made
+        during the test case.
+
+        This is currently only used for stateful testing, where |Bundle| grows a
+        list of values to choose from over the course of a test case.
+
+        ``data`` will only be used for introspection. No values will be drawn
+        from it in a way that modifies the choice sequence.
+        """
+        return self.is_empty
 
     @property
     def is_empty(self) -> Any:
@@ -419,21 +422,7 @@ class SearchStrategy(Generic[Ex]):
                         return value
                 assume(False)
         """
-        return FilteredStrategy(conditions=(condition,), strategy=self)
-
-    def _filter_for_filtered_draw(
-        self, condition: Callable[[Ex], Any]
-    ) -> "FilteredStrategy[Ex]":
-        # Hook for parent strategies that want to perform fallible filtering
-        # on one of their internal strategies (e.g. UniqueListStrategy).
-        # The returned object must have a `.do_filtered_draw(data)` method
-        # that behaves like `do_draw`, but returns the sentinel object
-        # `filter_not_satisfied` if the condition could not be satisfied.
-
-        # This is separate from the main `filter` method so that strategies
-        # can override `filter` without having to also guarantee a
-        # `do_filtered_draw` method.
-        return FilteredStrategy(conditions=(condition,), strategy=self)
+        return FilteredStrategy(self, conditions=(condition,))
 
     @property
     def branches(self) -> Sequence["SearchStrategy[Ex]"]:
@@ -699,7 +688,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             if name == "map":
                 result = f(element)
                 if build_context := _current_build_context.value:
-                    build_context.record_call(result, f, [element], {})
+                    build_context.record_call(result, f, args=[element], kwargs={})
                 element = result
             else:
                 assert name == "filter"
@@ -846,7 +835,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
-                lambda s: s._available(data)
+                lambda s: not s.is_currently_empty(data)
             )
         )
         return data.draw(strategy)
@@ -1025,7 +1014,9 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
                     data.stop_span()
-                    current_build_context().record_call(result, self.pack, [x], {})
+                    current_build_context().record_call(
+                        result, self.pack, args=[x], kwargs={}
+                    )
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_span(discard=True)

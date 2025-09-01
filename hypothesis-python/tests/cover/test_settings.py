@@ -20,6 +20,7 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
+    _CI_VARS,
     HealthCheck,
     Phase,
     Verbosity,
@@ -554,8 +555,9 @@ def test_check_defaults_to_derandomize_when_running_on_ci():
 @skipif_emscripten
 def test_check_defaults_to_randomize_when_not_running_on_ci():
     env = dict(os.environ)
-    env.pop("CI", None)
-    env.pop("TF_BUILD", None)
+    for key in _CI_VARS:
+        env.pop(key, None)
+
     assert (
         subprocess.check_output(
             [
