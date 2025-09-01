@@ -293,6 +293,7 @@ class duration(datetime.timedelta):
 
 def is_in_ci() -> bool:
     # see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
+    # initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
     CI_VARS = {
         "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
         "TF_BUILD": "true",  # Azure Pipelines
