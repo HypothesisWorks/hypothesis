@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.12:
+
+---------------------
+6.138.12 - 2025-09-01
+---------------------
+
+Improve automatic detection of the :ref:`CI profile <builtin-profiles>` on various vendor-specific CI systems.
+
 .. _v6.138.11:
 
 ---------------------
