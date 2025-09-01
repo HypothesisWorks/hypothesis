@@ -291,25 +291,27 @@ class duration(datetime.timedelta):
         return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
 
 
+# see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
+# initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
+_CI_VARS = {
+    "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
+    "TF_BUILD": "true",  # Azure Pipelines
+    "bamboo.buildKey": None,  # Bamboo
+    "BUILDKITE": "true",  # Buildkite
+    "CIRCLECI": "true",  # Circle CI
+    "CIRRUS_CI": "true",  # Cirrus CI
+    "CODEBUILD_BUILD_ID": None,  # CodeBuild
+    "GITHUB_ACTIONS": "true",  # GitHub Actions
+    "GITLAB_CI": None,  # GitLab CI
+    "HEROKU_TEST_RUN_ID": None,  # Heroku CI
+    "TEAMCITY_VERSION": None,  # TeamCity
+}
+
+
 def is_in_ci() -> bool:
-    # see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
-    # initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
-    CI_VARS = {
-        "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
-        "TF_BUILD": "true",  # Azure Pipelines
-        "bamboo.buildKey": None,  # Bamboo
-        "BUILDKITE": "true",  # Buildkite
-        "CIRCLECI": "true",  # Circle CI
-        "CIRRUS_CI": "true",  # Cirrus CI
-        "CODEBUILD_BUILD_ID": None,  # CodeBuild
-        "GITHUB_ACTIONS": "true",  # GitHub Actions
-        "GITLAB_CI": None,  # GitLab CI
-        "HEROKU_TEST_RUN_ID": None,  # Heroku CI
-        "TEAMCITY_VERSION": None,  # TeamCity
-    }
     return any(
         key in os.environ and (value is None or os.environ[key] == value)
-        for key, value in CI_VARS.items()
+        for key, value in _CI_VARS.items()
     )
 
 

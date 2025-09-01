@@ -12,6 +12,8 @@ import re
 
 import pytest
 
+from hypothesis._settings import _CI_VARS
+
 from tests.common.utils import skipif_threading
 
 pytest_plugins = "pytester"
@@ -90,7 +92,9 @@ def test_failure(i):
 def test_repeats_healthcheck_when_following_seed_instruction(
     testdir, tmp_path, monkeypatch
 ):
-    monkeypatch.delenv("CI", raising=False)
+    for key in _CI_VARS:
+        monkeypatch.delenv(key, raising=False)
+
     health_check_test = HEALTH_CHECK_FAILURE.replace(
         "<file>", repr(str(tmp_path / "seen"))
     )
