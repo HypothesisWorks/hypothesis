@@ -239,17 +239,20 @@ class SearchStrategy(Generic[Ex]):
     def __init__(self):
         self.validate_called: dict[int, bool] = {}
 
-    def _available(self, data: ConjectureData) -> bool:
-        """Returns whether this strategy can *currently* draw any
-        values. This typically useful for stateful testing where ``Bundle``
-        grows over time a list of value to choose from.
-
-        Unlike ``empty`` property, this method's return value may change
-        over time.
-        Note: ``data`` parameter will only be used for introspection and no
-        value drawn from it.
+    def is_currently_empty(self, data: ConjectureData) -> bool:
         """
-        return not self.is_empty
+        Returns whether this strategy is currently empty. Unlike ``empty``,
+        which is computed based on static information and cannot change,
+        ``is_currently_empty`` may change over time based on choices made
+        during the test case.
+
+        This is currently only used for stateful testing, where |Bundle| grows a
+        list of values to choose from over the course of a test case.
+
+        ``data`` will only be used for introspection. No values will be drawn
+        from it in a way that modifies the choice sequence.
+        """
+        return self.is_empty
 
     @property
     def is_empty(self) -> Any:
@@ -850,7 +853,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
-                lambda s: s._available(data)
+                lambda s: not s.is_currently_empty(data)
             )
         )
         return data.draw(strategy)

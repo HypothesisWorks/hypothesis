@@ -610,12 +610,12 @@ class Bundle(SearchStrategy[Ex]):
         # We assume that a bundle will grow over time
         return False
 
-    def _available(self, data):
+    def is_currently_empty(self, data):
         # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
         # Hence drawing from it only returns the current state machine without
-        # modifying the underlying buffer.
+        # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
-        return bool(machine.bundle(self.name))
+        return not bool(machine.bundle(self.name))
 
     def flatmap(self, expand):
         if self.draw_references:
