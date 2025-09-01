@@ -86,7 +86,7 @@ def _function_key(f, *, bounded_size=False):
         if len(consts_repr) > 48:
             consts_repr = hashlib.sha384(consts_repr.encode()).digest()
         if len(defaults_repr) > 48:
-            defaults_repr = hashlib.sha384(consts_repr.encode()).digest()
+            defaults_repr = hashlib.sha384(defaults_repr.encode()).digest()
     return (
         consts_repr,
         defaults_repr,
