@@ -309,7 +309,7 @@ def is_in_ci() -> bool:
         "TRAVIS": "true",  # Travis CI
     }
     return any(
-        (value is None and key in os.environ) or os.environ.get(key) == value
+        key in os.environ and (value is None or os.environ[key] == value)
         for key, value in CI_VARS.items()
     )
 
