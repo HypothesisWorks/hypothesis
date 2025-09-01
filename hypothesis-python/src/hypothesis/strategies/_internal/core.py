@@ -2272,8 +2272,6 @@ class DataObject:
 
 
 class DataStrategy(SearchStrategy):
-    supports_find = False
-
     def do_draw(self, data):
         if data._shared_data_strategy is None:
             data._shared_data_strategy = DataObject(data)

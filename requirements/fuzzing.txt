@@ -26,7 +26,7 @@ click==8.2.1
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.10.5
+coverage[toml]==7.10.6
     # via
     #   hypofuzz
     #   pytest-cov
@@ -59,7 +59,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.8.2
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.138.2
+hypothesis[cli,watchdog]==6.138.8
     # via hypofuzz
 idna==3.10
     # via
@@ -95,7 +95,7 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via black
 pluggy==1.6.0
     # via
@@ -149,7 +149,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.47.2
+starlette==0.47.3
     # via hypofuzz
 taskgroup==0.2.2
     # via hypercorn
@@ -161,7 +161,7 @@ tomli==2.2.1
     #   pytest
 trio==0.30.0
     # via hypofuzz
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   -r requirements/coverage.in
     #   anyio

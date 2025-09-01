@@ -22,8 +22,6 @@ from hypothesis.strategies._internal.strategies import RecurT, SearchStrategy
 
 
 class FunctionStrategy(SearchStrategy):
-    supports_find = False
-
     def __init__(self, like, returns, pure):
         super().__init__()
         self.like = like
