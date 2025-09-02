@@ -77,7 +77,7 @@ from hypothesis.utils.threading import ThreadLocal
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    from hypothesis.strategies import SearchStrategy
+    from hypothesis.strategies import SearchStrategy, SharedStrategy
     from hypothesis.strategies._internal.core import DataObject
     from hypothesis.strategies._internal.random import RandomState
     from hypothesis.strategies._internal.strategies import Ex

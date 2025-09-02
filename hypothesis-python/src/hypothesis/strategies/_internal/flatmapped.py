@@ -11,7 +11,10 @@
 from typing import Callable, Generic, TypeVar
 
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.utils import calc_label_from_callable, combine_labels
+from hypothesis.internal.conjecture.utils import (
+    calc_label_from_callable,
+    combine_labels,
+)
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     RecurT,
