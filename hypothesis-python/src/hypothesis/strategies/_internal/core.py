@@ -83,7 +83,6 @@ from hypothesis.internal.compat import (
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_callable,
-    calc_label_from_cls,
     calc_label_from_hash,
     check_sample,
     combine_labels,
@@ -1061,7 +1060,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
             self.class_label,
             calc_label_from_callable(self.target),
             *[strat.label for strat in self.args],
-            *[calc_label_from_hash(k) for k in self.kwargs.keys()],
+            *[calc_label_from_hash(k) for k in self.kwargs],
             *[strat.label for strat in self.kwargs.values()],
         )
 

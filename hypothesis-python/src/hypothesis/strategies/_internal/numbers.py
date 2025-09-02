@@ -15,8 +15,8 @@ from typing import Literal, Optional, Union, cast
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.conjecture.utils import calc_label_from_hash, combine_labels
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.utils import calc_label_from_hash, combine_labels
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
