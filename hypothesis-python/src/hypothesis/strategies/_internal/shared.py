@@ -49,7 +49,7 @@ class SharedStrategy(SearchStrategy[Ex]):
                     f"Different strategies are shared under {key=}. This"
                     " risks drawing values that are not valid examples for the strategy,"
                     " or that have a narrower range than expected."
-                    f" Conflicting strategies: ({self.base!r}, {other.base!r}).",
+                    f" Conflicting strategies: ({self!r}, {other!r}).",
                     HypothesisWarning,
                     stacklevel=1,
                 )

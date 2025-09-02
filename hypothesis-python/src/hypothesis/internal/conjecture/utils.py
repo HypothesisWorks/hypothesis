@@ -45,7 +45,7 @@ def calc_label_from_callable(f: Callable) -> int:
         # probably an instance defining __call__
         try:
             return calc_label_from_hash(f)
-        except Exception:  # pragma: no cover
+        except Exception:
             # not hashable
             return calc_label_from_cls(type(f))
 

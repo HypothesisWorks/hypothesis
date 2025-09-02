@@ -77,7 +77,7 @@ from hypothesis.utils.threading import ThreadLocal
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    from hypothesis.strategies import SearchStrategy, SharedStrategy
+    from hypothesis.strategies import SearchStrategy
     from hypothesis.strategies._internal.core import DataObject
     from hypothesis.strategies._internal.random import RandomState
     from hypothesis.strategies._internal.strategies import Ex
@@ -706,7 +706,7 @@ class ConjectureData:
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]
         ] = None
-        self._shared_strategy_draws: dict[Hashable, tuple[Any, "SharedStrategy"]] = {}
+        self._shared_strategy_draws: dict[Hashable, tuple[Any, "SearchStrategy"]] = {}
         self._shared_data_strategy: Optional[DataObject] = None
         self._stateful_repr_parts: Optional[list[Any]] = None
         self.states_for_ids: Optional[dict[int, RandomState]] = None
