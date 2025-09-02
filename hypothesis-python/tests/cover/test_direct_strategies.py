@@ -661,11 +661,12 @@ def test_compatible_shared_strategies_do_not_warn(strat_a, strat_b):
 def test_compatible_nested_shared_strategies_do_not_warn():
     shared_a = st.shared(st.integers(), key="share")
     shared_b = st.shared(st.integers(), key="share")
-    shared_c = st.shared(shared_a, key="share")
+    shared_c = st.shared(shared_a, key="nested_share")
+    shared_d = st.shared(shared_b, key="nested_share")
 
-    @given(shared_a, shared_b, shared_c)
+    @given(shared_a, shared_b, shared_c, shared_d)
     @settings(max_examples=10, phases=[Phase.generate])
-    def test_it(a, b, c):
-        assert a == b == c
+    def test_it(a, b, c, d):
+        assert a == b == c == d
 
     test_it()

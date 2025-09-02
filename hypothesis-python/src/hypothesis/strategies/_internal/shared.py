@@ -23,15 +23,15 @@ class SharedStrategy(SearchStrategy[Ex]):
         super().__init__()
         self.key = key
         self.base = base
-        while isinstance(self.base, SharedStrategy):
-            # Unwrap nested shares
-            self.base = self.base.base
 
     def __repr__(self) -> str:
         if self.key is not None:
             return f"shared({self.base!r}, key={self.key!r})"
         else:
             return f"shared({self.base!r})"
+
+    def calc_label(self) -> int:
+        return self.base.calc_label()
 
     # Ideally would be -> Ex, but key collisions with different-typed values are
     # possible. See https://github.com/HypothesisWorks/hypothesis/issues/4301.
@@ -44,7 +44,7 @@ class SharedStrategy(SearchStrategy[Ex]):
             drawn, other = data._shared_strategy_draws[key]
 
             # Check that the strategies shared under this key are equivalent
-            if self.base.label != other.base.label:
+            if self.label != other.label:
                 warnings.warn(
                     f"Different strategies are shared under {key=}. This"
                     " risks drawing values that are not valid examples for the strategy,"
