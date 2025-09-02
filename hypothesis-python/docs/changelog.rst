@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.14:
+
+---------------------
+6.138.14 - 2025-09-02
+---------------------
+
+Patch files written by hypothesis now use a deterministic ordering when multiple |@example| decorators are present.
+
 .. _v6.138.13:
 
 ---------------------
