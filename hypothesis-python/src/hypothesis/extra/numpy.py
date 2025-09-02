@@ -10,6 +10,7 @@
 
 import importlib
 import math
+import operator
 import types
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, cast, overload
@@ -35,7 +36,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import Real
@@ -94,6 +95,18 @@ TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", 
 
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
+
+
+def _is_comparable(x: Any) -> bool:
+    """Returns True if the input can be compared."""
+    try:
+        return bool(np.all([x == x]) or np.all([x != x]))
+    except Exception:
+        return False
+
+
+def _array_or_scalar_equal(a: Any, b: Any) -> bool:
+    return bool(np.all([a == b]))
 
 
 @defines_strategy(force_reusable_values=True)
@@ -213,6 +226,8 @@ def from_dtype(
         else:  # NEP-7 defines the NaT value as integer -(2**63)
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
+    elif dtype.kind == "O":
+        return st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
@@ -225,9 +240,17 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
-        self.element_strategy = element_strategy
+        if dtype == np.dtype("O"):
+            self.element_strategy = element_strategy.filter(_is_comparable)
+            self.fill = fill.filter(_is_comparable)
+        else:
+            self.element_strategy = element_strategy
+            self.fill = fill
         self.unique = unique
-        self._check_elements = dtype.kind not in ("O", "V")
+        self._check_elements = dtype.kind not in ("V",)
+        self._elements_equal = (
+            _array_or_scalar_equal if dtype.kind in ("O",) else operator.eq
+        )
 
     def __repr__(self):
         return (
@@ -239,17 +262,23 @@ class ArrayStrategy(st.SearchStrategy):
         try:
             result[idx] = val
         except TypeError as err:
+            element_type = getattr(val, "dtype", type(val))
+            element_type_repr = get_pretty_function_description(element_type)
+            result_type_repr = get_pretty_function_description(result.dtype)
             raise InvalidArgument(
-                f"Could not add element={val!r} of {val.dtype!r} to array of "
-                f"{result.dtype!r} - possible mismatch of time units in dtypes?"
+                f"Could not add element={val!r} of {element_type_repr} to array of "
+                f"{result_type_repr} - possible mismatch of time units in dtypes?"
             ) from err
         try:
-            elem_changed = self._check_elements and val != result[idx] and val == val
+            elem_changed = self._check_elements and (
+                not self._elements_equal(val, result[idx])
+                and self._elements_equal(val, val)
+            )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                f"Internal error when checking element={val!r} of {val.dtype!r} "
+                f"Internal error when checking element={val!r} of {getattr(val, 'dtype', type(val))!r} "
                 f"to array of {result.dtype!r}"
             ) from err
         if elem_changed:

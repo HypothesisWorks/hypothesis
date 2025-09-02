@@ -25,12 +25,24 @@ from hypothesis import (
     strategies as st,
     target,
 )
-from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import InvalidArgument, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
-from tests.common.debug import check_can_generate_examples, find_any, minimal
+from tests.common.debug import (
+    assert_no_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import fails_with, flaky
+from tests.numpy.helpers import (
+    all_elements,
+    all_scalar_object_elements,
+    dataclass_instance,
+    paired_containers_and_elements,
+)
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
@@ -1273,3 +1285,88 @@ def test_infers_elements_and_fill():
     assert not elems.has_reusable_values
     s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1, elements=elems))
     assert s.fill.is_empty
+
+
+@given(nps.arrays(np.dtype("O"), shape=(1,), elements=all_elements))
+def test_object_arrays_are_of_type_object(obj_array):
+    assert obj_array.dtype == np.dtype("O")
+
+
+def test_error_with_object_elements_in_numpy_dtype_arrays():
+    with pytest.raises(InvalidArgument):
+        find_any(
+            nps.arrays(
+                nps.scalar_dtypes(),
+                shape=nps.array_shapes(min_dims=1, min_side=1),
+                elements=all_scalar_object_elements,
+            ),
+        )
+
+
+def test_can_generate_object_arrays_with_mixed_dtype_elements():
+    find_any(
+        nps.arrays(
+            np.dtype("O"),
+            shape=nps.array_shapes(min_dims=1, min_side=1),
+            elements=all_elements,
+        ),
+        lambda arr: len({type(x) for x in arr.ravel()}) > 1,
+    )
+
+
+@given(
+    *paired_containers_and_elements(
+        lambda elems: nps.arrays(
+            np.dtype("O"),
+            nps.array_shapes(min_dims=1, max_dims=1, min_side=1),
+            elements=elems,
+        ),
+        all_elements,
+    )
+)
+@settings(max_examples=2000)
+def test_elements_in_object_array_remain_uncoerced(arr, elements):
+    assert arr.tolist() == elements
+
+
+def test_can_hold_arbitrary_dataclass():
+    find_any(
+        nps.arrays(np.dtype("O"), shape=(1,), elements=st.just(dataclass_instance)),
+        lambda arr: len([x is dataclass_instance for x in arr.ravel()]) > 0,
+    )
+
+
+def test_series_with_mixed_dtypes_is_still_object_dtype_even_with_numpy_types():
+    assert_no_examples(
+        nps.arrays(
+            np.dtype("O"),
+            shape=(1,),
+            elements=st.one_of(nps.array_dtypes(), nps.scalar_dtypes()),
+        ),
+        lambda arr: all(isinstance(e, np.dtype) for e in arr.ravel())
+        and (arr.dtype != np.dtype("O")),
+    )
+
+
+class Incomparable:
+    def __eq__(self, other):
+        raise TypeError
+
+
+@pytest.mark.parametrize(
+    "x",
+    [
+        Incomparable(),
+    ],
+)
+def test_array_strategy_filters_out_bad_examples(x):
+    bad_example = st.just(x)
+    with pytest.raises(Unsatisfiable):
+        assert_simple_property(
+            nps.arrays(
+                np.dtype("O"),
+                nps.array_shapes(min_dims=1, max_dims=1, min_side=1, max_side=1),
+                elements=bad_example,
+            ),
+            lambda v: True,
+        )
