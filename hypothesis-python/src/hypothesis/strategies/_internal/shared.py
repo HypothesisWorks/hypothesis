@@ -43,19 +43,14 @@ class SharedStrategy(SearchStrategy[Ex]):
         else:
             drawn, other = data._shared_strategy_draws[key]
 
-            if other.base is not self.base:
-                # Check that the strategies shared under this key are equivalent,
-                # approximated as having equal `repr`s. False positives are ok,
-                # false negatives (erroneous warnings) less so.
-                if not hasattr(self, "_is_compatible"):
-                    self._is_compatible = repr(self.base) == repr(other.base)
-                if not self._is_compatible:
-                    warnings.warn(
-                        f"Different strategies are shared under {key=}. This"
-                        " risks drawing values that are not valid examples for the strategy,"
-                        " or that have a narrower range than expected."
-                        f" Conflicting strategies: ({self.base!r}, {other.base!r}).",
-                        HypothesisWarning,
-                        stacklevel=1,
-                    )
+            # Check that the strategies shared under this key are equivalent
+            if self.base.label != other.base.label:
+                warnings.warn(
+                    f"Different strategies are shared under {key=}. This"
+                    " risks drawing values that are not valid examples for the strategy,"
+                    " or that have a narrower range than expected."
+                    f" Conflicting strategies: ({self.base!r}, {other.base!r}).",
+                    HypothesisWarning,
+                    stacklevel=1,
+                )
         return drawn
