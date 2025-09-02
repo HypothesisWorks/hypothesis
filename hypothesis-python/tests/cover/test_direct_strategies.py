@@ -592,16 +592,11 @@ def test_builds_error_messages(data):
         (st.integers(), st.integers(0)),
         (st.builds(int), st.builds(float)),
         (st.none(), st.integers()),
-        pytest.param(
+        (
             st.composite(lambda draw: draw(st.none()))(),
             st.composite(lambda draw: draw(st.integers()))(),
-            marks=pytest.mark.xfail(
-                # https://github.com/pytest-dev/pytest/issues/8928
-                raises=pytest.fail.Exception,
-                strict=True,
-                reason="same-name incompatible @composite",
-            ),
         ),
+        (st.builds(int, st.integers()), st.builds(int, st.integers(0))),
     ],
 )
 def test_incompatible_shared_strategies_warns(strat_a, strat_b):
@@ -633,24 +628,11 @@ def _composite2(draw):
         (st.floats(allow_nan=False), st.floats(allow_nan=False)),
         (st.builds(float), st.builds(float)),
         (_composite1(), _composite1()),
-        pytest.param(
+        (
             st.floats(allow_nan=False, allow_infinity=False),
             st.floats(allow_nan=False, allow_infinity=0),
-            marks=pytest.mark.xfail(
-                raises=HypothesisWarning,
-                strict=True,
-                reason="un-normalized constraint value (issue #4417)",
-            ),
         ),
-        pytest.param(
-            _composite1(),
-            _composite2(),
-            marks=pytest.mark.xfail(
-                raises=HypothesisWarning,
-                strict=True,
-                reason="differently named @composites",
-            ),
-        ),
+        (_composite1(), _composite2()),
         pytest.param(
             st.integers().flatmap(st.just),
             st.integers(),
