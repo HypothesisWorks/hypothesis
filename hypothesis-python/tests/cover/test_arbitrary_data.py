@@ -14,6 +14,8 @@ from pytest import raises
 from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
 
+from tests.common.utils import skipif_threading
+
 
 @given(st.integers(), st.data())
 def test_conditional_draw(x, data):
@@ -64,6 +66,9 @@ def test_given_twice_is_same():
     assert "Draw 2: 0" in err.value.__notes__
 
 
+# this test has failed under threading, so it seems unlikely `find` is threadsafe,
+# though it's not clear to me exactly why.
+@skipif_threading
 def test_data_supports_find():
     data = find(st.data(), lambda data: data.draw(st.integers()) >= 10)
     assert data.conjecture_data.choices == (10,)
