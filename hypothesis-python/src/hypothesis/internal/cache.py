@@ -178,6 +178,7 @@ class GenericCache(Generic[K, V]):
                     for i in range(len(entry.key)):
                         assert id(entry.key[i]) == id(k2i_key[i])
                         assert entry.key[i] is k2i_key[i]
+                        assert entry.key[i].__hash__() == k2i_key[i].__hash__()
                         assert hash(entry.key[i]) == hash(k2i_key[i])
         assert set(hash(k) for k in k2i_keys) == set(hash(k) for k in d_keys)
 
