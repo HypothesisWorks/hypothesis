@@ -160,12 +160,11 @@ jobs:
           hypothesis-python/branch-check*
 
   test-win:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python:
           - version: "3.11"
-            architecture: "x86"
         whichtests:
           #- nocover
           - cover+rest
@@ -190,13 +189,6 @@ jobs:
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python.architecture }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}-${{ matrix.python.architecture }}
-    - name: Use old pandas on win32
-      if: matrix.python.architecture
-      # See https://github.com/pandas-dev/pandas/issues/54979
-      run: |
-        (Get-Content .\requirements\coverage.txt) -replace 'numpy==[0-9.]+', 'numpy==1.26.4' | Out-File .\requirements\coverage.txt
-        (Get-Content .\requirements\coverage.txt) -replace 'pandas==[0-9.]+', 'pandas==2.0.3' | Out-File .\requirements\coverage.txt
-        (Get-Content .\requirements\coverage.txt) -replace 'pyarrow==[0-9.]+', '# omitted' | Out-File .\requirements\coverage.txt
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
@@ -206,7 +198,7 @@ jobs:
         pip install pytest-repeat
     - name: Run tests
       # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
-      run: python -m pytest --count 10 --repeat-scope session -x -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/numpy hypothesis-python/tests/cover/test_lookup.py' }}
+      run: python -m pytest --count 10 --repeat-scope session -x -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/numpy hypothesis-python/tests/crosshair' }}
 
   test-osx:
     if: false
