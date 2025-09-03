@@ -206,7 +206,7 @@ jobs:
         pip install pytest-repeat
     - name: Run tests
       # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
-      run: python -m pytest --count 10 --repeat-scope session -x -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/numpy hypothesis-python/tests/crosshair' }}
+      run: python -m pytest --count 10 --repeat-scope session -x -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/numpy hypothesis-python/tests/cover/test_lookup.py' }}
 
   test-osx:
     if: false
