@@ -35,7 +35,7 @@ StrategyCacheKey: "TypeAlias" = tuple[
 
 _strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
 # note: LRUReusedCache is already thread-local internally
-_STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
+_STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](32)
 
 
 def convert_value(v: object) -> ValueKey:

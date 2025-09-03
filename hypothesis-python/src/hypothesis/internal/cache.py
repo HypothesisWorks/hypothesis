@@ -119,22 +119,23 @@ class GenericCache(Generic[K, V]):
                     ) from None
                 try:
                     del self.keys_to_indices[evicted.key]
-                except KeyError:  # pragma: no cover
-                    # This can't happen, but happens nevertheless with
-                    #   id(key1) == id(key2)
-                    # but
-                    #   hash(key1) != hash(key2)
-                    # (see https://github.com/HypothesisWorks/hypothesis/issues/4442)
-                    # Rebuild keys_to_indices to match data.
-                    self.keys_to_indices.clear()
-                    self.keys_to_indices.update(
-                        {
-                            entry.key: i
-                            for i, entry in enumerate(self.data)
-                            if entry is not evicted
-                        }
-                    )
-                    assert len(self.keys_to_indices) == len(self.data) - 1
+                except KeyError:
+                    try:
+                        del self.keys_to_indices[evicted.key]
+                    except KeyError:
+                        print("Failed twice")
+                    else:
+                        print("Worked on second attempt")
+                    print(f"{len(self.data)=}")
+                    print(f"new key: {hash(key)} {key[0]} {key[1]} {[(k, id(v), v) for k,v in key[2]]}")
+                    print(f"desired key: {hash(evicted.key)} {evicted.key[0]} {evicted.key[1]} {[(k, id(v), v) for k,v in evicted.key[2]]}")
+                    for ky in self.keys_to_indices.keys():
+                        print(f"\n{hash(ky)} {ky==evicted.key} {ky is evicted.key} key={ky[0]} {ky[1]}{[(k, id(v), v) for k,v in ky[2]]}")
+                    for entry in self.data:
+                        print(f"\n{hash(entry.key)} {entry.key==evicted.key} {entry.key is evicted.key} data.key={entry.key[0]} {entry.key[1]} {[(k, id(v), v) for k,v in entry.key[2]]}")
+                    self.clear()
+                    #self.check_valid()
+                    raise
                 i = 0
                 self.data[0] = entry
             else:
@@ -152,6 +153,35 @@ class GenericCache(Generic[K, V]):
             if self.data[0] is not entry:
                 assert evicted.sort_key <= self.data[0].sort_key
             self.on_evict(evicted.key, evicted.value, evicted.score)
+
+        k2i_keys = list(self.keys_to_indices.keys())
+        d_keys = [entry.key for entry in self.data]
+
+        assert set(id(k) for k in k2i_keys) == set(id(k) for k in d_keys)
+        if set(hash(k) for k in k2i_keys) != set(hash(k) for k in d_keys):
+            id_to_k2i = {id(k): k for k in k2i_keys}
+            for entry in self.data:
+                k2i_key = id_to_k2i[id(entry.key)]
+                assert id(entry.key) == id(k2i_key), repr(entry.key)
+                if hash(entry.key) != hash(k2i_key):
+                    l1 = list(entry.key[2])
+                    l2 = list(k2i_key[2])
+                    for it1, it2 in zip(l1, l2):
+                        n1, (c1, v1) = it1
+                        n2, (c2, v2) = it2
+                        assert id(n1) == id(n2)
+                        assert hash(n1) == hash(n2)
+                        assert id(c1) == id(c2)
+                        assert hash(c1) == hash(c2)
+                        assert id(v1) == id(v2)
+                        assert hash(v1) == hash(v2)
+                    for i in range(len(entry.key)):
+                        assert id(entry.key[i]) == id(k2i_key[i])
+                        assert entry.key[i] is k2i_key[i]
+                        assert entry.key[i].__hash__() == k2i_key[i].__hash__()
+                        assert hash(entry.key[i]) == hash(k2i_key[i])
+        assert set(hash(k) for k in k2i_keys) == set(hash(k) for k in d_keys)
+
 
     def __iter__(self):
         return iter(self.keys_to_indices)

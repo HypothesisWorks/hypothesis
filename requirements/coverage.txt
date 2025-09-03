@@ -36,7 +36,7 @@ libcst==1.8.2
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.2.6
+numpy==1.26.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -44,7 +44,7 @@ packaging==25.0
     # via
     #   black
     #   pytest
-pandas==2.3.2
+pandas==2.0.3
     # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
@@ -58,7 +58,7 @@ pluggy==1.6.0
     #   pytest-cov
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==21.0.0
+# pyarrow==21.0.0
     # via -r requirements/coverage.in
 pygments==2.19.2
     # via pytest
