@@ -48,6 +48,7 @@ from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
     HypothesisProvider,
+    with_register_backend,
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
@@ -174,14 +175,12 @@ class PrngProvider(PrimitiveProvider):
 _temp_register_backend_lock = RLock()
 
 
+# same as with_register_backend, but adds a lock for our threading tests.
 @contextmanager
-def temp_register_backend(name, cls):
+def temp_register_backend(name, provider_cls):
     with _temp_register_backend_lock:
-        try:
-            AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
+        with with_register_backend(name, provider_cls):
             yield
-        finally:
-            AVAILABLE_PROVIDERS.pop(name)
 
 
 @pytest.mark.parametrize(
