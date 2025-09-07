@@ -79,6 +79,7 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 #: Registered Hypothesis backends. This is a dictionary where keys are the name
 #: to be used in |settings.backend|. The value of a key can be either:
+#:
 #: * A string corresponding to an importable absolute path of a
 #:   |PrimitiveProvider| subclass
 #: * A |PrimitiveProvider| subclass (the class itself, not an instance)

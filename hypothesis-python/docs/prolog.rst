@@ -136,8 +136,10 @@
 .. |PrimitiveProvider.add_observability_callback| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.add_observability_callback`
 .. |PrimitiveProvider.span_start| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_start`
 .. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
+.. |PrimitiveProvider.avoid_realization| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.avoid_realization`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
+.. |run_conformance_test| replace:: :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`
 
 .. |add_observability_callback| replace:: :data:`~hypothesis.internal.observability.add_observability_callback`
 .. |remove_observability_callback| replace:: :data:`~hypothesis.internal.observability.remove_observability_callback`
