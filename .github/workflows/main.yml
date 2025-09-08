@@ -165,13 +165,30 @@ jobs:
           - windows-latest
           - macos-latest
         task:
-          - alt-coverplus
+          - cover
+          - nocover
+          - rest
           - alt-nocover
+          - alt-rest
         python-version:
           - "3.11"
-        include:
-          - os: windows-latest
+          - "3.13"
+        python-architecture:
+          - null
+          - "x86"
+        exclude:
+          - os: macos-latest
             python-architecture: "x86"
+          - python-version: "3.13"
+            python-architecture: "x86"
+          - python-version: "3.11"
+            task: nocover
+          - python-version: "3.11"
+            task: rest
+          - python-version: "3.13"
+            task: alt-nocover
+          - python-version: "3.13"
+            task: alt-rest
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -193,8 +210,9 @@ jobs:
           ~/.local
           vendor/bundle
           .tox/
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ matrix.task }}
         restore-keys: |
+          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}
           deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}
     - name: Install tox

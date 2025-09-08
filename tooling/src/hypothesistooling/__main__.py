@@ -613,7 +613,7 @@ for key, version in PYTHONS.items():
         "brief",
         "full",
         "cover",
-        "coverplus",
+        "rest",
         "nocover",
         "niche",
         "custom",
@@ -660,7 +660,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
-for kind in ("coverplus", "nocover"):
+for kind in ("rest", "nocover"):
     # Note, in CI these are executed on alternative platforms (e.g., windows)
     # directly in tox (and not via build.sh)
     standard_tox_task(f"alt-{kind}")
