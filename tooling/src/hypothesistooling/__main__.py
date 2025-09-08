@@ -609,7 +609,15 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
-    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+    for subtask in (
+        "brief",
+        "full",
+        "cover",
+        "coverplus",
+        "nocover",
+        "niche",
+        "custom",
+    ):
         TASKS[f"check-{name}-{subtask}"] = python_tests(
             lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
         )
@@ -651,6 +659,11 @@ standard_tox_task("py39-pandas12", py="3.9")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
+
+for kind in ("coverplus", "nocover"):
+    # Note, in CI these are executed on alternative platforms (e.g., windows)
+    # directly in tox (and not via build.sh)
+    standard_tox_task(f"alt-{kind}")
 
 standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")

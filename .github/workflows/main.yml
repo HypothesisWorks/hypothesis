@@ -158,83 +158,53 @@ jobs:
           !hypothesis-python/.coveragerc
           hypothesis-python/branch-check*
 
-  test-win:
-    runs-on: windows-latest
+  test-cross-platform:
     strategy:
       matrix:
-        python:
-          - version: "3.11"
-          - version: "3.11"
-            architecture: "x86"
-        whichtests:
-          - nocover
-          - cover+rest
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Set up Python ${{ matrix.python.version }} ${{ matrix.python.architecture }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python.version }}
-        architecture: ${{ matrix.python.architecture }}
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~\appdata\local\pip\cache
-          vendor\bundle
-          .tox
-        key: deps-${{ runner.os }}-${{ matrix.python.architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python.version }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python.architecture }}-${{ hashFiles('requirements/*.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python.architecture }}
-    - name: Use old pandas on win32
-      if: matrix.python.architecture
-      # See https://github.com/pandas-dev/pandas/issues/54979
-      run: |
-        (Get-Content .\requirements\coverage.txt) -replace 'numpy==[0-9.]+', 'numpy==1.26.4' | Out-File .\requirements\coverage.txt
-        (Get-Content .\requirements\coverage.txt) -replace 'pandas==[0-9.]+', 'pandas==2.0.3' | Out-File .\requirements\coverage.txt
-        (Get-Content .\requirements\coverage.txt) -replace 'pyarrow==[0-9.]+', '# omitted' | Out-File .\requirements\coverage.txt
-    - name: Install dependencies
-      run: |
-        pip install --upgrade setuptools pip wheel
-        pip install -r requirements/coverage.txt
-        pip install -r requirements/crosshair.txt
-        pip install hypothesis-python/
-    - name: Run tests
-      # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
-      run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
-
-  test-osx:
-    runs-on: macos-latest
-    strategy:
-      matrix:
+        os:
+          - windows-latest
+          - macos-latest
         task:
-          - check-py310-cover
-          - check-py310-nocover
-          - check-py310-niche
-          - check-py311-cover
+          - alt-coverplus
+          - alt-nocover
+        python-version:
+          - "3.11"
+        include:
+          - os: windows-latest
+            python-architecture: "x86"
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.10
+    - name: Set up Python ${{ matrix.python-version }} ${{ matrix.python-architecture }}
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
       uses: actions/cache@v3
       with:
         path: |
           ~/.cache
           ~/Library/Caches/pip
+          ~/wheelhouse
+          ~/.local
+          vendor/bundle
           .tox/
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
+          deps-${{ runner.os }}
+    - name: Install tox
+      run: |
+        pip install --upgrade setuptools pip wheel
+        pip install tox
     - name: Run tests
-      run: TASK=${{ matrix.task }} ./build.sh
+      working-directory: ./hypothesis-python
+      run: |
+        tox -e ${{ matrix.task }}
 
   # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
@@ -287,7 +257,7 @@ jobs:
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
     runs-on: ubuntu-latest
-    needs: [test, test-win, test-osx]
+    needs: [test, test-cross-platform]
     strategy:
       matrix:
         task:
