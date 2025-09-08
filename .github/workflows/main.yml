@@ -191,6 +191,8 @@ jobs:
             task: alt-rest
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONWARNDEFAULTENCODING: ""
     steps:
     - uses: actions/checkout@v3
       with:
