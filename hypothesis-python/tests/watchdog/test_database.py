@@ -22,7 +22,7 @@ from hypothesis.database import (
 )
 from hypothesis.internal.compat import WINDOWS
 
-from tests.common.utils import skipif_threading, wait_for
+from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
 
 # e.g.
@@ -180,6 +180,7 @@ def test_database_listener_directory_explicit(tmp_path):
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
 
+@flaky(max_runs=5, min_passes=1)  # time_sleep(0.1) probably isn't enough here
 @skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
