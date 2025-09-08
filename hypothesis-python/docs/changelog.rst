@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.15:
+
+---------------------
+6.138.15 - 2025-09-08
+---------------------
+
+Refactor some stateful testing internals for easier use by third-party libraries.
+
 .. _v6.138.14:
 
 ---------------------
