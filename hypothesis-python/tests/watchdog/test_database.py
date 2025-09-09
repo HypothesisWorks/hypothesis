@@ -43,13 +43,10 @@ from tests.cover.test_database_backend import _database_conforms_to_listener_api
 # It seems watchdog CI also has a similar problem:
 # * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
 # * cmd+f `def rerun_filter` in the watchdog repository
-pytestmark = pytest.mark.skipif(
-    WINDOWS, reason="watchdog tests are too flaky on windows"
-)
-
-skipif_osx = pytest.mark.skipif(
-    sys.platform == "darwin", reason="times out consistently on osx"
-)
+pytestmark = [
+    pytest.mark.skipif(WINDOWS, reason="watchdog tests are too flaky on windows"),
+    pytest.mark.skipif(sys.platform == "darwin", reason="times out often on osx"),
+]
 
 
 # we need real time here, not monkeypatched for CI
@@ -75,7 +72,6 @@ def test_database_listener_directory():
 # assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
 @skipif_threading  # add_listener is not thread safe because watchdog is not
-@skipif_osx  # times out consistently
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -116,7 +112,6 @@ def test_database_listener_multiplexed(tmp_path):
 
 
 @skipif_threading  # add_listener is not thread safe because watchdog is not
-@skipif_osx  # times out consistently
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
