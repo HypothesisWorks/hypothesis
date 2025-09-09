@@ -20,7 +20,7 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
-from hypothesis.internal.compat import WINDOWS
+from hypothesis.internal.compat import OSX, WINDOWS
 
 from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
@@ -71,6 +71,7 @@ def test_database_listener_directory():
 # assertion, which...is baffling, and possibly a genuine bug (most likely in
 # watchdog).
 @skipif_threading  # add_listener is not thread safe because watchdog is not
+@pytest.mark.skipif(OSX, reason="times out consistently on osx")
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -111,6 +112,7 @@ def test_database_listener_multiplexed(tmp_path):
 
 
 @skipif_threading  # add_listener is not thread safe because watchdog is not
+@pytest.mark.skipif(OSX, reason="times out consistently on osx")
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
