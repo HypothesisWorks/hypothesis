@@ -20,7 +20,7 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
-from hypothesis.internal.compat import OSX, WINDOWS
+from hypothesis.internal.compat import WINDOWS
 
 from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
@@ -46,6 +46,8 @@ from tests.cover.test_database_backend import _database_conforms_to_listener_api
 pytestmark = pytest.mark.skipif(
     WINDOWS, reason="watchdog tests are too flaky on windows"
 )
+
+OSX = sys.platform == "darwin"
 
 
 # we need real time here, not monkeypatched for CI

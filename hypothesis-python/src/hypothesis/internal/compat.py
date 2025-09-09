@@ -96,7 +96,6 @@ else:  # pragma: no cover
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
 WINDOWS = platform.system() == "Windows"
-OSX = platform.system() == "Darwin"
 # First defined in CPython 3.13, defaults to False
 FREE_THREADED_CPYTHON = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
