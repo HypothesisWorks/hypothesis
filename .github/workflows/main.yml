@@ -158,24 +158,24 @@ jobs:
           !hypothesis-python/.coveragerc
           hypothesis-python/branch-check*
 
-  test-cross-platform:
+  cross:
     strategy:
       matrix:
         os:
           - windows-latest
           - macos-latest
-        task:
-          - cover
-          - nocover
-          - rest
-          - alt-nocover
-          - alt-rest
         python-version:
           - "3.11"
           - "3.13"
         python-architecture:
           - null
           - "x86"
+        task:
+          - cover
+          - nocover
+          - rest
+          - alt-nocover
+          - alt-rest
         exclude:
           - os: macos-latest
             python-architecture: "x86"
@@ -277,7 +277,7 @@ jobs:
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
     runs-on: ubuntu-latest
-    needs: [test, test-cross-platform]
+    needs: [test, cross]
     strategy:
       matrix:
         task:
