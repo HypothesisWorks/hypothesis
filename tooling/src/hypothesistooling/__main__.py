@@ -721,6 +721,19 @@ def check_types(*args):
 
 
 @task()
+def check_types_hypothesis(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        testcase = "type_check/test_mypy.py::test_mypy_passes_on_hypothesis"
+        args = ["-n", "auto", tools.REPO_TESTS / testcase]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
 def shell():
     import IPython
 

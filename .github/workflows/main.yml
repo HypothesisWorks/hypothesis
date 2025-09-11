@@ -25,12 +25,9 @@ jobs:
       matrix:
         task:
           - check-whole-repo-tests
-          - check-documentation
-          - check-types
           - lint
           - check-format
-          - check-py312-cover
-          - check-py312-conjecture
+          - check-py312-brief
       fail-fast: false
     env:
       PYTHON_VERSION: "3.10"
@@ -59,6 +56,8 @@ jobs:
     strategy:
       matrix:
         task:
+          - check-documentation
+          - check-types
           - check-coverage
           - check-conjecture-coverage
           - check-py39-cover
