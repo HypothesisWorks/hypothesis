@@ -28,7 +28,7 @@ def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
     # test effectiveness.
     @given(st.integers())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(backend="crosshair", deadline=1000, verbosity=verbosity, database=None)
     def f(n):
         assert n != 123456
 
