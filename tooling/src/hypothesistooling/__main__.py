@@ -692,7 +692,31 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_documentation(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "type_check"]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
