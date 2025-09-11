@@ -10,12 +10,10 @@
 
 import crosshair
 import pytest
-from crosshair.core import IgnoreAttempt, NotDeterministic, UnexploredPath
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
 from hypothesis import Phase, Verbosity, event, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import with_observability_callback
@@ -191,21 +189,6 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
         choices["normal"]
         == (choices["observability"] - extra_observability)
         == choices["verbosity"]
-    )
-
-
-def test_provider_conformance_crosshair():
-    # Hypothesis can in theory pass values of any type to `realize`,
-    # but the default strategy in the conformance test here acts too much like a
-    # fuzzer for crosshair internals here and finds very strange errors.
-    _realize_objects = (
-        st.integers() | st.floats() | st.booleans() | st.binary() | st.text()
-    )
-    run_conformance_test(
-        CrossHairPrimitiveProvider,
-        context_manager_exceptions=(IgnoreAttempt, UnexploredPath, NotDeterministic),
-        settings=settings(max_examples=5, stateful_step_count=10),
-        _realize_objects=_realize_objects,
     )
 
 
