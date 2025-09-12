@@ -27,7 +27,9 @@ jobs:
           - check-whole-repo-tests
           - lint
           - check-format
-          - check-py312-brief
+          - tox-cover
+          - tox-nocover
+          - tox-rest
       fail-fast: false
     env:
       PYTHON_VERSION: "3.10"
@@ -40,12 +42,18 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         task: ${{ matrix.task }}
+    - name: Install tox
+      if: ${{ startsWith(matrix.task, 'tox-') }}
+      run: |
+        pip install --upgrade setuptools pip wheel
+        pip install tox
     - name: Run tests
       run: |
         export TASK=${{ matrix.task }}
-        if [[ $TASK == check-crosshair-custom-* ]]; then
-          GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
+        if [[ $TASK == tox-* ]]; then
+           TOX_TASK="${TASK#tox-}"
+           cd hypothesis-python
+           tox -e $TOX_TASK
         else
           ./build.sh
         fi
