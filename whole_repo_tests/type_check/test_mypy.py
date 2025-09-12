@@ -25,6 +25,10 @@ from .revealed_types import (
 )
 
 
+def test_mypy_passes_on_hypothesis():
+    pip_tool("mypy", str(PYTHON_SRC))
+
+
 @pytest.mark.skip(
     reason="Hypothesis type-annotates the public API as a convenience for users, "
     "but strict checks for our internals would be a net drag on productivity."
@@ -539,6 +543,32 @@ def test_pos_only_args(tmp_path):
             (8, "call-overload"),
         ],
     )
+
+
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_mypy_passes_on_basic_test(tmp_path, python_version):
+    f = tmp_path / "check_mypy_on_basic_tests.py"
+    f.write_text(
+        textwrap.dedent(
+            """
+            import hypothesis
+            import hypothesis.strategies as st
+
+            @hypothesis.given(x=st.text())
+            def test_foo(x: str) -> None:
+                assert x == x
+
+            from hypothesis import given
+            from hypothesis.strategies import text
+
+            @given(x=text())
+            def test_bar(x: str) -> None:
+                assert x == x
+            """
+        ),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [], python_version=python_version)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)

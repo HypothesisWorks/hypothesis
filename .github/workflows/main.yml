@@ -28,7 +28,7 @@ jobs:
           - tox-nocover
           - tox-rest
           - check-whole-repo-tests
-          - check-types-basic
+          - check-types-mypy
           - lint
           - check-format
       fail-fast: false
@@ -66,7 +66,6 @@ jobs:
       matrix:
         task:
           - check-documentation
-          - check-types-mypy
           - check-types-pyright
           - check-coverage
           - check-conjecture-coverage
