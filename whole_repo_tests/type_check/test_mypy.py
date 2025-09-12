@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import subprocess
 import textwrap
 
@@ -33,10 +34,18 @@ def test_mypy_passes_on_hypothesis_strict():
 
 
 def get_mypy_output(fname, *extra_args):
+    # Work around a mypy cache bug,
+    # https://github.com/HypothesisWorks/hypothesis/pull/4256
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+
     proc = subprocess.run(
-        # --no-incremental is substantially slower, but works around a mypy cache
-        # bug https://github.com/HypothesisWorks/hypothesis/pull/4256
-        [tool_path("mypy"), "--no-incremental", *extra_args, str(fname)],
+        [
+            tool_path("mypy"),
+            "--cache-dir",
+            f".mypy_caches/{worker_id}",
+            *extra_args,
+            str(fname),
+        ],
         encoding="utf-8",
         capture_output=True,
         text=True,
