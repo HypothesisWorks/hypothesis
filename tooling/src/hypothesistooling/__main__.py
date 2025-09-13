@@ -716,7 +716,7 @@ def check_types(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS / "type_check"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -728,8 +728,8 @@ def check_types_api(*args):
     )
 
     if not args:
-        ignore = ["--ignore", tools.REPO_TESTS / "type_check/test_hypothesis.py"]
-        args = ["-n", "auto", tools.REPO_TESTS / "type_check"] + ignore
+        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -741,7 +741,7 @@ def check_types_hypothesis(*args):
     )
 
     if not args:
-        testcase = "type_check/test_hypothesis.py"
+        testcase = "types/test_hypothesis.py"
         args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
