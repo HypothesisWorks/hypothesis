@@ -129,9 +129,9 @@ jobs:
     - name: Upload coverage data
       uses: actions/upload-artifact@v4
       # Invoke the magic `always` function to run on both success and failure.
-      if: ${{ always() && endsWith(inputs.task, '-coverage') }}
+      if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
-        name: ${{ inputs.task }}-data
+        name: ${{ matrix.task }}-data
         path: |
           hypothesis-python/.coverage*
           !hypothesis-python/.coveragerc
