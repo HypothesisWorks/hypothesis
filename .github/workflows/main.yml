@@ -137,7 +137,7 @@ jobs:
           !hypothesis-python/.coveragerc
           hypothesis-python/branch-check*
 
-  opt:
+  nonreq:
     needs: [basic]
     runs-on: ubuntu-latest
     strategy:
