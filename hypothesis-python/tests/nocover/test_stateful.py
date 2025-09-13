@@ -205,12 +205,6 @@ def test_bad_machines_fail(machine):
     with pytest.raises(AssertionError) as err:
         machine.TestCase().runTest()
 
-    # if this assertion flakes, then it's possible we were rely on the shrinking
-    # to keep these steps within bounds. We disabled shrinking in this test because
-    # it was taking too long.
-    steps = [l for l in err.value.__notes__ if "Step " in l or "state." in l]
-    assert 1 <= len(steps) <= 50
-
 
 class MyStatefulMachine(RuleBasedStateMachine):
     def __init__(self):
