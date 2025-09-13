@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.15:
+
+---------------------
+6.138.15 - 2025-09-08
+---------------------
+
+Refactor some stateful testing internals for easier use by third-party libraries.
+
+.. _v6.138.14:
+
+---------------------
+6.138.14 - 2025-09-02
+---------------------
+
+Patch files written by hypothesis now use a deterministic ordering when multiple |@example| decorators are present.
+
 .. _v6.138.13:
 
 ---------------------

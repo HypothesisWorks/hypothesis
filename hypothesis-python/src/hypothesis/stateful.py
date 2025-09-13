@@ -112,9 +112,9 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
 
     @settings
     @given(st.data())
-    def run_state_machine(factory, data):
+    def run_state_machine(data):
         cd = data.conjecture_data
-        machine: RuleBasedStateMachine = factory()
+        machine: RuleBasedStateMachine = state_machine_factory()
         check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         cd.hypothesis_runner = machine
         machine._observability_predicates = cd._observability_predicates  # alias
@@ -254,7 +254,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
     state_machine_test = get_state_machine_test(
         state_machine_factory, settings=settings, _min_steps=_min_steps
     )
-    state_machine_test(state_machine_factory)
+    state_machine_test()
 
 
 class StateMachineMeta(type):
