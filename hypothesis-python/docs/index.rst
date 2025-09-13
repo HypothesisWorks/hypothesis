@@ -56,7 +56,7 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
     test_sort_correct()
 
-You should start with the :doc:`tutorial <tutorial/index>`, or the more condensed :doc:`quickstart <quickstart>`.
+You should start with the :doc:`tutorial <tutorial/index>`, or alternatively the more condensed :doc:`quickstart <quickstart>`.
 
 .. rst-class:: row
 
