@@ -243,7 +243,9 @@ class DeadlineExceeded(_Trimmable):
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
             f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
-            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms"
+            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms. If you "
+            "expect test cases to take this long, you can use @settings(deadline=...) "
+            "to either set a higher deadline, or to disable it with deadline=None."
         )
         self.runtime = runtime
         self.deadline = deadline

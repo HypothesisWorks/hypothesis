@@ -63,10 +63,10 @@ class BalancedTrees(RuleBasedStateMachine):
     def test_is_balanced(self, tree):
         if isinstance(tree, Leaf):
             return
-        else:
-            assert abs(self.size(tree.left) - self.size(tree.right)) <= 1
-            self.test_is_balanced(tree.left)
-            self.test_is_balanced(tree.right)
+
+        assert abs(self.size(tree.left) - self.size(tree.right)) <= 1
+        self.test_is_balanced(tree.left)
+        self.test_is_balanced(tree.right)
 
     def size(self, tree):
         if isinstance(tree, Leaf):
@@ -108,13 +108,10 @@ class RoseTreeStateMachine(RuleBasedStateMachine):
 
     @rule(source=nodes)
     def shallow(self, source):
-        def d(ls):
-            if not ls:
-                return 0
-            else:
-                return 1 + max(map(d, ls))
+        def depth(ls):
+            return 0 if not ls else 1 + max(map(depth, ls))
 
-        assert d(source) <= 5
+        assert depth(source) <= 5
 
 
 class NotTheLastMachine(RuleBasedStateMachine):
@@ -166,11 +163,7 @@ class CanSwarm(RuleBasedStateMachine):
         super().__init__()
         self.seen = set()
 
-    # The reason this rule takes a parameter is that it ensures that we do not
-    # achieve "swarming" by by just restricting the alphabet for single byte
-    # decisions, which is a thing the underlying conjecture engine  will
-    # happily do on its own without knowledge of the rule structure.
-    @rule(move=st.integers(0, 255))
+    @rule(move=st.integers())
     def ladder(self, move):
         self.seen.add(move)
         assert len(self.seen) <= 15
@@ -190,16 +183,12 @@ bad_machines = (
 )
 
 for m in bad_machines:
-    m.TestCase.settings = Settings(m.TestCase.settings, max_examples=1000)
-
-
-cheap_bad_machines = list(bad_machines)
-cheap_bad_machines.remove(BalancedTrees)
-
-
-with_cheap_bad_machines = pytest.mark.parametrize(
-    "machine", cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
-)
+    m.TestCase.settings = Settings(
+        m.TestCase.settings,
+        max_examples=1000,
+        database=None,
+        phases=set(Phase) - {Phase.shrink},
+    )
 
 
 @pytest.mark.parametrize(
@@ -213,13 +202,13 @@ def test_bad_machines_fail(machine):
         # and also takes 10/6 minutes respectively, on top of not finding the failure
         pytest.xfail(reason=str(Why.undiscovered))
 
-    test_class = machine.TestCase
-    try:
-        test_class().runTest()
-        raise RuntimeError("Expected an assertion error")
-    except AssertionError as err:
-        notes = err.__notes__
-    steps = [l for l in notes if "Step " in l or "state." in l]
+    with pytest.raises(AssertionError) as err:
+        machine.TestCase().runTest()
+
+    # if this assertion flakes, then it's possible we were rely on the shrinking
+    # to keep these steps within bounds. We disabled shrinking in this test because
+    # it was taking too long.
+    steps = [l for l in err.value.__notes__ if "Step " in l or "state." in l]
     assert 1 <= len(steps) <= 50
 
 
