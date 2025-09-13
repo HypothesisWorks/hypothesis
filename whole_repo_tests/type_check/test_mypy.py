@@ -25,10 +25,6 @@ from .revealed_types import (
 )
 
 
-def test_mypy_passes_on_hypothesis():
-    pip_tool("mypy", str(PYTHON_SRC))
-
-
 @pytest.mark.skip(
     reason="Hypothesis type-annotates the public API as a convenience for users, "
     "but strict checks for our internals would be a net drag on productivity."

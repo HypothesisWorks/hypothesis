@@ -721,27 +721,27 @@ def check_types(*args):
 
 
 @task()
-def check_types_mypy(*args):
+def check_types_api(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
     )
 
     if not args:
-        testcase = "type_check/test_mypy.py"
-        args = ["-n", "auto", tools.REPO_TESTS / testcase]
+        ignore = ["--ignore", tools.REPO_TESTS / "type_check/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "type_check"] + ignore
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
 @task()
-def check_types_pyright(*args):
+def check_types_hypothesis(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
     )
 
     if not args:
-        testcase = "type_check/test_pyright.py"
+        testcase = "type_check/test_hypothesis.py"
         args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
