@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.16:
+
+---------------------
+6.138.16 - 2025-09-13
+---------------------
+
+Improved error message for |DeadlineExceeded|.
+
 .. _v6.138.15:
 
 ---------------------
