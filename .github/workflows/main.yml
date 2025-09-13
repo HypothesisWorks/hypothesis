@@ -132,6 +132,7 @@ jobs:
       if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
         name: ${{ matrix.task }}-data
+        include-hidden-files: true
         path: |
           hypothesis-python/.coverage*
           !hypothesis-python/.coveragerc
