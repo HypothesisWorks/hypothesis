@@ -202,7 +202,7 @@ def test_bad_machines_fail(machine):
         # and also takes 10/6 minutes respectively, on top of not finding the failure
         pytest.xfail(reason=str(Why.undiscovered))
 
-    with pytest.raises(AssertionError) as err:
+    with pytest.raises(AssertionError):
         machine.TestCase().runTest()
 
 
