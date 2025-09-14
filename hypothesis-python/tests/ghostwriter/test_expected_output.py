@@ -42,7 +42,7 @@ from hypothesis.extra import ghostwriter
 from hypothesis.utils.conventions import not_set
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="ghostwriter is not thread safe",
 )
 

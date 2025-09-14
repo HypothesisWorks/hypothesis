@@ -39,7 +39,7 @@ pytest_plugins = "pytester"
 # Since we recommend against using .example() interactively, fixing this is
 # an enhancement, not a bug.
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason=".example() is not thread-safe",
 )
 

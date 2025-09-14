@@ -331,7 +331,7 @@ def test_randbytes_have_right_length(rnd, n):
 
 
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes hours; may get faster after https://github.com/pschanely/CrossHair/issues/332",
 )
 @given(any_random)

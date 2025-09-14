@@ -1426,7 +1426,7 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 
 
 @pytest.mark.skipif(
-    Settings.currrent_profile_name() == "crosshair",
+    Settings.get_current_profile_name() == "crosshair",
     reason="takes hours; too much symbolic data",
 )
 def test_lots_of_entropy():

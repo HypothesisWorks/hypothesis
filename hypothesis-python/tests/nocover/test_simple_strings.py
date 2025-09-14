@@ -17,7 +17,7 @@ from hypothesis.strategies import text
 
 
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~10 minutes; many-valued realization is slow",
 )
 @given(text(min_size=1, max_size=1))

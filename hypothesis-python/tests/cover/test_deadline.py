@@ -20,7 +20,7 @@ from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 from tests.common.utils import assert_falsifying_output, fails_with
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="takes a long time because we don't monkeypatch time",
 )
 

@@ -20,7 +20,7 @@ from hypothesis.internal.compat import PYPY
 from tests.common.utils import skipif_emscripten
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="bad interactions when mixing threads and asyncio",
 )
 

@@ -21,7 +21,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="slow - large number of symbolics",
 )
 

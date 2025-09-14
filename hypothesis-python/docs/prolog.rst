@@ -42,7 +42,7 @@
 .. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
 .. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
 .. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
-.. |settings.current_profile_name| replace:: :func:`~hypothesis.settings.current_profile_name`
+.. |settings.get_current_profile_name| replace:: :func:`~hypothesis.settings.get_current_profile_name`
 
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`

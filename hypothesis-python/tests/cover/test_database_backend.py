@@ -685,7 +685,7 @@ def test_database_listener_memory():
 
 @skipif_emscripten
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair", reason="takes ages"
+    settings.get_current_profile_name() == "crosshair", reason="takes ages"
 )
 def test_database_listener_background_write():
     _database_conforms_to_listener_api(

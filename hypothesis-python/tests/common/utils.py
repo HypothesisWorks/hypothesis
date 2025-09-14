@@ -153,7 +153,7 @@ class NotDeprecated(Exception):
 @contextlib.contextmanager
 def validate_deprecation():
 
-    if settings.currrent_profile_name() == "threading":
+    if settings.get_current_profile_name() == "threading":
         import pytest
 
         if sys.version_info[:2] < (3, 14):
@@ -325,7 +325,7 @@ def skipif_threading(f):
         return f
 
     return pytest.mark.skipif(
-        settings.currrent_profile_name() == "threading", reason="not thread safe"
+        settings.get_current_profile_name() == "threading", reason="not thread safe"
     )(f)
 
 
@@ -362,7 +362,7 @@ def restore_recursion_limit():
 def run_concurrently(function, n: int) -> None:
     import pytest
 
-    if settings.currrent_profile_name() == "crosshair":
+    if settings.get_current_profile_name() == "crosshair":
         pytest.skip("crosshair is not thread safe")
     if sys.platform == "emscripten":
         pytest.skip("no threads on emscripten")

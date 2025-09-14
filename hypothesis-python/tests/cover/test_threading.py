@@ -59,7 +59,7 @@ def test_raises_if_not_passed_callable():
 
 @skipif_emscripten
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="crosshair is not thread-safe",
 )
 def test_run_given_concurrently():

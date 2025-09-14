@@ -31,7 +31,7 @@ from hypothesis.extra.ghostwriter import (
 from hypothesis.internal.reflection import get_pretty_function_description
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="ghostwriter is not thread safe",
 )
 

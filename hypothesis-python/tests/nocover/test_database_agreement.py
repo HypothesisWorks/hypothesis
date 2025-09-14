@@ -77,7 +77,7 @@ class DatabaseComparison(RuleBasedStateMachine):
 
 
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair", reason="isn't threadsafe"
+    settings.get_current_profile_name() == "crosshair", reason="isn't threadsafe"
 )
 def test_database_equivalence():
     DatabaseComparison.TestCase().runTest()

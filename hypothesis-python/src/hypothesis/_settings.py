@@ -1026,14 +1026,14 @@ class settings(metaclass=settingsMeta):
         default_variable.value = settings.get_profile(name)
 
     @staticmethod
-    def currrent_profile_name() -> str:
+    def get_current_profile_name() -> str:
         """
         The name of the current settings profile. For example:
 
         .. code-block:: python
 
             >>> settings.load_profile("myprofile")
-            >>> settings.currrent_profile_name()
+            >>> settings.get_current_profile_name()
             'myprofile'
         """
         assert settings._current_profile is not None

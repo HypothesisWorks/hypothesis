@@ -118,7 +118,7 @@ def test_can_form_sets_of_recursive_data():
 
 
 @pytest.mark.skipif(
-    settings.currrent_profile_name() == "crosshair", reason="not threadsafe"
+    settings.get_current_profile_name() == "crosshair", reason="not threadsafe"
 )
 def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(

@@ -38,7 +38,7 @@ varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.e
 
 
 pytestmark = pytest.mark.skipif(
-    settings.currrent_profile_name() == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="ghostwriter is not thread safe",
 )
 
