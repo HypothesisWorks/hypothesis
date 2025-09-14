@@ -14,7 +14,7 @@ import warnings
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, StopTest
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
 from hypothesis.strategies._internal.datetime import datetime_does_not_exist
@@ -118,6 +118,7 @@ def test_can_trigger_error_in_draw_near_boundary(bound):
     # with st.composite and assuming the event condition to work.
     # https://github.com/HypothesisWorks/hypothesis/pull/4229#discussion_r1907993831
     @given(st.data())
+    @settings(max_examples=1000)
     def f(data):
         try:
             data.draw(datetimes(**bound, timezones=timezones()))
