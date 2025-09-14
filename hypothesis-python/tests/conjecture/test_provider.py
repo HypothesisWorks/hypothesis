@@ -417,7 +417,7 @@ def test_bad_realize():
 
         with pytest.raises(
             HypothesisException,
-            match="expected .* from BadRealizeProvider.realize",
+            match=r"expected .* from BadRealizeProvider.realize",
         ):
             test_function()
 

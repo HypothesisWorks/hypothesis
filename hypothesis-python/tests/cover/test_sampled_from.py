@@ -203,7 +203,7 @@ class AnnotationsInsteadOfElements(enum.Enum):
 
 
 def test_suggests_elements_instead_of_annotations():
-    with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
+    with pytest.raises(InvalidArgument, match=r"Cannot sample.*annotations.*dataclass"):
         check_can_generate_examples(st.sampled_from(AnnotationsInsteadOfElements))
 
 

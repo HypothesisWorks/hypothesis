@@ -629,7 +629,7 @@ class settings(metaclass=settingsMeta):
         )
         self._deadline = (
             self._fallback.deadline  # type: ignore
-            if deadline is not_set
+            if deadline is not_set  # type: ignore
             else _validate_deadline(deadline)
         )
         self._print_blob = (

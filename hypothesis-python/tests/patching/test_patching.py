@@ -168,7 +168,7 @@ def test_make_full_patch(tst, example, expected, body, remove):
 
 @pytest.mark.parametrize("n", [0, 1, 2])
 def test_invalid_syntax_cases_dropped(n):
-    tst, (ex, via), expected = SIMPLE
+    tst, (ex, via), _expected = SIMPLE
     example_ls = [(ex.replace("x=1", f"x={x}"), via) for x in range(n)]
     example_ls.insert(-1, ("fn(\n    x=<__main__.Cls object at 0x>,\n)", FAIL_MSG))
 

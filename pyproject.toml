@@ -49,7 +49,6 @@ ignore = [
   "FBT003",
   "FBT001",
   "PD011",
-  "PD901",
   "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
   "PT001",
   "PT003",
@@ -69,6 +68,7 @@ ignore = [
   "RUF005",
   "RUF017",
   "RUF028",  # we use fmt: off for black as well as ruff, with differing semantics
+  "RUF043",
   "SIM102",
   "SIM105",
   "SIM108",
