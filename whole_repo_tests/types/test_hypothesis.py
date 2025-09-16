@@ -8,5 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-__version_info__ = (6, 138, 17)
-__version__ = ".".join(map(str, __version_info__))
+from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.scripts import pip_tool
+
+
+def test_mypy_passes_on_hypothesis():
+    pip_tool("mypy", str(PYTHON_SRC))
