@@ -280,7 +280,7 @@ else:
                             "for each generated input, then unfortunately you "
                             "will need to find a different way to achieve your "
                             "goal (for example, replacing the fixture with a similar "
-                            "cotext manager inside of the test)."
+                            "context manager inside of the test)."
                             "\n\n"
                             "If you are confident that your test will work correctly "
                             "even though the fixture is not reset between generated "
