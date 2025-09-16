@@ -1025,6 +1025,20 @@ class settings(metaclass=settingsMeta):
         settings._current_profile = name
         default_variable.value = settings.get_profile(name)
 
+    @staticmethod
+    def get_current_profile_name() -> str:
+        """
+        The name of the current settings profile. For example:
+
+        .. code-block:: python
+
+            >>> settings.load_profile("myprofile")
+            >>> settings.get_current_profile_name()
+            'myprofile'
+        """
+        assert settings._current_profile is not None
+        return settings._current_profile
+
 
 @contextlib.contextmanager
 def local_settings(s: settings) -> Generator[settings, None, None]:

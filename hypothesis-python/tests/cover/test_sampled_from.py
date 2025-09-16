@@ -100,7 +100,7 @@ def test_efficient_dicts_with_sampled_keys(x):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes 3-5 mins and raises Unsatisfiable",
 )
 @pytest.mark.parametrize(

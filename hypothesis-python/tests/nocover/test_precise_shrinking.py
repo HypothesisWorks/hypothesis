@@ -63,11 +63,11 @@ T = TypeVar("T")
 
 pytestmark = [
     pytest.mark.skipif(
-        settings._current_profile == "crosshair",
+        settings.get_current_profile_name() == "crosshair",
         reason="using internals for testing in a way crosshair doesn't support",
     ),
     pytest.mark.skipif(
-        settings._current_profile == "threading",
+        settings.get_current_profile_name() == "threading",
         reason="not worth making thread-safe atm",
     ),
 ]

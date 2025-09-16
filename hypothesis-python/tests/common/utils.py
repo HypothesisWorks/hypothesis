@@ -153,7 +153,7 @@ class NotDeprecated(Exception):
 @contextlib.contextmanager
 def validate_deprecation():
 
-    if settings._current_profile == "threading":
+    if settings.get_current_profile_name() == "threading":
         import pytest
 
         if sys.version_info[:2] < (3, 14):
@@ -308,11 +308,10 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     except ImportError:
         return lambda fn: fn
 
-    current_backend = settings.get_profile(settings._current_profile).backend
     kw = {
         "strict": strict and why != Why.undiscovered,
         "reason": f"Expected failure due to: {why.value}",
-        "condition": current_backend == "crosshair",
+        "condition": settings().backend == "crosshair",
     }
     if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
         return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
@@ -326,7 +325,7 @@ def skipif_threading(f):
         return f
 
     return pytest.mark.skipif(
-        settings._current_profile == "threading", reason="not thread safe"
+        settings.get_current_profile_name() == "threading", reason="not thread safe"
     )(f)
 
 
@@ -363,7 +362,7 @@ def restore_recursion_limit():
 def run_concurrently(function, n: int) -> None:
     import pytest
 
-    if settings._current_profile == "crosshair":
+    if settings.get_current_profile_name() == "crosshair":
         pytest.skip("crosshair is not thread safe")
     if sys.platform == "emscripten":
         pytest.skip("no threads on emscripten")

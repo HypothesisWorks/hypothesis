@@ -57,7 +57,7 @@ def test_invalid_domain_arguments(max_length, max_element_length):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~300s each; the `sampled_from(get_top_level_domains())` decision is realized via iterative comparisons https://github.com/pschanely/CrossHair/issues/332",
 )
 @pytest.mark.parametrize("max_length", [None, 4, 8, 255])

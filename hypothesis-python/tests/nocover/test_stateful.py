@@ -197,7 +197,7 @@ for m in bad_machines:
 def test_bad_machines_fail(machine):
     if (
         machine in [CanSwarm, RoseTreeStateMachine]
-        and Settings._current_profile == "crosshair"
+        and Settings.get_current_profile_name() == "crosshair"
     ):
         # and also takes 10/6 minutes respectively, on top of not finding the failure
         pytest.xfail(reason=str(Why.undiscovered))

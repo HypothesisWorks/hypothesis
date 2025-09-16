@@ -73,6 +73,8 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
       # from accidentally caching/retaining crosshair proxy objects
       pip install pytest-repeat
       pip install -r ../requirements/crosshair.txt
+      # requirements/crosshair.txt pins hypothesis. Re-override it with our local changes
+      pip install .
       $PYTEST --count=2 --repeat-scope=session tests/numpy tests/crosshair
       # ...but running twice takes time, don't overdo it
       $PYTEST tests/array_api

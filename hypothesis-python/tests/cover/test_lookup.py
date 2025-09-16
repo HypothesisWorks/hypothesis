@@ -623,7 +623,7 @@ class Tree:
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
 )
 @given(tree=st.builds(Tree))
@@ -986,7 +986,7 @@ def test_no_byteswarning(_):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="Crosshair is too much slower at hashing values",
 )
 def test_hashable_type_unhashable_value():
@@ -1153,7 +1153,7 @@ def test_resolves_builtin_types(t):
 @given(data=st.data())
 @settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
-    if t.__name__ == "object" and settings._current_profile == "threading":
+    if t.__name__ == "object" and settings.get_current_profile_name() == "threading":
         # from_type(ForwardRef("object")) pulls from register_type_strategy,
         # and depending on threading I've seen `st.builds(Bar, st.integers())`
         # (from this file) be registered in one iteration and not the next,

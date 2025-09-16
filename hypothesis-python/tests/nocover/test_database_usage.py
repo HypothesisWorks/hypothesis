@@ -114,7 +114,7 @@ def test_trashes_invalid_examples():
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="condition is easy for crosshair, stops early",
 )
 def test_respects_max_examples_in_database_usage():
