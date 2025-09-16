@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.139.1:
+
+--------------------
+6.139.1 - 2025-09-16
+--------------------
+
+Fixed another typo in error message around function-scoped fixtures.
+
 .. _v6.139.0:
 
 --------------------
