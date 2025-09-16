@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.139.0:
+
+--------------------
+6.139.0 - 2025-09-16
+--------------------
+
+Add |settings.get_current_profile_name|, which returns the name of the current settings profile.
+
 .. _v6.138.17:
 
 ---------------------
