@@ -14,7 +14,7 @@ value and encodes it as another value, and another that is supposed to reverse t
 This is ripe for testing with Hypothesis because it has a natural completely defined
 specification: Encoding and then decoding should be exactly the same as doing nothing.
 
-Lets look at a concrete example.
+Let's look at a concrete example.
 
 <!--more-->
 
@@ -86,7 +86,7 @@ if not input_string:
     return []
 ```
 
-The test now passes, which isn't very interesting, so lets break the code. We'll delete
+The test now passes, which isn't very interesting, so let's break the code. We'll delete
 a line from our implementation of encode which resets the count when the character changes:
 
 
