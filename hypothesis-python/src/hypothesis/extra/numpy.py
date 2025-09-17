@@ -98,7 +98,7 @@ NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 1
 
 def _is_comparable(obj: Any) -> bool:
     try:
-        obj == obj
+        _ = obj == obj
     except Exception:
         return False
     return True
