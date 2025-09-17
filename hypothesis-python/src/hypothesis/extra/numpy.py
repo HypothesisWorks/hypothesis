@@ -249,6 +249,11 @@ class ArrayStrategy(st.SearchStrategy):
         )
 
     def set_element(self, val, result, idx, *, fill=False):
+        # `val` is either an arbitrary object (for dtype="O"), or otherwise an
+        # instance of a numpy dtype. This means we can generally expect e.g.
+        # val.dtype to be present, but can only concretely rely on it if
+        # self.dtype != "O".
+
         try:
             result[idx] = val
         except TypeError as err:

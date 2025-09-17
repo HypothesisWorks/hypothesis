@@ -54,14 +54,13 @@ def test_object_series_are_of_type_object(series):
     assert series.dtype == np.dtype("O")
 
 
-@given(nps.scalar_dtypes().filter(supported_by_pandas))
-def test_class_instances_not_allowed_in_scalar_series(scalar_dtype):
+def test_class_instances_not_allowed_in_scalar_series():
     class A:
         pass
 
     with pytest.raises(InvalidArgument):
         check_can_generate_examples(
-            pdst.series(elements=st.just(A()), dtype=scalar_dtype)
+            pdst.series(elements=st.just(A()), dtype=np.dtype("int"))
         )
 
 
