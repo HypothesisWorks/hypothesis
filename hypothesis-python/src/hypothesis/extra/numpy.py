@@ -10,7 +10,6 @@
 
 import importlib
 import math
-import operator
 import types
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, cast, overload
@@ -97,16 +96,12 @@ TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", 
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
-def _is_comparable(x: Any) -> bool:
-    """Returns True if the input can be compared."""
+def _is_comparable(obj: Any) -> bool:
     try:
-        return bool(np.all([x == x]) or np.all([x != x]))
+        obj == obj
     except Exception:
         return False
-
-
-def _array_or_scalar_equal(a: Any, b: Any) -> bool:
-    return bool(np.all([a == b]))
+    return True
 
 
 @defines_strategy(force_reusable_values=True)
@@ -240,17 +235,12 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
-        if dtype == np.dtype("O"):
-            self.element_strategy = element_strategy.filter(_is_comparable)
-            self.fill = fill.filter(_is_comparable)
-        else:
-            self.element_strategy = element_strategy
-            self.fill = fill
+        self.element_strategy = element_strategy
         self.unique = unique
-        self._check_elements = dtype.kind not in ("V",)
-        self._elements_equal = (
-            _array_or_scalar_equal if dtype.kind in ("O",) else operator.eq
-        )
+        self._check_elements = dtype.kind != "V"
+        if dtype == np.dtype("O"):
+            self.element_strategy = self.element_strategy.filter(_is_comparable)
+            self.fill = self.fill.filter(_is_comparable)
 
     def __repr__(self):
         return (
@@ -263,17 +253,14 @@ class ArrayStrategy(st.SearchStrategy):
             result[idx] = val
         except TypeError as err:
             element_type = getattr(val, "dtype", type(val))
-            element_type_repr = get_pretty_function_description(element_type)
-            result_type_repr = get_pretty_function_description(result.dtype)
             raise InvalidArgument(
-                f"Could not add element={val!r} of {element_type_repr} to array of "
-                f"{result_type_repr} - possible mismatch of time units in dtypes?"
+                f"Could not add element={val!r} of "
+                f"{get_pretty_function_description(element_type)} to array of "
+                f"{get_pretty_function_description(result.dtype)} - possible "
+                "mismatch of time units in dtypes?"
             ) from err
         try:
-            elem_changed = self._check_elements and (
-                not self._elements_equal(val, result[idx])
-                and self._elements_equal(val, val)
-            )
+            elem_changed = self._check_elements and (val != result[idx] and val == val)
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
