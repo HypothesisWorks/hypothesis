@@ -153,7 +153,7 @@ def test_unique_column_with_fill(df):
     assert len(set(df["A"])) == len(df["A"])
 
 
-@settings(suppress_health_check=[HealthCheck.too_slow])
+@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
 @given(st.data())
 def test_arbitrary_data_frames(data):
     columns = data.draw(
