@@ -17,7 +17,7 @@ source "$HERE/common.sh"
 # This script should be pretty fast once files are cached, so the loss of concurrency
 # is not a major problem.
 # This should be using the lockfile command, but that's not available on the
-# containerized Travis and we can't install it without sudo.
+# containerized travis and we can't install it without sudo.
 # It is unclear if this is actually useful. I was seeing behaviour that suggested
 # concurrent runs of the installer, but I can't seem to find any evidence of this lock
 # ever not being acquired.
