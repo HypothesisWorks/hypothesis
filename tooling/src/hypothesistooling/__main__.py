@@ -609,7 +609,15 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
-    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+    for subtask in (
+        "brief",
+        "full",
+        "cover",
+        "rest",
+        "nocover",
+        "niche",
+        "custom",
+    ):
         TASKS[f"check-{name}-{subtask}"] = python_tests(
             lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
         )
@@ -652,6 +660,11 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+for kind in ("rest", "nocover"):
+    # Note, in CI these are executed on alternative platforms (e.g., windows)
+    # directly in tox (and not via build.sh)
+    standard_tox_task(f"alt-{kind}")
+
 standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("py39-oldparser", py="3.9")
@@ -679,7 +692,57 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_documentation(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "types"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_api(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_hypothesis(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        testcase = "types/test_hypothesis.py"
+        args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
