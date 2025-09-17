@@ -128,10 +128,7 @@ def elements_and_dtype(elements, dtype, source=None):
                 return None
             name = f"draw({prefix}elements)"
             if dtype.kind == "O":
-                # for objects, don't use numpy to coerce it (as below)
-                # if `value` is an array, numpy will make a 2d array
-                # and so when we come to retrieve the value from the pandas object at the end
-                # we don't get an array anymore: input != output
+                # for objects, just use the object, otherwise numpy might convert it
                 return value
             try:
                 return np.array([value], dtype=dtype)[0]

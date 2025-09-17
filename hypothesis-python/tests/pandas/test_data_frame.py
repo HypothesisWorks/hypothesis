@@ -12,18 +12,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import HealthCheck, given, reject, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
-from tests.common.debug import assert_no_examples, find_any
-from tests.numpy.helpers import (
-    all_elements,
-    all_numpy_dtypes,
-    all_scalar_elements,
-    dataclass_instance,
-    paired_containers_and_elements,
+from tests.common.debug import (
+    assert_all_examples,
+    check_can_generate_examples,
+    find_any,
 )
 from tests.pandas.helpers import supported_by_pandas
 
@@ -289,101 +286,57 @@ def test_pandas_nullable_types():
         assert type(df[s].dtype) == pd.core.arrays.integer.Int8Dtype
 
 
-@pytest.mark.parametrize(
-    "strategy",
-    [
-        pdst.data_frames(
-            columns=[pdst.column("col", all_elements, dtype=object)],
-            index=pdst.range_indexes(1),
-        ),
-        pdst.data_frames(
-            rows=st.fixed_dictionaries({"col": all_elements}),
-            index=pdst.range_indexes(1),
-        ),
-    ],
-)
-def test_can_generate_object_arrays_with_mixed_dtype_elements(strategy):
-    find_any(strategy, lambda df: len({type(x) for x in df["col"].values}) > 1)
+@given(pdst.data_frames(columns=[pdst.column("col", dtype=object)]))
+def test_object_columns_are_of_type_object(df):
+    assert df["col"].dtype == np.dtype("O")
 
 
-def test_error_with_object_elements_in_numpy_dtype_arrays():
-    with pytest.raises(InvalidArgument):
-        find_any(
-            pdst.data_frames(
-                columns=[
-                    pdst.column(
-                        "col",
-                        all_scalar_elements,
-                        dtype=all_numpy_dtypes,
-                    )
-                ]
+def test_class_instances_not_allowed_in_scalar_columns():
+    class A:
+        pass
+
+    s = pdst.data_frames(
+        columns=[
+            pdst.column(
+                "col",
+                elements=st.just(A()),
+                dtype=npst.scalar_dtypes(),
             )
-        )
-
-
-@given(
-    *paired_containers_and_elements(
-        lambda elems: pdst.data_frames(
-            columns=[pdst.column("col", elems, dtype=object)],
-            index=pdst.range_indexes(min_size=1),
-        ),
-        all_elements,
-    )
-)
-@settings(max_examples=2000)
-def test_elements_in_object_dataframe_remain_uncoerced(df, elements):
-    assert df["col"].values.tolist() == elements
-
-
-@pytest.mark.parametrize(
-    "strategy",
-    [
-        pdst.data_frames(
-            columns=[pdst.column("col", st.just(dataclass_instance), dtype=object)],
-            index=pdst.range_indexes(1),
-        ),
-        pdst.data_frames(
-            rows=st.fixed_dictionaries({"col": st.just(dataclass_instance)}),
-            index=pdst.range_indexes(1),
-        ),
-    ],
-)
-def test_can_hold_arbitrary_dataclass(strategy):
-    find_any(
-        strategy,
-        lambda df: len([x is dataclass_instance for x in df["col"].values]) > 0,
+        ]
     )
 
+    with pytest.raises(InvalidArgument):
+        check_can_generate_examples(s)
 
-@pytest.mark.parametrize(
-    "strategy",
-    [
-        pdst.data_frames(
-            columns=[pdst.column("col", all_numpy_dtypes, dtype=object)],
-            index=pdst.range_indexes(1),
-        ),
-        pdst.data_frames(
-            rows=st.fixed_dictionaries({"col": all_numpy_dtypes}),
-            index=pdst.range_indexes(1),
-        ),
-    ],
-)
-def test_series_is_still_object_dtype_even_with_numpy_types(strategy):
-    assert_no_examples(
-        strategy,
-        lambda df: all(isinstance(e, np.dtype) for e in df["col"].values)
-        and (df["col"].dtype != np.dtype("O")),
+
+def test_can_generate_object_arrays_with_mixed_dtype_elements():
+    class A:
+        pass
+
+    s = pdst.data_frames(
+        columns=[pdst.column("col", st.just(A()) | st.integers(), dtype=object)],
+        index=pdst.range_indexes(1),
     )
+    assert_all_examples(s, lambda df: df["col"].dtype == np.dtype("O"))
+    find_any(s, lambda df: len({type(x) for x in df["col"].values}) > 1)
 
 
-@given(st.data(), npst.from_dtype(np.dtype(object)))
-def test_can_create_a_series_of_single_python_type(data, obj):
-    # Ensure that arbitrary objects are present in the series without
-    # modification.
-    df = data.draw(
-        pdst.data_frames(
-            columns=[pdst.column("col", elements=st.just(obj), dtype=object)],
-            index=pdst.range_indexes(min_size=1),
-        )
+def _equal_to_itself(v):
+    try:
+        return v == v
+    except Exception:
+        # sNaN decimal, etc
+        return False
+
+
+@given(st.data())
+def test_object_dataframe_can_hold_arbitrary_class_instances(data):
+    instance = data.draw(st.from_type(type).flatmap(st.from_type))
+    s = pdst.data_frames(
+        columns=[pdst.column("col", elements=st.just(instance), dtype=object)]
     )
-    assert all(val is obj for val in df["col"].values)
+    df = data.draw(s)
+
+    assert all(x is instance for x in df["col"].values)
+    assume(_equal_to_itself(instance))
+    assert all(v == instance for v in df["col"].values)
