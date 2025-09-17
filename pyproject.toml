@@ -68,7 +68,6 @@ ignore = [
   "RUF005",
   "RUF017",
   "RUF028",  # we use fmt: off for black as well as ruff, with differing semantics
-  "RUF043",
   "SIM102",
   "SIM105",
   "SIM108",
