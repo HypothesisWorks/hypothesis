@@ -17,7 +17,7 @@ from types import ModuleType
 
 import pytest
 
-from hypothesis import example, given, note, strategies as st
+from hypothesis import example, given, note, settings, strategies as st
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
@@ -145,6 +145,11 @@ def test_frozenset_constants(value):
 
 @skipif_threading
 @skipif_emscripten
+@pytest.mark.xfail(
+    condition=settings._current_profile != "ci",
+    strict=False,
+    reason="Requires clean environment",
+)
 def test_constants_from_running_file(tmp_path):
     p = tmp_path / "my_constants.py"
     p.write_text(

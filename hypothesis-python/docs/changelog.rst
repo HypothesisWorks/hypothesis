@@ -18,6 +18,135 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.138.17:
+
+---------------------
+6.138.17 - 2025-09-15
+---------------------
+
+Fixed typo in error message around function-scoped fixtures.
+
+.. _v6.138.16:
+
+---------------------
+6.138.16 - 2025-09-13
+---------------------
+
+Improved error message for |DeadlineExceeded|.
+
+.. _v6.138.15:
+
+---------------------
+6.138.15 - 2025-09-08
+---------------------
+
+Refactor some stateful testing internals for easier use by third-party libraries.
+
+.. _v6.138.14:
+
+---------------------
+6.138.14 - 2025-09-02
+---------------------
+
+Patch files written by hypothesis now use a deterministic ordering when multiple |@example| decorators are present.
+
+.. _v6.138.13:
+
+---------------------
+6.138.13 - 2025-09-01
+---------------------
+
+Fix a typo affecting pretty-printing of lambdas with complex default
+arguments.
+
+.. _v6.138.12:
+
+---------------------
+6.138.12 - 2025-09-01
+---------------------
+
+Improve automatic detection of the :ref:`CI profile <builtin-profiles>` on various vendor-specific CI systems.
+
+.. _v6.138.11:
+
+---------------------
+6.138.11 - 2025-09-01
+---------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.138.10:
+
+---------------------
+6.138.10 - 2025-08-31
+---------------------
+
+Internal refactor to simplify |SearchStrategy|.
+
+.. _v6.138.9:
+
+--------------------
+6.138.9 - 2025-08-31
+--------------------
+
+This patch further improves stringification of lambdas, by
+never returning a lambda source unless it is confirmed to
+compile to the same code object. This stricter check makes
+it possible to widen the search for a matching source block,
+so that it can often be found even if the file has been
+edited.
+
+.. _v6.138.8:
+
+--------------------
+6.138.8 - 2025-08-29
+--------------------
+
+Fixes a race condition under threading when using |st.deferred|.
+
+.. _v6.138.7:
+
+--------------------
+6.138.7 - 2025-08-28
+--------------------
+
+Improves upon the cache eviction problem workaround
+of :v:`6.135.12`.
+
+.. _v6.138.6:
+
+--------------------
+6.138.6 - 2025-08-27
+--------------------
+
+Documentation tweaks.
+
+.. _v6.138.5:
+
+--------------------
+6.138.5 - 2025-08-27
+--------------------
+
+Fixes a race condition under threading for strategies which trigger our filter-rewriting rules, like ``st.integers().filter(lambda x: abs(x) > 100)``.
+
+.. _v6.138.4:
+
+--------------------
+6.138.4 - 2025-08-27
+--------------------
+
+One of our shrinking passes for reducing failing inputs targets failures which require two numbers to add to the same value. This pass previously only worked for positive numbers. This patch fixes that, so it also works for negative numbers.
+
+.. _v6.138.3:
+
+--------------------
+6.138.3 - 2025-08-24
+--------------------
+
+This patch slightly improves the cache-hit rate for
+|st.dictionaries| and certain unique |st.lists|.
+
 .. _v6.138.2:
 
 --------------------

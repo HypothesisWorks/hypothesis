@@ -255,15 +255,19 @@ hypothesis-urandom
 
     ``/dev/urandom`` is not available on Windows, so we emit a warning and fall back to the
     hypothesis backend there.
+hypofuzz
+    Generates inputs using coverage-guided fuzzing. See `HypoFuzz <https://hypofuzz.com/>`_ for details.
+
+    Requires ``pip install hypofuzz``.
 crosshair
-    Generates examples using SMT solvers like z3, which is particularly effective at satisfying
+    Generates inputs using SMT solvers like z3, which is particularly effective at satisfying
     difficult checks in your code, like ``if`` or ``==`` statements.
 
     Requires ``pip install hypothesis[crosshair]``.
 
 You can change the backend for a test with the |settings.backend| setting. For instance, after
 ``pip install hypothesis[crosshair]``, you can use :pypi:`crosshair <crosshair-tool>` to
-generate examples with SMT via the :pypi:`hypothesis-crosshair` backend:
+generate inputs with SMT via the :pypi:`hypothesis-crosshair` backend:
 
 .. code-block:: python
 
@@ -275,4 +279,4 @@ generate examples with SMT via the :pypi:`hypothesis-crosshair` backend:
         assert x != 123456789
 
 Failures found by alternative backends are saved to the database and shrink just like normally
-generated examples, and in general interact with every feature of Hypothesis as you would expect.
+generated inputs, and in general interact with every feature of Hypothesis as you would expect.

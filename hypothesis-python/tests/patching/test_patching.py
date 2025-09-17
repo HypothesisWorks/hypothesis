@@ -190,6 +190,22 @@ def test_no_example_for_data_strategy():
     assert get_patch_for(fn, [("fn(Foo(data=data(...)))", "msg")]) is not None
 
 
+def test_patch_order_preserved():
+    (_fname, _before, after) = get_patch_for(
+        fn, [("fn(a=1)", "msg"), ("fn(b=2)", "msg")]
+    )
+    assert after.startswith(
+        '@given(st.integers())\n@example(a=1).via("msg")\n@example(b=2).via("msg")'
+    )
+
+    (_fname, _before, after) = get_patch_for(
+        fn, [("fn(b=2)", "msg"), ("fn(a=1)", "msg")]
+    )
+    assert after.startswith(
+        '@given(st.integers())\n@example(b=2).via("msg")\n@example(a=1).via("msg")'
+    )
+
+
 def test_deduplicates_examples():
     tst, example, expected = SIMPLE
     where, _, after = get_patch_for(tst, [example, example])

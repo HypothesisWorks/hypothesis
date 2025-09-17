@@ -24,7 +24,7 @@ Hypothesis provides type hints for all strategies and functions which return a s
     def numbers() -> SearchStrategy[int | float]:
         return st.integers() | st.floats(allow_nan=False, allow_infinity=False)
 
-It's worth pointing out the distinction between a strategy, and a function that returns a strategy. |st.integers| is a function which returns a strategy that has type ``SearchStrategy[int]``. The function ``st.integers`` therefore has type ``Callable[..., SearchStrategy[int]]``, while the value ``s = st.integers()`` has type ``SearchStrategy[int]``.
+It's worth pointing out the distinction between a strategy, and a function that returns a strategy. |st.integers| is a function which returns a strategy, and that strategy has type ``SearchStrategy[int]``. The function ``st.integers`` therefore has type ``Callable[..., SearchStrategy[int]]``, while the value ``s = st.integers()`` has type ``SearchStrategy[int]``.
 
 
 Type hints for |st.composite|

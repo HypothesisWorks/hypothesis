@@ -209,7 +209,14 @@ def _get_patch_for(
     # The printed examples might include object reprs which are invalid syntax,
     # so we parse here and skip over those.  If _none_ are valid, there's no patch.
     call_nodes: list[tuple[cst.Call, str]] = []
-    for ex, via in set(examples):
+
+    # we want to preserve order, but remove duplicates.
+    seen_examples = set()
+    for ex, via in examples:
+        if (ex, via) in seen_examples:
+            continue
+        seen_examples.add((ex, via))
+
         with suppress(Exception):
             node: Any = cst.parse_module(ex)
             the_call = node.body[0].body[0].value

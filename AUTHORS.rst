@@ -84,6 +84,7 @@ their individual contributions.
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)
 * `Israel Fruchter <https://github.com/fruch>`_
 * `Ivan Tham <https://github.com/pickfire>`_
+* `Iyassou Shimels <https://github.com/iyassou>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `James Lamb <https://github.com/jameslamb>`_

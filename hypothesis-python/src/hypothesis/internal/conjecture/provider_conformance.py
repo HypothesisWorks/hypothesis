@@ -348,7 +348,7 @@ def run_conformance_test(
 
     For instance, this tests that ``Provider`` does not return out of bounds
     choices from any of the ``draw_*`` methods, or violate other invariants
-    depended on by Hypothesis.
+    which Hypothesis depends on.
 
     This function is intended to be called at test-time, not at runtime. It is
     provided by Hypothesis to make it easy for third-party backend authors to

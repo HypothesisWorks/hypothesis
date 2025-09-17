@@ -360,9 +360,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.23",
-    "5.1": "5.1.11",
-    "5.2": "5.2.3",
+    "4.2": "4.2.24",
+    "5.1": "5.1.12",
+    "5.2": "5.2.6",
 }
 
 
@@ -574,15 +574,15 @@ PYTHONS = {
     "3.10": "3.10.18",
     "3.11": "3.11.13",
     "3.12": "3.12.11",
-    "3.13": "3.13.5",
+    "3.13": "3.13.7",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0rc1",
+    "3.14": "3.14.0rc2",
     "3.14t": "3.14t-dev",
     "3.15": "3.15-dev",
     "3.15t": "3.15t-dev",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.19",
-    "pypy3.11": "pypy3.11-7.3.19",
+    "pypy3.11": "pypy3.11-7.3.20",
 }
 ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
@@ -609,7 +609,15 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
-    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+    for subtask in (
+        "brief",
+        "full",
+        "cover",
+        "rest",
+        "nocover",
+        "niche",
+        "custom",
+    ):
         TASKS[f"check-{name}-{subtask}"] = python_tests(
             lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
         )
@@ -652,6 +660,11 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+for kind in ("rest", "nocover"):
+    # Note, in CI these are executed on alternative platforms (e.g., windows)
+    # directly in tox (and not via build.sh)
+    standard_tox_task(f"alt-{kind}")
+
 standard_tox_task("threading")
 standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("py39-oldparser", py="3.9")
@@ -679,7 +692,57 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_documentation(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "types"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_api(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_hypothesis(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        testcase = "types/test_hypothesis.py"
+        args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 

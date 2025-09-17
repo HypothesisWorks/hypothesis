@@ -16,7 +16,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import Why, flaky, xfail_on_crosshair
+from tests.common.utils import Why, flaky, xfail_if_gil_disabled, xfail_on_crosshair
 
 
 def test_can_generate_with_large_branching():
@@ -161,6 +161,7 @@ def test_self_ref_regression(_):
     pass
 
 
+@xfail_if_gil_disabled
 @flaky(min_passes=1, max_runs=2)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):
     # We were concerned in #3979 that we might see bad results from a RecursionError

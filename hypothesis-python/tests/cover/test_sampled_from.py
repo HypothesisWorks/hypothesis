@@ -10,6 +10,7 @@
 
 import collections
 import enum
+import operator
 
 import pytest
 
@@ -100,16 +101,15 @@ def test_efficient_dicts_with_sampled_keys(x):
 
 @pytest.mark.skipif(
     settings._current_profile == "crosshair",
-    reason="takes ~10 mins and raises Unsatisfiable; first barrier is symbolic subscripting https://github.com/pschanely/CrossHair/issues/332",
+    reason="takes 3-5 mins and raises Unsatisfiable",
 )
-@given(
-    st.lists(
-        st.tuples(st.sampled_from(range(20)), st.builds(list)),
-        min_size=20,
-        unique_by=lambda asdf: asdf[0],
-    )
+@pytest.mark.parametrize(
+    "fn", [lambda asdf: asdf[0], (operator.itemgetter(0), lambda x: x[0])]
 )
-def test_efficient_lists_of_tuples_first_element_sampled_from(x):
+@given(st.data())
+def test_efficient_lists_of_tuples_first_element_sampled_from(fn, data):
+    elems = st.tuples(st.sampled_from(range(20)), st.builds(list))
+    x = data.draw(st.lists(elems, min_size=20, unique_by=fn))
     assert {first for first, *_ in x} == set(range(20))
 
 

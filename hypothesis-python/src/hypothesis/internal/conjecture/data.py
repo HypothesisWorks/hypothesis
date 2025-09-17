@@ -663,7 +663,6 @@ class ConjectureData:
         self.observer = observer
         self.max_choices = max_choices
         self.max_length = BUFFER_SIZE
-        self.is_find = False
         self.overdraw = 0
         self._random = random
 
@@ -1201,12 +1200,6 @@ class ConjectureData:
         from hypothesis.internal.observability import observability_enabled
         from hypothesis.strategies._internal.lazy import unwrap_strategies
         from hypothesis.strategies._internal.utils import to_jsonable
-
-        if self.is_find and not strategy.supports_find:
-            raise InvalidArgument(
-                f"Cannot use strategy {strategy!r} within a call to find "
-                "(presumably because it would be invalid after the call had ended)."
-            )
 
         at_top_level = self.depth == 0
         start_time = None

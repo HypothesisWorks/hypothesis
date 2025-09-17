@@ -924,7 +924,6 @@ class StateForActualGivenExecution:
         self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
         self.test_runner = get_executor(stuff.selfy)
-        self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
@@ -982,7 +981,6 @@ class StateForActualGivenExecution:
         """
 
         self.ever_executed = True
-        data.is_find = self.is_find
 
         self._string_repr = ""
         text_repr = None
@@ -1493,7 +1491,7 @@ class StateForActualGivenExecution:
                 with with_reporter(fragments.append):
                     self.execute_once(
                         ran_example,
-                        print_example=not self.is_find,
+                        print_example=True,
                         is_final=True,
                         expected_failure=(
                             falsifying_example.expected_exception,
@@ -1763,7 +1761,7 @@ def given(
         test(manual_string="x")
 
     The reason for this "from the right" behavior is to support using |@given|
-    with instance methods, by passing through ``self``:
+    with instance methods, by automatically passing through ``self``:
 
     .. code-block:: python
 
@@ -2291,11 +2289,7 @@ def find(
     if random is not None:
         test = seed(random.getrandbits(64))(test)
 
-    # Aliasing as Any avoids mypy errors (attr-defined) when accessing and
-    # setting custom attributes on the decorated function or class.
-    _test: Any = test
-    _test._hypothesis_internal_is_find = True
-    _test._hypothesis_internal_database_key = database_key
+    test._hypothesis_internal_database_key = database_key  # type: ignore
 
     try:
         test()

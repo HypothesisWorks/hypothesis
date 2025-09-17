@@ -330,6 +330,19 @@ def skipif_threading(f):
     )(f)
 
 
+def xfail_if_gil_disabled(f):
+    try:
+        if not sys._is_gil_enabled():  # 3.13+
+            import pytest
+
+            return pytest.mark.xfail(
+                reason="fails on free-threading build", strict=False
+            )(f)
+    except Exception:
+        pass
+    return f
+
+
 # we don't monkeypatch _consistently_increment_time under threading
 skipif_time_unpatched = skipif_threading
 

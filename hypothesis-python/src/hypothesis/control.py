@@ -155,6 +155,7 @@ class BuildContext:
         self,
         obj: object,
         func: object,
+        *,
         args: Sequence[object],
         kwargs: dict[str, object],
     ) -> None:

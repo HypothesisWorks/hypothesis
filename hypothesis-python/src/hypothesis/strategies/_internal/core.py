@@ -274,6 +274,14 @@ def sampled_from(
     )
 
 
+def _gets_first_item(fn: Callable) -> bool:
+    # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
+    if isinstance(fn, FunctionType):
+        s = get_pretty_function_description(fn)
+        return bool(re.fullmatch(s, r"lambda ([a-z]+): \1\[0\]"))
+    return isinstance(fn, operator.itemgetter) and repr(fn) == "operator.itemgetter(0)"
+
+
 @cacheable
 @defines_strategy()
 def lists(
@@ -349,21 +357,7 @@ def lists(
             # our strategy somewhat to draw the first element then draw add the rest.
             isinstance(elements, TupleStrategy)
             and len(elements.element_strategies) >= 1
-            and len(unique_by) == 1
-            and (
-                # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
-                (
-                    isinstance(unique_by[0], operator.itemgetter)
-                    and repr(unique_by[0]) == "operator.itemgetter(0)"
-                )
-                or (
-                    isinstance(unique_by[0], FunctionType)
-                    and re.fullmatch(
-                        get_pretty_function_description(unique_by[0]),
-                        r"lambda ([a-z]+): \1\[0\]",
-                    )
-                )
-            )
+            and all(_gets_first_item(fn) for fn in unique_by)
         ):
             unique_by = (identity,)
             tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
@@ -572,6 +566,9 @@ def fixed_dictionaries(
     return FixedDictStrategy(mapping, optional=optional)
 
 
+_get_first_item = operator.itemgetter(0)
+
+
 @cacheable
 @defines_strategy()
 def dictionaries(
@@ -603,7 +600,7 @@ def dictionaries(
         tuples(keys, values),
         min_size=min_size,
         max_size=max_size,
-        unique_by=operator.itemgetter(0),
+        unique_by=_get_first_item,
     ).map(dict_class)
 
 
@@ -1080,7 +1077,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args, kwargs)
+        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
         return obj
 
     def do_validate(self) -> None:
@@ -2275,8 +2272,6 @@ class DataObject:
 
 
 class DataStrategy(SearchStrategy):
-    supports_find = False
-
     def do_draw(self, data):
         if data._shared_data_strategy is None:
             data._shared_data_strategy = DataObject(data)
@@ -2587,7 +2582,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 
@@ -2618,7 +2613,7 @@ else:  # pragma: no cover
         may return a different value if called again with the same arguments.
 
         Generated functions can only be called within the scope of the ``@given``
-        which created them.  This strategy does not support ``.example()``.
+        which created them.
         """
         return _functions(like=like, returns=returns, pure=pure)
 
