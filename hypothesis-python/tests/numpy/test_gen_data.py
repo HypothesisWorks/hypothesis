@@ -1351,3 +1351,9 @@ def test_object_array_filters_out_incomparable_elements():
 
     with pytest.raises(FailedHealthCheck, match="filter_too_much"):
         f()
+
+
+def test_can_generate_nested_object_arrays():
+    int_arrays = nps.arrays(np.dtype("int"), nps.array_shapes())
+    s = nps.arrays(np.dtype("O"), nps.array_shapes(), elements=int_arrays)
+    check_can_generate_examples(s)

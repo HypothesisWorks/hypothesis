@@ -35,7 +35,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import get_pretty_function_description, proxies
+from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import Real
@@ -252,22 +252,27 @@ class ArrayStrategy(st.SearchStrategy):
         try:
             result[idx] = val
         except TypeError as err:
-            element_type = getattr(val, "dtype", type(val))
             raise InvalidArgument(
                 f"Could not add element={val!r} of "
-                f"{get_pretty_function_description(element_type)} to array of "
-                f"{get_pretty_function_description(result.dtype)} - possible "
-                "mismatch of time units in dtypes?"
+                f"{getattr(val, 'dtype', type(val))} to array of "
+                f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
+
         try:
-            elem_changed = self._check_elements and (val != result[idx] and val == val)
+            # use np.all to cover the possibility that the elements of the array
+            # are themselves numpy arrays. This is only possible for dtype="O".
+            elem_changed = self._check_elements and (
+                not np.all(val == result[idx]) and np.all(val == val)
+            )
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                f"Internal error when checking element={val!r} of {getattr(val, 'dtype', type(val))!r} "
-                f"to array of {result.dtype!r}"
+                f"Internal error when checking element={val!r} of "
+                f"{getattr(val, 'dtype', type(val))!r} to array of "
+                f"{result.dtype!r}"
             ) from err
+
         if elem_changed:
             strategy = self.fill if fill else self.element_strategy
             if self.dtype.kind == "f":  # pragma: no cover
