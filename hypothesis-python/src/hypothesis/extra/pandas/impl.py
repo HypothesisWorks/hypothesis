@@ -126,13 +126,14 @@ def elements_and_dtype(elements, dtype, source=None):
         def convert_element(value):
             if is_na_dtype and value is None:
                 return None
-            name = f"draw({prefix}elements)"
             if dtype.kind == "O":
-                # for objects, just use the object, otherwise numpy might convert it
+                # just return the object, to avoid any conversion by numpy
                 return value
+
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
+                name = f"draw({prefix}elements)"
                 raise InvalidArgument(
                     f"Cannot convert {name}={value!r} of type "
                     f"{type(value).__name__} to dtype {dtype.str}"
@@ -582,7 +583,6 @@ def data_frames(
             raise InvalidArgument(f"duplicate definition of column name {c.name!r}")
 
         column_names.add(c.name)
-
         c.elements, _ = elements_and_dtype(c.elements, c.dtype, label)
 
         if c.dtype is None and rows is not None:
@@ -593,7 +593,6 @@ def data_frames(
         c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique, name=label
         )
-
         rewritten_columns.append(c)
 
     if rows is None:
@@ -611,14 +610,11 @@ def data_frames(
 
             # For columns with no filling the problem is harder, and drawing
             # them like that would result in rows being very far apart from
-            # each other in the underlying data stream, which gets in the way
+            # each other in the choice sequence, which gets in the way
             # of shrinking. So what we do is reorder and draw those columns
             # row wise, so that the values of each row are next to each other.
-            # This makes life easier for the shrinker when deleting blocks of
-            # data.
+            # This makes life easier for the shrinker when deleting choices.
 
-            # use a list to contain drawn elements rather than inserting into
-            # a series directly, otherwise pandas will attempt to coerce them
             data = defaultdict(list)
             columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
             if columns_without_fill:
