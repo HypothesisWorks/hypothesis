@@ -53,7 +53,7 @@ As evidence I present the following:
 
 So that provides us with a useful starting point of things that are definitely property based
 testing. But you're never going to find a good definition by looking at only positive examples,
-so lets look at some cases where it's more arguable.
+so let's look at some cases where it's more arguable.
 
 First off, lets revisit that parenthetical question: Does just testing against a large corpus count?
 
