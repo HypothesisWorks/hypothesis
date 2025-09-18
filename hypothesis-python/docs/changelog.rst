@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.139.2:
+
+--------------------
+6.139.2 - 2025-09-18
+--------------------
+
+Internal refactoring for new lint rules.
+
 .. _v6.139.1:
 
 --------------------
