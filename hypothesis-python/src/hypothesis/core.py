@@ -867,7 +867,7 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
     try:
         yield
     except BaseExceptionGroup as excgroup:
-        frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
+        _frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
 
         # group only contains Frozen, reraise the group
         # it doesn't matter what we raise, since any exceptions get disregarded

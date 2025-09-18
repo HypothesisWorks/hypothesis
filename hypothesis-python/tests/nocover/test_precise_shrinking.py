@@ -170,7 +170,7 @@ def test_can_precisely_shrink_values(typ, strat, require_truthy):
         cond = bool
     else:
         cond = lambda x: True
-    result, shrunk = precisely_shrink(strat, is_interesting=cond)
+    _result, shrunk = precisely_shrink(strat, is_interesting=cond)
     assert shrunk == find(strat, cond)
 
 
@@ -191,7 +191,7 @@ def test_can_precisely_shrink_alternatives(i, j, a, seed):
     types = [u for u, _ in a]
     combined_strategy = st.one_of(*[v for _, v in a])
 
-    result, value = precisely_shrink(
+    _result, value = precisely_shrink(
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[j]),
         is_interesting=lambda x: not any(isinstance(x, types[k]) for k in range(i)),
@@ -213,7 +213,7 @@ def test_precise_shrink_with_blocker(a, seed):
     types = [u for u, _ in a]
     combined_strategy = st.one_of(*[v for _, v in a])
 
-    result, value = precisely_shrink(
+    _result, value = precisely_shrink(
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[2]),
         is_interesting=lambda x: True,
@@ -300,7 +300,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
 def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
     combined_strategy = st.one_of(st.none(), *a)
 
-    result, value = find_random(combined_strategy, lambda x: x is not None)
+    result, _value = find_random(combined_strategy, lambda x: x is not None)
     shrunk_values = shrinks(
         combined_strategy, result.nodes, allow_sloppy=allow_sloppy, seed=seed
     )
@@ -317,11 +317,11 @@ def test_can_shrink_to_every_smaller_alternative(i, alts, seed, force_small):
     strats = [s for _, s in alts]
     combined_strategy = st.one_of(*strats)
     if force_small:
-        result, value = precisely_shrink(
+        result, _value = precisely_shrink(
             combined_strategy, is_interesting=lambda x: type(x) is types[i], seed=seed
         )
     else:
-        result, value = find_random(
+        result, _value = find_random(
             combined_strategy, lambda x: type(x) is types[i], seed=seed
         )
 

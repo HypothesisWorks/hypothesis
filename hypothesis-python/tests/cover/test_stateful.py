@@ -260,7 +260,7 @@ def test_multiple_variables_printed():
     # Make sure MultipleResult is iterable so the printed code is valid.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2311
     state = ProducesMultiple()
-    b_0, b_1 = state.populate_bundle()
+    _b_0, _b_1 = state.populate_bundle()
     with raises(AssertionError):
         state.fail_fast()
 
@@ -918,7 +918,7 @@ def test_initialize_rule_dont_mix_with_precondition():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachine.initialize has been decorated with both @initialize "
+            "BadStateMachine\\.initialize has been decorated with both @initialize "
             "and @precondition"
         ),
     ):
@@ -934,7 +934,7 @@ def test_initialize_rule_dont_mix_with_precondition():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "BadStateMachineReverseOrder\\.initialize has been decorated with both "
             "@initialize and @precondition"
         ),
     ):
@@ -949,7 +949,7 @@ def test_initialize_rule_dont_mix_with_precondition():
 def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(
         InvalidDefinition,
-        match="BadStateMachine.initialize has been decorated with both @rule and @initialize",
+        match="BadStateMachine\\.initialize has been decorated with both @rule and @initialize",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -961,7 +961,7 @@ def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "BadStateMachineReverseOrder\\.initialize has been decorated with both "
             "@rule and @initialize"
         ),
     ):
@@ -976,7 +976,7 @@ def test_initialize_rule_dont_mix_with_regular_rule():
 def test_initialize_rule_cannot_be_double_applied():
     with pytest.raises(
         InvalidDefinition,
-        match="BadStateMachine.initialize has been decorated with @initialize twice",
+        match="BadStateMachine\\.initialize has been decorated with @initialize twice",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -1251,7 +1251,7 @@ class ErrorsOnClassAttributeSettings(RuleBasedStateMachine):
 def test_fails_on_settings_class_attribute():
     with pytest.raises(
         InvalidDefinition,
-        match="Assigning .+ as a class attribute does nothing",
+        match=r"Assigning .+ as a class attribute does nothing",
     ):
         run_state_machine_as_test(ErrorsOnClassAttributeSettings)
 
@@ -1488,7 +1488,7 @@ def test_precondition_cannot_be_used_without_rule():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachine.has_precondition_but_no_rule has been decorated "
+            "BadStateMachine\\.has_precondition_but_no_rule has been decorated "
             "with @precondition, but not @rule"
         ),
     ):

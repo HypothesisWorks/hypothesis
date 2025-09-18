@@ -38,7 +38,7 @@ cachetools==6.2.0
     # via tox
 certifi==2025.8.3
     # via requests
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 chardet==5.2.0
     # via tox
@@ -132,7 +132,7 @@ keyring==25.6.0
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
-libcst==1.8.2
+libcst==1.8.4
     # via
     #   -r requirements/tools.in
     #   shed
@@ -150,7 +150,7 @@ more-itertools==10.8.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.17.1
+mypy==1.18.1
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -202,7 +202,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pycparser==2.22
+pycparser==2.23
     # via cffi
 pyflakes==3.4.0
     # via autoflake
@@ -260,9 +260,9 @@ rich==14.1.0
     # via
     #   pelican
     #   twine
-ruff==0.12.12
+ruff==0.13.0
     # via -r requirements/tools.in
-secretstorage==3.3.3
+secretstorage==3.4.0
     # via keyring
 shed==2024.1.1
     # via -r requirements/tools.in
