@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections import OrderedDict, abc
+from collections import OrderedDict, abc, defaultdict
 from collections.abc import Sequence
 from copy import copy
 from datetime import datetime, timedelta
@@ -17,6 +17,7 @@ from typing import Any, Generic, Optional, Union
 import attr
 import numpy as np
 import pandas
+import pandas as pd
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
@@ -125,10 +126,14 @@ def elements_and_dtype(elements, dtype, source=None):
         def convert_element(value):
             if is_na_dtype and value is None:
                 return None
-            name = f"draw({prefix}elements)"
+            if dtype.kind == "O":
+                # just return the object, to avoid any conversion by numpy
+                return value
+
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
+                name = f"draw({prefix}elements)"
                 raise InvalidArgument(
                     f"Cannot convert {name}={value!r} of type "
                     f"{type(value).__name__} to dtype {dtype.str}"
@@ -578,7 +583,6 @@ def data_frames(
             raise InvalidArgument(f"duplicate definition of column name {c.name!r}")
 
         column_names.add(c.name)
-
         c.elements, _ = elements_and_dtype(c.elements, c.dtype, label)
 
         if c.dtype is None and rows is not None:
@@ -589,7 +593,6 @@ def data_frames(
         c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique, name=label
         )
-
         rewritten_columns.append(c)
 
     if rows is None:
@@ -599,8 +602,6 @@ def data_frames(
             index = draw(index_strategy)
             local_index_strategy = st.just(index)
 
-            data = OrderedDict((c.name, None) for c in rewritten_columns)
-
             # Depending on how the columns are going to be generated we group
             # them differently to get better shrinking. For columns with fill
             # enabled, the elements can be shrunk independently of the size,
@@ -609,23 +610,17 @@ def data_frames(
 
             # For columns with no filling the problem is harder, and drawing
             # them like that would result in rows being very far apart from
-            # each other in the underlying data stream, which gets in the way
+            # each other in the choice sequence, which gets in the way
             # of shrinking. So what we do is reorder and draw those columns
             # row wise, so that the values of each row are next to each other.
-            # This makes life easier for the shrinker when deleting blocks of
-            # data.
-            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
+            # This makes life easier for the shrinker when deleting choices.
 
+            data = defaultdict(list)
+            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
             if columns_without_fill:
-                for c in columns_without_fill:
-                    data[c.name] = pandas.Series(
-                        np.zeros(shape=len(index), dtype=object),
-                        index=index,
-                        dtype=c.dtype,
-                    )
                 seen = {c.name: set() for c in columns_without_fill if c.unique}
 
-                for i in range(len(index)):
+                for _ in range(len(index)):
                     for c in columns_without_fill:
                         if c.unique:
                             for _ in range(5):
@@ -637,21 +632,7 @@ def data_frames(
                                 reject()
                         else:
                             value = draw(c.elements)
-                        try:
-                            data[c.name].iloc[i] = value
-                        except ValueError as err:  # pragma: no cover
-                            # This just works in Pandas 1.4 and later, but gives
-                            # a confusing error on previous versions.
-                            if c.dtype is None and not isinstance(
-                                value, (float, int, str, bool, datetime, timedelta)
-                            ):
-                                raise ValueError(
-                                    f"Failed to add {value=} to column "
-                                    f"{c.name} with dtype=None.  Maybe passing "
-                                    "dtype=object would help?"
-                                ) from err
-                            # Unclear how this could happen, but users find a way...
-                            raise
+                        data[c.name].append(value)
 
             for c in rewritten_columns:
                 if not c.fill.is_empty:
@@ -664,8 +645,11 @@ def data_frames(
                             unique=c.unique,
                         )
                     )
-
-            return pandas.DataFrame(data, index=index)
+            series_list = [
+                pd.Series(data[c.name], index=index, dtype=c.dtype, name=c.name)
+                for c in rewritten_columns
+            ]
+            return pandas.DataFrame({s.name: s for s in series_list})
 
         return just_draw_columns()
     else:
