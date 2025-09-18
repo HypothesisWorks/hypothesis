@@ -16,11 +16,13 @@ import sys
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, TypeVar, Union
+from types import FunctionType
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.floats import next_up
+from hypothesis.internal.lambda_sources import _function_key
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
@@ -32,6 +34,20 @@ LABEL_MASK = 2**64 - 1
 def calc_label_from_name(name: str) -> int:
     hashed = hashlib.sha384(name.encode()).digest()
     return int_from_bytes(hashed[:8])
+
+
+def calc_label_from_callable(f: Callable) -> int:
+    if isinstance(f, FunctionType):
+        return calc_label_from_hash(_function_key(f, ignore_name=True))
+    elif isinstance(f, type):
+        return calc_label_from_cls(f)
+    else:
+        # probably an instance defining __call__
+        try:
+            return calc_label_from_hash(f)
+        except Exception:
+            # not hashable
+            return calc_label_from_cls(type(f))
 
 
 def calc_label_from_cls(cls: type) -> int:
