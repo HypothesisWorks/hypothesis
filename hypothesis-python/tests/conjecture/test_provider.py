@@ -654,8 +654,10 @@ def test_available_providers_deprecation():
     "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
 )
 def test_can_generate_from_all_available_providers(backend, strategy):
+    # note: database=InMemoryExampleDatabase() is for compatibility with HypoFuzz
+    # here.
     @given(strategy)
-    @settings(backend=backend, database=None)
+    @settings(backend=backend, database=InMemoryExampleDatabase())
     def f(x):
         raise ValueError
 

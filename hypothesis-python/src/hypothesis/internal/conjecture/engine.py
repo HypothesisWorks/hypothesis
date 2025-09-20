@@ -306,13 +306,9 @@ class ConjectureRunner:
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
 
-        # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.shrunk_examples: set[Optional[InterestingOrigin]] = set()
-
+        self.shrunk_examples: set[InterestingOrigin] = set()
         self.health_check_state: Optional[HealthCheckState] = None
-
         self.tree: DataTree = DataTree()
-
         self.provider: Union[type, PrimitiveProvider] = _get_provider(
             self.settings.backend
         )
@@ -383,8 +379,6 @@ class ConjectureRunner:
             self._current_phase = phase
             yield
         finally:
-            # We ignore the mypy type error here. Because `phase` is a string literal and "-phase" is a string literal
-            # as well, the concatenation will always be valid key in the dictionary.
             self.statistics[phase + "-phase"] = {  # type: ignore
                 "duration-seconds": time.perf_counter() - start_time,
                 "test-cases": list(self.stats_per_test_case),

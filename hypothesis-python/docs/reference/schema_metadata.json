@@ -47,6 +47,10 @@
             "type": "number",
             "description": "The unix timestamp when Hypothesis was imported."
         },
+        "phase": {
+            "type": "string",
+            "description": "The Hypothesis |Phase| this test case was generated in."
+        },
         "data_status": {
             "type": "number",
             "enum": [0, 1, 2, 3],
