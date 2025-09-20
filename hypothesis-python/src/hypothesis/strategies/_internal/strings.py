@@ -11,11 +11,13 @@
 import copy
 import re
 import warnings
+from collections.abc import Collection
 from functools import cache, lru_cache, partial
-from typing import Optional
+from typing import Optional, Union, cast
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
+from hypothesis.internal.charmap import Categories
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
@@ -61,13 +63,13 @@ class OneCharStringStrategy(SearchStrategy[str]):
     def from_characters_args(
         cls,
         *,
-        codec=None,
-        min_codepoint=None,
-        max_codepoint=None,
-        categories=None,
-        exclude_characters=None,
-        include_characters=None,
-    ):
+        codec: Optional[str] = None,
+        min_codepoint: Optional[int] = None,
+        max_codepoint: Optional[int] = None,
+        categories: Optional[Categories] = None,
+        exclude_characters: Collection[str] = "",
+        include_characters: Collection[str] = "",
+    ) -> "OneCharStringStrategy":
         assert set(categories or ()).issubset(charmap.categories())
         intervals = charmap.query(
             min_codepoint=min_codepoint,
@@ -90,7 +92,11 @@ class OneCharStringStrategy(SearchStrategy[str]):
                 ("include_characters", include_characters),
             ]
             if v not in (None, "")
-            and not (k == "categories" and set(v) == set(charmap.categories()) - {"Cs"})
+            and not (
+                k == "categories"
+                # v has to be `categories` here. Help mypy along to infer that.
+                and set(cast(Categories, v)) == set(charmap.categories()) - {"Cs"}
+            )
         )
         if not intervals:
             raise InvalidArgument(
@@ -100,7 +106,9 @@ class OneCharStringStrategy(SearchStrategy[str]):
         return cls(intervals, force_repr=f"characters({_arg_repr})")
 
     @classmethod
-    def from_alphabet(cls, alphabet):
+    def from_alphabet(
+        cls, alphabet: Union[str, SearchStrategy]
+    ) -> "OneCharStringStrategy":
         if isinstance(alphabet, str):
             return cls.from_characters_args(categories=(), include_characters=alphabet)
 

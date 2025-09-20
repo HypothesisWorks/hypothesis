@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional
@@ -78,7 +78,7 @@ def charmap_file(fname: str = "charmap") -> Path:
     )
 
 
-_charmap = None
+_charmap: Optional[dict[CategoryName, IntervalsT]] = None
 
 
 def charmap() -> dict[CategoryName, IntervalsT]:
@@ -293,8 +293,8 @@ def query(
     categories: Optional[Categories] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
-    include_characters: str = "",
-    exclude_characters: str = "",
+    include_characters: Collection[str] = "",
+    exclude_characters: Collection[str] = "",
 ) -> IntervalSet:
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the criteria.
@@ -314,8 +314,8 @@ def query(
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
     catkey = _category_key(categories)
-    character_intervals = IntervalSet.from_string(include_characters or "")
-    exclude_intervals = IntervalSet.from_string(exclude_characters or "")
+    character_intervals = IntervalSet.from_string("".join(include_characters))
+    exclude_intervals = IntervalSet.from_string("".join(exclude_characters))
     qkey = (
         catkey,
         min_codepoint,
