@@ -306,6 +306,10 @@ def floats(
             f"Got {width=}, but the only valid values "
             "are the integers 16, 32, and 64."
         )
+    # Literal[16] accepts both 16 and 16.0. Normalize to the int 16 here, mainly
+    # for mypyc. We want to support width=16.0 to make e.g. width=mywidth / 2 for
+    # mywidth=32 easy.
+    width = int(width)
 
     check_valid_bound(min_value, "min_value")
     check_valid_bound(max_value, "max_value")
