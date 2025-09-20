@@ -31,7 +31,7 @@ StrategyCacheKey: "TypeAlias" = tuple[
     object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
 ]
 
-_all_strategies: dict[str, Callable] = WeakValueDictionary()
+_all_strategies: WeakValueDictionary[str, Callable] = WeakValueDictionary()
 # note: LRUReusedCache is already thread-local internally
 _STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
 
