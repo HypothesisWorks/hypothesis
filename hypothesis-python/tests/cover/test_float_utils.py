@@ -50,9 +50,9 @@ def test_next_float_equal(func, val):
 
 
 # exponent comparisons:
-@example(float_constr(1, float_info.max), 0)
-@example(float_constr(1, float_info.max), 1)
-@example(float_constr(1, float_info.max), 10)
+@example(float_constr(1, float_info.max), 0.0)
+@example(float_constr(1, float_info.max), 1.0)
+@example(float_constr(1, float_info.max), 10.0)
 @example(float_constr(1, float_info.max), float_info.max)
 @example(float_constr(1, float_info.max), math.inf)
 # mantissa comparisons:
@@ -64,12 +64,12 @@ def test_next_float_equal(func, val):
 @example(float_constr(0, 10, allow_nan=True), math.nan)
 # the branch coverage of resampling in the "out of range of smallest magnitude" case
 # relies on randomness from the mantissa. try a few different values.
-@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 4)
-@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 5)
-@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 6)
-@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -4)
-@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -5)
-@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -6)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 4.0)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 5.0)
+@example(float_constr(-4, -1, smallest_nonzero_magnitude=4), 6.0)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -4.0)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -5.0)
+@example(float_constr(1, 4, smallest_nonzero_magnitude=4), -6.0)
 @example(float_constr(-5e-324, -0.0), 3.0)
 @example(float_constr(0.0, 0.0), -0.0)
 @example(float_constr(-0.0, -0.0), 0.0)
