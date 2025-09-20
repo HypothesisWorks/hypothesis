@@ -257,10 +257,10 @@ def float_constr(
     smallest_nonzero_magnitude=SMALLEST_SUBNORMAL,
 ):
     return {
-        "min_value": min_value,
-        "max_value": max_value,
+        "min_value": float(min_value),
+        "max_value": float(max_value),
         "allow_nan": allow_nan,
-        "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+        "smallest_nonzero_magnitude": float(smallest_nonzero_magnitude),
     }
 
 
