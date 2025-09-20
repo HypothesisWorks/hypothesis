@@ -1,3 +1,7 @@
+# mypyc
+
+*.so
+
 # misc (editors, file systems, etc)
 
 *.swo

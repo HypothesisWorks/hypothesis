@@ -220,7 +220,7 @@ def compute_max_children(
         # or downwards with our full 128 bit generation, but only half of these
         # (plus one for the case of generating zero) result in a probe in the
         # direction we want. ((2**128 - 1) // 2) + 1 == 2 ** 127
-        assert (min_value is None) ^ (max_value is None)
+        assert (min_value is None) != (max_value is None)
         return 2**127
     elif choice_type == "boolean":
         constraints = cast(BooleanConstraints, constraints)
