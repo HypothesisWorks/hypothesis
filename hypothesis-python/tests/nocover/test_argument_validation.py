@@ -42,7 +42,13 @@ for ex in [
     adjust(ex, max_size="no")
 
 
-BAD_ARGS.extend([e(st.lists, st.nothing(), unique=True, min_size=1)])
+BAD_ARGS.extend(
+    [
+        e(st.lists, st.nothing(), unique=True, min_size=1),
+        e(st.characters, codec="ascii", exclude_characters=["a", "morethanonechar"]),
+        e(st.characters, codec="ascii", include_characters=["a", "morethanonechar"]),
+    ]
+)
 
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
 
