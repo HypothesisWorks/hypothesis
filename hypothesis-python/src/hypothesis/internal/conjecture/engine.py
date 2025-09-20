@@ -170,8 +170,8 @@ class RunIsComplete(Exception):
 
 
 def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
-    mname, cname = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
-    provider_cls = getattr(importlib.import_module(mname), cname)
+    module_name, class_name = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
+    provider_cls = getattr(importlib.import_module(module_name), class_name)
     if provider_cls.lifetime == "test_function":
         return provider_cls(None)
     elif provider_cls.lifetime == "test_case":
