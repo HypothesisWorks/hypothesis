@@ -25,7 +25,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.types import _global_type_lookup
-from hypothesis.strategies._internal.utils import _strategies
+from hypothesis.strategies._internal.utils import _all_strategies
 
 from tests.common.debug import (
     assert_all_examples,
@@ -89,11 +89,13 @@ def test_lookup_knows_about_all_core_strategies():
         "timezone_keys",
         "timezones",
     }
-    assert set(_strategies).issuperset(blocklist), blocklist.difference(_strategies)
+    assert set(_all_strategies).issuperset(blocklist), blocklist.difference(
+        _all_strategies
+    )
     found = set()
     for thing in (
         getattr(st, name)
-        for name in sorted(_strategies)
+        for name in sorted(_all_strategies)
         if name in dir(st) and name not in blocklist
     ):
         for n in range(3):
