@@ -33,7 +33,9 @@ from hypothesis.vendor.pretty import pretty
 
 # Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
 @cache
-def _check_is_single_character(c):
+# this is part of our forward-facing validation, so we do *not* tell mypyc that c
+# should be a str, because we don't want it to validate it before we can.
+def _check_is_single_character(c: object) -> str:
     # In order to mitigate the performance cost of this check, we use a shared cache,
     # even at the cost of showing the culprit strategy in the error message.
     if not isinstance(c, str):
@@ -320,7 +322,7 @@ _PROPLIST = """
 
 
 @lru_cache
-def _identifier_characters():
+def _identifier_characters() -> tuple[IntervalSet, IntervalSet]:
     """See https://docs.python.org/3/reference/lexical_analysis.html#identifiers"""
     # Start by computing the set of special characters
     chars = {"Other_ID_Start": "", "Other_ID_Continue": ""}
@@ -356,7 +358,7 @@ class BytesStrategy(SearchStrategy):
             max_size if max_size is not None else COLLECTION_DEFAULT_MAX_SIZE
         )
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> bytes:
         return data.draw_bytes(self.min_size, self.max_size)
 
     _nonempty_filters = (

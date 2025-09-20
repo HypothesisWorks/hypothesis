@@ -711,7 +711,7 @@ class ConjectureData:
         self._stateful_repr_parts: Optional[list[Any]] = None
         self.states_for_ids: Optional[dict[int, RandomState]] = None
         self.seeds_to_states: Optional[dict[Any, RandomState]] = None
-        self.hypothesis_runner = not_set
+        self.hypothesis_runner: Any = not_set
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None
