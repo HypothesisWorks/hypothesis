@@ -26,7 +26,7 @@ beautifulsoup4==4.13.5
     # via
     #   furo
     #   sphinx-codeautolink
-black==25.1.0
+black==25.9.0
     # via shed
 blinker==1.9.0
     # via pelican
@@ -44,7 +44,7 @@ chardet==5.2.0
     # via tox
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via
     #   black
     #   pip-tools
@@ -56,7 +56,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.10.6
     # via -r requirements/tools.in
-cryptography==45.0.7
+cryptography==46.0.1
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -150,7 +150,7 @@ more-itertools==10.8.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.18.1
+mypy==1.18.2
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -234,6 +234,8 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
+pytokens==0.1.10
+    # via black
 pyupgrade==3.20.0
     # via shed
 pyyaml==6.0.2
@@ -260,7 +262,7 @@ rich==14.1.0
     # via
     #   pelican
     #   twine
-ruff==0.13.0
+ruff==0.13.1
     # via -r requirements/tools.in
 secretstorage==3.4.0
     # via keyring
@@ -331,7 +333,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.2.0
     # via -r requirements/tools.in
-types-cffi==1.17.0.20250822
+types-cffi==1.17.0.20250915
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
@@ -350,6 +352,7 @@ typing-extensions==4.15.0
     #   asgiref
     #   beautifulsoup4
     #   black
+    #   cryptography
     #   exceptiongroup
     #   ipython
     #   mypy
