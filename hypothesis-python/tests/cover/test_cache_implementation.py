@@ -119,7 +119,7 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
 @xfail_on_crosshair(Why.symbolic_outside_context)
 @settings(
     suppress_health_check={HealthCheck.too_slow}
-    | set(settings.get_profile(settings._current_profile).suppress_health_check),
+    | set(settings().suppress_health_check),
     deadline=None,
 )
 @given(write_pattern(min_distinct_keys=2), st.data())

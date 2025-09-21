@@ -136,7 +136,7 @@ def allow_unknown_lambdas(monkeypatch):
 
 # monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests
 # if we define this.
-if settings._current_profile != "threading":
+if settings.get_current_profile_name() != "threading":
 
     @pytest.fixture(scope="function", autouse=True)
     def _consistently_increment_time(monkeypatch):
@@ -230,7 +230,7 @@ def pytest_runtest_call(item):
         not (hasattr(item, "obj") and is_hypothesis_test(item.obj))
         # we disable this check on the threading job, due to races in the global
         # state.
-        or settings._current_profile == "threading"
+        or settings.get_current_profile_name() == "threading"
     ):
         outcome = yield
     elif "pytest_randomly" in sys.modules:

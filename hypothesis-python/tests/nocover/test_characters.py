@@ -53,7 +53,7 @@ assert len(lots_of_encodings) > 100  # sanity-check
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes 2000s; large & slow symbolic strings",
 )
 @given(data=st.data(), codec=st.sampled_from(lots_of_encodings))

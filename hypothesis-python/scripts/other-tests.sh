@@ -66,7 +66,20 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/ghostwriter/
   pip uninstall -y black
 
-  if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c "import platform; print(platform.python_implementation() not in {'PyPy', 'GraalVM'})")" = "True" ] ; then
-    $PYTEST tests/array_api tests/numpy
+  if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] ; then
+    # Crosshair tracer is not compatible with no-gil
+    if [ "$(python -c "import sys; print('free-threading' in sys.version)")" != "True" ] ; then
+      # Run twice, interleaved by other tests, to make it more probable to tickle any problems
+      # from accidentally caching/retaining crosshair proxy objects
+      pip install pytest-repeat
+      pip install -r ../requirements/crosshair.txt
+      # requirements/crosshair.txt pins hypothesis. Re-override it with our local changes
+      pip install .
+      $PYTEST --count=2 --repeat-scope=session tests/numpy tests/crosshair
+      # ...but running twice takes time, don't overdo it
+      $PYTEST tests/array_api
+    else
+      $PYTEST tests/array_api tests/numpy
+    fi
   fi
 fi

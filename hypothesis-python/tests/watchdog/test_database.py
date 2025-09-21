@@ -43,9 +43,10 @@ from tests.cover.test_database_backend import _database_conforms_to_listener_api
 # It seems watchdog CI also has a similar problem:
 # * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
 # * cmd+f `def rerun_filter` in the watchdog repository
-pytestmark = pytest.mark.skipif(
-    WINDOWS, reason="watchdog tests are too flaky on windows"
-)
+pytestmark = [
+    pytest.mark.skipif(WINDOWS, reason="watchdog tests are too flaky on windows"),
+    pytest.mark.skipif(sys.platform == "darwin", reason="times out often on osx"),
+]
 
 
 # we need real time here, not monkeypatched for CI

@@ -18,6 +18,46 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.139.2:
+
+--------------------
+6.139.2 - 2025-09-18
+--------------------
+
+Internal refactoring for new lint rules.
+
+.. _v6.139.1:
+
+--------------------
+6.139.1 - 2025-09-16
+--------------------
+
+Fixed another typo in error message around function-scoped fixtures.
+
+.. _v6.139.0:
+
+--------------------
+6.139.0 - 2025-09-16
+--------------------
+
+Add |settings.get_current_profile_name|, which returns the name of the current settings profile.
+
+.. _v6.138.17:
+
+---------------------
+6.138.17 - 2025-09-15
+---------------------
+
+Fixed typo in error message around function-scoped fixtures.
+
+.. _v6.138.16:
+
+---------------------
+6.138.16 - 2025-09-13
+---------------------
+
+Improved error message for |DeadlineExceeded|.
+
 .. _v6.138.15:
 
 ---------------------

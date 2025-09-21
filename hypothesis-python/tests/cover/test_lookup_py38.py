@@ -127,7 +127,7 @@ class Node:
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~11 mins; datastructure explosion: https://github.com/pschanely/hypothesis-crosshair/issues/27",
 )
 @given(st.builds(Node))
@@ -201,7 +201,7 @@ def has_posonly_args(x, /, y):
 
 
 @pytest.mark.xfail(
-    settings._current_profile == "threading",
+    settings.get_current_profile_name() == "threading",
     reason=(
         "dynamic @example applications modify the shared "
         "has_posonly_args.hypothesis._given_kwargs."

@@ -271,9 +271,9 @@ def test_check_strategy_might_suggest_sampled_from():
     with pytest.raises(InvalidArgument) as excinfo:
         check_strategy_("not a strategy")
     assert "sampled_from" not in str(excinfo.value)
-    with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
+    with pytest.raises(InvalidArgument, match="such as st\\.sampled_from"):
         check_strategy_([1, 2, 3])
-    with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
+    with pytest.raises(InvalidArgument, match="such as st\\.sampled_from"):
         check_strategy_((1, 2, 3))
     check_strategy_(integers(), "passes for our custom coverage check")
 

@@ -68,8 +68,7 @@ def restore_profile():
     with _restore_profile_lock:
         # avoid polluting global state by resetting the loaded profile back to its
         # previous value in tests which use load_profile
-        current_profile = settings._current_profile
-        assert current_profile is not None
+        current_profile = settings.get_current_profile_name()
         try:
             yield
         finally:

@@ -89,11 +89,11 @@ def git(*args):
     subprocess.check_call(("git", *args))
 
 
-TOOLING_COMMITER_NAME = "CI on behalf of the Hypothesis team"
+TOOLING_COMMITTER_NAME = "CI on behalf of the Hypothesis team"
 
 
 def configure_git():
-    git("config", "user.name", TOOLING_COMMITER_NAME)
+    git("config", "user.name", TOOLING_COMMITTER_NAME)
     git("config", "user.email", "david@drmaciver.com")
 
 

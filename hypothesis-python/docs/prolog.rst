@@ -39,6 +39,11 @@
 .. |~settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
 .. |~settings.backend| replace:: :obj:`~hypothesis.settings.backend`
 
+.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
+.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
+.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
+.. |settings.get_current_profile_name| replace:: :func:`~hypothesis.settings.get_current_profile_name`
+
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
 .. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
@@ -105,10 +110,6 @@
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
 .. |django.from_field| replace:: :func:`~hypothesis.extra.django.from_field`
-
-.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
-.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
-.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`

@@ -15,7 +15,7 @@ from hypothesis.strategies import emails, just
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~7 mins; first barrier: the `sampled_from(get_top_level_domains())` decision is "
     "realized via iterative comparisons; see https://github.com/pschanely/CrossHair/issues/332",
 )

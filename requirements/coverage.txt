@@ -32,7 +32,7 @@ iniconfig==2.1.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.8.2
+libcst==1.8.4
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
@@ -67,7 +67,7 @@ pytest==8.4.2
     #   -r requirements/test.in
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==6.3.0
+pytest-cov==7.0.0
     # via -r requirements/coverage.in
 pytest-xdist==3.8.0
     # via -r requirements/test.in

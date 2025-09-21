@@ -205,7 +205,7 @@ def test_normal_representation_includes_draws():
     with capture_observations() as observations:
         f()
 
-    crosshair = settings._current_profile == "crosshair"
+    crosshair = settings.get_current_profile_name() == "crosshair"
     expected = textwrap.dedent(
         f"""
         f(

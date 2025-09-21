@@ -168,7 +168,7 @@ def test_make_full_patch(tst, example, expected, body, remove):
 
 @pytest.mark.parametrize("n", [0, 1, 2])
 def test_invalid_syntax_cases_dropped(n):
-    tst, (ex, via), expected = SIMPLE
+    tst, (ex, via), _expected = SIMPLE
     example_ls = [(ex.replace("x=1", f"x={x}"), via) for x in range(n)]
     example_ls.insert(-1, ("fn(\n    x=<__main__.Cls object at 0x>,\n)", FAIL_MSG))
 
@@ -188,6 +188,22 @@ def test_no_example_for_data_strategy():
 
     assert get_patch_for(fn, [("fn(data='data(...)')", "msg")]) is not None
     assert get_patch_for(fn, [("fn(Foo(data=data(...)))", "msg")]) is not None
+
+
+def test_patch_order_preserved():
+    (_fname, _before, after) = get_patch_for(
+        fn, [("fn(a=1)", "msg"), ("fn(b=2)", "msg")]
+    )
+    assert after.startswith(
+        '@given(st.integers())\n@example(a=1).via("msg")\n@example(b=2).via("msg")'
+    )
+
+    (_fname, _before, after) = get_patch_for(
+        fn, [("fn(b=2)", "msg"), ("fn(a=1)", "msg")]
+    )
+    assert after.startswith(
+        '@given(st.integers())\n@example(b=2).via("msg")\n@example(a=1).via("msg")'
+    )
 
 
 def test_deduplicates_examples():

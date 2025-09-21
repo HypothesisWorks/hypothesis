@@ -113,7 +113,7 @@ def test_can_guard_against_draws_of_nan():
         st.tuples(st.just(1), st.floats(allow_nan=True)),
     )
 
-    tag, f = minimal(tagged_floats, lambda x: math.isnan(x[1]))
+    tag, _f = minimal(tagged_floats, lambda x: math.isnan(x[1]))
     assert tag == 1
 
 
@@ -238,7 +238,7 @@ def test_exclude_infinite_endpoint_is_invalid():
 @pytest.mark.parametrize("lo,hi", [(True, False), (False, True), (True, True)])
 @given(bound=st.floats(allow_nan=False, allow_infinity=False).filter(bool))
 def test_exclude_entire_interval(lo, hi, bound):
-    with pytest.raises(InvalidArgument, match="exclude_min=.+ and exclude_max="):
+    with pytest.raises(InvalidArgument, match=r"exclude_min=.+ and exclude_max="):
         st.floats(bound, bound, exclude_min=lo, exclude_max=hi).validate()
 
 

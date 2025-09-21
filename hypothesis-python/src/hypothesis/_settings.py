@@ -629,7 +629,7 @@ class settings(metaclass=settingsMeta):
         )
         self._deadline = (
             self._fallback.deadline  # type: ignore
-            if deadline is not_set
+            if deadline is not_set  # type: ignore
             else _validate_deadline(deadline)
         )
         self._print_blob = (
@@ -1024,6 +1024,20 @@ class settings(metaclass=settingsMeta):
         check_type(str, name, "name")
         settings._current_profile = name
         default_variable.value = settings.get_profile(name)
+
+    @staticmethod
+    def get_current_profile_name() -> str:
+        """
+        The name of the current settings profile. For example:
+
+        .. code-block:: python
+
+            >>> settings.load_profile("myprofile")
+            >>> settings.get_current_profile_name()
+            'myprofile'
+        """
+        assert settings._current_profile is not None
+        return settings._current_profile
 
 
 @contextlib.contextmanager
