@@ -16,12 +16,12 @@ attrs==25.3.0
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   outcome
     #   trio
-black==25.1.0
+black==25.9.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.2.1
+click==8.3.0
     # via
     #   -r requirements/coverage.in
     #   black
@@ -59,7 +59,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.9.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.138.16
+hypothesis[cli,watchdog]==6.139.2
     # via hypofuzz
 idna==3.10
     # via
@@ -103,7 +103,7 @@ pluggy==1.6.0
     #   pytest-cov
 priority==2.0.0
     # via hypercorn
-psutil==7.0.0
+psutil==7.1.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
@@ -127,6 +127,8 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
+pytokens==0.1.10
+    # via black
 pytz==2025.2
     # via
     #   -r requirements/coverage.in
