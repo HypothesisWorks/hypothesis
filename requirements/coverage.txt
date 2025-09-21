@@ -10,9 +10,9 @@ async-timeout==5.0.1
     # via redis
 attrs==25.3.0
     # via hypothesis (hypothesis-python/pyproject.toml)
-black==25.1.0
+black==25.9.0
     # via -r requirements/coverage.in
-click==8.2.1
+click==8.3.0
     # via
     #   -r requirements/coverage.in
     #   black
@@ -75,6 +75,8 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
+pytokens==0.1.10
+    # via black
 pytz==2025.2
     # via
     #   -r requirements/coverage.in
