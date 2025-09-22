@@ -52,6 +52,18 @@ def test_when_nothing_could_be_produced():
         )
 
 
+def test_include_exclude_with_multiple_chars_is_invalid():
+    with pytest.raises(InvalidArgument, match="required to be a single character"):
+        check_can_generate_examples(
+            characters(codec="ascii", exclude_characters=["a", "morethanonechar"])
+        )
+
+    with pytest.raises(InvalidArgument, match="required to be a single character"):
+        check_can_generate_examples(
+            characters(codec="ascii", include_characters=["a", "morethanonechar"])
+        )
+
+
 def test_characters_of_specific_groups():
     st = characters(categories=("Lu", "Nd"))
 

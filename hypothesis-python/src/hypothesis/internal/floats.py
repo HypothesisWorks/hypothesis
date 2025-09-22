@@ -37,7 +37,7 @@ TO_SIGNED_FORMAT: dict[UnsignedIntFormat, SignedIntFormat] = {
 }
 
 
-def reinterpret_bits(x: float, from_: str, to: str) -> float:
+def reinterpret_bits(x: Union[float, int], from_: str, to: str) -> Union[float, int]:
     x = struct.unpack(to, struct.pack(from_, x))[0]
     assert isinstance(x, (float, int))
     return x
@@ -185,7 +185,7 @@ def make_float_clamper(
     return float_clamper
 
 
-def sign_aware_lte(x: float, y: float) -> bool:
+def sign_aware_lte(x: Union[float, int], y: Union[float, int]) -> bool:
     """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
     if x == 0.0 == y:
         return math.copysign(1.0, x) <= math.copysign(1.0, y)
@@ -193,7 +193,9 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return x <= y
 
 
-def clamp(lower: float, value: float, upper: float) -> float:
+def clamp(
+    lower: Union[float, int], value: Union[float, int], upper: Union[float, int]
+) -> Union[float, int]:
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper.  NaN is mapped to lower."""
     # this seems pointless (and is for integers), but handles the -0.0/0.0 case.

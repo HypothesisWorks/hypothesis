@@ -578,6 +578,7 @@ def test_metadata_to_json():
             "os.getpid()",
             "imported_at",
             "data_status",
+            "phase",
             "interesting_origin",
             "choice_nodes",
             "choice_spans",

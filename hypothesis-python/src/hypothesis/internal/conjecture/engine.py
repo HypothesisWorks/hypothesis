@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
-from typing import Callable, Final, Literal, NoReturn, Optional, Union, cast
+from typing import Callable, Literal, NoReturn, Optional, Union, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -71,11 +71,15 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report
 
+# In most cases, the following constants are all Final. However, we do allow users
+# to monkeypatch all of these variables, which means we cannot annotate them as
+# Final or mypyc will inline them and render monkeypatching useless.
+
 #: The maximum number of times the shrinker will reduce the complexity of a failing
 #: input before giving up. This avoids falling down a trap of exponential (or worse)
 #: complexity, where the shrinker appears to be making progress but will take a
 #: substantially long time to finish completely.
-MAX_SHRINKS: Final[int] = 500
+MAX_SHRINKS: int = 500
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
@@ -87,7 +91,7 @@ MAX_SHRINKS: Final[int] = 500
 #: for before giving up. This is across all shrinks for the same failure, so even
 #: if the shrinker successfully reduces the complexity of a single failure several
 #: times, it will stop when it hits |MAX_SHRINKING_SECONDS| of total time taken.
-MAX_SHRINKING_SECONDS: Final[int] = 300
+MAX_SHRINKING_SECONDS: int = 300
 
 #: The maximum amount of entropy a single test case can use before giving up
 #: while making random choices during input generation.
@@ -95,9 +99,9 @@ MAX_SHRINKING_SECONDS: Final[int] = 300
 #: The "unit" of one |BUFFER_SIZE| does not have any defined semantics, and you
 #: should not rely on it, except that a linear increase |BUFFER_SIZE| will linearly
 #: increase the amount of entropy a test case can use during generation.
-BUFFER_SIZE: Final[int] = 8 * 1024
-CACHE_SIZE: Final[int] = 10000
-MIN_TEST_CALLS: Final[int] = 10
+BUFFER_SIZE: int = 8 * 1024
+CACHE_SIZE: int = 10000
+MIN_TEST_CALLS: int = 10
 
 
 def shortlex(s):
@@ -168,8 +172,8 @@ class RunIsComplete(Exception):
 def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
     provider_cls = AVAILABLE_PROVIDERS[backend]
     if isinstance(provider_cls, str):
-        mname, cname = provider_cls.rsplit(".", 1)
-        provider_cls = getattr(importlib.import_module(mname), cname)
+        module_name, class_name = provider_cls.rsplit(".", 1)
+        provider_cls = getattr(importlib.import_module(module_name), class_name)
 
     if provider_cls.lifetime == "test_function":
         return provider_cls(None)
@@ -309,13 +313,9 @@ class ConjectureRunner:
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
 
-        # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.shrunk_examples: set[Optional[InterestingOrigin]] = set()
-
+        self.shrunk_examples: set[InterestingOrigin] = set()
         self.health_check_state: Optional[HealthCheckState] = None
-
         self.tree: DataTree = DataTree()
-
         self.provider: Union[type, PrimitiveProvider] = _get_provider(
             self.settings.backend
         )
@@ -386,8 +386,6 @@ class ConjectureRunner:
             self._current_phase = phase
             yield
         finally:
-            # We ignore the mypy type error here. Because `phase` is a string literal and "-phase" is a string literal
-            # as well, the concatenation will always be valid key in the dictionary.
             self.statistics[phase + "-phase"] = {  # type: ignore
                 "duration-seconds": time.perf_counter() - start_time,
                 "test-cases": list(self.stats_per_test_case),

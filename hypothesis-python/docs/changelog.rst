@@ -18,6 +18,31 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.140.1:
+
+--------------------
+6.140.1 - 2025-09-22
+--------------------
+
+This patch re-enables the warning for incompatible :func:`~hypothesis.strategies.shared`
+strategies that was first enabled in :v:`6.133.0` but disabled in :v:`6.135.15`.
+
+.. _v6.140.0:
+
+--------------------
+6.140.0 - 2025-09-22
+--------------------
+
+|st.characters| now validates that the elements of the ``exclude_characters`` and ``include_characters`` arguments are single characters, which was always assumed internally. For example, ``exclude_characters=["a", "b"]`` is valid while ``exclude_characters=["ab"]`` will now raise an error up-front.
+
+.. _v6.139.3:
+
+--------------------
+6.139.3 - 2025-09-22
+--------------------
+
+Add ``phase`` to the :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in :ref:`observability <observability>`.
+
 .. _v6.139.2:
 
 --------------------

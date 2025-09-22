@@ -65,7 +65,7 @@ def extract_all_attributes(tree):
     return attributes
 
 
-def _function_key(f, *, bounded_size=False):
+def _function_key(f, *, bounded_size=False, ignore_name=False):
     """Returns a digest that differentiates functions that have different sources.
 
     Either a function or a code object may be passed. If code object, default
@@ -96,7 +96,7 @@ def _function_key(f, *, bounded_size=False):
         code.co_names,
         code.co_varnames,
         code.co_freevars,
-        code.co_name,
+        ignore_name or code.co_name,
     )
 
 

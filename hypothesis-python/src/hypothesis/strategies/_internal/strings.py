@@ -11,11 +11,13 @@
 import copy
 import re
 import warnings
+from collections.abc import Collection
 from functools import cache, lru_cache, partial
-from typing import Optional
+from typing import Optional, Union, cast
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
+from hypothesis.internal.charmap import Categories
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
@@ -33,7 +35,9 @@ from hypothesis.vendor.pretty import pretty
 
 # Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
 @cache
-def _check_is_single_character(c):
+# this is part of our forward-facing validation, so we do *not* tell mypyc that c
+# should be a str, because we don't want it to validate it before we can.
+def _check_is_single_character(c: object) -> str:
     # In order to mitigate the performance cost of this check, we use a shared cache,
     # even at the cost of showing the culprit strategy in the error message.
     if not isinstance(c, str):
@@ -59,13 +63,13 @@ class OneCharStringStrategy(SearchStrategy[str]):
     def from_characters_args(
         cls,
         *,
-        codec=None,
-        min_codepoint=None,
-        max_codepoint=None,
-        categories=None,
-        exclude_characters=None,
-        include_characters=None,
-    ):
+        codec: Optional[str] = None,
+        min_codepoint: Optional[int] = None,
+        max_codepoint: Optional[int] = None,
+        categories: Optional[Categories] = None,
+        exclude_characters: Collection[str] = "",
+        include_characters: Collection[str] = "",
+    ) -> "OneCharStringStrategy":
         assert set(categories or ()).issubset(charmap.categories())
         intervals = charmap.query(
             min_codepoint=min_codepoint,
@@ -88,7 +92,11 @@ class OneCharStringStrategy(SearchStrategy[str]):
                 ("include_characters", include_characters),
             ]
             if v not in (None, "")
-            and not (k == "categories" and set(v) == set(charmap.categories()) - {"Cs"})
+            and not (
+                k == "categories"
+                # v has to be `categories` here. Help mypy along to infer that.
+                and set(cast(Categories, v)) == set(charmap.categories()) - {"Cs"}
+            )
         )
         if not intervals:
             raise InvalidArgument(
@@ -98,7 +106,9 @@ class OneCharStringStrategy(SearchStrategy[str]):
         return cls(intervals, force_repr=f"characters({_arg_repr})")
 
     @classmethod
-    def from_alphabet(cls, alphabet):
+    def from_alphabet(
+        cls, alphabet: Union[str, SearchStrategy]
+    ) -> "OneCharStringStrategy":
         if isinstance(alphabet, str):
             return cls.from_characters_args(categories=(), include_characters=alphabet)
 
@@ -320,7 +330,7 @@ _PROPLIST = """
 
 
 @lru_cache
-def _identifier_characters():
+def _identifier_characters() -> tuple[IntervalSet, IntervalSet]:
     """See https://docs.python.org/3/reference/lexical_analysis.html#identifiers"""
     # Start by computing the set of special characters
     chars = {"Other_ID_Start": "", "Other_ID_Continue": ""}
@@ -356,7 +366,7 @@ class BytesStrategy(SearchStrategy):
             max_size if max_size is not None else COLLECTION_DEFAULT_MAX_SIZE
         )
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> bytes:
         return data.draw_bytes(self.min_size, self.max_size)
 
     _nonempty_filters = (

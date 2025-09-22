@@ -11,7 +11,7 @@
 from crosshair.core import IgnoreAttempt, NotDeterministic, UnexploredPath
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
-from hypothesis import settings, strategies as st
+from hypothesis import Verbosity, settings, strategies as st
 from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 
 
@@ -25,6 +25,16 @@ def test_provider_conformance_crosshair():
     run_conformance_test(
         CrossHairPrimitiveProvider,
         context_manager_exceptions=(IgnoreAttempt, UnexploredPath, NotDeterministic),
-        settings=settings(max_examples=5, stateful_step_count=10),
+        settings=settings(
+            max_examples=5,
+            stateful_step_count=10,
+            # It's nice to set Verbosity.verbose unconditionally here so we get
+            # more information during rare errors without having to retry.
+            #
+            # Careful, though: it's possible interactions with crosshair differ
+            # under verbosity (eg realizing the symbolic debug messages), so
+            # some errors may only surface with or without verbosity.
+            verbosity=Verbosity.verbose,
+        ),
         _realize_objects=_realize_objects,
     )

@@ -82,8 +82,10 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
-    calc_label_from_cls,
+    calc_label_from_callable,
+    calc_label_from_name,
     check_sample,
+    combine_labels,
     identity,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
@@ -713,6 +715,16 @@ def characters(
         )
     exclude_characters = exclude_characters or ""
     include_characters = include_characters or ""
+    if not_one_char := [c for c in exclude_characters if len(c) != 1]:
+        raise InvalidArgument(
+            "Elements of exclude_characters are required to be a single character, "
+            f"but {not_one_char!r} passed in {exclude_characters=} was not."
+        )
+    if not_one_char := [c for c in include_characters if len(c) != 1]:
+        raise InvalidArgument(
+            "Elements of include_characters are required to be a single character, "
+            f"but {not_one_char!r} passed in {include_characters=} was not."
+        )
     overlap = set(exclude_characters).intersection(include_characters)
     if overlap:
         raise InvalidArgument(
@@ -1042,6 +1054,15 @@ class BuildsStrategy(SearchStrategy[Ex]):
         self.target = target
         self.args = args
         self.kwargs = kwargs
+
+    def calc_label(self) -> int:
+        return combine_labels(
+            self.class_label,
+            calc_label_from_callable(self.target),
+            *[strat.label for strat in self.args],
+            *[calc_label_from_name(k) for k in self.kwargs],
+            *[strat.label for strat in self.kwargs.values()],
+        )
 
     def do_draw(self, data: ConjectureData) -> Ex:
         args = [data.draw(s) for s in self.args]
@@ -1865,7 +1886,10 @@ class CompositeStrategy(SearchStrategy):
         return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self) -> int:
-        return calc_label_from_cls(self.definition)
+        return combine_labels(
+            self.class_label,
+            calc_label_from_callable(self.definition),
+        )
 
 
 class DrawFn(Protocol):

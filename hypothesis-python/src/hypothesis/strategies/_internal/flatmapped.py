@@ -11,6 +11,10 @@
 from typing import Callable, Generic, TypeVar
 
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.utils import (
+    calc_label_from_callable,
+    combine_labels,
+)
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     RecurT,
@@ -34,6 +38,13 @@ class FlatMapStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.base)
+
+    def calc_label(self) -> int:
+        return combine_labels(
+            self.class_label,
+            self.base.label,
+            calc_label_from_callable(self.expand),
+        )
 
     def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):

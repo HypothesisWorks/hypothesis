@@ -46,6 +46,7 @@ from hypothesis.strategies import binary, data, integers, just, lists
 from tests.common.utils import (
     Why,
     capture_out,
+    skipif_threading,
     validate_deprecation,
     xfail_on_crosshair,
 )
@@ -407,6 +408,7 @@ class FailsEventually(RuleBasedStateMachine):
 FailsEventually.TestCase.settings = Settings(stateful_step_count=5)
 
 
+@skipif_threading
 def test_can_explicitly_pass_settings():
     run_state_machine_as_test(FailsEventually)
     try:
@@ -432,6 +434,7 @@ def test_runner_that_checks_factory_produced_a_machine():
         run_state_machine_as_test(object)
 
 
+@skipif_threading
 def test_settings_attribute_is_validated():
     real_settings = FailsEventually.TestCase.settings
     try:
