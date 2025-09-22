@@ -589,14 +589,23 @@ def test_builds_error_messages(data):
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
-        (st.integers(), st.integers(0)),
+        pytest.param(
+            st.integers(),
+            st.integers(0),
+            marks=pytest.mark.xfail(
+                # this is the exception raised by failed pytest.warns(),
+                # ref https://github.com/pytest-dev/pytest/issues/8928
+                raises=pytest.fail.Exception,
+                strict=True,
+                reason="constraints not checked",
+            ),
+        ),
         (st.builds(int), st.builds(float)),
         (st.none(), st.integers()),
         (
             st.composite(lambda draw: draw(st.none()))(),
             st.composite(lambda draw: draw(st.integers()))(),
         ),
-        (st.builds(int, st.integers()), st.builds(int, st.integers(0))),
     ],
 )
 def test_incompatible_shared_strategies_warns(strat_a, strat_b):

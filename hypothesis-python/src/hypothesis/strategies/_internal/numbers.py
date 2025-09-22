@@ -16,7 +16,6 @@ from typing import Literal, Optional, Union, cast
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.utils import calc_label_from_hash, combine_labels
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
@@ -66,13 +65,6 @@ class IntegersStrategy(SearchStrategy[int]):
         if self.start is None:
             return f"integers(max_value={self.end})"
         return f"integers({self.start}, {self.end})"
-
-    def calc_label(self) -> int:
-        return combine_labels(
-            self.class_label,
-            calc_label_from_hash(self.start),
-            calc_label_from_hash(self.end),
-        )
 
     def do_draw(self, data: ConjectureData) -> int:
         # For bounded integers, make the bounds and near-bounds more likely.
@@ -188,15 +180,6 @@ class FloatStrategy(SearchStrategy[float]):
             f"{self.__class__.__name__}({self.min_value=}, {self.max_value=}, "
             f"{self.allow_nan=}, {self.smallest_nonzero_magnitude=})"
         ).replace("self.", "")
-
-    def calc_label(self) -> int:
-        return combine_labels(
-            self.class_label,
-            calc_label_from_hash(self.min_value),
-            calc_label_from_hash(self.max_value),
-            calc_label_from_hash(self.allow_nan),
-            calc_label_from_hash(self.smallest_nonzero_magnitude),
-        )
 
     def do_draw(self, data: ConjectureData) -> float:
         return data.draw_float(

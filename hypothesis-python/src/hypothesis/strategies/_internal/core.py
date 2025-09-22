@@ -1886,7 +1886,10 @@ class CompositeStrategy(SearchStrategy):
         return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self) -> int:
-        return calc_label_from_callable(self.definition)
+        return combine_labels(
+            self.class_label,
+            calc_label_from_callable(self.definition),
+        )
 
 
 class DrawFn(Protocol):
