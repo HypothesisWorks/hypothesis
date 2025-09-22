@@ -82,7 +82,8 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #:
 #: * A string corresponding to an importable absolute path of a
 #:   |PrimitiveProvider| subclass
-#: * A |PrimitiveProvider| subclass (the class itself, not an instance)
+#: * A |PrimitiveProvider| subclass (the class itself, not an instance of the
+#:   class)
 #:
 #: Hypothesis will instantiate the corresponding |PrimitiveProvider| subclass
 #: when the backend is requested by a test's |settings.backend| value.
@@ -111,10 +112,12 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #: Though, as ``backend="hypothesis"`` is the default setting, the above would
 #: typically not have any effect.
 #:
-#: If you maintain a third-party backend, we strongly recommend providing an
-#: absolute importable path, rather than a |PrimitiveProvider| class. Hypothesis
-#: will defer importing class paths until required, which improves startup times
-#: for tests which don't request the backend.
+#: For third-party backend authors, we strongly encourage ensuring that
+#: ``import hypothesis`` does not automatically import the expensive parts of
+#: your package, by:
+#: - setting a string path here, instead of a provider class
+#: - ensuring the registered hypothesis plugin path references a path which just
+#:   sets AVAILABLE_PROVIDERS and does not import your package
 AVAILABLE_PROVIDERS: dict[str, Union[str, type["PrimitiveProvider"]]] = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
