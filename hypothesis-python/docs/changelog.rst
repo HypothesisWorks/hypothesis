@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.139.3:
+
+--------------------
+6.139.3 - 2025-09-22
+--------------------
+
+Add ``phase`` to the :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in :ref:`observability <observability>`.
+
 .. _v6.139.2:
 
 --------------------
