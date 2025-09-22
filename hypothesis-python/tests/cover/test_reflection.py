@@ -12,7 +12,7 @@ import sys
 from copy import deepcopy
 from datetime import time
 from functools import partial, wraps
-from inspect import Parameter, Signature, signature
+from inspect import Parameter, Signature, iscoroutinefunction, signature
 from textwrap import dedent
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
@@ -279,6 +279,10 @@ def universal_acceptor(*args, **kwargs):
     return args, kwargs
 
 
+async def async_acceptor(*args, **kwargs):
+    return args, kwargs
+
+
 def has_one_arg(hello):
     pass
 
@@ -344,6 +348,13 @@ def test_uses_varargs():
         universal_acceptor
     )
     assert f(1, 2) == ((1, 2), {})
+
+
+def test_copying_preserves_coroutines():
+    f = define_function_signature("foo", "A docstring for foo", signature(has_varargs))(
+        async_acceptor
+    )
+    assert iscoroutinefunction(f)
 
 
 DEFINE_FOO_FUNCTION = """

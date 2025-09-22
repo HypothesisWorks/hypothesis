@@ -371,6 +371,16 @@ def accept({funcname}):
 """.lstrip()
 
 
+COPY_ASYNC_SIGNATURE_SCRIPT = """
+from hypothesis.utils.conventions import not_set
+
+def accept({funcname}):
+    async def {name}{signature}:
+        return await {funcname}({invocation})
+    return {name}
+""".lstrip()
+
+
 def get_varargs(
     sig: Signature, kind: int = Parameter.VAR_POSITIONAL
 ) -> Optional[Parameter]:
@@ -434,7 +444,11 @@ def define_function_signature(name, docstring, signature):
             if funcname not in used_names:
                 break
 
-        source = COPY_SIGNATURE_SCRIPT.format(
+        if inspect.iscoroutinefunction(f):
+            script = COPY_ASYNC_SIGNATURE_SCRIPT
+        else:
+            script = COPY_SIGNATURE_SCRIPT
+        source = script.format(
             name=name,
             funcname=funcname,
             signature=str(newsig),
