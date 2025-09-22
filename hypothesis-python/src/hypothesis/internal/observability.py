@@ -171,6 +171,7 @@ class ObservationMetadata:
     os_getpid: int
     imported_at: float
     data_status: "Status"
+    phase: str
     interesting_origin: Optional[InterestingOrigin]
     choice_nodes: Optional[tuple[ChoiceNode, ...]]
     choice_spans: Optional["Spans"]
@@ -185,6 +186,7 @@ class ObservationMetadata:
             "os.getpid()": self.os_getpid,
             "imported_at": self.imported_at,
             "data_status": self.data_status,
+            "phase": self.phase,
             "interesting_origin": self.interesting_origin,
             "choice_nodes": (
                 None if self.choice_nodes is None else nodes_to_json(self.choice_nodes)
@@ -456,6 +458,7 @@ def make_testcase(
                 "predicates": dict(data._observability_predicates),
                 "backend": backend_metadata or {},
                 "data_status": data.status,
+                "phase": phase,
                 "interesting_origin": data.interesting_origin,
                 "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
                 "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
