@@ -13,11 +13,12 @@ import os
 import sys
 import textwrap
 import traceback
+from dataclasses import dataclass
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
 from types import ModuleType, TracebackType
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -90,7 +91,8 @@ def get_trimmed_traceback(
     return tb
 
 
-class InterestingOrigin(NamedTuple):
+@dataclass(frozen=True)
+class InterestingOrigin:
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even
     # if report_multiple_bugs=False).  We traditionally use the exception type and

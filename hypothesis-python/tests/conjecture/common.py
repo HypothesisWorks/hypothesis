@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import math
 import sys
 from contextlib import contextmanager
@@ -48,7 +49,7 @@ def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
         int("not an int")
     except Exception as e:
         origin = InterestingOrigin.from_exception(e)
-        return origin._replace(lineno=n if n is not None else origin.lineno)
+        return dataclasses.replace(origin, lineno=n if n is not None else origin.lineno)
 
 
 def run_to_data(f):
@@ -256,10 +257,10 @@ def float_constr(
     smallest_nonzero_magnitude=SMALLEST_SUBNORMAL,
 ):
     return {
-        "min_value": min_value,
-        "max_value": max_value,
+        "min_value": float(min_value),
+        "max_value": float(max_value),
         "allow_nan": allow_nan,
-        "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+        "smallest_nonzero_magnitude": float(smallest_nonzero_magnitude),
     }
 
 

@@ -115,19 +115,6 @@ MAX_DEPTH = 100
 threadlocal = ThreadLocal(global_test_counter=int)
 
 
-class ExtraInformation:
-    """A class for holding shared state on a ``ConjectureData`` that should
-    be added to the final ``ConjectureResult``."""
-
-    def __repr__(self) -> str:
-        return "ExtraInformation({})".format(
-            ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()),
-        )
-
-    def has_information(self) -> bool:
-        return bool(self.__dict__)
-
-
 class Status(IntEnum):
     OVERRUN = 0
     INVALID = 1
@@ -597,7 +584,6 @@ class ConjectureResult:
     nodes: tuple[ChoiceNode, ...] = attr.ib(eq=False, repr=False)
     length: int = attr.ib()
     output: str = attr.ib()
-    extra_information: Optional[ExtraInformation] = attr.ib()
     expected_exception: Optional[BaseException] = attr.ib()
     expected_traceback: Optional[str] = attr.ib()
     has_discards: bool = attr.ib()
@@ -725,11 +711,10 @@ class ConjectureData:
         self._stateful_repr_parts: Optional[list[Any]] = None
         self.states_for_ids: Optional[dict[int, RandomState]] = None
         self.seeds_to_states: Optional[dict[Any, RandomState]] = None
-        self.hypothesis_runner = not_set
+        self.hypothesis_runner: Any = not_set
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None
-        self.extra_information = ExtraInformation()
 
         self.prefix = prefix
         self.nodes: tuple[ChoiceNode, ...] = ()
@@ -1165,11 +1150,6 @@ class ConjectureData:
                 output=self.output,
                 expected_traceback=self.expected_traceback,
                 expected_exception=self.expected_exception,
-                extra_information=(
-                    self.extra_information
-                    if self.extra_information.has_information()
-                    else None
-                ),
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),

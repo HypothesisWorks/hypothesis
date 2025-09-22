@@ -942,7 +942,7 @@ class StateForActualGivenExecution:
         self._timing_features = {}
 
     @property
-    def test_identifier(self):
+    def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
         ) or get_pretty_function_description(self.wrapped_test)

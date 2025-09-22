@@ -713,6 +713,16 @@ def characters(
         )
     exclude_characters = exclude_characters or ""
     include_characters = include_characters or ""
+    if not_one_char := [c for c in exclude_characters if len(c) != 1]:
+        raise InvalidArgument(
+            "Elements of exclude_characters are required to be a single character, "
+            f"but {not_one_char!r} passed in {exclude_characters=} was not."
+        )
+    if not_one_char := [c for c in include_characters if len(c) != 1]:
+        raise InvalidArgument(
+            "Elements of include_characters are required to be a single character, "
+            f"but {not_one_char!r} passed in {include_characters=} was not."
+        )
     overlap = set(exclude_characters).intersection(include_characters)
     if overlap:
         raise InvalidArgument(

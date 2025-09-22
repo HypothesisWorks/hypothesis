@@ -11,8 +11,8 @@
 import dataclasses
 import sys
 from functools import partial
-from inspect import signature
 from typing import TYPE_CHECKING, Callable, TypeVar
+from weakref import WeakValueDictionary
 
 import attr
 
@@ -24,8 +24,6 @@ from hypothesis.vendor.pretty import pretty
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    from hypothesis.strategies._internal.strategies import SearchStrategy
-
 T = TypeVar("T")
 ValueKey: "TypeAlias" = tuple[type, object]
 # (fn, args, kwargs)
@@ -33,7 +31,7 @@ StrategyCacheKey: "TypeAlias" = tuple[
     object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
 ]
 
-_strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
+_all_strategies: WeakValueDictionary[str, Callable] = WeakValueDictionary()
 # note: LRUReusedCache is already thread-local internally
 _STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
 
@@ -103,7 +101,7 @@ def defines_strategy(
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
-        _strategies[strategy_definition.__name__] = signature(strategy_definition)
+        _all_strategies[strategy_definition.__name__] = strategy_definition
 
         if never_lazy:
             assert not try_non_lazy
