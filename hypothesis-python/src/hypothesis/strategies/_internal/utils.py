@@ -69,7 +69,6 @@ def cacheable(fn: T) -> T:
         else:
             result = fn(*args, **kwargs)
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                result._is_singleton = True
                 _STRATEGY_CACHE[cache_key] = result
             return result
 

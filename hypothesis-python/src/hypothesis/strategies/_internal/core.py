@@ -82,8 +82,10 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
-    calc_label_from_cls,
+    calc_label_from_callable,
+    calc_label_from_name,
     check_sample,
+    combine_labels,
     identity,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
@@ -1053,6 +1055,15 @@ class BuildsStrategy(SearchStrategy[Ex]):
         self.args = args
         self.kwargs = kwargs
 
+    def calc_label(self) -> int:
+        return combine_labels(
+            self.class_label,
+            calc_label_from_callable(self.target),
+            *[strat.label for strat in self.args],
+            *[calc_label_from_name(k) for k in self.kwargs],
+            *[strat.label for strat in self.kwargs.values()],
+        )
+
     def do_draw(self, data: ConjectureData) -> Ex:
         args = [data.draw(s) for s in self.args]
         kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
@@ -1875,7 +1886,10 @@ class CompositeStrategy(SearchStrategy):
         return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self) -> int:
-        return calc_label_from_cls(self.definition)
+        return combine_labels(
+            self.class_label,
+            calc_label_from_callable(self.definition),
+        )
 
 
 class DrawFn(Protocol):

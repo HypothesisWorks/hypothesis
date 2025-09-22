@@ -208,3 +208,20 @@ def test_samples_from_a_range_directly():
 
 def test_p_continue_to_average_saturates():
     assert cu._p_continue_to_avg(1.1, 100) == 100
+
+
+def test_unhashable_calc_label():
+
+    class Unhashable:
+        def __call__(self):
+            return None
+
+        def __hash__(self):
+            raise TypeError
+
+    c1 = Unhashable()
+    c2 = Unhashable()
+
+    with pytest.raises(TypeError):
+        assert cu.calc_label_from_hash(c1) == cu.calc_label_from_hash(c2)
+    assert cu.calc_label_from_callable(c1) == cu.calc_label_from_callable(c2)
