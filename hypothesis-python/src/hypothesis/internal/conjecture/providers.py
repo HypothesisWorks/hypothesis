@@ -115,6 +115,7 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #: For third-party backend authors, we strongly encourage ensuring that
 #: ``import hypothesis`` does not automatically import the expensive parts of
 #: your package, by:
+#:
 #: - setting a string path here, instead of a provider class
 #: - ensuring the registered hypothesis plugin path references a path which just
 #:   sets AVAILABLE_PROVIDERS and does not import your package
