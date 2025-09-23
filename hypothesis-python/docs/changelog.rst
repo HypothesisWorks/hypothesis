@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.140.2:
+
+--------------------
+6.140.2 - 2025-09-23
+--------------------
+
+The automatic switch to the CI :class:`settings profile <hypothesis.settings>` now works under :pypi:`tox` (for ``tox >= 4.30.0``).
+
 .. _v6.140.1:
 
 --------------------
