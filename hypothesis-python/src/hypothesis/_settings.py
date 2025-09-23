@@ -294,7 +294,9 @@ class duration(datetime.timedelta):
 # see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
 # initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
 _CI_VARS = {
-    "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
+    "CI": None,  # various, including GitHub Actions, Travis CI, and AppVeyor
+    # see https://github.com/tox-dev/tox/issues/3442
+    "__TOX_ENVIRONMENT_VARIABLE_ORIGINAL_CI": None,
     "TF_BUILD": "true",  # Azure Pipelines
     "bamboo.buildKey": None,  # Bamboo
     "BUILDKITE": "true",  # Buildkite
