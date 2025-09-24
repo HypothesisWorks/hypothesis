@@ -227,8 +227,8 @@ jobs:
           - alt-nocover
           - alt-rest
         exclude:
-          - { os: macos-latest, python-architecture: "x86" } 
-          - { python-version: "3.13", python-architecture: "x86" } 
+          - { os: macos-latest, python-architecture: "x86" }
+          - { python-version: "3.13", python-architecture: "x86" }
           - { python-version: "3.11", task: nocover }
           - { python-version: "3.11", task: rest }
           - { python-version: "3.13", task: alt-nocover }

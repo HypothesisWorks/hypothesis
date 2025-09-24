@@ -14,7 +14,7 @@ import math
 import sys
 import warnings
 from collections.abc import Iterable
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from functools import cached_property
 from random import Random
 from sys import float_info
@@ -77,10 +77,16 @@ LifetimeT: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-#: Registered Hypothesis backends. This is a dictionary whose keys are the name
-#: to be used in |settings.backend|, and whose values are a string of the absolute
-#: importable path to a subclass of |PrimitiveProvider|, which Hypothesis will
-#: instantiate when your backend is requested by a test's |settings.backend| value.
+#: Registered Hypothesis backends. This is a dictionary where keys are the name
+#: to be used in |settings.backend|. The value of a key can be either:
+#:
+#: * A string corresponding to an importable absolute path of a
+#:   |PrimitiveProvider| subclass
+#: * A |PrimitiveProvider| subclass (the class itself, not an instance of the
+#:   class)
+#:
+#: Hypothesis will instantiate the corresponding |PrimitiveProvider| subclass
+#: when the backend is requested by a test's |settings.backend| value.
 #:
 #: For example, the default Hypothesis backend is registered as:
 #:
@@ -89,6 +95,8 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #:    from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 #:
 #:    AVAILABLE_PROVIDERS["hypothesis"] = "hypothesis.internal.conjecture.providers.HypothesisProvider"
+#:    # or
+#:    AVAILABLE_PROVIDERS["hypothesis"] = HypothesisProvider
 #:
 #: And can be used with:
 #:
@@ -104,10 +112,14 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #: Though, as ``backend="hypothesis"`` is the default setting, the above would
 #: typically not have any effect.
 #:
-#: The purpose of mapping to an absolute importable path, rather than the actual
-#: |PrimitiveProvider| class, is to avoid slowing down Hypothesis startup times
-#: by only importing alternative backends when required.
-AVAILABLE_PROVIDERS = {
+#: For third-party backend authors, we strongly encourage ensuring that
+#: ``import hypothesis`` does not automatically import the expensive parts of
+#: your package, by:
+#:
+#: - setting a string path here, instead of a provider class
+#: - ensuring the registered hypothesis plugin path references a path which just
+#:   sets AVAILABLE_PROVIDERS and does not import your package
+AVAILABLE_PROVIDERS: dict[str, Union[str, type["PrimitiveProvider"]]] = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
@@ -297,6 +309,15 @@ def _get_local_constants() -> Constants:
         CONSTANTS_CACHE.cache.clear()
 
     return _local_constants
+
+
+@contextmanager
+def with_register_backend(name, provider_cls):
+    try:
+        AVAILABLE_PROVIDERS[name] = provider_cls
+        yield
+    finally:
+        del AVAILABLE_PROVIDERS[name]
 
 
 class _BackendInfoMsg(TypedDict):

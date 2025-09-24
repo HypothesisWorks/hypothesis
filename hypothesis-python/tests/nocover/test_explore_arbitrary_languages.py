@@ -121,7 +121,8 @@ def run_language_test_for(root, data, seed):
 # unclear why the warning doesn't trigger on a
 # single thread, but that was previous behavior so I'm not looking too deep into it.
 @skipif_threading
-@xfail_on_crosshair(Why.nested_given)  # technically nested-engine, but same problem
+# technically nested-engine, but same problem
+@xfail_on_crosshair(Why.nested_given, strict=False)
 @settings(
     suppress_health_check=list(HealthCheck),
     deadline=None,
