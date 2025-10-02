@@ -14,7 +14,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
-from typing import Any, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar, Union
 
 import django
 from django import forms as df
@@ -32,7 +32,12 @@ from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
 from hypothesis.strategies import emails
 
-AnyField: TypeAlias = dm.Field | df.Field
+# for some reason, when building docs with sphinx-build, dm.Field and df.Field
+# are both *instances* of a type, not a type itself. New-style unions fail on this.
+# I'm not sure the root cause but I'm leaving it for another day.
+#
+# assert isinstance(dm.Field, type) # <-- this should never fail, but does under sphinx-build
+AnyField: TypeAlias = Union[dm.Field, df.Field]  # noqa: UP007
 F = TypeVar("F", bound=AnyField)
 
 

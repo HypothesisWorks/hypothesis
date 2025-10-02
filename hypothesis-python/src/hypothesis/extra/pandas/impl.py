@@ -12,7 +12,7 @@ from collections import OrderedDict, abc
 from collections.abc import Sequence
 from copy import copy
 from datetime import datetime, timedelta
-from typing import Any, Generic
+from typing import Any, Generic, Union
 
 import attr
 import numpy as np
@@ -258,7 +258,11 @@ def series(
     *,
     elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
-    index: st.SearchStrategy[Sequence | pandas.Index] | None = None,
+    # new-style unions fail during docs sphinx-build here. See related comment in
+    # django/_fields.py. Quotes are to avoid shed/upgrade changing it.
+    index: (
+        st.SearchStrategy["Union[Sequence, pandas.Index]"] | None  # noqa: UP007
+    ) = None,
     fill: st.SearchStrategy[Ex] | None = None,
     unique: bool = False,
     name: st.SearchStrategy[str | None] = st.none(),
