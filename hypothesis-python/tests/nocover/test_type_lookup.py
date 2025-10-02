@@ -8,8 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Collection, Sequence
-from typing import Callable
+from collections.abc import Callable, Collection, Sequence
 
 import pytest
 

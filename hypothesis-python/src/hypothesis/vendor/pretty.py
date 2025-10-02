@@ -70,21 +70,19 @@ import sys
 import types
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, Flag
 from functools import partial
 from io import StringIO, TextIOBase
 from math import copysign, isnan
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.control import BuildContext
 
 T = TypeVar("T")
-PrettyPrintFunction: "TypeAlias" = Callable[[Any, "RepresentationPrinter", bool], None]
+PrettyPrintFunction: TypeAlias = Callable[[Any, "RepresentationPrinter", bool], None]
 
 __all__ = [
     "IDKey",
@@ -93,7 +91,7 @@ __all__ = [
 ]
 
 
-def _safe_getattr(obj: object, attr: str, default: Optional[Any] = None) -> Any:
+def _safe_getattr(obj: object, attr: str, default: Any | None = None) -> Any:
     """Safe version of getattr.
 
     Same as getattr, but will return ``default`` on any Exception,
@@ -136,7 +134,7 @@ class RepresentationPrinter:
 
     def __init__(
         self,
-        output: Optional[TextIOBase] = None,
+        output: TextIOBase | None = None,
         *,
         context: Optional["BuildContext"] = None,
     ) -> None:
@@ -152,7 +150,7 @@ class RepresentationPrinter:
         self.max_seq_length: int = 1000
         self.output_width: int = 0
         self.buffer_width: int = 0
-        self.buffer: deque[Union[Breakable, Text]] = deque()
+        self.buffer: deque[Breakable | Text] = deque()
 
         root_group = Group(0)
         self.group_stack = [root_group]
@@ -442,9 +440,9 @@ class RepresentationPrinter:
         args: Sequence[object],
         kwargs: dict[str, object],
         *,
-        force_split: Optional[bool] = None,
-        arg_slices: Optional[dict[str, tuple[int, int]]] = None,
-        leading_comment: Optional[str] = None,
+        force_split: bool | None = None,
+        arg_slices: dict[str, tuple[int, int]] | None = None,
+        leading_comment: str | None = None,
         avoid_realization: bool = False,
     ) -> None:
         """Helper function to represent a function call.
@@ -462,7 +460,7 @@ class RepresentationPrinter:
         all_args = [(None, v) for v in args] + list(kwargs.items())
         # int indicates the position of a positional argument, rather than a keyword
         # argument. Currently no callers use this; see #3624.
-        comments: dict[Union[int, str], object] = {
+        comments: dict[int | str, object] = {
             k: self.slice_comments[v]
             for k, v in (arg_slices or {}).items()
             if v in self.slice_comments
@@ -568,7 +566,7 @@ class GroupQueue:
             self.queue.append([])
         self.queue[depth].append(group)
 
-    def deq(self) -> Optional[Group]:
+    def deq(self) -> Group | None:
         for stack in self.queue:
             for idx, group in enumerate(reversed(stack)):
                 if group.breakables:
@@ -594,7 +592,7 @@ def _seq_pprinter_factory(start: str, end: str, basetype: type) -> PrettyPrintFu
     """
 
     def inner(
-        obj: Union[tuple[object], list[object]], p: RepresentationPrinter, cycle: bool
+        obj: tuple[object] | list[object], p: RepresentationPrinter, cycle: bool
     ) -> None:
         typ = type(obj)
         if (
@@ -634,7 +632,7 @@ def _set_pprinter_factory(
     frozensets."""
 
     def inner(
-        obj: Union[set[Any], frozenset[Any]],
+        obj: set[Any] | frozenset[Any],
         p: RepresentationPrinter,
         cycle: bool,
     ) -> None:
@@ -673,7 +671,7 @@ def _set_pprinter_factory(
 
 
 def _dict_pprinter_factory(
-    start: str, end: str, basetype: Optional[type[object]] = None
+    start: str, end: str, basetype: type[object] | None = None
 ) -> PrettyPrintFunction:
     """Factory that returns a pprint function used by the default pprint of
     dicts and dict proxies."""
@@ -690,9 +688,6 @@ def _dict_pprinter_factory(
 
         if cycle:
             return p.text("{...}")
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with p.group(1, start, end):
             # If the dict contains both "" and b"" (empty string and empty bytes), we
             # ignore the BytesWarning raised by `python -bb` mode.  We can't use
@@ -805,7 +800,7 @@ def pprint_fields(
 
 
 def _function_pprint(
-    obj: Union[types.FunctionType, types.BuiltinFunctionType, types.MethodType],
+    obj: types.FunctionType | types.BuiltinFunctionType | types.MethodType,
     p: RepresentationPrinter,
     cycle: bool,
 ) -> None:
@@ -885,7 +880,7 @@ _deferred_type_pprinters: dict[tuple[str, str], PrettyPrintFunction] = {}
 
 def for_type_by_name(
     type_module: str, type_name: str, func: PrettyPrintFunction
-) -> Optional[PrettyPrintFunction]:
+) -> PrettyPrintFunction | None:
     """Add a pretty printer for a type specified by the module and name of a
     type rather than the type object itself."""
     key = (type_module, type_name)

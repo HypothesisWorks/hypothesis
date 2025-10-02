@@ -11,7 +11,7 @@
 from collections.abc import Collection, Generator, Iterable, Sequence
 from functools import reduce
 from itertools import chain
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import attr
 
@@ -40,7 +40,7 @@ def get_attribute_by_alias(
     fields: Iterable[Attribute],
     alias: str,
     *,
-    target: Optional[type[AttrsInstance]] = None,
+    target: type[AttrsInstance] | None = None,
 ) -> Attribute:
     """
     Get an attrs attribute by its alias, rather than its name (compare
@@ -69,7 +69,7 @@ def get_attribute_by_alias(
 def from_attrs(
     target: type[AttrsInstance],
     args: tuple[SearchStrategy[Any], ...],
-    kwargs: dict[str, Union[SearchStrategy[Any], EllipsisType]],
+    kwargs: dict[str, SearchStrategy[Any] | EllipsisType],
     to_infer: Iterable[str],
 ) -> SearchStrategy:
     """An internal version of builds(), specialised for Attrs classes."""

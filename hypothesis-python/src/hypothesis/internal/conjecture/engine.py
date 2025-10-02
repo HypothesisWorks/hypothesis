@@ -14,13 +14,13 @@ import math
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
-from typing import Callable, Literal, NoReturn, Optional, Union, cast
+from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -169,7 +169,7 @@ class RunIsComplete(Exception):
     pass
 
 
-def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
+def _get_provider(backend: str) -> type | PrimitiveProvider:
     module_name, class_name = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
     provider_cls = getattr(importlib.import_module(module_name), class_name)
     if provider_cls.lifetime == "test_function":
@@ -213,7 +213,7 @@ StatisticsDict = TypedDict(
 )
 
 
-def choice_count(choices: Sequence[Union[ChoiceT, ChoiceTemplate]]) -> Optional[int]:
+def choice_count(choices: Sequence[ChoiceT | ChoiceTemplate]) -> int | None:
     count = 0
     for choice in choices:
         if isinstance(choice, ChoiceTemplate):
@@ -279,23 +279,23 @@ class ConjectureRunner:
         self,
         test_function: Callable[[ConjectureData], None],
         *,
-        settings: Optional[Settings] = None,
-        random: Optional[Random] = None,
-        database_key: Optional[bytes] = None,
+        settings: Settings | None = None,
+        random: Random | None = None,
+        database_key: bytes | None = None,
         ignore_limits: bool = False,
-        thread_overlap: Optional[dict[int, bool]] = None,
+        thread_overlap: dict[int, bool] | None = None,
     ) -> None:
         self._test_function: Callable[[ConjectureData], None] = test_function
         self.settings: Settings = settings or Settings()
         self.shrinks: int = 0
-        self.finish_shrinking_deadline: Optional[float] = None
+        self.finish_shrinking_deadline: float | None = None
         self.call_count: int = 0
         self.misaligned_count: int = 0
         self.valid_examples: int = 0
         self.invalid_examples: int = 0
         self.overrun_examples: int = 0
         self.random: Random = random or Random(getrandbits(128))
-        self.database_key: Optional[bytes] = database_key
+        self.database_key: bytes | None = database_key
         self.ignore_limits: bool = ignore_limits
         self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
@@ -307,15 +307,13 @@ class ConjectureRunner:
 
         self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
-        self.first_bug_found_at: Optional[int] = None
-        self.last_bug_found_at: Optional[int] = None
+        self.first_bug_found_at: int | None = None
+        self.last_bug_found_at: int | None = None
 
         self.shrunk_examples: set[InterestingOrigin] = set()
-        self.health_check_state: Optional[HealthCheckState] = None
+        self.health_check_state: HealthCheckState | None = None
         self.tree: DataTree = DataTree()
-        self.provider: Union[type, PrimitiveProvider] = _get_provider(
-            self.settings.backend
-        )
+        self.provider: type | PrimitiveProvider = _get_provider(self.settings.backend)
 
         self.best_observed_targets: defaultdict[str, float] = defaultdict(
             lambda: NO_SCORE
@@ -326,7 +324,7 @@ class ConjectureRunner:
         # is only marginally useful at present, but speeds up local development
         # because it means that large targets will be quickly surfaced in your
         # testing.
-        self.pareto_front: Optional[ParetoFront] = None
+        self.pareto_front: ParetoFront | None = None
         if self.database_key is not None and self.settings.database is not None:
             self.pareto_front = ParetoFront(self.random)
             self.pareto_front.on_evict(self.on_pareto_evict)
@@ -336,19 +334,19 @@ class ConjectureRunner:
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache[
-            tuple[ChoiceKeyT, ...], Union[ConjectureResult, _Overrun]
+            tuple[ChoiceKeyT, ...], ConjectureResult | _Overrun
         ](CACHE_SIZE)
 
         self.reused_previously_shrunk_test_case: bool = False
 
-        self.__pending_call_explanation: Optional[str] = None
+        self.__pending_call_explanation: str | None = None
         self._backend_found_failure: bool = False
         self._backend_exceeded_deadline: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
         # note unsound verification by alt backends
-        self._verified_by: Optional[str] = None
+        self._verified_by: str | None = None
 
     @contextmanager
     def _with_switch_to_hypothesis_provider(
@@ -430,11 +428,11 @@ class ConjectureRunner:
 
     def cached_test_function(
         self,
-        choices: Sequence[Union[ChoiceT, ChoiceTemplate]],
+        choices: Sequence[ChoiceT | ChoiceTemplate],
         *,
         error_on_discard: bool = False,
-        extend: Union[int, Literal["full"]] = 0,
-    ) -> Union[ConjectureResult, _Overrun]:
+        extend: int | Literal["full"] = 0,
+    ) -> ConjectureResult | _Overrun:
         """
         If ``error_on_discard`` is set to True this will raise ``ContainsDiscard``
         in preference to running the actual test function. This is to allow us
@@ -470,7 +468,7 @@ class ConjectureRunner:
         # The reason is we don't expect simulate_test_function to explore new choices
         # and write back to the tree, so we don't want the overhead of the
         # TreeRecordingObserver tracking those calls.
-        trial_observer: Optional[DataObserver] = DataObserver()
+        trial_observer: DataObserver | None = DataObserver()
         if error_on_discard:
             trial_observer = DiscardObserver()
 
@@ -848,7 +846,7 @@ class ConjectureRunner:
             )
 
     def save_choices(
-        self, choices: Sequence[ChoiceT], sub_key: Optional[bytes] = None
+        self, choices: Sequence[ChoiceT], sub_key: bytes | None = None
     ) -> None:
         if self.settings.database is not None:
             key = self.sub_key(sub_key)
@@ -861,7 +859,7 @@ class ConjectureRunner:
         if self.settings.database is not None and self.database_key is not None:
             self.settings.database.move(self.database_key, self.secondary_key, buffer)
 
-    def sub_key(self, sub_key: Optional[bytes]) -> Optional[bytes]:
+    def sub_key(self, sub_key: bytes | None) -> bytes | None:
         if self.database_key is None:
             return None
         if sub_key is None:
@@ -869,11 +867,11 @@ class ConjectureRunner:
         return b".".join((self.database_key, sub_key))
 
     @property
-    def secondary_key(self) -> Optional[bytes]:
+    def secondary_key(self) -> bytes | None:
         return self.sub_key(b"secondary")
 
     @property
-    def pareto_key(self) -> Optional[bytes]:
+    def pareto_key(self) -> bytes | None:
         return self.sub_key(b"pareto")
 
     def debug(self, message: str) -> None:
@@ -884,7 +882,7 @@ class ConjectureRunner:
     def report_debug_info(self) -> bool:
         return self.settings.verbosity >= Verbosity.debug
 
-    def debug_data(self, data: Union[ConjectureData, ConjectureResult]) -> None:
+    def debug_data(self, data: ConjectureData | ConjectureResult) -> None:
         if not self.report_debug_info:
             return
 
@@ -919,9 +917,6 @@ class ConjectureRunner:
 
     def run(self) -> None:
         with local_settings(self.settings):
-            # NOTE: For compatibility with Python 3.9's LL(1)
-            # parser, this is written as a nested with-statement,
-            # instead of a compound one.
             with self.observe_for_provider():
                 try:
                     self._run()
@@ -935,7 +930,7 @@ class ConjectureRunner:
                 )
 
     @property
-    def database(self) -> Optional[ExampleDatabase]:
+    def database(self) -> ExampleDatabase | None:
         if self.database_key is None:
             return None
         return self.settings.database
@@ -1277,9 +1272,7 @@ class ConjectureRunner:
                 self._current_phase = "target"
                 self.optimise_targets()
 
-    def generate_mutations_from(
-        self, data: Union[ConjectureData, ConjectureResult]
-    ) -> None:
+    def generate_mutations_from(self, data: ConjectureData | ConjectureResult) -> None:
         # A thing that is often useful but rarely happens by accident is
         # to generate the same value at multiple different points in the
         # test case.
@@ -1509,10 +1502,10 @@ class ConjectureRunner:
 
     def new_conjecture_data(
         self,
-        prefix: Sequence[Union[ChoiceT, ChoiceTemplate]],
+        prefix: Sequence[ChoiceT | ChoiceTemplate],
         *,
-        observer: Optional[DataObserver] = None,
-        max_choices: Optional[int] = None,
+        observer: DataObserver | None = None,
+        max_choices: int | None = None,
     ) -> ConjectureData:
         provider = (
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
@@ -1570,7 +1563,7 @@ class ConjectureRunner:
                 self.shrink(example, lambda d: d.status == Status.INTERESTING)
                 return
 
-            def predicate(d: Union[ConjectureResult, _Overrun]) -> bool:
+            def predicate(d: ConjectureResult | _Overrun) -> bool:
                 if d.status < Status.INTERESTING:
                     return False
                 d = cast(ConjectureResult, d)
@@ -1612,23 +1605,23 @@ class ConjectureRunner:
 
     def shrink(
         self,
-        example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[ShrinkPredicateT] = None,
-        allow_transition: Optional[
-            Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
-        ] = None,
-    ) -> Union[ConjectureData, ConjectureResult]:
+        example: ConjectureData | ConjectureResult,
+        predicate: ShrinkPredicateT | None = None,
+        allow_transition: (
+            Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
+        ) = None,
+    ) -> ConjectureData | ConjectureResult:
         s = self.new_shrinker(example, predicate, allow_transition)
         s.shrink()
         return s.shrink_target
 
     def new_shrinker(
         self,
-        example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[ShrinkPredicateT] = None,
-        allow_transition: Optional[
-            Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
-        ] = None,
+        example: ConjectureData | ConjectureResult,
+        predicate: ShrinkPredicateT | None = None,
+        allow_transition: (
+            Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
+        ) = None,
     ) -> Shrinker:
         return Shrinker(
             self,

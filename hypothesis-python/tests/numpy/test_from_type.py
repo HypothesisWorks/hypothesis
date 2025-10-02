@@ -149,26 +149,20 @@ def test_resolves_SupportsArray():
 def test_resolve_ArrayLike_equivalent():
     # This is the current (1.24.3) definition of ArrayLike,
     # with problematic parts commented out.
-    ArrayLike_like = typing.Union[
-        _SupportsArray,
-        # _NestedSequence[_SupportsArray],
-        bool,
-        int,
-        float,
-        complex,
-        str,
-        bytes,
-        _NestedSequence[
-            typing.Union[
-                bool,
-                int,
-                float,
-                complex,
-                str,
-                # bytes,
-            ]
-        ],
-    ]
+    ArrayLike_like = (
+        _SupportsArray
+        # | _NestedSequence[_SupportsArray],
+        | bool
+        | int
+        | float
+        | complex
+        | str
+        | bytes
+        | _NestedSequence[
+            bool | int | float | complex | str,
+            # | bytes,
+        ]
+    )
 
     @given(arr_like=from_type(ArrayLike_like))
     def test(arr_like):

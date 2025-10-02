@@ -23,16 +23,16 @@ def test_fuzz_event(value: str, payload: typing.Union[str, int, float]) -> None:
 @given(
     specifier=st.from_type(st.SearchStrategy),
     condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
-    settings=st.from_type(typing.Optional[hypothesis.settings]),
+    settings=st.from_type(typing.Union[hypothesis.settings, None]),
     random=st.one_of(st.none(), st.randoms()),
     database_key=st.one_of(st.none(), st.binary()),
 )
 def test_fuzz_find(
     specifier: st.SearchStrategy,
-    condition: typing.Callable[[typing.Any], bool],
-    settings: typing.Optional[hypothesis.settings],
-    random: typing.Optional[random.Random],
-    database_key: typing.Optional[bytes],
+    condition: collections.abc.Callable[[typing.Any], bool],
+    settings: typing.Union[hypothesis.settings, None],
+    random: typing.Union[random.Random, None],
+    database_key: typing.Union[bytes, None],
 ) -> None:
     hypothesis.find(
         specifier=specifier,

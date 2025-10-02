@@ -18,18 +18,15 @@ import unicodedata
 from collections.abc import Collection, Iterable
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, TypeAlias
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet, IntervalsT
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
 # See https://en.wikipedia.org/wiki/Unicode_character_property#General_Category
-CategoryName: "TypeAlias" = Literal[
+CategoryName: TypeAlias = Literal[
     "L",  #  Letter
     "Lu",  # Letter, uppercase
     "Ll",  # Letter, lowercase
@@ -68,8 +65,8 @@ CategoryName: "TypeAlias" = Literal[
     "Co",  # Other, private use
     "Cn",  # Other, not assigned
 ]
-Categories: "TypeAlias" = Iterable[CategoryName]
-CategoriesTuple: "TypeAlias" = tuple[CategoryName, ...]
+Categories: TypeAlias = Iterable[CategoryName]
+CategoriesTuple: TypeAlias = tuple[CategoryName, ...]
 
 
 def charmap_file(fname: str = "charmap") -> Path:
@@ -78,7 +75,7 @@ def charmap_file(fname: str = "charmap") -> Path:
     )
 
 
-_charmap: Optional[dict[CategoryName, IntervalsT]] = None
+_charmap: dict[CategoryName, IntervalsT] | None = None
 
 
 def charmap() -> dict[CategoryName, IntervalsT]:
@@ -181,7 +178,7 @@ def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
     return res
 
 
-_categories: Optional[Categories] = None
+_categories: Categories | None = None
 
 
 def categories() -> Categories:
@@ -234,7 +231,7 @@ def as_general_categories(cats: Categories, name: str = "cats") -> CategoriesTup
 category_index_cache: dict[frozenset[CategoryName], IntervalsT] = {frozenset(): ()}
 
 
-def _category_key(cats: Optional[Iterable[str]]) -> CategoriesTuple:
+def _category_key(cats: Iterable[str] | None) -> CategoriesTuple:
     """Return a normalised tuple of all Unicode categories that are in
     `include`, but not in `exclude`.
 
@@ -290,9 +287,9 @@ limited_category_index_cache: dict[
 
 def query(
     *,
-    categories: Optional[Categories] = None,
-    min_codepoint: Optional[int] = None,
-    max_codepoint: Optional[int] = None,
+    categories: Categories | None = None,
+    min_codepoint: int | None = None,
+    max_codepoint: int | None = None,
     include_characters: Collection[str] = "",
     exclude_characters: Collection[str] = "",
 ) -> IntervalSet:

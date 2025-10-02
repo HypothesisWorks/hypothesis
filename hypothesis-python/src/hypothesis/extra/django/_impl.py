@@ -10,7 +10,7 @@
 
 import unittest
 from functools import partial
-from typing import Optional, TypeVar, Union
+from typing import TypeVar
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -63,7 +63,7 @@ class StaticLiveServerTestCase(HypothesisTestCase, dst.StaticLiveServerTestCase)
 
 @defines_strategy()
 def from_model(
-    model: type[ModelT], /, **field_strategies: Union[st.SearchStrategy, EllipsisType]
+    model: type[ModelT], /, **field_strategies: st.SearchStrategy | EllipsisType
 ) -> st.SearchStrategy[ModelT]:
     """Return a strategy for examples of ``model``.
 
@@ -134,8 +134,8 @@ def _models_impl(draw, strat):
 @defines_strategy()
 def from_form(
     form: type[df.Form],
-    form_kwargs: Optional[dict] = None,
-    **field_strategies: Union[st.SearchStrategy, EllipsisType],
+    form_kwargs: dict | None = None,
+    **field_strategies: st.SearchStrategy | EllipsisType,
 ) -> st.SearchStrategy[df.Form]:
     """Return a strategy for examples of ``form``.
 

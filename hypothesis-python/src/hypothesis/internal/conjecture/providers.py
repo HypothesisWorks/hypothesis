@@ -25,9 +25,9 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 from sortedcontainers import SortedSet
@@ -67,13 +67,11 @@ from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import InfoObservationType, TestCaseObservation
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.internal.conjecture.data import ConjectureData
     from hypothesis.internal.constants_ast import ConstantT
 
 T = TypeVar("T")
-LifetimeT: "TypeAlias" = Literal["test_case", "test_function"]
+LifetimeT: TypeAlias = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
@@ -112,8 +110,8 @@ AVAILABLE_PROVIDERS = {
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 # cache the choice_permitted constants for a particular set of constraints.
-CacheKeyT: "TypeAlias" = tuple[ChoiceTypeT, tuple[Any, ...]]
-CacheValueT: "TypeAlias" = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
+CacheKeyT: TypeAlias = tuple[ChoiceTypeT, tuple[Any, ...]]
+CacheValueT: TypeAlias = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
 CONSTANTS_CACHE: LRUCache[CacheKeyT, CacheValueT] = LRUCache(1024)
 
 _constant_floats = (
@@ -239,7 +237,7 @@ _local_constants = Constants(
 # modules are new without an expensive path.resolve() or is_local_module_file
 # cache lookup.
 _seen_modules: set[ModuleType] = set()
-_sys_modules_len: Optional[int] = None
+_sys_modules_len: int | None = None
 
 
 def _get_local_constants() -> Constants:
@@ -302,7 +300,7 @@ def _get_local_constants() -> Constants:
 class _BackendInfoMsg(TypedDict):
     type: InfoObservationType
     title: str
-    content: Union[str, dict[str, Any]]
+    content: str | dict[str, Any]
 
 
 # TODO_DOCS: link to choice sequence explanation page
@@ -397,10 +395,10 @@ class PrimitiveProvider(abc.ABC):
     @abc.abstractmethod
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
     ) -> int:
         """
@@ -740,10 +738,10 @@ class HypothesisProvider(PrimitiveProvider):
 
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
     ) -> int:
         assert self._cd is not None
@@ -1057,10 +1055,10 @@ class BytestringProvider(PrimitiveProvider):
 
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
     ) -> int:
         assert self._cd is not None

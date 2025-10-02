@@ -19,13 +19,21 @@ import sys
 import threading
 import time
 import warnings
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Optional,
+    TypeAlias,
+    Union,
+    cast,
+)
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
@@ -45,19 +53,17 @@ from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.internal.conjecture.data import ConjectureData, Spans, Status
 
 
-Observation: "TypeAlias" = Union["InfoObservation", "TestCaseObservation"]
-CallbackThreadT: "TypeAlias" = Callable[[Observation], None]
+Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]
+CallbackThreadT: TypeAlias = Callable[[Observation], None]
 # for all_threads=True, we pass the thread id as well.
-CallbackAllThreadsT: "TypeAlias" = Callable[[Observation, int], None]
-CallbackT: "TypeAlias" = Union[CallbackThreadT, CallbackAllThreadsT]
+CallbackAllThreadsT: TypeAlias = Callable[[Observation, int], None]
+CallbackT: TypeAlias = CallbackThreadT | CallbackAllThreadsT
 
 # thread_id: list[callback]
-_callbacks: dict[Optional[int], list[CallbackThreadT]] = {}
+_callbacks: dict[int | None, list[CallbackThreadT]] = {}
 # callbacks where all_threads=True was set
 _callbacks_all_threads: list[CallbackAllThreadsT] = []
 
@@ -74,7 +80,7 @@ class PredicateCounts:
             self.unsatisfied += 1
 
 
-def _choice_to_json(choice: Union[ChoiceT, None]) -> Any:
+def _choice_to_json(choice: ChoiceT | None) -> Any:
     if choice is None:
         return None
     # see the note on the same check in to_jsonable for why we cast large
@@ -163,8 +169,8 @@ def nodes_to_json(nodes: tuple[ChoiceNode, ...]) -> list[dict[str, Any]]:
 
 @dataclass
 class ObservationMetadata:
-    traceback: Optional[str]
-    reproduction_decorator: Optional[str]
+    traceback: str | None
+    reproduction_decorator: str | None
     predicates: dict[str, PredicateCounts]
     backend: dict[str, Any]
     sys_argv: list[str]
@@ -172,8 +178,8 @@ class ObservationMetadata:
     imported_at: float
     data_status: "Status"
     phase: str
-    interesting_origin: Optional[InterestingOrigin]
-    choice_nodes: Optional[tuple[ChoiceNode, ...]]
+    interesting_origin: InterestingOrigin | None
+    choice_nodes: tuple[ChoiceNode, ...] | None
     choice_spans: Optional["Spans"]
 
     def to_json(self) -> dict[str, Any]:
@@ -230,7 +236,7 @@ TestCaseStatus = Literal["gave_up", "passed", "failed"]
 class InfoObservation(BaseObservation):
     type: InfoObservationType
     title: str
-    content: Union[str, dict]
+    content: str | dict
 
 
 @dataclass
@@ -244,7 +250,7 @@ class TestCaseObservation(BaseObservation):
     arguments: dict
     how_generated: str
     features: dict
-    coverage: Optional[dict[str, list[int]]]
+    coverage: dict[str, list[int]] | None
     timing: dict[str, float]
     metadata: ObservationMetadata
 
@@ -392,17 +398,17 @@ def make_testcase(
     how_generated: str,
     representation: str = "<unknown>",
     timing: dict[str, float],
-    arguments: Optional[dict] = None,
-    coverage: Optional[dict[str, list[int]]] = None,
-    phase: Optional[str] = None,
-    backend_metadata: Optional[dict[str, Any]] = None,
-    status: Optional[
-        Union[TestCaseStatus, "Status"]
-    ] = None,  # overrides automatic calculation
-    status_reason: Optional[str] = None,  # overrides automatic calculation
+    arguments: dict | None = None,
+    coverage: dict[str, list[int]] | None = None,
+    phase: str | None = None,
+    backend_metadata: dict[str, Any] | None = None,
+    status: (
+        Union[TestCaseStatus, "Status"] | None
+    ) = None,  # overrides automatic calculation
+    status_reason: str | None = None,  # overrides automatic calculation
     # added to calculated metadata. If keys overlap, the value from this `metadata`
     # is used
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ) -> TestCaseObservation:
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status

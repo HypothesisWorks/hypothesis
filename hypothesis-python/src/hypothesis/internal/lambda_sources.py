@@ -14,9 +14,9 @@ import inspect
 import linecache
 import sys
 import textwrap
-from collections.abc import MutableMapping
+from collections.abc import Callable, MutableMapping
 from inspect import Parameter
-from typing import Any, Callable, Optional
+from typing import Any
 from weakref import WeakKeyDictionary
 
 from hypothesis.internal import reflection
@@ -116,7 +116,7 @@ def _normalize_code(f, l):
     # function called with their respective oparg sequences, which must return
     # true for the transformation to be valid.
     Checker = Callable[[list[int], list[int]], bool]
-    transforms: tuple[list[int], list[int], Optional[Checker]] = [
+    transforms: tuple[list[int], list[int], Checker | None] = [
         ([_op.NOP], [], lambda a, b: True),
         (
             [_op.LOAD_FAST, _op.LOAD_FAST],
@@ -185,7 +185,7 @@ def _normalize_code(f, l):
         inspect.iscode(l_const) for l_const in l_consts
     ):
         normalized_consts = []
-        for f_const, l_const in zip(f_consts, l_consts):
+        for f_const, l_const in zip(f_consts, l_consts, strict=True):
             if (
                 inspect.iscode(l_const)
                 and inspect.iscode(f_const)
@@ -224,11 +224,15 @@ def _mimic_lambda_from_node(f, node):
     # Install values for non-literal argument defaults. Thankfully, these are
     # always captured by value - so there is no interaction with the closure.
     if f.__defaults__:
-        for f_default, l_default in zip(f.__defaults__, node.args.defaults):
+        for f_default, l_default in zip(
+            f.__defaults__, node.args.defaults, strict=True
+        ):
             if isinstance(l_default, ast.Name):
                 f_globals[l_default.id] = f_default
     if f.__kwdefaults__:  # pragma: no cover
-        for l_default, l_varname in zip(node.args.kw_defaults, node.args.kwonlyargs):
+        for l_default, l_varname in zip(
+            node.args.kw_defaults, node.args.kwonlyargs, strict=True
+        ):
             if isinstance(l_default, ast.Name):
                 f_globals[l_default.id] = f.__kwdefaults__[l_varname.arg]
 

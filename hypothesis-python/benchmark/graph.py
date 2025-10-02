@@ -84,8 +84,10 @@ def _process_benchmark_data(data):
 
         sums["old"] += statistics.mean(old)
         sums["new"] += statistics.mean(new)
-        diffs = [n_old - n_new for n_old, n_new in zip(old, new)]
-        diffs_times = [_diff_times(n_old, n_new) for n_old, n_new in zip(old, new)]
+        diffs = [n_old - n_new for n_old, n_new in zip(old, new, strict=True)]
+        diffs_times = [
+            _diff_times(n_old, n_new) for n_old, n_new in zip(old, new, strict=True)
+        ]
         ci_shrink = (
             _mean_difference_ci(old, new, confidence=0.95) if len(old) > 1 else 0
         )

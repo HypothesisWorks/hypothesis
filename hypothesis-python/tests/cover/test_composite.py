@@ -225,5 +225,5 @@ def test_composite_allows_overload_without_draw():
     def overloaded(draw: st.DrawFn, *, x: str) -> typing.Literal[False]: ...
 
     @st.composite
-    def overloaded(draw: st.DrawFn, *, x: typing.Union[int, str]) -> bool:
+    def overloaded(draw: st.DrawFn, *, x: int | str) -> bool:
         return draw(st.just(isinstance(x, int)))

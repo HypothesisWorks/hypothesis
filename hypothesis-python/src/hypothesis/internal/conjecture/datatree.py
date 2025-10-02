@@ -11,7 +11,7 @@
 import math
 from collections.abc import Generator, Set
 from random import Random
-from typing import TYPE_CHECKING, Final, Optional, Union, cast
+from typing import TYPE_CHECKING, Final, TypeAlias, cast
 
 import attr
 
@@ -43,11 +43,9 @@ from hypothesis.internal.floats import (
 )
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.vendor.pretty import RepresentationPrinter
 
-ChildrenCacheValueT: "TypeAlias" = tuple[
+ChildrenCacheValueT: TypeAlias = tuple[
     Generator[ChoiceT, None, None], list[ChoiceT], set[ChoiceT]
 ]
 
@@ -124,7 +122,7 @@ class Conclusion:
     """Represents a transition to a finished state."""
 
     status: Status = attr.ib()
-    interesting_origin: Optional[InterestingOrigin] = attr.ib()
+    interesting_origin: InterestingOrigin | None = attr.ib()
 
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
@@ -410,7 +408,7 @@ class TreeNode:
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: Optional[set[int]] = attr.ib(default=None, init=False)
+    __forced: set[int] | None = attr.ib(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -421,7 +419,7 @@ class TreeNode:
     # - Conclusion (ConjectureData.conclude_test was called here)
     # - Killed (this branch is valid and may even have children, but should not
     #   be explored when generating novel prefixes)
-    transition: Union[None, Branch, Conclusion, Killed] = attr.ib(default=None)
+    transition: None | Branch | Conclusion | Killed = attr.ib(default=None)
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
@@ -528,7 +526,7 @@ class TreeNode:
         assert cycle is False
         indent = 0
         for i, (choice_type, constraints, value) in enumerate(
-            zip(self.choice_types, self.constraints, self.values)
+            zip(self.choice_types, self.constraints, self.values, strict=True)
         ):
             with p.indent(indent):
                 if i > 0:
@@ -730,6 +728,7 @@ class DataTree:
                     current_node.choice_types,
                     current_node.constraints,
                     current_node.values,
+                    strict=True,
                 )
             ):
                 if i in current_node.forced:
@@ -852,7 +851,7 @@ class DataTree:
         try:
             while True:
                 for i, (choice_type, constraints, previous) in enumerate(
-                    zip(node.choice_types, node.constraints, node.values)
+                    zip(node.choice_types, node.constraints, node.values, strict=True)
                 ):
                     v = draw(
                         choice_type,
@@ -1140,7 +1139,7 @@ class TreeRecordingObserver(DataObserver):
         self._trail.append(self._current_node)
 
     def conclude_test(
-        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+        self, status: Status, interesting_origin: InterestingOrigin | None
     ) -> None:
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""

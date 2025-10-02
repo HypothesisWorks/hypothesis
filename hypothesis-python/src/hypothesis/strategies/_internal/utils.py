@@ -10,8 +10,9 @@
 
 import dataclasses
 import sys
+from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TypeAlias, TypeVar
 from weakref import WeakValueDictionary
 
 import attr
@@ -21,13 +22,10 @@ from hypothesis.internal.floats import clamp, float_to_int
 from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
 T = TypeVar("T")
-ValueKey: "TypeAlias" = tuple[type, object]
+ValueKey: TypeAlias = tuple[type, object]
 # (fn, args, kwargs)
-StrategyCacheKey: "TypeAlias" = tuple[
+StrategyCacheKey: TypeAlias = tuple[
     object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
 ]
 
