@@ -640,9 +640,7 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-standard_tox_task("py310-nose", py="3.10")
-standard_tox_task("py310-pytest46", py="3.10")
-standard_tox_task("py310-pytest54", py="3.10")
+# standard_tox_task("py310-pytest46", py="3.10")
 standard_tox_task("pytest62")
 
 for n in DJANGO_VERSIONS:

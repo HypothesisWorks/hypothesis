@@ -23,7 +23,7 @@ def test_fuzz_event(value: str, payload: typing.Union[str, int, float]) -> None:
 @given(
     specifier=st.from_type(st.SearchStrategy),
     condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
-    settings=st.from_type(typing.Union[hypothesis.settings, None]),
+    settings=st.from_type(typing.Optional[hypothesis.settings]),
     random=st.one_of(st.none(), st.randoms()),
     database_key=st.one_of(st.none(), st.binary()),
 )

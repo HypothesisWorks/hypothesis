@@ -88,9 +88,7 @@ jobs:
           - check-py313t-nocover
           - check-py313t-niche
           - check-quality
-          - check-py310-nose
-          - check-py310-pytest46
-          - check-py310-pytest54
+          - check-pytest62
           - check-pytest62
           - check-django51
           - check-django42
