@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import typing
 
 import numpy as np
@@ -85,7 +84,6 @@ def test_resolves_specified_NDArray_type(typ):
     )
 
 
-@pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason="union op for types")
 @pytest.mark.skipif(NDArray is None, **needs_np_typing)
 def test_resolves_NDArray_with_dtype_union():
     strat = from_type(NDArray[np.float64 | np.complex128])

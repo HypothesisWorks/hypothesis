@@ -87,6 +87,7 @@ from itertools import permutations, zip_longest
 from keyword import iskeyword as _iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
+from types import EllipsisType
 from typing import (
     Any,
     ForwardRef,
@@ -100,7 +101,7 @@ import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument, SmallSearchSpaceWarning
-from hypothesis.internal.compat import EllipsisType, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains

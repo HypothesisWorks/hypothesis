@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+from types import EllipsisType
 from typing import NamedTuple
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import EllipsisType
 from hypothesis.internal.conjecture.utils import _calc_p_continue
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.validation import check_type, check_valid_interval

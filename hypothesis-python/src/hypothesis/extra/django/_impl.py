@@ -10,6 +10,7 @@
 
 import unittest
 from functools import partial
+from types import EllipsisType
 from typing import TypeVar
 
 from django import forms as df, test as dt
@@ -20,7 +21,6 @@ from django.db import IntegrityError, models as dm
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
-from hypothesis.internal.compat import EllipsisType
 from hypothesis.strategies._internal.utils import defines_strategy
 
 ModelT = TypeVar("ModelT", bound=dm.Model)

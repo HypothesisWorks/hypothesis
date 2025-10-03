@@ -25,13 +25,13 @@ from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, generate_tokens, untokenize
-from types import ModuleType
+from types import EllipsisType, ModuleType
 from typing import TYPE_CHECKING, Any, TypeVar, Union
 from unittest.mock import _patch as PatchType
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import lambda_sources
-from hypothesis.internal.compat import EllipsisType, is_typed_named_tuple
+from hypothesis.internal.compat import is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 

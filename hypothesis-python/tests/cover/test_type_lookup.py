@@ -10,7 +10,6 @@
 
 import abc
 import enum
-import sys
 import typing
 from collections.abc import Callable, Sequence
 from inspect import Parameter as P, Signature
@@ -357,9 +356,6 @@ def test_generic_origin_with_type_args(generic, strategy):
     assert generic not in types._global_type_lookup
 
 
-skip_39 = pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="early version")
-
-
 @pytest.mark.parametrize(
     "generic",
     (
@@ -369,8 +365,8 @@ skip_39 = pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="early versi
         # you can register types with all generic parameters
         _List[T],
         getattr(typing, "Sequence", None)[T],  # pyupgrade workaround
-        pytest.param(list[T], marks=skip_39),
-        pytest.param(Sequence[T], marks=skip_39),
+        list[T],
+        Sequence[T],
         # User-defined generics should also work
         MyGeneric,
         MyGeneric[T],

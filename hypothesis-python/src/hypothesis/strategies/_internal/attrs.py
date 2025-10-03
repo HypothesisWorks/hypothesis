@@ -11,6 +11,7 @@
 from collections.abc import Collection, Generator, Iterable, Sequence
 from functools import reduce
 from itertools import chain
+from types import EllipsisType
 from typing import Any, TypeVar
 
 import attr
@@ -27,7 +28,7 @@ from attrs import Attribute, AttrsInstance, Factory
 
 from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import EllipsisType, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key

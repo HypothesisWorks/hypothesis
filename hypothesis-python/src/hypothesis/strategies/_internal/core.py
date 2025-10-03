@@ -25,11 +25,12 @@ from fractions import Fraction
 from functools import reduce
 from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
-from types import FunctionType, GenericAlias
+from types import EllipsisType, FunctionType, GenericAlias
 from typing import (
     Annotated,
     Any,
     AnyStr,
+    Concatenate,
     Literal,
     NoReturn,
     Protocol,
@@ -68,8 +69,6 @@ from hypothesis.internal.charmap import (
     categories as all_categories,
 )
 from hypothesis.internal.compat import (
-    Concatenate,
-    EllipsisType,
     ParamSpec,
     bit_count,
     ceil,
@@ -1942,7 +1941,7 @@ def _composite(f):
             f"Return-type annotation is `{ret_repr}`, but the decorated "
             "function should return a value (not a strategy)",
             HypothesisWarning,
-            stacklevel=3 if sys.version_info[:2] > (3, 9) else 5,  # ugh
+            stacklevel=3,
         )
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]

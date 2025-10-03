@@ -52,7 +52,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 9))')" = "True" ] ; then
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
     # Per NEP-29, this is the last version to support Python 3.10
     pip install numpy==2.2.6
   else

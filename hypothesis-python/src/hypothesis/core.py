@@ -32,6 +32,7 @@ from functools import partial
 from inspect import Parameter
 from random import Random
 from threading import Lock
+from types import EllipsisType
 from typing import (
     Any,
     BinaryIO,
@@ -72,7 +73,6 @@ from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
-    EllipsisType,
     add_note,
     bad_django_TestCase,
     get_type_hints,

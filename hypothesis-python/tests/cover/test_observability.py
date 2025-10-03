@@ -751,7 +751,7 @@ def test_only_receives_callbacks_from_this_thread():
         # but that had a race condition somehow and sometimes still didn't work?? The
         # warnings module is not thread-safe until 3.14, I think.
         with with_collect_coverage(value=False):
-            run_concurrently(test, 5)
+            run_concurrently(test, n=5)
 
 
 def test_all_threads_callback():
@@ -772,7 +772,7 @@ def test_all_threads_callback():
 
     with with_collect_coverage(value=False):
         with with_observability_callback(global_callback, all_threads=True):
-            run_concurrently(f, n_threads)
+            run_concurrently(f, n=n_threads)
 
     assert len(calls) == n_threads
     assert all(count == (settings().max_examples + 1) for count in calls.values())

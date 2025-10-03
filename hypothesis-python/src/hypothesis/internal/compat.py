@@ -36,8 +36,6 @@ except NameError:
         ExceptionGroup as ExceptionGroup,
     )
 if TYPE_CHECKING:
-    from typing import Concatenate as Concatenate, TypeAlias as TypeAlias
-
     from typing_extensions import (
         NotRequired as NotRequired,
         ParamSpec as ParamSpec,
@@ -66,31 +64,18 @@ else:
 
     try:
         from typing import (
-            Concatenate as Concatenate,
             ParamSpec as ParamSpec,
-            TypeAlias as TypeAlias,
             override as override,
         )
     except ImportError:
         try:
-            from typing import Concatenate as Concatenate, TypeAlias as TypeAlias
-
             from typing_extensions import (
                 ParamSpec as ParamSpec,
                 override as override,
             )
         except ImportError:
-            Concatenate, ParamSpec = None, None
-            TypeAlias = None
+            ParamSpec = None
             override = lambda f: f
-
-from types import EllipsisType as EllipsisType
-
-if TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:  # pragma: no cover
-    EllipsisType = type(Ellipsis)
-
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"

@@ -353,7 +353,7 @@ def restore_recursion_limit():
             sys.setrecursionlimit(original_limit)
 
 
-def run_concurrently(function, n: int) -> None:
+def run_concurrently(function, *, n: int) -> None:
     import pytest
 
     if settings.get_current_profile_name() == "crosshair":

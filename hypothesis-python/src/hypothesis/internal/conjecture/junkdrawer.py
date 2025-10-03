@@ -115,9 +115,9 @@ class IntList(Sequence[int]):
     @overload
     def __getitem__(
         self, i: slice
-    ) -> Union[list[int], "ArrayType[int]"]: ...  # pragma: no cover
+    ) -> "list[int] | ArrayType[int]": ...  # pragma: no cover
 
-    def __getitem__(self, i: int | slice) -> Union[int, list[int], "ArrayType[int]"]:
+    def __getitem__(self, i: int | slice) -> "int | list[int] | ArrayType[int]":
         return self.__underlying[i]
 
     def __delitem__(self, i: int | slice) -> None:

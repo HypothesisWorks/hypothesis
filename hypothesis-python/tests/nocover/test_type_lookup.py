@@ -9,12 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Callable, Collection, Sequence
+from typing import Concatenate
 
 import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import Concatenate, ParamSpec
+from hypothesis.internal.compat import ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
 from tests.common.debug import (
