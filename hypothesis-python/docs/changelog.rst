@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.140.3:
+
+--------------------
+6.140.3 - 2025-10-04
+--------------------
+
+Fixes our bundled |run_conformance_test| not respecting |PrimitiveProvider.avoid_realization|.
+
 .. _v6.140.2:
 
 --------------------
