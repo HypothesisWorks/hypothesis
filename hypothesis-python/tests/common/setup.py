@@ -76,6 +76,9 @@ def run():
     if "crosshair" in AVAILABLE_PROVIDERS:
         settings.register_profile(
             "crosshair",
+            # inherit from default profile, even on CI. See
+            # https://github.com/HypothesisWorks/hypothesis/pull/4536#issuecomment-3366741772
+            settings.get_profile("default"),
             backend="crosshair",
             max_examples=20,
             deadline=None,
