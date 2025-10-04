@@ -117,7 +117,7 @@ COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 #: - setting a string path here, instead of a provider class
 #: - ensuring the registered hypothesis plugin path references a path which just
 #:   sets AVAILABLE_PROVIDERS and does not import your package
-AVAILABLE_PROVIDERS: dict[str, Union[str, type["PrimitiveProvider"]]] = {
+AVAILABLE_PROVIDERS: dict[str, str | type["PrimitiveProvider"]] = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
     "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
