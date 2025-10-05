@@ -10,7 +10,7 @@
 
 import unittest
 from functools import partial
-from typing import Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -195,8 +195,8 @@ def from_form(
         if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
 
-    data_strategies = {}
-    file_strategies = {}
+    data_strategies: dict[str, Any] = {}
+    file_strategies: dict[str, Any] = {}
     for name, field in sorted(fields_by_name.items()):
         if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
@@ -216,8 +216,8 @@ def from_form(
     return _forms_impl(
         st.builds(
             partial(form, **form_kwargs),  # type: ignore
-            data=st.fixed_dictionaries(data_strategies),  # type: ignore
-            files=st.fixed_dictionaries(file_strategies),  # type: ignore
+            data=st.fixed_dictionaries(data_strategies),
+            files=st.fixed_dictionaries(file_strategies),
         )
     )
 
