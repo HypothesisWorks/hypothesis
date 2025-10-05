@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Collection, Sequence
 from typing import Callable
 
 import pytest
@@ -17,7 +18,11 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import Concatenate, ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import (
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+)
 
 try:
     from typing import TypeGuard  # new in 3.10
@@ -92,3 +97,14 @@ def test_callable_return_typegard_type(typ):
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], typ[int]], st.none())
+
+
+def test_binary_type_resolution():
+    # we have special logic for this, see
+    # https://github.com/HypothesisWorks/hypothesis/pull/4490
+    find_any(st.from_type(Collection[int]), lambda v: isinstance(v, bytes))
+    find_any(st.from_type(Sequence[object]), lambda v: isinstance(v, bytes))
+    find_any(st.from_type(Sequence[int]), lambda v: isinstance(v, bytes))
+
+    assert_simple_property(st.from_type(type[int]), lambda v: not isinstance(v, bytes))
+    assert_simple_property(st.from_type(set[int]), lambda v: not isinstance(v, bytes))

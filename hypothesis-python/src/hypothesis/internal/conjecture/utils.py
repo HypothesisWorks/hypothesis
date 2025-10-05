@@ -11,15 +11,18 @@
 import enum
 import hashlib
 import heapq
+import math
 import sys
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Optional, TypeVar, Union
+from types import FunctionType
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.floats import next_up
+from hypothesis.internal.lambda_sources import _function_key
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
@@ -33,8 +36,26 @@ def calc_label_from_name(name: str) -> int:
     return int_from_bytes(hashed[:8])
 
 
+def calc_label_from_callable(f: Callable) -> int:
+    if isinstance(f, FunctionType):
+        return calc_label_from_hash(_function_key(f, ignore_name=True))
+    elif isinstance(f, type):
+        return calc_label_from_cls(f)
+    else:
+        # probably an instance defining __call__
+        try:
+            return calc_label_from_hash(f)
+        except Exception:
+            # not hashable
+            return calc_label_from_cls(type(f))
+
+
 def calc_label_from_cls(cls: type) -> int:
     return calc_label_from_name(cls.__qualname__)
+
+
+def calc_label_from_hash(obj: object) -> int:
+    return calc_label_from_name(str(hash(obj)))
 
 
 def combine_labels(*labels: int) -> int:
@@ -71,7 +92,7 @@ def check_sample(
             )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         raise InvalidArgument(
-            f"Cannot sample from {values!r}, not an ordered collection. "
+            f"Cannot sample from {values!r} because it is not an ordered collection. "
             f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
             "example, the sampled values must have the same iteration order "
@@ -82,8 +103,77 @@ def check_sample(
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
-        return values
+        # Pyright is unhappy with every way I've tried to type-annotate this
+        # function, so fine, we'll just ignore the analysis error.
+        return values  # type: ignore
     return tuple(values)
+
+
+@lru_cache(64)
+def compute_sampler_table(weights: tuple[float, ...]) -> list[tuple[int, int, float]]:
+    n = len(weights)
+    table: list[list[int | float | None]] = [[i, None, None] for i in range(n)]
+    total = sum(weights)
+    num_type = type(total)
+
+    zero = num_type(0)  # type: ignore
+    one = num_type(1)  # type: ignore
+
+    small: list[int] = []
+    large: list[int] = []
+
+    probabilities = [w / total for w in weights]
+    scaled_probabilities: list[float] = []
+
+    for i, alternate_chance in enumerate(probabilities):
+        scaled = alternate_chance * n
+        scaled_probabilities.append(scaled)
+        if scaled == 1:
+            table[i][2] = zero
+        elif scaled < 1:
+            small.append(i)
+        else:
+            large.append(i)
+    heapq.heapify(small)
+    heapq.heapify(large)
+
+    while small and large:
+        lo = heapq.heappop(small)
+        hi = heapq.heappop(large)
+
+        assert lo != hi
+        assert scaled_probabilities[hi] > one
+        assert table[lo][1] is None
+        table[lo][1] = hi
+        table[lo][2] = one - scaled_probabilities[lo]
+        scaled_probabilities[hi] = (
+            scaled_probabilities[hi] + scaled_probabilities[lo]
+        ) - one
+
+        if scaled_probabilities[hi] < 1:
+            heapq.heappush(small, hi)
+        elif scaled_probabilities[hi] == 1:
+            table[hi][2] = zero
+        else:
+            heapq.heappush(large, hi)
+    while large:
+        table[large.pop()][2] = zero
+    while small:
+        table[small.pop()][2] = zero
+
+    new_table: list[tuple[int, int, float]] = []
+    for base, alternate, alternate_chance in table:
+        assert isinstance(base, int)
+        assert isinstance(alternate, int) or alternate is None
+        assert alternate_chance is not None
+        if alternate is None:
+            new_table.append((base, base, alternate_chance))
+        elif alternate < base:
+            new_table.append((alternate, base, one - alternate_chance))
+        else:
+            new_table.append((base, alternate, alternate_chance))
+    new_table.sort()
+    return new_table
 
 
 class Sampler:
@@ -108,69 +198,7 @@ class Sampler:
 
     def __init__(self, weights: Sequence[float], *, observe: bool = True):
         self.observe = observe
-
-        n = len(weights)
-        table: "list[list[int | float | None]]" = [[i, None, None] for i in range(n)]
-        total = sum(weights)
-        num_type = type(total)
-
-        zero = num_type(0)  # type: ignore
-        one = num_type(1)  # type: ignore
-
-        small: "List[int]" = []
-        large: "List[int]" = []
-
-        probabilities = [w / total for w in weights]
-        scaled_probabilities: "List[float]" = []
-
-        for i, alternate_chance in enumerate(probabilities):
-            scaled = alternate_chance * n
-            scaled_probabilities.append(scaled)
-            if scaled == 1:
-                table[i][2] = zero
-            elif scaled < 1:
-                small.append(i)
-            else:
-                large.append(i)
-        heapq.heapify(small)
-        heapq.heapify(large)
-
-        while small and large:
-            lo = heapq.heappop(small)
-            hi = heapq.heappop(large)
-
-            assert lo != hi
-            assert scaled_probabilities[hi] > one
-            assert table[lo][1] is None
-            table[lo][1] = hi
-            table[lo][2] = one - scaled_probabilities[lo]
-            scaled_probabilities[hi] = (
-                scaled_probabilities[hi] + scaled_probabilities[lo]
-            ) - one
-
-            if scaled_probabilities[hi] < 1:
-                heapq.heappush(small, hi)
-            elif scaled_probabilities[hi] == 1:
-                table[hi][2] = zero
-            else:
-                heapq.heappush(large, hi)
-        while large:
-            table[large.pop()][2] = zero
-        while small:
-            table[small.pop()][2] = zero
-
-        self.table: "list[tuple[int, int, float]]" = []
-        for base, alternate, alternate_chance in table:
-            assert isinstance(base, int)
-            assert isinstance(alternate, int) or alternate is None
-            assert alternate_chance is not None
-            if alternate is None:
-                self.table.append((base, base, alternate_chance))
-            elif alternate < base:
-                self.table.append((alternate, base, one - alternate_chance))
-            else:
-                self.table.append((base, alternate, alternate_chance))
-        self.table.sort()
+        self.table = compute_sampler_table(tuple(weights))
 
     def sample(
         self,
@@ -179,7 +207,7 @@ class Sampler:
         forced: Optional[int] = None,
     ) -> int:
         if self.observe:
-            data.start_example(SAMPLE_IN_SAMPLER_LABEL)
+            data.start_span(SAMPLE_IN_SAMPLER_LABEL)
         forced_choice = (  # pragma: no branch # https://github.com/nedbat/coveragepy/issues/1617
             None
             if forced is None
@@ -208,7 +236,7 @@ class Sampler:
             observe=self.observe,
         )
         if self.observe:
-            data.stop_example()
+            data.stop_span()
         if use_alternate:
             assert forced is None or alternate == forced, (forced, alternate)
             return alternate
@@ -257,23 +285,23 @@ class many:
         self.rejected = False
         self.observe = observe
 
-    def stop_example(self):
+    def stop_span(self):
         if self.observe:
-            self.data.stop_example()
+            self.data.stop_span()
 
-    def start_example(self, label):
+    def start_span(self, label):
         if self.observe:
-            self.data.start_example(label)
+            self.data.start_span(label)
 
     def more(self) -> bool:
         """Should I draw another element to add to the collection?"""
         if self.drawn:
-            self.stop_example()
+            self.stop_span()
 
         self.drawn = True
         self.rejected = False
 
-        self.start_example(ONE_FROM_MANY_LABEL)
+        self.start_span(ONE_FROM_MANY_LABEL)
         if self.min_size == self.max_size:
             # if we have to hit an exact size, draw unconditionally until that
             # point, and no further.
@@ -301,7 +329,7 @@ class many:
             self.count += 1
             return True
         else:
-            self.stop_example()
+            self.stop_span()
             return False
 
     def reject(self, why: Optional[str] = None) -> None:
@@ -324,13 +352,13 @@ SMALLEST_POSITIVE_FLOAT: float = next_up(0.0) or sys.float_info.min
 
 
 @lru_cache
-def _calc_p_continue(desired_avg: float, max_size: int) -> float:
+def _calc_p_continue(desired_avg: float, max_size: Union[int, float]) -> float:
     """Return the p_continue which will generate the desired average size."""
     assert desired_avg <= max_size, (desired_avg, max_size)
     if desired_avg == max_size:
         return 1.0
     p_continue = 1 - 1.0 / (1 + desired_avg)
-    if p_continue == 0 or max_size == float("inf"):
+    if p_continue == 0 or max_size == math.inf:
         assert 0 <= p_continue < 1, p_continue
         return p_continue
     assert 0 < p_continue < 1, p_continue
@@ -362,7 +390,7 @@ def _calc_p_continue(desired_avg: float, max_size: int) -> float:
     return p_continue
 
 
-def _p_continue_to_avg(p_continue: float, max_size: int) -> float:
+def _p_continue_to_avg(p_continue: float, max_size: Union[int, float]) -> float:
     """Return the average_size generated by this p_continue and max_size."""
     if p_continue >= 1:
         return max_size

@@ -21,7 +21,7 @@ import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
-from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
+from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -375,9 +375,10 @@ def test_isidentifier_filter_properly_rewritten(al, data):
     assert example.isidentifier()
 
 
-@pytest.mark.parametrize("al", ["¥¦§©"])
-def test_isidentifer_filter_unsatisfiable(al):
-    fs = st.text(alphabet=al).filter(str.isidentifier)
+def test_isidentifer_filter_unsatisfiable():
+    alphabet = "¥¦§©"
+    assert not any(f"_{c}".isidentifier() for c in alphabet)
+    fs = st.text(alphabet=alphabet).filter(str.isidentifier)
     with pytest.raises(Unsatisfiable):
         check_can_generate_examples(fs)
 

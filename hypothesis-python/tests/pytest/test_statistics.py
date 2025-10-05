@@ -11,6 +11,8 @@
 import pytest
 from _hypothesis_pytestplugin import PRINT_STATISTICS_OPTION
 
+from tests.common.utils import skipif_threading
+
 pytest_plugins = "pytester"
 
 
@@ -68,6 +70,7 @@ def test_prints_statistics_given_option_with_junitxml(testdir):
     assert "< 10% of examples satisfied assumptions" in out
 
 
+@skipif_threading
 @pytest.mark.skipif(
     tuple(map(int, pytest.__version__.split(".")[:2])) < (5, 4), reason="too old"
 )

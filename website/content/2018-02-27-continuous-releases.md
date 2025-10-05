@@ -12,7 +12,7 @@ This is all thanks to our continuous release process.
 We've completely automated the process of releasing, so every pull request that changes code gets a new release, without any human input.
 In this post, I'll explain how our continuous releases work, and why we find it so useful.
 
-[changelog]: https://hypothesis.readthedocs.io/en/latest/changes.html
+[changelog]: https://hypothesis.readthedocs.io/en/latest/changelog.html
 
 <!--more-->
 

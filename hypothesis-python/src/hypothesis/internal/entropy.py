@@ -15,6 +15,7 @@ import sys
 import warnings
 from collections.abc import Generator, Hashable
 from itertools import count
+from random import Random
 from typing import TYPE_CHECKING, Any, Callable, Optional
 from weakref import WeakValueDictionary
 
@@ -35,12 +36,13 @@ if TYPE_CHECKING:
 else:  # pragma: no cover
     RandomLike = random.Random
 
+_RKEY = count()
+_global_random_rkey = next(_RKEY)
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
-_RKEY = count()
 RANDOMS_TO_MANAGE: WeakValueDictionary[int, RandomLike] = WeakValueDictionary(
-    {next(_RKEY): random}
+    {_global_random_rkey: random}
 )
 
 
@@ -115,7 +117,11 @@ def register_random(r: RandomLike) -> None:
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"{r=} does not have all the required methods")
 
-    if r in RANDOMS_TO_MANAGE.values():
+    if r in [
+        random
+        for ref in RANDOMS_TO_MANAGE.data.copy().values()  # type: ignore
+        if (random := ref()) is not None
+    ]:
         return
 
     if not (PYPY or GRAALPY):  # pragma: no branch
@@ -148,6 +154,14 @@ def register_random(r: RandomLike) -> None:
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
+# Used to make the warning issued by `deprecate_random_in_strategy` thread-safe,
+# as well as to avoid warning on uses of st.randoms().
+# Store just the hash to reduce memory consumption. This is an underapproximation
+# of membership (distinct items might have the same hash), which is fine for the
+# warning, as it results in missed alarms, not false alarms.
+_known_random_state_hashes: set[Any] = set()
+
+
 def get_seeder_and_restorer(
     seed: Hashable = 0,
 ) -> tuple[Callable[[], None], Callable[[], None]]:
@@ -172,15 +186,55 @@ def get_seeder_and_restorer(
 
     def seed_all() -> None:
         assert not states
-        for k, r in RANDOMS_TO_MANAGE.items():
+        # access .data.copy().items() instead of .items() to avoid a "dictionary
+        # changed size during iteration" error under multithreading.
+        #
+        # I initially expected this to be fixed by
+        # https://github.com/python/cpython/commit/96d37dbcd23e65a7a57819aeced9034296ef747e,
+        # but I believe that is addressing the size change from weakrefs expiring
+        # during gc, not from the user adding new elements to the dict.
+        #
+        # Since we're accessing .data, we have to manually handle checking for
+        # expired ref instances during iteration. Normally WeakValueDictionary
+        # handles this for us.
+        #
+        # This command reproduces at time of writing:
+        #   pytest hypothesis-python/tests/ -k test_intervals_are_equivalent_to_their_lists
+        #   --parallel-threads 2
+        for k, ref in RANDOMS_TO_MANAGE.data.copy().items():  # type: ignore
+            r = ref()
+            if r is None:
+                # ie the random instance has been gc'd
+                continue  # pragma: no cover
             states[k] = r.getstate()
+            if k == _global_random_rkey:
+                # r.seed sets the random's state. We want to add that state to
+                # _known_random_states before calling r.seed, in case a thread
+                # switch occurs between the two. To figure out the seed -> state
+                # mapping, set the seed on a dummy random and add that state to
+                # _known_random_state.
+                #
+                # we could use a global dummy random here, but then we'd have to
+                # put a lock around it, and it's not clear to me if that's more
+                # efficient than constructing a new instance each time.
+                dummy_random = Random()
+                dummy_random.seed(seed)
+                _known_random_state_hashes.add(hash(dummy_random.getstate()))
+                # we expect `assert r.getstate() == dummy_random.getstate()` to
+                # hold here, but thread switches means it might not.
+
             r.seed(seed)
 
     def restore_all() -> None:
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
-            if r is not None:  # i.e., hasn't been garbage-collected
-                r.setstate(state)
+            if r is None:  # i.e., has been garbage-collected
+                continue
+
+            if k == _global_random_rkey:
+                _known_random_state_hashes.add(hash(state))
+            r.setstate(state)
+
         states.clear()
 
     return seed_all, restore_all
@@ -195,9 +249,11 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-        hypothesis.core._hypothesis_global_random = random.Random()
-        register_random(hypothesis.core._hypothesis_global_random)
+    if (
+        hypothesis.core.threadlocal._hypothesis_global_random is None
+    ):  # pragma: no cover
+        hypothesis.core.threadlocal._hypothesis_global_random = Random()
+        register_random(hypothesis.core.threadlocal._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
@@ -205,3 +261,7 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
         yield
     finally:
         restore_all()
+        # TODO it would be nice to clean up _known_random_state_hashes when no
+        # active deterministic_PRNG contexts remain, to free memory (see similar
+        # logic in StackframeLimiter). But it's a bit annoying to get right, and
+        # likely not a big deal.

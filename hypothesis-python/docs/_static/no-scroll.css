@@ -1,0 +1,5 @@
+/* disable autoscroll-to-target behavior
+   https://github.com/pradyunsg/furo/discussions/384#discussioncomment-2249243 */
+html {
+    scroll-behavior: auto;
+}

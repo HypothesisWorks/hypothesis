@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections import Counter
+
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 from hypothesis.internal.conjecture.utils import identity
@@ -58,6 +60,17 @@ class Collection(Shrinker):
 
         # then try reordering
         Ordering.shrink(self.current, self.consider, key=self.to_order)
+
+        # then try minimizing all duplicated elements together simultaneously. This
+        # helps in cases like https://github.com/HypothesisWorks/hypothesis/issues/4286
+        duplicated = {val for val, count in Counter(self.current).items() if count > 1}
+        for val in duplicated:
+            self.ElementShrinker.shrink(
+                self.to_order(val),
+                lambda v: self.consider(
+                    tuple(self.from_order(v) if x == val else x for x in self.current)
+                ),
+            )
 
         # then try minimizing each element in turn
         for i, val in enumerate(self.current):

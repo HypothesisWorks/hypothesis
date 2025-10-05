@@ -87,7 +87,7 @@ def test_start_will_equal_size(size):
 
 
 @given(st.integers(1, 1000))
-@settings(deadline=None)
+@settings(deadline=None, max_examples=20)
 def test_start_will_equal_0(size):
     find_any(st.slices(size), lambda x: x.start == 0)
 

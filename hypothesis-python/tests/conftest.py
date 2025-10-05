@@ -11,21 +11,22 @@
 import gc
 import inspect
 import json
+import os
 import random
 import sys
 import time as time_module
-from collections import defaultdict
 from functools import wraps
 from pathlib import Path
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
+from hypothesis import is_hypothesis_test, settings
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
+from hypothesis.internal import lambda_sources
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import junkdrawer
-from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
@@ -36,8 +37,11 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 10):
-    collect_ignore_glob.append("cover/*py310*")
+# this checks up until py319
+for minor_increment in range(10):
+    minor = 10 + minor_increment
+    if sys.version_info < (3, minor):
+        collect_ignore_glob.append(f"cover/*py3{minor}*.py")
 
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
@@ -52,15 +56,13 @@ def pytest_configure(config):
         "markers",
         "xp_min_version(api_version): run when greater or equal to api_version",
     )
+    config.addinivalue_line("markers", "xf_crosshair: selection for xfailing symbolics")
 
     if config.getoption("--hypothesis-benchmark-shrinks"):
         # we'd like to support xdist here, but a session-scope fixture won't
         # be enough: https://github.com/pytest-dev/pytest-xdist/issues/271.
         # Need a lockfile or equivalent.
 
-        assert not hasattr(
-            config, "workerinput"
-        ), "--hypothesis-benchmark-shrinks does not currently support xdist. Run without -n"
         assert config.getoption(
             "--hypothesis-benchmark-output"
         ), "must specify shrinking output file"
@@ -73,7 +75,6 @@ def pytest_addoption(parser):
     parser.addoption("--hypothesis-update-outputs", action="store_true")
     parser.addoption("--hypothesis-benchmark-shrinks", type=str, choices=["new", "old"])
     parser.addoption("--hypothesis-benchmark-output", type=str)
-    parser.addoption("--hypothesis-learn-to-normalize", action="store_true")
 
     # New in pytest 6, so we add a shim on old versions to avoid missing-arg errors
     arg = "--durations-min"
@@ -93,75 +94,121 @@ def warns_or_raises(request):
         return pytest.warns
 
 
-@pytest.fixture(scope="function", autouse=True)
-def _consistently_increment_time(monkeypatch):
-    """Rather than rely on real system time we monkey patch time.time so that
-    it passes at a consistent rate between calls.
+# crosshair needs actual time for its path timeouts; load it before patching
+try:
+    import hypothesis_crosshair_provider.crosshair_provider  # noqa: F401
+except ImportError:
+    pass
 
-    The reason for this is that when these tests run in CI, their performance is
-    extremely variable and the VM the tests are on might go to sleep for a bit,
-    introducing arbitrary delays. This can cause a number of tests to fail
-    flakily.
 
-    Replacing time with a fake version under our control avoids this problem.
-    """
-    frozen = False
+if sys.version_info >= (3, 11):
+    # To detect if changes in code generation causes lambda test compilation
+    # to fail. Older versions (3.10 and earlier) have a few known false
+    # negatives which we ignore.
+    @pytest.fixture(scope="function", autouse=True)
+    def _make_unknown_lambdas_fail(monkeypatch):
 
-    current_time = time_module.time()
+        def fail(candidate):
+            msg = (
+                f"Failed to find a matching source for {candidate}. "
+                "This could indicate changes in the Python code generator,\n"
+                "or just a previously unknown case. To quickly resolve this "
+                "problem, use the `allow_unknown_lambdas` fixture."
+            )
+            raise AssertionError(msg)
 
-    def time():
-        nonlocal current_time
-        if not frozen:
-            current_time += TIME_INCREMENT
-        return current_time
+        monkeypatch.setattr(
+            lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail
+        )
 
-    def sleep(naptime):
-        nonlocal current_time
-        current_time += naptime
 
-    def freeze():
-        nonlocal frozen
-        frozen = True
+@pytest.fixture(scope="function")
+def allow_unknown_lambdas(monkeypatch):
+    # Will run after make...fail since autouse are run first
 
-    def _patch(name, fn):
-        monkeypatch.setattr(time_module, name, wraps(getattr(time_module, name))(fn))
+    def nofail(candidate):
+        pass
 
-    _patch("time", time)
-    _patch("monotonic", time)
-    _patch("perf_counter", time)
-    _patch("sleep", sleep)
-    monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
+    monkeypatch.setattr(
+        lambda_sources, "_check_unknown_perfectly_aligned_lambda", nofail
+    )
 
-    # In the patched time regime, observing it causes it to increment. To avoid reintroducing
-    # non-determinism due to GC running at arbitrary times, we patch the GC observer
-    # to NOT increment time.
 
-    monkeypatch.setattr(junkdrawer, "_perf_counter", time)
+# monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests
+# if we define this.
+if settings.get_current_profile_name() != "threading":
 
-    if hasattr(gc, "callbacks"):
-        # ensure timer callback is added, then bracket it by freeze/unfreeze below
-        junkdrawer.gc_cumulative_time()
+    @pytest.fixture(scope="function", autouse=True)
+    def _consistently_increment_time(monkeypatch):
+        """Rather than rely on real system time we monkey patch time.time so that
+        it passes at a consistent rate between calls.
 
-        _was_frozen = False
+        The reason for this is that when these tests run in CI, their performance is
+        extremely variable and the VM the tests are on might go to sleep for a bit,
+        introducing arbitrary delays. This can cause a number of tests to fail
+        flakily.
 
-        def _freezer(*_):
-            nonlocal _was_frozen, frozen
-            _was_frozen = frozen
+        Replacing time with a fake version under our control avoids this problem.
+        """
+        frozen = False
+
+        current_time = time_module.time()
+
+        def time():
+            nonlocal current_time
+            if not frozen:
+                current_time += TIME_INCREMENT
+            return current_time
+
+        def sleep(naptime):
+            nonlocal current_time
+            current_time += naptime
+
+        def freeze():
+            nonlocal frozen
             frozen = True
 
-        def _unfreezer(*_):
-            nonlocal _was_frozen, frozen
-            frozen = _was_frozen
+        def _patch(name, fn):
+            monkeypatch.setattr(
+                time_module, name, wraps(getattr(time_module, name))(fn)
+            )
 
-        gc.callbacks.insert(0, _freezer)  # freeze before gc callback
-        gc.callbacks.append(_unfreezer)  # unfreeze after
+        _patch("time", time)
+        _patch("monotonic", time)
+        _patch("perf_counter", time)
+        _patch("sleep", sleep)
+        monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
 
-        yield
+        # In the patched time regime, observing it causes it to increment. To avoid reintroducing
+        # non-determinism due to GC running at arbitrary times, we patch the GC observer
+        # to NOT increment time.
 
-        assert gc.callbacks.pop(0) == _freezer
-        assert gc.callbacks.pop() == _unfreezer
-    else:  # pragma: no cover # branch never taken in CPython
-        yield
+        monkeypatch.setattr(junkdrawer, "_perf_counter", time)
+
+        if hasattr(gc, "callbacks"):
+            # ensure timer callback is added, then bracket it by freeze/unfreeze below
+            junkdrawer.gc_cumulative_time()
+
+            _was_frozen = False
+
+            def _freezer(*_):
+                nonlocal _was_frozen, frozen
+                _was_frozen = frozen
+                frozen = True
+
+            def _unfreezer(*_):
+                nonlocal _was_frozen, frozen
+                frozen = _was_frozen
+
+            gc.callbacks.insert(0, _freezer)  # freeze before gc callback
+            gc.callbacks.append(_unfreezer)  # unfreeze after
+
+            yield
+
+            assert gc.callbacks.pop(0) == _freezer
+            assert gc.callbacks.pop() == _unfreezer
+        else:  # pragma: no cover # branch never taken in CPython
+            yield
 
 
 random_states_after_tests = {}
@@ -179,7 +226,12 @@ def pytest_runtest_call(item):
         return
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
-    if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
+    if (
+        not (hasattr(item, "obj") and is_hypothesis_test(item.obj))
+        # we disable this check on the threading job, due to races in the global
+        # state.
+        or settings.get_current_profile_name() == "threading"
+    ):
         outcome = yield
     elif "pytest_randomly" in sys.modules:
         # See https://github.com/HypothesisWorks/hypothesis/issues/3041 - this
@@ -213,12 +265,18 @@ def pytest_runtest_call(item):
         )
 
 
-shrink_calls = defaultdict(list)
-shrink_time = defaultdict(list)
 timer = time_module.process_time
 
 
-def _benchmark_shrinks(item):
+def _worker_path(session: pytest.Session) -> Path:
+    return (
+        Path(session.config.getoption("--hypothesis-benchmark-output")).parent
+        # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#envvar-PYTEST_XDIST_WORKER
+        / f"shrinking_results_{os.environ['PYTEST_XDIST_WORKER']}.json"
+    )
+
+
+def _benchmark_shrinks(item: pytest.Function) -> None:
     from hypothesis.internal.conjecture.shrinker import Shrinker
 
     # this isn't perfect, but it is cheap!
@@ -226,14 +284,16 @@ def _benchmark_shrinks(item):
         pytest.skip("(probably) does not call minimal()")
 
     actual_shrink = Shrinker.shrink
+    shrink_calls = []
+    shrink_time = []
 
     def shrink(self, *args, **kwargs):
+        nonlocal shrink_calls
+        nonlocal shrink_time
         start_t = timer()
         result = actual_shrink(self, *args, **kwargs)
-        # remove leading hypothesis-python/tests/...
-        nodeid = item.nodeid.rsplit("/", 1)[1]
-        shrink_calls[nodeid].append(self.engine.call_count - self.initial_calls)
-        shrink_time[nodeid].append(timer() - start_t)
+        shrink_calls.append(self.engine.call_count - self.initial_calls)
+        shrink_time.append(timer() - start_t)
         return result
 
     monkeypatch = MonkeyPatch()
@@ -247,15 +307,39 @@ def _benchmark_shrinks(item):
 
     monkeypatch.undo()
 
+    # remove leading hypothesis-python/tests/...
+    nodeid = item.nodeid.rsplit("/", 1)[1]
+
+    results_p = _worker_path(item.session)
+    if not results_p.exists():
+        results_p.write_text(json.dumps({"calls": {}, "time": {}}))
+
+    data = json.loads(results_p.read_text())
+    data["calls"][nodeid] = shrink_calls
+    data["time"][nodeid] = shrink_time
+    results_p.write_text(json.dumps(data))
+
 
 def pytest_sessionfinish(session, exitstatus):
     if not (mode := session.config.getoption("--hypothesis-benchmark-shrinks")):
         return
-    p = Path(session.config.getoption("--hypothesis-benchmark-output"))
-    results = {mode: {"calls": shrink_calls, "time": shrink_time}}
-    if not p.exists():
-        p.write_text(json.dumps(results))
+    # only run on the controller process, not the workers
+    if hasattr(session.config, "workerinput"):
+        return
+
+    results = {"calls": {}, "time": {}}
+    output_p = Path(session.config.getoption("--hypothesis-benchmark-output"))
+    for p in output_p.parent.iterdir():
+        if p.name.startswith("shrinking_results_"):
+            worker_results = json.loads(p.read_text())
+            results["calls"] |= worker_results["calls"]
+            results["time"] |= worker_results["time"]
+            p.unlink()
+
+    results = {mode: results}
+    if not output_p.exists():
+        output_p.write_text(json.dumps(results))
     else:
-        data = json.loads(p.read_text())
+        data = json.loads(output_p.read_text())
         data[mode] = results[mode]
-        p.write_text(json.dumps(data))
+        output_p.write_text(json.dumps(data))

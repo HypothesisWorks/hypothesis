@@ -92,7 +92,7 @@ of Hypothesis for Ruby:
   guided in the Python version right now...)
 * There will probably not be a health check system as part of the initial
   release, or if there is it will be much more basic.
-* Any equivalent to [`@reproduce_failure`](https://hypothesis.readthedocs.io/en/latest/reproducing.html#reproducing-an-example-with-with-reproduce-failure)
+* Any equivalent to [`@reproduce_failure`](https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.reproduce_failure)
 
 ## Possible omissions
 
@@ -105,7 +105,7 @@ for a future release:
   in the core engine, and if it's easy to support it then it will
   also be included in the front-end. I currently think it will be
   easy, but if it's not it will be dropped).
-* [adding explicit examples](https://hypothesis.readthedocs.io/en/latest/reproducing.html#providing-explicit-examples).
+* [adding explicit examples](https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.example).
 
 ## Current Project State
 

@@ -15,12 +15,8 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
-from hypothesis.internal.conjecture.data import (
-    ConjectureData,
-    NodeTemplate,
-    Status,
-    StopTest,
-)
+from hypothesis.internal.conjecture.choice import ChoiceTemplate
+from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
     DataTree,
@@ -28,31 +24,34 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.conjecture.provider_conformance import (
+    boolean_constraints,
+    integer_constraints,
+)
 from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
-    boolean_kwargs,
+    constraints_strategy,
     fresh_data,
-    integer_kwargs,
     interesting_origin,
-    kwargs_strategy,
     nodes,
     run_to_nodes,
 )
 
-TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
+runner_settings = settings(
+    max_examples=100, database=None, suppress_health_check=list(HealthCheck)
 )
 
 
 def runner_for(*examples):
     def accept(tf):
-        runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
-        runner.exit_with = lambda reason: None
+        runner = ConjectureRunner(
+            tf, settings=runner_settings, random=Random(0), ignore_limits=True
+        )
         ran_examples = []
         for choices in examples:
-            data = runner.cached_test_function_ir(choices)
+            data = runner.cached_test_function(choices)
             ran_examples.append((choices, data))
         for choices, d in ran_examples:
             rewritten, status = runner.tree.rewrite(choices)
@@ -125,22 +124,24 @@ def test_novel_prefixes_are_novel():
             data.draw_bytes(1, 1, forced=b"\0")
             data.draw_integer(0, 3)
 
-    runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
+    runner = ConjectureRunner(
+        tf, settings=settings(runner_settings, max_examples=1000), random=Random(0)
+    )
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
-        extension = prefix + (NodeTemplate("simplest", count=100),)
+        extension = prefix + (ChoiceTemplate("simplest", count=100),)
         assert runner.tree.rewrite(extension)[1] is None
-        result = runner.cached_test_function_ir(extension)
+        result = runner.cached_test_function(extension)
         assert runner.tree.rewrite(extension)[0] == result.choices
 
 
 def test_overruns_if_prefix():
     runner = ConjectureRunner(
         lambda data: [data.draw_boolean() for _ in range(2)],
-        settings=TEST_SETTINGS,
+        settings=runner_settings,
         random=Random(0),
     )
-    runner.cached_test_function_ir([False, False])
+    runner.cached_test_function([False, False])
     assert runner.tree.rewrite([False])[1] is Status.OVERRUN
 
 
@@ -149,10 +150,10 @@ def test_stores_the_tree_flat_until_needed():
     def runner(data):
         for _ in range(10):
             data.draw_boolean()
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     root = runner.tree.root
-    assert len(root.kwargs) == 10
+    assert len(root.constraints) == 10
     assert len(root.values) == 10
     assert root.transition.status == Status.INTERESTING
 
@@ -163,10 +164,10 @@ def test_split_in_the_middle():
         data.draw_integer(0, 1)
         data.draw_integer(0, 1)
         data.draw_integer(0, 15)
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     root = runner.tree.root
-    assert len(root.kwargs) == len(root.values) == 1
+    assert len(root.constraints) == len(root.values) == 1
     assert list(root.transition.children[0].values) == [2]
     assert list(root.transition.children[1].values) == [3]
 
@@ -177,7 +178,7 @@ def test_stores_forced_nodes():
         data.draw_integer(0, 1, forced=0)
         data.draw_integer(0, 1)
         data.draw_integer(0, 1, forced=0)
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     root = runner.tree.root
     assert root.forced == {0, 2}
@@ -188,7 +189,7 @@ def test_correctly_relocates_forced_nodes():
     def runner(data):
         data.draw_integer(0, 1)
         data.draw_integer(0, 1, forced=0)
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     root = runner.tree.root
     assert root.transition.children[1].forced == {0}
@@ -362,18 +363,18 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 def test_will_mark_changes_in_discard_as_flaky():
     tree = DataTree()
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
-    data.stop_example()
+    data.stop_span()
     data.draw_integer(0, 1)
     data.freeze()
 
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
 
     with pytest.raises(Flaky):
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
 
 
 def test_is_not_flaky_on_positive_zero_and_negative_zero():
@@ -409,51 +410,55 @@ def test_low_probabilities_are_still_explored():
     assert prefix[0]
 
 
-def _test_observed_draws_are_recorded_in_tree(ir_type):
-    @given(kwargs_strategy(ir_type))
-    def test(kwargs):
+def _test_observed_draws_are_recorded_in_tree(choice_type):
+    @given(constraints_strategy(choice_type))
+    def test(constraints):
         # we currently split pseudo-choices with a single child into their
         # own transition, which clashes with our asserts below. If we ever
         # change this (say, by not writing pseudo choices to the ir at all),
         # this restriction can be relaxed.
-        assume(compute_max_children(ir_type, kwargs) > 1)
+        assume(compute_max_children(choice_type, constraints) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
-        draw_func = getattr(data, f"draw_{ir_type}")
-        draw_func(**kwargs)
+        draw_func = getattr(data, f"draw_{choice_type}")
+        draw_func(**constraints)
 
         assert tree.root.transition is None
-        assert tree.root.ir_types == [ir_type]
+        assert tree.root.choice_types == [choice_type]
 
     test()
 
 
-def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
-    @given(kwargs_strategy(ir_type))
-    def test(kwargs):
-        assume(compute_max_children(ir_type, kwargs) > 1)
+def _test_non_observed_draws_are_not_recorded_in_tree(choice_type):
+    @given(constraints_strategy(choice_type))
+    def test(constraints):
+        assume(compute_max_children(choice_type, constraints) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
-        draw_func = getattr(data, f"draw_{ir_type}")
-        draw_func(**kwargs, observe=False)
+        draw_func = getattr(data, f"draw_{choice_type}")
+        draw_func(**constraints, observe=False)
 
         root = tree.root
         assert root.transition is None
-        assert root.kwargs == root.values == root.ir_types == []
+        assert root.constraints == root.values == root.choice_types == []
 
     test()
 
 
-@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
-def test_observed_ir_type_draw(ir_type):
-    _test_observed_draws_are_recorded_in_tree(ir_type)
+@pytest.mark.parametrize(
+    "choice_type", ["integer", "float", "boolean", "string", "bytes"]
+)
+def test_observed_choice_type_draw(choice_type):
+    _test_observed_draws_are_recorded_in_tree(choice_type)
 
 
-@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
-def test_non_observed_ir_type_draw(ir_type):
-    _test_non_observed_draws_are_not_recorded_in_tree(ir_type)
+@pytest.mark.parametrize(
+    "choice_type", ["integer", "float", "boolean", "string", "bytes"]
+)
+def test_non_observed_choice_type_draw(choice_type):
+    _test_non_observed_draws_are_not_recorded_in_tree(choice_type)
 
 
 def test_can_generate_hard_values():
@@ -494,7 +499,7 @@ def test_can_generate_hard_floats():
         def nodes(data):
             f = next_up_n(min_value, n)
             data.draw_float(min_value, max_value, forced=f, allow_nan=False)
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
         data = ConjectureData.for_choices(
             [n.value for n in nodes], observer=tree.new_observer()
@@ -515,44 +520,44 @@ def test_can_generate_hard_floats():
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
 
 
-@given(boolean_kwargs(), integer_kwargs())
-def test_datatree_repr(bool_kwargs, int_kwargs):
+@given(boolean_constraints(), integer_constraints())
+def test_datatree_repr(bool_constraints, int_constraints):
     tree = DataTree()
 
     origin = interesting_origin()
 
     observer = tree.new_observer()
-    observer.draw_boolean(True, was_forced=False, kwargs=bool_kwargs)
+    observer.draw_boolean(True, was_forced=False, constraints=bool_constraints)
     observer.conclude_test(Status.INVALID, interesting_origin=None)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(42, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(42, was_forced=False, constraints=int_constraints)
     observer.conclude_test(Status.VALID, interesting_origin=None)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(0, was_forced=False, kwargs=int_kwargs)
-    observer.draw_boolean(False, was_forced=True, kwargs=bool_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(0, was_forced=False, constraints=int_constraints)
+    observer.draw_boolean(False, was_forced=True, constraints=bool_constraints)
     observer.conclude_test(Status.INTERESTING, interesting_origin=origin)
 
     observer = tree.new_observer()
-    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
-    observer.draw_integer(5, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
+    observer.draw_integer(5, was_forced=False, constraints=int_constraints)
 
     assert (
         pretty.pretty(tree)
         == textwrap.dedent(
             f"""
-        boolean True {bool_kwargs}
+        boolean True {bool_constraints}
           Conclusion (Status.INVALID)
-        boolean False {bool_kwargs}
-          integer 42 {int_kwargs}
+        boolean False {bool_constraints}
+          integer 42 {int_constraints}
             Conclusion (Status.VALID)
-          integer 0 {int_kwargs}
-            boolean False [forced] {bool_kwargs}
+          integer 0 {int_constraints}
+            boolean False [forced] {bool_constraints}
               Conclusion (Status.INTERESTING, {origin})
-          integer 5 {int_kwargs}
+          integer 5 {int_constraints}
             unknown
         """
         ).strip()
@@ -560,15 +565,15 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
 
 
 def _draw(data, node, *, forced=None):
-    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
+    return getattr(data, f"draw_{node.type}")(**node.constraints, forced=forced)
 
 
-@given(nodes(was_forced=True, ir_types=["float"]))
+@given(nodes(was_forced=True, choice_types=["float"]))
 def test_simulate_forced_floats(node):
     tree = DataTree()
 
     data = ConjectureData.for_choices([node.value], observer=tree.new_observer())
-    data.draw_float(**node.kwargs, forced=node.value)
+    data.draw_float(**node.constraints, forced=node.value)
     with pytest.raises(StopTest):
         data.conclude_test(Status.VALID)
 

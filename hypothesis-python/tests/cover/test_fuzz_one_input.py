@@ -108,22 +108,19 @@ def test_autopruning_of_returned_buffer():
     assert test.hypothesis.fuzz_one_input(b"deadbeef") == b"dead"
 
 
-STRAT = st.builds(object)
-
-
-@given(x=STRAT)
-def addx(x, y):
-    pass
-
-
-@given(STRAT)
-def addy(x, y):
-    pass
-
-
 def test_can_access_strategy_for_wrapped_test():
-    assert addx.hypothesis._given_kwargs == {"x": STRAT}
-    assert addy.hypothesis._given_kwargs == {"y": STRAT}
+    strategy = st.builds(object)
+
+    @given(x=strategy)
+    def addx(x, y):
+        pass
+
+    @given(strategy)
+    def addy(x, y):
+        pass
+
+    assert addx.hypothesis._given_kwargs == {"x": strategy}
+    assert addy.hypothesis._given_kwargs == {"y": strategy}
 
 
 @pytest.mark.parametrize(

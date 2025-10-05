@@ -127,13 +127,15 @@ class FilledWithStuff:
 
 def test_dataclass_asdict():
     ANamedTuple = namedtuple("ANamedTuple", ("with_some_field"))
-    obj = FilledWithStuff(a=[1], b=(2), c=ANamedTuple(3), d={4: 5}, e=defaultdict(list))
+    e = defaultdict(list)
+    e["a"].append(1)
+    obj = FilledWithStuff(a=[1], b=(2), c=ANamedTuple(3), d={4: 5}, e=e)
     assert dataclass_asdict(obj) == {
         "a": [1],
         "b": (2),
         "c": ANamedTuple(3),
         "d": {4: 5},
-        "e": {},
+        "e": {"a": [1]},
     }
 
 

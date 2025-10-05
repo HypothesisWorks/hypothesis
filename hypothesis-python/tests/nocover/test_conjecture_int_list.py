@@ -23,16 +23,6 @@ def valid_index(draw):
     return draw(st.integers(0, len(machine.model) - 1))
 
 
-@st.composite
-def valid_slice(draw):
-    machine = draw(st.runner())
-    result = [
-        draw(st.integers(0, max(3, len(machine.model) * 2 - 1))) for _ in range(2)
-    ]
-    result.sort()
-    return slice(*result)
-
-
 class IntListRules(RuleBasedStateMachine):
     @initialize(ls=st.lists(INTEGERS))
     def starting_lists(self, ls):
@@ -52,15 +42,10 @@ class IntListRules(RuleBasedStateMachine):
         self.model.append(n)
         self.target.append(n)
 
-    @rule(i=valid_index() | valid_slice())
+    @rule(i=valid_index())
     def delete(self, i):
         del self.model[i]
         del self.target[i]
-
-    @rule(sl=valid_slice())
-    def slice(self, sl):
-        self.model = self.model[sl]
-        self.target = self.target[sl]
 
     @rule(i=valid_index())
     def agree_on_values(self, i):

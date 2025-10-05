@@ -138,5 +138,8 @@ def test_bound_type_cheking_only_forward_ref():
 def test_bound_type_checking_only_forward_ref_wrong_type():
     """We should check ``ForwardRef`` parameter name correctly."""
     with utils.temp_registered(ForwardRef("WrongType"), st.just(1)):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ResolutionFailed):
             check_can_generate_examples(st.builds(typechecking_only_fun))

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=${to_uri}" />
+    </noscript>
+    <script>
+      var target = "${to_uri}";
+
+      var manualRedirects = {
+        "details.html#thread-safety-policy": "supported.html#thread-safety-policy",
+        "details.html#hypothesis.given": "reference/api.html#hypothesis.given",
+        "details.html#targeted-example-generation": "reference/api.html#targeted-property-based-testing",
+        "details.html#custom-function-execution": "reference/api.html#custom-function-execution",
+        "details.html#type-annotations-in-hypothesis": "how-to/type-strategies.html",
+        "details.html#the-hypothesis-pytest-plugin": "reference/integrations.html#the-hypothesis-pytest-plugin",
+        "details.html#use-with-external-fuzzers": "reference/api.html#use-with-external-fuzzers",
+        "details.html#making-assumptions": "reference/api.html#hypothesis.assume",
+        "details.html#hypothesis.event": "reference/api.html#hypothesis.event",
+        "details.html#hypothesis.assume": "reference/api.html#hypothesis.assume",
+        "details.html#hypothesis.given": "reference/api.html#hypothesis.given",
+        "details.html#hypothesis.target": "reference/api.html#hypothesis.target",
+        "details.html#hypothesis.register_random": "reference/strategies.html#hypothesis.register_random",
+        "details.html#hypothesis.strategies.SearchStrategy": "reference/strategies.html#hypothesis.strategies.SearchStrategy",
+        "details.html#test-statistics": "reference/integrations.html#statistics",
+      };
+      var redirect = manualRedirects[window.location.pathname.split('/').pop() + window.location.hash];
+
+      if (redirect) {
+        window.location.replace(redirect);
+      } else if (window.location.hash) {
+        // if both the requested url and the redirect target have a hash, prefer the requested url hash.
+        // This makes a redirect config of {"settings": "api.html#settings"} redirect settings.html#hypothesis.HealthCheck
+        // to api.html#hypothesis.HealthCheck instead of api.html#settings.
+        window.location.replace(target.split('#')[0] + window.location.hash);
+      } else {
+        window.location.replace(target);
+      }
+    </script>
+  </head>
+</html>

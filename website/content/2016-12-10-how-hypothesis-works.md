@@ -163,6 +163,7 @@ For example, suppose we tried to implement lists as follows:
 ```python
 class ListStrategy(SearchStrategy):
     def __init__(self, elements):
+        super().__init__()
         self.elements = elements
 
     def do_draw(self, data):
@@ -191,6 +192,7 @@ this as follows:
 ```python
 class ListStrategy(SearchStrategy):
     def __init__(self, elements):
+        super().__init__()
         self.elements = elements
 
     def do_draw(self, data):
@@ -388,6 +390,7 @@ class SearchStrategy:
 
 class FlatmappedStrategy(SearchStrategy):
     def __init__(self, base, bind):
+        super().__init__()
         self.base = base
         self.bind = bind
 

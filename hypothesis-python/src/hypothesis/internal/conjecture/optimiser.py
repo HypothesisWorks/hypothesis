@@ -12,14 +12,9 @@ from typing import Optional, Union
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choice import ChoiceT, choice_permitted
-from hypothesis.internal.conjecture.data import (
-    ConjectureResult,
-    Status,
-    _Overrun,
-    bits_to_bytes,
-)
+from hypothesis.internal.conjecture.data import ConjectureResult, Status, _Overrun
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.junkdrawer import find_integer
+from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes, find_integer
 from hypothesis.internal.conjecture.pareto import NO_SCORE
 
 
@@ -113,14 +108,14 @@ class Optimiser:
             # we can only (sensibly & easily) define hill climbing for
             # numeric-style nodes. It's not clear hill-climbing a string is
             # useful, for instance.
-            if node.ir_type not in {"integer", "float", "bytes", "boolean"}:
+            if node.type not in {"integer", "float", "bytes", "boolean"}:
                 continue
 
             def attempt_replace(k: int) -> bool:
                 """
                 Try replacing the current node in the current best test case
                 with a value which is "k times larger", where the exact notion
-                of "larger" depends on the ir_type.
+                of "larger" depends on the choice_type.
 
                 Note that we use the *current* best and not the one we started with.
                 This helps ensure that if we luck into a good draw when making
@@ -136,10 +131,10 @@ class Optimiser:
                     return False  # pragma: no cover
 
                 new_choice: ChoiceT
-                if node.ir_type in {"integer", "float"}:
+                if node.type in {"integer", "float"}:
                     assert isinstance(node.value, (int, float))
                     new_choice = node.value + k
-                elif node.ir_type == "boolean":
+                elif node.type == "boolean":
                     assert isinstance(node.value, bool)
                     if abs(k) > 1:
                         return False
@@ -150,7 +145,7 @@ class Optimiser:
                     if k == 0:  # pragma: no cover
                         new_choice = node.value
                 else:
-                    assert node.ir_type == "bytes"
+                    assert node.type == "bytes"
                     assert isinstance(node.value, bytes)
                     v = int_from_bytes(node.value)
                     # can't go below zero for bytes
@@ -162,7 +157,7 @@ class Optimiser:
                     size = max(len(node.value), bits_to_bytes(v.bit_length()))
                     new_choice = int_to_bytes(v, size)
 
-                if not choice_permitted(new_choice, node.kwargs):
+                if not choice_permitted(new_choice, node.constraints):
                     return False
 
                 for _ in range(3):
@@ -172,7 +167,7 @@ class Optimiser:
                         + (new_choice,)
                         + choices[node.index + 1 :]
                     )
-                    attempt = self.engine.cached_test_function_ir(
+                    attempt = self.engine.cached_test_function(
                         attempt_choices, extend="full"
                     )
 
@@ -186,17 +181,17 @@ class Optimiser:
                     if len(attempt.nodes) == len(self.current_data.nodes):
                         return False
 
-                    for j, ex in enumerate(self.current_data.examples):
+                    for j, ex in enumerate(self.current_data.spans):
                         if ex.start >= node.index + 1:
                             break  # pragma: no cover
                         if ex.end <= node.index:
                             continue
-                        ex_attempt = attempt.examples[j]
+                        ex_attempt = attempt.spans[j]
                         if ex.choice_count == ex_attempt.choice_count:
                             continue  # pragma: no cover
                         replacement = attempt.choices[ex_attempt.start : ex_attempt.end]
                         if self.consider_new_data(
-                            self.engine.cached_test_function_ir(
+                            self.engine.cached_test_function(
                                 choices[: node.index]
                                 + replacement
                                 + self.current_data.choices[ex.end :]

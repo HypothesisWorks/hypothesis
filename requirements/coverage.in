@@ -12,4 +12,5 @@ pytest-cov
 python-dateutil
 pytz
 typing-extensions
+watchdog
 -r test.in

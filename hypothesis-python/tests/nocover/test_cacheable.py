@@ -15,6 +15,8 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 
+from tests.common.utils import xfail_if_gil_disabled
+
 
 @pytest.mark.parametrize(
     "s",
@@ -51,6 +53,7 @@ def test_cacheable_things_are_cached():
     assert st.tuples(x) == st.tuples(x)
 
 
+@xfail_if_gil_disabled
 def test_local_types_are_garbage_collected_issue_493():
     store = None
 

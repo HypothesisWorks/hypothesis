@@ -86,7 +86,9 @@ def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
     )
 
 
-@settings(deadline=None, max_examples=50)
+@settings(
+    deadline=None, max_examples=50, suppress_health_check=[HealthCheck.nested_given]
+)
 @given(
     min_dims=st.integers(0, 4),
     min_side=st.integers(2, 3),

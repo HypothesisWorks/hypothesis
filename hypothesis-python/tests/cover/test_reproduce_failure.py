@@ -28,11 +28,11 @@ from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.choice import choice_equal
 
-from tests.common.utils import capture_out, no_shrink
-from tests.conjecture.common import ir, nodes
+from tests.common.utils import Why, capture_out, no_shrink, xfail_on_crosshair
+from tests.conjecture.common import nodes, nodes_inline
 
 
-@example(ir("0" * 100))  # shorter compressed than not
+@example(nodes_inline("0" * 100))  # shorter compressed than not
 @given(st.lists(nodes()))
 def test_encoding_loop(nodes):
     choices = [n.value for n in nodes]
@@ -45,7 +45,7 @@ def test_encoding_loop(nodes):
 @example(base64.b64encode(b"\2\3\4"))
 @example(b"\t")
 @example(base64.b64encode(b"\1\0"))  # zlib error
-@example(base64.b64encode(b"\1" + zlib.compress(b"\xFF")))  # ir_from_bytes error
+@example(base64.b64encode(b"\1" + zlib.compress(b"\xff")))  # choices_from_bytes error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
@@ -124,6 +124,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_prints_reproduction_if_requested():
     failing_example = None
 
@@ -156,6 +157,9 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -169,6 +173,9 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
         raise AssertionError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -183,6 +190,9 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
             raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
     assert "@reproduce_failure" not in o.getvalue()
@@ -200,6 +210,9 @@ def test_does_not_print_reproduction_if_told_not_to():
         raise ValueError
 
     with capture_out() as o:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(ValueError):
             test()
 
@@ -226,6 +239,9 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
         assert data.draw(st.just(False))
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_always_fails()
 

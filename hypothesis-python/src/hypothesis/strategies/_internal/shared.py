@@ -8,31 +8,49 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
+from collections.abc import Hashable
+from typing import Any, Optional
+
+from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal.strategies import Ex
 
-SHARED_STRATEGY_ATTRIBUTE = "_hypothesis_shared_strategies"
 
-
-class SharedStrategy(SearchStrategy):
-    def __init__(self, base, key=None):
+class SharedStrategy(SearchStrategy[Ex]):
+    def __init__(self, base: SearchStrategy[Ex], key: Optional[Hashable] = None):
+        super().__init__()
         self.key = key
         self.base = base
 
-    @property
-    def supports_find(self):
-        return self.base.supports_find
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.key is not None:
             return f"shared({self.base!r}, key={self.key!r})"
         else:
             return f"shared({self.base!r})"
 
-    def do_draw(self, data):
-        if not hasattr(data, SHARED_STRATEGY_ATTRIBUTE):
-            setattr(data, SHARED_STRATEGY_ATTRIBUTE, {})
-        sharing = getattr(data, SHARED_STRATEGY_ATTRIBUTE)
+    def calc_label(self) -> int:
+        return self.base.calc_label()
+
+    # Ideally would be -> Ex, but key collisions with different-typed values are
+    # possible. See https://github.com/HypothesisWorks/hypothesis/issues/4301.
+    def do_draw(self, data: ConjectureData) -> Any:
         key = self.key or self
-        if key not in sharing:
-            sharing[key] = data.draw(self.base)
-        return sharing[key]
+        if key not in data._shared_strategy_draws:
+            drawn = data.draw(self.base)
+            data._shared_strategy_draws[key] = (drawn, self)
+        else:
+            drawn, other = data._shared_strategy_draws[key]
+
+            # Check that the strategies shared under this key are equivalent
+            if self.label != other.label:
+                warnings.warn(
+                    f"Different strategies are shared under {key=}. This"
+                    " risks drawing values that are not valid examples for the strategy,"
+                    " or that have a narrower range than expected."
+                    f" Conflicting strategies: ({self!r}, {other!r}).",
+                    HypothesisWarning,
+                    stacklevel=1,
+                )
+        return drawn

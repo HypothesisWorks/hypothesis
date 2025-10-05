@@ -14,8 +14,9 @@ from collections import Counter
 from hypothesis import assume, example, given, settings, strategies as st, target
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+from hypothesis.internal.conjecture.provider_conformance import integer_weights
 
-from tests.conjecture.common import fresh_data, integer_weights
+from tests.conjecture.common import fresh_data
 
 
 @given(integer_weights(), st.randoms(use_true_random=True))
@@ -35,7 +36,8 @@ def test_sampler_matches_distribution(weights, random):
     # if we ever pull in scipy to our test suite, we should do a chi squared
     # test here instead.
     expected = [w / sum(weights) for w in weights]
-    actual = [counter[i] / counter.total() for i in range(len(weights))]
+    counter_total = sum(counter.values())  # Counter.total() new in py3.10
+    actual = [counter[i] / counter_total for i in range(len(weights))]
     for p1, p2 in zip(expected, actual):
         assert abs(p1 - p2) < 0.05, (expected, actual)
 

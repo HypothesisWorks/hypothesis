@@ -13,28 +13,33 @@ import os
 import sys
 import textwrap
 import traceback
+from dataclasses import dataclass
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from typing import NamedTuple, Optional
+from types import ModuleType, TracebackType
+from typing import Callable, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+FILE_CACHE: dict[ModuleType, dict[str, bool]] = {}
 
-def belongs_to(package):
-    if not hasattr(package, "__file__"):  # pragma: no cover
+
+def belongs_to(package: ModuleType) -> Callable[[str], bool]:
+    if getattr(package, "__file__", None) is None:  # pragma: no cover
         return lambda filepath: False
 
+    assert package.__file__ is not None
+    FILE_CACHE.setdefault(package, {})
+    cache = FILE_CACHE[package]
     root = Path(package.__file__).resolve().parent
-    cache = {str: {}, bytes: {}}
 
-    def accept(filepath):
-        ftype = type(filepath)
+    def accept(filepath: str) -> bool:
         try:
-            return cache[ftype][filepath]
+            return cache[filepath]
         except KeyError:
             pass
         try:
@@ -42,20 +47,19 @@ def belongs_to(package):
             result = True
         except Exception:
             result = False
-        cache[ftype][filepath] = result
+        cache[filepath] = result
         return result
 
     accept.__name__ = f"is_{package.__name__}_file"
     return accept
 
 
-FILE_CACHE: dict[bytes, bool] = {}
-
-
 is_hypothesis_file = belongs_to(hypothesis)
 
 
-def get_trimmed_traceback(exception=None):
+def get_trimmed_traceback(
+    exception: Optional[BaseException] = None,
+) -> Optional[TracebackType]:
     """Return the current traceback, minus any frames added by Hypothesis."""
     if exception is None:
         _, exception, tb = sys.exc_info()
@@ -65,9 +69,10 @@ def get_trimmed_traceback(exception=None):
     # was raised inside Hypothesis. Additionally, the environment variable
     # HYPOTHESIS_NO_TRACEBACK_TRIM is respected if nonempty, because verbose
     # mode is prohibitively slow when debugging strategy recursion errors.
+    assert hypothesis.settings.default is not None
     if (
         tb is None
-        or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM", None)
+        or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM")
         or hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug
         or (
             is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
@@ -86,7 +91,8 @@ def get_trimmed_traceback(exception=None):
     return tb
 
 
-class InterestingOrigin(NamedTuple):
+@dataclass(frozen=True)
+class InterestingOrigin:
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even
     # if report_multiple_bugs=False).  We traditionally use the exception type and
@@ -118,7 +124,7 @@ class InterestingOrigin(NamedTuple):
             filename, lineno, *_ = traceback.extract_tb(tb)[-1]
         seen = (*seen, exception)
         make = partial(cls.from_exception, seen=seen)
-        context: "InterestingOrigin | tuple[()]" = ()
+        context: InterestingOrigin | tuple[()] = ()
         if exception.__context__ is not None and exception.__context__ not in seen:
             context = make(exception.__context__)
         return cls(

@@ -9,8 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import random
+from dataclasses import dataclass, field
+from typing import Any
 
-import attr
 import pytest
 
 from hypothesis import (
@@ -26,25 +27,26 @@ from hypothesis import (
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+from tests.common.utils import Why, skipif_threading, xfail_on_crosshair
 from tests.conjecture.common import interesting_origin
 
 
-@attr.s()
+@dataclass
 class Write:
-    value = attr.ib()
-    child = attr.ib()
+    value: Any
+    child: Any
 
 
-@attr.s()
+@dataclass
 class Branch:
-    bits = attr.ib()
-    children = attr.ib(factory=dict)
+    bits: Any
+    children: Any = field(default_factory=dict)
 
 
-@attr.s()
+@dataclass
 class Terminal:
-    status = attr.ib()
-    payload = attr.ib(default=None)
+    status: Any
+    payload: Any = field(default=None)
 
 
 nodes = st.deferred(lambda: terminals | writes | branches)
@@ -115,6 +117,12 @@ def run_language_test_for(root, data, seed):
     assume(runner.interesting_examples)
 
 
+# modifying global random, causing warnings from deprecate_random_in_strategy.
+# unclear why the warning doesn't trigger on a
+# single thread, but that was previous behavior so I'm not looking too deep into it.
+@skipif_threading
+# technically nested-engine, but same problem
+@xfail_on_crosshair(Why.nested_given, strict=False)
 @settings(
     suppress_health_check=list(HealthCheck),
     deadline=None,

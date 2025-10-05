@@ -19,9 +19,9 @@ from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 import pytest
 from pytest import raises
 
-from hypothesis import given, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal import reflection
+from hypothesis.internal import lambda_sources, reflection
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
@@ -30,6 +30,7 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     get_signature,
     is_first_param_referenced_in_function,
+    is_identity_function,
     is_mock,
     proxies,
     repr_call,
@@ -531,9 +532,9 @@ class Target:
         ((), {}, set("ab")),
         ((1,), {}, set("b")),
         ((1, 2), {}, set()),
-        ((), dict(a=1), set("b")),
-        ((), dict(b=2), set("a")),
-        ((), dict(a=1, b=2), set()),
+        ((), {"a": 1}, set("b")),
+        ((), {"b": 2}, set("a")),
+        ((), {"a": 1, "b": 2}, set()),
     ],
 )
 def test_required_args(target, args, kwargs, expected):
@@ -546,29 +547,6 @@ def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
     pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702
     # fmt: on
     assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
-
-
-def test_can_render_lambda_with_no_encoding(monkeypatch):
-    is_positive = lambda x: x > 0
-
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
-
-
-def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
-    # Monkey-patching out the `detect_encoding` method here means
-    # that our reflection can't detect the encoding of the source file, and
-    # has to fall back to assuming it's ASCII.
-
-    monkeypatch.setattr(reflection, "detect_encoding", None)
-    # fmt: off
-    pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702
-    # fmt: on
-    assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
 
 
 def test_too_many_posargs_fails():
@@ -595,7 +573,6 @@ def test_inline_given_handles_self():
 def logged(f):
     @wraps(f)
     def wrapper(*a, **kw):
-        # print("I was called")
         return f(*a, **kw)
 
     return wrapper
@@ -659,8 +636,10 @@ def test_param_called_within_defaults_on_error():
 
 def _prep_source(*pairs):
     return [
-        pytest.param(dedent(x).strip(), dedent(y).strip().encode(), id=f"case-{i}")
-        for i, (x, y) in enumerate(pairs)
+        pytest.param(
+            dedent(x).strip(), dedent(y).strip().encode(), id=f"case-{i}", marks=marks
+        )
+        for i, (x, y, *marks) in enumerate(pairs)
     ]
 
 
@@ -690,16 +669,6 @@ def _prep_source(*pairs):
         ),
         (
             """
-            def      \\
-                f(): pass
-            """,
-            """
-            def\\
-                f(): pass
-            """,
-        ),
-        (
-            """
             @dec
             async def f():
                 pass
@@ -718,3 +687,127 @@ def test_clean_source(src, clean):
 def test_overlong_repr_warns():
     with pytest.warns(HypothesisWarning, match="overly large"):
         repr(LazyStrategy(st.one_of, [st.none()] * 10000, {}))
+
+
+def identity(x):
+    return x
+
+
+class Identity:
+    def __call__(self, x):
+        return x
+
+    def instance_identity(self, x):
+        return x
+
+    def instance_self(self):
+        return self
+
+    @staticmethod
+    def static_identity(x):
+        return x
+
+    @classmethod
+    def class_identity(cls, x):
+        return x
+
+
+@pytest.mark.parametrize(
+    "f",
+    [
+        lambda x: x,
+        identity,
+        Identity(),
+        Identity().instance_identity,
+        Identity.static_identity,
+        Identity.class_identity,
+    ],
+)
+def test_is_identity(f):
+    assert is_identity_function(f)
+
+
+@example(Identity().instance_self)
+@example(lambda x, y: x)
+@example(lambda: None)
+@given(st.functions(like=identity, returns=st.from_type(type).flatmap(st.from_type)))
+def test_is_not_identity(f):
+    obj = object()
+    try:
+        assume(f(obj) is not obj)  # not necessary but ...
+    except TypeError:
+        pass
+    assert not is_identity_function(f)
+
+
+@pytest.mark.parametrize(
+    "f",
+    [
+        lambda x, y=None: x,  # this one would be fairly easy to recognize
+        lambda x, y=None: y or x,  # ... but the general case is impossible
+    ],
+)
+def test_is_unrecognized_identity(f):
+    assert not is_identity_function(f)
+
+
+def test_cache_key_size_is_bounded():
+    # Modify co_consts because ("c" * 1000) may not be evaluated at compile time
+    f = lambda x="a" * 1000, *, y="b" * 1000: "c"
+    f.__code__ = f.__code__.replace(
+        co_consts=tuple(c * 1000 if c == "c" else c for c in f.__code__.co_consts)
+    )
+    assert len(repr(lambda_sources._function_key(f))) > 3000
+    assert len(repr(lambda_sources._function_key(f, bounded_size=True))) < 1000
+
+
+def test_function_key_distinguishes_alpha_renames():
+    # these terms are equivalent under the lambda calculus, but their
+    # representations are not, so they should be cached differently.
+    assert lambda_sources._function_key(lambda x: x) != lambda_sources._function_key(
+        lambda y: y
+    )
+
+
+def test_import():
+    import time as t
+
+    f = lambda: t.ctime()
+    assert get_pretty_function_description(f) == "lambda: t.ctime()"
+
+
+@pytest.mark.parametrize("nop_on_f", [True, False])
+def test_code_normalization(nop_on_f):
+    f = lambda x: x
+    g = lambda x: x
+    h = f if nop_on_f else g
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
+
+    # Append a NOP to one of the bytecodes
+    NOP_instr = bytes([lambda_sources._op.NOP, 0])
+    h.__code__ = h.__code__.replace(co_code=h.__code__.co_code + NOP_instr)
+    assert lambda_sources._function_key(f) != lambda_sources._function_key(g)
+
+    # ...and then normalize g to match f (adding or removing a NOP)
+    g.__code__ = lambda_sources._normalize_code(f, g)
+    assert lambda_sources._function_key(f) == lambda_sources._function_key(g)
+
+
+@pytest.mark.parametrize(
+    "f, source",
+    [
+        (lambda x=1, *, y=2: (x, y), "lambda x=1, *, y=2: (x, y)"),
+        (lambda x=1, *, y: (x, y), "lambda x=1, *, y: (x, y)"),
+        (lambda x, *, y=2: (x, y), "lambda x, *, y=2: (x, y)"),
+        (lambda x, *, y: (x, y), "lambda x, *, y: (x, y)"),
+        (lambda *, y=2: (x, y), "lambda *, y=2: (x, y)"),  # noqa: F821
+        (lambda *, y: (x, y), "lambda *, y: (x, y)"),  # noqa: F821
+        (lambda x, /, y=1: (x, y), "lambda x, /, y=1: (x, y)"),
+        (lambda x, /, y: (x, y), "lambda x, /, y: (x, y)"),
+        (lambda x, /: (x, y), "lambda x, /: (x, y)"),  # noqa: F821
+        (lambda x=1, /, y=2: (x, y), "lambda x=1, /, y=2: (x, y)"),
+        (lambda x=1, /: (x, y), "lambda x=1, /: (x, y)"),  # noqa: F821
+    ],
+)
+def test_lambda_mimicry_with_arg_defaults(f, source):
+    assert get_pretty_function_description(f) == source

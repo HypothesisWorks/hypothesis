@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
 
 
@@ -30,7 +30,11 @@ def argument_validation_test(bad_args):
         ("function", "args", "kwargs"), bad_args, ids=list(map(e_to_str, bad_args))
     )
     def test_raise_invalid_argument(function, args, kwargs):
+        # some invalid argument tests may find multiple distinct invalid inputs,
+        # which hypothesis raises as an exception group (and is not caught by
+        # pytest.raises).
         @given(function(*args, **kwargs))
+        @settings(report_multiple_bugs=False)
         def test(x):
             pass
 

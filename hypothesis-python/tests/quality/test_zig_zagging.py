@@ -25,6 +25,8 @@ from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+from tests.conjecture.common import interesting_origin
+
 
 @st.composite
 def problems(draw):
@@ -80,7 +82,7 @@ def test_avoids_zig_zag_trap(p):
         if data.draw_bytes(len(marker), len(marker)) != marker:
             data.mark_invalid()
         if abs(m - n) == 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(
         test_function,
@@ -89,7 +91,7 @@ def test_avoids_zig_zag_trap(p):
         random=Random(0),
     )
 
-    runner.cached_test_function_ir((m, m + 1, marker))
+    runner.cached_test_function((m, m + 1, marker))
     assert runner.interesting_examples
     runner.run()
     (v,) = runner.interesting_examples.values()

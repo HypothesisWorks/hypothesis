@@ -13,9 +13,11 @@ import os
 import re
 import subprocess
 import sys
+import sysconfig
 import types
 from collections import defaultdict
 from collections.abc import Iterable
+from enum import IntEnum
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
@@ -27,15 +29,13 @@ from hypothesis.internal.escalation import is_hypothesis_file
 
 if TYPE_CHECKING:
     from typing import TypeAlias
-else:
-    TypeAlias = object
 
-Location: TypeAlias = tuple[str, int]
-Branch: TypeAlias = tuple[Optional[Location], Location]
-Trace: TypeAlias = set[Branch]
+Location: "TypeAlias" = tuple[str, int]
+Branch: "TypeAlias" = tuple[Optional[Location], Location]
+Trace: "TypeAlias" = set[Branch]
 
 
-@lru_cache(maxsize=None)
+@functools.cache
 def should_trace_file(fname: str) -> bool:
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
@@ -47,29 +47,33 @@ def should_trace_file(fname: str) -> bool:
 # tool_id = 1 is designated for coverage, but we intentionally choose a
 # non-reserved tool id so we can co-exist with coverage tools.
 MONITORING_TOOL_ID = 3
-if sys.version_info[:2] >= (3, 12):
+if hasattr(sys, "monitoring"):
     MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
 
 
 class Tracer:
     """A super-simple branch coverage tracer."""
 
-    __slots__ = ("_previous_location", "_should_trace", "branches")
+    __slots__ = (
+        "_previous_location",
+        "_should_trace",
+        "_tried_and_failed_to_trace",
+        "branches",
+    )
 
     def __init__(self, *, should_trace: bool) -> None:
         self.branches: Trace = set()
         self._previous_location: Optional[Location] = None
+        self._tried_and_failed_to_trace = False
         self._should_trace = should_trace and self.can_trace()
 
     @staticmethod
     def can_trace() -> bool:
-        return (
-            (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
-            or (
-                sys.version_info[:2] >= (3, 12)
-                and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-            )
-        ) and not PYPY
+        if PYPY:
+            return False
+        if hasattr(sys, "monitoring"):
+            return sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
+        return sys.gettrace() is None
 
     def trace(self, frame, event, arg):
         try:
@@ -96,14 +100,23 @@ class Tracer:
         self._previous_location = current_location
 
     def __enter__(self):
+        self._tried_and_failed_to_trace = False
+
         if not self._should_trace:
             return self
 
-        if sys.version_info[:2] < (3, 12):
+        if not hasattr(sys, "monitoring"):
             sys.settrace(self.trace)
             return self
 
-        sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+        try:
+            sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+        except ValueError:
+            # another thread may have registered a tool for MONITORING_TOOL_ID
+            # since we checked in can_trace.
+            self._tried_and_failed_to_trace = True
+            return self
+
         for event, callback_name in MONITORING_EVENTS.items():
             sys.monitoring.set_events(MONITORING_TOOL_ID, event)
             callback = getattr(self, callback_name)
@@ -115,8 +128,11 @@ class Tracer:
         if not self._should_trace:
             return
 
-        if sys.version_info[:2] < (3, 12):
+        if not hasattr(sys, "monitoring"):
             sys.settrace(None)
+            return
+
+        if self._tried_and_failed_to_trace:
             return
 
         sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
@@ -136,25 +152,29 @@ UNHELPFUL_LOCATIONS = (
     "/re/__init__.py",  # refactored in Python 3.11
     "/warnings.py",
     # Quite rarely, the first AFNP line is in Pytest's internals.
-    "/_pytest/_io/saferepr.py",
-    "/_pytest/assertion/*.py",
-    "/_pytest/config/__init__.py",
-    "/_pytest/pytester.py",
+    "/_pytest/**",
     "/pluggy/_*.py",
+    # used by pytest for failure formatting in the terminal.
+    # seen: pygments/lexer.py, pygments/formatters/, pygments/filter.py.
+    "/pygments/*",
+    # used by pytest for failure formatting
+    "/difflib.py",
     "/reprlib.py",
     "/typing.py",
     "/conftest.py",
+    "/pprint.py",
 )
 
 
 def _glob_to_re(locs: Iterable[str]) -> str:
     """Translate a list of glob patterns to a combined regular expression.
-    Only the * wildcard is supported, and patterns including special
+    Only the * and ** wildcards are supported, and patterns including special
     characters will only work by chance."""
     # fnmatch.translate is not an option since its "*" consumes path sep
     return "|".join(
-        loc.replace("*", r"[^/]+")
-        .replace(".", re.escape("."))
+        loc.replace(".", re.escape("."))
+        .replace("**", r".+")
+        .replace("*", r"[^/]+")
         .replace("/", re.escape(sep))
         + r"\Z"  # right anchored
         for loc in locs
@@ -210,18 +230,52 @@ def get_explaining_locations(traces):
     }
 
 
-LIB_DIR = str(Path(sys.executable).parent / "lib")
+# see e.g. https://docs.python.org/3/library/sysconfig.html#posix-user
+# for examples of these path schemes
+STDLIB_DIRS = {
+    Path(sysconfig.get_path("platstdlib")).resolve(),
+    Path(sysconfig.get_path("stdlib")).resolve(),
+}
+SITE_PACKAGES_DIRS = {
+    Path(sysconfig.get_path("purelib")).resolve(),
+    Path(sysconfig.get_path("platlib")).resolve(),
+}
+
 EXPLANATION_STUB = (
     "Explanation:",
     "    These lines were always and only run by failing examples:",
 )
 
 
-def make_report(explanations, cap_lines_at=5):
+class ModuleLocation(IntEnum):
+    LOCAL = 0
+    SITE_PACKAGES = 1
+    STDLIB = 2
+
+    @classmethod
+    @lru_cache(1024)
+    def from_path(cls, path: str) -> "ModuleLocation":
+        path = Path(path).resolve()
+        # site-packages may be a subdir of stdlib or platlib, so it's important to
+        # check is_relative_to for this before the stdlib.
+        if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+            return cls.SITE_PACKAGES
+        if any(path.is_relative_to(p) for p in STDLIB_DIRS):
+            return cls.STDLIB
+        return cls.LOCAL
+
+
+# show local files first, then site-packages, then stdlib
+def _sort_key(path: str, lineno: int) -> tuple[int, str, int]:
+    return (ModuleLocation.from_path(path), path, lineno)
+
+
+def make_report(explanations, *, cap_lines_at=5):
     report = defaultdict(list)
     for origin, locations in explanations.items():
+        locations = list(locations)
+        locations.sort(key=lambda v: _sort_key(v[0], v[1]))
         report_lines = [f"        {fname}:{lineno}" for fname, lineno in locations]
-        report_lines.sort(key=lambda line: (line.startswith(LIB_DIR), line))
         if len(report_lines) > cap_lines_at + 1:
             msg = "        (and {} more with settings.verbosity >= verbose)"
             report_lines[cap_lines_at:] = [msg.format(len(report_lines[cap_lines_at:]))]

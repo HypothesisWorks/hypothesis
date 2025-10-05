@@ -27,7 +27,12 @@ from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgume
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
-from tests.common.utils import assert_falsifying_output, capture_out, fails_with
+from tests.common.utils import (
+    assert_falsifying_output,
+    capture_out,
+    fails_with,
+    skipif_threading,
+)
 
 
 class TestInstanceMethods(TestCase):
@@ -141,6 +146,9 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
         assert x > 0
 
     with reporting.with_reporter(reporting.default):
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with pytest.raises(AssertionError):
             with capture_out() as out:
                 test_positive()
@@ -192,6 +200,9 @@ def test_examples_are_tried_in_order():
         print(f"x -> {x}")
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with reporting.with_reporter(reporting.default):
             test()
     ls = out.getvalue().splitlines()
@@ -222,6 +233,7 @@ def test_must_agree_with_number_of_arguments():
         test()
 
 
+@skipif_threading  # deadline disabled under threading
 @fails_with(DeadlineExceeded)
 @example(10)
 @settings(phases=[Phase.explicit], deadline=1)

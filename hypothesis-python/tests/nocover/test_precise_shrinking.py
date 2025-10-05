@@ -11,7 +11,7 @@
 """
 This file tests for our ability to make precise shrinks.
 
-Terminology: A shrink is *precise* if there is a single example (draw call) that
+Terminology: A shrink is *precise* if there is a single span (draw call) that
 it replaces, without leaving any of the data before or after that draw call changed.
 Otherwise, it is sloppy.
 
@@ -57,13 +57,26 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.shrinker import sort_key
 
+from tests.conjecture.common import interesting_origin
+
 T = TypeVar("T")
+
+pytestmark = [
+    pytest.mark.skipif(
+        settings.get_current_profile_name() == "crosshair",
+        reason="using internals for testing in a way crosshair doesn't support",
+    ),
+    pytest.mark.skipif(
+        settings.get_current_profile_name() == "threading",
+        reason="not worth making thread-safe atm",
+    ),
+]
 
 
 def safe_draw(data, strategy):
     """Set up just enough of the Hypothesis machinery to use draw on
     a strategy."""
-    with BuildContext(data):
+    with BuildContext(data, wrapped_test=None):
         try:
             return data.draw(strategy)
         except UnsatisfiedAssumption:
@@ -103,11 +116,11 @@ def precisely_shrink(
         value = safe_draw(data, strategy)
         check_value = safe_draw(data, end_marker)
         if is_interesting(value) and check_value == target_check_value:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function, random=random)
     try:
-        buf = runner.cached_test_function_ir(initial_choices)
+        buf = runner.cached_test_function(initial_choices)
         assert buf.status == Status.INTERESTING
         assert buf.choices == initial_choices
         assert runner.interesting_examples
@@ -157,7 +170,7 @@ def test_can_precisely_shrink_values(typ, strat, require_truthy):
         cond = bool
     else:
         cond = lambda x: True
-    result, shrunk = precisely_shrink(strat, is_interesting=cond)
+    _result, shrunk = precisely_shrink(strat, is_interesting=cond)
     assert shrunk == find(strat, cond)
 
 
@@ -178,7 +191,7 @@ def test_can_precisely_shrink_alternatives(i, j, a, seed):
     types = [u for u, _ in a]
     combined_strategy = st.one_of(*[v for _, v in a])
 
-    result, value = precisely_shrink(
+    _result, value = precisely_shrink(
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[j]),
         is_interesting=lambda x: not any(isinstance(x, types[k]) for k in range(i)),
@@ -200,7 +213,7 @@ def test_precise_shrink_with_blocker(a, seed):
     types = [u for u, _ in a]
     combined_strategy = st.one_of(*[v for _, v in a])
 
-    result, value = precisely_shrink(
+    _result, value = precisely_shrink(
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[2]),
         is_interesting=lambda x: True,
@@ -217,7 +230,7 @@ def find_random(
     while True:
         data = ConjectureData(random=random)
         try:
-            with BuildContext(data=data):
+            with BuildContext(data=data, wrapped_test=None):
                 value = data.draw(s)
                 if condition(value):
                     data.freeze()
@@ -238,7 +251,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
             results[data.nodes] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-        initial = runner.cached_test_function_ir(choices)
+        initial = runner.cached_test_function(choices)
         assert isinstance(initial, ConjectureResult)
         try:
             runner.shrink(initial, lambda x: x.choices == initial.choices)
@@ -246,7 +259,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     else:
         trial = ConjectureData(prefix=choices, random=random)
-        with BuildContext(trial):
+        with BuildContext(trial, wrapped_test=None):
             trial.draw(strategy)
             assert trial.choices == choices, "choice sequence is already sloppy"
             padding = safe_draw(trial, st.integers())
@@ -260,7 +273,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
                 results[key] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-        initial = runner.cached_test_function_ir(initial_choices)
+        initial = runner.cached_test_function(initial_choices)
         assert len(results) == 1
         try:
             runner.shrink(initial, lambda x: x.choices == initial_choices)
@@ -287,7 +300,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
 def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
     combined_strategy = st.one_of(st.none(), *a)
 
-    result, value = find_random(combined_strategy, lambda x: x is not None)
+    result, _value = find_random(combined_strategy, lambda x: x is not None)
     shrunk_values = shrinks(
         combined_strategy, result.nodes, allow_sloppy=allow_sloppy, seed=seed
     )
@@ -304,11 +317,11 @@ def test_can_shrink_to_every_smaller_alternative(i, alts, seed, force_small):
     strats = [s for _, s in alts]
     combined_strategy = st.one_of(*strats)
     if force_small:
-        result, value = precisely_shrink(
+        result, _value = precisely_shrink(
             combined_strategy, is_interesting=lambda x: type(x) is types[i], seed=seed
         )
     else:
-        result, value = find_random(
+        result, _value = find_random(
             combined_strategy, lambda x: type(x) is types[i], seed=seed
         )
 

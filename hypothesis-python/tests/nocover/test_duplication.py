@@ -15,15 +15,19 @@ import pytest
 from hypothesis import given, settings
 from hypothesis.strategies._internal import SearchStrategy
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 class Blocks(SearchStrategy):
     def __init__(self, n):
+        super().__init__()
         self.n = n
 
     def do_draw(self, data):
         return data.draw_bytes(self.n, self.n)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 @pytest.mark.parametrize("n", range(1, 5))
 def test_does_not_duplicate_blocks(n):
     counts = Counter()
@@ -37,6 +41,7 @@ def test_does_not_duplicate_blocks(n):
     assert set(counts.values()) == {1}
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # CrosshairInternal for n>0
 @pytest.mark.parametrize("n", range(1, 5))
 def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
     counts = Counter()

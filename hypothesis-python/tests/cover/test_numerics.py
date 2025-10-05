@@ -29,6 +29,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.debug import check_can_generate_examples, find_any
+from tests.common.utils import skipif_threading
 
 
 @settings(suppress_health_check=list(HealthCheck))
@@ -169,6 +170,9 @@ def test_consistent_decimal_error():
     with pytest.raises(InvalidArgument) as excinfo:
         check_can_generate_examples(decimals(bad))
     with pytest.raises(InvalidArgument) as excinfo2:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with decimal.localcontext(decimal.Context(traps=[])):
             check_can_generate_examples(decimals(bad))
     assert str(excinfo.value) == str(excinfo2.value)
@@ -195,6 +199,7 @@ def test_consistent_decimal_error():
         ),
     ],
 )
+@skipif_threading  # strategy instances are shared, which persists .validate_called
 def test_floats_message(s, msg):
     # https://github.com/HypothesisWorks/hypothesis/issues/3207
     with pytest.raises(InvalidArgument, match=msg):

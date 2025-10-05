@@ -9,10 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
------------------------
-hypothesis[dpcontracts]
------------------------
-
 This module provides tools for working with the :pypi:`dpcontracts` library,
 because `combining contracts and property-based testing works really well
 <https://hillelwayne.com/talks/beyond-unit-tests/>`_.

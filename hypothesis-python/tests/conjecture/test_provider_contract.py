@@ -8,34 +8,48 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import StopTest
+from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import (
     choice_equal,
     choice_from_index,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.providers import BytestringProvider
+from hypothesis.internal.conjecture.providers import (
+    BytestringProvider,
+    HypothesisProvider,
+    URandomProvider,
+)
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, string_kw
+from tests.conjecture.common import (
+    choice_types_constraints,
+    float_constr,
+    integer_constr,
+    nodes,
+    string_constr,
+)
 
 
-@example(b"\x00" * 100, [("integer", integer_kw())])
-@example(b"\x00" * 100, [("integer", integer_kw(0, 2))])
-@example(b"\x00" * 100, [("integer", integer_kw(0, 0))])
-@example(b"\x00" * 100, [("integer", integer_kw(min_value=0))])
-@example(b"\x00" * 100, [("integer", integer_kw(max_value=2))])
-@example(b"\x00" * 100, [("integer", integer_kw(0, 2, weights={0: 0.1}))])
+@example(b"\x00" * 100, [("integer", integer_constr())])
+@example(b"\x00" * 100, [("integer", integer_constr(0, 2))])
+@example(b"\x00" * 100, [("integer", integer_constr(0, 0))])
+@example(b"\x00" * 100, [("integer", integer_constr(min_value=0))])
+@example(b"\x00" * 100, [("integer", integer_constr(max_value=2))])
+@example(b"\x00" * 100, [("integer", integer_constr(0, 2, weights={0: 0.1}))])
 @example(b"\x00" * 100, [("boolean", {"p": 1.0})])
 @example(b"\x00" * 100, [("boolean", {"p": 0.0})])
 @example(b"\x00" * 100, [("boolean", {"p": 1e-99})])
-@example(b"\x00" * 100, [("string", string_kw(IntervalSet.from_string("a")))])
-@example(b"\x00" * 100, [("float", float_kw())])
+@example(b"\x00" * 100, [("string", string_constr(IntervalSet.from_string("a")))])
+@example(b"\x00" * 100, [("float", float_constr())])
 @example(b"\x00" * 100, [("bytes", {"min_size": 0, "max_size": 10})])
-@given(st.binary(min_size=200), st.lists(ir_types_and_kwargs()))
-def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
+@example(b"\x00", [("integer", integer_constr())])
+@given(st.binary(min_size=200), st.lists(choice_types_constraints()))
+def test_provider_contract_bytestring(bytestring, choice_type_and_constraints):
     data = ConjectureData(
         random=None,
         observer=None,
@@ -43,26 +57,36 @@ def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
         provider_kw={"bytestring": bytestring},
     )
 
-    for ir_type, kwargs in ir_type_and_kwargs:
+    for choice_type, constraints in choice_type_and_constraints:
+        # for the threading ci tests
+        constraints = constraints.copy()
         try:
-            value = getattr(data, f"draw_{ir_type}")(**kwargs)
+            value = getattr(data, f"draw_{choice_type}")(**constraints)
         except StopTest:
             return
 
-        # ir_value_permitted is currently restricted to what *could* be generated
-        # by the buffer. once we're fully on the TCS, we can drop this restriction.
-        # until then, the BytestringProvider can theoretically generate values
-        # that aren't forcable to a buffer - but this requires an enormous shrink_towards
-        # value and is such an edge case that I'm just going to bank on nobody hitting
-        # it before we're off the bytestring.
-        integer_edge_case = (
-            ir_type == "integer"
-            and kwargs["shrink_towards"] is not None
-            and kwargs["shrink_towards"].bit_length() > 100
-        )
-        assert choice_permitted(value, kwargs) or integer_edge_case
-
-        kwargs["forced"] = choice_from_index(0, ir_type, kwargs)
+        assert choice_permitted(value, constraints)
+        constraints["forced"] = choice_from_index(0, choice_type, constraints)
         assert choice_equal(
-            kwargs["forced"], getattr(data, f"draw_{ir_type}")(**kwargs)
+            constraints["forced"], getattr(data, f"draw_{choice_type}")(**constraints)
         )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    [
+        pytest.param(
+            URandomProvider,
+            marks=pytest.mark.skipif(
+                WINDOWS, reason="/dev/urandom not available on windows"
+            ),
+        ),
+        HypothesisProvider,
+    ],
+)
+@given(st.lists(nodes()), st.randoms())
+def test_provider_contract(provider, nodes, random):
+    data = ConjectureData(random=random, provider=provider)
+    for node in nodes:
+        value = getattr(data, f"draw_{node.type}")(**node.constraints)
+        assert choice_permitted(value, node.constraints)

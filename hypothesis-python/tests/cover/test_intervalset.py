@@ -11,9 +11,11 @@
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis.internal.conjecture.provider_conformance import (
+    interval_lists,
+    intervals,
+)
 from hypothesis.internal.intervalsets import IntervalSet
-
-from tests.common.strategies import interval_lists, intervals
 
 # various tests in this file impose a max_codepoint restriction on intervals,
 # for performance. There may be possibilities for performance improvements in

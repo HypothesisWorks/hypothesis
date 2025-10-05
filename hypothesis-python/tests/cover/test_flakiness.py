@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
 
-from tests.common.utils import no_shrink
+from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
 
 
 class Nope(Exception):
@@ -68,6 +68,7 @@ def test_fails_differently_is_flaky():
     assert set(map(type, exceptions)) == {Nope, DifferentNope}
 
 
+@skipif_threading  # executing into global scope
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="except* syntax")
 def test_exceptiongroup_wrapped_naked_exception_is_flaky():
 
@@ -131,6 +132,7 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     assert isinstance(exceptions[0], ZeroDivisionError)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_does_not_attempt_to_shrink_flaky_errors():
     values = []
 
@@ -162,11 +164,12 @@ def single_bool_lists(draw):
     return result
 
 
+@xfail_on_crosshair(Why.nested_given)
 @example([True, False, False, False], [3], None)
 @example([False, True, False, False], [3], None)
 @example([False, False, True, False], [3], None)
 @example([False, False, False, True], [3], None)
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=[HealthCheck.nested_given])
 @given(lists(booleans()) | single_bool_lists(), lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)

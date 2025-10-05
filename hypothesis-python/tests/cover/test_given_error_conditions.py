@@ -18,13 +18,10 @@ from hypothesis.strategies import booleans, integers, nothing
 from tests.common.utils import fails_with
 
 
-def test_raises_unsatisfiable_if_all_false_in_finite_set():
-    @given(booleans())
-    def test_assume_false(x):
-        reject()
-
-    with pytest.raises(Unsatisfiable):
-        test_assume_false()
+@fails_with(Unsatisfiable)
+@given(booleans())
+def test_raises_unsatisfiable_if_all_false_in_finite_set(x):
+    reject()
 
 
 def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
@@ -115,7 +112,7 @@ def test_specific_error_for_coroutine_functions():
         foo()
 
 
-@pytest.mark.parametrize("setting_name", all_settings.keys())
+@pytest.mark.parametrize("setting_name", all_settings)
 def test_suggests_at_settings_if_extra_kwarg_matches_setting_name(setting_name):
     val = 1
 

@@ -40,6 +40,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.utils import (
+    Why,
     assert_falsifying_output,
     capture_out,
     fails,
@@ -47,7 +48,9 @@ from tests.common.utils import (
     no_shrink,
     raises,
     skipif_emscripten,
+    xfail_on_crosshair,
 )
+from tests.conjecture.common import buffer_size_limit
 
 # This particular test file is run under both pytest and nose, so it can't
 # rely on pytest-specific helpers like `pytest.raises` unless we define a
@@ -315,6 +318,7 @@ def test_has_ascii(x):
     assert any(c in ascii_characters for c in x)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_can_derandomize():
     values = []
 
@@ -404,6 +408,7 @@ def test_mixed_text(x):
     assert set(x).issubset(set("abcdefg"))
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # runs ~five failing examples
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = []
 
@@ -466,6 +471,9 @@ def test_does_not_print_notes_if_all_succeed():
         note("Hi there")
 
     with capture_out() as out:
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with reporting.with_reporter(reporting.default):
             test()
     assert not out.getvalue()
@@ -489,6 +497,7 @@ def test_empty_lists(xs):
     assert xs == []
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_given_usable_inline_on_lambdas():
     xs = []
     given(booleans())(lambda x: xs.append(x))()
@@ -512,8 +521,13 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
         f()
 
 
+# crosshair generates one valid input before verifying the test function,
+# so the Unsatisfiable check never occurs.
+# (not strict due to slowness causing crosshair to bail out on the first input,
+# maybe?)
+@xfail_on_crosshair(Why.other, strict=False)
 def test_notes_high_overrun_rates_in_unsatisfiable_error():
-    @given(st.binary(min_size=9000))
+    @given(st.binary(min_size=100))
     @settings(
         suppress_health_check=[
             HealthCheck.data_too_large,
@@ -531,4 +545,8 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
             r"try reducing the typical size of your inputs\?"
         ),
     ):
-        f()
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
+        with buffer_size_limit(10):
+            f()

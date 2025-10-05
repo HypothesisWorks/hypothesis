@@ -70,7 +70,7 @@ import sys
 import types
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, Flag
 from functools import partial
@@ -82,8 +82,6 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from hypothesis.control import BuildContext
-
-# ruff: noqa: FBT001
 
 T = TypeVar("T")
 PrettyPrintFunction: "TypeAlias" = Callable[[Any, "RepresentationPrinter", bool], None]
@@ -409,7 +407,12 @@ class RepresentationPrinter:
         return self.output.getvalue()
 
     def maybe_repr_known_object_as_call(
-        self, obj: object, cycle: bool, name: str, args: Any, kwargs: dict[str, object]
+        self,
+        obj: object,
+        cycle: bool,
+        name: str,
+        args: Sequence[object],
+        kwargs: dict[str, object],
     ) -> None:
         # pprint this object as a call, _unless_ the call would be invalid syntax
         # and the repr would be valid and there are not comments on arguments.
@@ -436,12 +439,13 @@ class RepresentationPrinter:
     def repr_call(
         self,
         func_name: str,
-        args: Any,
+        args: Sequence[object],
         kwargs: dict[str, object],
         *,
         force_split: Optional[bool] = None,
         arg_slices: Optional[dict[str, tuple[int, int]]] = None,
         leading_comment: Optional[str] = None,
+        avoid_realization: bool = False,
     ) -> None:
         """Helper function to represent a function call.
 
@@ -489,7 +493,10 @@ class RepresentationPrinter:
                     self.breakable(" " if i else "")
                 if k:
                     self.text(f"{k}=")
-                self.pretty(v)
+                if avoid_realization:
+                    self.text("<symbolic>")
+                else:
+                    self.pretty(v)
                 if force_split or i + 1 < len(all_args):
                     self.text(",")
                 comment = None
@@ -683,6 +690,9 @@ def _dict_pprinter_factory(
 
         if cycle:
             return p.text("{...}")
+        # NOTE: For compatibility with Python 3.9's LL(1)
+        # parser, this is written as a nested with-statement,
+        # instead of a compound one.
         with p.group(1, start, end):
             # If the dict contains both "" and b"" (empty string and empty bytes), we
             # ignore the BytesWarning raised by `python -bb` mode.  We can't use

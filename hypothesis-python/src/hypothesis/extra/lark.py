@@ -9,10 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-----------------
-hypothesis[lark]
-----------------
-
 This extra can be used to generate strings matching any context-free grammar,
 using the `Lark parser library <https://github.com/lark-parser/lark>`_.
 
@@ -72,6 +68,7 @@ class LarkStrategy(st.SearchStrategy):
         explicit: dict[str, st.SearchStrategy[str]],
         alphabet: st.SearchStrategy[str],
     ) -> None:
+        super().__init__()
         assert isinstance(grammar, lark.lark.Lark)
         start: list[str] = grammar.options.start if start is None else [start]
 
@@ -183,12 +180,12 @@ class LarkStrategy(st.SearchStrategy):
             draw_state.append(data.draw(strategy))
         else:
             assert isinstance(symbol, NonTerminal)
-            data.start_example(self.rule_label(symbol.name))
+            data.start_span(self.rule_label(symbol.name))
             expansion = data.draw(self.nonterminal_strategies[symbol.name])
             for e in expansion:
                 self.draw_symbol(data, e, draw_state)
                 self.gen_ignore(data, draw_state)
-            data.stop_example()
+            data.stop_span()
 
     def gen_ignore(self, data: ConjectureData, draw_state: list[str]) -> None:
         if self.ignored_symbols and data.draw_boolean(1 / 4):

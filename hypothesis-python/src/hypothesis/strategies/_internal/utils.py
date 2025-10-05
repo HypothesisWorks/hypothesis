@@ -8,62 +8,45 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import sys
-import threading
-from inspect import signature
-from typing import TYPE_CHECKING, Callable
+from functools import partial
+from typing import TYPE_CHECKING, Callable, TypeVar
+from weakref import WeakValueDictionary
 
 import attr
 
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import dataclass_asdict
 from hypothesis.internal.floats import clamp, float_to_int
 from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
 
 if TYPE_CHECKING:
-    from hypothesis.strategies._internal.strategies import SearchStrategy, T
+    from typing import TypeAlias
 
-_strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
+T = TypeVar("T")
+ValueKey: "TypeAlias" = tuple[type, object]
+# (fn, args, kwargs)
+StrategyCacheKey: "TypeAlias" = tuple[
+    object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
+]
 
-
-class FloatKey:
-    def __init__(self, f):
-        self.value = float_to_int(f)
-
-    def __eq__(self, other):
-        return isinstance(other, FloatKey) and (other.value == self.value)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.value)
+_all_strategies: WeakValueDictionary[str, Callable] = WeakValueDictionary()
+# note: LRUReusedCache is already thread-local internally
+_STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
 
 
-def convert_value(v):
+def convert_value(v: object) -> ValueKey:
     if isinstance(v, float):
-        return FloatKey(v)
+        return (float, float_to_int(v))
     return (type(v), v)
 
 
-_CACHE = threading.local()
-
-
-def get_cache() -> LRUReusedCache:
-    try:
-        return _CACHE.STRATEGY_CACHE
-    except AttributeError:
-        _CACHE.STRATEGY_CACHE = LRUReusedCache(1024)
-        return _CACHE.STRATEGY_CACHE
-
-
 def clear_cache() -> None:
-    cache = get_cache()
-    cache.clear()
+    _STRATEGY_CACHE.clear()
 
 
-def cacheable(fn: "T") -> "T":
+def cacheable(fn: T) -> T:
     from hypothesis.control import _current_build_context
     from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -78,16 +61,15 @@ def cacheable(fn: "T") -> "T":
         except TypeError:
             return fn(*args, **kwargs)
         cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
-        cache = get_cache()
         try:
-            if cache_key in cache:
-                return cache[cache_key]
+            if cache_key in _STRATEGY_CACHE:
+                return _STRATEGY_CACHE[cache_key]
         except TypeError:
             return fn(*args, **kwargs)
         else:
             result = fn(*args, **kwargs)
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                cache[cache_key] = result
+                _STRATEGY_CACHE[cache_key] = result
             return result
 
     cached_strategy.__clear_cache = clear_cache  # type: ignore
@@ -99,7 +81,7 @@ def defines_strategy(
     force_reusable_values: bool = False,
     try_non_lazy: bool = False,
     never_lazy: bool = False,
-) -> Callable[["T"], "T"]:
+) -> Callable[[T], T]:
     """Returns a decorator for strategy functions.
 
     If ``force_reusable_values`` is True, the returned strategy will be marked
@@ -118,7 +100,7 @@ def defines_strategy(
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
-        _strategies[strategy_definition.__name__] = signature(strategy_definition)
+        _all_strategies[strategy_definition.__name__] = strategy_definition
 
         if never_lazy:
             assert not try_non_lazy
@@ -156,7 +138,7 @@ def defines_strategy(
     return decorator
 
 
-def to_jsonable(obj: object) -> object:
+def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     """Recursively convert an object to json-encodable form.
 
     This is not intended to round-trip, but rather provide an analysis-ready
@@ -164,27 +146,36 @@ def to_jsonable(obj: object) -> object:
     known types.
     """
     if isinstance(obj, (str, int, float, bool, type(None))):
-        if isinstance(obj, int) and abs(obj) >= 2**63:
-            # Silently clamp very large ints to max_float, to avoid
-            # OverflowError when casting to float.
+        # We convert integers of 2**63 to floats, to avoid crashing external
+        # utilities with a 64 bit integer cap (notable, sqlite). See
+        # https://github.com/HypothesisWorks/hypothesis/pull/3797#discussion_r1413425110
+        # and https://github.com/simonw/sqlite-utils/issues/605.
+        if isinstance(obj, int) and not isinstance(obj, bool) and abs(obj) >= 2**63:
+            # Silently clamp very large ints to max_float, to avoid OverflowError when
+            # casting to float.  (but avoid adding more constraints to symbolic values)
+            if avoid_realization:
+                return "<symbolic>"
             obj = clamp(-sys.float_info.max, obj, sys.float_info.max)
             return float(obj)
         return obj
+    if avoid_realization:
+        return "<symbolic>"
+
+    recur = partial(to_jsonable, avoid_realization=avoid_realization)
     if isinstance(obj, (list, tuple, set, frozenset)):
         if isinstance(obj, tuple) and hasattr(obj, "_asdict"):
-            return to_jsonable(obj._asdict())  # treat namedtuples as dicts
-        return [to_jsonable(x) for x in obj]
+            return recur(obj._asdict())  # treat namedtuples as dicts
+        return [recur(x) for x in obj]
     if isinstance(obj, dict):
         return {
-            k if isinstance(k, str) else pretty(k): to_jsonable(v)
-            for k, v in obj.items()
+            k if isinstance(k, str) else pretty(k): recur(v) for k, v in obj.items()
         }
 
     # Hey, might as well try calling a .to_json() method - it works for Pandas!
     # We try this before the below general-purpose handlers to give folks a
     # chance to control this behavior on their custom classes.
     try:
-        return to_jsonable(obj.to_json())  # type: ignore
+        return recur(obj.to_json())  # type: ignore
     except Exception:
         pass
 
@@ -194,11 +185,16 @@ def to_jsonable(obj: object) -> object:
         and dcs.is_dataclass(obj)
         and not isinstance(obj, type)
     ):
-        return to_jsonable(dataclass_asdict(obj))
+        # Avoid dataclasses.asdict here to ensure that inner to_json overrides
+        # can get called as well
+        return {
+            field.name: recur(getattr(obj, field.name))
+            for field in dataclasses.fields(obj)  # type: ignore
+        }
     if attr.has(type(obj)):
-        return to_jsonable(attr.asdict(obj, recurse=False))  # type: ignore
+        return recur(attr.asdict(obj, recurse=False))  # type: ignore
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
-        return to_jsonable(obj.model_dump())
+        return recur(obj.model_dump())
 
     # If all else fails, we'll just pretty-print as a string.
     return pretty(obj)

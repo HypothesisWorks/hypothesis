@@ -16,6 +16,8 @@ from hypothesis import HealthCheck, settings
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
+from tests.conjecture.common import interesting_origin
+
 POISON = "POISON"
 MAX_INT = 2**32 - 1
 
@@ -36,8 +38,8 @@ class PoisonedTree(SearchStrategy):
             return data.draw(self) + data.draw(self)
         else:
             # We draw n as two separate calls so that it doesn't show up as a
-            # single block. If it did, the heuristics that allow us to move
-            # blocks around would fire and it would move right, which would
+            # single choice. If it did, the heuristics that allow us to move
+            # choices around would fire and it would move right, which would
             # then allow us to shrink it more easily.
             n1 = data.draw_integer(0, 2**16 - 1) << 16
             n2 = data.draw_integer(0, 2**16 - 1)
@@ -75,7 +77,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
     def test_function(data):
         v = data.draw(strat)
         if len(v) >= size:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
     runner.generate_new_examples()
@@ -87,7 +89,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
     nodes = [
         node
         for node in data.nodes
-        if node.ir_type == "integer" and node.kwargs["max_value"] == 2**16 - 1
+        if node.type == "integer" and node.constraints["max_value"] == 2**16 - 1
     ]
     assert len(nodes) % 2 == 0
 
@@ -103,13 +105,13 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             v = data.draw(strat)
             m = data.draw_bytes(len(marker), len(marker))
             if POISON in v and m == marker:
-                data.mark_interesting()
+                data.mark_interesting(interesting_origin())
 
         runner = ConjectureRunner(
             test_function_with_poison, random=random, settings=TEST_SETTINGS
         )
         # replace n1 and n2 with 2**16 - 1 to insert a poison value here
-        runner.cached_test_function_ir(
+        runner.cached_test_function(
             data.choices[: node.index]
             + (2**16 - 1, 2**16 - 1)
             + (data.choices[node.index + 2 :])

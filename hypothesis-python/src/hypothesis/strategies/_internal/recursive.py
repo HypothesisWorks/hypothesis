@@ -47,10 +47,10 @@ class LimitedStrategy(SearchStrategy):
     def currently_capped(self, value):
         self._threadlocal.currently_capped = value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"LimitedStrategy({self.base_strategy!r})"
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         self.base_strategy.validate()
 
     def do_draw(self, data):
@@ -73,6 +73,7 @@ class LimitedStrategy(SearchStrategy):
 
 class RecursiveStrategy(SearchStrategy):
     def __init__(self, base, extend, max_leaves):
+        super().__init__()
         self.max_leaves = max_leaves
         self.base = base
         self.limited_base = LimitedStrategy(base)
@@ -83,7 +84,7 @@ class RecursiveStrategy(SearchStrategy):
             strategies.append(extend(OneOfStrategy(tuple(strategies))))
         self.strategy = OneOfStrategy(strategies)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):
             self._cached_repr = "recursive(%r, %s, max_leaves=%d)" % (
                 self.base,
@@ -92,7 +93,7 @@ class RecursiveStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         check_strategy(self.base, "base")
         extended = self.extend(self.limited_base)
         check_strategy(extended, f"extend({self.limited_base!r})")

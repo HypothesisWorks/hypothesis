@@ -11,12 +11,15 @@
 import copy
 import re
 import warnings
-from functools import lru_cache, partial
-from typing import Optional
+from collections.abc import Collection
+from functools import cache, lru_cache, partial
+from typing import Optional, Union, cast
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
+from hypothesis.internal.charmap import Categories
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -31,8 +34,10 @@ from hypothesis.vendor.pretty import pretty
 
 
 # Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
-@lru_cache(maxsize=None)
-def _check_is_single_character(c):
+@cache
+# this is part of our forward-facing validation, so we do *not* tell mypyc that c
+# should be a str, because we don't want it to validate it before we can.
+def _check_is_single_character(c: object) -> str:
     # In order to mitigate the performance cost of this check, we use a shared cache,
     # even at the cost of showing the culprit strategy in the error message.
     if not isinstance(c, str):
@@ -43,10 +48,13 @@ def _check_is_single_character(c):
     return c
 
 
-class OneCharStringStrategy(SearchStrategy):
+class OneCharStringStrategy(SearchStrategy[str]):
     """A strategy which generates single character strings of text type."""
 
-    def __init__(self, intervals, force_repr=None):
+    def __init__(
+        self, intervals: IntervalSet, force_repr: Optional[str] = None
+    ) -> None:
+        super().__init__()
         assert isinstance(intervals, IntervalSet)
         self.intervals = intervals
         self._force_repr = force_repr
@@ -55,13 +63,13 @@ class OneCharStringStrategy(SearchStrategy):
     def from_characters_args(
         cls,
         *,
-        codec=None,
-        min_codepoint=None,
-        max_codepoint=None,
-        categories=None,
-        exclude_characters=None,
-        include_characters=None,
-    ):
+        codec: Optional[str] = None,
+        min_codepoint: Optional[int] = None,
+        max_codepoint: Optional[int] = None,
+        categories: Optional[Categories] = None,
+        exclude_characters: Collection[str] = "",
+        include_characters: Collection[str] = "",
+    ) -> "OneCharStringStrategy":
         assert set(categories or ()).issubset(charmap.categories())
         intervals = charmap.query(
             min_codepoint=min_codepoint,
@@ -72,6 +80,7 @@ class OneCharStringStrategy(SearchStrategy):
         )
         if codec is not None:
             intervals &= charmap.intervals_from_codec(codec)
+
         _arg_repr = ", ".join(
             f"{k}={v!r}"
             for k, v in [
@@ -82,7 +91,12 @@ class OneCharStringStrategy(SearchStrategy):
                 ("exclude_characters", exclude_characters),
                 ("include_characters", include_characters),
             ]
-            if v not in (None, "", set(charmap.categories()) - {"Cs"})
+            if v not in (None, "")
+            and not (
+                k == "categories"
+                # v has to be `categories` here. Help mypy along to infer that.
+                and set(cast(Categories, v)) == set(charmap.categories()) - {"Cs"}
+            )
         )
         if not intervals:
             raise InvalidArgument(
@@ -92,7 +106,9 @@ class OneCharStringStrategy(SearchStrategy):
         return cls(intervals, force_repr=f"characters({_arg_repr})")
 
     @classmethod
-    def from_alphabet(cls, alphabet):
+    def from_alphabet(
+        cls, alphabet: Union[str, SearchStrategy]
+    ) -> "OneCharStringStrategy":
         if isinstance(alphabet, str):
             return cls.from_characters_args(categories=(), include_characters=alphabet)
 
@@ -116,10 +132,10 @@ class OneCharStringStrategy(SearchStrategy):
             f"{alphabet=} must be a sampled_from() or characters() strategy"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._force_repr or f"OneCharStringStrategy({self.intervals!r})"
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> str:
         return data.draw_string(self.intervals, min_size=1, max_size=1)
 
 
@@ -150,12 +166,12 @@ _nonempty_and_content_names = (
 )
 
 
-class TextStrategy(ListStrategy):
+class TextStrategy(ListStrategy[str]):
     def do_draw(self, data):
         # if our element strategy is OneCharStringStrategy, we can skip the
-        # ListStrategy draw and jump right to our nice IR string draw.
+        # ListStrategy draw and jump right to data.draw_string.
         # Doing so for user-provided element strategies is not correct in
-        # general, as they may define a different distribution than our IR.
+        # general, as they may define a different distribution than data.draw_string.
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             return data.draw_string(
@@ -169,7 +185,7 @@ class TextStrategy(ListStrategy):
             )
         return "".join(super().do_draw(data))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         args = []
         if repr(self.element_strategy) != "characters()":
             args.append(repr(self.element_strategy))
@@ -314,7 +330,7 @@ _PROPLIST = """
 
 
 @lru_cache
-def _identifier_characters():
+def _identifier_characters() -> tuple[IntervalSet, IntervalSet]:
     """See https://docs.python.org/3/reference/lexical_analysis.html#identifiers"""
     # Start by computing the set of special characters
     chars = {"Other_ID_Start": "", "Other_ID_Continue": ""}
@@ -344,12 +360,13 @@ def _identifier_characters():
 
 class BytesStrategy(SearchStrategy):
     def __init__(self, min_size: int, max_size: Optional[int]):
+        super().__init__()
         self.min_size = min_size
         self.max_size = (
             max_size if max_size is not None else COLLECTION_DEFAULT_MAX_SIZE
         )
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> bytes:
         return data.draw_bytes(self.min_size, self.max_size)
 
     _nonempty_filters = (

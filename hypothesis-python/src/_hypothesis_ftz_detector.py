@@ -52,7 +52,7 @@ def run_in_process(fn: Callable[..., FTZCulprits], *args: object) -> FTZCulprits
     import multiprocessing as mp
 
     mp.set_start_method("spawn", force=True)
-    q: "Queue[FTZCulprits]" = mp.Queue()
+    q: Queue[FTZCulprits] = mp.Queue()
     p = mp.Process(target=target, args=(q, fn, *args))
     p.start()
     retval = q.get()

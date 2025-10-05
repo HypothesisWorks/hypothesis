@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import example, given, strategies as st
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil
 
 from tests.common.debug import minimal
@@ -32,12 +32,14 @@ def test_can_shrink_in_variable_sized_context(n):
 @example(1.7976931348623157e308)
 @example(1.5)
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_shrinks_downwards_to_integers(f):
     assert minimal(st.floats(min_value=f)) == ceil(f)
 
 
 @example(1)
 @given(st.integers(1, 2**16 - 1))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
         st.floats(

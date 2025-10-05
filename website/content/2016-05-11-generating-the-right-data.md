@@ -27,9 +27,7 @@ class Project:
         self.end = end
 
     def __repr__(self):
-        return "Project {} from {} to {}".format(
-            self.name, self.start.isoformat(), self.end.isoformat()
-        )
+        return f"Project {self.name} from {self.start.isoformat()} to {self.end.isoformat()}"
 ```
 
 A project has a name, a start date, and an end date.
@@ -124,7 +122,7 @@ asking Hypothesis for a more specific example:
 ' '
 ```
 
-So lets fix it so that they can't by stripping the spaces off it.
+So let's fix it so that they can't by stripping the spaces off it.
 
 To do this we're going to use the strategy's *map* method which lets you compose it with
 an arbitrary function to post-process the results into the for you want:
@@ -134,7 +132,7 @@ an arbitrary function to post-process the results into the for you want:
 ...     lambda x: x.strip())
 ```
 
-Now lets check that we can no longer have the above problem:
+Now let's check that we can no longer have the above problem:
 
 ```pycon
 >>> find(names, lambda x: x[0] == ' ')
@@ -366,5 +364,3 @@ a flavour of the sort of things to try and the sort of things that are possible.
 It's worth having a read of [the documentation](https://hypothesis.readthedocs.io/en/latest/data.html)
 for this, and if you're still stuck then try asking [the community](https://hypothesis.readthedocs.io/en/latest/community.html)
 for some help. We're pretty friendly.
-
-
