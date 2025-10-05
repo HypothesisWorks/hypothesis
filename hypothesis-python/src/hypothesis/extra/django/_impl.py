@@ -176,10 +176,7 @@ def from_form(
 
     unbound_form = form(**form_kwargs)
     fields_by_name = {}
-    file_fields_by_name = set()
     for name, field in unbound_form.fields.items():
-        if isinstance(field, df.FileField):
-            file_fields_by_name.add(name)
         if isinstance(field, df.MultiValueField):
             # PS: So this is a little strange, but MultiValueFields must
             # have their form data encoded in a particular way for the
@@ -198,22 +195,28 @@ def from_form(
         if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
 
+    data_strategies = {}
+    file_strategies = {}
     for name, field in sorted(fields_by_name.items()):
         if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
-    # File strategies need to be passed separately into the form constructor
-    # and so we create a separate dict for them. These fields are not supposed
-    # to be sent via the data constructor
-    # ref: https://docs.djangoproject.com/en/5.1/topics/http/file-uploads/#id4
-    file_strategies = {}
-    for name in list(field_strategies):
-        if name in file_fields_by_name:
-            file_strategies[name] = field_strategies.pop(name)
+
+    # in django, files are handled a bit specially. A Form accepts two arguments:
+    # `data` and `files`. The former is for normal fields, and the latter is for
+    # file fields.
+    # see https://docs.djangoproject.com/en/5.1/ref/forms/api/#binding-uploaded-files.
+    for name, field in field_strategies.items():
+        dictionary = (
+            file_strategies if isinstance(field, df.FileField) else data_strategies
+        )
+        dictionary[name] = field
+    # no longer necessary
+    del field_strategies
 
     return _forms_impl(
         st.builds(
             partial(form, **form_kwargs),  # type: ignore
-            data=st.fixed_dictionaries(field_strategies),  # type: ignore
+            data=st.fixed_dictionaries(data_strategies),  # type: ignore
             files=st.fixed_dictionaries(file_strategies),  # type: ignore
         )
     )
