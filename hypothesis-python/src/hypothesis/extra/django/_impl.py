@@ -162,7 +162,6 @@ def from_form(
     # currently unsupported:
     # ComboField
     # FilePathField
-    # FileField
     # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
@@ -195,8 +194,6 @@ def from_form(
         if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
 
-    data_strategies: dict[str, Any] = {}
-    file_strategies: dict[str, Any] = {}
     for name, field in sorted(fields_by_name.items()):
         if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
@@ -205,9 +202,12 @@ def from_form(
     # `data` and `files`. The former is for normal fields, and the latter is for
     # file fields.
     # see https://docs.djangoproject.com/en/5.1/ref/forms/api/#binding-uploaded-files.
+    data_strategies: dict[str, Any] = {}
+    file_strategies: dict[str, Any] = {}
     for name, field in field_strategies.items():
+        form_field = unbound_form.fields[name]
         dictionary = (
-            file_strategies if isinstance(field, df.FileField) else data_strategies
+            file_strategies if isinstance(form_field, df.FileField) else data_strategies
         )
         dictionary[name] = field
     # no longer necessary
