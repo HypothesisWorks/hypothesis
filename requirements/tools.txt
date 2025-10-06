@@ -8,9 +8,9 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.10.0
+anyio==4.11.0
     # via watchfiles
-asgiref==3.9.1
+asgiref==3.9.2
     # via django
 asttokens==3.0.0
     # via stack-data
@@ -22,7 +22,7 @@ babel==2.17.0
     # via sphinx
 backports-tarfile==1.2.0
     # via jaraco-context
-beautifulsoup4==4.13.5
+beautifulsoup4==4.14.2
     # via
     #   furo
     #   sphinx-codeautolink
@@ -54,9 +54,9 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.10.6
+coverage==7.10.7
     # via -r requirements/tools.in
-cryptography==46.0.1
+cryptography==46.0.2
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -65,7 +65,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==5.2.6
+django==5.2.7
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -92,7 +92,7 @@ filelock==3.19.1
     # via
     #   tox
     #   virtualenv
-furo==2025.7.19
+furo==2025.9.25
     # via -r requirements/tools.in
 id==1.5.0
     # via twine
@@ -108,7 +108,7 @@ iniconfig==2.1.0
     # via pytest
 ipython==8.37.0
     # via -r requirements/tools.in
-isort==6.0.1
+isort==6.1.0
     # via shed
 jaraco-classes==3.4.0
     # via keyring
@@ -130,9 +130,9 @@ jsonpointer==3.0.0
     # via sphinx-jsonschema
 keyring==25.6.0
     # via twine
-lark==1.2.2
+lark==1.3.0
     # via -r requirements/tools.in
-libcst==1.8.4
+libcst==1.8.5
     # via
     #   -r requirements/tools.in
     #   shed
@@ -140,7 +140,7 @@ markdown==3.9
     # via pelican
 markdown-it-py==4.0.0
     # via rich
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -185,7 +185,7 @@ pexpect==4.9.0
     # via
     #   -r requirements/test.in
     #   ipython
-pip-tools==7.5.0
+pip-tools==7.5.1
     # via -r requirements/tools.in
 platformdirs==4.4.0
     # via
@@ -222,7 +222,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.405
+pyright==1.1.406
     # via -r requirements/tools.in
 pytest==8.4.2
     # via
@@ -238,7 +238,7 @@ pytokens==0.1.10
     # via black
 pyupgrade==3.20.0
     # via shed
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   libcst
     #   sphinx-jsonschema
@@ -262,7 +262,7 @@ rich==14.1.0
     # via
     #   pelican
     #   twine
-ruff==0.13.1
+ruff==0.13.3
     # via -r requirements/tools.in
 secretstorage==3.4.0
     # via keyring
@@ -325,7 +325,7 @@ tomli==2.2.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.30.2
+tox==4.30.3
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -372,7 +372,7 @@ watchdog==6.0.0
     # via -r requirements/tools.in
 watchfiles==1.1.0
     # via pelican
-wcwidth==0.2.13
+wcwidth==0.2.14
     # via prompt-toolkit
 wheel==0.45.1
     # via pip-tools
