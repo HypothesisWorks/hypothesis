@@ -10,7 +10,7 @@
 
 import warnings
 from collections.abc import Hashable
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -19,7 +19,7 @@ from hypothesis.strategies._internal.strategies import Ex
 
 
 class SharedStrategy(SearchStrategy[Ex]):
-    def __init__(self, base: SearchStrategy[Ex], key: Optional[Hashable] = None):
+    def __init__(self, base: SearchStrategy[Ex], key: Hashable | None = None):
         super().__init__()
         self.key = key
         self.base = base

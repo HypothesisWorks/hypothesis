@@ -10,9 +10,15 @@
 
 import math
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeAlias,
+    cast,
+)
 
 from hypothesis.internal.conjecture.choice import (
     ChoiceNode,
@@ -53,11 +59,10 @@ from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 if TYPE_CHECKING:
     from random import Random
-    from typing import TypeAlias
 
     from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-ShrinkPredicateT: "TypeAlias" = Callable[[Union[ConjectureResult, _Overrun]], bool]
+ShrinkPredicateT: TypeAlias = Callable[[ConjectureResult | _Overrun], bool]
 
 
 def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
@@ -87,7 +92,7 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
 @dataclass
 class ShrinkPass:
     function: Any
-    name: Optional[str] = None
+    name: str | None = None
     last_prefix: Any = ()
 
     # some execution statistics
@@ -263,12 +268,12 @@ class Shrinker:
     def __init__(
         self,
         engine: "ConjectureRunner",
-        initial: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[ShrinkPredicateT],
+        initial: ConjectureData | ConjectureResult,
+        predicate: ShrinkPredicateT | None,
         *,
-        allow_transition: Optional[
-            Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
-        ],
+        allow_transition: (
+            Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
+        ),
         explain: bool,
         in_target_phase: bool = False,
     ):
@@ -320,7 +325,7 @@ class Shrinker:
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
-        self.__extend: Union[Literal["full"], int] = "full" if in_target_phase else 0
+        self.__extend: Literal["full"] | int = "full" if in_target_phase else 0
         self.should_explain = explain
 
     @derived_value  # type: ignore
@@ -353,7 +358,7 @@ class Shrinker:
 
     def cached_test_function(
         self, nodes: Sequence[ChoiceNode]
-    ) -> tuple[bool, Optional[Union[ConjectureResult, _Overrun]]]:
+    ) -> tuple[bool, ConjectureResult | _Overrun | None]:
         nodes = nodes[: len(self.nodes)]
 
         if startswith(nodes, self.nodes):
@@ -518,7 +523,9 @@ class Shrinker:
                     and endswith(result.nodes, nodes[end:])
                 ):
                     # Turns out this was a variable-length part, so grab the infix...
-                    for span1, span2 in zip(shrink_target.spans, result.spans):
+                    for span1, span2 in zip(
+                        shrink_target.spans, result.spans, strict=False
+                    ):
                         assert span1.start == span2.start
                         assert span1.start <= start
                         assert span1.label == span2.label
@@ -995,7 +1002,7 @@ class Shrinker:
                     st.nodes,
                     [
                         offset_node(node, sign * (n + v))
-                        for node, v in zip(changed, ints)
+                        for node, v in zip(changed, ints, strict=False)
                     ],
                 )
             )
@@ -1025,13 +1032,13 @@ class Shrinker:
         assert sort_key(new_target.nodes) < sort_key(prev_target.nodes)
 
         if len(prev_nodes) != len(new_nodes) or any(
-            n1.type != n2.type for n1, n2 in zip(prev_nodes, new_nodes)
+            n1.type != n2.type for n1, n2 in zip(prev_nodes, new_nodes, strict=True)
         ):
             # should we check constraints are equal as well?
             self.__all_changed_nodes = set()
         else:
             assert len(prev_nodes) == len(new_nodes)
-            for i, (n1, n2) in enumerate(zip(prev_nodes, new_nodes)):
+            for i, (n1, n2) in enumerate(zip(prev_nodes, new_nodes, strict=True)):
                 assert n1.type == n2.type
                 if not choice_equal(n1.value, n2.value):
                     self.__all_changed_nodes.add(i)
@@ -1351,8 +1358,8 @@ class Shrinker:
             and node1.index < node.index <= node1.index + 4,
         )
 
-        m: Union[int, float] = node1.value
-        n: Union[int, float] = node2.value
+        m: int | float = node1.value
+        n: int | float = node2.value
 
         def boost(k: int) -> bool:
             # floats always shrink towards 0
@@ -1715,7 +1722,7 @@ class Shrinker:
                             v,
                             st.nodes[spans[i].start : spans[i].end],
                         )
-                        for (u, v), i in zip(endpoints, indices)
+                        for (u, v), i in zip(endpoints, indices, strict=True)
                     ],
                 )
             ),

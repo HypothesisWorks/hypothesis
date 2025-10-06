@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Hashable, Iterable, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -37,7 +37,7 @@ class FeatureFlags:
 
     def __init__(
         self,
-        data: Optional[ConjectureData] = None,
+        data: ConjectureData | None = None,
         enabled: Sequence[Any] = (),
         disabled: Sequence[Any] = (),
         at_least_one_of: Iterable[Hashable] = (),

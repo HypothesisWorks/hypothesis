@@ -15,24 +15,23 @@ import ast
 import hashlib
 import inspect
 import re
-import sys
 import textwrap
 import types
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import partial, wraps
 from inspect import Parameter, Signature
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, generate_tokens, untokenize
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
+from types import EllipsisType, ModuleType
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 from unittest.mock import _patch as PatchType
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import lambda_sources
-from hypothesis.internal.compat import EllipsisType, is_typed_named_tuple
+from hypothesis.internal.compat import is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -160,15 +159,7 @@ def get_signature(
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
-    # eval_str is only supported by Python 3.10 and newer
-    if sys.version_info[:2] >= (3, 10):
-        sig = inspect.signature(
-            target, follow_wrapped=follow_wrapped, eval_str=eval_str
-        )
-    else:
-        sig = inspect.signature(
-            target, follow_wrapped=follow_wrapped
-        )  # pragma: no cover
+    sig = inspect.signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
     check_signature(sig)
     return sig
 
@@ -183,7 +174,7 @@ def arg_is_required(param: Parameter) -> bool:
 def required_args(
     target: Callable[..., Any],
     args: tuple["SearchStrategy[Any]", ...] = (),
-    kwargs: Optional[dict[str, Union["SearchStrategy[Any]", EllipsisType]]] = None,
+    kwargs: dict[str, Union["SearchStrategy[Any]", EllipsisType]] | None = None,
 ) -> set[str]:
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
@@ -373,7 +364,7 @@ def accept({funcname}):
 
 def get_varargs(
     sig: Signature, kind: int = Parameter.VAR_POSITIONAL
-) -> Optional[Parameter]:
+) -> Parameter | None:
     for p in sig.parameters.values():
         if p.kind is kind:
             return p

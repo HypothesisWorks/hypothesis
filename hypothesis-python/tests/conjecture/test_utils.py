@@ -76,7 +76,7 @@ def test_sampler_distribution(weights):
         calculated[base] += (1 - p_alternate) / n
         calculated[alternate] += p_alternate / n
 
-    for expected, actual in zip(probabilities, calculated):
+    for expected, actual in zip(probabilities, calculated, strict=True):
         if isinstance(actual, Fraction):
             assert expected == actual
         else:

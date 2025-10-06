@@ -31,7 +31,7 @@ We use custom exception and warning types, so you can see exactly where an error
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython and PyPy 3.9+, i.e. all Python versions `that are still supported <https://devguide.python.org/versions/>`_.
+Hypothesis is supported and tested on CPython and PyPy 3.10+, i.e. all Python versions `that are still supported <https://devguide.python.org/versions/>`_.
 32-bit builds of CPython also work, though we only test them on Windows.
 
 Hypothesis does not officially support anything except the latest patch release of each supported Python version. We will fix bugs in earlier patch releases if reported, but they're not tested in CI and no guarantees are made.

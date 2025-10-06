@@ -132,9 +132,6 @@ def fails_with(e, *, match=None):
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
             with deterministic_PRNG():
-                # NOTE: For compatibility with Python 3.9's LL(1)
-                # parser, this is written as a nested with-statement,
-                # instead of a compound one.
                 with raises(e, match=match):
                     f(*arguments, **kwargs)
 
@@ -260,9 +257,6 @@ def temp_registered(type_, strat_or_factory):
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
     with raises(expected_warning, match=match) as r:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=expected_warning)
             yield r
@@ -359,7 +353,7 @@ def restore_recursion_limit():
             sys.setrecursionlimit(original_limit)
 
 
-def run_concurrently(function, n: int) -> None:
+def run_concurrently(function, *, n: int) -> None:
     import pytest
 
     if settings.get_current_profile_name() == "crosshair":

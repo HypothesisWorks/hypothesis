@@ -217,7 +217,7 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
                 if arg.keyword or arg.star or p.kind is not Parameter.KEYWORD_ONLY
                 else arg.with_changes(keyword=cst.Name(p.name), equal=assign_nospace)
             )
-            for p, arg in zip(params, updated_node.args)
+            for p, arg in zip(params, updated_node.args, strict=False)
         ]
         return updated_node.with_changes(args=newargs)
 

@@ -12,9 +12,9 @@ import inspect
 import math
 import random
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import contextmanager
-from typing import Any, Callable, NoReturn, Optional, Union
+from typing import Any, NoReturn, Optional
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -238,7 +238,7 @@ def note(value: object) -> None:
         report(value)
 
 
-def event(value: str, payload: Union[str, int, float] = "") -> None:
+def event(value: str, payload: str | int | float = "") -> None:
     """Record an event that occurred during this test. Statistics on the number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
@@ -272,7 +272,7 @@ def _event_to_string(event, allowed_types=str):
     return result
 
 
-def target(observation: Union[int, float], *, label: str = "") -> Union[int, float]:
+def target(observation: int | float, *, label: str = "") -> int | float:
     """Calling this function with an ``int`` or ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.

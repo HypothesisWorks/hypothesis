@@ -17,7 +17,7 @@ import sys
 import tempfile
 import warnings
 import weakref
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha384
@@ -28,11 +28,9 @@ from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Literal,
-    Optional,
-    Union,
+    TypeAlias,
     cast,
 )
 from urllib.error import HTTPError, URLError
@@ -55,17 +53,15 @@ __all__ = [
 ]
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from watchdog.observers.api import BaseObserver
 
-StrPathT: "TypeAlias" = Union[str, PathLike[str]]
-SaveDataT: "TypeAlias" = tuple[bytes, bytes]  # key, value
-DeleteDataT: "TypeAlias" = tuple[bytes, Optional[bytes]]  # key, value
-ListenerEventT: "TypeAlias" = Union[
-    tuple[Literal["save"], SaveDataT], tuple[Literal["delete"], DeleteDataT]
-]
-ListenerT: "TypeAlias" = Callable[[ListenerEventT], Any]
+StrPathT: TypeAlias = str | PathLike[str]
+SaveDataT: TypeAlias = tuple[bytes, bytes]  # key, value
+DeleteDataT: TypeAlias = tuple[bytes, bytes | None]  # key, value
+ListenerEventT: TypeAlias = (
+    tuple[Literal["save"], SaveDataT] | tuple[Literal["delete"], DeleteDataT]
+)
+ListenerT: TypeAlias = Callable[[ListenerEventT], Any]
 
 
 def _usable_dir(path: StrPathT) -> bool:
@@ -85,7 +81,7 @@ def _usable_dir(path: StrPathT) -> bool:
 
 
 def _db_for_path(
-    path: Optional[Union[StrPathT, UniqueIdentifier, Literal[":memory:"]]] = None,
+    path: StrPathT | UniqueIdentifier | Literal[":memory:"] | None = None,
 ) -> "ExampleDatabase":
     if path is not_set:
         if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
@@ -565,9 +561,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         _broadcast_change = self._broadcast_change
 
         class Handler(FileSystemEventHandler):
-            def on_created(
-                _self, event: Union[FileCreatedEvent, DirCreatedEvent]
-            ) -> None:
+            def on_created(_self, event: FileCreatedEvent | DirCreatedEvent) -> None:
                 # we only registered for the file creation event
                 assert not isinstance(event, DirCreatedEvent)
                 # watchdog events are only bytes if we passed a byte path to
@@ -601,9 +595,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
                 _broadcast_change(("save", (key, value)))
 
-            def on_deleted(
-                self, event: Union[FileDeletedEvent, DirDeletedEvent]
-            ) -> None:
+            def on_deleted(self, event: FileDeletedEvent | DirDeletedEvent) -> None:
                 assert not isinstance(event, DirDeletedEvent)
                 assert isinstance(event.src_path, str)
 
@@ -614,7 +606,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
                 _broadcast_change(("delete", (key, None)))
 
-            def on_moved(self, event: Union[FileMovedEvent, DirMovedEvent]) -> None:
+            def on_moved(self, event: FileMovedEvent | DirMovedEvent) -> None:
                 assert not isinstance(event, DirMovedEvent)
                 assert isinstance(event.src_path, str)
                 assert isinstance(event.dest_path, str)
@@ -842,7 +834,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         repo: str,
         artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
-        path: Optional[StrPathT] = None,
+        path: StrPathT | None = None,
     ):
         super().__init__()
         self.owner = owner
@@ -852,7 +844,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
-        self.token: Optional[str] = getenv("GITHUB_TOKEN")
+        self.token: str | None = getenv("GITHUB_TOKEN")
 
         if path is None:
             self.path: Path = Path(
@@ -867,9 +859,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         # This is the path to the artifact in usage
         # .hypothesis/github-artifacts/<artifact-name>/<modified_isoformat>.zip
-        self._artifact: Optional[Path] = None
+        self._artifact: Path | None = None
         # This caches the artifact structure
-        self._access_cache: Optional[dict[PurePath, set[PurePath]]] = None
+        self._access_cache: dict[PurePath, set[PurePath]] | None = None
 
         # Message to display if user doesn't wrap around ReadOnlyDatabase
         self._read_only_message = (
@@ -990,7 +982,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         self._prepare_for_io()
 
-    def _get_bytes(self, url: str) -> Optional[bytes]:  # pragma: no cover
+    def _get_bytes(self, url: str) -> bytes | None:  # pragma: no cover
         request = Request(
             url,
             headers={
@@ -1000,7 +992,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             },
         )
         warning_message = None
-        response_bytes: Optional[bytes] = None
+        response_bytes: bytes | None = None
         try:
             with urlopen(request) as response:
                 response_bytes = response.read()
@@ -1032,7 +1024,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         return response_bytes
 
-    def _fetch_artifact(self) -> Optional[Path]:  # pragma: no cover
+    def _fetch_artifact(self) -> Path | None:  # pragma: no cover
         # Get the list of artifacts from GitHub
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/artifacts"
         response_bytes = self._get_bytes(url)
@@ -1119,7 +1111,7 @@ class BackgroundWriteDatabase(ExampleDatabase):
         super().__init__()
         self._db = db
         self._queue: Queue[tuple[str, tuple[bytes, ...]]] = Queue()
-        self._thread: Optional[Thread] = None
+        self._thread: Thread | None = None
 
     def _ensure_thread(self):
         if self._thread is None:
@@ -1141,7 +1133,7 @@ class BackgroundWriteDatabase(ExampleDatabase):
             getattr(self._db, method)(*args)
             self._queue.task_done()
 
-    def _join(self, timeout: Optional[float] = None) -> None:
+    def _join(self, timeout: float | None = None) -> None:
         # copy of Queue.join with a timeout. https://bugs.python.org/issue9634
         with self._queue.all_tasks_done:
             while self._queue.unfinished_tasks:
@@ -1280,7 +1272,7 @@ def _choices_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
     return tuple(parts)
 
 
-def choices_from_bytes(buffer: bytes, /) -> Optional[tuple[ChoiceT, ...]]:
+def choices_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...] | None:
     """
     Deserialize a bytestring to a tuple of choices. Inverts choices_to_bytes.
 

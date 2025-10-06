@@ -992,7 +992,7 @@ def test_mutually_broadcastable_shapes_can_generate_interesting_singletons(
             min_side=0,
             max_dims=max_dims,
         ),
-        lambda x: any(a != b for a, b in zip(*(s[::-1] for s in x.input_shapes))),  # type: ignore
+        lambda x: any(a != b for a, b in zip(*(s[::-1] for s in x.input_shapes), strict=False)),  # type: ignore
     )
 
 
@@ -1083,7 +1083,7 @@ def test_advanced_integer_index_minimizes_as_documented(
     )
     desired = len(shape) * (np.zeros(min_dims * [min_side]),)
     assert len(smallest) == len(desired)
-    for s, d in zip(smallest, desired):
+    for s, d in zip(smallest, desired, strict=True):
         np.testing.assert_array_equal(s, d)
 
 

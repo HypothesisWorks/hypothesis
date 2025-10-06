@@ -11,7 +11,8 @@
 from collections.abc import Collection, Generator, Iterable, Sequence
 from functools import reduce
 from itertools import chain
-from typing import Any, Optional, TypeVar, Union
+from types import EllipsisType
+from typing import Any, TypeVar
 
 import attr
 
@@ -27,7 +28,7 @@ from attrs import Attribute, AttrsInstance, Factory
 
 from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import EllipsisType, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
@@ -40,7 +41,7 @@ def get_attribute_by_alias(
     fields: Iterable[Attribute],
     alias: str,
     *,
-    target: Optional[type[AttrsInstance]] = None,
+    target: type[AttrsInstance] | None = None,
 ) -> Attribute:
     """
     Get an attrs attribute by its alias, rather than its name (compare
@@ -69,7 +70,7 @@ def get_attribute_by_alias(
 def from_attrs(
     target: type[AttrsInstance],
     args: tuple[SearchStrategy[Any], ...],
-    kwargs: dict[str, Union[SearchStrategy[Any], EllipsisType]],
+    kwargs: dict[str, SearchStrategy[Any] | EllipsisType],
     to_infer: Iterable[str],
 ) -> SearchStrategy:
     """An internal version of builds(), specialised for Attrs classes."""

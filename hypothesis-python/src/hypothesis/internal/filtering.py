@@ -26,11 +26,11 @@ import ast
 import inspect
 import math
 import operator
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, NamedTuple, Optional, TypeVar
+from typing import Any, NamedTuple, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
@@ -60,7 +60,7 @@ class ConstructivePredicate(NamedTuple):
     """
 
     constraints: dict[str, Any]
-    predicate: Optional[Predicate]
+    predicate: Predicate | None
 
     @classmethod
     def unchanged(cls, predicate: Predicate) -> "ConstructivePredicate":
@@ -189,7 +189,7 @@ def numeric_bounds_from_ast(
         ops = tree.ops
         vals = tree.comparators
         comparisons = [(tree.left, ops[0], vals[0])]
-        for i, (op, val) in enumerate(zip(ops[1:], vals[1:]), start=1):
+        for i, (op, val) in enumerate(zip(ops[1:], vals[1:], strict=True), start=1):
             comparisons.append((vals[i - 1], op, val))
         bounds = []
         for comp in comparisons:

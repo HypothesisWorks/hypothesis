@@ -30,7 +30,7 @@ from collections.abc import Sequence
 from contextlib import suppress
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import libcst as cst
 from libcst import matchers as m
@@ -110,7 +110,7 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
 
     def __call_node_to_example_dec(
         self, node: cst.Call, via: str
-    ) -> Optional[cst.Decorator]:
+    ) -> cst.Decorator | None:
         # If we have black installed, remove trailing comma, _unless_ there's a comment
         node = node.with_changes(
             func=self.decorator_func,
@@ -164,7 +164,7 @@ def get_patch_for(
     examples: Sequence[tuple[str, str]],
     *,
     strip_via: tuple[str, ...] = (),
-) -> Optional[tuple[str, str, str]]:
+) -> tuple[str, str, str] | None:
     # Skip this if we're unable to find the location of this function.
     try:
         module = sys.modules[func.__module__]
@@ -195,7 +195,7 @@ def _get_patch_for(
     *,
     strip_via: tuple[str, ...] = (),
     namespace: dict[str, Any],
-) -> Optional[tuple[str, str]]:
+) -> tuple[str, str] | None:
     try:
         before = inspect.getsource(func)
     except Exception:  # pragma: no cover
@@ -295,7 +295,7 @@ def make_patch(
     triples: Sequence[tuple[str, str, str]],
     *,
     msg: str = "Hypothesis: add explicit examples",
-    when: Optional[datetime] = None,
+    when: datetime | None = None,
     author: str = f"Hypothesis {__version__} <no-reply@hypothesis.works>",
 ) -> str:
     """Create a patch for (fname, before, after) triples."""

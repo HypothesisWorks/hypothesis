@@ -13,12 +13,12 @@ import os
 import sys
 import textwrap
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
 from types import ModuleType, TracebackType
-from typing import Callable, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -58,8 +58,8 @@ is_hypothesis_file = belongs_to(hypothesis)
 
 
 def get_trimmed_traceback(
-    exception: Optional[BaseException] = None,
-) -> Optional[TracebackType]:
+    exception: BaseException | None = None,
+) -> TracebackType | None:
     """Return the current traceback, minus any frames added by Hypothesis."""
     if exception is None:
         _, exception, tb = sys.exc_info()
@@ -100,8 +100,8 @@ class InterestingOrigin:
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
     exc_type: type[BaseException]
-    filename: Optional[str]
-    lineno: Optional[int]
+    filename: str | None
+    lineno: int | None
     context: "InterestingOrigin | tuple[()]"
     group_elems: "tuple[InterestingOrigin, ...]"
 

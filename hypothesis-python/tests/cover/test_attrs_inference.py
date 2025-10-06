@@ -18,6 +18,10 @@ from hypothesis.errors import ResolutionFailed
 
 from tests.common.debug import check_can_generate_examples
 
+# Union[A, B] is not equivalent to A | B until 3.14. We'll continue to test both
+# until then.
+# ruff: noqa: UP045, UP007
+
 
 @attr.s
 class Inferrables:
@@ -53,7 +57,9 @@ class Inferrables:
     typing_list_of_list = attr.ib(type=list[list[int]])
     typing_dict = attr.ib(type=dict[str, int])
     typing_optional = attr.ib(type=typing.Optional[bool])
+    typing_optional_new = attr.ib(type=bool | None)
     typing_union = attr.ib(type=typing.Union[str, int])
+    typing_union_new = attr.ib(type=str | int)
 
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))

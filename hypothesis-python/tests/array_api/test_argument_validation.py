@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Optional
-
 import pytest
 
 from hypothesis.errors import InvalidArgument
@@ -19,7 +17,7 @@ from tests.array_api.common import MIN_VER_FOR_COMPLEX
 from tests.common.debug import check_can_generate_examples
 
 
-def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
+def e(name, *, _min_version: NominalVersion | None = None, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
     id_ = f"{name}({kw})"
     if _min_version is None:

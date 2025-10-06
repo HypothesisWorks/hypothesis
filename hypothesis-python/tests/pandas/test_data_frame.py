@@ -177,7 +177,7 @@ def test_arbitrary_data_frames(data):
 
     assert len(data_frame_columns) == len(columns)
 
-    for i, (c, n) in enumerate(zip(columns, df)):
+    for i, (c, n) in enumerate(zip(columns, df, strict=True)):
         if c.name is None:
             assert n == i
         else:

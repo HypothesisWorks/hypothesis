@@ -69,8 +69,6 @@ jobs:
           - check-types-api
           - check-coverage
           - check-conjecture-coverage
-          - check-py39-cover
-          - check-pypy39-cover
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche
@@ -90,9 +88,7 @@ jobs:
           - check-py313t-nocover
           - check-py313t-niche
           - check-quality
-          - check-py39-nose
-          - check-py39-pytest46
-          - check-py39-pytest54
+          - check-pytest62
           - check-pytest62
           - check-django51
           - check-django42
@@ -103,8 +99,8 @@ jobs:
           - check-pandas14
           - check-pandas13
           ## FIXME: actions update means Python builds without eg _bz2, which was required
-          # - check-py39-pandas12
-          # - check-py39-pandas11
+          # - check-py310-pandas12
+          # - check-py310-pandas11
       fail-fast: false
     env:
       PYTHON_VERSION: "3.10"
@@ -144,7 +140,6 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-py39-oldparser
           - check-py314-cover
           - check-py314-nocover
           # Blocked by a 3.14rc1 bug. see
@@ -173,7 +168,7 @@ jobs:
           - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
           - check-threading
-          - check-py39-oldestnumpy
+          - check-py310-oldestnumpy
           - check-numpy-nightly
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby

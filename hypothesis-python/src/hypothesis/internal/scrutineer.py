@@ -21,18 +21,15 @@ from enum import IntEnum
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TypeAlias
 
 from hypothesis._settings import Phase, Verbosity
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.escalation import is_hypothesis_file
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
-Location: "TypeAlias" = tuple[str, int]
-Branch: "TypeAlias" = tuple[Optional[Location], Location]
-Trace: "TypeAlias" = set[Branch]
+Location: TypeAlias = tuple[str, int]
+Branch: TypeAlias = tuple[Location | None, Location]
+Trace: TypeAlias = set[Branch]
 
 
 @functools.cache
@@ -63,7 +60,7 @@ class Tracer:
 
     def __init__(self, *, should_trace: bool) -> None:
         self.branches: Trace = set()
-        self._previous_location: Optional[Location] = None
+        self._previous_location: Location | None = None
         self._tried_and_failed_to_trace = False
         self._should_trace = should_trace and self.can_trace()
 

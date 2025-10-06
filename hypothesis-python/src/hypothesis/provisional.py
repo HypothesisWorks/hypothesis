@@ -21,7 +21,6 @@ definitions it links to.  If not, report the bug!
 import string
 from functools import lru_cache
 from importlib import resources
-from typing import Optional
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
@@ -60,7 +59,7 @@ def _recase_randomly(draw: DrawFn, tld: str) -> str:
 class DomainNameStrategy(st.SearchStrategy[str]):
     @staticmethod
     def clean_inputs(
-        minimum: int, maximum: int, value: Optional[int], variable_name: str
+        minimum: int, maximum: int, value: int | None, variable_name: str
     ) -> int:
         if value is None:
             value = maximum
@@ -75,7 +74,7 @@ class DomainNameStrategy(st.SearchStrategy[str]):
         return value
 
     def __init__(
-        self, max_length: Optional[int] = None, max_element_length: Optional[int] = None
+        self, max_length: int | None = None, max_element_length: int | None = None
     ) -> None:
         """
         A strategy for :rfc:`1035` fully qualified domain names.

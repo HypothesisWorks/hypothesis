@@ -11,8 +11,9 @@
 import json
 import os
 import sys
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 from hypothesis.internal.reflection import proxies
 

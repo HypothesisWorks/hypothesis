@@ -18,7 +18,6 @@ from collections.abc import Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
 from string import Template
-from typing import Optional
 from urllib.parse import urlparse
 
 from sphinx.application import Sphinx
@@ -52,7 +51,7 @@ def setup(app: Sphinx) -> dict:
     return {"parallel_read_safe": True}
 
 
-def init(app: Sphinx) -> Optional[Sequence]:
+def init(app: Sphinx) -> Sequence | None:
     if not app.config[OPTION_REDIRECTS]:
         logger.debug("No redirects configured")
         return []

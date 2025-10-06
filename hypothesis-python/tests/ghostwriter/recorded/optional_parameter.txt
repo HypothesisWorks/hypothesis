@@ -7,5 +7,5 @@ from hypothesis import given, strategies as st
 
 
 @given(a=st.floats(), b=st.one_of(st.none(), st.floats()))
-def test_fuzz_optional_parameter(a: float, b: typing.Optional[float]) -> None:
+def test_fuzz_optional_parameter(a: float, b: typing.Union[float, None]) -> None:
     test_expected_output.optional_parameter(a=a, b=b)

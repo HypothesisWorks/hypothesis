@@ -471,9 +471,6 @@ def test_does_not_print_notes_if_all_succeed():
         note("Hi there")
 
     with capture_out() as out:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with reporting.with_reporter(reporting.default):
             test()
     assert not out.getvalue()
@@ -545,8 +542,5 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
             r"try reducing the typical size of your inputs\?"
         ),
     ):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with buffer_size_limit(10):
             f()

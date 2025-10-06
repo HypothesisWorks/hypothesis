@@ -40,9 +40,10 @@ result.
 
 
 import itertools
+from collections.abc import Callable
 from functools import lru_cache
 from random import Random
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 import pytest
 

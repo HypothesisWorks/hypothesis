@@ -14,7 +14,6 @@ import sys
 from contextlib import contextmanager
 from random import Random
 from threading import RLock
-from typing import Optional
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
 from hypothesis.control import current_build_context, currently_in_test_context
@@ -36,7 +35,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 SOME_LABEL = calc_label_from_name("some label")
 
 
-def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
+def interesting_origin(n: int | None = None) -> InterestingOrigin:
     """
     Creates and returns an InterestingOrigin, parameterized by n, such that
     interesting_origin(n) == interesting_origin(m) iff n = m.

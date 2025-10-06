@@ -10,11 +10,10 @@
 
 import abc
 import enum
-import sys
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from inspect import Parameter as P, Signature
-from typing import Callable, Generic, List as _List, TypeVar, Union
+from typing import Generic, List as _List, TypeVar, Union
 
 import pytest
 
@@ -42,7 +41,7 @@ from tests.common.utils import (
 )
 
 # we'll continue testing the typing variants until their removal from the stdlib
-# ruff: noqa: UP006, UP035
+# ruff: noqa: UP006, UP035, UP007
 
 types_with_core_strat = {
     type_
@@ -171,9 +170,6 @@ def test_custom_type_resolution_with_function():
 
 def test_custom_type_resolution_with_function_non_strategy():
     with temp_registered(UnknownType, lambda _: None):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(ResolutionFailed):
             check_can_generate_examples(st.from_type(UnknownType))
         with pytest.raises(ResolutionFailed):
@@ -345,6 +341,7 @@ def test_issue_2951_regression_two_params():
     "generic",
     (
         Union[str, int],
+        str | int,
         Sequence[Sequence[int]],
         MyGeneric[str],
         Callable[..., str],
@@ -359,9 +356,6 @@ def test_generic_origin_with_type_args(generic, strategy):
     assert generic not in types._global_type_lookup
 
 
-skip_39 = pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="early version")
-
-
 @pytest.mark.parametrize(
     "generic",
     (
@@ -371,8 +365,8 @@ skip_39 = pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="early versi
         # you can register types with all generic parameters
         _List[T],
         getattr(typing, "Sequence", None)[T],  # pyupgrade workaround
-        pytest.param(list[T], marks=skip_39),
-        pytest.param(Sequence[T], marks=skip_39),
+        list[T],
+        Sequence[T],
         # User-defined generics should also work
         MyGeneric,
         MyGeneric[T],

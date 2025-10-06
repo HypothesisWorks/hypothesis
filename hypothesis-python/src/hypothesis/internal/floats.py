@@ -10,17 +10,15 @@
 
 import math
 import struct
+from collections.abc import Callable
 from sys import float_info
-from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
+from typing import Literal, SupportsFloat, TypeAlias
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
-SignedIntFormat: "TypeAlias" = Literal["!h", "!i", "!q"]
-UnsignedIntFormat: "TypeAlias" = Literal["!H", "!I", "!Q"]
-IntFormat: "TypeAlias" = Union[SignedIntFormat, UnsignedIntFormat]
-FloatFormat: "TypeAlias" = Literal["!e", "!f", "!d"]
-Width: "TypeAlias" = Literal[16, 32, 64]
+SignedIntFormat: TypeAlias = Literal["!h", "!i", "!q"]
+UnsignedIntFormat: TypeAlias = Literal["!H", "!I", "!Q"]
+IntFormat: TypeAlias = SignedIntFormat | UnsignedIntFormat
+FloatFormat: TypeAlias = Literal["!e", "!f", "!d"]
+Width: TypeAlias = Literal[16, 32, 64]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -37,7 +35,7 @@ TO_SIGNED_FORMAT: dict[UnsignedIntFormat, SignedIntFormat] = {
 }
 
 
-def reinterpret_bits(x: Union[float, int], from_: str, to: str) -> Union[float, int]:
+def reinterpret_bits(x: float | int, from_: str, to: str) -> float | int:
     x = struct.unpack(to, struct.pack(from_, x))[0]
     assert isinstance(x, (float, int))
     return x
@@ -185,7 +183,7 @@ def make_float_clamper(
     return float_clamper
 
 
-def sign_aware_lte(x: Union[float, int], y: Union[float, int]) -> bool:
+def sign_aware_lte(x: float | int, y: float | int) -> bool:
     """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
     if x == 0.0 == y:
         return math.copysign(1.0, x) <= math.copysign(1.0, y)
@@ -193,9 +191,7 @@ def sign_aware_lte(x: Union[float, int], y: Union[float, int]) -> bool:
         return x <= y
 
 
-def clamp(
-    lower: Union[float, int], value: Union[float, int], upper: Union[float, int]
-) -> Union[float, int]:
+def clamp(lower: float | int, value: float | int, upper: float | int) -> float | int:
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper.  NaN is mapped to lower."""
     # this seems pointless (and is for integers), but handles the -0.0/0.0 case.

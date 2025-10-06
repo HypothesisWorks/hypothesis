@@ -14,19 +14,18 @@ anything that lives here, please move it."""
 
 import array
 import gc
+import itertools
 import sys
 import time
 import warnings
 from array import ArrayType
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from threading import Lock
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
-    Optional,
     TypeVar,
     Union,
     overload,
@@ -70,7 +69,7 @@ class IntList(Sequence[int]):
     the new value."""
 
     ARRAY_CODES: ClassVar[list[str]] = ["B", "H", "I", "L", "Q", "O"]
-    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+    NEXT_ARRAY_CODE: ClassVar[dict[str, str]] = dict(itertools.pairwise(ARRAY_CODES))
 
     __slots__ = ("__underlying",)
 
@@ -87,7 +86,7 @@ class IntList(Sequence[int]):
             for v in underlying:
                 if not isinstance(v, int) or v < 0:
                     raise ValueError(f"Could not create IntList for {values!r}")
-        self.__underlying: Union[list[int], ArrayType[int]] = underlying
+        self.__underlying: list[int] | ArrayType[int] = underlying
 
     @classmethod
     def of_length(cls, n: int) -> "IntList":
@@ -116,14 +115,12 @@ class IntList(Sequence[int]):
     @overload
     def __getitem__(
         self, i: slice
-    ) -> Union[list[int], "ArrayType[int]"]: ...  # pragma: no cover
+    ) -> "list[int] | ArrayType[int]": ...  # pragma: no cover
 
-    def __getitem__(
-        self, i: Union[int, slice]
-    ) -> Union[int, list[int], "ArrayType[int]"]:
+    def __getitem__(self, i: int | slice) -> "int | list[int] | ArrayType[int]":
         return self.__underlying[i]
 
-    def __delitem__(self, i: Union[int, slice]) -> None:
+    def __delitem__(self, i: int | slice) -> None:
         del self.__underlying[i]
 
     def insert(self, i: int, v: int) -> None:
@@ -203,8 +200,8 @@ class LazySequenceCopy(Generic[T]):
     def __init__(self, values: Sequence[T]):
         self.__values = values
         self.__len = len(values)
-        self.__mask: Optional[dict[int, T]] = None
-        self.__popped_indices: Optional[SortedList[int]] = None
+        self.__mask: dict[int, T] | None = None
+        self.__popped_indices: SortedList[int] | None = None
 
     def __len__(self) -> int:
         if self.__popped_indices is None:
@@ -313,7 +310,7 @@ class StackframeLimiter:
     def __init__(self):
         self._active_contexts = 0
         self._known_limits: set[int] = set()
-        self._original_limit: Optional[int] = None
+        self._original_limit: int | None = None
 
     def _setrecursionlimit(self, new_limit: int, *, check: bool = True) -> None:
         if check and sys.getrecursionlimit() not in self._known_limits:
@@ -547,13 +544,13 @@ def gc_cumulative_time() -> float:
 def startswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
     if len(l1) < len(l2):
         return False
-    return all(v1 == v2 for v1, v2 in zip(l1[: len(l2)], l2))
+    return all(v1 == v2 for v1, v2 in zip(l1[: len(l2)], l2, strict=False))
 
 
 def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
     if len(l1) < len(l2):
         return False
-    return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))
+    return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2, strict=False))
 
 
 def bits_to_bytes(n: int) -> int:

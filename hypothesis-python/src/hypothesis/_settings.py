@@ -27,7 +27,6 @@ from typing import (
     ClassVar,
     Optional,
     TypeVar,
-    Union,
 )
 
 from hypothesis.errors import (
@@ -387,8 +386,8 @@ def _validate_suppress_health_check(suppressions):
 
 
 def _validate_deadline(
-    x: Union[int, float, datetime.timedelta, None],
-) -> Optional[duration]:
+    x: int | float | datetime.timedelta | None,
+) -> duration | None:
     if x is None:
         return x
     invalid_deadline_error = InvalidArgument(
@@ -551,7 +550,7 @@ class settings(metaclass=settingsMeta):
     """
 
     _profiles: ClassVar[dict[str, "settings"]] = {}
-    _current_profile: ClassVar[Optional[str]] = None
+    _current_profile: ClassVar[str | None] = None
 
     def __init__(
         self,
@@ -569,7 +568,7 @@ class settings(metaclass=settingsMeta):
         stateful_step_count: int = not_set,  # type: ignore
         report_multiple_bugs: bool = not_set,  # type: ignore
         suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
-        deadline: Union[int, float, datetime.timedelta, None] = not_set,  # type: ignore
+        deadline: int | float | datetime.timedelta | None = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
         backend: str = not_set,  # type: ignore
     ) -> None:

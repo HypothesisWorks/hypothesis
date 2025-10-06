@@ -9,15 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from typing import (
-    TYPE_CHECKING,
-    Callable,
     Literal,
-    Optional,
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -31,14 +28,11 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 T = TypeVar("T")
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
 
 class IntegerConstraints(TypedDict):
-    min_value: Optional[int]
-    max_value: Optional[int]
-    weights: Optional[dict[int, float]]
+    min_value: int | None
+    max_value: int | None
+    weights: dict[int, float] | None
     shrink_towards: int
 
 
@@ -64,24 +58,24 @@ class BooleanConstraints(TypedDict):
     p: float
 
 
-ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
-ChoiceConstraintsT: "TypeAlias" = Union[
-    IntegerConstraints,
-    FloatConstraints,
-    StringConstraints,
-    BytesConstraints,
-    BooleanConstraints,
-]
-ChoiceTypeT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
-ChoiceKeyT: "TypeAlias" = Union[
-    int, str, bytes, tuple[Literal["bool"], bool], tuple[Literal["float"], int]
-]
+ChoiceT: TypeAlias = int | str | bool | float | bytes
+ChoiceConstraintsT: TypeAlias = (
+    IntegerConstraints
+    | FloatConstraints
+    | StringConstraints
+    | BytesConstraints
+    | BooleanConstraints
+)
+ChoiceTypeT: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
+ChoiceKeyT: TypeAlias = (
+    int | str | bytes | tuple[Literal["bool"], bool] | tuple[Literal["float"], int]
+)
 
 
 @attr.s(slots=True)
 class ChoiceTemplate:
     type: Literal["simplest"] = attr.ib()
-    count: Optional[int] = attr.ib()
+    count: int | None = attr.ib()
 
     def __attrs_post_init__(self) -> None:
         if self.count is not None:
@@ -94,13 +88,13 @@ class ChoiceNode:
     value: ChoiceT = attr.ib()
     constraints: ChoiceConstraintsT = attr.ib()
     was_forced: bool = attr.ib()
-    index: Optional[int] = attr.ib(default=None)
+    index: int | None = attr.ib(default=None)
 
     def copy(
         self,
         *,
-        with_value: Optional[ChoiceT] = None,
-        with_constraints: Optional[ChoiceConstraintsT] = None,
+        with_value: ChoiceT | None = None,
+        with_constraints: ChoiceConstraintsT | None = None,
     ) -> "ChoiceNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.

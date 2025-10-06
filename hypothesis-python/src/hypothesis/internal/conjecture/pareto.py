@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from enum import Enum
 from random import Random
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING
 
 from sortedcontainers import SortedList
 
@@ -144,9 +144,9 @@ class ParetoFront:
         self.front: SortedList[ConjectureResult] = SortedList(
             key=lambda d: sort_key(d.nodes)
         )
-        self.__pending: Optional[ConjectureResult] = None
+        self.__pending: ConjectureResult | None = None
 
-    def add(self, data: Union[ConjectureData, ConjectureResult, _Overrun]) -> bool:
+    def add(self, data: ConjectureData | ConjectureResult | _Overrun) -> bool:
         """Attempts to add ``data`` to the pareto front. Returns True if
         ``data`` is now in the front, including if data is already in the
         collection, and False otherwise"""

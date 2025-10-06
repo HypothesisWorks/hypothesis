@@ -14,13 +14,11 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     NamedTuple,
-    Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     get_args,
 )
 from warnings import warn
@@ -54,9 +52,6 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
-
-if TYPE_CHECKING:
-    from typing import TypeAlias
 
 __all__ = [
     "make_strategies_namespace",
@@ -118,7 +113,7 @@ def warn_on_missing_dtypes(xp: Any, stubs: list[str]) -> None:
 
 def find_castable_builtin_for_dtype(
     xp: Any, api_version: NominalVersion, dtype: DataType
-) -> type[Union[bool, int, float, complex]]:
+) -> type[bool | int | float | complex]:
     """Returns builtin type which can have values that are castable to the given
     dtype, according to :xp-ref:`type promotion rules <type_promotion.html>`.
 
@@ -180,16 +175,16 @@ def dtype_from_name(xp: Any, name: str) -> Any:
 def _from_dtype(
     xp: Any,
     api_version: NominalVersion,
-    dtype: Union[DataType, str],
+    dtype: DataType | str,
     *,
-    min_value: Optional[Union[int, float]] = None,
-    max_value: Optional[Union[int, float]] = None,
-    allow_nan: Optional[bool] = None,
-    allow_infinity: Optional[bool] = None,
-    allow_subnormal: Optional[bool] = None,
-    exclude_min: Optional[bool] = None,
-    exclude_max: Optional[bool] = None,
-) -> st.SearchStrategy[Union[bool, int, float, complex]]:
+    min_value: int | float | None = None,
+    max_value: int | float | None = None,
+    allow_nan: bool | None = None,
+    allow_infinity: bool | None = None,
+    allow_subnormal: bool | None = None,
+    exclude_min: bool | None = None,
+    exclude_max: bool | None = None,
+) -> st.SearchStrategy[bool | int | float | complex]:
     """Return a strategy for any value of the given dtype.
 
     Values generated are of the Python scalar which is
@@ -456,11 +451,11 @@ class ArrayStrategy(st.SearchStrategy):
 def _arrays(
     xp: Any,
     api_version: NominalVersion,
-    dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
-    shape: Union[int, Shape, st.SearchStrategy[Shape]],
+    dtype: DataType | str | st.SearchStrategy[DataType] | st.SearchStrategy[str],
+    shape: int | Shape | st.SearchStrategy[Shape],
     *,
-    elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
-    fill: Optional[st.SearchStrategy[Any]] = None,
+    elements: Mapping[str, Any] | st.SearchStrategy | None = None,
+    fill: st.SearchStrategy[Any] | None = None,
     unique: bool = False,
 ) -> st.SearchStrategy:
     """Returns a strategy for :xp-ref:`arrays <array_object.html>`.
@@ -650,13 +645,13 @@ def numeric_dtype_names(base_name: str, sizes: Sequence[int]) -> Iterator[str]:
         yield f"{base_name}{size}"
 
 
-IntSize: "TypeAlias" = Literal[8, 16, 32, 64]
-FltSize: "TypeAlias" = Literal[32, 64]
-CpxSize: "TypeAlias" = Literal[64, 128]
+IntSize: TypeAlias = Literal[8, 16, 32, 64]
+FltSize: TypeAlias = Literal[32, 64]
+CpxSize: TypeAlias = Literal[64, 128]
 
 
 def _integer_dtypes(
-    xp: Any, *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: IntSize | Sequence[IntSize] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for signed integer dtype objects.
 
@@ -674,7 +669,7 @@ def _integer_dtypes(
 
 
 def _unsigned_integer_dtypes(
-    xp: Any, *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: IntSize | Sequence[IntSize] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for unsigned integer dtype objects.
 
@@ -694,7 +689,7 @@ def _unsigned_integer_dtypes(
 
 
 def _floating_dtypes(
-    xp: Any, *, sizes: Union[FltSize, Sequence[FltSize]] = (32, 64)
+    xp: Any, *, sizes: FltSize | Sequence[FltSize] = (32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for real-valued floating-point dtype objects.
 
@@ -712,7 +707,7 @@ def _floating_dtypes(
 
 
 def _complex_dtypes(
-    xp: Any, *, sizes: Union[CpxSize, Sequence[CpxSize]] = (64, 128)
+    xp: Any, *, sizes: CpxSize | Sequence[CpxSize] = (64, 128)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for complex dtype objects.
 
@@ -749,9 +744,9 @@ def mutually_broadcastable_shapes(
     *,
     base_shape: Shape = (),
     min_dims: int = 0,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     min_side: int = 1,
-    max_side: Optional[int] = None,
+    max_side: int | None = None,
 ) -> st.SearchStrategy[BroadcastableShapes]:
     return _mutually_broadcastable_shapes(
         num_shapes=num_shapes,
@@ -771,7 +766,7 @@ def indices(
     shape: Shape,
     *,
     min_dims: int = 0,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     allow_newaxis: bool = False,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
@@ -845,7 +840,7 @@ _args_to_xps: WeakValueDictionary = WeakValueDictionary()
 
 
 def make_strategies_namespace(
-    xp: Any, *, api_version: Optional[NominalVersion] = None
+    xp: Any, *, api_version: NominalVersion | None = None
 ) -> SimpleNamespace:
     """Creates a strategies namespace for the given array module.
 
@@ -923,16 +918,16 @@ def make_strategies_namespace(
 
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
-        dtype: Union[DataType, str],
+        dtype: DataType | str,
         *,
-        min_value: Optional[Union[int, float]] = None,
-        max_value: Optional[Union[int, float]] = None,
-        allow_nan: Optional[bool] = None,
-        allow_infinity: Optional[bool] = None,
-        allow_subnormal: Optional[bool] = None,
-        exclude_min: Optional[bool] = None,
-        exclude_max: Optional[bool] = None,
-    ) -> st.SearchStrategy[Union[bool, int, float, complex]]:
+        min_value: int | float | None = None,
+        max_value: int | float | None = None,
+        allow_nan: bool | None = None,
+        allow_infinity: bool | None = None,
+        allow_subnormal: bool | None = None,
+        exclude_min: bool | None = None,
+        exclude_max: bool | None = None,
+    ) -> st.SearchStrategy[bool | int | float | complex]:
         return _from_dtype(
             xp,
             api_version,
@@ -948,13 +943,11 @@ def make_strategies_namespace(
 
     @defines_strategy(force_reusable_values=True)
     def arrays(
-        dtype: Union[
-            DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]
-        ],
-        shape: Union[int, Shape, st.SearchStrategy[Shape]],
+        dtype: DataType | str | st.SearchStrategy[DataType] | st.SearchStrategy[str],
+        shape: int | Shape | st.SearchStrategy[Shape],
         *,
-        elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
-        fill: Optional[st.SearchStrategy[Any]] = None,
+        elements: Mapping[str, Any] | st.SearchStrategy | None = None,
+        fill: st.SearchStrategy[Any] | None = None,
         unique: bool = False,
     ) -> st.SearchStrategy:
         return _arrays(
@@ -985,19 +978,19 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def integer_dtypes(
-        *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
+        *, sizes: IntSize | Sequence[IntSize] = (8, 16, 32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _integer_dtypes(xp, sizes=sizes)
 
     @defines_strategy()
     def unsigned_integer_dtypes(
-        *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
+        *, sizes: IntSize | Sequence[IntSize] = (8, 16, 32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _unsigned_integer_dtypes(xp, sizes=sizes)
 
     @defines_strategy()
     def floating_dtypes(
-        *, sizes: Union[FltSize, Sequence[FltSize]] = (32, 64)
+        *, sizes: FltSize | Sequence[FltSize] = (32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _floating_dtypes(xp, sizes=sizes)
 
@@ -1058,7 +1051,7 @@ def make_strategies_namespace(
 
         @defines_strategy()
         def complex_dtypes(
-            *, sizes: Union[CpxSize, Sequence[CpxSize]] = (64, 128)
+            *, sizes: CpxSize | Sequence[CpxSize] = (64, 128)
         ) -> st.SearchStrategy[DataType]:
             return _complex_dtypes(xp, sizes=sizes)
 

@@ -18,13 +18,13 @@ import of Hypothesis itself from each subprocess which must import the worker fu
 
 import importlib
 import sys
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     from multiprocessing import Queue
-    from typing import TypeAlias
 
-FTZCulprits: "TypeAlias" = tuple[Optional[bool], set[str]]
+FTZCulprits: TypeAlias = tuple[bool | None, set[str]]
 
 
 KNOWN_EVER_CULPRITS = (
