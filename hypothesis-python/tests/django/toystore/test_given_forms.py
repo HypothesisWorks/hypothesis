@@ -29,6 +29,7 @@ from tests.django.toystore.forms import (
     CustomerForm,
     DynamicForm,
     EmailFieldForm,
+    FileFieldsForm,
     InternetProtocolForm,
     ManyMultiValueForm,
     ManyNumericsForm,
@@ -134,6 +135,12 @@ class TestGetsBasicForms(TestCase):
         self.assertTrue(1 <= x.data["_decimal_one_to_five"] <= 5)
         self.assertTrue(1 <= x.data["_float_one_to_five"] <= 5)
         self.assertTrue(5 <= len(x.data["_string_five_to_ten"]) <= 10)
+
+    @given(from_form(FileFieldsForm))
+    def test_file_fields_form(self, x):
+        assert x.is_valid()
+        if "file1" in x.data:
+            self.assertTrue(x.data["file1"])
 
     @skipIf(not has_contrib_auth, "contrib.auth not installed")
     @given(from_form(UsernameForm))
