@@ -211,8 +211,6 @@ def from_form(
             file_strategies if isinstance(form_field, df.FileField) else data_strategies
         )
         dictionary[name] = field
-    # no longer necessary
-    del field_strategies
 
     return _forms_impl(
         st.builds(
