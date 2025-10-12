@@ -570,13 +570,13 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.23",
-    "3.10": "3.10.18",
-    "3.11": "3.11.13",
-    "3.12": "3.12.11",
-    "3.13": "3.13.7",
+    "3.9": "3.9.24",
+    "3.10": "3.10.19",
+    "3.11": "3.11.14",
+    "3.12": "3.12.12",
+    "3.13": "3.13.8",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0rc3",
+    "3.14": "3.14.0",
     "3.14t": "3.14t-dev",
     "3.15": "3.15-dev",
     "3.15t": "3.15t-dev",
