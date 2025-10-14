@@ -22,7 +22,8 @@ import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
+from enum import Enum
 from functools import lru_cache
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
@@ -48,6 +49,19 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from hypothesis.internal.conjecture.data import ConjectureData, Spans, Status
+
+
+class ObservabilityOption(Enum):
+    """
+    Internal representation of the string options passed to
+    |settings.observability|.
+    """
+
+    coverage = "coverage"
+    choices = "choices"
+
+    def __repr__(self) -> str:
+        return f"ObservabilityOption.{self.name}"
 
 
 Observation: "TypeAlias" = Union["InfoObservation", "TestCaseObservation"]
@@ -320,7 +334,12 @@ def observability_enabled() -> bool:
 
 @contextmanager
 def with_observability_callback(
-    f: Callable[[Observation], None], /, *, all_threads: bool = False
+    # first type here is for all_threads=False, and second is for all_threads=True.
+    # The latter additionally passes a thread_id: int.
+    f: Union[Callable[[Observation], None], Callable[[Observation, int], None]],
+    /,
+    *,
+    all_threads: bool = False,
 ) -> Generator[None, None, None]:
     """
     A simple context manager which calls |add_observability_callback| on ``f``
@@ -403,6 +422,9 @@ def make_testcase(
     # added to calculated metadata. If keys overlap, the value from this `metadata`
     # is used
     metadata: Optional[dict[str, Any]] = None,
+    # Extra observability output options. See settings.observability
+    # and settings._observability_options.
+    options: tuple[ObservabilityOption, ...],
 ) -> TestCaseObservation:
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status
@@ -432,6 +454,11 @@ def make_testcase(
     if status is None:
         status = status_map[data.status]
 
+    coverage_enabled = (
+        ObservabilityOption.coverage in options or OBSERVABILITY_COLLECT_COVERAGE
+    )
+    choices_enabled = ObservabilityOption.choices in options or OBSERVABILITY_CHOICES
+
     return TestCaseObservation(
         type="test_case",
         status=status,
@@ -447,7 +474,7 @@ def make_testcase(
             },
             **data.events,
         },
-        coverage=coverage,
+        coverage=coverage if coverage_enabled else None,
         timing=timing,
         metadata=ObservationMetadata(
             **{
@@ -460,8 +487,8 @@ def make_testcase(
                 "data_status": data.status,
                 "phase": phase,
                 "interesting_origin": data.interesting_origin,
-                "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
-                "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
+                "choice_nodes": (data.nodes if choices_enabled else None),
+                "choice_spans": (data.spans if choices_enabled else None),
                 **_system_metadata(),
                 # unpack last so it takes precedence for duplicate keys
                 **(metadata or {}),
@@ -512,47 +539,44 @@ def _system_metadata() -> dict[str, Any]:
     }
 
 
-#: If ``False``, do not collect coverage information when observability is enabled.
-#:
-#: This is exposed both for performance (as coverage collection can be slow on
-#: Python 3.11 and earlier) and size (if you do not use coverage information,
-#: you may not want to store it in-memory).
-OBSERVABILITY_COLLECT_COVERAGE = (
-    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
-)
-#: If ``True``, include the ``metadata.choice_nodes`` and ``metadata.spans`` keys
-#: in test case observations.
-#:
-#: ``False`` by default. ``metadata.choice_nodes`` and ``metadata.spans`` can be
-#: a substantial amount of data, and so must be opted-in to, even when
-#: observability is enabled.
-#:
-#: .. warning::
-#:
-#:     EXPERIMENTAL AND UNSTABLE. We are actively working towards a better
-#:     interface for this as of June 2025, and this attribute may disappear or
-#:     be renamed without notice.
-#:
-OBSERVABILITY_CHOICES = "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICES" in os.environ
+envvar_observability: Union[bool, tuple[ObservabilityOption, ...]] = False
 
-if OBSERVABILITY_COLLECT_COVERAGE is False and (
-    sys.version_info[:2] >= (3, 12)
-):  # pragma: no cover
-    warnings.warn(
-        "Coverage data collection should be quite fast in Python 3.12 or later "
-        "so there should be no need to turn coverage reporting off.",
-        HypothesisWarning,
-        stacklevel=2,
-    )
+# supported for backwards compat. These were always marked experimental, so they
+# can be removed whenever. 6 months would be more than generous.
+if (
+    envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY")
+) is not None:  # pragma: no cover
+    envvar_observability = True
 
 if (
-    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ
-    or OBSERVABILITY_COLLECT_COVERAGE is False
-):  # pragma: no cover
-    add_observability_callback(_deliver_to_file, all_threads=True)
+    envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICES")
+) is not None:  # pragma: no cover
+    envvar_observability = (ObservabilityOption.choices,)
 
-    # Remove files more than a week old, to cap the size on disk
-    max_age = (date.today() - timedelta(days=8)).isoformat()
-    for f in storage_directory("observed", intent_to_write=False).glob("*.jsonl"):
-        if f.stem < max_age:  # pragma: no branch
-            f.unlink(missing_ok=True)
+if (
+    envvar_value := os.environ.get("HYPOTHESIS_OBSERVABILITY")
+) is not None:  # pragma: no cover
+    observability: Union[bool, tuple[ObservabilityOption, ...]] = False
+
+    if envvar_value in {"True", "true", "1"}:
+        observability = True
+    elif envvar_value in {"False", "false", "0"}:
+        observability = False
+    else:
+        try:
+            values = [v.strip() for v in envvar_value.split(",")]
+            observability = tuple(ObservabilityOption(value) for value in values)
+        except Exception:
+            warnings.warn(
+                f"could not parse HYPOTHESIS_OBSERVABILITY={envvar_value!r} as a "
+                "valid value for settings.observability",
+                HypothesisWarning,
+                stacklevel=1,
+            )
+
+    envvar_observability = observability
+
+# internal attrs. left for monkeypatching, for now, until we figure out a better
+# way to handle observability options that don't want to write to .hypothesis/observed.
+OBSERVABILITY_COLLECT_COVERAGE = False
+OBSERVABILITY_CHOICES = False

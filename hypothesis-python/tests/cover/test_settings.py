@@ -34,6 +34,7 @@ from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
 )
+from hypothesis.internal.observability import ObservabilityOption
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 
@@ -381,22 +382,6 @@ def test_deadline_given_valid_timedelta():
     assert x.microseconds == 30000
 
 
-@pytest.mark.parametrize(
-    "x",
-    [
-        0,
-        -0.7,
-        -1,
-        86400000000000000.2,
-        datetime.timedelta(microseconds=-1),
-        datetime.timedelta(0),
-    ],
-)
-def test_invalid_deadline(x):
-    with pytest.raises(InvalidArgument):
-        settings(deadline=x)
-
-
 @pytest.mark.parametrize("value", ["always"])
 def test_can_not_set_print_blob_to_non_print_settings(value):
     with pytest.raises(InvalidArgument):
@@ -467,9 +452,17 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"stateful_step_count": 2.5},
         {"deadline": -1},
         {"deadline": 0},
+        {"deadline": -0.7},
+        {"deadline": 86400000000000000.2},
+        {"deadline": datetime.timedelta(microseconds=-1)},
+        {"deadline": datetime.timedelta(0)},
         {"deadline": True},
         {"deadline": False},
         {"backend": "this_backend_does_not_exist"},
+        {"observability": ["this_option_does_not_exist"]},
+        # "coverage" is a valid single option, but must be passed as a collection. So
+        # observability=["coverage"] is valid, for example.
+        {"observability": "coverage"},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
@@ -484,10 +477,8 @@ def test_invalid_parent():
 
     not_settings = NotSettings()
 
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument, match=r"parent=\(not settings repr\)"):
         settings(not_settings)
-
-    assert "parent=(not settings repr)" in str(excinfo.value)
 
 
 def test_default_settings_do_not_use_ci():
@@ -611,3 +602,21 @@ def test_register_profile_avoids_intermediate_profiles():
     s = settings(parent, max_examples=10)
     with temp_register_profile("for_intermediate_test", s):
         assert settings.get_profile("for_intermediate_test")._fallback is parent
+
+
+@pytest.mark.parametrize(
+    "observability, options",
+    [
+        # any collection is valid
+        ({"choices"}, (ObservabilityOption.choices,)),
+        (["choices"], (ObservabilityOption.choices,)),
+        (("choices",), (ObservabilityOption.choices,)),
+        ([], ()),
+        # as is any boolean
+        (True, ()),
+        (False, ()),
+    ],
+)
+def test_observability_options(observability, options):
+    s = settings(observability=observability)
+    assert s._observability_options == options

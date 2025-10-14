@@ -36,8 +36,6 @@ Observability
 .. autofunction:: hypothesis.internal.observability.observability_enabled
 
 .. autodata:: hypothesis.internal.observability.TESTCASE_CALLBACKS
-.. autodata:: hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
-.. autodata:: hypothesis.internal.observability.OBSERVABILITY_CHOICES
 
 Engine constants
 ----------------
