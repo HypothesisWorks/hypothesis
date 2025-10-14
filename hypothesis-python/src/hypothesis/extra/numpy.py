@@ -427,6 +427,8 @@ def arrays(
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
 ) -> "st.SearchStrategy[NDArray[G]]": ...
+
+
 @overload
 def arrays(
     dtype: Union[D, st.SearchStrategy[D]],
@@ -436,6 +438,8 @@ def arrays(
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
 ) -> "st.SearchStrategy[NDArray[Any]]": ...
+
+
 @defines_strategy(force_reusable_values=True)
 def arrays(
     dtype: Union[D, st.SearchStrategy[D]],
@@ -624,30 +628,40 @@ def unsigned_integer_dtypes(
     endianness: str = "?",
     sizes: Literal[8],
 ) -> st.SearchStrategy["np.dtype[np.uint8]"]: ...
+
+
 @overload
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[16],
 ) -> st.SearchStrategy["np.dtype[np.uint16]"]: ...
+
+
 @overload
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[32],
 ) -> st.SearchStrategy["np.dtype[np.uint32]"]: ...
+
+
 @overload
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[64],
 ) -> st.SearchStrategy["np.dtype[np.uint64]"]: ...
+
+
 @overload
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
 ) -> st.SearchStrategy["np.dtype[np.unsignedinteger[Any]]"]: ...
+
+
 @defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
@@ -677,30 +691,40 @@ def integer_dtypes(
     endianness: str = "?",
     sizes: Literal[8],
 ) -> st.SearchStrategy["np.dtype[np.int8]"]: ...
+
+
 @overload
 def integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[16],
 ) -> st.SearchStrategy["np.dtype[np.int16]"]: ...
+
+
 @overload
 def integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[32],
 ) -> st.SearchStrategy["np.dtype[np.int32]"]: ...
+
+
 @overload
 def integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[64],
 ) -> st.SearchStrategy["np.dtype[np.int64]"]: ...
+
+
 @overload
 def integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
 ) -> st.SearchStrategy["np.dtype[np.signedinteger[Any]]"]: ...
+
+
 @defines_dtype_strategy
 def integer_dtypes(
     *,
@@ -726,30 +750,40 @@ def floating_dtypes(
     endianness: str = "?",
     sizes: Literal[16],
 ) -> st.SearchStrategy["np.dtype[np.float16]"]: ...
+
+
 @overload
 def floating_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[32],
 ) -> st.SearchStrategy["np.dtype[np.float32]"]: ...
+
+
 @overload
 def floating_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[64],
 ) -> st.SearchStrategy["np.dtype[np.float64]"]: ...
+
+
 @overload
 def floating_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[128],
 ) -> st.SearchStrategy["np.dtype[np.float128]"]: ...
+
+
 @overload
 def floating_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[16, 32, 64, 96, 128]] = (16, 32, 64),
 ) -> st.SearchStrategy["np.dtype[np.floating[Any]]"]: ...
+
+
 @defines_dtype_strategy
 def floating_dtypes(
     *,
@@ -776,24 +810,32 @@ def complex_number_dtypes(
     endianness: str = "?",
     sizes: Literal[64],
 ) -> st.SearchStrategy["np.dtype[np.complex64]"]: ...
+
+
 @overload
 def complex_number_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[128],
 ) -> st.SearchStrategy["np.dtype[np.complex128]"]: ...
+
+
 @overload
 def complex_number_dtypes(
     *,
     endianness: str = "?",
     sizes: Literal[256],
 ) -> st.SearchStrategy["np.dtype[np.complex256]"]: ...
+
+
 @overload
 def complex_number_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[64, 128, 192, 256]] = (64, 128),
 ) -> st.SearchStrategy["np.dtype[np.complexfloating[Any, Any]]"]: ...
+
+
 @defines_dtype_strategy
 def complex_number_dtypes(
     *,
@@ -1117,6 +1159,8 @@ def integer_array_indices(
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
 ) -> "st.SearchStrategy[tuple[NDArray[np.signedinteger[Any]], ...]]": ...
+
+
 @overload
 def integer_array_indices(
     shape: Shape,
@@ -1124,6 +1168,8 @@ def integer_array_indices(
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: "np.dtype[I]",
 ) -> "st.SearchStrategy[tuple[NDArray[I], ...]]": ...
+
+
 @defines_strategy()
 def integer_array_indices(
     shape: Shape,
