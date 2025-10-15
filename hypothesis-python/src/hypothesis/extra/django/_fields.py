@@ -33,11 +33,8 @@ from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
 from hypothesis.strategies import emails
 
-# for some reason, when building docs with sphinx-build, dm.Field and df.Field
-# are both *instances* of a type, not a type itself. New-style unions fail on this.
-# I'm not sure the root cause but I'm leaving it for another day.
-#
-# assert isinstance(dm.Field, type) # <-- this should never fail, but does under sphinx-build
+# Use old-style union to avoid hitting
+# https://github.com/sphinx-doc/sphinx/issues/11211
 AnyField: TypeAlias = Union[dm.Field, df.Field]  # noqa: UP007
 F = TypeVar("F", bound=AnyField)
 

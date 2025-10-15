@@ -258,8 +258,9 @@ def series(
     *,
     elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
-    # new-style unions fail during docs sphinx-build here. See related comment in
-    # django/_fields.py. Quotes are to avoid shed/upgrade changing it.
+    # new-style unions hit https://github.com/sphinx-doc/sphinx/issues/11211 during
+    # doc builds. See related comment in django/_fields.py. Quote to prevent
+    # shed/pyupgrade from changing it.
     index: (
         st.SearchStrategy["Union[Sequence, pandas.Index]"] | None  # noqa: UP007
     ) = None,
