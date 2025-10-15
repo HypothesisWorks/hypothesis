@@ -523,7 +523,7 @@ def test_gets_public_location_not_impl_location():
     assert ghostwriter._get_module(assume) == "hypothesis"  # not "hypothesis.control"
 
 
-class A:
+class ForwardRefA:
     pass
 
 
@@ -537,9 +537,9 @@ class A:
             if sys.version_info[:2] < (3, 14)
             else [
                 (
-                    ForwardRef("A", owner=A),
+                    ForwardRef("ForwardRefA", owner=A),
                     ghostwriter._AnnotationData(
-                        "test_ghostwriter.A", {"test_ghostwriter"}
+                        "test_ghostwriter.ForwardRefA", {"test_ghostwriter"}
                     ),
                 )
             ]
