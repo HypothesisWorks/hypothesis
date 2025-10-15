@@ -13,6 +13,7 @@ import enum
 import json
 import re
 import socket
+import sys
 import unittest
 import unittest.mock
 from collections.abc import KeysView, Sequence, Sized, ValuesView
@@ -20,7 +21,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, ModuleType
-from typing import Any, Union
+from typing import Any, ForwardRef, Union
 
 import attr
 import click
@@ -520,3 +521,30 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
 
 def test_gets_public_location_not_impl_location():
     assert ghostwriter._get_module(assume) == "hypothesis"  # not "hypothesis.control"
+
+
+class A:
+    pass
+
+
+@pytest.mark.parametrize(
+    "parameter, type_name",
+    [
+        (ForwardRef("this_ref_does_not_exist"), None),
+        # ForwardRef.evaluate() logic is new in 3.14
+        *(
+            []
+            if sys.version_info[:2] < (3, 14)
+            else [
+                (
+                    ForwardRef("A", owner=A),
+                    ghostwriter._AnnotationData(
+                        "test_ghostwriter.A", {"test_ghostwriter"}
+                    ),
+                )
+            ]
+        ),
+    ],
+)
+def test_parameter_to_annotation(parameter, type_name):
+    assert ghostwriter._parameter_to_annotation(parameter) == type_name
