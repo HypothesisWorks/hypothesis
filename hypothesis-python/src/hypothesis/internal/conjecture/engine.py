@@ -937,8 +937,8 @@ class ConjectureRunner:
             max_age = (date.today() - timedelta(days=8)).isoformat()
             for f in storage_directory("observed", intent_to_write=False).glob(
                 "*.jsonl"
-            ):
-                if f.stem < max_age:  # pragma: no branch
+            ):  # pragma: no cover
+                if f.stem < max_age:
                     f.unlink(missing_ok=True)
             _have_evicted_observations = True
 
