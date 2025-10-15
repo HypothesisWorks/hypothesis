@@ -139,8 +139,10 @@ class TestGetsBasicForms(TestCase):
     @given(from_form(FileFieldsForm))
     def test_file_fields_form(self, x):
         assert x.is_valid()
-        if "file1" in x.data:
-            self.assertTrue(x.data["file1"])
+        # form.data is empty, and form.files has one entry: file1
+        self.assertFalse(x.data)
+        self.assertTrue(set(x.files.keys()) == {"file1"})
+        self.assertTrue(x.files["file1"])
 
     @skipIf(not has_contrib_auth, "contrib.auth not installed")
     @given(from_form(UsernameForm))
