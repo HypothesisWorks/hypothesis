@@ -19,6 +19,7 @@ from typing import Any, TypeAlias, TypeVar, Union
 import django
 from django import forms as df
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.validators import (
     validate_ipv4_address,
     validate_ipv6_address,
@@ -101,6 +102,9 @@ _global_field_lookup: _FieldLookUpType = {
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
+    df.FileField: st.builds(
+        ContentFile, st.binary(min_size=1), name=st.text(min_size=1, max_size=100)
+    ),
 }
 
 _ipv6_strings = st.one_of(

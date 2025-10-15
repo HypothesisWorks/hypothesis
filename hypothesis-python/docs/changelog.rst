@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.141.0:
+
+--------------------
+6.141.0 - 2025-10-15
+--------------------
+
+The |django.from_field| and |django.from_form| strategies from our :ref:`Django extra <hypothesis-django>` now support :obj:`~django:django.db.models.FileField`.
+
+Thanks to Arjoonn Sharma for this fix!
+
 .. _v6.140.4:
 
 --------------------

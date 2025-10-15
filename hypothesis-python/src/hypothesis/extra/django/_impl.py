@@ -11,7 +11,7 @@
 import unittest
 from functools import partial
 from types import EllipsisType
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -162,7 +162,6 @@ def from_form(
     # currently unsupported:
     # ComboField
     # FilePathField
-    # FileField
     # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
@@ -191,6 +190,7 @@ def from_form(
                 fields_by_name[f"{name}_{i}"] = _field
         else:
             fields_by_name[name] = field
+
     for name, value in sorted(field_strategies.items()):
         if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
@@ -199,10 +199,24 @@ def from_form(
         if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
 
+    # files are handled a bit specially in forms. A Form accepts two arguments:
+    # `data` and `files`. The former is for normal fields, and the latter is for
+    # file fields.
+    # see https://docs.djangoproject.com/en/5.1/ref/forms/api/#binding-uploaded-files.
+    data_strategies: dict[str, Any] = {}
+    file_strategies: dict[str, Any] = {}
+    for name, field in field_strategies.items():
+        form_field = fields_by_name[name]
+        dictionary = (
+            file_strategies if isinstance(form_field, df.FileField) else data_strategies
+        )
+        dictionary[name] = field
+
     return _forms_impl(
         st.builds(
             partial(form, **form_kwargs),  # type: ignore
-            data=st.fixed_dictionaries(field_strategies),  # type: ignore
+            data=st.fixed_dictionaries(data_strategies),
+            files=st.fixed_dictionaries(file_strategies),
         )
     )
 
