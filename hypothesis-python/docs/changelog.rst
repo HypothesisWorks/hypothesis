@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.140.4:
+
+--------------------
+6.140.4 - 2025-10-14
+--------------------
+
+Clean up internal ``@overload`` type annotations.
+
 .. _v6.140.3:
 
 --------------------
