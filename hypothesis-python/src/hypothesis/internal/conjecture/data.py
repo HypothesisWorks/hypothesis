@@ -605,7 +605,7 @@ class ConjectureData:
         choices: Sequence[ChoiceTemplate | ChoiceT],
         *,
         observer: DataObserver | None = None,
-        provider: type | PrimitiveProvider = HypothesisProvider,
+        provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
         random: Random | None = None,
     ) -> "ConjectureData":
         from hypothesis.internal.conjecture.engine import choice_count
@@ -623,7 +623,7 @@ class ConjectureData:
         *,
         random: Random | None,
         observer: DataObserver | None = None,
-        provider: type | PrimitiveProvider = HypothesisProvider,
+        provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
         prefix: Sequence[ChoiceTemplate | ChoiceT] | None = None,
         max_choices: int | None = None,
         provider_kw: dict[str, Any] | None = None,

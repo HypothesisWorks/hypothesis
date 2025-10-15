@@ -169,7 +169,7 @@ class RunIsComplete(Exception):
     pass
 
 
-def _get_provider(backend: str) -> type | PrimitiveProvider:
+def _get_provider(backend: str) -> PrimitiveProvider | type[PrimitiveProvider]:
     provider_cls = AVAILABLE_PROVIDERS[backend]
     if isinstance(provider_cls, str):
         module_name, class_name = provider_cls.rsplit(".", 1)
@@ -316,7 +316,9 @@ class ConjectureRunner:
         self.shrunk_examples: set[InterestingOrigin] = set()
         self.health_check_state: HealthCheckState | None = None
         self.tree: DataTree = DataTree()
-        self.provider: type | PrimitiveProvider = _get_provider(self.settings.backend)
+        self.provider: PrimitiveProvider | type[PrimitiveProvider] = _get_provider(
+            self.settings.backend
+        )
 
         self.best_observed_targets: defaultdict[str, float] = defaultdict(
             lambda: NO_SCORE

@@ -33,6 +33,7 @@ from typing import (
     Concatenate,
     Literal,
     NoReturn,
+    ParamSpec,
     Protocol,
     TypeAlias,
     TypeVar,
@@ -69,7 +70,6 @@ from hypothesis.internal.charmap import (
     categories as all_categories,
 )
 from hypothesis.internal.compat import (
-    ParamSpec,
     bit_count,
     ceil,
     floor,

@@ -38,7 +38,6 @@ except NameError:
 if TYPE_CHECKING:
     from typing_extensions import (
         NotRequired as NotRequired,
-        ParamSpec as ParamSpec,
         TypedDict as TypedDict,
         override as override,
     )
@@ -64,17 +63,14 @@ else:
 
     try:
         from typing import (
-            ParamSpec as ParamSpec,
             override as override,
         )
     except ImportError:
         try:
             from typing_extensions import (
-                ParamSpec as ParamSpec,
                 override as override,
             )
         except ImportError:
-            ParamSpec = None
             override = lambda f: f
 
 PYPY = platform.python_implementation() == "PyPy"
