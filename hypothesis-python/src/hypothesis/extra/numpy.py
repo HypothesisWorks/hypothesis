@@ -419,7 +419,6 @@ G = TypeVar("G", bound="np.generic")
 
 
 @overload
-@defines_strategy(force_reusable_values=True)
 def arrays(
     dtype: Union["np.dtype[G]", st.SearchStrategy["np.dtype[G]"]],
     shape: int | st.SearchStrategy[int] | Shape | st.SearchStrategy[Shape],
@@ -431,7 +430,6 @@ def arrays(
 
 
 @overload
-@defines_strategy(force_reusable_values=True)
 def arrays(
     dtype: D | st.SearchStrategy[D],
     shape: int | st.SearchStrategy[int] | Shape | st.SearchStrategy[Shape],
@@ -625,7 +623,6 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 
 @overload
-@defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
@@ -634,7 +631,6 @@ def unsigned_integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
@@ -643,7 +639,6 @@ def unsigned_integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
@@ -652,7 +647,6 @@ def unsigned_integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
@@ -661,7 +655,6 @@ def unsigned_integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
@@ -693,7 +686,6 @@ def unsigned_integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def integer_dtypes(
     *,
     endianness: str = "?",
@@ -702,7 +694,6 @@ def integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def integer_dtypes(
     *,
     endianness: str = "?",
@@ -711,7 +702,6 @@ def integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def integer_dtypes(
     *,
     endianness: str = "?",
@@ -720,7 +710,6 @@ def integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def integer_dtypes(
     *,
     endianness: str = "?",
@@ -729,7 +718,6 @@ def integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def integer_dtypes(
     *,
     endianness: str = "?",
@@ -757,7 +745,6 @@ def integer_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def floating_dtypes(
     *,
     endianness: str = "?",
@@ -766,7 +753,6 @@ def floating_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def floating_dtypes(
     *,
     endianness: str = "?",
@@ -775,7 +761,6 @@ def floating_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def floating_dtypes(
     *,
     endianness: str = "?",
@@ -784,7 +769,6 @@ def floating_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def floating_dtypes(
     *,
     endianness: str = "?",
@@ -793,7 +777,6 @@ def floating_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def floating_dtypes(
     *,
     endianness: str = "?",
@@ -824,7 +807,6 @@ def floating_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def complex_number_dtypes(
     *,
     endianness: str = "?",
@@ -833,7 +815,6 @@ def complex_number_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def complex_number_dtypes(
     *,
     endianness: str = "?",
@@ -842,7 +823,6 @@ def complex_number_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def complex_number_dtypes(
     *,
     endianness: str = "?",
@@ -851,7 +831,6 @@ def complex_number_dtypes(
 
 
 @overload
-@defines_dtype_strategy
 def complex_number_dtypes(
     *,
     endianness: str = "?",
@@ -1177,7 +1156,6 @@ I = TypeVar("I", bound=np.integer)
 
 
 @overload
-@defines_strategy()
 def integer_array_indices(
     shape: Shape,
     *,
@@ -1186,7 +1164,6 @@ def integer_array_indices(
 
 
 @overload
-@defines_strategy()
 def integer_array_indices(
     shape: Shape,
     *,

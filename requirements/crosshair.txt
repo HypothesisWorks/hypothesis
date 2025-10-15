@@ -4,13 +4,13 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   cattrs
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   lsprotocol
-cattrs==25.2.0
+cattrs==25.3.0
     # via
     #   lsprotocol
     #   pygls
@@ -64,7 +64,7 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
-tomli==2.2.1
+tomli==2.3.0
     # via pytest
 typeshed-client==2.8.2
     # via crosshair-tool
