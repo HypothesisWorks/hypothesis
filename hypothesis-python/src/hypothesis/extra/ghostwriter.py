@@ -978,9 +978,22 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
         return None
 
     if isinstance(parameter, ForwardRef):
-        forwarded_value = parameter.__forward_value__
-        if forwarded_value is None:
-            return None
+        if sys.version_info[:2] < (3, 14):
+            forwarded_value = parameter.__forward_value__
+            if forwarded_value is None:
+                return None
+        else:
+            # ForwardRef.__forward_value__ was removed in 3.14 in favor of
+            # ForwardRef.evaluate(). See also PEP 649, PEP 749, and
+            # typing.evaluate_forward_ref.
+            #
+            # .evaluate() with Format.VALUE (the default) throws if the name
+            # could not be resolved.
+            # https://docs.python.org/3.14/library/annotationlib.html#annotationlib.ForwardRef.evaluate
+            try:
+                forwarded_value = parameter.evaluate()
+            except Exception:
+                return None
         return _parameter_to_annotation(forwarded_value)
 
     # the arguments of Callable are in a list

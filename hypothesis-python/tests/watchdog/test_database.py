@@ -119,17 +119,25 @@ def test_database_listener_directory_explicit(tmp_path):
     def listener(event):
         events.append(event)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
 
     db.save(b"k1", b"v1")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.remove_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v1")
     db.save(b"k1", b"v2")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v2")
     db.save(b"k1", b"v3")
     wait_for(

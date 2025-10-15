@@ -18,6 +18,32 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.141.1:
+
+--------------------
+6.141.1 - 2025-10-15
+--------------------
+
+Fixes an error when using :ref:`the Ghostwriter <ghostwriter>` with annotations that include :obj:`python:typing.ForwardRef` on Python 3.14 (:issue:`4565`).
+
+.. _v6.141.0:
+
+--------------------
+6.141.0 - 2025-10-15
+--------------------
+
+The |django.from_field| and |django.from_form| strategies from our :ref:`Django extra <hypothesis-django>` now support :obj:`~django:django.db.models.FileField`.
+
+Thanks to Arjoonn Sharma for this fix!
+
+.. _v6.140.4:
+
+--------------------
+6.140.4 - 2025-10-14
+--------------------
+
+Clean up internal ``@overload`` type annotations.
+
 .. _v6.140.3:
 
 --------------------

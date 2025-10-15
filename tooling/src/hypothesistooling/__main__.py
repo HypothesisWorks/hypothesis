@@ -265,7 +265,31 @@ def check_format():
                 print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
-    check_not_changed()
+    try:
+        check_not_changed()
+    except Exception:
+        box_width = 50
+        inner_width = box_width - 2
+        content_width = inner_width - 2
+        msg1 = "Note: code differed after formatting."
+        msg2 = "To fix this, run:"
+        msg3 = "    ./build.sh format"
+
+        lines = [
+            "",
+            "    " + "*" * box_width,
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg1 + " " * (content_width - len(msg1)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg2 + " " * (content_width - len(msg2)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg3 + " " * (content_width - len(msg3)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    " + "*" * box_width,
+            "",
+        ]
+        print("\n".join(lines), file=sys.stderr)
+        raise
 
 
 def check_not_changed():
