@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.141.1:
+
+--------------------
+6.141.1 - 2025-10-15
+--------------------
+
+Fixes an error when using :ref:`the Ghostwriter <ghostwriter>` with annotations that include :obj:`python:typing.ForwardRef` on Python 3.14 (:issue:`4565`).
+
 .. _v6.141.0:
 
 --------------------
