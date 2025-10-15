@@ -9,4 +9,4 @@ Observability can be controlled in two ways:
 
 See :ref:`Configuring observability <observability-configuration>` for details.
 
-If you use VSCode, we recommend the `tyche <https://github.com/tyche-pbt/tyche-extension>` extension, a PBT-specific visualization tool designed for Hypothesis's observability interface.
+If you use VSCode, we recommend the `Tyche <https://github.com/tyche-pbt/tyche-extension>`__ extension, a PBT-specific visualization tool designed for Hypothesis's observability interface.
