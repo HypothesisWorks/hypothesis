@@ -1,6 +1,5 @@
 RELEASE_TYPE: minor
 
-This release fixes file field handling for django forms when using
-:func:`~hypothesis.extra.django.from_form` (:issue:`4093`).
+The |django.from_field| and |django.from_form| strategies from our :ref:`Django extra <hypothesis-django>` now support :obj:`~django:django.db.models.FileField`.
 
 Thanks to Arjoonn Sharma for this fix!
