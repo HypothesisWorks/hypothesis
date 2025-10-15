@@ -105,6 +105,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     InfoObservation,
     InfoObservationType,
+    ObservabilityOption,
     deliver_observation,
     make_testcase,
     observability_enabled,
@@ -692,6 +693,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         how_generated="explicit example",
                         representation=state._string_repr,
                         timing=state._timing_features,
+                        options=state.settings._observability_options,
                     )
                     deliver_observation(tc)
 
@@ -948,10 +950,9 @@ class StateForActualGivenExecution:
         ) or get_pretty_function_description(self.wrapped_test)
 
     def _should_trace(self):
-        # NOTE: we explicitly support monkeypatching this. Keep the namespace
-        # access intact.
-        _trace_obs = (
-            observability_enabled() and observability.OBSERVABILITY_COLLECT_COVERAGE
+        _trace_obs = observability_enabled() and (
+            ObservabilityOption.coverage in self.settings._observability_options
+            or observability.OBSERVABILITY_COLLECT_COVERAGE
         )
         _trace_failure = (
             self.failed_normally
@@ -1347,6 +1348,7 @@ class StateForActualGivenExecution:
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
+                    options=self.settings._observability_options,
                 )
                 deliver_observation(tc)
 
@@ -1549,6 +1551,7 @@ class StateForActualGivenExecution:
                         status="passed" if sys.exc_info()[0] else "failed",
                         status_reason=str(origin or "unexpected/flaky pass"),
                         metadata={"traceback": tb},
+                        options=self.settings._observability_options,
                     )
                     deliver_observation(tc)
 
@@ -2213,6 +2216,7 @@ def given(
                             coverage=None,
                             status=status,
                             backend_metadata=data.provider.observe_test_case(),
+                            options=state.settings._observability_options,
                         )
                         deliver_observation(tc)
                         state._timing_features = {}
