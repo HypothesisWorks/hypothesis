@@ -214,25 +214,24 @@ def test_can_patch_up_examples():
 
 
 def test_optimiser_when_test_grows_buffer_to_overflow():
-    with deterministic_PRNG():
-        with buffer_size_limit(2):
+    with deterministic_PRNG(), buffer_size_limit(2):
 
-            def test(data):
-                m = data.draw_integer(0, 2**8 - 1)
-                data.target_observations["m"] = m
-                if m > 100:
-                    data.draw_integer(0, 2**64 - 1)
-                    data.mark_invalid()
+        def test(data):
+            m = data.draw_integer(0, 2**8 - 1)
+            data.target_observations["m"] = m
+            if m > 100:
+                data.draw_integer(0, 2**64 - 1)
+                data.mark_invalid()
 
-            runner = ConjectureRunner(test, settings=runner_settings)
-            runner.cached_test_function((0,) * 10)
+        runner = ConjectureRunner(test, settings=runner_settings)
+        runner.cached_test_function((0,) * 10)
 
-            try:
-                runner.optimise_targets()
-            except RunIsComplete:
-                pass
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
 
-            assert runner.best_observed_targets["m"] == 100
+        assert runner.best_observed_targets["m"] == 100
 
 
 @given(nodes())

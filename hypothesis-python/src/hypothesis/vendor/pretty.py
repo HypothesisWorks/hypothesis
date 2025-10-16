@@ -688,19 +688,21 @@ def _dict_pprinter_factory(
 
         if cycle:
             return p.text("{...}")
-        with p.group(1, start, end):
+        with (
+            p.group(1, start, end),
             # If the dict contains both "" and b"" (empty string and empty bytes), we
             # ignore the BytesWarning raised by `python -bb` mode.  We can't use
             # `.items()` because it might be a non-`dict` type of mapping.
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", BytesWarning)
-                for idx, key in p._enumerate(obj):
-                    if idx:
-                        p.text(",")
-                        p.breakable()
-                    p.pretty(key)
-                    p.text(": ")
-                    p.pretty(obj[key])
+            warnings.catch_warnings(),
+        ):
+            warnings.simplefilter("ignore", BytesWarning)
+            for idx, key in p._enumerate(obj):
+                if idx:
+                    p.text(",")
+                    p.breakable()
+                p.pretty(key)
+                p.text(": ")
+                p.pretty(obj[key])
 
     inner.__name__ = f"_dict_pprinter_factory({start!r}, {end!r}, {basetype!r})"
     return inner

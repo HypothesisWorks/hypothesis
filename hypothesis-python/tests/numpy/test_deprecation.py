@@ -19,9 +19,8 @@ from tests.common.debug import check_can_generate_examples
 
 
 def test_basic_indices_bad_min_dims_warns():
-    with pytest.warns(HypothesisDeprecationWarning):
-        with pytest.raises(InvalidArgument):
-            check_can_generate_examples(nps.basic_indices((3, 3, 3), min_dims=4))
+    with pytest.warns(HypothesisDeprecationWarning), pytest.raises(InvalidArgument):
+        check_can_generate_examples(nps.basic_indices((3, 3, 3), min_dims=4))
 
 
 def test_basic_indices_bad_max_dims_warns():

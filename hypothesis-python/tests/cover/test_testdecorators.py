@@ -470,9 +470,8 @@ def test_does_not_print_notes_if_all_succeed():
     def test(i):
         note("Hi there")
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            test()
+    with capture_out() as out, reporting.with_reporter(reporting.default):
+        test()
     assert not out.getvalue()
 
 
@@ -535,12 +534,12 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
     def f(v):
         pass
 
-    with raises(
-        Unsatisfiable,
-        match=(
-            r"1000 of 1000 examples were too large to finish generating; "
-            r"try reducing the typical size of your inputs\?"
-        ),
+    match = (
+        r"1000 of 1000 examples were too large to finish generating; try "
+        r"reducing the typical size of your inputs\?"
+    )
+    with (
+        raises(Unsatisfiable, match=match),
+        buffer_size_limit(10),
     ):
-        with buffer_size_limit(10):
-            f()
+        f()

@@ -156,9 +156,8 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
     def test(i):
         raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test()
+    with capture_out() as o, pytest.raises(AssertionError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
@@ -169,9 +168,8 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
         data.draw(st.integers())
         raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test()
+    with capture_out() as o, pytest.raises(AssertionError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
@@ -183,9 +181,8 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
         if len(zlib.compress(b)) > 1000:
             raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
@@ -200,9 +197,8 @@ def test_does_not_print_reproduction_if_told_not_to():
     def test(i):
         raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
 
     assert "@reproduce_failure" not in o.getvalue()
 
@@ -226,8 +222,7 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
     def test_always_fails(data):
         assert data.draw(st.just(False))
 
-    with capture_out() as out:
-        with pytest.raises(AssertionError):
-            test_always_fails()
+    with capture_out() as out, pytest.raises(AssertionError):
+        test_always_fails()
 
     assert "@reproduce_failure" not in out.getvalue()

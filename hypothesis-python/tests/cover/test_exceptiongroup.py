@@ -165,9 +165,8 @@ def test_exceptiongroups_reconstruct_original_type(ExceptionClass):
     class UnrelatedException(Exception):
         pass
 
-    with pytest.raises(ExceptionClass):
-        with suppress(UnrelatedException):
-            raise ExceptionClass("exception message", [Exception()])
+    with pytest.raises(ExceptionClass), suppress(UnrelatedException):
+        raise ExceptionClass("exception message", [Exception()])
 
 
 @pytest.mark.parametrize("ExceptionClass", [FlakyFailure, FlakyBackendFailure])
