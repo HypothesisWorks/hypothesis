@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.142.1:
+
+--------------------
+6.142.1 - 2025-10-16
+--------------------
+
+Simplify some internal typing logic after dropping Python 3.9.
+
 .. _v6.142.0:
 
 --------------------
