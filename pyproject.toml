@@ -42,6 +42,9 @@ ignore = [
   "COM812",
   "DJ007",
   "DJ008",
+  # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
+  # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
+  # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
   "E501",
   "E721",
   "E731",
