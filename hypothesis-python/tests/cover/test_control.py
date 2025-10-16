@@ -74,39 +74,36 @@ def test_can_nest_build_context():
 
 
 def test_does_not_suppress_exceptions():
-    with pytest.raises(AssertionError):
-        with bc():
-            raise AssertionError
+    with pytest.raises(AssertionError), bc():
+        raise AssertionError
     assert _current_build_context.value is None
 
 
 def test_suppresses_exceptions_in_teardown():
-    with pytest.raises(ValueError) as exc_info:
-        with bc():
+    with pytest.raises(ValueError) as exc_info, bc():
 
-            def foo():
-                raise ValueError
+        def foo():
+            raise ValueError
 
-            cleanup(foo)
-            raise AssertionError
+        cleanup(foo)
+        raise AssertionError
 
     assert isinstance(exc_info.value, ValueError)
     assert isinstance(exc_info.value.__cause__, AssertionError)
 
 
 def test_runs_multiple_cleanup_with_teardown():
-    with pytest.raises(ExceptionGroup) as exc_info:
-        with bc():
+    with pytest.raises(ExceptionGroup) as exc_info, bc():
 
-            def foo():
-                raise ValueError
+        def foo():
+            raise ValueError
 
-            def bar():
-                raise TypeError
+        def bar():
+            raise TypeError
 
-            cleanup(foo)
-            cleanup(bar)
-            raise AssertionError
+        cleanup(foo)
+        cleanup(bar)
+        raise AssertionError
 
     assert isinstance(exc_info.value, ExceptionGroup)
     assert isinstance(exc_info.value.__cause__, AssertionError)
@@ -115,13 +112,12 @@ def test_runs_multiple_cleanup_with_teardown():
 
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
-    with pytest.raises(ValueError):
-        with bc():
+    with pytest.raises(ValueError), bc():
 
-            def foo():
-                raise ValueError
+        def foo():
+            raise ValueError
 
-            cleanup(foo)
+        cleanup(foo)
     assert _current_build_context.value is None
 
 
@@ -139,12 +135,14 @@ def test_deprecation_warning_if_assume_out_of_context():
 
 
 def test_deprecation_warning_if_reject_out_of_context():
-    with pytest.warns(
-        HypothesisDeprecationWarning,
-        match="Using `reject` outside a property-based test is deprecated",
+    with (
+        pytest.warns(
+            HypothesisDeprecationWarning,
+            match="Using `reject` outside a property-based test is deprecated",
+        ),
+        pytest.raises(UnsatisfiedAssumption),
     ):
-        with pytest.raises(UnsatisfiedAssumption):
-            reject()
+        reject()
 
 
 def test_raises_if_current_build_context_out_of_context():
@@ -169,10 +167,12 @@ def test_prints_all_notes_in_verbose_mode():
         messages.add(msg)
         assert x < 5
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
-                test()
+    with (
+        capture_out() as out,
+        reporting.with_reporter(reporting.default),
+        pytest.raises(AssertionError),
+    ):
+        test()
     v = out.getvalue()
     for x in sorted(messages):
         assert x in v

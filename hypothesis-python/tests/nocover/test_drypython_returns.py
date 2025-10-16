@@ -198,6 +198,8 @@ def wrong_generic_func2(obj: _SecondBase[None, bool]):
 
 @pytest.mark.parametrize("func", [wrong_generic_func1, wrong_generic_func2])
 def test_several_generic_bases_wrong_functions(func):
-    with temp_registered(AllConcrete, st.builds(AllConcrete)):
-        with pytest.raises(ResolutionFailed):
-            check_can_generate_examples(st.builds(func))
+    with (
+        temp_registered(AllConcrete, st.builds(AllConcrete)),
+        pytest.raises(ResolutionFailed),
+    ):
+        check_can_generate_examples(st.builds(func))

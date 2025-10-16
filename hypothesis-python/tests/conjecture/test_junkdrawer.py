@@ -237,15 +237,17 @@ def test_endswith(b1, b2):
 
 def test_stackframes_warns_when_recursion_limit_is_changed():
     with restore_recursion_limit():
-        with pytest.warns(
-            HypothesisWarning,
-            match=(
-                "The recursion limit will not be reset, since it was changed during "
-                "test execution."
-            ),
-        ) as warnings:
-            with ensure_free_stackframes():
-                sys.setrecursionlimit(100)
+        with (
+            pytest.warns(
+                HypothesisWarning,
+                match=(
+                    "The recursion limit will not be reset, since it was changed during "
+                    "test execution."
+                ),
+            ) as warnings,
+            ensure_free_stackframes(),
+        ):
+            sys.setrecursionlimit(100)
 
         # we only got the warning once
         assert len(warnings) == 1
@@ -253,23 +255,21 @@ def test_stackframes_warns_when_recursion_limit_is_changed():
 
 def test_stackframes_cleans_up_on_werror():
     limiter = junkdrawer._stackframe_limiter
-    with restore_recursion_limit():
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            assert limiter._active_contexts == 0
+    with restore_recursion_limit(), warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert limiter._active_contexts == 0
 
-            # the code for this cleanup case only triggers when the warning is raised
-            # on __enter__. set that up by entering one context, changing the limit,
-            # then entering another.
-            with pytest.raises(HypothesisWarning):
-                with ensure_free_stackframes():
-                    assert limiter._active_contexts == 1
-                    sys.setrecursionlimit(101)
+        # the code for this cleanup case only triggers when the warning is raised
+        # on __enter__. set that up by entering one context, changing the limit,
+        # then entering another.
+        with pytest.raises(HypothesisWarning), ensure_free_stackframes():
+            assert limiter._active_contexts == 1
+            sys.setrecursionlimit(101)
 
-                    with ensure_free_stackframes():
-                        assert limiter._active_contexts == 2
-                        sys.setrecursionlimit(102)
+            with ensure_free_stackframes():
+                assert limiter._active_contexts == 2
+                sys.setrecursionlimit(102)
 
-                    assert limiter._active_contexts == 1
+            assert limiter._active_contexts == 1
 
-            assert limiter._active_contexts == 0
+        assert limiter._active_contexts == 0

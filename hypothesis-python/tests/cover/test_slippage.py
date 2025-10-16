@@ -26,9 +26,8 @@ from tests.common.utils import (
 
 
 def capture_reports(test):
-    with capture_out() as o:
-        with pytest.raises(ExceptionGroup) as err:
-            test()
+    with capture_out() as o, pytest.raises(ExceptionGroup) as err:
+        test()
 
     return o.getvalue() + "\n\n".join(
         f"{e!r}\n" + "\n".join(getattr(e, "__notes__", []))

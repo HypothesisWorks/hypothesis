@@ -300,16 +300,18 @@ def test_ga_corrupted_artifact():
 def test_ga_deletes_old_artifacts():
     """Tests that old artifacts are automatically deleted."""
     now = datetime.now(timezone.utc)
-    with ga_empty_artifact(date=now) as (path, file_now):
-        with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
+    with (
+        ga_empty_artifact(date=now) as (path, file_now),
+        ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
             _,
             file_old,
-        ):
-            database = GitHubArtifactDatabase("test", "test", path=path)
-            # Trigger initialization
-            list(database.fetch(b""))
-            assert file_now.exists()
-            assert not file_old.exists()
+        ),
+    ):
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        # Trigger initialization
+        list(database.fetch(b""))
+        assert file_now.exists()
+        assert not file_old.exists()
 
 
 @skipif_threading

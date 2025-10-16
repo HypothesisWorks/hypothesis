@@ -145,10 +145,12 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
     def test_positive(x):
         assert x > 0
 
-    with reporting.with_reporter(reporting.default):
-        with pytest.raises(AssertionError):
-            with capture_out() as out:
-                test_positive()
+    with (
+        reporting.with_reporter(reporting.default),
+        pytest.raises(AssertionError),
+        capture_out() as out,
+    ):
+        test_positive()
     out = out.getvalue()
     assert "Falsifying example: test_positive(1)" not in out
 
@@ -196,9 +198,8 @@ def test_examples_are_tried_in_order():
     def test(x):
         print(f"x -> {x}")
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            test()
+    with capture_out() as out, reporting.with_reporter(reporting.default):
+        test()
     ls = out.getvalue().splitlines()
     assert ls == ["x -> 1", "x -> 2", "x -> 3"]
 

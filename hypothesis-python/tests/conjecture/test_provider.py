@@ -174,9 +174,8 @@ _temp_register_backend_lock = RLock()
 # same as with_register_backend, but adds a lock for our threading tests.
 @contextmanager
 def temp_register_backend(name, provider_cls):
-    with _temp_register_backend_lock:
-        with with_register_backend(name, provider_cls):
-            yield
+    with _temp_register_backend_lock, with_register_backend(name, provider_cls):
+        yield
 
 
 @pytest.mark.parametrize(
@@ -304,11 +303,11 @@ class InvalidLifetime(TrivialProvider):
 
 
 def test_invalid_lifetime():
-    with temp_register_backend("invalid_lifetime", InvalidLifetime):
-        with pytest.raises(InvalidArgument):
-            ConjectureRunner(
-                lambda: True, settings=settings(backend="invalid_lifetime")
-            )
+    with (
+        temp_register_backend("invalid_lifetime", InvalidLifetime),
+        pytest.raises(InvalidArgument),
+    ):
+        ConjectureRunner(lambda: True, settings=settings(backend="invalid_lifetime"))
 
 
 function_lifetime_init_count = 0
@@ -653,15 +652,17 @@ def test_can_generate_from_all_available_providers(backend, strategy):
     def f(x):
         raise ValueError
 
-    with pytest.raises(ValueError):
-        with (
+    with (
+        pytest.raises(ValueError),
+        (
             pytest.warns(
                 HypothesisWarning, match="/dev/urandom is not available on windows"
             )
             if backend == "hypothesis-urandom" and WINDOWS
             else nullcontext()
-        ):
-            f()
+        ),
+    ):
+        f()
 
 
 def test_saves_on_fatal_error_with_backend():

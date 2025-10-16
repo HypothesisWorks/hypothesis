@@ -1296,6 +1296,8 @@ def test_issue_4194_regression():
     inner = typing.Union[typing.Sequence["A"], MyProtocol]
     A = typing.Union[typing.Sequence[inner], MyProtocol]
 
-    with temp_registered(MyProtocol, st.just(b"")):
-        with temp_registered(typing.ForwardRef("A"), st.integers()):
-            find_any(st.from_type(A))
+    with (
+        temp_registered(MyProtocol, st.just(b"")),
+        temp_registered(typing.ForwardRef("A"), st.integers()),
+    ):
+        find_any(st.from_type(A))
