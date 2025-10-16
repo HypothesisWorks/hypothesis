@@ -1,5 +1,5 @@
 [tool.ruff]
-line-length = 125
+line-length = 88
 target-version = "py310"
 
 [tool.ruff.per-file-target-version]
@@ -72,7 +72,6 @@ ignore = [
   "SIM105",
   "SIM108",
   "SIM114",
-  "SIM117",
   "SIM300",
   "SIM905",
   "UP031",
