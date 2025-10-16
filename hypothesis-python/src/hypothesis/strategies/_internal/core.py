@@ -1339,7 +1339,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
-        return _from_type(thing.__supertype__)  # type: ignore
+        return _from_type(thing.__supertype__)
     if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
         if thing in types._global_type_lookup:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
