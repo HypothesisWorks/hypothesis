@@ -12,7 +12,17 @@ import importlib
 import math
 import types
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    overload,
+)
 
 import numpy as np
 
@@ -1243,17 +1253,6 @@ def integer_array_indices(
     )
 
 
-def _unpack_generic(thing):
-    # get_origin and get_args fail on python<3.9 because (some of) the
-    # relevant types do not inherit from _GenericAlias.  So just pick the
-    # value out directly.
-    real_thing = getattr(thing, "__origin__", None)
-    if real_thing is not None:
-        return (real_thing, getattr(thing, "__args__", ()))
-    else:
-        return (thing, ())
-
-
 def _unpack_dtype(dtype):
     dtype_args = getattr(dtype, "__args__", ())
     if dtype_args and type(dtype) not in (getattr(types, "UnionType", object()), Union):
@@ -1353,9 +1352,13 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
         dtype = np.dtype(thing)
         return from_dtype(dtype) if dtype.kind not in "OV" else None
 
-    real_thing, args = _unpack_generic(thing)
+    origin = get_origin(thing)
+    # if origin is not generic-like, get_origin returns None. Fall back to thing.
+    if origin is None:
+        origin = thing
+    args = get_args(thing)
 
-    if real_thing == _NestedSequence:
+    if origin == _NestedSequence:
         # We have to override the default resolution to ensure sequences are of
         # equal length. Actually they are still not, if the arg specialization
         # returns arbitrary-shaped sequences or arrays - hence the even more special
@@ -1369,7 +1372,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
             st.recursive(st.tuples(base_strat, base_strat), st.tuples),
         )
 
-    if real_thing in [np.ndarray, _SupportsArray]:
+    if origin in [np.ndarray, _SupportsArray]:
         dtype = _dtype_from_args(args)
         return arrays(dtype, array_shapes(max_dims=2))  # type: ignore[return-value]
 

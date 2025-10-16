@@ -32,7 +32,7 @@ from collections.abc import Iterator
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
@@ -242,8 +242,6 @@ def try_issubclass(thing, superclass):
             # generics, and so on.  If you need to change this code, read PEP-560
             # and Hypothesis issue #2951 closely first, and good luck.  The tests
             # will help you, I hope - good luck.
-            if getattr(thing, "__args__", None) is not None:
-                return True  # pragma: no cover  # only possible on Python <= 3.9
             for orig_base in getattr(thing, "__orig_bases__", None) or [None]:
                 args = getattr(orig_base, "__args__", None)
                 if _compatible_args(args, superclass_args):
@@ -252,20 +250,6 @@ def try_issubclass(thing, superclass):
     except (AttributeError, TypeError):
         # Some types can't be the subject or object of an instance or subclass check
         return False
-
-
-def is_a_new_type(thing):
-    if not isinstance(typing.NewType, type):
-        # At runtime, `typing.NewType` returns an identity function rather
-        # than an actual type, but we can check whether that thing matches.
-        return (  # pragma: no cover  # Python <= 3.9 only
-            hasattr(thing, "__supertype__")
-            and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
-            and inspect.isfunction(thing)
-        )
-    # In 3.10 and later, NewType is actually a class - which simplifies things.
-    # See https://bugs.python.org/issue44353 for links to the various patches.
-    return isinstance(thing, typing.NewType)
 
 
 def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
@@ -291,7 +275,7 @@ def is_a_type(thing: object) -> bool:
     return (
         isinstance(thing, type)
         or is_generic_type(thing)
-        or is_a_new_type(thing)
+        or isinstance(thing, NewType)
         or is_a_type_alias_type(thing)
         # union and forwardref checks necessary from 3.14+. Before 3.14, they
         # were covered by is_generic_type(thing).
