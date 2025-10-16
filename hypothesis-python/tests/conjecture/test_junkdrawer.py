@@ -236,21 +236,19 @@ def test_endswith(b1, b2):
 
 
 def test_stackframes_warns_when_recursion_limit_is_changed():
-    with restore_recursion_limit():
-        with (
-            pytest.warns(
-                HypothesisWarning,
-                match=(
-                    "The recursion limit will not be reset, since it was changed during "
-                    "test execution."
-                ),
-            ) as warnings,
-            ensure_free_stackframes(),
-        ):
-            sys.setrecursionlimit(100)
+    match = (
+        "The recursion limit will not be reset, since it was changed during "
+        "test execution."
+    )
+    with (
+        restore_recursion_limit(),
+        pytest.warns(HypothesisWarning, match=match) as warnings,
+        ensure_free_stackframes(),
+    ):
+        sys.setrecursionlimit(100)
 
-        # we only got the warning once
-        assert len(warnings) == 1
+    # we only got the warning once
+    assert len(warnings) == 1
 
 
 def test_stackframes_cleans_up_on_werror():

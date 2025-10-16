@@ -929,8 +929,8 @@ class ConjectureRunner:
             for v in self.interesting_examples.values():
                 self.debug_data(v)
             self.debug(
-                "Run complete after %d examples (%d valid) and %d shrinks"
-                % (self.call_count, self.valid_examples, self.shrinks)
+                f"Run complete after {self.call_count} examples "
+                f"({self.valid_examples} valid) and {self.shrinks} shrinks"
             )
 
     @property

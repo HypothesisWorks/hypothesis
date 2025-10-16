@@ -534,14 +534,12 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
     def f(v):
         pass
 
+    match = (
+        r"1000 of 1000 examples were too large to finish generating; try "
+        r"reducing the typical size of your inputs\?"
+    )
     with (
-        raises(
-            Unsatisfiable,
-            match=(
-                r"1000 of 1000 examples were too large to finish generating; "
-                r"try reducing the typical size of your inputs\?"
-            ),
-        ),
+        raises(Unsatisfiable, match=match),
         buffer_size_limit(10),
     ):
         f()
