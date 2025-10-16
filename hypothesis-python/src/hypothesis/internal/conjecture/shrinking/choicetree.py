@@ -9,9 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from random import Random
-from typing import Callable, Optional
 
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 
@@ -146,8 +145,8 @@ class ChoiceTree:
 class TreeNode:
     def __init__(self) -> None:
         self.children: dict[int, TreeNode] = defaultdict(TreeNode)
-        self.live_child_count: Optional[int] = None
-        self.n: Optional[int] = None
+        self.live_child_count: int | None = None
+        self.n: int | None = None
 
     @property
     def exhausted(self) -> bool:

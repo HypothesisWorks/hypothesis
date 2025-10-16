@@ -457,9 +457,6 @@ def test_saves_failing_example_in_database():
 
 def test_can_run_with_no_db():
     with deterministic_PRNG():
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with raises(AssertionError):
             run_state_machine_as_test(
                 DepthMachine, settings=Settings(database=None, max_examples=10_000)

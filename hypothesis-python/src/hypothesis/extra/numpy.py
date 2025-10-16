@@ -12,7 +12,7 @@ import importlib
 import math
 import types
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast, overload
 
 import numpy as np
 
@@ -100,18 +100,18 @@ NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 1
 def from_dtype(
     dtype: np.dtype,
     *,
-    alphabet: Optional[st.SearchStrategy[str]] = None,
+    alphabet: st.SearchStrategy[str] | None = None,
     min_size: int = 0,
-    max_size: Optional[int] = None,
-    min_value: Union[int, float, None] = None,
-    max_value: Union[int, float, None] = None,
-    allow_nan: Optional[bool] = None,
-    allow_infinity: Optional[bool] = None,
-    allow_subnormal: Optional[bool] = None,
-    exclude_min: Optional[bool] = None,
-    exclude_max: Optional[bool] = None,
+    max_size: int | None = None,
+    min_value: int | float | None = None,
+    max_value: int | float | None = None,
+    allow_nan: bool | None = None,
+    allow_infinity: bool | None = None,
+    allow_subnormal: bool | None = None,
+    exclude_min: bool | None = None,
+    exclude_max: bool | None = None,
     min_magnitude: Real = 0,
-    max_magnitude: Optional[Real] = None,
+    max_magnitude: Real | None = None,
 ) -> st.SearchStrategy[Any]:
     """Creates a strategy which can generate any value of the given dtype.
 
@@ -421,32 +421,32 @@ G = TypeVar("G", bound="np.generic")
 @overload
 def arrays(
     dtype: Union["np.dtype[G]", st.SearchStrategy["np.dtype[G]"]],
-    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
+    shape: int | st.SearchStrategy[int] | Shape | st.SearchStrategy[Shape],
     *,
-    elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
-    fill: Optional[st.SearchStrategy[Any]] = None,
+    elements: st.SearchStrategy[Any] | Mapping[str, Any] | None = None,
+    fill: st.SearchStrategy[Any] | None = None,
     unique: bool = False,
 ) -> "st.SearchStrategy[NDArray[G]]": ...
 
 
 @overload
 def arrays(
-    dtype: Union[D, st.SearchStrategy[D]],
-    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
+    dtype: D | st.SearchStrategy[D],
+    shape: int | st.SearchStrategy[int] | Shape | st.SearchStrategy[Shape],
     *,
-    elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
-    fill: Optional[st.SearchStrategy[Any]] = None,
+    elements: st.SearchStrategy[Any] | Mapping[str, Any] | None = None,
+    fill: st.SearchStrategy[Any] | None = None,
     unique: bool = False,
 ) -> "st.SearchStrategy[NDArray[Any]]": ...
 
 
 @defines_strategy(force_reusable_values=True)
 def arrays(
-    dtype: Union[D, st.SearchStrategy[D]],
-    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
+    dtype: D | st.SearchStrategy[D],
+    shape: int | st.SearchStrategy[int] | Shape | st.SearchStrategy[Shape],
     *,
-    elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
-    fill: Optional[st.SearchStrategy[Any]] = None,
+    elements: st.SearchStrategy[Any] | Mapping[str, Any] | None = None,
+    fill: st.SearchStrategy[Any] | None = None,
     unique: bool = False,
 ) -> "st.SearchStrategy[NDArray[Any]]":
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
@@ -666,7 +666,7 @@ def unsigned_integer_dtypes(
 def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[Literal[8, 16, 32, 64], Sequence[Literal[8, 16, 32, 64]]] = (
+    sizes: Literal[8, 16, 32, 64] | Sequence[Literal[8, 16, 32, 64]] = (
         8,
         16,
         32,
@@ -729,7 +729,7 @@ def integer_dtypes(
 def integer_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[Literal[8, 16, 32, 64], Sequence[Literal[8, 16, 32, 64]]] = (
+    sizes: Literal[8, 16, 32, 64] | Sequence[Literal[8, 16, 32, 64]] = (
         8,
         16,
         32,
@@ -788,9 +788,11 @@ def floating_dtypes(
 def floating_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[
-        Literal[16, 32, 64, 96, 128], Sequence[Literal[16, 32, 64, 96, 128]]
-    ] = (16, 32, 64),
+    sizes: Literal[16, 32, 64, 96, 128] | Sequence[Literal[16, 32, 64, 96, 128]] = (
+        16,
+        32,
+        64,
+    ),
 ) -> st.SearchStrategy["np.dtype[np.floating[Any]]"]:
     """Return a strategy for floating-point dtypes.
 
@@ -840,7 +842,7 @@ def complex_number_dtypes(
 def complex_number_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[Literal[64, 128, 192, 256], Sequence[Literal[64, 128, 192, 256]]] = (
+    sizes: Literal[64, 128, 192, 256] | Sequence[Literal[64, 128, 192, 256]] = (
         64,
         128,
     ),
@@ -991,7 +993,7 @@ def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
     max_leaves: int = 10,
-    max_itemsize: Optional[int] = None,
+    max_itemsize: int | None = None,
 ) -> st.SearchStrategy[np.dtype]:
     """Return the most-general dtype strategy.
 
@@ -1074,7 +1076,7 @@ def basic_indices(
     shape: Shape,
     *,
     min_dims: int = 0,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     allow_newaxis: bool = False,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
@@ -1283,7 +1285,7 @@ def _dtype_from_args(args):
     return np.dtype(dtype)
 
 
-def _from_type(thing: type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
+def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a numpy-specific strategy for thing, we return that; otherwise,

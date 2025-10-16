@@ -9,19 +9,18 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import collections
-from typing import Annotated, Callable, DefaultDict, NewType, Union
+from collections.abc import Callable
+from typing import Annotated, Concatenate, DefaultDict, NewType, TypeGuard, Union
 
 import pytest
 import typing_extensions
 from typing_extensions import (
-    Concatenate,
     LiteralString,
     NotRequired,
     ParamSpec,
     ReadOnly,
     Required,
     TypedDict,
-    TypeGuard,
     TypeIs,
 )
 
@@ -38,7 +37,7 @@ from tests.common.debug import (
 )
 
 # we'll continue testing the typing variants until their removal from the stdlib
-# ruff: noqa: UP035, UP006
+# ruff: noqa: UP035, UP006, UP007
 
 # See also nocover/test_type_lookup.py
 
@@ -92,9 +91,13 @@ def test_resolves_NewType():
     typ = NewType("T", int)
     nested = NewType("NestedT", typ)
     uni = NewType("UnionT", Union[int, None])
+    uni_new = NewType("UnionT", int | None)
     assert_simple_property(from_type(typ), lambda x: isinstance(x, int))
     assert_simple_property(from_type(nested), lambda x: isinstance(x, int))
     assert_simple_property(from_type(uni), lambda x: isinstance(x, (int, type(None))))
+    assert_simple_property(
+        from_type(uni_new), lambda x: isinstance(x, (int, type(None)))
+    )
     find_any(from_type(uni), lambda x: isinstance(x, int))
     find_any(from_type(uni), lambda x: isinstance(x, type(None)))
 
@@ -317,6 +320,7 @@ T_int = typing_extensions.TypeVar("T_int", bound=int)
         (typing_extensions.TypeVar("V", bound=int), int),
         (typing_extensions.TypeVar("V", bound=Foo), (Bar, Baz)),
         (typing_extensions.TypeVar("V", bound=Union[int, str]), (int, str)),
+        (typing_extensions.TypeVar("V", bound=int | str), (int, str)),
         # Constraints:
         (typing_extensions.TypeVar("V", int, str), (int, str)),
         # Default:
@@ -324,6 +328,7 @@ T_int = typing_extensions.TypeVar("T_int", bound=int)
         (typing_extensions.TypeVar("V", default=T), object),
         (typing_extensions.TypeVar("V", default=Foo), (Bar, Baz)),
         (typing_extensions.TypeVar("V", default=Union[int, str]), (int, str)),
+        (typing_extensions.TypeVar("V", default=int | str), (int, str)),
         (typing_extensions.TypeVar("V", default=T_int), int),
         (typing_extensions.TypeVar("V", default=T_int, bound=int), int),
         (typing_extensions.TypeVar("V", int, str, default=int), (int, str)),

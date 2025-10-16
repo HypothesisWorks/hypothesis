@@ -10,10 +10,11 @@
 
 import re
 import string
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar, Union
 
 import django
 from django import forms as df
@@ -32,7 +33,9 @@ from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
 from hypothesis.strategies import emails
 
-AnyField = Union[dm.Field, df.Field]
+# Use old-style union to avoid hitting
+# https://github.com/sphinx-doc/sphinx/issues/11211
+AnyField: TypeAlias = Union[dm.Field, df.Field]  # noqa: UP007
 F = TypeVar("F", bound=AnyField)
 
 
@@ -71,7 +74,7 @@ def timezones():
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _FieldLookUpType = dict[
     type[AnyField],
-    Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]],
+    st.SearchStrategy | Callable[[Any], st.SearchStrategy],
 ]
 _global_field_lookup: _FieldLookUpType = {
     dm.SmallIntegerField: integers_for_field(-32768, 32767),
@@ -350,7 +353,7 @@ def register_field_strategy(
     _global_field_lookup[field_type] = strategy
 
 
-def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
+def from_field(field: F) -> st.SearchStrategy[F | None]:
     """Return a strategy for values that fit the given field.
 
     This function is used by :func:`~hypothesis.extra.django.from_form` and

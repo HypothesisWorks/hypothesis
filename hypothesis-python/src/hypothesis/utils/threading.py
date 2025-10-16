@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 class ThreadLocal:

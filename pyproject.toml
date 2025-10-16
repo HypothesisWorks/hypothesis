@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 125
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.per-file-target-version]
 "test_typealias_py312.py" = "py312"

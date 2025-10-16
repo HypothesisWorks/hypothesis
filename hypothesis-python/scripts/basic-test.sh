@@ -49,9 +49,9 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/codemods/
   pip uninstall -y libcst click
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 9))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.9
-    pip install numpy==2.0.2
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.10
+    pip install numpy==2.2.6
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi

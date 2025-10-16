@@ -19,7 +19,7 @@ from tests.common import utils
 from tests.common.utils import skipif_threading
 
 # error only occurs with typing variants
-# ruff: noqa: UP006, UP035
+# ruff: noqa: UP006, UP035, UP007
 
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722

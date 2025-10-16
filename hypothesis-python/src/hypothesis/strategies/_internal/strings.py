@@ -13,7 +13,7 @@ import re
 import warnings
 from collections.abc import Collection
 from functools import cache, lru_cache, partial
-from typing import Optional, Union, cast
+from typing import cast
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
@@ -51,9 +51,7 @@ def _check_is_single_character(c: object) -> str:
 class OneCharStringStrategy(SearchStrategy[str]):
     """A strategy which generates single character strings of text type."""
 
-    def __init__(
-        self, intervals: IntervalSet, force_repr: Optional[str] = None
-    ) -> None:
+    def __init__(self, intervals: IntervalSet, force_repr: str | None = None) -> None:
         super().__init__()
         assert isinstance(intervals, IntervalSet)
         self.intervals = intervals
@@ -63,10 +61,10 @@ class OneCharStringStrategy(SearchStrategy[str]):
     def from_characters_args(
         cls,
         *,
-        codec: Optional[str] = None,
-        min_codepoint: Optional[int] = None,
-        max_codepoint: Optional[int] = None,
-        categories: Optional[Categories] = None,
+        codec: str | None = None,
+        min_codepoint: int | None = None,
+        max_codepoint: int | None = None,
+        categories: Categories | None = None,
         exclude_characters: Collection[str] = "",
         include_characters: Collection[str] = "",
     ) -> "OneCharStringStrategy":
@@ -106,9 +104,7 @@ class OneCharStringStrategy(SearchStrategy[str]):
         return cls(intervals, force_repr=f"characters({_arg_repr})")
 
     @classmethod
-    def from_alphabet(
-        cls, alphabet: Union[str, SearchStrategy]
-    ) -> "OneCharStringStrategy":
+    def from_alphabet(cls, alphabet: str | SearchStrategy) -> "OneCharStringStrategy":
         if isinstance(alphabet, str):
             return cls.from_characters_args(categories=(), include_characters=alphabet)
 
@@ -359,7 +355,7 @@ def _identifier_characters() -> tuple[IntervalSet, IntervalSet]:
 
 
 class BytesStrategy(SearchStrategy):
-    def __init__(self, min_size: int, max_size: Optional[int]):
+    def __init__(self, min_size: int, max_size: int | None):
         super().__init__()
         self.min_size = min_size
         self.max_size = (

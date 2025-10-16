@@ -18,12 +18,12 @@ execution to date.
 import collections
 import dataclasses
 import inspect
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
+from typing import Any, ClassVar, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
@@ -499,8 +499,8 @@ class Rule:
     arguments: Any
     preconditions: Any
     bundles: tuple["Bundle", ...] = field(init=False)
-    _cached_hash: Optional[int] = field(init=False, default=None)
-    _cached_repr: Optional[str] = field(init=False, default=None)
+    _cached_hash: int | None = field(init=False, default=None)
+    _cached_repr: str | None = field(init=False, default=None)
 
     def __post_init__(self):
         self.arguments_strategies = {}
@@ -719,7 +719,7 @@ PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-_RuleType = Callable[..., Union[MultipleResults[Ex], Ex]]
+_RuleType = Callable[..., MultipleResults[Ex] | Ex]
 _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 
 
@@ -787,10 +787,10 @@ def rule(
 
 def rule(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine. Any Bundle present in ``target`` or
     ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -882,10 +882,10 @@ def initialize(
 
 def initialize(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but all ``@initialize()`` decorated

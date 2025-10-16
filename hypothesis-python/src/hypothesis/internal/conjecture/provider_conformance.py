@@ -11,7 +11,7 @@
 import math
 import sys
 from collections.abc import Collection, Iterable, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis import (
     HealthCheck,
@@ -74,7 +74,7 @@ def intervals(
 
 @st.composite
 def integer_weights(
-    draw: DrawFn, min_value: Optional[int] = None, max_value: Optional[int] = None
+    draw: DrawFn, min_value: int | None = None, max_value: int | None = None
 ) -> dict[int, float]:
     # Sampler doesn't play well with super small floats, so exclude them
     weights = draw(
@@ -167,9 +167,9 @@ def integer_constraints(
 def _collection_constraints(
     draw: DrawFn,
     *,
-    forced: Optional[Any],
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    forced: Any | None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
 ) -> dict[str, int]:
     min_size = 0
     max_size = COLLECTION_DEFAULT_MAX_SIZE
@@ -203,8 +203,8 @@ def _collection_constraints(
 def string_constraints(
     draw: DrawFn,
     *,
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
     use_forced: bool = False,
 ) -> Any:
     interval_set = draw(intervals())
@@ -228,8 +228,8 @@ def string_constraints(
 def bytes_constraints(
     draw: DrawFn,
     *,
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
     use_forced: bool = False,
 ) -> Any:
     forced = draw(st.binary()) if use_forced else None
@@ -339,7 +339,7 @@ def run_conformance_test(
     Provider: type[PrimitiveProvider],
     *,
     context_manager_exceptions: Collection[type[BaseException]] = (),
-    settings: Optional[Settings] = None,
+    settings: Settings | None = None,
     _realize_objects: SearchStrategy[Any] = (
         st.from_type(object) | st.from_type(type).flatmap(st.from_type)
     ),

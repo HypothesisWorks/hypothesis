@@ -26,19 +26,17 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
+from collections.abc import Callable, Coroutine, Generator, Hashable, Iterable, Sequence
 from dataclasses import dataclass, field
 from functools import partial
 from inspect import Parameter
 from random import Random
 from threading import Lock
+from types import EllipsisType
 from typing import (
     Any,
     BinaryIO,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 from unittest import TestCase
@@ -75,7 +73,6 @@ from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
-    EllipsisType,
     add_note,
     bad_django_TestCase,
     get_type_hints,
@@ -246,9 +243,7 @@ class example:
         condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
-        raises: Union[
-            type[BaseException], tuple[type[BaseException], ...]
-        ] = BaseException,
+        raises: type[BaseException] | tuple[type[BaseException], ...] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
         :obj:`pytest.mark.xfail(strict=True) <pytest.mark.xfail>`.
@@ -557,7 +552,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     "example has too many arguments for test. Expected at most "
                     f"{len(posargs)} but got {len(example.args)}"
                 )
-            example_kwargs = dict(zip(posargs[-len(example.args) :], example.args))
+            example_kwargs = dict(
+                zip(posargs[-len(example.args) :], example.args, strict=True)
+            )
         else:
             example_kwargs = dict(example.kwargs)
         given_kws = ", ".join(
@@ -988,12 +985,8 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_markers_from_group():
-                    # NOTE: For compatibility with Python 3.9's LL(1)
-                    # parser, this is written as a nested with-statement,
-                    # instead of a compound one.
-                    with ensure_free_stackframes():
-                        return self.test(*args, **kwargs)
+                with unwrap_markers_from_group(), ensure_free_stackframes():
+                    return self.test(*args, **kwargs)
 
         else:
 
@@ -1005,9 +998,6 @@ class StateForActualGivenExecution:
                 start = time.perf_counter()
                 try:
                     with unwrap_markers_from_group():
-                        # NOTE: For compatibility with Python 3.9's LL(1)
-                        # parser, this is written as a nested with-statement,
-                        # instead of a compound one.
                         with ensure_free_stackframes():
                             result = self.test(*args, **kwargs)
                 finally:
@@ -1130,9 +1120,6 @@ class StateForActualGivenExecution:
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
-        #
-        # NOTE: For compatibility with Python 3.9's LL(1) parser, this is written as
-        # three nested with-statements, instead of one compound statement.
         with local_settings(self.settings):
             with deterministic_PRNG():
                 with BuildContext(
@@ -1357,7 +1344,7 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: InfoObservationType, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: str | dict
     ) -> None:
         deliver_observation(
             InfoObservation(
@@ -1655,7 +1642,7 @@ class HypothesisHandle:
     @property
     def fuzz_one_input(
         self,
-    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
+    ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
         """Run the test as a fuzz target, driven with the `buffer` of bytes.
 
         Returns None if buffer invalid for the strategy, canonical pruned
@@ -1676,7 +1663,7 @@ class HypothesisHandle:
 def given(
     _: EllipsisType, /
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
 ]:  # pragma: no cover
     ...
 
@@ -1685,26 +1672,24 @@ def given(
 def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 @overload
 def given(
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
-) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
-]:
+    *_given_arguments: SearchStrategy[Any] | EllipsisType,
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
+) -> Callable[[Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]]:
     """
     The |@given| decorator turns a function into a Hypothesis test. This is the
     main entry point to Hypothesis.
@@ -1865,7 +1850,9 @@ def given(
                 for p in original_sig.parameters.values()
                 if p.kind is p.POSITIONAL_OR_KEYWORD
             ]
-            given_kwargs = dict(list(zip(posargs[::-1], given_arguments[::-1]))[::-1])
+            given_kwargs = dict(
+                list(zip(posargs[::-1], given_arguments[::-1], strict=False))[::-1]
+            )
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
@@ -2130,7 +2117,7 @@ def given(
                     del thread_overlap[threadid]
 
         def _get_fuzz_target() -> (
-            Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]
+            Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]
         ):
             # Because fuzzing interfaces are very performance-sensitive, we use a
             # somewhat more complicated structure here.  `_get_fuzz_target()` is
@@ -2167,8 +2154,8 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO],
-            ) -> Optional[bytes]:
+                buffer: bytes | bytearray | memoryview | BinaryIO,
+            ) -> bytes | None:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.
                 if isinstance(buffer, io.IOBase):
@@ -2252,9 +2239,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Optional[Settings] = None,
-    random: Optional[Random] = None,
-    database_key: Optional[bytes] = None,
+    settings: Settings | None = None,
+    random: Random | None = None,
+    database_key: bytes | None = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""

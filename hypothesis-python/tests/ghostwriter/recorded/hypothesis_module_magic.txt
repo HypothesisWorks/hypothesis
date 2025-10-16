@@ -29,10 +29,10 @@ def test_fuzz_event(value: str, payload: typing.Union[str, int, float]) -> None:
 )
 def test_fuzz_find(
     specifier: st.SearchStrategy,
-    condition: typing.Callable[[typing.Any], bool],
-    settings: typing.Optional[hypothesis.settings],
-    random: typing.Optional[random.Random],
-    database_key: typing.Optional[bytes],
+    condition: collections.abc.Callable[[typing.Any], bool],
+    settings: typing.Union[hypothesis.settings, None],
+    random: typing.Union[random.Random, None],
+    database_key: typing.Union[bytes, None],
 ) -> None:
     hypothesis.find(
         specifier=specifier,

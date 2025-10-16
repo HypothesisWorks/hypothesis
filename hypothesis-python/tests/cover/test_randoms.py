@@ -10,7 +10,6 @@
 
 import inspect
 import math
-import sys
 from copy import copy
 
 import pytest
@@ -96,14 +95,7 @@ def any_call_of_method(draw, method):
         b = draw(INT64)
         assume(a != b)
         a, b = sorted((a, b))
-        if a == 0 and sys.version_info[:2] < (3, 10) and draw(st.booleans()):
-            start = b
-            stop = None
-        else:
-            start = a
-            stop = b
-
-        kwargs = {"start": start, "stop": stop, "step": draw(st.integers(1, 3))}
+        kwargs = {"start": a, "stop": b, "step": draw(st.integers(1, 3))}
     elif method == "triangular":
         a = normalize_zero(draw(st.floats(allow_infinity=False, allow_nan=False)))
         b = normalize_zero(draw(st.floats(allow_infinity=False, allow_nan=False)))

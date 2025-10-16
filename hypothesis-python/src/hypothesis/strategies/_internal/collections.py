@@ -10,8 +10,8 @@
 
 import copy
 import math
-from collections.abc import Iterable
-from typing import Any, Callable, Optional, Union, overload
+from collections.abc import Callable, Iterable
+from typing import Any, overload
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
@@ -149,7 +149,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int = 0,
-        max_size: Optional[Union[float, int]] = math.inf,
+        max_size: float | int | None = math.inf,
     ):
         super().__init__()
         self.min_size = min_size or 0
@@ -252,11 +252,11 @@ class UniqueListStrategy(ListStrategy[Ex]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int,
-        max_size: Optional[Union[float, int]],
+        max_size: float | int | None,
         # TODO: keys are guaranteed to be Hashable, not just Any, but this makes
         # other things harder to type
         keys: tuple[Callable[[Ex], Any], ...],
-        tuple_suffixes: Optional[SearchStrategy[tuple[Ex, ...]]],
+        tuple_suffixes: SearchStrategy[tuple[Ex, ...]] | None,
     ):
         super().__init__(elements, min_size, max_size)
         self.keys = keys
@@ -284,7 +284,10 @@ class UniqueListStrategy(ListStrategy[Ex]):
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
         def not_yet_in_unique_list(val: Ex) -> bool:  # type: ignore # covariant type param
-            return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
+            return all(
+                key(val) not in seen
+                for key, seen in zip(self.keys, seen_sets, strict=True)
+            )
 
         filtered = FilteredStrategy(
             self.element_strategy, conditions=(not_yet_in_unique_list,)
@@ -295,7 +298,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
                 assert not isinstance(value, UniqueIdentifier)
-                for key, seen in zip(self.keys, seen_sets):
+                for key, seen in zip(self.keys, seen_sets, strict=True):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))  # type: ignore
@@ -323,9 +326,10 @@ class UniqueSampledListStrategy(UniqueListStrategy):
             j = data.draw_integer(0, len(remaining) - 1)
             value = self.element_strategy._transform(remaining.pop(j))
             if value is not filter_not_satisfied and all(
-                key(value) not in seen for key, seen in zip(self.keys, seen_sets)
+                key(value) not in seen
+                for key, seen in zip(self.keys, seen_sets, strict=True)
             ):
-                for key, seen in zip(self.keys, seen_sets):
+                for key, seen in zip(self.keys, seen_sets, strict=True):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))
@@ -350,14 +354,14 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         self,
         mapping: dict[Any, SearchStrategy[Any]],
         *,
-        optional: Optional[dict[Any, SearchStrategy[Any]]],
+        optional: dict[Any, SearchStrategy[Any]] | None,
     ):
         super().__init__()
         dict_type = type(mapping)
         self.mapping = mapping
         keys = tuple(mapping.keys())
         self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
-            lambda value: dict_type(zip(keys, value))
+            lambda value: dict_type(zip(keys, value, strict=True))
         )
         self.optional = optional
 

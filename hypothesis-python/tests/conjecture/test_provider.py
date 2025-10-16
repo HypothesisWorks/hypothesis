@@ -16,7 +16,6 @@ import time
 from contextlib import contextmanager, nullcontext
 from random import Random
 from threading import RLock
-from typing import Optional
 
 import pytest
 
@@ -80,10 +79,10 @@ class PrngProvider(PrimitiveProvider):
 
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
     ) -> int:
         # shrink_towards is fully ignored here. It would be nice to implement
@@ -166,10 +165,7 @@ class PrngProvider(PrimitiveProvider):
         # cap max size for performance
         max_size = 100 if max_size is None else min(max_size, 100)
         size = self.prng.randint(min_size, max_size)
-        try:
-            return self.prng.randbytes(size)
-        except AttributeError:  # randbytes is new in python 3.9
-            return bytes(self.prng.randint(0, 255) for _ in range(size))
+        return self.prng.randbytes(size)
 
 
 _temp_register_backend_lock = RLock()
@@ -309,9 +305,6 @@ class InvalidLifetime(TrivialProvider):
 
 def test_invalid_lifetime():
     with temp_register_backend("invalid_lifetime", InvalidLifetime):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(InvalidArgument):
             ConjectureRunner(
                 lambda: True, settings=settings(backend="invalid_lifetime")
@@ -661,9 +654,6 @@ def test_can_generate_from_all_available_providers(backend, strategy):
         raise ValueError
 
     with pytest.raises(ValueError):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with (
             pytest.warns(
                 HypothesisWarning, match="/dev/urandom is not available on windows"

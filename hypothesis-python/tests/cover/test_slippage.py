@@ -27,9 +27,6 @@ from tests.common.utils import (
 
 def capture_reports(test):
     with capture_out() as o:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(ExceptionGroup) as err:
             test()
 

@@ -168,6 +168,7 @@ def update_pyproject_toml():
     toml_p = HYPOTHESIS_PYTHON / "pyproject.toml"
     toml_data = tomli.loads(toml_p.read_text())
     extras = toml_data["project"]["optional-dependencies"]
+    extras.pop("all")
     readme = (tools.ROOT / "README.md").read_text()
     content = toml_p.read_text()
     content = re.sub(

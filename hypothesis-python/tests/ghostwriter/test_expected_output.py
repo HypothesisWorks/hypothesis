@@ -11,7 +11,9 @@
 """
 'Golden master' tests for the ghostwriter.
 
-To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
+To update the recorded outputs, run:
+
+    pytest test_expected_output.py --hypothesis-update-outputs
 """
 
 import ast
@@ -24,7 +26,6 @@ import re
 import subprocess
 import sys
 from collections.abc import Sequence
-from typing import Optional, Union
 
 import black
 import numpy
@@ -98,40 +99,28 @@ def divide(a: int, b: int) -> float:
     return a / b
 
 
-def optional_parameter(a: float, b: Optional[float]) -> float:
+def optional_parameter(a: float, b: float | None) -> float:
     return optional_union_parameter(a, b)
 
 
-def optional_union_parameter(a: float, b: Optional[Union[float, int]]) -> float:
+def optional_union_parameter(a: float, b: float | int | None) -> float:
     return a if b is None else a + b
 
 
-if sys.version_info[:2] >= (3, 10):
-
-    def union_sequence_parameter(items: Sequence[float | int]) -> float:
-        return sum(items)
-
-else:
-
-    def union_sequence_parameter(items: Sequence[Union[float, int]]) -> float:
-        return sum(items)
+def union_sequence_parameter(items: Sequence[float | int]) -> float:
+    return sum(items)
 
 
 def sequence_from_collections(items: collections.abc.Sequence[int]) -> int:
     return min(items)
 
 
-if sys.version_info[:2] >= (3, 10):
-
-    def various_numpy_annotations(
-        f: numpy.typing.NDArray[numpy.float64],
-        fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
-        union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
-    ):
-        pass
-
-else:
-    various_numpy_annotations = add
+def various_numpy_annotations(
+    f: numpy.typing.NDArray[numpy.float64],
+    fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
+    union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
+):
+    pass
 
 
 # Note: for some of the `expected` outputs, we replace away some small
@@ -162,18 +151,9 @@ else:
             "sequence_from_collections",
             lambda: ghostwriter.magic(sequence_from_collections),
         ),
-        pytest.param(
-            ("add_custom_classes", lambda: ghostwriter.magic(add_custom_classes)),
-            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
-        ),
-        pytest.param(
-            ("merge_dicts", lambda: ghostwriter.magic(merge_dicts)),
-            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
-        ),
-        pytest.param(
-            ("invalid_types", lambda: ghostwriter.magic(invalid_types)),
-            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
-        ),
+        ("add_custom_classes", lambda: ghostwriter.magic(add_custom_classes)),
+        ("merge_dicts", lambda: ghostwriter.magic(merge_dicts)),
+        ("invalid_types", lambda: ghostwriter.magic(invalid_types)),
         ("magic_base64_roundtrip", lambda: ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",

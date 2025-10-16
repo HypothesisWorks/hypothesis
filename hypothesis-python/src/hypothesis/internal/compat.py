@@ -24,7 +24,6 @@ from typing import (
     ForwardRef,
     Optional,
     TypedDict as TypedDict,
-    Union,
     get_args,
 )
 
@@ -38,10 +37,7 @@ except NameError:
     )
 if TYPE_CHECKING:
     from typing_extensions import (
-        Concatenate as Concatenate,
         NotRequired as NotRequired,
-        ParamSpec as ParamSpec,
-        TypeAlias as TypeAlias,
         TypedDict as TypedDict,
         override as override,
     )
@@ -67,31 +63,15 @@ else:
 
     try:
         from typing import (
-            Concatenate as Concatenate,
-            ParamSpec as ParamSpec,
-            TypeAlias as TypeAlias,
             override as override,
         )
     except ImportError:
         try:
             from typing_extensions import (
-                Concatenate as Concatenate,
-                ParamSpec as ParamSpec,
-                TypeAlias as TypeAlias,
                 override as override,
             )
         except ImportError:
-            Concatenate, ParamSpec = None, None
-            TypeAlias = None
             override = lambda f: f
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
-elif TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:  # pragma: no cover
-    EllipsisType = type(Ellipsis)
-
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
@@ -116,7 +96,7 @@ def escape_unicode_characters(s: str) -> str:
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
 
-def int_from_bytes(data: Union[bytes, bytearray]) -> int:
+def int_from_bytes(data: bytes | bytearray) -> int:
     return int.from_bytes(data, "big")
 
 
@@ -203,11 +183,12 @@ def get_type_hints(thing: object) -> dict[str, Any]:
                         for sig_hint, hint in zip(
                             _hint_and_args(p.annotation),
                             _hint_and_args(hints.get(p.name, Any)),
+                            strict=False,
                         )
                     ):
                         p_hint = hints[p.name]
                     if p.default is None:
-                        hints[p.name] = typing.Optional[p_hint]
+                        hints[p.name] = p_hint | None
                     else:
                         hints[p.name] = p_hint
     except (AttributeError, TypeError, NameError):  # pragma: no cover
@@ -236,7 +217,7 @@ def ceil(x):
     return y
 
 
-def extract_bits(x: int, /, width: Optional[int] = None) -> list[int]:
+def extract_bits(x: int, /, width: int | None = None) -> list[int]:
     assert x >= 0
     result = []
     while x:

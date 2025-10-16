@@ -12,7 +12,7 @@ from collections import OrderedDict, abc
 from collections.abc import Sequence
 from copy import copy
 from datetime import datetime, timedelta
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Union
 
 import attr
 import numpy as np
@@ -186,8 +186,8 @@ DEFAULT_MAX_SIZE = 10
 @defines_strategy()
 def range_indexes(
     min_size: int = 0,
-    max_size: Optional[int] = None,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    max_size: int | None = None,
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -213,12 +213,12 @@ def range_indexes(
 @defines_strategy()
 def indexes(
     *,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
     min_size: int = 0,
-    max_size: Optional[int] = None,
+    max_size: int | None = None,
     unique: bool = True,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -256,12 +256,17 @@ def indexes(
 @defines_strategy()
 def series(
     *,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
-    index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
-    fill: Optional[st.SearchStrategy[Ex]] = None,
+    # new-style unions hit https://github.com/sphinx-doc/sphinx/issues/11211 during
+    # doc builds. See related comment in django/_fields.py. Quote to prevent
+    # shed/pyupgrade from changing it.
+    index: (
+        st.SearchStrategy["Union[Sequence, pandas.Index]"] | None  # noqa: UP007
+    ) = None,
+    fill: st.SearchStrategy[Ex] | None = None,
     unique: bool = False,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -376,19 +381,19 @@ class column(Generic[Ex]):
     * unique: If all values in this column should be distinct.
     """
 
-    name: Optional[Union[str, int]] = attr.ib(default=None)
-    elements: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
+    name: str | int | None = attr.ib(default=None)
+    elements: st.SearchStrategy[Ex] | None = attr.ib(default=None)
     dtype: Any = attr.ib(default=None, repr=get_pretty_function_description)
-    fill: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
+    fill: st.SearchStrategy[Ex] | None = attr.ib(default=None)
     unique: bool = attr.ib(default=False)
 
 
 def columns(
-    names_or_number: Union[int, Sequence[str]],
+    names_or_number: int | Sequence[str],
     *,
     dtype: Any = None,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
-    fill: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
+    fill: st.SearchStrategy[Ex] | None = None,
     unique: bool = False,
 ) -> list[column[Ex]]:
     """A convenience function for producing a list of :class:`column` objects
@@ -401,7 +406,7 @@ def columns(
     create the columns.
     """
     if isinstance(names_or_number, (int, float)):
-        names: list[Union[int, str, None]] = [None] * names_or_number
+        names: list[int | str | None] = [None] * names_or_number
     else:
         names = list(names_or_number)
     return [
@@ -412,10 +417,10 @@ def columns(
 
 @defines_strategy()
 def data_frames(
-    columns: Optional[Sequence[column]] = None,
+    columns: Sequence[column] | None = None,
     *,
-    rows: Optional[st.SearchStrategy[Union[dict, Sequence[Any]]]] = None,
-    index: Optional[st.SearchStrategy[Ex]] = None,
+    rows: st.SearchStrategy[dict | Sequence[Any]] | None = None,
+    index: st.SearchStrategy[Ex] | None = None,
 ) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
@@ -725,7 +730,7 @@ def data_frames(
                         row = as_list
                     if any_unique:
                         has_duplicate = False
-                        for seen, value in zip(all_seen, row):
+                        for seen, value in zip(all_seen, row, strict=False):
                             if seen is None:
                                 continue
                             if value in seen:

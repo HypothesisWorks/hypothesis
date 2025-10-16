@@ -88,9 +88,6 @@ def do_it_all(l, a, x, data):
 @skipif_threading  # captures observations from other threads
 def test_observability():
     with capture_observations() as ls:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(ZeroDivisionError):
             do_it_all()
         with pytest.raises(ZeroDivisionError):
@@ -143,9 +140,6 @@ def test_failure_includes_explain_phase_comments():
             raise AssertionError
 
     with capture_observations() as observations:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_fails()
 
@@ -176,9 +170,6 @@ def test_failure_includes_notes():
         raise AssertionError
 
     with capture_observations() as observations:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_fails_with_note()
 
@@ -268,9 +259,6 @@ def test_minimal_failing_observation():
             raise AssertionError
 
     with capture_observations() as observations:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_fails()
 
@@ -313,9 +301,6 @@ def test_all_failing_observations_have_reproduction_decorator():
         raise AssertionError
 
     with capture_observations() as observations:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with pytest.raises(AssertionError):
             test_fails()
 
@@ -388,9 +373,6 @@ def test_fuzz_one_input_status(buffer, expected_status):
             assume(False)
 
     with capture_observations() as ls:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with (
             pytest.raises(AssertionError)
             if expected_status == "failed"
@@ -769,7 +751,7 @@ def test_only_receives_callbacks_from_this_thread():
         # but that had a race condition somehow and sometimes still didn't work?? The
         # warnings module is not thread-safe until 3.14, I think.
         with with_collect_coverage(value=False):
-            run_concurrently(test, 5)
+            run_concurrently(test, n=5)
 
 
 def test_all_threads_callback():
@@ -790,7 +772,7 @@ def test_all_threads_callback():
 
     with with_collect_coverage(value=False):
         with with_observability_callback(global_callback, all_threads=True):
-            run_concurrently(f, n_threads)
+            run_concurrently(f, n=n_threads)
 
     assert len(calls) == n_threads
     assert all(count == (settings().max_examples + 1) for count in calls.values())

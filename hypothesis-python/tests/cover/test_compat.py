@@ -13,7 +13,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from functools import partial
 from inspect import Parameter, Signature, signature
-from typing import ForwardRef, Optional, Union
+from typing import ForwardRef, Union
 
 import pytest
 
@@ -77,7 +77,7 @@ Foo.__signature__ = signature(Foo).replace(  # type: ignore
 
 @dataclass
 class Bar:
-    x: Optional[Union[int, "Bar"]]
+    x: Union[int, "Bar"] | None
 
 
 Bar.__signature__ = signature(Bar).replace(  # type: ignore
@@ -85,21 +85,23 @@ Bar.__signature__ = signature(Bar).replace(  # type: ignore
         Parameter(
             "x",
             Parameter.POSITIONAL_OR_KEYWORD,
-            annotation=Optional[Union[int, ForwardRef("Bar")]],  # type: ignore
+            # ruff reports a false-positive UP007 here, since int | ForwardRef("Bar")
+            # errors on 3.10. We can change this once we drop 3.10.
+            #
+            # see also https://github.com/astral-sh/ruff/issues/20883
+            annotation=Union[int, ForwardRef("Bar"), None],  # type: ignore  # noqa: UP007
         )
     ]
 )
 
 
-@pytest.mark.parametrize(
-    "obj,expected", [(Foo, Optional[Foo]), (Bar, Optional[Union[int, Bar]])]
-)
+@pytest.mark.parametrize("obj,expected", [(Foo, Foo | None), (Bar, int | Bar | None)])
 def test_resolve_fwd_refs(obj, expected):
     # See: https://github.com/HypothesisWorks/hypothesis/issues/3519
     assert get_type_hints(obj)["x"] == expected
 
 
-def func(a, b: int, *c: str, d: Optional[int] = None):
+def func(a, b: int, *c: str, d: int | None = None):
     pass
 
 

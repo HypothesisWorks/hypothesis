@@ -242,7 +242,7 @@ def format():
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py310-plus", *files_to_format, *doc_files_to_format)
 
     for f in doc_files_to_format:
         remove_consecutive_newlines_in_rst(f)
@@ -594,7 +594,6 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.24",
     "3.10": "3.10.19",
     "3.11": "3.11.14",
     "3.12": "3.12.12",
@@ -604,7 +603,6 @@ PYTHONS = {
     "3.14t": "3.14t-dev",
     "3.15": "3.15-dev",
     "3.15t": "3.15t-dev",
-    "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",
 }
@@ -666,9 +664,7 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-standard_tox_task("py39-nose", py="3.9")
-standard_tox_task("py39-pytest46", py="3.9")
-standard_tox_task("py39-pytest54", py="3.9")
+# standard_tox_task("py310-pytest46", py="3.10")
 standard_tox_task("pytest62")
 
 for n in DJANGO_VERSIONS:
@@ -678,8 +674,8 @@ standard_tox_task("django-nocontrib")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
-standard_tox_task("py39-pandas11", py="3.9")
-standard_tox_task("py39-pandas12", py="3.9")
+standard_tox_task("py310-pandas11", py="3.10")
+standard_tox_task("py310-pandas12", py="3.10")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
@@ -690,8 +686,7 @@ for kind in ("rest", "nocover"):
     standard_tox_task(f"alt-{kind}")
 
 standard_tox_task("threading")
-standard_tox_task("py39-oldestnumpy", py="3.9")
-standard_tox_task("py39-oldparser", py="3.9")
+standard_tox_task("py310-oldestnumpy", py="3.10")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")

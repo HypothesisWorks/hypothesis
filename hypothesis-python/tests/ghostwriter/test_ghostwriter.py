@@ -21,7 +21,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, ModuleType
-from typing import Any, ForwardRef, Union
+from typing import Any, ForwardRef
 
 import attr
 import click
@@ -133,7 +133,7 @@ def non_resolvable_arg(x: NotResolvable):
 
 
 def test_flattens_one_of_repr():
-    strat = from_type(Union[int, Sequence[int]])
+    strat = from_type(int | Sequence[int])
     assert repr(strat).count("one_of(") == 2
     assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
@@ -261,11 +261,11 @@ def test_invalid_func_inputs(gw, args):
 
 class A:
     @classmethod
-    def to_json(cls, obj: Union[dict, list]) -> str:
+    def to_json(cls, obj: dict | list) -> str:
         return json.dumps(obj)
 
     @classmethod
-    def from_json(cls, obj: str) -> Union[dict, list]:
+    def from_json(cls, obj: str) -> dict | list:
         return json.loads(obj)
 
     @staticmethod

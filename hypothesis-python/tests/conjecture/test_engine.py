@@ -1119,9 +1119,6 @@ def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
 
     with deterministic_PRNG():
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
         with buffer_size_limit(buffer_size):
 
             def test(data):
