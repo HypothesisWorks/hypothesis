@@ -9,8 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import inspect
-from collections.abc import Sequence
-from typing import Callable, Optional
+from collections.abc import Callable, Sequence
 
 from hypothesis.configuration import check_sideeffect_during_initialization
 from hypothesis.errors import InvalidArgument
@@ -29,9 +28,9 @@ class DeferredStrategy(SearchStrategy[Ex]):
 
     def __init__(self, definition: Callable[[], SearchStrategy[Ex]]):
         super().__init__()
-        self.__wrapped_strategy: Optional[SearchStrategy[Ex]] = None
+        self.__wrapped_strategy: SearchStrategy[Ex] | None = None
         self.__in_repr: bool = False
-        self.__definition: Optional[Callable[[], SearchStrategy[Ex]]] = definition
+        self.__definition: Callable[[], SearchStrategy[Ex]] | None = definition
 
     @property
     def wrapped_strategy(self) -> SearchStrategy[Ex]:

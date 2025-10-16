@@ -235,7 +235,7 @@ def test_sets():
         "frozenset({1, 2})",
         "{-3, -2, -1}",
     ]
-    for obj, expected_output in zip(objects, expected):
+    for obj, expected_output in zip(objects, expected, strict=True):
         got_output = pretty.pretty(obj)
         assert got_output == expected_output
 
@@ -562,9 +562,6 @@ class BigList(list):
             return "[...]"
         else:
             with printer.group(open="[", close="]"):
-                # NOTE: For compatibility with Python 3.9's LL(1)
-                # parser, this is written as a nested with-statement,
-                # instead of a compound one.
                 with printer.indent(5):
                     for v in self:
                         printer.pretty(v)

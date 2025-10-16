@@ -146,7 +146,9 @@ else:
         settings_str = settings.default.show_changed()
         if settings_str != "":
             settings_str = f" -> {settings_str}"
-        return f"hypothesis profile {settings._current_profile!r}{settings_str}"
+        return (
+            f"hypothesis profile {settings.get_current_profile_name()!r}{settings_str}"
+        )
 
     def pytest_configure(config):
         config.addinivalue_line("markers", "hypothesis: Tests which use hypothesis.")
@@ -160,7 +162,9 @@ else:
         verbosity_name = config.getoption(VERBOSITY_OPTION)
         if verbosity_name and verbosity_name != settings.default.verbosity.name:
             verbosity_value = Verbosity[verbosity_name]
-            name = f"{settings._current_profile}-with-{verbosity_name}-verbosity"
+            name = (
+                f"{settings.get_current_profile_name()}-with-{verbosity_name}-verbosity"
+            )
             # register_profile creates a new profile, exactly like the current one,
             # with the extra values given (in this case 'verbosity')
             settings.register_profile(name, verbosity=verbosity_value)
@@ -169,7 +173,7 @@ else:
             config.getoption(EXPLAIN_OPTION)
             and Phase.explain not in settings.default.phases
         ):
-            name = f"{settings._current_profile}-with-explain-phase"
+            name = f"{settings.get_current_profile_name()}-with-explain-phase"
             phases = (*settings.default.phases, Phase.explain)
             settings.register_profile(name, phases=phases)
             settings.load_profile(name)
@@ -276,7 +280,7 @@ else:
                             "for each generated input, then unfortunately you "
                             "will need to find a different way to achieve your "
                             "goal (for example, replacing the fixture with a similar "
-                            "cotext manager inside of the test)."
+                            "context manager inside of the test)."
                             "\n\n"
                             "If you are confident that your test will work correctly "
                             "even though the fixture is not reset between generated "
@@ -308,13 +312,12 @@ else:
             stats["nodeid"] = item.nodeid
             item.hypothesis_statistics = describe_statistics(stats)
 
-        with collector.with_value(note_statistics):
-            # NOTE: For compatibility with Python 3.9's LL(1)
-            # parser, this is written as a nested with-statement,
-            # instead of a compound one.
-            with with_reporter(store):
-                with current_pytest_item.with_value(item):
-                    yield
+        with (
+            collector.with_value(note_statistics),
+            with_reporter(store),
+            current_pytest_item.with_value(item),
+        ):
+            yield
 
         if store.results:
             item.hypothesis_report_information = "\n".join(store.results)

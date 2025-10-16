@@ -21,7 +21,8 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 pytestmark = pytest.mark.skipif(
-    settings._current_profile == "crosshair", reason="slow - large number of symbolics"
+    settings.get_current_profile_name() == "crosshair",
+    reason="slow - large number of symbolics",
 )
 
 large_strategy = st.binary(min_size=7000, max_size=7000)

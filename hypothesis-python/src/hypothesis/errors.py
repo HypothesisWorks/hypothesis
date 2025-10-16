@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from hypothesis.internal.compat import ExceptionGroup
 
@@ -28,7 +28,7 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, reason: Optional[str] = None) -> None:
+    def __init__(self, reason: str | None = None) -> None:
         self.reason = reason
 
 

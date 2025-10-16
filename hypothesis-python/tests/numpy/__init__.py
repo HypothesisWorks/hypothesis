@@ -17,5 +17,5 @@ else:
     import warnings
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", EncodingWarning)  # noqa  # not undefined
+        warnings.simplefilter("ignore", EncodingWarning)
         import numpy.testing  # noqa

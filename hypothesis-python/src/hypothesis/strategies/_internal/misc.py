@@ -8,7 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -56,7 +57,7 @@ class JustStrategy(SampledFromStrategy[Ex]):
     def calc_is_cacheable(self, recur: RecurT) -> bool:
         return is_hashable(self.value)
 
-    def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
+    def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # The parent class's `do_draw` implementation delegates directly to
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. (This also avoids drawing any data.)

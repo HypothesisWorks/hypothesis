@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Optional, TypeVar
+from typing import TypeVar
 from unittest import SkipTest
 
 from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
@@ -33,7 +33,7 @@ class Found(Exception):
 def minimal(
     definition: SearchStrategy[T],
     condition=lambda x: True,
-    settings: Optional[Settings] = None,
+    settings: Settings | None = None,
 ) -> T:
     from tests.conftest import in_shrinking_benchmark
 

@@ -18,6 +18,106 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.142.0:
+
+--------------------
+6.142.0 - 2025-10-16
+--------------------
+
+This release drops support for Python 3.9, `which reached end of life in
+October 2025 <https://devguide.python.org/versions/>`__.
+
+.. _v6.141.1:
+
+--------------------
+6.141.1 - 2025-10-15
+--------------------
+
+Fixes an error when using :ref:`the Ghostwriter <ghostwriter>` with annotations that include :obj:`python:typing.ForwardRef` on Python 3.14 (:issue:`4565`).
+
+.. _v6.141.0:
+
+--------------------
+6.141.0 - 2025-10-15
+--------------------
+
+The |django.from_field| and |django.from_form| strategies from our :ref:`Django extra <hypothesis-django>` now support :obj:`~django:django.db.models.FileField`.
+
+Thanks to Arjoonn Sharma for this fix!
+
+.. _v6.140.4:
+
+--------------------
+6.140.4 - 2025-10-14
+--------------------
+
+Clean up internal ``@overload`` type annotations.
+
+.. _v6.140.3:
+
+--------------------
+6.140.3 - 2025-10-04
+--------------------
+
+Fixes our bundled |run_conformance_test| not respecting |PrimitiveProvider.avoid_realization|.
+
+.. _v6.140.2:
+
+--------------------
+6.140.2 - 2025-09-23
+--------------------
+
+The automatic switch to the CI :class:`settings profile <hypothesis.settings>` now works under :pypi:`tox` (for ``tox >= 4.30.0``).
+
+.. _v6.140.1:
+
+--------------------
+6.140.1 - 2025-09-22
+--------------------
+
+This patch re-enables the warning for incompatible :func:`~hypothesis.strategies.shared`
+strategies that was first enabled in :v:`6.133.0` but disabled in :v:`6.135.15`.
+
+.. _v6.140.0:
+
+--------------------
+6.140.0 - 2025-09-22
+--------------------
+
+|st.characters| now validates that the elements of the ``exclude_characters`` and ``include_characters`` arguments are single characters, which was always assumed internally. For example, ``exclude_characters=["a", "b"]`` is valid while ``exclude_characters=["ab"]`` will now raise an error up-front.
+
+.. _v6.139.3:
+
+--------------------
+6.139.3 - 2025-09-22
+--------------------
+
+Add ``phase`` to the :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in :ref:`observability <observability>`.
+
+.. _v6.139.2:
+
+--------------------
+6.139.2 - 2025-09-18
+--------------------
+
+Internal refactoring for new lint rules.
+
+.. _v6.139.1:
+
+--------------------
+6.139.1 - 2025-09-16
+--------------------
+
+Fixed another typo in error message around function-scoped fixtures.
+
+.. _v6.139.0:
+
+--------------------
+6.139.0 - 2025-09-16
+--------------------
+
+Add |settings.get_current_profile_name|, which returns the name of the current settings profile.
+
 .. _v6.138.17:
 
 ---------------------

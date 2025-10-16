@@ -27,7 +27,6 @@ from typing import (
     ClassVar,
     Optional,
     TypeVar,
-    Union,
 )
 
 from hypothesis.errors import (
@@ -294,7 +293,9 @@ class duration(datetime.timedelta):
 # see https://adamj.eu/tech/2020/03/09/detect-if-your-tests-are-running-on-ci
 # initially from https://github.com/tox-dev/tox/blob/e911788a/src/tox/util/ci.py
 _CI_VARS = {
-    "CI": None,  # GitHub Actions, Travis CI, and AppVeyor
+    "CI": None,  # various, including GitHub Actions, Travis CI, and AppVeyor
+    # see https://github.com/tox-dev/tox/issues/3442
+    "__TOX_ENVIRONMENT_VARIABLE_ORIGINAL_CI": None,
     "TF_BUILD": "true",  # Azure Pipelines
     "bamboo.buildKey": None,  # Bamboo
     "BUILDKITE": "true",  # Buildkite
@@ -385,8 +386,8 @@ def _validate_suppress_health_check(suppressions):
 
 
 def _validate_deadline(
-    x: Union[int, float, datetime.timedelta, None],
-) -> Optional[duration]:
+    x: int | float | datetime.timedelta | None,
+) -> duration | None:
     if x is None:
         return x
     invalid_deadline_error = InvalidArgument(
@@ -549,7 +550,7 @@ class settings(metaclass=settingsMeta):
     """
 
     _profiles: ClassVar[dict[str, "settings"]] = {}
-    _current_profile: ClassVar[Optional[str]] = None
+    _current_profile: ClassVar[str | None] = None
 
     def __init__(
         self,
@@ -567,7 +568,7 @@ class settings(metaclass=settingsMeta):
         stateful_step_count: int = not_set,  # type: ignore
         report_multiple_bugs: bool = not_set,  # type: ignore
         suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
-        deadline: Union[int, float, datetime.timedelta, None] = not_set,  # type: ignore
+        deadline: int | float | datetime.timedelta | None = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
         backend: str = not_set,  # type: ignore
     ) -> None:
@@ -629,7 +630,7 @@ class settings(metaclass=settingsMeta):
         )
         self._deadline = (
             self._fallback.deadline  # type: ignore
-            if deadline is not_set
+            if deadline is not_set  # type: ignore
             else _validate_deadline(deadline)
         )
         self._print_blob = (
@@ -1024,6 +1025,20 @@ class settings(metaclass=settingsMeta):
         check_type(str, name, "name")
         settings._current_profile = name
         default_variable.value = settings.get_profile(name)
+
+    @staticmethod
+    def get_current_profile_name() -> str:
+        """
+        The name of the current settings profile. For example:
+
+        .. code-block:: python
+
+            >>> settings.load_profile("myprofile")
+            >>> settings.get_current_profile_name()
+            'myprofile'
+        """
+        assert settings._current_profile is not None
+        return settings._current_profile
 
 
 @contextlib.contextmanager

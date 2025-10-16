@@ -42,14 +42,7 @@ def installed_array_modules() -> dict[str, EntryPoint]:
     select interface, so this can be used warning-free in all modern Python
     versions.
     """
-    try:
-        eps = entry_points(group="array_api")
-    except TypeError:
-        # The select interface for entry_points was introduced in py3.10,
-        # supplanting its dict interface. We fallback to the dict interface so
-        # we can still find entry points in py3.9.
-        eps = entry_points().get("array_api", [])
-    return {ep.name: ep for ep in eps}
+    return {ep.name: ep for ep in entry_points(group="array_api")}
 
 
 def flushes_to_zero(xp, width: Literal[32, 64]) -> bool:

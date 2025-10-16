@@ -224,7 +224,7 @@ def _compatible_args(args, superclass_args):
         # good enough for all the cases that I've seen so far and has the
         # substantial virtue of (relative) simplicity.
         a == b or isinstance(a, typing.TypeVar) or isinstance(b, typing.TypeVar)
-        for a, b in zip(args, superclass_args)
+        for a, b in zip(args, superclass_args, strict=True)
     )
 
 
@@ -668,7 +668,7 @@ utc_offsets = st.builds(
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
 _global_type_lookup: dict[
-    type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
+    type, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
 ] = {
     type(None): st.none(),
     bool: st.booleans(),
@@ -852,16 +852,14 @@ _global_type_lookup.update(
 # installed. To avoid the performance hit of importing anything here, we defer
 # it until the method is called the first time, at which point we replace the
 # entry in the lookup table with the direct call.
-def _from_numpy_type(thing: type) -> typing.Optional[st.SearchStrategy]:
+def _from_numpy_type(thing: type) -> st.SearchStrategy | None:
     from hypothesis.extra.numpy import _from_type
 
     _global_extra_lookup["numpy"] = _from_type
     return _from_type(thing)
 
 
-_global_extra_lookup: dict[
-    str, typing.Callable[[type], typing.Optional[st.SearchStrategy]]
-] = {
+_global_extra_lookup: dict[str, typing.Callable[[type], st.SearchStrategy | None]] = {
     "numpy": _from_numpy_type,
 }
 

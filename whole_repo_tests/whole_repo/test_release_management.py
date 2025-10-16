@@ -90,5 +90,5 @@ def test_update_changelog(tmp_path):
 def test_changelog_parsing_strips_trailing_whitespace():
     header = "RELEASE_TYPE: patch\n\n"
     contents = "Adds a feature\n    indented.\n"
-    level, out = parse_release(header + contents.replace("feature", "feature    "))
+    _level, out = parse_release(header + contents.replace("feature", "feature    "))
     assert contents.strip() == out

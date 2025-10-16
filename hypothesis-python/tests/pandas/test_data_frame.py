@@ -158,7 +158,7 @@ def test_unique_column_with_fill(df):
     assert len(set(df["A"])) == len(df["A"])
 
 
-@settings(suppress_health_check=[HealthCheck.too_slow])
+@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
 @given(st.data())
 def test_arbitrary_data_frames(data):
     columns = data.draw(
@@ -182,7 +182,7 @@ def test_arbitrary_data_frames(data):
 
     assert len(data_frame_columns) == len(columns)
 
-    for i, (c, n) in enumerate(zip(columns, df)):
+    for i, (c, n) in enumerate(zip(columns, df, strict=True)):
         if c.name is None:
             assert n == i
         else:

@@ -8,14 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Collection, Sequence
-from typing import Callable
+from collections.abc import Callable, Collection, Sequence
+from typing import Concatenate, ParamSpec
 
 import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import Concatenate, ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
 from tests.common.debug import (

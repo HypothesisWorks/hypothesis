@@ -137,7 +137,7 @@ def test_flags_minimizes_bit_count():
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~10 mins; path tree is too large",
 )
 def test_flags_finds_all_bits_set():
