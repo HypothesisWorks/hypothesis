@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import HealthCheck, assume, given, reject, settings, strategies as st
+from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
@@ -321,22 +321,13 @@ def test_can_generate_object_arrays_with_mixed_dtype_elements():
     find_any(s, lambda df: len({type(x) for x in df["col"].values}) > 1)
 
 
-def _equal_to_itself(v):
-    try:
-        return v == v
-    except Exception:
-        # sNaN decimal, etc
-        return False
-
-
 @given(st.data())
 def test_object_dataframe_can_hold_arbitrary_class_instances(data):
+    print("\n\n")
     instance = data.draw(st.from_type(type).flatmap(st.from_type))
     s = pdst.data_frames(
         columns=[pdst.column("col", elements=st.just(instance), dtype=object)]
     )
     df = data.draw(s)
 
-    assert all(x is instance for x in df["col"].values)
-    assume(_equal_to_itself(instance))
-    assert all(v == instance for v in df["col"].values)
+    assert all(v is instance for v in df["col"].values)

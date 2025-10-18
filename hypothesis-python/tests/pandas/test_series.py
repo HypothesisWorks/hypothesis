@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
@@ -78,13 +78,6 @@ def test_object_series_with_mixed_elements_still_has_object_dtype():
     find_any(s, lambda arr: len({type(x) for x in arr.ravel()}) > 1)
 
 
-def _equal_to_itself(v):
-    try:
-        return v == v
-    except Exception:
-        return False
-
-
 @given(st.data())
 @settings(max_examples=10)
 def test_series_can_hold_arbitrary_class_instances(data):
@@ -92,9 +85,7 @@ def test_series_can_hold_arbitrary_class_instances(data):
     s = pdst.series(elements=st.just(instance), dtype=object)
     series = data.draw(s)
 
-    assert all(x is instance for x in series.values)
-    assume(_equal_to_itself(instance))
-    assert all(v == instance for v in series.values)
+    assert all(v is instance for v in series.values)
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))

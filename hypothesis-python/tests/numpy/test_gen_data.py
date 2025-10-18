@@ -25,7 +25,7 @@ from hypothesis import (
     strategies as st,
     target,
 )
-from hypothesis.errors import FailedHealthCheck, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
@@ -1301,7 +1301,7 @@ def test_class_instances_not_allowed_in_scalar_array():
         check_can_generate_examples(s)
 
 
-def test_object_arrays_with_mixed_elements_still_has_object_dtype():
+def test_object_arrays_with_mixed_elements_has_object_dtype():
     class A:
         pass
 
@@ -1315,42 +1315,27 @@ def test_object_arrays_with_mixed_elements_still_has_object_dtype():
     find_any(s, lambda arr: len({type(x) for x in arr.ravel()}) > 1)
 
 
-def _equal_to_itself(v):
-    try:
-        return v == v
-    except Exception:
-        # sNaN decimal, etc
-        return False
-
-
 @given(st.data())
 def test_object_array_can_hold_arbitrary_class_instances(data):
     instance = data.draw(st.from_type(type).flatmap(st.from_type))
     s = nps.arrays(np.dtype("O"), nps.array_shapes(), elements=st.just(instance))
     arr = data.draw(s)
 
-    assert all(x is instance for x in arr.ravel())
-    assume(_equal_to_itself(instance))
-    assert all(v == instance for v in arr.ravel())
+    assert all(v is instance for v in arr.ravel())
 
 
-def test_object_array_filters_out_incomparable_elements():
+def test_object_array_can_hold_incomparable_elements():
     class Incomparable:
         def __eq__(self, other):
             raise TypeError
 
-    @given(
+    check_can_generate_examples(
         nps.arrays(
             np.dtype("O"),
             nps.array_shapes(),
             elements=st.just(Incomparable()),
         )
     )
-    def f(x):
-        pass
-
-    with pytest.raises(FailedHealthCheck, match="filter_too_much"):
-        f()
 
 
 def test_can_generate_nested_object_arrays():

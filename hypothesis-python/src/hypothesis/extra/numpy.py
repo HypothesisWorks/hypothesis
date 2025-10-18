@@ -96,14 +96,6 @@ TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", 
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
-def _is_comparable(obj: Any) -> bool:
-    try:
-        _ = obj == obj
-    except Exception:
-        return False
-    return True
-
-
 @defines_strategy(force_reusable_values=True)
 def from_dtype(
     dtype: np.dtype,
@@ -222,7 +214,7 @@ def from_dtype(
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
     elif dtype.kind == "O":
-        return st.from_type(type).flatmap(st.from_type).filter(_is_comparable)
+        return st.from_type(object)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
@@ -237,10 +229,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.dtype = dtype
         self.element_strategy = element_strategy
         self.unique = unique
-        self._check_elements = dtype.kind != "V"
-        if dtype == np.dtype("O"):
-            self.element_strategy = self.element_strategy.filter(_is_comparable)
-            self.fill = self.fill.filter(_is_comparable)
+        self._check_elements = dtype.kind not in ("O", "V")
 
     def __repr__(self):
         return (
@@ -250,9 +239,9 @@ class ArrayStrategy(st.SearchStrategy):
 
     def set_element(self, val, result, idx, *, fill=False):
         # `val` is either an arbitrary object (for dtype="O"), or otherwise an
-        # instance of a numpy dtype. This means we can generally expect e.g.
-        # val.dtype to be present, but can only concretely rely on it if
-        # self.dtype != "O".
+        # instance of a numpy dtype. This means we can *usually* expect e.g.
+        # val.dtype to be present, but can only guarantee it if
+        # `self.dtype != "O"`.
 
         try:
             result[idx] = val
@@ -264,11 +253,7 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
 
         try:
-            # use np.all to cover the possibility that the elements of the array
-            # are themselves numpy arrays. This is only possible for dtype="O".
-            elem_changed = self._check_elements and (
-                not np.all(val == result[idx]) and np.all(val == val)
-            )
+            elem_changed = self._check_elements and val != result[idx] and val == val
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
