@@ -223,6 +223,8 @@ def from_dtype(
         else:  # NEP-7 defines the NaT value as integer -(2**63)
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
+    elif dtype.kind == "O":
+        return st.from_type(object)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
@@ -246,22 +248,31 @@ class ArrayStrategy(st.SearchStrategy):
         )
 
     def set_element(self, val, result, idx, *, fill=False):
+        # `val` is either an arbitrary object (for dtype="O"), or otherwise an
+        # instance of a numpy dtype. This means we can *usually* expect e.g.
+        # val.dtype to be present, but can only guarantee it if
+        # `self.dtype != "O"`.
+
         try:
             result[idx] = val
         except TypeError as err:
             raise InvalidArgument(
-                f"Could not add element={val!r} of {val.dtype!r} to array of "
+                f"Could not add element={val!r} of "
+                f"{getattr(val, 'dtype', type(val))} to array of "
                 f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
+
         try:
             elem_changed = self._check_elements and val != result[idx] and val == val
         except Exception as err:  # pragma: no cover
             # This branch only exists to help debug weird behaviour in Numpy,
             # such as the string problems we had a while back.
             raise HypothesisException(
-                f"Internal error when checking element={val!r} of {val.dtype!r} "
-                f"to array of {result.dtype!r}"
+                f"Internal error when checking element={val!r} of "
+                f"{getattr(val, 'dtype', type(val))!r} to array of "
+                f"{result.dtype!r}"
             ) from err
+
         if elem_changed:
             strategy = self.fill if fill else self.element_strategy
             if self.dtype.kind == "f":  # pragma: no cover
