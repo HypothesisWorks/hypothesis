@@ -13,6 +13,7 @@ import random
 import sys
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass
+from typing import Any
 
 import attr
 import pytest
@@ -22,6 +23,7 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.utils import to_jsonable
+from hypothesis.vendor import pretty
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
 from tests.common.utils import checks_deprecated_behaviour
@@ -127,6 +129,11 @@ class AttrsClass:
     n = attr.ib()
 
 
+@dataclass
+class RecursiveReference:
+    a: Any
+
+
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
@@ -163,6 +170,17 @@ def test_jsonable_very_large_ints():
     n = 2**1024
     assert to_jsonable(n, avoid_realization=False) == sys.float_info.max
     assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
+
+
+def test_jsonable_recursive_reference():
+    # test that to_jsonable handles RecursionError gracefully, by falling back to
+    # pretty.pretty.
+    a = []
+    a.append(a)
+    obj = RecursiveReference(a=a)
+    assert pretty.pretty(obj) == "RecursiveReference(a=[[...]])"
+    assert to_jsonable(obj, avoid_realization=False) == "RecursiveReference(a=[[...]])"
+    assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
 
 
 @dataclass
