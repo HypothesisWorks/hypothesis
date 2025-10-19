@@ -26,7 +26,7 @@ from hypothesis.strategies._internal.utils import to_jsonable
 from hypothesis.vendor import pretty
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
 
 
 def test_or_errors_when_given_non_strategy():
@@ -172,6 +172,8 @@ def test_jsonable_very_large_ints():
     assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
 
 
+# https://github.com/pyodide/pyodide/issues/5959
+@skipif_emscripten
 def test_jsonable_recursive_reference():
     # test that to_jsonable handles RecursionError gracefully, by falling back to
     # pretty.pretty.
