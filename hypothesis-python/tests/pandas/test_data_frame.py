@@ -322,8 +322,11 @@ def test_can_generate_object_arrays_with_mixed_dtype_elements():
 
 
 @given(st.data())
+@pytest.mark.xfail(
+    reason="not actually true due to pandas conversion. see "
+    "https://github.com/HypothesisWorks/hypothesis/pull/4444#issuecomment-3413951478"
+)
 def test_object_dataframe_can_hold_arbitrary_class_instances(data):
-    print("\n\n")
     instance = data.draw(st.from_type(type).flatmap(st.from_type))
     s = pdst.data_frames(
         columns=[pdst.column("col", elements=st.just(instance), dtype=object)]
