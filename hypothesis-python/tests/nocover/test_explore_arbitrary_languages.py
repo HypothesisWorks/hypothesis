@@ -8,8 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import random
 from dataclasses import dataclass, field
+from random import Random
 from typing import Any
 
 import pytest
@@ -50,18 +50,14 @@ class Terminal:
 
 
 nodes = st.deferred(lambda: terminals | writes | branches)
-
-
-# Does not include Status.OVERFLOW by design: That happens because of the size
+# Does not include Status.OVERRUN by design: That happens because of the size
 # of the string, not the input language.
 terminals = st.one_of(
     st.just(Terminal(Status.VALID)),
     st.just(Terminal(Status.INVALID)),
     st.builds(Terminal, status=st.just(Status.INTERESTING), payload=st.integers(0, 10)),
 )
-
 branches = st.builds(Branch, bits=st.integers(1, 64))
-
 writes = st.builds(Write, value=st.binary(min_size=1), child=nodes)
 
 
@@ -72,8 +68,6 @@ _default_phases = settings.default.phases
 
 
 def run_language_test_for(root, data, seed):
-    random.seed(seed)
-
     def test(local_data):
         node = root
         while not isinstance(node, Terminal):
@@ -108,6 +102,7 @@ def run_language_test_for(root, data, seed):
             # phases setting from the outer test.
             phases=_default_phases,
         ),
+        random=Random(seed),
     )
     try:
         runner.run()
