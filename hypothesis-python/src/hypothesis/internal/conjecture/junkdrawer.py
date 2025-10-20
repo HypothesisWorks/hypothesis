@@ -313,10 +313,13 @@ class StackframeLimiter:
         self._original_limit: int | None = None
 
     def _setrecursionlimit(self, new_limit: int, *, check: bool = True) -> None:
-        if check and sys.getrecursionlimit() not in self._known_limits:
+        if (
+            check
+            and (current_limit := sys.getrecursionlimit()) not in self._known_limits
+        ):
             warnings.warn(
                 "The recursion limit will not be reset, since it was changed "
-                "during test execution.",
+                f"during test execution (from {self._original_limit} to {current_limit}).",
                 HypothesisWarning,
                 stacklevel=4,
             )
