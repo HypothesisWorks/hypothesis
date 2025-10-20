@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.142.2:
+
+--------------------
+6.142.2 - 2025-10-20
+--------------------
+
+Remove a case where Hypothesis would interact with the global |random.Random| instance if Hypothesis internals were used directly.
+
 .. _v6.142.1:
 
 --------------------
