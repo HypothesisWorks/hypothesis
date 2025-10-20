@@ -8,8 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import random
 from dataclasses import dataclass, field
+from random import Random
 from typing import Any
 
 import pytest
@@ -27,7 +27,7 @@ from hypothesis import (
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-from tests.common.utils import Why, skipif_threading, xfail_on_crosshair
+from tests.common.utils import Why, xfail_on_crosshair
 from tests.conjecture.common import interesting_origin
 
 
@@ -50,18 +50,14 @@ class Terminal:
 
 
 nodes = st.deferred(lambda: terminals | writes | branches)
-
-
-# Does not include Status.OVERFLOW by design: That happens because of the size
+# Does not include Status.OVERRUN by design: That happens because of the size
 # of the string, not the input language.
 terminals = st.one_of(
     st.just(Terminal(Status.VALID)),
     st.just(Terminal(Status.INVALID)),
     st.builds(Terminal, status=st.just(Status.INTERESTING), payload=st.integers(0, 10)),
 )
-
 branches = st.builds(Branch, bits=st.integers(1, 64))
-
 writes = st.builds(Write, value=st.binary(min_size=1), child=nodes)
 
 
@@ -72,8 +68,6 @@ _default_phases = settings.default.phases
 
 
 def run_language_test_for(root, data, seed):
-    random.seed(seed)
-
     def test(local_data):
         node = root
         while not isinstance(node, Terminal):
@@ -108,6 +102,7 @@ def run_language_test_for(root, data, seed):
             # phases setting from the outer test.
             phases=_default_phases,
         ),
+        random=Random(seed),
     )
     try:
         runner.run()
@@ -117,10 +112,6 @@ def run_language_test_for(root, data, seed):
     assume(runner.interesting_examples)
 
 
-# modifying global random, causing warnings from deprecate_random_in_strategy.
-# unclear why the warning doesn't trigger on a
-# single thread, but that was previous behavior so I'm not looking too deep into it.
-@skipif_threading
 # technically nested-engine, but same problem
 @xfail_on_crosshair(Why.nested_given, strict=False)
 @settings(
