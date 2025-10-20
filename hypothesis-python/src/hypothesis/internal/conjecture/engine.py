@@ -19,7 +19,7 @@ from contextlib import AbstractContextManager, contextmanager, nullcontext, supp
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
-from random import Random, getrandbits
+from random import Random
 from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
@@ -102,6 +102,11 @@ MAX_SHRINKING_SECONDS: int = 300
 BUFFER_SIZE: int = 8 * 1024
 CACHE_SIZE: int = 10000
 MIN_TEST_CALLS: int = 10
+
+# we use this to isolate Hypothesis from interacting with the global random,
+# to make it easier to reason about our global random warning logic easier (see
+# deprecate_random_in_strategy).
+_random = Random()
 
 
 def shortlex(s):
@@ -297,7 +302,7 @@ class ConjectureRunner:
         self.valid_examples: int = 0
         self.invalid_examples: int = 0
         self.overrun_examples: int = 0
-        self.random: Random = random or Random(getrandbits(128))
+        self.random: Random = random or Random(_random.getrandbits(128))
         self.database_key: bytes | None = database_key
         self.ignore_limits: bool = ignore_limits
         self.thread_overlap = {} if thread_overlap is None else thread_overlap

@@ -704,16 +704,18 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
     if wrapped_test._hypothesis_internal_use_seed is not None:
         return Random(wrapped_test._hypothesis_internal_use_seed)
-    elif settings.derandomize:
+
+    if settings.derandomize:
         return Random(int_from_bytes(function_digest(test)))
-    elif global_force_seed is not None:
+
+    if global_force_seed is not None:
         return Random(global_force_seed)
-    else:
-        if threadlocal._hypothesis_global_random is None:  # pragma: no cover
-            threadlocal._hypothesis_global_random = Random()
-        seed = threadlocal._hypothesis_global_random.getrandbits(128)
-        wrapped_test._hypothesis_internal_use_generated_seed = seed
-        return Random(seed)
+
+    if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+        threadlocal._hypothesis_global_random = Random()
+    seed = threadlocal._hypothesis_global_random.getrandbits(128)
+    wrapped_test._hypothesis_internal_use_generated_seed = seed
+    return Random(seed)
 
 
 @dataclass
