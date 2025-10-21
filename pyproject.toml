@@ -1,5 +1,5 @@
 [tool.ruff]
-line-length = 125
+line-length = 88
 target-version = "py310"
 
 [tool.ruff.per-file-target-version]
@@ -42,6 +42,10 @@ ignore = [
   "COM812",
   "DJ007",
   "DJ008",
+  # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
+  # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
+  # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
+  "E501",
   "E721",
   "E731",
   "E741",
@@ -72,7 +76,6 @@ ignore = [
   "SIM105",
   "SIM108",
   "SIM114",
-  "SIM117",
   "SIM300",
   "SIM905",
   "UP031",

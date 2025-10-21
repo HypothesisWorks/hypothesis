@@ -139,9 +139,8 @@ def test_failure_includes_explain_phase_comments():
         if x:
             raise AssertionError
 
-    with capture_observations() as observations:
-        with pytest.raises(AssertionError):
-            test_fails()
+    with capture_observations() as observations, pytest.raises(AssertionError):
+        test_fails()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     # only the last test case observation, once we've finished shrinking it,
@@ -169,9 +168,8 @@ def test_failure_includes_notes():
         note("not included 2")
         raise AssertionError
 
-    with capture_observations() as observations:
-        with pytest.raises(AssertionError):
-            test_fails_with_note()
+    with capture_observations() as observations, pytest.raises(AssertionError):
+        test_fails_with_note()
 
     expected = textwrap.dedent(
         """
@@ -258,9 +256,8 @@ def test_minimal_failing_observation():
         if x:
             raise AssertionError
 
-    with capture_observations() as observations:
-        with pytest.raises(AssertionError):
-            test_fails()
+    with capture_observations() as observations, pytest.raises(AssertionError):
+        test_fails()
 
     observation = [tc for tc in observations if tc.type == "test_case"][-1]
     expected_representation = textwrap.dedent(
@@ -300,9 +297,8 @@ def test_all_failing_observations_have_reproduction_decorator():
     def test_fails(x):
         raise AssertionError
 
-    with capture_observations() as observations:
-        with pytest.raises(AssertionError):
-            test_fails()
+    with capture_observations() as observations, pytest.raises(AssertionError):
+        test_fails()
 
     # all failed test case observations should have reprodution_decorator
     for observation in [
@@ -372,13 +368,11 @@ def test_fuzz_one_input_status(buffer, expected_status):
         if should_fail_assume:
             assume(False)
 
-    with capture_observations() as ls:
-        with (
-            pytest.raises(AssertionError)
-            if expected_status == "failed"
-            else nullcontext()
-        ):
-            test_fails.hypothesis.fuzz_one_input(buffer)
+    with (
+        capture_observations() as ls,
+        pytest.raises(AssertionError) if expected_status == "failed" else nullcontext(),
+    ):
+        test_fails.hypothesis.fuzz_one_input(buffer)
     assert len(ls) == 1
     assert ls[0].status == expected_status
     assert ls[0].how_generated == "fuzz_one_input"
@@ -694,28 +688,27 @@ def test_testcase_callbacks():
 
     thread_id = threading.get_ident()
 
-    with restore_callbacks():
-        with warnings.catch_warnings():
-            # ignore TESTCASE_CALLBACKS deprecation warnings
-            warnings.simplefilter("ignore")
+    with restore_callbacks(), warnings.catch_warnings():
+        # ignore TESTCASE_CALLBACKS deprecation warnings
+        warnings.simplefilter("ignore")
 
-            assert not bool(TESTCASE_CALLBACKS)
-            add_observability_callback(f)
-            assert _callbacks() == {thread_id: [f]}
+        assert not bool(TESTCASE_CALLBACKS)
+        add_observability_callback(f)
+        assert _callbacks() == {thread_id: [f]}
 
-            assert bool(TESTCASE_CALLBACKS)
-            add_observability_callback(g)
-            assert _callbacks() == {thread_id: [f, g]}
+        assert bool(TESTCASE_CALLBACKS)
+        add_observability_callback(g)
+        assert _callbacks() == {thread_id: [f, g]}
 
-            assert bool(TESTCASE_CALLBACKS)
-            remove_observability_callback(g)
-            assert _callbacks() == {thread_id: [f]}
+        assert bool(TESTCASE_CALLBACKS)
+        remove_observability_callback(g)
+        assert _callbacks() == {thread_id: [f]}
 
-            assert bool(TESTCASE_CALLBACKS)
-            remove_observability_callback(f)
-            assert _callbacks() == {}
+        assert bool(TESTCASE_CALLBACKS)
+        remove_observability_callback(f)
+        assert _callbacks() == {}
 
-            assert not bool(TESTCASE_CALLBACKS)
+        assert not bool(TESTCASE_CALLBACKS)
 
 
 def test_only_receives_callbacks_from_this_thread():
@@ -738,7 +731,8 @@ def test_only_receives_callbacks_from_this_thread():
         # one per example, plus one for the overall run
         assert count_observations == settings().max_examples + 1
 
-    with restore_callbacks():
+    with (
+        restore_callbacks(),
         # Observability tries to record coverage, but we don't currently
         # support concurrent coverage collection, and issue a warning instead.
         #
@@ -750,8 +744,9 @@ def test_only_receives_callbacks_from_this_thread():
         #
         # but that had a race condition somehow and sometimes still didn't work?? The
         # warnings module is not thread-safe until 3.14, I think.
-        with with_collect_coverage(value=False):
-            run_concurrently(test, n=5)
+        with_collect_coverage(value=False),
+    ):
+        run_concurrently(test, n=5)
 
 
 def test_all_threads_callback():
@@ -770,9 +765,11 @@ def test_all_threads_callback():
     def f(n):
         pass
 
-    with with_collect_coverage(value=False):
-        with with_observability_callback(global_callback, all_threads=True):
-            run_concurrently(f, n=n_threads)
+    with (
+        with_collect_coverage(value=False),
+        with_observability_callback(global_callback, all_threads=True),
+    ):
+        run_concurrently(f, n=n_threads)
 
     assert len(calls) == n_threads
     assert all(count == (settings().max_examples + 1) for count in calls.values())

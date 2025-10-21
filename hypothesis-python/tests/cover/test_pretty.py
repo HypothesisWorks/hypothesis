@@ -561,11 +561,10 @@ class BigList(list):
         if cycle:
             return "[...]"
         else:
-            with printer.group(open="[", close="]"):
-                with printer.indent(5):
-                    for v in self:
-                        printer.pretty(v)
-                        printer.breakable(",")
+            with printer.group(open="[", close="]"), printer.indent(5):
+                for v in self:
+                    printer.pretty(v)
+                    printer.breakable(",")
 
 
 def test_print_with_indent():

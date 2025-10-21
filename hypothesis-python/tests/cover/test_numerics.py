@@ -169,9 +169,11 @@ def test_consistent_decimal_error():
     bad = "invalid argument to Decimal"
     with pytest.raises(InvalidArgument) as excinfo:
         check_can_generate_examples(decimals(bad))
-    with pytest.raises(InvalidArgument) as excinfo2:
-        with decimal.localcontext(decimal.Context(traps=[])):
-            check_can_generate_examples(decimals(bad))
+    with (
+        pytest.raises(InvalidArgument) as excinfo2,
+        decimal.localcontext(decimal.Context(traps=[])),
+    ):
+        check_can_generate_examples(decimals(bad))
     assert str(excinfo.value) == str(excinfo2.value)
 
 

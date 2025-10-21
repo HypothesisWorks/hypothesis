@@ -32,6 +32,7 @@ from typing import (
     AnyStr,
     Concatenate,
     Literal,
+    NewType,
     NoReturn,
     ParamSpec,
     Protocol,
@@ -1070,9 +1071,9 @@ class BuildsStrategy(SearchStrategy[Ex]):
                     f"try using sampled_from({name}) instead of builds({name})"
                 ) from err
             if not (self.args or self.kwargs):
-                from .types import is_a_new_type, is_generic_type
+                from .types import is_generic_type
 
-                if is_a_new_type(self.target) or is_generic_type(self.target):
+                if isinstance(self.target, NewType) or is_generic_type(self.target):
                     raise InvalidArgument(
                         f"Calling {self.target!r} with no arguments raised an "
                         f"error - try using from_type({self.target!r}) instead "
@@ -1331,14 +1332,14 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                     if strat is not None:
                         return strat
 
-    if types.is_a_new_type(thing):
+    if isinstance(thing, NewType):
         # Check if we have an explicitly registered strategy for this thing,
         # resolve it so, and otherwise resolve as for the base type.
         if thing in types._global_type_lookup:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
-        return _from_type(thing.__supertype__)  # type: ignore
+        return _from_type(thing.__supertype__)
     if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
         if thing in types._global_type_lookup:
             strategy = as_strategy(types._global_type_lookup[thing], thing)

@@ -44,9 +44,8 @@ def test_prints_seed_only_on_healthcheck(
     def test(i):
         assert fail_healthcheck
 
-    with capture_out() as o:
-        with pytest.raises(expected_exc):
-            test()
+    with capture_out() as o, pytest.raises(expected_exc):
+        test()
 
     output = o.getvalue()
 
@@ -71,9 +70,8 @@ def test_uses_global_force(monkeypatch):
     output = []
 
     for _ in range(2):
-        with capture_out() as o:
-            with pytest.raises(ValueError):
-                test()
+        with capture_out() as o, pytest.raises(ValueError):
+            test()
         output.append(o.getvalue())
 
     assert output[0] == output[1]
@@ -91,25 +89,22 @@ def test_does_print_on_reuse_from_database():
         assume(passes_healthcheck)
         raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(FailedHealthCheck):
-            test()
+    with capture_out() as o, pytest.raises(FailedHealthCheck):
+        test()
 
     assert "@seed" in o.getvalue()
 
     passes_healthcheck = True
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
 
     assert all_values(database)
     assert "@seed" not in o.getvalue()
 
     passes_healthcheck = False
 
-    with capture_out() as o:
-        with pytest.raises(FailedHealthCheck):
-            test()
+    with capture_out() as o, pytest.raises(FailedHealthCheck):
+        test()
 
     assert "@seed" in o.getvalue()

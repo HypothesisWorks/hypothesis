@@ -131,9 +131,8 @@ def fails_with(e, *, match=None):
             # we rig the PRNG to avoid occasional flakiness. We do this outside
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
-            with deterministic_PRNG():
-                with raises(e, match=match):
-                    f(*arguments, **kwargs)
+            with deterministic_PRNG(), raises(e, match=match):
+                f(*arguments, **kwargs)
 
         return inverted_test
 
@@ -256,10 +255,9 @@ def temp_registered(type_, strat_or_factory):
 @contextlib.contextmanager
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
-    with raises(expected_warning, match=match) as r:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=expected_warning)
-            yield r
+    with raises(expected_warning, match=match) as r, warnings.catch_warnings():
+        warnings.simplefilter("error", category=expected_warning)
+        yield r
 
 
 @contextlib.contextmanager

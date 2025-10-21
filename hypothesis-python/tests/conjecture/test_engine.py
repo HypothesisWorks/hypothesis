@@ -506,9 +506,8 @@ def test_health_check_too_slow_with_overrun_examples():
     def test(x):
         pass
 
-    with buffer_size_limit(10):
-        with pytest.raises(FailedHealthCheck) as exc:
-            test()
+    with buffer_size_limit(10), pytest.raises(FailedHealthCheck) as exc:
+        test()
 
     assert str(HealthCheck.too_slow) in str(exc.value)
     assert re.search(
@@ -1118,17 +1117,16 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
 
-    with deterministic_PRNG():
-        with buffer_size_limit(buffer_size):
+    with deterministic_PRNG(), buffer_size_limit(buffer_size):
 
-            def test(data):
-                while data.draw_boolean():
-                    assert data.length <= buffer_size
+        def test(data):
+            while data.draw_boolean():
                 assert data.length <= buffer_size
+            assert data.length <= buffer_size
 
-            runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
-            runner.run()
-            assert runner.valid_examples == buffer_size
+        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+        runner.run()
+        assert runner.valid_examples == buffer_size
 
 
 def test_does_not_shrink_multiple_bugs_when_told_not_to():
