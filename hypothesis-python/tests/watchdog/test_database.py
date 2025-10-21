@@ -64,7 +64,7 @@ def test_database_listener_directory():
             stateful_step_count=10,
             # expensive runtime makes shrinking take forever
             phases=set(Phase) - {Phase.shrink},
-            deadline=False
+            deadline=None,
         ),
     )
 
