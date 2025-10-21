@@ -19,9 +19,9 @@ Hypothesis has shipped with [the ghostwriter](https://hypothesis.readthedocs.io/
 
 Recently, we explored what this same idea might look like with AI. The outcome of that is a [Claude Code](https://www.claude.com/product/claude-code) command we developed, called `/hypothesis`. When invoked, `/hypothesis` reads your code, infers testable properties, and automatically adds Hypothesis tests to your test suite.
 
-The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests.
+The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. After iterating on it, we've found `/hypothesis` pretty useful. Both for standing up tests in fresh repositories, but also to augment existing test suites. And we think that others could benefit from it too!
 
-After iterating on it, we've found `/hypothesis` pretty useful. Both for standing up tests in fresh repositories, but also to augment existing test suites. And we think that others could benefit from it too! Since it doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
+Since it doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
 
 And lest we forget: we also [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/), which uses a variant of this prompt as a bug-hunting agent! We found real bugs in numpy, pandas, and many other packages. It will appear at the 2025 NeurIPS Deep Learning for Code Workshop.
 
