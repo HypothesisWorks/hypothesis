@@ -23,10 +23,10 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.utils import to_jsonable
-from hypothesis.vendor import pretty
+from hypothesis.utils.conventions import UniqueIdentifier
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
-from tests.common.utils import checks_deprecated_behaviour, skipif_emscripten
+from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_or_errors_when_given_non_strategy():
@@ -129,11 +129,6 @@ class AttrsClass:
     n = attr.ib()
 
 
-@dataclass
-class RecursiveReference:
-    a: Any
-
-
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
@@ -172,19 +167,6 @@ def test_jsonable_very_large_ints():
     assert to_jsonable(n, avoid_realization=True) == "<symbolic>"
 
 
-# https://github.com/pyodide/pyodide/issues/5959
-@skipif_emscripten
-def test_jsonable_recursive_reference():
-    # test that to_jsonable handles RecursionError gracefully, by falling back to
-    # pretty.pretty.
-    a = []
-    a.append(a)
-    obj = RecursiveReference(a=a)
-    assert pretty.pretty(obj) == "RecursiveReference(a=[[...]])"
-    assert to_jsonable(obj, avoid_realization=False) == "RecursiveReference(a=[[...]])"
-    assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
-
-
 @dataclass
 class HasCustomJsonFormat:
     x: str
@@ -216,6 +198,41 @@ def test_jsonable_to_json_nested():
     obj = Outer(Inner(42))
     assert to_jsonable(obj, avoid_realization=False) == {"inner": "custom"}
     assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
+
+
+recursive_list = []
+recursive_list.append(recursive_list)
+
+recursive_dict = {}
+recursive_dict["a"] = recursive_dict
+
+mutual1 = []
+mutual2 = [mutual1]
+mutual1.append(mutual2)
+
+shared = UniqueIdentifier("shared")
+
+
+@dataclass
+class A:
+    a: Any
+    b: Any
+
+
+@pytest.mark.parametrize(
+    "obj, value",
+    [
+        (recursive_list, ["[...]"]),
+        (recursive_dict, {"a": "{...}"}),
+        (mutual1, [["[...]"]]),
+        (mutual2, [["[...]"]]),
+        # same id object in different fields. no cycle
+        (A(a=shared, b=shared), {"a": "shared", "b": "shared"}),
+        (A(a=recursive_list, b=recursive_dict), {"a": ["[...]"], "b": {"a": "{...}"}}),
+    ],
+)
+def test_to_jsonable_handles_reference_cycles(obj, value):
+    assert to_jsonable(obj, avoid_realization=False) == value
 
 
 def test_deferred_strategy_draw():

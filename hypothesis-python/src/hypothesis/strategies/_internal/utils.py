@@ -136,7 +136,7 @@ def defines_strategy(
     return decorator
 
 
-def _to_jsonable(obj: object, *, avoid_realization: bool) -> object:
+def _to_jsonable(obj: object, *, avoid_realization: bool, seen: set[int]) -> object:
     if isinstance(obj, (str, int, float, bool, type(None))):
         # We convert integers of 2**63 to floats, to avoid crashing external
         # utilities with a 64 bit integer cap (notable, sqlite). See
@@ -153,7 +153,13 @@ def _to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     if avoid_realization:
         return "<symbolic>"
 
-    recur = partial(_to_jsonable, avoid_realization=avoid_realization)
+    obj_id = id(obj)
+    if obj_id in seen:
+        return pretty(obj, cycle=True)
+
+    recur = partial(
+        _to_jsonable, avoid_realization=avoid_realization, seen=seen | {obj_id}
+    )
     if isinstance(obj, (list, tuple, set, frozenset)):
         if isinstance(obj, tuple) and hasattr(obj, "_asdict"):
             return recur(obj._asdict())  # treat namedtuples as dicts
@@ -199,13 +205,4 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     format for observability.  To avoid side affects, we pretty-print all but
     known types.
     """
-
-    # lift out a helper method to handle recursion errors at the top level.
-    # In an ideal world, _to_jsonable would detect reference cycles itself,
-    # in the same way that pretty.pretty does, so we get the nice hypothesis-specific
-    # logic of to_jsonable, and also to avoid the performance penalty of recursing
-    # a thousand times before falling back.
-    try:
-        return _to_jsonable(obj, avoid_realization=avoid_realization)
-    except RecursionError:
-        return pretty(obj)
+    return _to_jsonable(obj, avoid_realization=avoid_realization, seen=set())
