@@ -67,18 +67,22 @@ Based on this understanding, and a few details from docstrings that we've omitte
 4. The `mean` and `scale` arrays broadcasts correctly.
 5. Seeding the distribution produces deterministic results.
 
-And then goes about writing Hypothesis tests for them. Here's one of the tests it writes, verbatim:
+And then goes about writing Hypothesis tests for them. Here's one of the tests it writes (formatted slightly):
 
 ```python
-from hypothesis import given, strategies as st
 import numpy as np
 
-positive_floats = st.floats(min_value=1e-10, max_value=1e6, allow_nan=False, allow_infinity=False)
+from hypothesis import given, strategies as st
+
+positive_floats = st.floats(
+    min_value=1e-10, max_value=1e6, allow_nan=False, allow_infinity=False
+)
+
 
 @given(
     mean=positive_floats,
     scale=positive_floats,
-    size=st.integers(min_value=1, max_value=1000)
+    size=st.integers(min_value=1, max_value=1000),
 )
 def test_wald_all_outputs_positive(mean, scale, size):
     """Test that all Wald distribution samples are positive."""
