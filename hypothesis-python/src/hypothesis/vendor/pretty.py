@@ -104,10 +104,10 @@ def _safe_getattr(obj: object, attr: str, default: Any | None = None) -> Any:
         return default
 
 
-def pretty(obj: object) -> str:
+def pretty(obj: object, *, cycle: bool = False) -> str:
     """Pretty print the object's representation."""
     printer = RepresentationPrinter()
-    printer.pretty(obj)
+    printer.pretty(obj, cycle=cycle)
     return printer.getvalue()
 
 
@@ -187,10 +187,10 @@ class RepresentationPrinter:
             self.slice_comments = context.data.slice_comments
         assert all(isinstance(k, IDKey) for k in self.known_object_printers)
 
-    def pretty(self, obj: object) -> None:
+    def pretty(self, obj: object, *, cycle: bool = False) -> None:
         """Pretty print the given object."""
         obj_id = id(obj)
-        cycle = obj_id in self.stack
+        cycle = cycle or obj_id in self.stack
         self.stack.append(obj_id)
         try:
             with self.group():
