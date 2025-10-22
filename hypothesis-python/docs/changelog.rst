@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.142.3:
+
+--------------------
+6.142.3 - 2025-10-22
+--------------------
+
+Fix a recursion error when :ref:`observability <observability>` is enabled and a test generates an object with a recursive reference, like ``a = []; a.append(a)``.
+
 .. _v6.142.2:
 
 --------------------
