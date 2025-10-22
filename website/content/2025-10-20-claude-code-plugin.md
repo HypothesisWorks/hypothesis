@@ -55,7 +55,7 @@ In fact, it did not find a bug. In reality, `dateutil.easter` computes the date 
 
 As mentioned before, we [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/) based on the `/hypothesis` command, where we use `/hypothesis` to write and run Hypothesis tests for popular Python packages. We found bugs in NumPy, pandas, and Google and Amazon SDKs, and [submitted](https://github.com/numpy/numpy/pull/29609) [patches](https://github.com/aws-powertools/powertools-lambda-python/pull/7246) [for](https://github.com/aws-cloudformation/cloudformation-cli/pull/1106) [a](https://github.com/huggingface/tokenizers/pull/1853) number of them. The paper is quite short, so do give it a read if you're interested.
 
-It's interesting to walk through one bug we found in particular: a bug in NumPy's `numpy.random.wald` function, which implements the inverse of the Gaussian distribution.
+It's interesting to walk through one bug we found in particular: a bug in NumPy's `numpy.random.wald` function, also called the inverse Guassian distribution.
 
 To start, we ran `/hypothesis numpy.random` to kick off the agent. This directs it to write tests for the entire `numpy.random` module. It starts by reading the source code of `numpy.random` as well as any relevant docstrings. It sees the function `wald`, realizes from its mathematical background of the Wald distribution that `wald` should only produce positive values, and tracks that as a potential property. It reads further and discovers from the docstring of `wald` that both the `mean` and `scale` parameters must be greater than 0.
 
