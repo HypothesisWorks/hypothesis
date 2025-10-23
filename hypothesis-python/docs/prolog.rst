@@ -26,6 +26,7 @@
 .. |settings.suppress_health_check| replace:: :obj:`settings.suppress_health_check <hypothesis.settings.suppress_health_check>`
 .. |settings.stateful_step_count| replace:: :obj:`settings.stateful_step_count <hypothesis.settings.stateful_step_count>`
 .. |settings.backend| replace:: :obj:`settings.backend <hypothesis.settings.backend>`
+.. |settings.observability| replace:: :obj:`settings.observability <hypothesis.settings.observability>`
 
 .. |~settings.max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
 .. |~settings.database| replace:: :obj:`~hypothesis.settings.database`
@@ -38,6 +39,7 @@
 .. |~settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
 .. |~settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
 .. |~settings.backend| replace:: :obj:`~hypothesis.settings.backend`
+.. |~settings.observability| replace:: :obj:`settings.observability <hypothesis.settings.observability>`
 
 .. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
 .. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
@@ -147,7 +149,6 @@
 .. |with_observability_callback| replace:: :data:`~hypothesis.internal.observability.with_observability_callback`
 .. |observability_enabled| replace:: :data:`~hypothesis.internal.observability.observability_enabled`
 .. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
-.. |OBSERVABILITY_CHOICES| replace:: :data:`~hypothesis.internal.observability.OBSERVABILITY_CHOICES`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`
