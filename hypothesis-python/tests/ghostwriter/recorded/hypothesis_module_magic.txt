@@ -96,6 +96,7 @@ def test_fuzz_settings(
     deadline: typing.Union[int, float, datetime.timedelta, None],
     print_blob: bool,
     backend: str,
+    observability: typing.Union[bool, collections.abc.Collection[str]],
 ) -> None:
     hypothesis.settings(
         parent=parent,
@@ -110,6 +111,7 @@ def test_fuzz_settings(
         deadline=deadline,
         print_blob=print_blob,
         backend=backend,
+        observability=observability,
     )
 
 
