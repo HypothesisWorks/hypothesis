@@ -13,10 +13,15 @@ import pandas as pd
 import pytest
 
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
-from tests.common.debug import find_any
+from tests.common.debug import (
+    assert_all_examples,
+    check_can_generate_examples,
+    find_any,
+)
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -279,3 +284,54 @@ def test_pandas_nullable_types():
     df = find_any(st, lambda s: s.isna().any().any())
     for s in df.columns:
         assert type(df[s].dtype) == pd.core.arrays.integer.Int8Dtype
+
+
+@given(pdst.data_frames(columns=[pdst.column("col", dtype=object)]))
+def test_object_columns_are_of_type_object(df):
+    assert df["col"].dtype == np.dtype("O")
+
+
+def test_class_instances_not_allowed_in_scalar_columns():
+    class A:
+        pass
+
+    s = pdst.data_frames(
+        columns=[
+            pdst.column(
+                "col",
+                elements=st.just(A()),
+                dtype=npst.scalar_dtypes(),
+            )
+        ]
+    )
+
+    with pytest.raises(InvalidArgument):
+        check_can_generate_examples(s)
+
+
+def test_can_generate_object_arrays_with_mixed_dtype_elements():
+    class A:
+        pass
+
+    s = pdst.data_frames(
+        columns=[pdst.column("col", st.just(A()) | st.integers(), dtype=object)],
+        index=pdst.range_indexes(1),
+    )
+    assert_all_examples(s, lambda df: df["col"].dtype == np.dtype("O"))
+    find_any(s, lambda df: len({type(x) for x in df["col"].values}) > 1)
+
+
+@given(st.data())
+@pytest.mark.xfail(
+    strict=False,
+    reason="not actually true due to pandas conversion. see "
+    "https://github.com/HypothesisWorks/hypothesis/pull/4444#issuecomment-3413951478",
+)
+def test_object_dataframe_can_hold_arbitrary_class_instances(data):
+    instance = data.draw(st.from_type(type).flatmap(st.from_type))
+    s = pdst.data_frames(
+        columns=[pdst.column("col", elements=st.just(instance), dtype=object)]
+    )
+    df = data.draw(s)
+
+    assert all(v is instance for v in df["col"].values)
