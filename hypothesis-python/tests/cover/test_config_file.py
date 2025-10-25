@@ -183,7 +183,9 @@ class TestParseConfigFile:
             config_path.unlink()
 
     def test_parses_named_profiles(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("[hypothesis]\n")
             f.write("max_examples = 100\n")
             f.write("\n")
