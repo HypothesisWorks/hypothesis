@@ -997,24 +997,24 @@ class StateForActualGivenExecution:
                 arg_drawtime = math.fsum(data.draw_times.values())
                 arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
-                start = time.perf_counter()
-                try:
-                    with unwrap_markers_from_group(), ensure_free_stackframes():
+                with unwrap_markers_from_group(), ensure_free_stackframes():
+                    start = time.perf_counter()
+                    try:
                         result = self.test(*args, **kwargs)
-                finally:
-                    finish = time.perf_counter()
-                    in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
-                    in_stateful = (
-                        math.fsum(data._stateful_run_times.values()) - arg_stateful
-                    )
-                    in_gctime = gc_cumulative_time() - arg_gctime
-                    runtime = finish - start - in_drawtime - in_stateful - in_gctime
-                    self._timing_features = {
-                        "execute:test": runtime,
-                        "overall:gc": in_gctime,
-                        **data.draw_times,
-                        **data._stateful_run_times,
-                    }
+                    finally:
+                        finish = time.perf_counter()
+                        in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
+                        in_stateful = (
+                            math.fsum(data._stateful_run_times.values()) - arg_stateful
+                        )
+                        in_gctime = gc_cumulative_time() - arg_gctime
+                        runtime = finish - start - in_drawtime - in_stateful - in_gctime
+                        self._timing_features = {
+                            "execute:test": runtime,
+                            "overall:gc": in_gctime,
+                            **data.draw_times,
+                            **data._stateful_run_times,
+                        }
 
                 if (
                     (current_deadline := self.settings.deadline) is not None
