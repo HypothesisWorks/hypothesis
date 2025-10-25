@@ -27,6 +27,7 @@ from typing import (
     ClassVar,
     Optional,
     TypeVar,
+    cast,
 )
 
 from hypothesis._config_file import load_profiles_from_config_file
@@ -1093,9 +1094,12 @@ settings.register_profile("ci", CI)
 # Load profiles from hypothesis.ini if it exists
 # This allows users to override the built-in profiles or define new ones
 _config_profiles = load_profiles_from_config_file()
-_config_load_profile = _config_profiles.pop("_load_profile", None)
+_config_load_profile = cast(str | None, _config_profiles.pop("_load_profile", None))
 
-for _profile_name, _profile_settings in _config_profiles.items():
+# After popping the special _load_profile key, remaining values are all dicts
+_config_profile_dicts = cast(dict[str, dict[str, Any]], _config_profiles)
+
+for _profile_name, _profile_settings in _config_profile_dicts.items():
     # Get the parent profile if it exists (for inheritance)
     _parent = settings.get_profile(_profile_name) if _profile_name in settings._profiles else None
     settings.register_profile(_profile_name, parent=_parent, **_profile_settings)

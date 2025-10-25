@@ -123,7 +123,7 @@ def _parse_value(key: str, value: str) -> Any:
     return value
 
 
-def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any]]:
+def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any] | str]:
     """
     Parse a hypothesis.ini configuration file.
 
@@ -147,7 +147,7 @@ def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any]]:
         )
         return {}
 
-    profiles: dict[str, dict[str, Any]] = {}
+    profiles: dict[str, dict[str, Any] | str] = {}
 
     for section in parser.sections():
         # Section names are either [hypothesis] or [hypothesis:profile_name]
@@ -176,7 +176,7 @@ def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any]]:
     return profiles
 
 
-def load_profiles_from_config_file() -> dict[str, dict[str, Any]]:
+def load_profiles_from_config_file() -> dict[str, dict[str, Any] | str]:
     """
     Load Hypothesis settings profiles from a hypothesis.ini file.
 
