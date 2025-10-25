@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.142.4:
+
+--------------------
+6.142.4 - 2025-10-25
+--------------------
+
+Improve the accuracy of test timing reports, by tracking the start time of each test case closer to when the test is executed.
+
 .. _v6.142.3:
 
 --------------------
