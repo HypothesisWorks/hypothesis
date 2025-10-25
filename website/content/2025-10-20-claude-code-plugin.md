@@ -17,13 +17,15 @@ author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
 
 Hypothesis has shipped with [the ghostwriter](https://hypothesis.readthedocs.io/en/latest/reference/integrations.html#ghostwriter) for quite a while, which automatically writes Hypothesis tests for your code. It uses nothing but good old fashioned heuristics, and is a nice way to stand up Hypothesis tests with minimal effort.
 
-Recently, we explored what this same idea might look like with AI. The outcome of that is a [Claude Code](https://www.claude.com/product/claude-code) command we developed, called `/hypothesis`. When invoked, `/hypothesis` reads your code, infers testable properties, and automatically adds Hypothesis tests to your test suite.
+Recently, we explored what this same idea might look like with AI, and the results have been pretty compelling. So we're happy to release `/hypothesis`, a [Claude Code](https://www.claude.com/product/claude-code) command that we developed to automate Hypothesis test-writing.
 
-The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. After iterating on it, we've found `/hypothesis` pretty useful. Both for standing up tests in fresh repositories, but also to augment existing test suites. And we think that others could benefit from it too!
+When invoked, `/hypothesis` reads your code, automatically infers testable properties, and adds Hypothesis tests to your test suite. The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. We've found `/hypothesis` pretty useful—both for standing up tests in fresh repositories, but also to augment existing test suites.
 
 Since it doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
 
-And lest we forget: we also [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/), which uses a variant of this prompt as a bug-hunting agent! We found real bugs in numpy, pandas, and many other packages. It will appear at the 2025 NeurIPS Deep Learning for Code Workshop.
+If given no arguments, `/hypothesis` defaults to exploring and writing tests for the most promising parts of the codebase. You can alternatively point it to a particular section of the code, or give it more complex instructions, like `/hypothesis focus on the database implementation; add tests to test_db.py`.
+
+And lest we forget: we also [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/), using a variant of this prompt as a bug-hunting agent! We found real bugs in numpy, pandas, and many other packages. It will appear at the 2025 NeurIPS Deep Learning for Code Workshop.
 
 # Designing the `/hypothesis` command
 
