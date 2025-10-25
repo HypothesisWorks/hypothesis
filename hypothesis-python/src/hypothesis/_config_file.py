@@ -82,7 +82,9 @@ def _parse_value(key: str, value: str) -> Any:
         if value.lower() in ("none", "null"):
             return None
         # Try to parse duration strings
-        duration_match = re.match(r"^(\d+(?:\.\d+)?)\s*(ms|s|sec|seconds?|milliseconds?)?$", value.lower())
+        duration_match = re.match(
+            r"^(\d+(?:\.\d+)?)\s*(ms|s|sec|seconds?|milliseconds?)?$", value.lower()
+        )
         if duration_match:
             amount = float(duration_match.group(1))
             unit = duration_match.group(2) or ""
@@ -153,7 +155,7 @@ def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any] | str]:
         if section == "hypothesis":
             profile_name = "default"
         elif section.startswith("hypothesis:"):
-            profile_name = section[len("hypothesis:"):]
+            profile_name = section[len("hypothesis:") :]
         else:
             # Ignore non-hypothesis sections
             continue
@@ -195,4 +197,3 @@ def load_profiles_from_config_file() -> dict[str, dict[str, Any] | str]:
         return {}
 
     return _parse_config_file(config_path)
-

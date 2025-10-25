@@ -289,7 +289,9 @@ class TestParseConfigFile:
             # Import HypothesisWarning locally to match the actual warning type
             from hypothesis.errors import HypothesisWarning
 
-            with pytest.warns(HypothesisWarning, match="Failed to parse hypothesis.ini"):
+            with pytest.warns(
+                HypothesisWarning, match="Failed to parse hypothesis.ini"
+            ):
                 profiles = _parse_config_file(config_path)
             assert profiles == {}
         finally:
@@ -355,10 +357,7 @@ class TestConfigFileIntegration:
             (tmpdir_path / ".git").mkdir()
 
             config_file = tmpdir_path / "hypothesis.ini"
-            config_file.write_text(
-                "[hypothesis:test_profile]\n"
-                "max_examples = 42\n"
-            )
+            config_file.write_text("[hypothesis:test_profile]\n" "max_examples = 42\n")
 
             original_cwd = os.getcwd()
             try:
@@ -393,9 +392,7 @@ class TestConfigFilePriority:
 
             config_file = tmpdir_path / "hypothesis.ini"
             config_file.write_text(
-                "[hypothesis:base]\n"
-                "max_examples = 100\n"
-                "derandomize = true\n"
+                "[hypothesis:base]\n" "max_examples = 100\n" "derandomize = true\n"
             )
 
             original_cwd = os.getcwd()
@@ -418,7 +415,8 @@ class TestRealWorldConfigExamples:
 
     def test_typical_development_config(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
-            f.write("""[hypothesis]
+            f.write(
+                """[hypothesis]
 max_examples = 100
 deadline = 200
 verbosity = normal
@@ -436,7 +434,8 @@ deadline = 50
 [hypothesis:debug]
 max_examples = 10
 verbosity = verbose
-""")
+"""
+            )
             f.flush()
             config_path = Path(f.name)
 
@@ -445,7 +444,9 @@ verbosity = verbose
 
             # Check default profile
             assert profiles["default"]["max_examples"] == 100
-            assert profiles["default"]["deadline"] == datetime.timedelta(milliseconds=200)
+            assert profiles["default"]["deadline"] == datetime.timedelta(
+                milliseconds=200
+            )
             assert profiles["default"]["verbosity"] == "normal"
 
             # Check CI profile
@@ -466,7 +467,8 @@ verbosity = verbose
 
     def test_config_with_auto_load(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
-            f.write("""[hypothesis]
+            f.write(
+                """[hypothesis]
 load_profile = development
 max_examples = 50
 
@@ -477,7 +479,8 @@ deadline = 500
 [hypothesis:production]
 max_examples = 10000
 deadline = None
-""")
+"""
+            )
             f.flush()
             config_path = Path(f.name)
 
@@ -493,4 +496,3 @@ deadline = None
             assert profiles["production"]["max_examples"] == 10000
         finally:
             config_path.unlink()
-

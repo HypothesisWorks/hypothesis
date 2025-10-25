@@ -1101,7 +1101,11 @@ _config_profile_dicts = cast(dict[str, dict[str, Any]], _config_profiles)
 
 for _profile_name, _profile_settings in _config_profile_dicts.items():
     # Get the parent profile if it exists (for inheritance)
-    _parent = settings.get_profile(_profile_name) if _profile_name in settings._profiles else None
+    _parent = (
+        settings.get_profile(_profile_name)
+        if _profile_name in settings._profiles
+        else None
+    )
     settings.register_profile(_profile_name, parent=_parent, **_profile_settings)
 
 # Auto-load profile from config file if specified
