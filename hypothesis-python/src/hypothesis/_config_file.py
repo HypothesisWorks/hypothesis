@@ -19,7 +19,7 @@ from typing import Any
 
 from hypothesis.errors import HypothesisWarning
 
-__all__ = ["load_profile_from_config_file"]
+__all__ = ["load_profiles_from_config_file"]
 
 
 def _find_project_root() -> Path | None:
@@ -104,8 +104,7 @@ def _parse_value(key: str, value: str) -> Any:
         if not value:
             return []
         # Split by comma and strip whitespace
-        items = [item.strip() for item in value.split(",")]
-        return items
+        return [item.strip() for item in value.split(",")]
 
     # Try to parse as int
     try:

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from hypothesis import HealthCheck, Phase, Verbosity, given, settings, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis._config_file import (
     _find_project_root,
     _parse_config_file,
