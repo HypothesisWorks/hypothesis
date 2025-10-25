@@ -193,7 +193,7 @@ pre code {
 }
 
 .home-page {
-  max-width: 850px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -346,14 +346,14 @@ pre code {
 }
 
 .article-page {
-  max-width: 850px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
 .article__header {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 2px solid #e2e2e2;
+  border-bottom: 2px solid #dadada;
 }
 
 .article__title {
@@ -440,17 +440,38 @@ pre code {
   margin-bottom: 0.25rem;
 }
 
-.article-content a {
+.article-content a,
+.article-summary a:hover {
   color: var(--link-color);
   text-decoration: none;
 }
 
-.article-content a:hover {
+.article-content a:hover,
+.article-summary a:hover {
   text-decoration: underline;
 }
 
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.article-content hr,
+.article-card__summary hr {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: none;
+  border-bottom: 2px solid #dadada;
+}
+
 .static-page {
-  max-width: 850px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -517,6 +538,36 @@ pre code {
 
 .page-body a:hover {
   text-decoration: underline;
+}
+
+/* Responsive images within static pages */
+.page-body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
+
+/* Figures and captions */
+.article-content figure,
+.page-body figure {
+  margin: 1.5rem 0;
+}
+
+.article-content figure > img,
+.page-body figure > img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.article-content figcaption,
+.page-body figcaption {
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-top: 0.5rem;
 }
 
 .footer {
