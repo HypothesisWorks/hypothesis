@@ -139,7 +139,7 @@ def _parse_config_file(config_path: Path) -> dict[str, dict[str, Any] | str]:
     parser = configparser.ConfigParser()
 
     try:
-        parser.read(config_path)
+        parser.read(config_path, encoding="utf-8")
     except configparser.Error as e:
         warnings.warn(
             f"Failed to parse hypothesis.ini at {config_path}: {e}",

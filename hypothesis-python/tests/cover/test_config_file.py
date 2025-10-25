@@ -165,7 +165,9 @@ class TestParseConfigFile:
     """Test the _parse_config_file function."""
 
     def test_parses_default_profile(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("[hypothesis]\n")
             f.write("max_examples = 200\n")
             f.write("derandomize = true\n")
@@ -208,7 +210,9 @@ class TestParseConfigFile:
             config_path.unlink()
 
     def test_parses_load_profile_directive(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("[hypothesis]\n")
             f.write("load_profile = ci\n")
             f.write("max_examples = 100\n")
@@ -228,7 +232,9 @@ class TestParseConfigFile:
             config_path.unlink()
 
     def test_ignores_non_hypothesis_sections(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("[hypothesis]\n")
             f.write("max_examples = 100\n")
             f.write("\n")
@@ -249,7 +255,9 @@ class TestParseConfigFile:
             config_path.unlink()
 
     def test_handles_various_data_types(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("[hypothesis]\n")
             f.write("max_examples = 200\n")
             f.write("derandomize = true\n")
@@ -278,7 +286,9 @@ class TestParseConfigFile:
             config_path.unlink()
 
     def test_handles_invalid_ini_gracefully(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write("This is not valid INI content!\n")
             f.write("[[broken]]\n")
             f.flush()
@@ -327,7 +337,7 @@ class TestLoadProfilesFromConfigFile:
                 "\n"
                 "[hypothesis:custom]\n"
                 "max_examples = 50\n",
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
             # Create a subdirectory and change to it
@@ -358,7 +368,9 @@ class TestConfigFileIntegration:
             (tmpdir_path / ".git").mkdir()
 
             config_file = tmpdir_path / "hypothesis.ini"
-            config_file.write_text("[hypothesis:test_profile]\nmax_examples = 42\n", encoding="utf-8")
+            config_file.write_text(
+                "[hypothesis:test_profile]\nmax_examples = 42\n", encoding="utf-8"
+            )
 
             original_cwd = os.getcwd()
             try:
@@ -394,7 +406,7 @@ class TestConfigFilePriority:
             config_file = tmpdir_path / "hypothesis.ini"
             config_file.write_text(
                 "[hypothesis:base]\nmax_examples = 100\nderandomize = true\n",
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
             original_cwd = os.getcwd()
@@ -416,7 +428,9 @@ class TestRealWorldConfigExamples:
     """Test realistic hypothesis.ini configurations."""
 
     def test_typical_development_config(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write(
                 """[hypothesis]
 max_examples = 100
@@ -468,7 +482,9 @@ verbosity = verbose
             config_path.unlink()
 
     def test_config_with_auto_load(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ini", delete=False, encoding="utf-8"
+        ) as f:
             f.write(
                 """[hypothesis]
 load_profile = development
