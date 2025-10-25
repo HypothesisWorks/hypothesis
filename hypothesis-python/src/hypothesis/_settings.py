@@ -29,6 +29,7 @@ from typing import (
     TypeVar,
 )
 
+from hypothesis._config_file import load_profiles_from_config_file
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -1089,8 +1090,21 @@ CI = settings(
 
 settings.register_profile("ci", CI)
 
+# Load profiles from hypothesis.ini if it exists
+# This allows users to override the built-in profiles or define new ones
+_config_profiles = load_profiles_from_config_file()
+_config_load_profile = _config_profiles.pop("_load_profile", None)
 
-if is_in_ci():  # pragma: no cover # covered in ci, but not locally
+for _profile_name, _profile_settings in _config_profiles.items():
+    # Get the parent profile if it exists (for inheritance)
+    _parent = settings.get_profile(_profile_name) if _profile_name in settings._profiles else None
+    settings.register_profile(_profile_name, parent=_parent, **_profile_settings)
+
+# Auto-load profile from config file if specified
+if _config_load_profile:
+    settings.load_profile(_config_load_profile)
+elif is_in_ci():  # pragma: no cover # covered in ci, but not locally
+    # Only auto-load CI profile if config file didn't specify a profile
     settings.load_profile("ci")
 
 assert settings.default is not None

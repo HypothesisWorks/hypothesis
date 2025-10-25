@@ -181,6 +181,7 @@ their individual contributions.
 * `SuperStormer <https://github.com/SuperStormer>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
+* `tboy1337 <https://github.com/tboy1337>`_ (tboy1337@proton.me)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Thea Koutsoukis <https://www.github.com/theakaterina>`_
 * `Thomas Ball <https://www.github.com/bomtall>`_ (bomtall1@hotmail.com)

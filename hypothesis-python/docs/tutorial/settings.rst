@@ -111,3 +111,102 @@ If using pytest, you can also easily select the active profile with ``--hypothes
     $ pytest --hypothesis-profile fast
 
 See the :ref:`Hypothesis pytest plugin <pytest-plugin>`.
+
+Using a configuration file
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For projects that prefer configuration files, Hypothesis can load settings from a ``hypothesis.ini`` file located at the project root. This file uses standard INI format and allows you to define settings profiles without writing Python code.
+
+Hypothesis searches for ``hypothesis.ini`` in your project root (the directory containing ``.git/``, ``setup.py``, ``pyproject.toml``, or similar project markers).
+
+Basic example
+^^^^^^^^^^^^^
+
+Create a ``hypothesis.ini`` file in your project root:
+
+.. code-block:: ini
+
+    [hypothesis]
+    max_examples = 200
+    deadline = 500
+
+    [hypothesis:ci]
+    max_examples = 1000
+    deadline = None
+    derandomize = true
+
+    [hypothesis:fast]
+    max_examples = 10
+
+The ``[hypothesis]`` section configures the default profile, while ``[hypothesis:profile_name]`` sections define named profiles.
+
+Supported settings
+^^^^^^^^^^^^^^^^^^
+
+You can configure any setting that can be passed to |settings|:
+
+* **Boolean values**: ``true``/``false``, ``yes``/``no``, ``on``/``off``, ``1``/``0`` (case-insensitive)
+* **Integer values**: ``max_examples = 100``
+* **None values**: ``deadline = None`` or ``database = null``
+* **Duration values**: ``deadline = 200`` (milliseconds) or ``deadline = 2s`` (seconds)
+* **List values**: ``phases = explicit, generate, shrink`` (comma-separated)
+* **String values**: ``verbosity = verbose``, ``backend = hypothesis``
+
+Auto-loading a profile
+^^^^^^^^^^^^^^^^^^^^^^
+
+You can specify which profile to load by default using the ``load_profile`` key:
+
+.. code-block:: ini
+
+    [hypothesis]
+    load_profile = development
+    max_examples = 50
+
+    [hypothesis:development]
+    max_examples = 200
+
+    [hypothesis:production]
+    max_examples = 10000
+
+When Hypothesis initializes, it will automatically load the ``development`` profile instead of the default profile.
+
+Settings priority
+^^^^^^^^^^^^^^^^^
+
+Settings are applied in the following order (later items override earlier ones):
+
+1. Built-in defaults (``default`` and ``ci`` profiles)
+2. Settings from ``hypothesis.ini`` (if the file exists)
+3. Programmatic |settings.register_profile| calls in your code
+4. |@settings| decorators on individual tests
+
+This means that ``hypothesis.ini`` provides a good baseline for your project, but individual tests can still override these settings as needed.
+
+Complete example
+^^^^^^^^^^^^^^^^
+
+Here's a realistic ``hypothesis.ini`` for a typical project:
+
+.. code-block:: ini
+
+    [hypothesis]
+    max_examples = 100
+    deadline = 200
+    verbosity = normal
+    
+    [hypothesis:ci]
+    max_examples = 1000
+    deadline = None
+    derandomize = true
+    print_blob = true
+    suppress_health_check = too_slow
+    
+    [hypothesis:fast]
+    max_examples = 10
+    deadline = 50
+    
+    [hypothesis:debug]
+    max_examples = 10
+    verbosity = verbose
+    print_blob = true
