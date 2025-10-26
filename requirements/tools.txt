@@ -142,7 +142,7 @@ markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.3
     # via jinja2
-matplotlib-inline==0.1.7
+matplotlib-inline==0.2.1
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
@@ -222,7 +222,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.406
+pyright==1.1.407
     # via -r requirements/tools.in
 pytest==8.4.2
     # via
@@ -262,7 +262,7 @@ rich==14.2.0
     # via
     #   pelican
     #   twine
-ruff==0.14.1
+ruff==0.14.2
     # via -r requirements/tools.in
 secretstorage==3.4.0
     # via keyring
@@ -325,7 +325,7 @@ tomli==2.3.0
     #   pytest
     #   sphinx
     #   tox
-tox==4.31.0
+tox==4.32.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -380,7 +380,7 @@ zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.2
+pip==25.3
     # via pip-tools
 setuptools==80.9.0
     # via pip-tools

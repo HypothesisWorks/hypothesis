@@ -59,7 +59,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.9.2
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.142.1
+hypothesis[cli,watchdog]==6.142.4
     # via hypofuzz
 idna==3.11
     # via
@@ -103,11 +103,11 @@ pluggy==1.6.0
     #   pytest-cov
 priority==2.0.0
     # via hypercorn
-psutil==7.1.0
+psutil==7.1.2
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==21.0.0
+pyarrow==22.0.0
     # via -r requirements/coverage.in
 pygments==2.19.2
     # via
@@ -135,7 +135,7 @@ pytz==2025.2
     #   pandas
 pyyaml==6.0.3
     # via libcst
-redis==6.4.0
+redis==7.0.0
     # via fakeredis
 rich==14.2.0
     # via hypothesis
