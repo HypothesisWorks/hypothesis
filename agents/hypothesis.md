@@ -56,7 +56,7 @@ If you don't identify any candidate properties during exploration, that's fine; 
 
 ## 2. For each candidate property, explore how its related code is used
 
-Before writing Hypothesis tests, make sure you have a good understanding of what the code each candidate property is testing does. For each candidate property, explore how the codebase uses the code involved in that property. For example, if a property involves a function `wald`, explore how the codebase calls `wald`: what kinds of inputs are passed to it? in what context? etc. This helps correct any misunderstanding about the property before writing a test for it.
+Before writing Hypothesis tests, make sure you have a good understanding of what the code each candidate property is testing does. For each candidate property, explore how the codebase uses the code involved in that property. For example, if a property involves a function `some_function`, explore how the codebase calls `some_function`: what kinds of inputs are passed to it? in what context? etc. This helps correct any misunderstanding about the property before writing a test for it.
 
 ## 3. Write Hypothesis tests based on those properties.
 
@@ -75,9 +75,9 @@ Run the new Hypothesis tests that you just added. If any fail, reflect on why. I
 
 Documentation reference (fetch with the `WebFetch` tool if required):
 
-- **Strategies reference**: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html
-- **NumPy strategies**: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html#numpy
-- **Pandas strategies**: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html#pandas
+- **Strategies API reference**: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html
+- **Other API reference**: https://hypothesis.readthedocs.io/en/latest/reference/api.html
+  - Documents `@settings`, `@given`, etc.
 
 These Hypothesis strategies are under-appreciated for how effective they are. Use them if they are a perfect or near-perfect fit for a property:
 

@@ -17,7 +17,7 @@ author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
 
 Hypothesis has shipped with [the ghostwriter](https://hypothesis.readthedocs.io/en/latest/reference/integrations.html#ghostwriter) for quite a while, which automatically writes Hypothesis tests for your code. It uses nothing but good old fashioned heuristics, and is a nice way to stand up Hypothesis tests with minimal effort.
 
-Recently, we explored what this same idea might look like with AI, and the results have been pretty compelling. So we're happy to release `/hypothesis`, a [Claude Code](https://www.claude.com/product/claude-code) command that we developed to automate Hypothesis test-writing.
+Recently, we explored what this same idea might look like with modern AI tools, and the results have been pretty compelling. So we're happy to release `/hypothesis`, a [Claude Code](https://www.claude.com/product/claude-code) command that we developed to automate Hypothesis test-writing.
 
 When invoked, `/hypothesis` reads your code, automatically infers testable properties, and adds Hypothesis tests to your test suite. The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. We've found `/hypothesis` pretty useful—both for standing up tests in fresh repositories, but also to augment existing test suites.
 
