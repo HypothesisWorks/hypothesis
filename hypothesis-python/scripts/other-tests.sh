@@ -67,7 +67,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/patching/
   pip uninstall -y libcst
 
-  # One of the ghostwriter tests uses attrs (though hypothesis[extra] does not require attrs).
+  # One of the ghostwriter tests uses attrs (though hypothesis[ghostwriter] does not require attrs).
   pip install attrs
   $PYTEST tests/ghostwriter/
   pip uninstall -y attrs
