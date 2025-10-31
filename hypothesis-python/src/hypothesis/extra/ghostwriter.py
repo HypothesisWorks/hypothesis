@@ -1850,7 +1850,8 @@ def _make_binop_body(
         ]
         maker(do.__name__ + "_distributes_over", "abc", "\n".join(dist_parts))
 
-    _, operands_repr = _valid_syntax_repr(operands)
+    operands_imports, operands_repr = _valid_syntax_repr(operands)
+    all_imports.update(operands_imports)
     operands_repr = _st_strategy_names(operands_repr)
     classdef = ""
     if style == "unittest":
