@@ -101,6 +101,7 @@ class Namespace:
     class A:
         x: int
 
+
 def test_includes_namespace_classes_in_pretty():
     obj = Namespace.A(x=1)
     assert pretty.pretty(obj) == "Namespace.A(x=1)"

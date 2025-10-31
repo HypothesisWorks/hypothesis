@@ -14,9 +14,9 @@ import attr
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import SmallSearchSpaceWarning
+from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.debug import check_can_generate_examples
-from hypothesis.strategies._internal.utils import to_jsonable
 
 
 def a_converter(x) -> int:

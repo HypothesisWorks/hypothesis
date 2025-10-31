@@ -181,10 +181,10 @@ def _to_jsonable(obj: object, *, avoid_realization: bool, seen: set[int]) -> obj
         # can get called as well
         return {
             field.name: recur(getattr(obj, field.name))
-            for field in dataclasses.fields(obj)  # type: ignore
+            for field in dataclasses.fields(obj)
         }
     if (attr := sys.modules.get("attr")) is not None and attr.has(type(obj)):
-        return recur(attr.asdict(obj, recurse=False))  # type: ignore
+        return recur(attr.asdict(obj, recurse=False))
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
         return recur(obj.model_dump())
 
