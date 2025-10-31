@@ -210,6 +210,27 @@ def test_binary_op_also_handles_frozensets():
     exec(source_code, {})
 
 
+def test_binary_op_with_numpy_arrays_includes_imports():
+    # Regression test for issue #4576: binary_operation should include imports
+    # for numpy strategies like arrays(), scalar_dtypes(), and array_shapes()
+    pytest.importorskip("numpy")
+    import numpy as np
+
+    def numpy_add(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return a + b
+
+    source_code = ghostwriter.binary_operation(
+        numpy_add, associative=True, commutative=True, identity=None
+    )
+    # Check that the necessary imports are present
+    assert "from hypothesis.extra.numpy import" in source_code
+    assert "arrays" in source_code
+    assert "scalar_dtypes" in source_code
+    assert "array_shapes" in source_code
+    # Most importantly: the code should execute without NameError
+    exec(source_code, {})
+
+
 @varied_excepts
 @pytest.mark.parametrize(
     "func", [re.compile, json.loads, json.dump, timsort, ast.literal_eval]
