@@ -48,3 +48,28 @@ class AttrsClass:
 def test_jsonable_attrs():
     obj = AttrsClass(n=10)
     assert to_jsonable(obj, avoid_realization=False) == {"n": 10}
+
+
+def test_hypothesis_is_not_the_first_to_import_attrs(testdir):
+    # We only import attrs if the user did so first.
+
+    test_path = testdir.makepyfile(
+        """
+        import os
+        # don't load hypothesis plugins, which might transitively import attrs
+        os.environ["HYPOTHESIS_NO_PLUGINS"] = "1"
+
+        import sys
+        assert "attrs" not in sys.modules
+
+        from hypothesis import given, strategies as st
+        assert "attrs" not in sys.modules
+
+        @given(st.integers() | st.floats() | st.sampled_from(["a", "b"]))
+        def test_no_attrs_import(x):
+            assert "attrs" not in sys.modules
+        """
+    )
+    # don't load pytest plugins, which might transitively import attrs
+    result = testdir.runpytest(test_path, "--disable-plugin-autoload")
+    result.assert_outcomes(passed=1, failed=0)
