@@ -15,17 +15,21 @@ author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
   </a>
 </div>
 
+*We wrote a paper using Claude to autonomously write and run Hypothesis tests, and found real bugs in numpy, pandas, and other packages. We've extracted this to a Claude Code command for writing Hypothesis tests, which we're sharing today. We hope you find it useful.*
+
+*(Not familiar with property-based testing? [Learn more here](https://increment.com/testing/in-praise-of-property-based-testing/)).*
+
+---
+
 Hypothesis has shipped with [the ghostwriter](https://hypothesis.readthedocs.io/en/latest/reference/integrations.html#ghostwriter) for quite a while, which automatically writes Hypothesis tests for your code. It uses nothing but good old fashioned heuristics, and is a nice way to stand up Hypothesis tests with minimal effort.
 
-Recently, we explored what this same idea might look like with modern AI tools, like Anthropic's Claude Sonnet 4.5 and OpenAI's GPT-5, and the results have been pretty compelling. So we're happy to release `/hypothesis`, a [Claude Code](https://www.claude.com/product/claude-code) command that we developed to automate Hypothesis test-writing.
+Recently, we explored what this same idea might look like with modern AI tools, like Anthropic's Claude Sonnet 4.5 and OpenAI's GPT-5, and the results have been pretty compelling. So we're happy to release `/hypothesis`, a [Claude Code](https://www.claude.com/product/claude-code) command that we developed to automate writing Hypothesis tests.
 
-The `/hypothesis` command instructs the model to automatically read your code, infer testable properties, and add Hypothesis tests to your test suite. The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. We've found `/hypothesis` pretty useful when combined with modern AI models—both for standing up tests in fresh repositories, but also to augment existing test suites.
+The `/hypothesis` command instructs the model to automatically read your code, infer testable properties, and add Hypothesis tests to your test suite. The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. You can alternatively give more complex instructions, like `/hypothesis focus on the database implementation; add tests to test_db.py`.
+
+We've found `/hypothesis` pretty useful when combined with modern AI models—both for standing up tests in fresh repositories, but also to augment existing test suites.
 
 Since it doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
-
-If given no arguments, the instructions in `/hypothesis` default to exploring and writing tests for the most promising parts of the codebase. You can alternatively point out to a particular section of the code, or give more complex instructions to the model, like `/hypothesis focus on the database implementation; add tests to test_db.py`.
-
-And lest we forget: we also [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/), using a variant of this prompt as a bug-hunting agent! We found real bugs in numpy, pandas, and many other packages. It will appear at the 2025 NeurIPS Deep Learning for Code Workshop.
 
 # Designing the `/hypothesis` command
 
@@ -54,9 +58,9 @@ This kind of subtle semantic reasoning remains difficult for models, and it's im
 
 # Using `/hypothesis` for bug hunting
 
-As mentioned before, we [wrote a paper](https://mmaaz-git.github.io/agentic-pbt-site/) based on the `/hypothesis` command, where we use `/hypothesis` with Claude Sonnet 4 to write and run Hypothesis tests for popular Python packages. We found bugs in NumPy, pandas, and Google and Amazon SDKs, and [submitted](https://github.com/numpy/numpy/pull/29609) [patches](https://github.com/aws-powertools/powertools-lambda-python/pull/7246) [for](https://github.com/aws-cloudformation/cloudformation-cli/pull/1106) [a](https://github.com/huggingface/tokenizers/pull/1853) number of them. The paper is quite short, so do give it a read if you're interested.
+Armed with a test-writing command, one natural extension is to use it to find real bugs in open-source repositories. To explore this, we used Claude Opus 4.1 to automatically write and run Hypothesis tests for a number of popular Python packages. The results were promising—we found bugs in NumPy, pandas, and Google and Amazon SDKs, and [submitted](https://github.com/numpy/numpy/pull/29609) [patches](https://github.com/aws-powertools/powertools-lambda-python/pull/7246) [for](https://github.com/aws-cloudformation/cloudformation-cli/pull/1106) [several](https://github.com/huggingface/tokenizers/pull/1853) of them. You can [read more in our paper](https://mmaaz-git.github.io/agentic-pbt-site/); it's quite short, so do give it a read if you're interested.
 
-It's interesting to walk through one bug we found in particular: a bug in NumPy's `numpy.random.wald` function, also called the inverse Gaussian distribution.
+It's insightful to walk through one bug we found in particular: a bug in NumPy's `numpy.random.wald` function (also called the inverse Gaussian distribution).
 
 To start, we ran `/hypothesis numpy.random` to kick off the model. This directs the model to write tests for the entire `numpy.random` module. The model starts by reading the source code of `numpy.random` as well as any relevant docstrings. It sees the function `wald`, realizes from its mathematical background of the Wald distribution that `wald` should only produce positive values, and tracks that as a potential property. It reads further and discovers from the docstring of `wald` that both the `mean` and `scale` parameters must be greater than 0.
 
