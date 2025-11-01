@@ -97,7 +97,7 @@ def test_wald_all_outputs_positive(mean, scale, size):
 
 It then runs this test. And the test fails! After reflection, the model decides this is a real bug, leaves the test in the test suite, and reports the failure to the developer.
 
-What's going on here? We tracked this bug down to catastrophic cancellation in NumPy's `wald` implementation, which could sometimes result in negative values. We reported this to the NumPy maintainers alongside a patch with a more numerically stable algorithm. The NumPy maintainers confirmed the bug, and our fix was released in [v2.3.4](https://github.com/numpy/numpy/releases/tag/v2.3.4). You can check out the PR here: [https://github.com/numpy/numpy/pull/29609](https://github.com/numpy/numpy/pull/29609).
+What's going on here? We tracked this bug down to catastrophic cancellation in NumPy's `wald` implementation, which could sometimes result in negative values. We reported this to the NumPy maintainers alongside a patch with a more numerically stable algorithm. The NumPy maintainers confirmed the bug, and our fix was released in [v2.3.4](https://github.com/numpy/numpy/releases/tag/v2.3.4). You can [check out the PR here](https://github.com/numpy/numpy/pull/29609).
 
 We think this is a really neat confirmation of both the power of property-based testing, and the ability of current AI models to reason about code.
 
