@@ -1700,20 +1700,15 @@ def _as_finite_decimal(
     if value is None:
         return None
     if not isinstance(value, Decimal):
-        # Handle Fraction objects specially - Decimal() can't accept them directly
-        if isinstance(value, Fraction):
-            # Convert by dividing numerator by denominator as Decimals
-            # We do this outside localcontext to allow inexact division, then verify
-            decimal_value = Decimal(value.numerator) / Decimal(value.denominator)
-            # Verify the conversion is mathematically exact
-            if Fraction(decimal_value) != value:
-                raise InvalidArgument(
-                    f"Cannot convert {name}={value!r} of type "
-                    f"{type(value).__name__} to type Decimal without loss of precision"
-                )
-            value = decimal_value
-        else:
-            with localcontext(Context()):  # ensure that default traps are enabled
+        with localcontext(Context()):
+            if isinstance(value, Fraction):
+                original = value
+                value = Decimal(value.numerator) / Decimal(value.denominator)
+                if Fraction(value) != original:
+                    raise InvalidArgument(
+                        f"Cannot convert {name}={original!r} to Decimal without loss of precision"
+                    )
+            else:
                 value = try_convert(Decimal, value, name)
     assert isinstance(value, Decimal)
     if value.is_finite():
@@ -1722,7 +1717,6 @@ def _as_finite_decimal(
         if allow_infinity or allow_infinity is None:
             return None
         raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
-    # This could be infinity, quiet NaN, or signalling NaN
     raise InvalidArgument(f"Invalid {name}={value!r}")
 
 
