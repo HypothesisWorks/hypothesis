@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.143.0:
+
+--------------------
+6.143.0 - 2025-11-01
+--------------------
+
+The extras for |hypothesis-numpy| and |hypothesis-pandas| now support automatically inferring a strategy for ``dtype="O"``. Previously, Hypothesis required an explicit elements strategy to be passed, for example ``nps.arrays("O", shape=(1,), elements=st.just(object()))``. Now, Hypothesis automatically infers ``elements=st.from_type(object)``.
+
+Thanks to Shaun Read for identifying and fixing this!
+
 .. _v6.142.5:
 
 --------------------
