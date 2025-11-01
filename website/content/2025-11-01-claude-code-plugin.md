@@ -5,7 +5,7 @@ author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
 ---
 
 <div class="cta-buttons">
-  <a href="https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md" class="cta-button">
+  <a href="https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/hypothesis.md" class="cta-button">
     <img src="/theme/icon-code.svg" alt="" class="cta-icon">
     View the command
   </a>
