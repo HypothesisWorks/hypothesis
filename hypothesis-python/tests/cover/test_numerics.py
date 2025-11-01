@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import decimal
+from fractions import Fraction
 from math import copysign, inf
 
 import pytest
@@ -203,3 +204,44 @@ def test_floats_message(s, msg):
     # https://github.com/HypothesisWorks/hypothesis/issues/3207
     with pytest.raises(InvalidArgument, match=msg):
         s.validate()
+
+
+def test_decimals_accept_fraction_bounds():
+    # Test case from https://github.com/HypothesisWorks/hypothesis/issues/4466
+    # Fractions that can be exactly represented as Decimals should be accepted
+    val = decimals(min_value=Fraction(850), allow_nan=False).example()
+    assert val >= decimal.Decimal(850) and val.is_finite()
+
+
+@given(decimals(min_value=Fraction(1, 2), max_value=Fraction(3, 2)))
+def test_decimals_with_fraction_bounds(x):
+    assert decimal.Decimal("0.5") <= x <= decimal.Decimal("1.5")
+
+
+def test_decimals_reject_imprecise_fractions():
+    # Fractions that can't be exactly represented as Decimals should be rejected
+    # 1/3 = 0.333... (repeating) cannot be exactly represented as a Decimal
+    with pytest.raises(
+        InvalidArgument,
+        match="Cannot convert .* of type Fraction to type Decimal without loss of precision",
+    ):
+        decimals(min_value=Fraction(1, 3)).example()
+
+
+def test_decimals_accept_precise_fraction_bounds():
+    # Test various fractions that can be exactly represented as decimals
+    # Powers of 2 and 5 in the denominator should work
+    test_cases = [
+        Fraction(1, 2),  # 0.5
+        Fraction(1, 4),  # 0.25
+        Fraction(3, 4),  # 0.75
+        Fraction(1, 5),  # 0.2
+        Fraction(1, 8),  # 0.125
+        Fraction(7, 10),  # 0.7
+        Fraction(125, 100),  # 1.25
+    ]
+    for frac in test_cases:
+        val = decimals(
+            min_value=frac, max_value=frac + 1, allow_nan=False, allow_infinity=False
+        ).example()
+        assert decimal.Decimal(frac.numerator) / decimal.Decimal(frac.denominator) <= val
