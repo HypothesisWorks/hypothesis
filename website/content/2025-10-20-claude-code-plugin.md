@@ -27,9 +27,9 @@ Recently, we explored what this same idea might look like with modern AI tools, 
 
 The `/hypothesis` command instructs the model to automatically read your code, infer testable properties, and add Hypothesis tests to your test suite. The idea is that if you wanted to add Hypothesis tests for a file `mypackage/a/utils.py`, you could run `/hypothesis mypackage/a/utils.py`, go get a coffee, and then come back to see some new newly-added tests. You can alternatively give more complex instructions, like `/hypothesis focus on the database implementation; add tests to test_db.py`.
 
-We've found `/hypothesis` pretty useful when combined with modern AI models—both for standing up tests in fresh repositories, but also to augment existing test suites.
+We've found `/hypothesis` pretty useful when combined with modern AI models, for tasks ranging from setting up tests in fresh repositories, to augmenting existing test suites, to standing up a full fuzzing workflow with [HypoFuzz](https://hypofuzz.com/).
 
-Since it doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
+Since `/hypothesis` doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/hypothesisworks/hypothesis/agents/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
 
 # Designing the `/hypothesis` command
 
