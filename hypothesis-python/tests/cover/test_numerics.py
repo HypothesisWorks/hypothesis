@@ -219,15 +219,12 @@ def test_decimals_reject_imprecise_fractions():
         check_can_generate_examples(decimals(min_value=Fraction(1, 3)))
 
 
-@given(data())
-def test_decimals_with_fraction_bounds_from_decimals(data):
-    dec1 = data.draw(decimals(allow_nan=False, allow_infinity=False))
-    dec2 = data.draw(decimals(allow_nan=False, allow_infinity=False))
+@given(
+    decimals(allow_nan=False, allow_infinity=False),
+    decimals(allow_nan=False, allow_infinity=False),
+)
+def test_decimals_with_fraction_bounds_from_decimals(dec1, dec2):
     min_dec, max_dec = sorted([dec1, dec2])
-
     min_frac, max_frac = Fraction(min_dec), Fraction(max_dec)
-    try:
-        val = data.draw(decimals(min_value=min_frac, max_value=max_frac))
-    except InvalidArgument:
-        reject()
+    val = decimals(min_value=min_frac, max_value=max_frac).example()
     assert min_dec <= val <= max_dec

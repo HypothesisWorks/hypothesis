@@ -1717,6 +1717,7 @@ def _as_finite_decimal(
         if allow_infinity or allow_infinity is None:
             return None
         raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
+    # This could be infinity, quiet NaN, or signalling NaN
     raise InvalidArgument(f"Invalid {name}={value!r}")
 
 
