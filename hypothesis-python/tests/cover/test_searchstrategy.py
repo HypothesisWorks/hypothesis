@@ -15,7 +15,6 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from typing import Any
 
-import attr
 import pytest
 
 from hypothesis import given, strategies as st
@@ -124,20 +123,10 @@ class HasDefaultDict:
     x: defaultdict
 
 
-@attr.s
-class AttrsClass:
-    n = attr.ib()
-
-
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
     assert to_jsonable(obj, avoid_realization=False) == {"x": {"a": [42]}}
-
-
-def test_jsonable_attrs():
-    obj = AttrsClass(n=10)
-    assert to_jsonable(obj, avoid_realization=False) == {"n": 10}
 
 
 def test_jsonable_namedtuple():

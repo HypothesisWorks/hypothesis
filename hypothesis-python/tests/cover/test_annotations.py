@@ -8,21 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import warnings
 from inspect import Parameter as P, signature
 
-import attr
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import SmallSearchSpaceWarning
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
     define_function_signature,
     get_pretty_function_description,
 )
-
-from tests.common.debug import check_can_generate_examples
 
 
 @given(st.integers())
@@ -112,24 +107,3 @@ def test_given_edits_annotations(nargs):
     assert sig_given.return_annotation is None
     assert len(sig_given.parameters) == 3 - nargs
     assert all(p.annotation is not P.empty for p in sig_given.parameters.values())
-
-
-def a_converter(x) -> int:
-    return int(x)
-
-
-@attr.s
-class Inferrables:
-    annot_converter = attr.ib(converter=a_converter)
-
-
-@given(st.builds(Inferrables))
-def test_attrs_inference_builds(c):
-    pass
-
-
-def test_attrs_inference_from_type():
-    s = st.from_type(Inferrables)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", SmallSearchSpaceWarning)
-        check_can_generate_examples(s)

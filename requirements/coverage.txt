@@ -8,8 +8,6 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==5.0.1
     # via redis
-attrs==25.4.0
-    # via hypothesis (hypothesis-python/pyproject.toml)
 black==25.9.0
     # via -r requirements/coverage.in
 click==8.3.0
