@@ -5,7 +5,7 @@ author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
 ---
 
 <div class="cta-buttons">
-  <a href="https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/hypothesis.md" class="cta-button">
+  <a href="https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/commands/hypothesis.md" class="cta-button">
     <img src="/theme/icon-code.svg" alt="" class="cta-icon">
     View the command
   </a>
@@ -29,7 +29,7 @@ The `/hypothesis` command instructs the model to automatically read your code, i
 
 We've found `/hypothesis` pretty useful when combined with modern AI models, for tasks ranging from setting up tests in fresh repositories, to augmenting existing test suites, to standing up a full fuzzing workflow with [HypoFuzz](https://hypofuzz.com/).
 
-Since `/hypothesis` doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
+Since `/hypothesis` doesn't (yet) make sense to release in Hypothesis itself, we're releasing it here. [You can find the full command here](https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/commands/hypothesis.md), install it by copying into `~/.claude/commands/`, and run it with `/hypothesis` inside of Claude Code[^1].
 
 # Designing the `/hypothesis` command
 
