@@ -1223,12 +1223,20 @@ class StateForActualGivenExecution:
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
             raise
-        except (
-            FailedHealthCheck,
-            *skip_exceptions_to_reraise(),
-        ):
-            # These are fatal errors or control exceptions that should stop the
-            # engine, so we re-raise them.
+        except FailedHealthCheck:
+            # This is a fatal error that should stop the engine.
+            raise
+        except skip_exceptions_to_reraise() as e:
+            # Skip exceptions should stop the engine, but we also mark the data
+            # as interesting so it's saved to the database and can be replayed
+            # immediately on subsequent runs (issue #4484).
+            if not data.frozen:
+                # Mark skip exceptions as interesting so they're saved to the database.
+                # We can't use mark_interesting() because it raises StopTest, but we
+                # need to re-raise the skip exception instead.
+                data.status = Status.INTERESTING
+                data.interesting_origin = InterestingOrigin.from_exception(e)
+                data.freeze()
             raise
         except failure_exceptions_to_catch() as e:
             # If an unhandled (i.e., non-Hypothesis) error was raised by

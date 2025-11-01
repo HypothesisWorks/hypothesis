@@ -12,7 +12,7 @@ import unittest
 
 import pytest
 
-from hypothesis import given
+from hypothesis import Phase, given, settings
 from hypothesis.core import skip_exceptions_to_reraise
 from hypothesis.strategies import integers
 
@@ -38,3 +38,40 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         unittest.TextTestRunner().run(suite)
 
     assert "Falsifying example" not in o.getvalue()
+
+
+def test_skip_exceptions_are_saved_to_database():
+    """Skip exceptions should be saved to the database so they can be replayed
+    immediately on subsequent runs (issue #4484)."""
+
+    from hypothesis.database import InMemoryExampleDatabase
+
+    db = InMemoryExampleDatabase()
+    skip_value = 42
+
+    # First run: with Phase.reuse disabled, find and skip at the target value
+    @settings(
+        database=db,
+        max_examples=200,
+        phases=[Phase.explicit, Phase.generate, Phase.target, Phase.shrink],
+    )
+    @given(x=integers(min_value=0, max_value=100))
+    def test_skip_generate(x):
+        if x == skip_value:
+            raise unittest.SkipTest(f"Skipping at x={skip_value}")
+
+    # Run the test until it skips
+    with pytest.raises(unittest.SkipTest):
+        test_skip_generate()
+
+    # Second run: with only Phase.reuse enabled, it should still skip because
+    # the skip exception was saved to the database
+    @settings(database=db, phases=[Phase.reuse])
+    @given(x=integers(min_value=0, max_value=100))
+    def test_skip_reuse(x):
+        if x == skip_value:
+            raise unittest.SkipTest(f"Skipping at x={skip_value}")
+
+    # This should also skip because the database entry is replayed
+    with pytest.raises(unittest.SkipTest):
+        test_skip_reuse()
