@@ -107,29 +107,24 @@ def elements_and_dtype(elements, dtype, source=None):
     _get_subclasses = getattr(IntegerDtype, "__subclasses__", list)
     dtype = {t.name: t() for t in _get_subclasses()}.get(dtype, dtype)
 
+    is_na_dtype = False
     if isinstance(dtype, IntegerDtype):
         is_na_dtype = True
         dtype = np.dtype(dtype.name.lower())
     elif dtype is not None:
-        is_na_dtype = False
         dtype = try_convert(np.dtype, dtype, "dtype")
-    else:
-        is_na_dtype = False
 
     if elements is None:
         elements = npst.from_dtype(dtype)
         if is_na_dtype:
             elements = st.none() | elements
-    elif dtype is not None:
+    # as an optimization, avoid converting object dtypes, which will always
+    # remain unchanged.
+    elif dtype is not None and dtype.kind != "O":
 
         def convert_element(value):
             if is_na_dtype and value is None:
                 return None
-
-            if dtype.kind == "O":
-                # as an optimization, pass objects straight through, because
-                # we know numpy won't convert them.
-                return value
 
             try:
                 return np.array([value], dtype=dtype)[0]
