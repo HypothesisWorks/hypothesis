@@ -150,6 +150,8 @@ omit = [
     "**/internal/scrutineer.py",
     "**/utils/terminal.py",
     "**/internal/conjecture/provider_conformance.py",
+    # covered by our attrs tests in check-niche
+    "**/strategies/_internal/attrs.py"
 ]
 
 [tool.coverage.report]

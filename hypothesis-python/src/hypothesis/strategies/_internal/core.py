@@ -1156,7 +1156,7 @@ def builds(
             isinstance(target, type)
             and (attr := sys.modules.get("attr")) is not None
             and attr.has(target)
-        ):
+        ):  # pragma: no cover  # covered by our attrs tests in check-niche
             # Use our custom introspection for attrs classes
             from hypothesis.strategies._internal.attrs import from_attrs
 
