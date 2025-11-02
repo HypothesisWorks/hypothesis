@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.debug import check_can_generate_examples, find_any, minimal
-from tests.common.utils import skipif_threading
+from tests.common.utils import checks_deprecated_behaviour, skipif_threading
 
 
 @settings(suppress_health_check=list(HealthCheck))
@@ -208,3 +208,9 @@ def test_floats_message(s, msg):
 def test_minimal_nonfinite_decimal_is_inf():
     assert minimal(decimals()) == decimal.Decimal("Infinity")
     assert minimal(decimals(places=10)) == decimal.Decimal("Infinity")
+
+
+@checks_deprecated_behaviour
+def test_decimals_warns_for_inexact_numeric_bounds():
+    check_can_generate_examples(decimals(min_value=0.1, places=1))
+    check_can_generate_examples(decimals(max_value=0.3, places=1))

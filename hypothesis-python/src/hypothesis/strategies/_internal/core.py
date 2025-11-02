@@ -1697,15 +1697,29 @@ def fractions(
 
 
 def _as_finite_decimal(
-    value: Real | str | None, name: str, allow_infinity: bool | None
+    value: Real | str | None, name: str, allow_infinity: bool | None, places: int | None
 ) -> Decimal | None:
     """Convert decimal bounds to decimals, carefully."""
     assert name in ("min_value", "max_value")
     if value is None:
         return None
+    old = value
+    if isinstance(value, Fraction):
+        value = Context(prec=places).divide(value.numerator, value.denominator)
+        if old != value:
+            raise InvalidArgument(
+                f"{old!r} cannot be exactly represented as a decimal with {places=}"
+            )
     if not isinstance(value, Decimal):
         with localcontext(Context()):  # ensure that default traps are enabled
             value = try_convert(Decimal, value, name)
+        if old != value:
+            note_deprecation(
+                f"{old!r} cannot be exactly represented as a decimal with {places=}",
+                since="RELEASEDAY",
+                has_codemod=False,
+                stacklevel=1,
+            )
     assert isinstance(value, Decimal)
     if value.is_finite():
         return value
@@ -1751,8 +1765,8 @@ def decimals(
     check_valid_integer(places, "places")
     if places is not None and places < 0:
         raise InvalidArgument(f"{places=} may not be negative")
-    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
-    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
+    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity, places)
+    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity, places)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument("Cannot allow infinity between finite bounds")
