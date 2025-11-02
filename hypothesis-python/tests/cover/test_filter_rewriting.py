@@ -654,17 +654,27 @@ def test_partial_placeholder():
 
     assert st.integers(0, 5).filter(partial(operator.gt, Placeholder, 5)).is_empty
 
-    s = unwrap_strategies(st.integers(-5, 5).filter(partial(operator.lt, Placeholder, 3)))
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.lt, Placeholder, 3))
+    )
     assert (s.start, s.end) == (-5, 2)
 
-    s = unwrap_strategies(st.integers(-5, 5).filter(partial(operator.le, Placeholder, 3)))
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.le, Placeholder, 3))
+    )
     assert (s.start, s.end) == (-5, 3)
 
-    s = unwrap_strategies(st.integers(-5, 5).filter(partial(operator.gt, Placeholder, 3)))
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.gt, Placeholder, 3))
+    )
     assert (s.start, s.end) == (4, 5)
 
-    s = unwrap_strategies(st.integers(-5, 5).filter(partial(operator.ge, Placeholder, 3)))
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.ge, Placeholder, 3))
+    )
     assert (s.start, s.end) == (3, 5)
 
-    s = unwrap_strategies(st.integers(-5, 5).filter(partial(operator.eq, Placeholder, 3)))
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.eq, Placeholder, 3))
+    )
     assert (s.start, s.end) == (3, 3)
