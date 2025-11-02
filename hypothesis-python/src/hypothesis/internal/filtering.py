@@ -38,9 +38,9 @@ from hypothesis.internal.lambda_sources import lambda_description
 from hypothesis.internal.reflection import get_pretty_function_description
 
 try:
-    from functools import Placeholder
-except ImportError:
     # new in 3.14
+    from functools import Placeholder  # type: ignore
+except ImportError:
     Placeholder = object()
 
 Ex = TypeVar("Ex")
