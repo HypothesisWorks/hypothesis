@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.144.0:
+
+--------------------
+6.144.0 - 2025-11-02
+--------------------
+
+This release adds support for :class:`~fractions.Fraction` objects as ``min_value``
+and ``max_value`` bounds in :func:`~hypothesis.strategies.decimals`, if they can
+be exactly represented as decimals in the target precision (:issue:`4466`).
+
+Bounding :func:`~hypothesis.strategies.decimals` with *other* values that cannot
+be exactly represented is now deprecated; previously the bounds could be off by one.
+
 .. _v6.143.1:
 
 --------------------

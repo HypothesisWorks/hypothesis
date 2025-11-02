@@ -1724,7 +1724,7 @@ def _as_finite_decimal(
     ):
         note_deprecation(
             f"{old!r} cannot be exactly represented as a decimal with {places=}",
-            since="RELEASEDAY",
+            since="2025-11-02",
             has_codemod=False,
             stacklevel=1,
         )
