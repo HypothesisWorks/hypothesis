@@ -28,8 +28,8 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import check_can_generate_examples, find_any
-from tests.common.utils import skipif_threading
+from tests.common.debug import check_can_generate_examples, find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour, skipif_threading
 
 
 @settings(suppress_health_check=list(HealthCheck))
@@ -203,3 +203,13 @@ def test_floats_message(s, msg):
     # https://github.com/HypothesisWorks/hypothesis/issues/3207
     with pytest.raises(InvalidArgument, match=msg):
         s.validate()
+
+
+@pytest.mark.parametrize("s", [decimals(), decimals(places=10)], ids=repr)
+def test_minimal_nonfinite_decimal_is_inf(s):
+    assert minimal(s.filter(lambda x: not x.is_finite())) == decimal.Decimal("Infinity")
+
+
+@checks_deprecated_behaviour
+def test_decimals_warns_for_inexact_numeric_bounds():
+    check_can_generate_examples(decimals(min_value=1e-100))

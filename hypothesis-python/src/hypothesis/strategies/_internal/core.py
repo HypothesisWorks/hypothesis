@@ -1697,24 +1697,44 @@ def fractions(
 
 
 def _as_finite_decimal(
-    value: Real | str | None, name: str, allow_infinity: bool | None
+    value: Real | str | None, name: str, allow_infinity: bool | None, places: int | None
 ) -> Decimal | None:
     """Convert decimal bounds to decimals, carefully."""
     assert name in ("min_value", "max_value")
     if value is None:
         return None
+    old = value
+    if isinstance(value, Fraction):
+        value = Context(prec=places).divide(value.numerator, value.denominator)
+        if old != value:
+            raise InvalidArgument(
+                f"{old!r} cannot be exactly represented as a decimal with {places=}"
+            )
     if not isinstance(value, Decimal):
         with localcontext(Context()):  # ensure that default traps are enabled
             value = try_convert(Decimal, value, name)
     assert isinstance(value, Decimal)
+    if value.is_nan():
+        raise InvalidArgument(f"Invalid {name}={value!r}")
+
+    # If you are reading this conditional, I am so sorry.  I did my best.
+    finitude_old = value if isinstance(old, str) else old
+    if math.isfinite(finitude_old) != math.isfinite(value) or (
+        value.is_finite() and Fraction(str(old)) != Fraction(str(value))
+    ):
+        note_deprecation(
+            f"{old!r} cannot be exactly represented as a decimal with {places=}",
+            since="RELEASEDAY",
+            has_codemod=False,
+            stacklevel=1,
+        )
+
     if value.is_finite():
         return value
-    if value.is_infinite() and (value < 0 if "min" in name else value > 0):
-        if allow_infinity or allow_infinity is None:
-            return None
-        raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
-    # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument(f"Invalid {name}={value!r}")
+    assert value.is_infinite()
+    if (value < 0 if "min" in name else value > 0) and allow_infinity is not False:
+        return None
+    raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
 
 
 @cacheable
@@ -1751,8 +1771,8 @@ def decimals(
     check_valid_integer(places, "places")
     if places is not None and places < 0:
         raise InvalidArgument(f"{places=} may not be negative")
-    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
-    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
+    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity, places)
+    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity, places)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument("Cannot allow infinity between finite bounds")
@@ -1797,12 +1817,12 @@ def decimals(
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
     special: list[Decimal] = []
-    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
-        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
     if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
+    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
+        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     return strat | (sampled_from(special) if special else nothing())
 
 
