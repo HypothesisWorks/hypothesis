@@ -205,12 +205,11 @@ def test_floats_message(s, msg):
         s.validate()
 
 
-def test_minimal_nonfinite_decimal_is_inf():
-    assert minimal(decimals()) == decimal.Decimal("Infinity")
-    assert minimal(decimals(places=10)) == decimal.Decimal("Infinity")
+@pytest.mark.parametrize("s", [decimals(), decimals(places=10)], ids=repr)
+def test_minimal_nonfinite_decimal_is_inf(s):
+    assert minimal(s.filter(lambda x: not x.is_finite())) == decimal.Decimal("Infinity")
 
 
 @checks_deprecated_behaviour
 def test_decimals_warns_for_inexact_numeric_bounds():
-    check_can_generate_examples(decimals(min_value=0.1, places=1))
-    check_can_generate_examples(decimals(max_value=0.3, places=1))
+    check_can_generate_examples(decimals(min_value=1e-100))

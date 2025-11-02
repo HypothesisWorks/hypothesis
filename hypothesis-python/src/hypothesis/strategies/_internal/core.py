@@ -1713,22 +1713,28 @@ def _as_finite_decimal(
     if not isinstance(value, Decimal):
         with localcontext(Context()):  # ensure that default traps are enabled
             value = try_convert(Decimal, value, name)
-        if old != value:
-            note_deprecation(
-                f"{old!r} cannot be exactly represented as a decimal with {places=}",
-                since="RELEASEDAY",
-                has_codemod=False,
-                stacklevel=1,
-            )
     assert isinstance(value, Decimal)
+    if value.is_nan():
+        raise InvalidArgument(f"Invalid {name}={value!r}")
+
+    # If you are reading this conditional, I am so sorry.  I did my best.
+    finitude_old = value if isinstance(old, str) else old
+    if math.isfinite(finitude_old) != math.isfinite(value) or (
+        value.is_finite() and Fraction(str(old)) != Fraction(str(value))
+    ):
+        note_deprecation(
+            f"{old!r} cannot be exactly represented as a decimal with {places=}",
+            since="RELEASEDAY",
+            has_codemod=False,
+            stacklevel=1,
+        )
+
     if value.is_finite():
         return value
-    if value.is_infinite() and (value < 0 if "min" in name else value > 0):
-        if allow_infinity or allow_infinity is None:
-            return None
-        raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
-    # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument(f"Invalid {name}={value!r}")
+    assert value.is_infinite()
+    if (value < 0 if "min" in name else value > 0) and allow_infinity is not False:
+        return None
+    raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
 
 
 @cacheable
