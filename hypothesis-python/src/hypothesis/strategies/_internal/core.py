@@ -1797,12 +1797,12 @@ def decimals(
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
     special: list[Decimal] = []
-    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
-        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
     if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
+    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
+        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     return strat | (sampled_from(special) if special else nothing())
 
 

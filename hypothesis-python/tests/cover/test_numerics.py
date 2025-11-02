@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import check_can_generate_examples, find_any
+from tests.common.debug import check_can_generate_examples, find_any, minimal
 from tests.common.utils import skipif_threading
 
 
@@ -203,3 +203,8 @@ def test_floats_message(s, msg):
     # https://github.com/HypothesisWorks/hypothesis/issues/3207
     with pytest.raises(InvalidArgument, match=msg):
         s.validate()
+
+
+def test_minimal_nonfinite_decimal_is_inf():
+    assert minimal(decimals()) == decimal.Decimal("Infinity")
+    assert minimal(decimals(places=10)) == decimal.Decimal("Infinity")
