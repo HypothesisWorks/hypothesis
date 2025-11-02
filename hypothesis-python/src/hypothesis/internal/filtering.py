@@ -40,6 +40,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 try:
     from functools import Placeholder
 except ImportError:
+    # new in 3.14
     Placeholder = object()
 
 Ex = TypeVar("Ex")

@@ -317,7 +317,7 @@ class ConjectureRunner:
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: int | None = None
         self.last_bug_found_at: int | None = None
-        self.first_bug_found_time: float = 1e999
+        self.first_bug_found_time: float = math.inf
 
         self.shrunk_examples: set[InterestingOrigin] = set()
         self.health_check_state: HealthCheckState | None = None
