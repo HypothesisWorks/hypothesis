@@ -1424,11 +1424,13 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         # Taken from `Lib/typing.py` and modified:
         def _get_typeddict_qualifiers(key, annotation_type):
             qualifiers = []
+            annotations = []
             while True:
                 annotation_origin = types.extended_get_origin(annotation_type)
                 if annotation_origin is Annotated:
                     if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
+                        annotations.extend(annotation_args[1:])
                     else:
                         break
                 elif annotation_origin in types.RequiredTypes:
@@ -1442,6 +1444,8 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                     annotation_type = _get_annotation_arg(key, annotation_type)
                 else:
                     break
+            if annotations:
+                annotation_type = Annotated[(annotation_type, *annotations)]
             return set(qualifiers), annotation_type
 
         # The __optional_keys__ attribute may or may not be present, but if there's no

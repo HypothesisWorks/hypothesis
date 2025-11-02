@@ -135,3 +135,22 @@ def test_flattens_grouped_metadata():
     grp = GroupedStuff(GroupedStuff(GroupedStuff(at.Len(min_length=1, max_length=5))))
     constraints = list(_get_constraints(grp))
     assert constraints == [at.MinLen(1), at.MaxLen(5)]
+
+
+try:
+    # we can drop this ugly code when Python 3.10 reaches EOL
+    from typing import NotRequired, TypedDict
+except ImportError:
+    pass
+else:
+
+    class TypedDictWithAnnotations(TypedDict):
+        x: Annotated[int, at.Ge(0)]
+        y: Annotated[NotRequired[int], at.Ge(0)]
+        z: NotRequired[Annotated[int, at.Ge(0)]]
+
+    @given(st.from_type(TypedDictWithAnnotations))
+    def test_typeddict_with_annotated_constraints(value):
+        assert value["x"] >= 0
+        assert value.get("y", 0) >= 0
+        assert value.get("z", 0) >= 0
