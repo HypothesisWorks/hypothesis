@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.143.1:
+
+--------------------
+6.143.1 - 2025-11-02
+--------------------
+
+:func:`~hypothesis.strategies.from_type` now correctly handles :pypi:`annotated-types`
+annotations on :class:`typing.TypedDict` fields which are also marked as being
+:obj:`~typing.ReadOnly`, :obj:`~typing.Required`, or :obj:`~typing.NotRequired`
+(:issue:`4474`).
+
 .. _v6.143.0:
 
 --------------------
