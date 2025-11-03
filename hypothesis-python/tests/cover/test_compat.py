@@ -150,7 +150,7 @@ def test_extract_bits_roundtrip(width, x):
     assert x == sum(v << p for p, v in enumerate(reversed(bits)))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=False)
 class ImmutableError:
     msg: str
 

@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+# Since Hypothesis doesn't have a hard dependency on attrs, be careful to only import
+# this file when attrs is in sys.modules.
+
 from collections.abc import Collection, Generator, Iterable, Sequence
 from functools import reduce
 from itertools import chain

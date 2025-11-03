@@ -11,10 +11,10 @@
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from copy import copy
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Generic, Union
 
-import attr
 import numpy as np
 import pandas
 
@@ -25,7 +25,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -364,7 +363,7 @@ def series(
     return result()
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 
@@ -382,11 +381,11 @@ class column(Generic[Ex]):
     * unique: If all values in this column should be distinct.
     """
 
-    name: str | int | None = attr.ib(default=None)
-    elements: st.SearchStrategy[Ex] | None = attr.ib(default=None)
-    dtype: Any = attr.ib(default=None, repr=get_pretty_function_description)
-    fill: st.SearchStrategy[Ex] | None = attr.ib(default=None)
-    unique: bool = attr.ib(default=False)
+    name: str | int | None = None
+    elements: st.SearchStrategy[Ex] | None = None
+    dtype: Any = None
+    fill: st.SearchStrategy[Ex] | None = None
+    unique: bool = False
 
 
 def columns(

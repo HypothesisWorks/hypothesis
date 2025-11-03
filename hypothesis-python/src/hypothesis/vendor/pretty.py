@@ -232,7 +232,7 @@ class RepresentationPrinter:
                             self.type_pprinters[cls] = printer
                             return printer(obj, self, cycle)
                         else:
-                            if hasattr(cls, "__attrs_attrs__"):
+                            if hasattr(cls, "__attrs_attrs__"):  # pragma: no cover
                                 return pprint_fields(
                                     obj,
                                     self,

@@ -113,7 +113,7 @@ def shortlex(s):
     return (len(s), s)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class HealthCheckState:
     valid_examples: int = field(default=0)
     invalid_examples: int = field(default=0)

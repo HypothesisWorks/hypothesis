@@ -11,10 +11,9 @@
 import abc
 import inspect
 import math
+from dataclasses import dataclass, field
 from random import Random
 from typing import Any
-
-import attr
 
 from hypothesis.control import should_note
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -147,10 +146,10 @@ for r in RANDOM_METHODS:
     define_copy_method(r)
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class RandomState:
-    next_states: dict = attr.ib(factory=dict)
-    state_id: Any = attr.ib(default=None)
+    next_states: dict = field(default_factory=dict)
+    state_id: Any = None
 
 
 def state_for_seed(data, seed):

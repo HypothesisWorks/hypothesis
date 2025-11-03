@@ -13,7 +13,7 @@ import subprocess
 import hypothesistooling as tools
 from hypothesistooling import installers as install
 
-SCRIPTS = [f for f in tools.all_files() if f.endswith(".sh")]
+SCRIPTS = [p for p in tools.all_files() if p.suffix == ".sh"]
 
 
 def test_all_shell_scripts_are_valid():

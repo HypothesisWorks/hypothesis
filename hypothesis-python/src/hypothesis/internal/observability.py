@@ -68,7 +68,7 @@ _callbacks: dict[int | None, list[CallbackThreadT]] = {}
 _callbacks_all_threads: list[CallbackAllThreadsT] = []
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class PredicateCounts:
     satisfied: int = 0
     unsatisfied: int = 0
@@ -167,7 +167,7 @@ def nodes_to_json(nodes: tuple[ChoiceNode, ...]) -> list[dict[str, Any]]:
     ]
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class ObservationMetadata:
     traceback: str | None
     reproduction_decorator: str | None
@@ -221,7 +221,7 @@ class ObservationMetadata:
         return data
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class BaseObservation:
     type: Literal["test_case", "info", "alert", "error"]
     property: str
@@ -232,14 +232,14 @@ InfoObservationType = Literal["info", "alert", "error"]
 TestCaseStatus = Literal["gave_up", "passed", "failed"]
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class InfoObservation(BaseObservation):
     type: InfoObservationType
     title: str
     content: str | dict
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class TestCaseObservation(BaseObservation):
     __test__ = False  # no! bad pytest!
 

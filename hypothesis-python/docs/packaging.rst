@@ -39,7 +39,6 @@ Other Python libraries
 
 Hypothesis has *mandatory* dependencies on the following libraries:
 
-* :pypi:`attrs`
 * :pypi:`sortedcontainers`
 
 Hypothesis has *optional* dependencies on the following libraries:

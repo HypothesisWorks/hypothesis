@@ -8,7 +8,6 @@ attrs==25.4.0
     # via
     #   cattrs
     #   hypothesis
-    #   hypothesis (hypothesis-python/pyproject.toml)
     #   lsprotocol
     #   pygls
 cattrs==25.3.0

@@ -89,7 +89,7 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
     )
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class ShrinkPass:
     function: Any
     name: str | None = None

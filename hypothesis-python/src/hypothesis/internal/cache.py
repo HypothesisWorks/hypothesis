@@ -10,9 +10,8 @@
 
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
-
-import attr
 
 from hypothesis.errors import InvalidArgument
 
@@ -20,12 +19,12 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class Entry(Generic[K, V]):
-    key: K = attr.ib()
-    value: V = attr.ib()
-    score: int = attr.ib()
-    pins: int = attr.ib(default=0)
+    key: K
+    value: V
+    score: int
+    pins: int = 0
 
     @property
     def sort_key(self) -> tuple[int, ...]:

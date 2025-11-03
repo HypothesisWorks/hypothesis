@@ -91,7 +91,7 @@ def get_trimmed_traceback(
     return tb
 
 
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class InterestingOrigin:
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even

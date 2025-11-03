@@ -129,13 +129,13 @@ def modified_files():
         for l in diff_output.split("\n"):
             filepath = l.strip()
             if filepath and os.path.exists(filepath):
-                files.add(filepath)
+                files.add(Path(filepath))
     return files
 
 
-def all_files():
+def all_files() -> list[Path]:
     return [
-        f
+        Path(f)
         for f in subprocess.check_output(["git", "ls-files"])
         .decode("ascii")
         .splitlines()

@@ -15,7 +15,7 @@ asgiref==3.10.0
 asttokens==3.0.0
     # via stack-data
 attrs==25.4.0
-    # via hypothesis (hypothesis-python/pyproject.toml)
+    # via -r requirements/tools.in
 autoflake==2.3.1
     # via shed
 babel==2.17.0

@@ -80,7 +80,21 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
+    codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
+
+    matches = subprocess.run(
+        r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
+        "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        from textwrap import indent
+
+        print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
+        print(indent(matches, "    "))
+        sys.exit(1)
 
 
 def do_release(package):
@@ -164,10 +178,9 @@ rst_pattern = re.compile(
 )
 
 
-def remove_consecutive_newlines_in_rst(path):
+def remove_consecutive_newlines_in_rst(path: Path):
     # replace 2+ empty lines in `.. code-block:: python` blocks with just one empty
     # line
-    path = Path(path)
     content = path.read_text()
     processed_content = rst_pattern.sub(
         lambda m: m["before"] + re.sub(r"\n{3,}", "\n\n", m["code"]), content
@@ -178,12 +191,6 @@ def remove_consecutive_newlines_in_rst(path):
 
 @task()
 def format():
-    def should_format_file(path):
-        return path.endswith(".py")
-
-    def should_format_doc_file(path):
-        return path.endswith((".rst", ".md"))
-
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
@@ -192,12 +199,12 @@ def format():
         # logic, so we need to rerun formatters.
         format_all = True
 
-    files = tools.all_files() if format_all else changed
+    paths = tools.all_files() if format_all else changed
 
-    doc_files_to_format = [f for f in sorted(files) if should_format_doc_file(f)]
-    files_to_format = [f for f in sorted(files) if should_format_file(f)]
+    doc_paths_to_format = [p for p in sorted(paths) if p.suffix in {".rst", ".md"}]
+    paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
 
-    if not (files_to_format or doc_files_to_format):
+    if not (paths_to_format or doc_paths_to_format):
         return
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and
@@ -211,9 +218,9 @@ def format():
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
     last_header_line = HEADER.splitlines()[-1].rstrip()
 
-    for f in files_to_format:
+    for p in paths_to_format:
         lines = []
-        with open(f, encoding="utf-8") as fp:
+        with open(p, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
@@ -230,7 +237,7 @@ def format():
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
 
         source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as fp:
+        with open(p, "w", encoding="utf-8") as fp:
             if shebang is not None:
                 fp.write(shebang)
                 fp.write("\n")
@@ -240,12 +247,12 @@ def format():
                 fp.write(source)
             fp.write("\n")
 
-    codespell("--write-changes", *files_to_format, *doc_files_to_format)
+    codespell("--write-changes", *paths_to_format, *doc_paths_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py310-plus", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py310-plus", *paths_to_format, *doc_paths_to_format)
 
-    for f in doc_files_to_format:
-        remove_consecutive_newlines_in_rst(f)
+    for p in doc_paths_to_format:
+        remove_consecutive_newlines_in_rst(p)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -256,13 +263,13 @@ def check_format():
     format()
     n = max(map(len, VALID_STARTS))
     bad = False
-    for f in tools.all_files():
-        if not f.endswith(".py"):
+    for p in tools.all_files():
+        if p.suffix != ".py":
             continue
-        with open(f, encoding="utf-8") as fp:
+        with open(p, encoding="utf-8") as fp:
             start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
-                print(f"{f} has incorrect start {start!r}", file=sys.stderr)
+                print(f"{p} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
     try:
