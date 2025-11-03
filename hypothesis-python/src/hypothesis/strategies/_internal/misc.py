@@ -64,7 +64,7 @@ class JustStrategy(SampledFromStrategy[Ex]):
         return self._transform(self.value)
 
 
-@defines_strategy(never_lazy=True)
+@defines_strategy(eager=True)
 def just(value: T) -> SearchStrategy[T]:
     """Return a strategy which only generates ``value``.
 
@@ -120,7 +120,7 @@ NOTHING = Nothing()
 
 
 @cacheable
-@defines_strategy(never_lazy=True)
+@defines_strategy(eager=True)
 def nothing() -> SearchStrategy["Never"]:
     """This strategy never successfully draws a value and will always reject on
     an attempt to draw.
