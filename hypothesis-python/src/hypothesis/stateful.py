@@ -269,7 +269,7 @@ class StateMachineMeta(type):
         return super().__setattr__(name, value)
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class _SetupState:
     rules: list["Rule"]
     invariants: list["Invariant"]
@@ -492,7 +492,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Rule:
     targets: Any
     function: Any
@@ -501,9 +501,9 @@ class Rule:
     bundles: tuple["Bundle", ...] = field(init=False)
     _cached_hash: int | None = field(init=False, default=None)
     _cached_repr: str | None = field(init=False, default=None)
+    arguments_strategies: dict[Any, Any] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
             assert not isinstance(v, BundleReferenceStrategy)
@@ -658,7 +658,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     return BundleConsumer(bundle)
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class MultipleResults(Iterable[Ex]):
     values: tuple[Ex, ...]
 
@@ -941,7 +941,7 @@ def initialize(
     return accept
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class VarReference:
     name: str
 
@@ -1010,7 +1010,7 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
     return decorator
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Invariant:
     function: Any
     preconditions: Any
