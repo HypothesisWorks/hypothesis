@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.144.1:
+
+--------------------
+6.144.1 - 2025-11-03
+--------------------
+
+Tweak how Hypothesis hides internal tracebacks to fix an error under rare conditions (:issue:`3822`).
+
 .. _v6.144.0:
 
 --------------------
