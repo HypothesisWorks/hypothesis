@@ -87,6 +87,8 @@ def fn_ktest(*fnkwargs):
     (st.decimals, {"max_value": "inf", "allow_infinity": False}),
     (st.decimals, {"min_value": complex(1, 2)}),
     (st.decimals, {"min_value": "0.1", "max_value": "0.9", "places": 0}),
+    (st.decimals, {"min_value": fractions.Fraction(1, 3)}),
+    (st.decimals, {"max_value": fractions.Fraction(2, 3), "places": 1}),
     (
         st.dictionaries,
         {"keys": st.booleans(), "values": st.booleans(), "min_size": 10, "max_size": 1},
@@ -241,6 +243,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (st.decimals, {"max_value": 1.0, "min_value": -1.0, "allow_nan": False}),
     (st.decimals, {"min_value": "-inf"}),
     (st.decimals, {"max_value": "inf"}),
+    (st.decimals, {"min_value": fractions.Fraction(3, 20)}),
+    (st.decimals, {"max_value": fractions.Fraction(1, 8), "places": 10}),
     (st.fractions, {"min_value": -1, "max_value": 1, "max_denominator": 1000}),
     (st.fractions, {"min_value": 1, "max_value": 1}),
     (st.fractions, {"min_value": 1, "max_value": 1, "max_denominator": 2}),

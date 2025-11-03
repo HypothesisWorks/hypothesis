@@ -18,6 +18,70 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.145.0:
+
+--------------------
+6.145.0 - 2025-11-03
+--------------------
+
+Hypothesis previously required :pypi:`attrs` as a dependency. This release removes that dependency, so that the only required dependency of Hypothesis is :pypi:`sortedcontainers`.
+
+All attrs-specific features of Hypothesis, such as using |st.from_type| with attrs classes, will continue to behave as before.
+
+.. _v6.144.1:
+
+--------------------
+6.144.1 - 2025-11-03
+--------------------
+
+Tweak how Hypothesis hides internal tracebacks to fix an error under rare conditions (:issue:`3822`).
+
+.. _v6.144.0:
+
+--------------------
+6.144.0 - 2025-11-02
+--------------------
+
+This release adds support for :class:`~fractions.Fraction` objects as ``min_value``
+and ``max_value`` bounds in :func:`~hypothesis.strategies.decimals`, if they can
+be exactly represented as decimals in the target precision (:issue:`4466`).
+
+Bounding :func:`~hypothesis.strategies.decimals` with *other* values that cannot
+be exactly represented is now deprecated; previously the bounds could be off by one.
+
+.. _v6.143.1:
+
+--------------------
+6.143.1 - 2025-11-02
+--------------------
+
+:func:`~hypothesis.strategies.from_type` now correctly handles :pypi:`annotated-types`
+annotations on :class:`typing.TypedDict` fields which are also marked as being
+:obj:`~typing.ReadOnly`, :obj:`~typing.Required`, or :obj:`~typing.NotRequired`
+(:issue:`4474`).
+
+.. _v6.143.0:
+
+--------------------
+6.143.0 - 2025-11-01
+--------------------
+
+The extras for |hypothesis-numpy| and |hypothesis-pandas| now support automatically inferring a strategy for ``dtype="O"``. Previously, Hypothesis required an explicit elements strategy to be passed, for example ``nps.arrays("O", shape=(1,), elements=st.just(object()))``. Now, Hypothesis automatically infers ``elements=st.from_type(object)``.
+
+Thanks to Shaun Read for identifying and fixing this!
+
+.. _v6.142.5:
+
+--------------------
+6.142.5 - 2025-10-31
+--------------------
+
+This patch fixes :func:`~hypothesis.extra.ghostwriter.binary_operation` to
+include imports for :mod:`hypothesis.extra.numpy` strategies such as
+:func:`~hypothesis.extra.numpy.arrays`, :func:`~hypothesis.extra.numpy.scalar_dtypes`,
+and :func:`~hypothesis.extra.numpy.array_shapes` when ghostwriting tests for
+functions with numpy array parameters (:issue:`4576`).
+
 .. _v6.142.4:
 
 --------------------

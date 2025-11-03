@@ -44,8 +44,8 @@ EXTRA_PATH_METADATA = {k: {"path": basename(k)} for k in STATIC_PATHS}
 PROFILE_IMAGE_URL = "/dragonfly-rainbow.svg"
 
 MENUITEMS = (
-    ("Articles", "/articles"),
-    ("Documentation", "https://hypothesis.readthedocs.io/en/latest/"),
+    ("Blog", "/articles"),
+    ("Docs", "https://hypothesis.readthedocs.io/en/latest/"),
     ("GitHub", "https://github.com/HypothesisWorks/hypothesis/"),
     ("PyPI", "https://pypi.org/project/hypothesis/"),
 )

@@ -16,7 +16,7 @@ import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from inspect import getframeinfo
+from inspect import getfile, getsourcefile
 from pathlib import Path
 from types import ModuleType, TracebackType
 
@@ -82,7 +82,7 @@ def get_trimmed_traceback(
         return tb
     while tb.tb_next is not None and (
         # If the frame is from one of our files, it's been added by Hypothesis.
-        is_hypothesis_file(getframeinfo(tb.tb_frame).filename)
+        is_hypothesis_file(getsourcefile(tb.tb_frame) or getfile(tb.tb_frame))
         # But our `@proxies` decorator overrides the source location,
         # so we check for an attribute it injects into the frame too.
         or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
@@ -91,7 +91,7 @@ def get_trimmed_traceback(
     return tb
 
 
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class InterestingOrigin:
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even

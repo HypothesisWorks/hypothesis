@@ -10,6 +10,7 @@
 
 import math
 from collections.abc import Callable, Hashable, Iterable, Sequence
+from dataclasses import dataclass
 from typing import (
     Literal,
     TypeAlias,
@@ -17,8 +18,6 @@ from typing import (
     TypeVar,
     cast,
 )
-
-import attr
 
 from hypothesis.errors import ChoiceTooLarge
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
@@ -72,23 +71,23 @@ ChoiceKeyT: TypeAlias = (
 )
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class ChoiceTemplate:
-    type: Literal["simplest"] = attr.ib()
-    count: int | None = attr.ib()
+    type: Literal["simplest"]
+    count: int | None
 
-    def __attrs_post_init__(self) -> None:
+    def __post_init__(self) -> None:
         if self.count is not None:
             assert self.count > 0
 
 
-@attr.s(slots=True, repr=False, eq=False)
+@dataclass(slots=True, frozen=False)
 class ChoiceNode:
-    type: ChoiceTypeT = attr.ib()
-    value: ChoiceT = attr.ib()
-    constraints: ChoiceConstraintsT = attr.ib()
-    was_forced: bool = attr.ib()
-    index: int | None = attr.ib(default=None)
+    type: ChoiceTypeT
+    value: ChoiceT
+    constraints: ChoiceConstraintsT
+    was_forced: bool
+    index: int | None = None
 
     def copy(
         self,

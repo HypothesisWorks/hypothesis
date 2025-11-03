@@ -11,10 +11,10 @@
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from copy import copy
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Generic, Union
 
-import attr
 import numpy as np
 import pandas
 
@@ -25,7 +25,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -107,28 +106,29 @@ def elements_and_dtype(elements, dtype, source=None):
     _get_subclasses = getattr(IntegerDtype, "__subclasses__", list)
     dtype = {t.name: t() for t in _get_subclasses()}.get(dtype, dtype)
 
+    is_na_dtype = False
     if isinstance(dtype, IntegerDtype):
         is_na_dtype = True
         dtype = np.dtype(dtype.name.lower())
     elif dtype is not None:
-        is_na_dtype = False
         dtype = try_convert(np.dtype, dtype, "dtype")
-    else:
-        is_na_dtype = False
 
     if elements is None:
         elements = npst.from_dtype(dtype)
         if is_na_dtype:
             elements = st.none() | elements
-    elif dtype is not None:
+    # as an optimization, avoid converting object dtypes, which will always
+    # remain unchanged.
+    elif dtype is not None and dtype.kind != "O":
 
         def convert_element(value):
             if is_na_dtype and value is None:
                 return None
-            name = f"draw({prefix}elements)"
+
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
+                name = f"draw({prefix}elements)"
                 raise InvalidArgument(
                     f"Cannot convert {name}={value!r} of type "
                     f"{type(value).__name__} to dtype {dtype.str}"
@@ -363,7 +363,7 @@ def series(
     return result()
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 
@@ -381,11 +381,11 @@ class column(Generic[Ex]):
     * unique: If all values in this column should be distinct.
     """
 
-    name: str | int | None = attr.ib(default=None)
-    elements: st.SearchStrategy[Ex] | None = attr.ib(default=None)
-    dtype: Any = attr.ib(default=None, repr=get_pretty_function_description)
-    fill: st.SearchStrategy[Ex] | None = attr.ib(default=None)
-    unique: bool = attr.ib(default=False)
+    name: str | int | None = None
+    elements: st.SearchStrategy[Ex] | None = None
+    dtype: Any = None
+    fill: st.SearchStrategy[Ex] | None = None
+    unique: bool = False
 
 
 def columns(
@@ -583,7 +583,6 @@ def data_frames(
             raise InvalidArgument(f"duplicate definition of column name {c.name!r}")
 
         column_names.add(c.name)
-
         c.elements, _ = elements_and_dtype(c.elements, c.dtype, label)
 
         if c.dtype is None and rows is not None:
@@ -594,7 +593,6 @@ def data_frames(
         c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique, name=label
         )
-
         rewritten_columns.append(c)
 
     if rows is None:
@@ -614,13 +612,12 @@ def data_frames(
 
             # For columns with no filling the problem is harder, and drawing
             # them like that would result in rows being very far apart from
-            # each other in the underlying data stream, which gets in the way
+            # each other in the choice sequence, which gets in the way
             # of shrinking. So what we do is reorder and draw those columns
             # row wise, so that the values of each row are next to each other.
-            # This makes life easier for the shrinker when deleting blocks of
-            # data.
-            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
+            # This makes life easier for the shrinker when deleting choices.
 
+            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
             if columns_without_fill:
                 for c in columns_without_fill:
                     data[c.name] = pandas.Series(
@@ -642,6 +639,7 @@ def data_frames(
                                 reject()
                         else:
                             value = draw(c.elements)
+
                         try:
                             data[c.name].iloc[i] = value
                         except ValueError as err:  # pragma: no cover

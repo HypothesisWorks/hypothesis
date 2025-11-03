@@ -12,6 +12,7 @@ import math
 import time
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import cached_property
 from random import Random
@@ -25,8 +26,6 @@ from typing import (
     cast,
     overload,
 )
-
-import attr
 
 from hypothesis.errors import (
     CannotProceedScopeT,
@@ -120,9 +119,9 @@ class Status(IntEnum):
         return f"Status.{self.name}"
 
 
-@attr.s(slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class StructuralCoverageTag:
-    label: int = attr.ib()
+    label: int
 
 
 STRUCTURAL_COVERAGE_CACHE: dict[int, StructuralCoverageTag] = {}
@@ -568,27 +567,27 @@ class DataObserver:
         pass
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=True)
 class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
 
-    status: Status = attr.ib()
-    interesting_origin: InterestingOrigin | None = attr.ib()
-    nodes: tuple[ChoiceNode, ...] = attr.ib(eq=False, repr=False)
-    length: int = attr.ib()
-    output: str = attr.ib()
-    expected_exception: BaseException | None = attr.ib()
-    expected_traceback: str | None = attr.ib()
-    has_discards: bool = attr.ib()
-    target_observations: TargetObservations = attr.ib()
-    tags: frozenset[StructuralCoverageTag] = attr.ib()
-    spans: Spans = attr.ib(repr=False, eq=False)
-    arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
-    slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
-    misaligned_at: MisalignedAt | None = attr.ib(repr=False)
-    cannot_proceed_scope: CannotProceedScopeT | None = attr.ib(repr=False)
+    status: Status
+    interesting_origin: InterestingOrigin | None
+    nodes: tuple[ChoiceNode, ...] = field(repr=False, compare=False)
+    length: int
+    output: str
+    expected_exception: BaseException | None
+    expected_traceback: str | None
+    has_discards: bool
+    target_observations: TargetObservations
+    tags: frozenset[StructuralCoverageTag]
+    spans: Spans = field(repr=False, compare=False)
+    arg_slices: set[tuple[int, int]] = field(repr=False)
+    slice_comments: dict[tuple[int, int], str] = field(repr=False)
+    misaligned_at: MisalignedAt | None = field(repr=False)
+    cannot_proceed_scope: CannotProceedScopeT | None = field(repr=False)
 
     def as_result(self) -> "ConjectureResult":
         return self

@@ -29,7 +29,12 @@ from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
-from tests.common.debug import check_can_generate_examples, find_any, minimal
+from tests.common.debug import (
+    assert_all_examples,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import fails_with, flaky
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
@@ -1273,3 +1278,67 @@ def test_infers_elements_and_fill():
     assert not elems.has_reusable_values
     s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1, elements=elems))
     assert s.fill.is_empty
+
+
+@given(nps.arrays(np.dtype("O"), shape=nps.array_shapes()))
+def test_object_arrays_are_of_type_object(obj_array):
+    assert obj_array.dtype == np.dtype("O")
+
+
+def test_class_instances_not_allowed_in_scalar_array():
+    class A:
+        pass
+
+    s = nps.arrays(
+        nps.scalar_dtypes(),
+        shape=nps.array_shapes(),
+        elements=st.just(A()),
+    )
+
+    # can raise ValueError during generation. For example if scalar_dtype is
+    # corresponds to a datetime, numpy will raise "cannot convert A to a datetime".
+    with pytest.raises((InvalidArgument, ValueError)):
+        check_can_generate_examples(s)
+
+
+def test_object_arrays_with_mixed_elements_has_object_dtype():
+    class A:
+        pass
+
+    s = nps.arrays(
+        np.dtype("O"),
+        shape=nps.array_shapes(),
+        elements=st.just(A()) | st.integers(),
+    )
+
+    assert_all_examples(s, lambda arr: arr.dtype == np.dtype("O"))
+    find_any(s, lambda arr: len({type(x) for x in arr.ravel()}) > 1)
+
+
+@given(st.data())
+def test_object_array_can_hold_arbitrary_class_instances(data):
+    instance = data.draw(st.from_type(type).flatmap(st.from_type))
+    s = nps.arrays(np.dtype("O"), nps.array_shapes(), elements=st.just(instance))
+    arr = data.draw(s)
+
+    assert all(v is instance for v in arr.ravel())
+
+
+def test_object_array_can_hold_incomparable_elements():
+    class Incomparable:
+        def __eq__(self, other):
+            raise TypeError
+
+    check_can_generate_examples(
+        nps.arrays(
+            np.dtype("O"),
+            nps.array_shapes(),
+            elements=st.just(Incomparable()),
+        )
+    )
+
+
+def test_can_generate_nested_object_arrays():
+    int_arrays = nps.arrays(np.dtype("int"), nps.array_shapes())
+    s = nps.arrays(np.dtype("O"), nps.array_shapes(), elements=int_arrays)
+    check_can_generate_examples(s)

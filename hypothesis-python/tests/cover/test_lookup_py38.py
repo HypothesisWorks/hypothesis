@@ -120,7 +120,7 @@ def test_layered_optional_key_is_optional():
     find_any(from_type(C), lambda d: "b" not in d)
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(slots=False, frozen=False)
 class Node:
     left: typing.Union["Node", int]
     right: typing.Union["Node", int]

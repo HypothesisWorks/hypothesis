@@ -157,7 +157,7 @@ global_force_seed = None
 threadlocal = ThreadLocal(_hypothesis_global_random=lambda: None)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Example:
     args: Any
     kwargs: Any
@@ -718,7 +718,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
     return Random(seed)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Stuff:
     selfy: Any
     args: tuple
@@ -1622,7 +1622,7 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
-@dataclass
+@dataclass(slots=False, frozen=False)
 class HypothesisHandle:
     """This object is provided as the .hypothesis attribute on @given tests.
 

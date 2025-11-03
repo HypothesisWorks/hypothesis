@@ -185,6 +185,10 @@
 .. |is_hypothesis_test| replace:: :func:`~hypothesis.is_hypothesis_test`
 .. |currently_in_test_context| replace:: :func:`~hypothesis.currently_in_test_context`
 
+.. |hypothesis-numpy| replace:: :ref:`NumPy <hypothesis-numpy>`
+.. |hypothesis-pandas| replace:: :ref:`pandas <hypothesis-pandas>`
+.. |hypothesis-django| replace:: :ref:`Django <hypothesis-django>`
+
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
 .. |bool| replace:: :obj:`python:bool`

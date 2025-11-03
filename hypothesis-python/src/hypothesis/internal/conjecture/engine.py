@@ -113,7 +113,7 @@ def shortlex(s):
     return (len(s), s)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class HealthCheckState:
     valid_examples: int = field(default=0)
     invalid_examples: int = field(default=0)
@@ -317,6 +317,7 @@ class ConjectureRunner:
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: int | None = None
         self.last_bug_found_at: int | None = None
+        self.first_bug_found_time: float = math.inf
 
         self.shrunk_examples: set[InterestingOrigin] = set()
         self.health_check_state: HealthCheckState | None = None
@@ -660,6 +661,7 @@ class ConjectureRunner:
                 self.last_bug_found_at = self.call_count
                 if self.first_bug_found_at is None:
                     self.first_bug_found_at = self.call_count
+                    self.first_bug_found_time = time.monotonic()
             else:
                 if sort_key(data.nodes) < sort_key(existing.nodes):
                     self.shrinks += 1
@@ -1073,9 +1075,11 @@ class ConjectureRunner:
             return True
         # Users who disable shrinking probably want to exit as fast as possible.
         # If we've found a bug and won't report more than one, stop looking.
+        # If we first saw a bug more than 10 seconds ago, stop looking.
         elif (
             Phase.shrink not in self.settings.phases
             or not self.settings.report_multiple_bugs
+            or time.monotonic() - self.first_bug_found_time > 10
         ):
             return False
         assert isinstance(self.first_bug_found_at, int)

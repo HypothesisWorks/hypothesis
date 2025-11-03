@@ -45,8 +45,6 @@ from typing import (
 )
 from uuid import UUID
 
-import attr
-
 from hypothesis._settings import note_deprecation
 from hypothesis.control import (
     cleanup,
@@ -1154,7 +1152,11 @@ def builds(
     required = required_args(target, args, kwargs)
     to_infer = {k for k, v in kwargs.items() if v is ...}
     if required or to_infer:
-        if isinstance(target, type) and attr.has(target):
+        if (
+            isinstance(target, type)
+            and (attr := sys.modules.get("attr")) is not None
+            and attr.has(target)
+        ):  # pragma: no cover  # covered by our attrs tests in check-niche
             # Use our custom introspection for attrs classes
             from hypothesis.strategies._internal.attrs import from_attrs
 
@@ -1424,11 +1426,13 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         # Taken from `Lib/typing.py` and modified:
         def _get_typeddict_qualifiers(key, annotation_type):
             qualifiers = []
+            annotations = []
             while True:
                 annotation_origin = types.extended_get_origin(annotation_type)
                 if annotation_origin is Annotated:
                     if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
+                        annotations.extend(annotation_args[1:])
                     else:
                         break
                 elif annotation_origin in types.RequiredTypes:
@@ -1442,6 +1446,8 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                     annotation_type = _get_annotation_arg(key, annotation_type)
                 else:
                     break
+            if annotations:
+                annotation_type = Annotated[(annotation_type, *annotations)]
             return set(qualifiers), annotation_type
 
         # The __optional_keys__ attribute may or may not be present, but if there's no
@@ -1532,7 +1538,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         required = required_args(thing)
         if required and not (
             required.issubset(get_type_hints(thing))
-            or attr.has(thing)
+            or ((attr := sys.modules.get("attr")) is not None and attr.has(thing))
             or is_typed_named_tuple(thing)  # weird enough that we have a specific check
         ):
             raise ResolutionFailed(
@@ -1693,24 +1699,44 @@ def fractions(
 
 
 def _as_finite_decimal(
-    value: Real | str | None, name: str, allow_infinity: bool | None
+    value: Real | str | None, name: str, allow_infinity: bool | None, places: int | None
 ) -> Decimal | None:
     """Convert decimal bounds to decimals, carefully."""
     assert name in ("min_value", "max_value")
     if value is None:
         return None
+    old = value
+    if isinstance(value, Fraction):
+        value = Context(prec=places).divide(value.numerator, value.denominator)
+        if old != value:
+            raise InvalidArgument(
+                f"{old!r} cannot be exactly represented as a decimal with {places=}"
+            )
     if not isinstance(value, Decimal):
         with localcontext(Context()):  # ensure that default traps are enabled
             value = try_convert(Decimal, value, name)
     assert isinstance(value, Decimal)
+    if value.is_nan():
+        raise InvalidArgument(f"Invalid {name}={value!r}")
+
+    # If you are reading this conditional, I am so sorry.  I did my best.
+    finitude_old = value if isinstance(old, str) else old
+    if math.isfinite(finitude_old) != math.isfinite(value) or (
+        value.is_finite() and Fraction(str(old)) != Fraction(str(value))
+    ):
+        note_deprecation(
+            f"{old!r} cannot be exactly represented as a decimal with {places=}",
+            since="2025-11-02",
+            has_codemod=False,
+            stacklevel=1,
+        )
+
     if value.is_finite():
         return value
-    if value.is_infinite() and (value < 0 if "min" in name else value > 0):
-        if allow_infinity or allow_infinity is None:
-            return None
-        raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
-    # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument(f"Invalid {name}={value!r}")
+    assert value.is_infinite()
+    if (value < 0 if "min" in name else value > 0) and allow_infinity is not False:
+        return None
+    raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
 
 
 @cacheable
@@ -1747,8 +1773,8 @@ def decimals(
     check_valid_integer(places, "places")
     if places is not None and places < 0:
         raise InvalidArgument(f"{places=} may not be negative")
-    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
-    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
+    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity, places)
+    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity, places)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument("Cannot allow infinity between finite bounds")
@@ -1793,12 +1819,12 @@ def decimals(
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
     special: list[Decimal] = []
-    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
-        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
     if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
+    if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
+        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     return strat | (sampled_from(special) if special else nothing())
 
 

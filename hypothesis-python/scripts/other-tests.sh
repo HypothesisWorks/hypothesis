@@ -25,6 +25,10 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+pip install attrs
+$PYTEST tests/attrs/
+pip uninstall -y attrs
+
 # use pinned redis version instead of inheriting from fakeredis
 pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
@@ -63,7 +67,10 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/patching/
   pip uninstall -y libcst
 
+  # One of the ghostwriter tests uses attrs (though hypothesis[ghostwriter] does not require attrs).
+  pip install attrs
   $PYTEST tests/ghostwriter/
+  pip uninstall -y attrs
   pip uninstall -y black
 
   if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] ; then

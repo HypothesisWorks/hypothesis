@@ -1,6 +1,6 @@
 /* PrismJS 1.17.1  https://prismjs.com/download.html#themes=prism&languages=python
 * prism.js default theme for JavaScript, CSS and HTML by Lea Verou, based on dabblet.com
-* Modified by Zac Hatfield-Dodds; removed background etc.
+* Modified by Zac Hatfield-Dodds; removed background, match github's python colors closer, etc.
 */
 
 pre[class*="language-"]::-moz-selection,
@@ -28,11 +28,11 @@ pre[class*="language-"] * {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: slategray;
+  color: #6a737d;
 }
 
 .token.punctuation {
-  color: #999;
+  color: #24292e;
 }
 
 .namespace {
@@ -46,7 +46,7 @@ pre[class*="language-"] * {
 .token.constant,
 .token.symbol,
 .token.deleted {
-  color: #905;
+  color: #005cc5;
 }
 
 .token.selector,
@@ -55,7 +55,7 @@ pre[class*="language-"] * {
 .token.char,
 .token.builtin,
 .token.inserted {
-  color: #690;
+  color: #032f62;
 }
 
 .token.operator,
@@ -63,24 +63,25 @@ pre[class*="language-"] * {
 .token.url,
 .language-css .token.string,
 .style .token.string {
-  color: #9a6e3a;
+  color: #24292e;
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: #07a;
+  color: #d73a49;
 }
 
 .token.function,
-.token.class-name {
-  color: #dd4a68;
+.token.class-name,
+.token.decorator {
+  color: #6f42c1;
 }
 
 .token.regex,
 .token.important,
 .token.variable {
-  color: #e90;
+  color: #e36209;
 }
 
 .token.important,

@@ -10,10 +10,9 @@
 
 import math
 from collections.abc import Generator, Set
+from dataclasses import dataclass, field
 from random import Random
 from typing import TYPE_CHECKING, Final, TypeAlias, cast
-
-import attr
 
 from hypothesis.errors import (
     FlakyReplay,
@@ -64,14 +63,14 @@ _FLAKY_STRAT_MSG = (
 EMPTY: frozenset[int] = frozenset()
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=True)
 class Killed:
     """Represents a transition to part of the tree which has been marked as
     "killed", meaning we want to treat it as not worth exploring, so it will
     be treated as if it were completely explored for the purposes of
     exhaustion."""
 
-    next_node: "TreeNode" = attr.ib()
+    next_node: "TreeNode"
 
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
@@ -89,14 +88,14 @@ def _node_pretty(
     return f"{choice_type} {value!r}{forced_marker} {constraints}"
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
-    constraints: ChoiceConstraintsT = attr.ib()
-    choice_type: ChoiceTypeT = attr.ib()
-    children: dict[ChoiceT, "TreeNode"] = attr.ib(repr=False)
+    constraints: ChoiceConstraintsT
+    choice_type: ChoiceTypeT
+    children: dict[ChoiceT, "TreeNode"] = field(repr=False)
 
     @property
     def max_children(self) -> int:
@@ -117,12 +116,12 @@ class Branch:
                 p.pretty(child)
 
 
-@attr.s(slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class Conclusion:
     """Represents a transition to a finished state."""
 
-    status: Status = attr.ib()
-    interesting_origin: InterestingOrigin | None = attr.ib()
+    status: Status
+    interesting_origin: InterestingOrigin | None
 
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
@@ -334,7 +333,7 @@ def all_children(
             yield from _floats_between(min_point, max_value)
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class TreeNode:
     """
     A node, or collection of directly descended nodes, in a DataTree.
@@ -400,15 +399,15 @@ class TreeNode:
 
     # The constraints, value, and choice_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    constraints: list[ChoiceConstraintsT] = attr.ib(factory=list)
-    values: list[ChoiceT] = attr.ib(factory=list)
-    choice_types: list[ChoiceTypeT] = attr.ib(factory=list)
+    constraints: list[ChoiceConstraintsT] = field(default_factory=list)
+    values: list[ChoiceT] = field(default_factory=list)
+    choice_types: list[ChoiceTypeT] = field(default_factory=list)
 
     # The indices of nodes which had forced values.
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: set[int] | None = attr.ib(default=None, init=False)
+    __forced: set[int] | None = field(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -419,14 +418,14 @@ class TreeNode:
     # - Conclusion (ConjectureData.conclude_test was called here)
     # - Killed (this branch is valid and may even have children, but should not
     #   be explored when generating novel prefixes)
-    transition: None | Branch | Conclusion | Killed = attr.ib(default=None)
+    transition: None | Branch | Conclusion | Killed = None
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
     # change the answer.
     #
     # See also TreeNode.check_exhausted.
-    is_exhausted: bool = attr.ib(default=False, init=False)
+    is_exhausted: bool = field(default=False, init=False)
 
     @property
     def forced(self) -> Set[int]:
