@@ -220,7 +220,12 @@ html_theme = "furo"
 # remove "Hypothesis <version> documentation" from just below logo on the sidebar
 html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
-html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
+html_css_files = [
+    "better-signatures.css",
+    "wrap-in-tables.css",
+    "no-scroll.css",
+    "dark-fix.css",
+]
 htmlhelp_basename = "Hypothesisdoc"
 html_favicon = "../../brand/favicon.ico"
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"
