@@ -271,9 +271,12 @@ class SearchStrategy(Generic[Ex]):
     def has_reusable_values(self) -> Any:
         return recursive_property(self, "has_reusable_values", True)
 
-    # Whether this strategy is suitable for holding onto in a cache.
     @property
     def is_cacheable(self) -> Any:
+        """
+        Whether it is safe to hold on to instances of this strategy in a cache.
+        See _STRATEGY_CACHE.
+        """
         return recursive_property(self, "is_cacheable", True)
 
     def calc_is_cacheable(self, recur: RecurT) -> bool:
@@ -918,7 +921,7 @@ def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # pragma: no cov
     ...
 
 
-@defines_strategy(never_lazy=True)
+@defines_strategy(eager=True)
 def one_of(
     *args: Sequence[SearchStrategy[Any]] | SearchStrategy[Any],
 ) -> SearchStrategy[Any]:
