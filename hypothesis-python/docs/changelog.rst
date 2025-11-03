@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.145.1:
+
+--------------------
+6.145.1 - 2025-11-03
+--------------------
+
+Refactor some internal logic around strategy definitions.
+
 .. _v6.145.0:
 
 --------------------
