@@ -116,7 +116,7 @@ def defines_strategy(
         LazyStrategy.
     """
 
-    if eager is not False and force_reusable_values:
+    if eager is not False and force_reusable_values:  # pragma: no cover
         # We could support eager + force_reusable_values with a suitable wrapper,
         # but there are currently no callers that request this combination.
         raise InvalidArgument(
