@@ -82,6 +82,20 @@ def lint():
     pip_tool("ruff", "check", ".")
     codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
 
+    matches = subprocess.run(
+        r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
+        "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        from textwrap import indent
+
+        print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
+        print(indent(matches, "    "))
+        sys.exit(1)
+
 
 def do_release(package):
     if not package.has_release():
