@@ -1,0 +1,13 @@
+/*
+See https://github.com/HypothesisWorks/hypothesis/issues/4588 and
+https://github.com/pradyunsg/furo/discussions/909. Once this is fixed in furo,
+we can remove this.
+*/
+
+body[data-theme="dark"] .tooltip .tooltip-content {
+    background-color: var(--color-background-primary);
+}
+
+body[data-theme="dark"] .tooltip .arrow {
+    background: var(--color-background-primary);
+}
