@@ -1622,7 +1622,7 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
-@dataclass(slots=True, frozen=False)
+@dataclass(slots=False, frozen=False)
 class HypothesisHandle:
     """This object is provided as the .hypothesis attribute on @given tests.
 
