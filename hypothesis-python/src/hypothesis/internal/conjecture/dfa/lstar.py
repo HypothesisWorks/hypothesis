@@ -80,7 +80,7 @@ learning languages offline that we can record for later use.
 """
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class DistinguishedState:
     """Relevant information for a state that we have witnessed as definitely
     distinct from ones we have previously seen so far."""

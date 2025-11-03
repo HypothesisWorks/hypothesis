@@ -63,7 +63,7 @@ _FLAKY_STRAT_MSG = (
 EMPTY: frozenset[int] = frozenset()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Killed:
     """Represents a transition to part of the tree which has been marked as
     "killed", meaning we want to treat it as not worth exploring, so it will
@@ -88,7 +88,7 @@ def _node_pretty(
     return f"{choice_type} {value!r}{forced_marker} {constraints}"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
@@ -333,7 +333,7 @@ def all_children(
             yield from _floats_between(min_point, max_value)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class TreeNode:
     """
     A node, or collection of directly descended nodes, in a DataTree.

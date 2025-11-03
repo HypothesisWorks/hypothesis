@@ -146,7 +146,7 @@ for r in RANDOM_METHODS:
     define_copy_method(r)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class RandomState:
     next_states: dict = field(default_factory=dict)
     state_id: Any = None

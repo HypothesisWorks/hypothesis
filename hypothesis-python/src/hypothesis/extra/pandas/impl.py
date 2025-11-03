@@ -362,7 +362,7 @@ def series(
     return result()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 

@@ -71,7 +71,7 @@ ChoiceKeyT: TypeAlias = (
 )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class ChoiceTemplate:
     type: Literal["simplest"]
     count: int | None
@@ -81,7 +81,7 @@ class ChoiceTemplate:
             assert self.count > 0
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class ChoiceNode:
     type: ChoiceTypeT
     value: ChoiceT

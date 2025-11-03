@@ -567,7 +567,7 @@ class DataObserver:
         pass
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its

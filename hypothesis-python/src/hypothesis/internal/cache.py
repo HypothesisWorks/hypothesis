@@ -19,7 +19,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=False)
 class Entry(Generic[K, V]):
     key: K
     value: V
