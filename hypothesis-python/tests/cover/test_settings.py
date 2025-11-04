@@ -627,8 +627,8 @@ def test_can_set_verbosity_to_strings():
 def test_can_set_phase_to_strings():
     assert settings(phases=["reuse"]).phases == (Phase.reuse,)
     assert settings(phases=["reuse", "explicit"]).phases == (
-        Phase.reuse,
         Phase.explicit,
+        Phase.reuse,
     )
 
 
@@ -654,3 +654,36 @@ def test_verbosity_is_comparable():
     assert Verbosity.quiet == 0
     assert Verbosity.quiet >= 0
     assert Verbosity.normal > 0
+
+
+@checks_deprecated_behaviour
+def test_can_set_verbosity_to_integers():
+    assert Verbosity(0) is Verbosity.quiet
+    assert Verbosity(1) is Verbosity.normal
+    assert Verbosity(2) is Verbosity.verbose
+    assert Verbosity(3) is Verbosity.debug
+
+
+@checks_deprecated_behaviour
+def test_can_set_phase_to_integers():
+    assert Phase(0) is Phase.explicit
+    assert Phase(1) is Phase.reuse
+    assert Phase(2) is Phase.generate
+    assert Phase(4) is Phase.shrink
+
+
+@checks_deprecated_behaviour
+def test_can_set_suppressions_to_integers():
+    assert HealthCheck(1) is HealthCheck.data_too_large
+    assert HealthCheck(2) is HealthCheck.filter_too_much
+    assert HealthCheck(3) is HealthCheck.too_slow
+
+
+def test_invalid_integer_phase_raises():
+    with pytest.raises(ValueError):
+        Phase(99)
+
+
+def test_invalid_integer_healthcheck_raises():
+    with pytest.raises(ValueError):
+        HealthCheck(99)

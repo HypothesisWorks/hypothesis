@@ -90,12 +90,29 @@ class Verbosity(Enum):
     don't want this.
     """
 
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {0: "quiet", 1: "normal", 2: "verbose", 3: "debug"}
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing Verbosity({value}) as an integer is deprecated. "
+                    "Hypothesis now treats Verbosity values as strings, not integers. "
+                    f"Use Verbosity.{int_to_name[value]} instead.",
+                    since="RELEASEDAY",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
+
     def __repr__(self) -> str:
         return f"Verbosity.{self.name}"
 
     @staticmethod
     def _int_value(value: "Verbosity") -> int:
-        # we would just map Verbosity except it's not hashable
+        # we would just map Verbosity keys, except it's not hashable
         mapping = {
             Verbosity.quiet.name: 0,
             Verbosity.normal.name: 1,
@@ -154,6 +171,30 @@ class Phase(Enum):
     can't find a useful explanation, we'll just print the minimal failing example.
     """
 
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {
+                0: "explicit",
+                1: "reuse",
+                2: "generate",
+                3: "target",
+                4: "shrink",
+                5: "explain",
+            }
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing Phase({value}) as an integer is deprecated. "
+                    "Hypothesis now treats Phase values as strings, not integers. "
+                    f"Use Phase.{int_to_name[value]} instead.",
+                    since="RELEASEDAY",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
+
     def __repr__(self) -> str:
         return f"Phase.{self.name}"
 
@@ -208,6 +249,33 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     We recommend treating these particular health checks with more care, as
     suppressing them may result in an unsound test.
     """
+
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {
+                1: "data_too_large",
+                2: "filter_too_much",
+                3: "too_slow",
+                5: "return_value",
+                7: "large_base_example",
+                8: "not_a_test_method",
+                9: "function_scoped_fixture",
+                10: "differing_executors",
+                11: "nested_given",
+            }
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing HealthCheck({value}) as an integer is deprecated. "
+                    "Hypothesis now treats HealthCheck values as strings, not integers. "
+                    f"Use HealthCheck.{int_to_name[value]} instead.",
+                    since="RELEASEDAY",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
@@ -357,7 +425,7 @@ def _validate_enum_value(cls: type, value: object, *, name) -> Any:
     except ValueError:
         raise InvalidArgument(
             f"{name}={value} is not a valid value. The options "
-            f"are: {', '.join(m.name for m in cls)}"
+            f"are: {', '.join(repr(m.name) for m in cls)}"
         ) from None
 
 
@@ -387,7 +455,11 @@ def _validate_database(
 
 def _validate_phases(phases: Collection[Phase]) -> Sequence[Phase]:
     phases = try_convert(tuple, phases, "phases")
-    return tuple(_validate_enum_value(Phase, phase, name="phases") for phase in phases)
+    phases = tuple(
+        _validate_enum_value(Phase, phase, name="phases") for phase in phases
+    )
+    # sort by definition order
+    return tuple(phase for phase in list(Phase) if phase in phases)
 
 
 def _validate_stateful_step_count(stateful_step_count: int) -> int:
@@ -798,7 +870,6 @@ class settings(metaclass=settingsMeta):
             # these three are equivalent
             settings(verbosity=Verbosity.verbose)
             settings(verbosity="verbose")
-            settings(verbosity=2)
 
         If you are using :pypi:`pytest`, you may also need to :doc:`disable
         output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`
