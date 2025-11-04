@@ -18,8 +18,9 @@ from docutils import nodes
 from sphinx.util.docutils import SphinxRole
 
 root = Path(__file__).parent.parent
-sys.path.append(str(root / "src"))
-sys.path.append(str(Path(__file__).parent / "_ext"))
+# insert so the local versions are consulted first, before any installed version
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 needs_sphinx = re.search(
     r"sphinx==([0-9\.]+)", root.joinpath("../requirements/tools.txt").read_text()

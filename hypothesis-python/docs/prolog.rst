@@ -13,6 +13,7 @@
 .. |event| replace:: :func:`~hypothesis.event`
 .. |note| replace:: :func:`~hypothesis.note`
 .. |infer| replace:: :data:`~hypothesis.infer`
+.. |fuzz_one_input| replace:: :func:`~hypothesis.core.HypothesisHandle.fuzz_one_input`
 
 .. |max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
 .. |settings.max_examples| replace:: :obj:`settings.max_examples <hypothesis.settings.max_examples>`
