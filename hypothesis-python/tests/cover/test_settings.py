@@ -472,6 +472,7 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"backend": "nonexistent_backend"},
         {"suppress_health_check": ["nonexistent_healthcheck"]},
         {"phases": ["nonexistent_phase"]},
+        {"phases": 0},
         {"verbosity": -1},
         {"verbosity": "nonexistent_verbosity"},
     ],
