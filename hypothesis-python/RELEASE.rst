@@ -15,3 +15,7 @@ RELEASE_TYPE: minor
   # ...and these two.
   settings(suppress_health_check=[HealthCheck.filter_too_much])
   settings(suppress_health_check=["filter_too_much"])
+
+This release also changes the canonical value of |Verbosity|, |Phase|, and |HealthCheck| members to a string instead of an integer. For example, ``Phase.reuse.value == "explicit"`` as of this release, where previously ``Phase.reuse.value == 1``.
+
+Instantiating |Verbosity|, |Phase|, or |HealthCheck| with an integer, such as ``Verbosity(0)``, is now deprecated.

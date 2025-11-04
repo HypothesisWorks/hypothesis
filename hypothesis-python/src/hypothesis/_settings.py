@@ -123,12 +123,12 @@ class Verbosity(Enum):
         assert list(mapping.keys()) == [verbosity.name for verbosity in Verbosity]
         return mapping[value.name]
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Verbosity):
             return super().__eq__(other)
         return Verbosity._int_value(self) == other
 
-    def __gt__(self, other):
+    def __gt__(self, other: Any) -> bool:
         value1 = Verbosity._int_value(self)
         value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
         return value1 > value2
@@ -419,7 +419,7 @@ def _validate_choices(name: str, value: T, *, choices: Sequence[object]) -> T:
     return value
 
 
-def _validate_enum_value(cls: type, value: object, *, name) -> Any:
+def _validate_enum_value(cls: Any, value: object, *, name: str) -> Any:
     try:
         return cls(value)
     except ValueError:
@@ -471,7 +471,7 @@ def _validate_stateful_step_count(stateful_step_count: int) -> int:
     return stateful_step_count
 
 
-def _validate_suppress_health_check(suppressions: object):
+def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, ...]:
     suppressions = try_convert(tuple, suppressions, "suppress_health_check")
     for health_check in suppressions:
         if health_check in (HealthCheck.return_value, HealthCheck.not_a_test_method):
