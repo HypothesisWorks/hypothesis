@@ -469,7 +469,12 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"deadline": 0},
         {"deadline": True},
         {"deadline": False},
-        {"backend": "this_backend_does_not_exist"},
+        {"backend": "nonexistent_backend"},
+        {"suppress_health_check": ["nonexistent_healthcheck"]},
+        {"phases": ["nonexistent_phase"]},
+        {"phases": 0},
+        {"verbosity": -1},
+        {"verbosity": "nonexistent_verbosity"},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
@@ -611,3 +616,78 @@ def test_register_profile_avoids_intermediate_profiles():
     s = settings(parent, max_examples=10)
     with temp_register_profile("for_intermediate_test", s):
         assert settings.get_profile("for_intermediate_test")._fallback is parent
+
+
+def test_can_set_verbosity_to_strings():
+    assert settings(verbosity="quiet").verbosity is Verbosity.quiet
+    assert settings(verbosity="normal").verbosity is Verbosity.normal
+    assert settings(verbosity="verbose").verbosity is Verbosity.verbose
+    assert settings(verbosity="debug").verbosity is Verbosity.debug
+
+
+def test_can_set_phase_to_strings():
+    assert settings(phases=["reuse"]).phases == (Phase.reuse,)
+    assert settings(phases=["reuse", "explicit"]).phases == (
+        Phase.explicit,
+        Phase.reuse,
+    )
+
+
+def test_can_set_suppressions_to_strings():
+    assert settings(
+        suppress_health_check=["filter_too_much"]
+    ).suppress_health_check == (HealthCheck.filter_too_much,)
+    assert settings(
+        suppress_health_check=["filter_too_much", "too_slow"]
+    ).suppress_health_check == (HealthCheck.filter_too_much, HealthCheck.too_slow)
+
+
+def test_verbosity_is_comparable():
+    assert Verbosity.quiet < Verbosity.normal
+    assert Verbosity.quiet <= Verbosity.quiet
+    assert Verbosity.quiet == Verbosity.quiet
+    assert Verbosity.quiet >= Verbosity.quiet
+    assert Verbosity.debug > Verbosity.quiet
+
+    # make sure we're comparing by int value, not by str value
+    assert Verbosity.quiet < Verbosity.normal < Verbosity.verbose < Verbosity.debug
+
+    # also comparable with other ints
+    assert Verbosity.quiet < 1
+    assert Verbosity.quiet <= 1
+    assert Verbosity.quiet == 0
+    assert Verbosity.quiet >= 0
+    assert Verbosity.normal > 0
+
+
+@checks_deprecated_behaviour
+def test_can_set_verbosity_to_integers():
+    assert Verbosity(0) is Verbosity.quiet
+    assert Verbosity(1) is Verbosity.normal
+    assert Verbosity(2) is Verbosity.verbose
+    assert Verbosity(3) is Verbosity.debug
+
+
+@checks_deprecated_behaviour
+def test_can_set_phase_to_integers():
+    assert Phase(0) is Phase.explicit
+    assert Phase(1) is Phase.reuse
+    assert Phase(2) is Phase.generate
+    assert Phase(4) is Phase.shrink
+
+
+@checks_deprecated_behaviour
+def test_can_set_suppressions_to_integers():
+    assert HealthCheck(1) is HealthCheck.data_too_large
+    assert HealthCheck(2) is HealthCheck.filter_too_much
+    assert HealthCheck(3) is HealthCheck.too_slow
+
+
+def test_invalid_integer_phase_raises():
+    with pytest.raises(ValueError):
+        Phase(99)
+
+
+def test_invalid_integer_healthcheck_raises():
+    with pytest.raises(ValueError):
+        HealthCheck(99)
