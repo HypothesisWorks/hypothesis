@@ -10,6 +10,11 @@ from collections.abc import Hashable
 from hypothesis import given, settings, strategies as st
 
 
+@given(coverage=st.booleans(), choices=st.booleans())
+def test_fuzz_ObservabilitySettings(coverage: bool, choices: bool) -> None:
+    hypothesis.ObservabilitySettings(coverage=coverage, choices=choices)
+
+
 @given(condition=st.from_type(object))
 def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)
