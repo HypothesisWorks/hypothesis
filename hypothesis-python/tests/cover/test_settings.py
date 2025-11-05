@@ -649,6 +649,9 @@ def test_verbosity_is_comparable():
     assert Verbosity.quiet >= Verbosity.quiet
     assert Verbosity.debug > Verbosity.quiet
 
+    # make sure we're comparing by int value, not by str value
+    assert Verbosity.quiet < Verbosity.normal < Verbosity.verbose < Verbosity.debug
+
     # also comparable with other ints
     assert Verbosity.quiet < 1
     assert Verbosity.quiet <= 1
