@@ -100,7 +100,7 @@ class Verbosity(Enum):
                     f"Passing Verbosity({value}) as an integer is deprecated. "
                     "Hypothesis now treats Verbosity values as strings, not integers. "
                     f"Use Verbosity.{int_to_name[value]} instead.",
-                    since="RELEASEDAY",
+                    since="2025-11-05",
                     has_codemod=False,
                     stacklevel=2,
                 )
@@ -188,7 +188,7 @@ class Phase(Enum):
                     f"Passing Phase({value}) as an integer is deprecated. "
                     "Hypothesis now treats Phase values as strings, not integers. "
                     f"Use Phase.{int_to_name[value]} instead.",
-                    since="RELEASEDAY",
+                    since="2025-11-05",
                     has_codemod=False,
                     stacklevel=2,
                 )
@@ -270,7 +270,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
                     f"Passing HealthCheck({value}) as an integer is deprecated. "
                     "Hypothesis now treats HealthCheck values as strings, not integers. "
                     f"Use HealthCheck.{int_to_name[value]} instead.",
-                    since="RELEASEDAY",
+                    since="2025-11-05",
                     has_codemod=False,
                     stacklevel=2,
                 )
