@@ -30,18 +30,25 @@ def test_matches_builtin(ls):
         {% endfor %}
       </div>
 
-      <!-- <h2>Newsletter</h2>
-      <p>Stay up to date on the latest Hypothesis news with our low volume newsletter!</p>
+      <div class="separator" style="margin-top: 4rem; margin-bottom: 4rem;"></div>
 
-      <form id="tinyletter" action="https://tinyletter.com/DRMacIver" method="post" target="popupwindow"
-            onsubmit="window.open('https://tinyletter.com/DRMacIver', 'popupwindow', 'scrollbars=yes,width=800,height=600'); return true;"
-            class="newsletter-form">
-        <div class="newsletter-form__content">
-          <input type="email" name="email" id="tlemail" placeholder="me@example.com" class="newsletter-form__input"/>
-          <input type="hidden" value="1" name="embed" />
-          <input type="submit" value="Subscribe" class="newsletter-form__button"/>
-        </div>
-      </form> -->
+      <div class="newsletter-box">
+        <h2 style="margin-top: 0rem;">Hypothesis Quarterly</h2>
+        <p>Every three months, we send out a roundup newsletter of what's new in Hypothesis and the Hypothesis ecosystem!</p>
+
+        <form action="https://works.us16.list-manage.com/subscribe/post?u=96a2ac0812802282504dd335f&id=76e6edcda3" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" target="_blank" class="newsletter-form">
+          <div id="mc_embed_signup_scroll">
+            <div class="newsletter-form__content">
+              <input type="email" placeholder="me@example.com" value="" name="EMAIL" id="mce-EMAIL" required class="newsletter-form__input"/>
+              <button type="submit" name="subscribe" id="mc-embedded-subscribe" class="cta-button" style="height: 3rem;">Subscribe</button>
+            </div>
+            <div id="mce-responses" class="clear">
+              <div class="response" id="mce-error-response" style="display:none"></div>
+              <div class="response" id="mce-success-response" style="display:none"></div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
