@@ -10,6 +10,7 @@
 
 import base64
 import contextlib
+import dataclasses
 import json
 import math
 import textwrap
@@ -43,6 +44,7 @@ from hypothesis.internal.observability import (
     TESTCASE_CALLBACKS,
     InfoObservation,
     TestCaseObservation,
+    _ObservabilitySettings,
     add_observability_callback,
     choices_to_json,
     nodes_to_json,
@@ -580,14 +582,15 @@ def restore_callbacks():
 
 @contextlib.contextmanager
 def with_collect_coverage(*, value: bool):
-    original_value = hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
-    hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = value
+    original_value = hypothesis.internal.observability.OBSERVABILITY_SETTINGS
+    hypothesis.internal.observability.OBSERVABILITY_SETTINGS = _ObservabilitySettings(
+        enabled=value or original_value.enabled,
+        options=dataclasses.replace(original_value._options, coverage=value),
+    )
     try:
         yield
     finally:
-        hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = (
-            original_value
-        )
+        hypothesis.internal.observability.OBSERVABILITY_SETTINGS = original_value
 
 
 def _callbacks():

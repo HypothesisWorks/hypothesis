@@ -17,13 +17,14 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import date, timedelta
 from enum import Enum
 from random import Random
 from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
+from hypothesis.configuration import storage_directory
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -68,7 +69,11 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import Observation, with_observability_callback
+from hypothesis.internal.observability import (
+    Observation,
+    _deliver_to_file,
+    with_observability_callback,
+)
 from hypothesis.reporting import base_report, report
 
 # In most cases, the following constants are all Final. However, we do allow users
@@ -107,6 +112,9 @@ MIN_TEST_CALLS: int = 10
 # to make it easier to reason about our global random warning logic easier (see
 # deprecate_random_in_strategy).
 _random = Random()
+
+# used internally to only evict .hypothesis/observed files once per process.
+_have_evicted_observations: bool = False
 
 
 def shortlex(s):
@@ -927,8 +935,32 @@ class ConjectureRunner:
             return with_observability_callback(on_observation)
         return nullcontext()
 
+    def observe_for_observability(self) -> AbstractContextManager:
+        global _have_evicted_observations
+
+        # Remove files more than a week old, to cap the size on disk.
+        # Do so no more than once per process, to avoid disk overhead.
+        if not _have_evicted_observations:
+            max_age = (date.today() - timedelta(days=8)).isoformat()
+            for f in storage_directory("observed", intent_to_write=False).glob(
+                "*.jsonl"
+            ):  # pragma: no cover
+                if f.stem < max_age:
+                    f.unlink(missing_ok=True)
+            _have_evicted_observations = True
+
+        return (
+            with_observability_callback(_deliver_to_file, all_threads=True)
+            if self.settings.observability.enabled
+            else nullcontext()
+        )
+
     def run(self) -> None:
-        with local_settings(self.settings), self.observe_for_provider():
+        with (
+            local_settings(self.settings),
+            self.observe_for_observability(),
+            self.observe_for_provider(),
+        ):
             try:
                 self._run()
             except RunIsComplete:

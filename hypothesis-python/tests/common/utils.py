@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import dataclasses
 import enum
 import math
 import sys
@@ -25,6 +26,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.observability import (
     Observation,
+    _ObservabilitySettings,
     add_observability_callback,
     remove_observability_callback,
 )
@@ -265,15 +267,18 @@ def capture_observations(*, choices=None):
     ls: list[Observation] = []
     add_observability_callback(ls.append)
     if choices is not None:
-        old_choices = observability.OBSERVABILITY_CHOICES
-        observability.OBSERVABILITY_CHOICES = choices
+        original_value = observability.OBSERVABILITY_SETTINGS
+        observability.OBSERVABILITY_SETTINGS = _ObservabilitySettings(
+            enabled=choices or original_value.enabled,
+            options=dataclasses.replace(original_value._options, choices=choices),
+        )
 
     try:
         yield ls
     finally:
         remove_observability_callback(ls.append)
         if choices is not None:
-            observability.OBSERVABILITY_CHOICES = old_choices
+            observability.OBSERVABILITY_CHOICES = original_value
 
 
 # Specifies whether we can represent subnormal floating point numbers.

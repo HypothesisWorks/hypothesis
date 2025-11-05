@@ -81,6 +81,7 @@ def test_fuzz_seed(seed: collections.abc.Hashable) -> None:
     deadline=st.just(not_set),
     print_blob=st.just(not_set),
     backend=st.just(not_set),
+    observability=st.just(not_set),
 )
 def test_fuzz_settings(
     parent: typing.Optional[hypothesis.settings],
@@ -95,6 +96,7 @@ def test_fuzz_settings(
     deadline: typing.Union[int, float, datetime.timedelta, None],
     print_blob: bool,
     backend: str,
+    observability: typing.Union[bool, hypothesis.ObservabilitySettings],
 ) -> None:
     hypothesis.settings(
         parent=parent,
@@ -109,6 +111,7 @@ def test_fuzz_settings(
         deadline=deadline,
         print_blob=print_blob,
         backend=backend,
+        observability=observability,
     )
 
 

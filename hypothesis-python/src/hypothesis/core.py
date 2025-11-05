@@ -689,6 +689,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         how_generated="explicit example",
                         representation=state._string_repr,
                         timing=state._timing_features,
+                        observability=state.settings.observability,
                     )
                     deliver_observation(tc)
 
@@ -949,8 +950,9 @@ class StateForActualGivenExecution:
     def _should_trace(self):
         # NOTE: we explicitly support monkeypatching this. Keep the namespace
         # access intact.
-        _trace_obs = (
-            observability_enabled() and observability.OBSERVABILITY_COLLECT_COVERAGE
+        _trace_obs = observability_enabled() and (
+            self.settings.observability.coverage
+            or observability.OBSERVABILITY_SETTINGS.coverage
         )
         _trace_failure = (
             self.failed_normally
@@ -1337,6 +1339,7 @@ class StateForActualGivenExecution:
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
+                    observability=self.settings.observability,
                 )
                 deliver_observation(tc)
 
@@ -1539,6 +1542,7 @@ class StateForActualGivenExecution:
                         status="passed" if sys.exc_info()[0] else "failed",
                         status_reason=str(origin or "unexpected/flaky pass"),
                         metadata={"traceback": tb},
+                        observability=self.settings.observability,
                     )
                     deliver_observation(tc)
 
@@ -2203,6 +2207,7 @@ def given(
                             coverage=None,
                             status=status,
                             backend_metadata=data.provider.observe_test_case(),
+                            observability=state.settings.observability,
                         )
                         deliver_observation(tc)
                         state._timing_features = {}
