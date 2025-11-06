@@ -21,7 +21,6 @@ from types import SimpleNamespace
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.observability import (
     Observation,
@@ -127,11 +126,7 @@ def fails_with(e, *, match=None):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
-            # Most of these expected-failure tests are non-deterministic, so
-            # we rig the PRNG to avoid occasional flakiness. We do this outside
-            # the `raises` context manager so that any problems in rigging the
-            # PRNG don't accidentally count as the expected failure.
-            with deterministic_PRNG(), raises(e, match=match):
+            with raises(e, match=match):
                 f(*arguments, **kwargs)
 
         return inverted_test

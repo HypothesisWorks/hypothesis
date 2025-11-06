@@ -27,7 +27,6 @@ from hypothesis.internal.conjecture.provider_conformance import (
 )
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL
 from hypothesis.internal.intervalsets import IntervalSet
@@ -52,17 +51,17 @@ def interesting_origin(n: int | None = None) -> InterestingOrigin:
 
 
 def run_to_data(f):
-    with deterministic_PRNG():
-        runner = ConjectureRunner(
-            f,
-            settings=settings(
-                max_examples=300, database=None, suppress_health_check=list(HealthCheck)
-            ),
-        )
-        runner.run()
-        assert runner.interesting_examples
-        (last_data,) = runner.interesting_examples.values()
-        return last_data
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=300, database=None, suppress_health_check=list(HealthCheck)
+        ),
+        random=Random(0),
+    )
+    runner.run()
+    assert runner.interesting_examples
+    (last_data,) = runner.interesting_examples.values()
+    return last_data
 
 
 def run_to_nodes(f):
@@ -85,24 +84,23 @@ def buffer_size_limit(n):
 
 def shrinking_from(start):
     def accept(f):
-        with deterministic_PRNG():
-            runner = ConjectureRunner(
-                f,
-                settings=settings(
-                    max_examples=5000,
-                    database=None,
-                    suppress_health_check=list(HealthCheck),
-                    # avoid running the explain phase in shrinker.shrink() in tests
-                    # which don't test the inquisitor.
-                    phases=set(settings.default.phases) - {Phase.explain},
-                ),
-            )
-            runner.cached_test_function(start)
-            assert runner.interesting_examples
-            (last_data,) = runner.interesting_examples.values()
-            return runner.new_shrinker(
-                last_data, lambda d: d.status == Status.INTERESTING
-            )
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=5000,
+                database=None,
+                suppress_health_check=list(HealthCheck),
+                # avoid running the explain phase in shrinker.shrink() in tests
+                # which don't test the inquisitor.
+                phases=set(settings.default.phases) - {Phase.explain},
+            ),
+            random=Random(0),
+        )
+        runner.cached_test_function(start)
+        assert runner.interesting_examples
+
+        (last_data,) = runner.interesting_examples.values()
+        return runner.new_shrinker(last_data, lambda d: d.status == Status.INTERESTING)
 
     return accept
 

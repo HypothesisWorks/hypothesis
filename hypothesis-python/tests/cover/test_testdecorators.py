@@ -263,7 +263,7 @@ def test_list_is_sorted(xs):
 @fails
 @given(floats(1.0, 2.0))
 def test_is_an_endpoint(x):
-    assert x == 1.0 or x == 2.0
+    assert x in {1.0, 2.0}
 
 
 def test_breaks_bounds():
