@@ -225,7 +225,7 @@ def test_can_find_large_sum_frozenset(xs):
 
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
-    @settings(max_examples=100)
+    @settings(max_examples=1000)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
