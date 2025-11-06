@@ -16,7 +16,9 @@ import time
 import warnings
 from io import StringIO
 from threading import Barrier, Lock, RLock, Thread
-from types import SimpleNamespace
+
+import pytest
+from pytest import mark
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
@@ -35,44 +37,10 @@ from hypothesis.strategies._internal.types import _global_type_lookup
 # we need real time here, not monkeypatched for CI
 time_sleep = time.sleep
 
-try:
-    from pytest import raises
-except ModuleNotFoundError:
-    # We are currently running under a test framework other than pytest,
-    # so use our own simplified implementation of `pytest.raises`.
-
-    @contextlib.contextmanager
-    def raises(expected_exception, match=None):
-        err = SimpleNamespace(value=None)
-        try:
-            yield err
-        except expected_exception as e:
-            err.value = e
-            if match is not None:
-                import re
-
-                assert re.search(match, e.args[0])
-        else:
-            # This needs to be outside the try/except, so that the helper doesn't
-            # trick itself into thinking that an AssertionError was thrown.
-            raise AssertionError(
-                f"Expected to raise an exception ({expected_exception!r}) but didn't"
-            ) from None
-
-
-try:
-    from pytest import mark
-except ModuleNotFoundError:
-
-    def skipif_emscripten(f):
-        return f
-
-else:
-    skipif_emscripten = mark.skipif(
-        sys.platform == "emscripten",
-        reason="threads, processes, etc. are not available in the browser",
-    )
-
+skipif_emscripten = mark.skipif(
+    sys.platform == "emscripten",
+    reason="threads, processes, etc. are not available in the browser",
+)
 
 no_shrink = tuple(set(settings.default.phases) - {Phase.shrink, Phase.explain})
 
@@ -126,7 +94,7 @@ def fails_with(e, *, match=None):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
-            with raises(e, match=match):
+            with pytest.raises(e, match=match):
                 f(*arguments, **kwargs)
 
         return inverted_test
@@ -215,7 +183,7 @@ def assert_falsifying_output(
             test()
             msg = ""
         else:
-            with raises(expected_exception) as exc_info:
+            with pytest.raises(expected_exception) as exc_info:
                 test()
             notes = "\n".join(getattr(exc_info.value, "__notes__", []))
             msg = str(exc_info.value) + "\n" + notes
@@ -250,7 +218,7 @@ def temp_registered(type_, strat_or_factory):
 @contextlib.contextmanager
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
-    with raises(expected_warning, match=match) as r, warnings.catch_warnings():
+    with pytest.raises(expected_warning, match=match) as r, warnings.catch_warnings():
         warnings.simplefilter("error", category=expected_warning)
         yield r
 
@@ -290,11 +258,6 @@ class Why(enum.Enum):
 
 def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     # run `pytest -m xf_crosshair` to select these tests!
-    try:
-        import pytest
-    except ImportError:
-        return lambda fn: fn
-
     kw = {
         "strict": strict and why != Why.undiscovered,
         "reason": f"Expected failure due to: {why.value}",
@@ -306,11 +269,6 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
 
 
 def skipif_threading(f):
-    try:
-        import pytest
-    except ImportError:
-        return f
-
     return pytest.mark.skipif(
         settings.get_current_profile_name() == "threading", reason="not thread safe"
     )(f)
@@ -319,8 +277,6 @@ def skipif_threading(f):
 def xfail_if_gil_disabled(f):
     try:
         if not sys._is_gil_enabled():  # 3.13+
-            import pytest
-
             return pytest.mark.xfail(
                 reason="fails on free-threading build", strict=False
             )(f)

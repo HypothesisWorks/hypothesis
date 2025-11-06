@@ -12,6 +12,8 @@ import functools
 import threading
 from collections import namedtuple
 
+import pytest
+
 from hypothesis import (
     HealthCheck,
     Verbosity,
@@ -46,15 +48,10 @@ from tests.common.utils import (
     fails,
     fails_with,
     no_shrink,
-    raises,
     skipif_emscripten,
     xfail_on_crosshair,
 )
 from tests.conjecture.common import buffer_size_limit
-
-# This particular test file is run under both pytest and nose, so it can't
-# rely on pytest-specific helpers like `pytest.raises` unless we define a
-# fallback in tests.common.utils.
 
 
 @given(integers(), integers())
@@ -101,7 +98,7 @@ def test_still_minimizes_on_non_assertion_failures():
         if x >= 10:
             raise ValueError(f"No, {x} is just too large. Sorry")
 
-    with raises(ValueError, match=" 10 "):
+    with pytest.raises(ValueError, match=" 10 "):
         is_not_too_large()
 
 
@@ -181,7 +178,7 @@ def test_does_not_catch_interrupt_during_falsify():
             called = True
             raise KeyboardInterrupt
 
-    with raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):
         flaky_base_exception()
 
 
@@ -228,7 +225,7 @@ def test_can_find_large_sum_frozenset(xs):
 
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
-    @settings(max_examples=100)
+    @settings(max_examples=1000)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -343,7 +340,7 @@ def test_can_run_without_database():
     def test_blah(x):
         raise AssertionError
 
-    with raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_blah()
 
 
@@ -425,7 +422,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
             failing.append(x)
             raise AssertionError
 
-    with raises(AssertionError) as err:
+    with pytest.raises(AssertionError) as err:
         foo()
     assert len(failing) == 2
     assert len(set(failing)) == 1
@@ -483,7 +480,7 @@ def test_prints_notes_once_on_failure():
         if sum(xs) <= 100:
             raise ValueError
 
-    with raises(ValueError) as err:
+    with pytest.raises(ValueError) as err:
         test()
     assert err.value.__notes__.count("Hi there") == 1
 
@@ -507,7 +504,7 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
     def f(v):
         assume(False)
 
-    with raises(
+    with pytest.raises(
         Unsatisfiable,
         match=(
             r"Unable to satisfy assumptions of f\. 1000 of 1000 examples "
@@ -539,7 +536,7 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
         r"reducing the typical size of your inputs\?"
     )
     with (
-        raises(Unsatisfiable, match=match),
+        pytest.raises(Unsatisfiable, match=match),
         buffer_size_limit(10),
     ):
         f()
