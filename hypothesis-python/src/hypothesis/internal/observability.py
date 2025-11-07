@@ -69,7 +69,7 @@ class ObservabilitySettings:
 
     coverage: bool = True
     choices: bool = False
-    callbacks: Any = field(default_factory=list)
+    callbacks: Any = field(default_factory=lambda: [_deliver_to_file])
 
 
 Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]
@@ -282,9 +282,6 @@ def observability_enabled() -> bool:
         return False
 
     return _current_build_context.value.observability_enabled
-    # TODO need to consult the current build context to see if there are any
-    # callbacks enabled...but that's really set on ConjectureRunner, not the build
-    # context. need to add a new var to build context?
 
 
 def make_testcase(
@@ -385,9 +382,7 @@ _WROTE_TO = set()
 _deliver_to_file_lock = Lock()
 
 
-def _deliver_to_file(
-    observation: Observation, thread_id: int
-) -> None:  # pragma: no cover
+def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
     from hypothesis.strategies._internal.utils import to_jsonable
 
     kind = "testcases" if observation.type == "test_case" else "info"

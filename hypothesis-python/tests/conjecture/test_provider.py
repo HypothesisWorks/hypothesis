@@ -383,7 +383,7 @@ def test_flaky_with_backend():
         calls = 0
 
         @given(st.integers())
-        @settings(backend="trivial", database=None, observability=True)
+        @settings(backend="trivial", database=None)
         def test_function(n):
             nonlocal calls
             calls += 1
