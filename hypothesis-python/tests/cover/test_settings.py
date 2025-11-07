@@ -36,7 +36,6 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.observability import (
     ObservabilitySettings,
-    _ObservabilitySettings,
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
@@ -469,6 +468,8 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"verbosity": "nonexistent_verbosity"},
         {"observability": "bad_option"},
         {"observability": 10},
+        # users should pass False instead of None
+        {"observability": None},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
@@ -687,22 +688,19 @@ def test_invalid_integer_healthcheck_raises():
 
 def test_settings_observability():
     s = settings(observability=True)
-    assert s.observability == _ObservabilitySettings(enabled=True)
+    assert s.observability == ObservabilitySettings()
 
     s = settings(observability=False)
-    assert s.observability == _ObservabilitySettings(enabled=False)
+    assert s.observability is None
+
+    s = settings(observability=False)
+    assert s.observability is None
 
     s = settings(observability=ObservabilitySettings(coverage=True))
-    assert s.observability == _ObservabilitySettings(
-        enabled=True, options=ObservabilitySettings(coverage=True)
-    )
+    assert s.observability == ObservabilitySettings(coverage=True)
 
     s = settings(observability=ObservabilitySettings(choices=True))
-    assert s.observability == _ObservabilitySettings(
-        enabled=True, options=ObservabilitySettings(choices=True)
-    )
+    assert s.observability == ObservabilitySettings(choices=True)
 
     s = settings(observability=ObservabilitySettings(coverage=True, choices=True))
-    assert s.observability == _ObservabilitySettings(
-        enabled=True, options=ObservabilitySettings(coverage=True, choices=True)
-    )
+    assert s.observability == ObservabilitySettings(coverage=True, choices=True)

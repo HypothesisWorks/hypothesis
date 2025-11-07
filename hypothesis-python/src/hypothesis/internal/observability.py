@@ -72,40 +72,6 @@ class ObservabilitySettings:
     callbacks: Any = field(default_factory=list)
 
 
-class _ObservabilitySettings:
-    """
-    Internal representation of |settings.observability|.
-    """
-
-    def __init__(self, *, enabled: bool, options: ObservabilitySettings | None = None):
-        self.enabled = enabled
-        if options is None:
-            options = ObservabilitySettings()
-        self._options = options
-
-    @property
-    def coverage(self) -> bool:
-        return self.enabled and self._options.coverage
-
-    @property
-    def choices(self) -> bool:
-        return self.enabled and self._options.choices
-
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, _ObservabilitySettings)
-            and self.enabled == other.enabled
-            and self._options == other._options
-        )
-
-    def __str__(self) -> str:
-        return (
-            f"_ObservabilitySettings(enabled={self.enabled}, options={self._options})"
-        )
-
-    __repr__ = __str__
-
-
 Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]
 CallbackThreadT: TypeAlias = Callable[[Observation], None]
 # for all_threads=True, we pass the thread id as well.
@@ -340,8 +306,8 @@ def make_testcase(
     # added to calculated metadata. If keys overlap, the value from this `metadata`
     # is used
     metadata: dict[str, Any] | None = None,
-    # Observability settings from settings.observability
-    observability: _ObservabilitySettings,
+    # observability settings from settings.observability
+    observability: ObservabilitySettings,
 ) -> TestCaseObservation:
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status
@@ -451,24 +417,22 @@ def _system_metadata() -> dict[str, Any]:
     }
 
 
-envvar_observability = _ObservabilitySettings(enabled=False)
+envvar_observability: ObservabilitySettings | None = None
 
 # supported for backwards compat. These two were always marked experimental, so
 # they can be removed whenever. 6 months would be more than generous.
 if (
     envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY")
 ) is not None:  # pragma: no cover
-    envvar_observability = _ObservabilitySettings(enabled=True)
+    envvar_observability = ObservabilitySettings()
 
 if (
     envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICES")
 ) is not None:  # pragma: no cover
-    envvar_observability = _ObservabilitySettings(
-        enabled=True, options=ObservabilitySettings(choices=True)
-    )
+    envvar_observability = ObservabilitySettings(choices=True)
 
 if (
     envvar_value := os.environ.get("HYPOTHESIS_OBSERVABILITY")
 ) is not None:  # pragma: no cover
     enabled = envvar_value in {"True", "true", "1"}
-    envvar_observability = _ObservabilitySettings(enabled=enabled)
+    envvar_observability = ObservabilitySettings()

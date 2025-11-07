@@ -37,7 +37,6 @@ from hypothesis.errors import (
 from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.observability import (
     ObservabilitySettings,
-    _ObservabilitySettings,
     envvar_observability,
 )
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -535,12 +534,14 @@ def _validate_backend(backend: str) -> str:
     return backend
 
 
-def _validate_observability(observability: Any) -> _ObservabilitySettings:
+def _validate_observability(observability: Any) -> ObservabilitySettings | None:
     check_type((bool, ObservabilitySettings), observability, name="observability")
 
-    if isinstance(observability, bool):
-        return _ObservabilitySettings(enabled=observability)
-    return _ObservabilitySettings(enabled=True, options=observability)
+    if isinstance(observability, ObservabilitySettings):
+        return observability
+
+    assert isinstance(observability, bool)
+    return ObservabilitySettings() if observability else None
 
 
 class settingsMeta(type):

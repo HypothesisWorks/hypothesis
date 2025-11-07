@@ -953,7 +953,9 @@ class StateForActualGivenExecution:
         # NOTE: we explicitly support monkeypatching this. Keep the namespace
         # access intact.
         _trace_obs = (
-            self._observability_enabled() and self.settings.observability.coverage
+            self._observability_enabled()
+            and (settings := self.settings.observability) is not None
+            and settings.coverage
         )
         _trace_failure = (
             self.failed_normally
@@ -1358,14 +1360,18 @@ class StateForActualGivenExecution:
         return bool(self._observability_callbacks())
 
     def _observability_callbacks(self) -> tuple[Callable, ...]:
-        callbacks = self.settings.observability._options.callbacks.copy()
+        callbacks = (
+            []
+            if self.settings.observability is None
+            else self.settings.observability.callbacks.copy()
+        )
         # self._runner is None when running under fuzz_one_input
         if (
             self._runner is not None
             and self._runner._backend_observability_callback is not None
         ):
             callbacks.append(self._runner._backend_observability_callback)
-        return callbacks
+        return tuple(callbacks)
 
     def _deliver_observation(self, observation: Observation) -> None:
         for callback in self._observability_callbacks():
