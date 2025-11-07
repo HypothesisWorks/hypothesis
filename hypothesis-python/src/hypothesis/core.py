@@ -1361,17 +1361,17 @@ class StateForActualGivenExecution:
 
     def _observability_callbacks(self) -> tuple[Callable, ...]:
         callbacks = (
-            []
+            ()
             if self.settings.observability is None
-            else self.settings.observability.callbacks.copy()
+            else self.settings.observability.callbacks
         )
         # self._runner is None when running under fuzz_one_input
         if (
             self._runner is not None
             and self._runner._backend_observability_callback is not None
         ):
-            callbacks.append(self._runner._backend_observability_callback)
-        return tuple(callbacks)
+            callbacks += (self._runner._backend_observability_callback,)
+        return callbacks
 
     def _deliver_observation(self, observation: Observation) -> None:
         for callback in self._observability_callbacks():

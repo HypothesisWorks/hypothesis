@@ -184,7 +184,8 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
         backend="crosshair",
         database=None,
         max_examples=2,
-        observability=ObservabilitySettings(callbacks=[]),
+        # pass an arbitrary callback, to enable observability
+        observability=ObservabilitySettings(callbacks=[lambda observation: None]),
     )
     def f_observability(value):
         nonlocal called

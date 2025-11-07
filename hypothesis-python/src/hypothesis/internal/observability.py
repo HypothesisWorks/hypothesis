@@ -17,7 +17,7 @@ import math
 import os
 import sys
 import time
-from collections.abc import Callable, Collection
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from functools import lru_cache
@@ -47,12 +47,45 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.validation import try_convert
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData, Spans, Status
 
+Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]
+CallbackThreadT: TypeAlias = Callable[[Observation], None]
+# for all_threads=True, we pass the thread id as well.
+CallbackAllThreadsT: TypeAlias = Callable[[Observation, int], None]
+CallbackT: TypeAlias = CallbackThreadT | CallbackAllThreadsT
 
-@dataclass(slots=True, frozen=True)
+
+_WROTE_TO = set()
+_deliver_to_file_lock = Lock()
+
+
+def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
+    from hypothesis.strategies._internal.utils import to_jsonable
+
+    kind = "testcases" if observation.type == "test_case" else "info"
+    fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
+    fname.parent.mkdir(exist_ok=True, parents=True)
+
+    observation_bytes = (
+        json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
+    )
+    # only allow one conccurent file write to avoid write races. This is likely to make
+    # HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY quite slow under threading. A queue
+    # would be an improvement, but that requires a background thread, and I
+    # would prefer to avoid a thread in the single-threaded case. We could
+    # switch over to a queue if we detect multithreading, but it's tricky to get
+    # right.
+    with _deliver_to_file_lock:
+        _WROTE_TO.add(fname)
+        with fname.open(mode="a") as f:
+            f.write(observation_bytes)
+
+
+@dataclass(slots=True, frozen=False)
 class ObservabilitySettings:
     """
     Options for the |settings.observability| argument to |@settings|.
@@ -72,14 +105,10 @@ class ObservabilitySettings:
 
     coverage: bool = True
     choices: bool = False
-    callbacks: Collection[Callable] = field(default_factory=lambda: [_deliver_to_file])
+    callbacks: tuple[Callable, ...] = field(default=(_deliver_to_file,))
 
-
-Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]
-CallbackThreadT: TypeAlias = Callable[[Observation], None]
-# for all_threads=True, we pass the thread id as well.
-CallbackAllThreadsT: TypeAlias = Callable[[Observation, int], None]
-CallbackT: TypeAlias = CallbackThreadT | CallbackAllThreadsT
+    def __post_init__(self):
+        self.callbacks = try_convert(tuple, self.callbacks, "callbacks")
 
 
 @dataclass(slots=True, frozen=False)
@@ -379,32 +408,6 @@ def make_testcase(
         run_start=run_start,
         property=property,
     )
-
-
-_WROTE_TO = set()
-_deliver_to_file_lock = Lock()
-
-
-def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
-    from hypothesis.strategies._internal.utils import to_jsonable
-
-    kind = "testcases" if observation.type == "test_case" else "info"
-    fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
-    fname.parent.mkdir(exist_ok=True, parents=True)
-
-    observation_bytes = (
-        json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
-    )
-    # only allow one conccurent file write to avoid write races. This is likely to make
-    # HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY quite slow under threading. A queue
-    # would be an improvement, but that requires a background thread, and I
-    # would prefer to avoid a thread in the single-threaded case. We could
-    # switch over to a queue if we detect multithreading, but it's tricky to get
-    # right.
-    with _deliver_to_file_lock:
-        _WROTE_TO.add(fname)
-        with fname.open(mode="a") as f:
-            f.write(observation_bytes)
 
 
 _imported_at = time.time()
