@@ -612,7 +612,23 @@ def test_only_receives_callbacks_from_this_thread():
         count_observations[threading.get_ident()] += 1
 
     @given(st.integers())
-    @settings(observability=ObservabilitySettings(callbacks=[callback]))
+    @settings(
+        observability=ObservabilitySettings(
+            callbacks=[callback],
+            # Observability tries to record coverage, but we don't currently
+            # support concurrent coverage collection, and issue a warning instead.
+            #
+            # I tried to fix this with:
+            #
+            #    warnings.filterwarnings(
+            #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+            #    )
+            #
+            # but that had a race condition somehow and sometimes still didn't work?? The
+            # warnings module is not thread-safe until 3.14, I think.
+            coverage=False,
+        )
+    )
     def f(n):
         pass
 
