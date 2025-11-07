@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
-import dataclasses
 import enum
 import math
 import sys
@@ -21,15 +20,8 @@ from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.internal import observability
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
-from hypothesis.internal.observability import (
-    Observation,
-    _ObservabilitySettings,
-    add_observability_callback,
-    remove_observability_callback,
-)
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
@@ -260,25 +252,6 @@ def raises_warning(expected_warning, match=None):
     with raises(expected_warning, match=match) as r, warnings.catch_warnings():
         warnings.simplefilter("error", category=expected_warning)
         yield r
-
-
-@contextlib.contextmanager
-def capture_observations(*, choices=None):
-    ls: list[Observation] = []
-    add_observability_callback(ls.append)
-    if choices is not None:
-        original_value = observability.OBSERVABILITY_SETTINGS
-        observability.OBSERVABILITY_SETTINGS = _ObservabilitySettings(
-            enabled=choices or original_value.enabled,
-            options=dataclasses.replace(original_value._options, choices=choices),
-        )
-
-    try:
-        yield ls
-    finally:
-        remove_observability_callback(ls.append)
-        if choices is not None:
-            observability.OBSERVABILITY_CHOICES = original_value
 
 
 # Specifies whether we can represent subnormal floating point numbers.

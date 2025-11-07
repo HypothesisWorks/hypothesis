@@ -146,11 +146,7 @@
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
 .. |run_conformance_test| replace:: :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`
 
-.. |add_observability_callback| replace:: :data:`~hypothesis.internal.observability.add_observability_callback`
-.. |remove_observability_callback| replace:: :data:`~hypothesis.internal.observability.remove_observability_callback`
-.. |with_observability_callback| replace:: :data:`~hypothesis.internal.observability.with_observability_callback`
 .. |observability_enabled| replace:: :data:`~hypothesis.internal.observability.observability_enabled`
-.. |TESTCASE_CALLBACKS| replace:: :data:`~hypothesis.internal.observability.TESTCASE_CALLBACKS`
 .. |BUFFER_SIZE| replace:: :data:`~hypothesis.internal.conjecture.engine.BUFFER_SIZE`
 .. |MAX_SHRINKS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKS`
 .. |MAX_SHRINKING_SECONDS| replace:: :data:`~hypothesis.internal.conjecture.engine.MAX_SHRINKING_SECONDS`

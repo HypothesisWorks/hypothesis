@@ -77,7 +77,7 @@ pytestmark = [
 def safe_draw(data, strategy):
     """Set up just enough of the Hypothesis machinery to use draw on
     a strategy."""
-    with BuildContext(data, wrapped_test=None):
+    with BuildContext(data, wrapped_test=None, observability_enabled=False):
         try:
             return data.draw(strategy)
         except UnsatisfiedAssumption:
@@ -231,7 +231,7 @@ def find_random(
     while True:
         data = ConjectureData(random=random)
         try:
-            with BuildContext(data=data, wrapped_test=None):
+            with BuildContext(data=data, wrapped_test=None, observability_enabled=False):
                 value = data.draw(s)
                 if condition(value):
                     data.freeze()
@@ -260,7 +260,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     else:
         trial = ConjectureData(prefix=choices, random=random)
-        with BuildContext(trial, wrapped_test=None):
+        with BuildContext(trial, wrapped_test=None, observability_enabled=False):
             trial.draw(strategy)
             assert trial.choices == choices, "choice sequence is already sloppy"
             padding = safe_draw(trial, st.integers())

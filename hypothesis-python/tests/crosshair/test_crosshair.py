@@ -12,14 +12,21 @@ import crosshair
 import pytest
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
-from hypothesis import Phase, Verbosity, event, given, settings, strategies as st
+from hypothesis import (
+    ObservabilitySettings,
+    Phase,
+    Verbosity,
+    event,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import with_observability_callback
+from hypothesis.internal.observability import observability_enabled
 from hypothesis.vendor.pretty import pretty
 
-from tests.common.utils import capture_observations
 from tests.conjecture.common import float_constr, integer_constr, string_constr
 
 
@@ -173,17 +180,22 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
     called = False
 
     @given(strategy)
-    @settings(backend="crosshair", database=None, max_examples=2)
+    @settings(
+        backend="crosshair",
+        database=None,
+        max_examples=2,
+        observability=ObservabilitySettings(callbacks=[]),
+    )
     def f_observability(value):
         nonlocal called
+        assert observability_enabled()
         if called:
             choices["observability"] = len(
                 crosshair.statespace.context_statespace().choices_made
             )
         called = True
 
-    with capture_observations():
-        f_observability()
+    f_observability()
 
     assert (
         choices["normal"]
@@ -207,11 +219,14 @@ def test_realizes_event():
             saw_myevent = True
 
     @given(st.integers())
-    @settings(backend="crosshair", max_examples=5)
+    @settings(
+        backend="crosshair",
+        max_examples=5,
+        observability=ObservabilitySettings(callbacks=[callback]),
+    )
     def test(n):
         event("myevent", n)
 
-    with with_observability_callback(callback):
-        test()
+    test()
 
     assert saw_myevent

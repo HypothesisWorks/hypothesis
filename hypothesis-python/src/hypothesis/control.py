@@ -138,11 +138,13 @@ class BuildContext:
         *,
         is_final: bool = False,
         wrapped_test: Callable,
+        observability_enabled: bool
     ) -> None:
         self.data = data
         self.tasks: list[Callable[[], Any]] = []
         self.is_final = is_final
         self.wrapped_test = wrapped_test
+        self.observability_enabled = observability_enabled
 
         # Use defaultdict(list) here to handle the possibility of having multiple
         # functions registered for the same object (due to caching, small ints, etc).

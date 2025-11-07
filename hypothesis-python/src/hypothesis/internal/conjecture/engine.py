@@ -15,7 +15,7 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
-from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from enum import Enum
@@ -71,8 +71,6 @@ from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     Observation,
-    _deliver_to_file,
-    with_observability_callback,
 )
 from hypothesis.reporting import base_report, report
 
@@ -361,6 +359,7 @@ class ConjectureRunner:
         self.__pending_call_explanation: str | None = None
         self._backend_found_failure: bool = False
         self._backend_exceeded_deadline: bool = False
+        self._backend_observability_callback = None
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
@@ -915,15 +914,8 @@ class ConjectureRunner:
             f"{', ' + data.output if data.output else ''}"
         )
 
-    def observe_for_provider(self) -> AbstractContextManager:
-        def on_observation(observation: Observation) -> None:
-            assert observation.type == "test_case"
-            # because lifetime == "test_function"
-            assert isinstance(self.provider, PrimitiveProvider)
-            # only fire if we actually used that provider to generate this observation
-            if not self._switch_to_hypothesis_provider:
-                self.provider.on_observation(observation)
-
+    @contextmanager
+    def observe_for_provider(self):
         if (
             self.settings.backend != "hypothesis"
             # only for lifetime = "test_function" providers (guaranteed
@@ -932,10 +924,25 @@ class ConjectureRunner:
             # and the provider opted-in to observations
             and self.provider.add_observability_callback
         ):
-            return with_observability_callback(on_observation)
-        return nullcontext()
 
-    def observe_for_observability(self) -> AbstractContextManager:
+            def callback(observation: Observation) -> None:
+                assert observation.type == "test_case"
+                # because lifetime == "test_function"
+                assert isinstance(self.provider, PrimitiveProvider)
+                # only fire if we actually used that provider to generate this observation
+                if not self._switch_to_hypothesis_provider:
+                    self.provider.on_observation(observation)
+
+            old_value = self._backend_observability_callback
+            self._backend_observability_callback = callback
+            try:
+                yield
+            finally:
+                self._backend_observability_callback = old_value
+        else:
+            yield
+
+    def _maybe_evict_observations(self) -> None:
         global _have_evicted_observations
 
         # Remove files more than a week old, to cap the size on disk.
@@ -949,18 +956,9 @@ class ConjectureRunner:
                     f.unlink(missing_ok=True)
             _have_evicted_observations = True
 
-        return (
-            with_observability_callback(_deliver_to_file, all_threads=True)
-            if self.settings.observability.enabled
-            else nullcontext()
-        )
-
     def run(self) -> None:
-        with (
-            local_settings(self.settings),
-            self.observe_for_observability(),
-            self.observe_for_provider(),
-        ):
+        self._maybe_evict_observations()
+        with local_settings(self.settings), self.observe_for_provider():
             try:
                 self._run()
             except RunIsComplete:
