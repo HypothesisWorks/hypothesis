@@ -17,7 +17,7 @@ import math
 import os
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import dataclass, field
 from datetime import date
 from functools import lru_cache
@@ -61,15 +61,18 @@ class ObservabilitySettings:
     ----------
 
     coverage : bool
-        include the ``coverage`` field in test case observations.
+        Include the ``coverage`` field in test case observations.
     choices : bool
-        include the ``metadata.choice_nodes`` and ``metadata.choice_spans``
+        Include the ``metadata.choice_nodes`` and ``metadata.choice_spans``
         fields in test case observations.
+    callbacks: Collection[Callbable]
+        Observability callbacks. Each callback will be called for each observation
+        this test produces. See :ref:`observability <observability>` for details.
     """
 
     coverage: bool = True
     choices: bool = False
-    callbacks: Any = field(default_factory=lambda: [_deliver_to_file])
+    callbacks: Collection[Callable] = field(default_factory=lambda: [_deliver_to_file])
 
 
 Observation: TypeAlias = Union["InfoObservation", "TestCaseObservation"]

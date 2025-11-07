@@ -1061,9 +1061,10 @@ class settings(metaclass=settingsMeta):
         """
         Controls the :ref:`observability <observability>` behavior of Hypothesis.
 
-        Observability may be enabled or disabled by passing ``True`` or ``False``.
-        You can also pass |ObservabilitySettings| instead to further configure
-        observability behavior.
+        Valid values are ``True``, ``False``, or |ObservabilitySettings|. If
+        ``True`` or ``False``, observability is enabled or disabled respectively.
+        If |ObservabilitySettings|, observability is enabled, but is further
+        configured based on the options passed to |ObservabilitySettings|.
 
         For example:
 
@@ -1077,11 +1078,10 @@ class settings(metaclass=settingsMeta):
             # enables observability, with choice sequence data
             settings(observability=ObservabilitySettings(choices=True))
 
-        If not set, |settings.observability| is inherited from the
+        By default, |settings.observability| is inherited from the
         :ref:`HYPOTHESIS_OBSERVABILITY <observability-configuration>`
-        environment variable.
-
-        |settings.observability| is ``False`` by default.
+        environment variable. If that environment variable is also not set,
+        |settings.observability| defaults to ``False``.
         """
         return self._observability
 

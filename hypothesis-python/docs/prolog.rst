@@ -39,7 +39,7 @@
 .. |~settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
 .. |~settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
 .. |~settings.backend| replace:: :obj:`~hypothesis.settings.backend`
-.. |~settings.observability| replace:: :obj:`settings.observability <hypothesis.settings.observability>`
+.. |~settings.observability| replace:: :obj:`~hypothesis.settings.observability`
 
 .. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
 .. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
