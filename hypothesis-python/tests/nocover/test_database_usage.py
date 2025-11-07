@@ -18,7 +18,6 @@ from hypothesis.database import (
     ReadOnlyDatabase,
 )
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.utils import (
     Why,
@@ -80,7 +79,6 @@ def test_clears_out_database_as_things_get_boring():
 
 @xfail_on_crosshair(Why.other, strict=False)
 def test_trashes_invalid_examples():
-    key = b"a database key"
     database = InMemoryExampleDatabase()
 
     invalid = set()
@@ -96,20 +94,18 @@ def test_trashes_invalid_examples():
                 st.binary(min_size=5),
                 condition,
                 settings=settings(database=database),
-                database_key=key,
+                database_key=b"a database key",
             )
         except (Unsatisfiable, NoSuchExample):
             pass
 
-    with deterministic_PRNG():
-        value = stuff()
+    value = stuff()
 
     original = len(all_values(database))
     assert original > 1
 
     invalid.add(value)
-    with deterministic_PRNG():
-        stuff()
+    stuff()
     assert len(all_values(database)) < original
 
 
@@ -118,7 +114,6 @@ def test_trashes_invalid_examples():
     reason="condition is easy for crosshair, stops early",
 )
 def test_respects_max_examples_in_database_usage():
-    key = b"a database key"
     database = InMemoryExampleDatabase()
     do_we_care = True
     counter = 0
@@ -134,18 +129,18 @@ def test_respects_max_examples_in_database_usage():
                 st.binary(min_size=100),
                 check,
                 settings=settings(database=database, max_examples=10),
-                database_key=key,
+                database_key=b"a database key",
             )
         except NoSuchExample:
             pass
 
-    with deterministic_PRNG():
-        stuff()
+    stuff()
     assert len(all_values(database)) > 10
+
     do_we_care = False
     counter = 0
-    with deterministic_PRNG():
-        stuff()
+    stuff()
+
     assert counter == 10
 
 

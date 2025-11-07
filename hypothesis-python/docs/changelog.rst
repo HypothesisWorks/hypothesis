@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.147.0:
+
+--------------------
+6.147.0 - 2025-11-06
+--------------------
+
+This release drops support for :pypi:`nose`, which ceased development 9 years ago and does not support Python 3.10 or newer.
+
+Hypothesis still supports :pypi:`nose2`. While we do not test ``nose2`` in our CI, we will fix any bugs that get reported.
+
 .. _v6.146.0:
 
 --------------------

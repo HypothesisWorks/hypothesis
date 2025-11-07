@@ -191,7 +191,7 @@ def test_evil_prng_registration_nonsense():
     # The first test to call deterministic_PRNG registers a new random instance.
     # If that's this test, it will throw off our n_registered count in the middle.
     # start with a no-op to ensure this registration has occurred.
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         pass
 
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -206,7 +206,7 @@ def test_evil_prng_registration_nonsense():
     register_random(r2)
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 2
 
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         del r1
         gc_collect()
         assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"

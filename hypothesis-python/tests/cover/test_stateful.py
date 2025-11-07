@@ -29,7 +29,6 @@ from hypothesis.control import current_build_context
 from hypothesis.core import encode_failure
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
@@ -456,7 +455,7 @@ def test_saves_failing_example_in_database():
 
 
 def test_can_run_with_no_db():
-    with deterministic_PRNG(), raises(AssertionError):
+    with raises(AssertionError):
         run_state_machine_as_test(
             DepthMachine, settings=Settings(database=None, max_examples=10_000)
         )
