@@ -231,7 +231,9 @@ def find_random(
     while True:
         data = ConjectureData(random=random)
         try:
-            with BuildContext(data=data, wrapped_test=None, observability_enabled=False):
+            with BuildContext(
+                data=data, wrapped_test=None, observability_enabled=False
+            ):
                 value = data.draw(s)
                 if condition(value):
                     data.freeze()

@@ -37,7 +37,9 @@ from tests.common.utils import capture_out
 
 
 def bc():
-    return BuildContext(ConjectureData.for_choices([]), wrapped_test=None, observability_enabled=False)
+    return BuildContext(
+        ConjectureData.for_choices([]), wrapped_test=None, observability_enabled=False
+    )
 
 
 def test_cannot_cleanup_with_no_context():

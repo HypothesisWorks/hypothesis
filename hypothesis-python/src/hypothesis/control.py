@@ -138,7 +138,7 @@ class BuildContext:
         *,
         is_final: bool = False,
         wrapped_test: Callable,
-        observability_enabled: bool
+        observability_enabled: bool,
     ) -> None:
         self.data = data
         self.tasks: list[Callable[[], Any]] = []
