@@ -307,7 +307,7 @@ def make_testcase(
     # is used
     metadata: dict[str, Any] | None = None,
     # observability settings from settings.observability
-    observability: ObservabilitySettings,
+    observability: ObservabilitySettings | None,
 ) -> TestCaseObservation:
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status
@@ -352,7 +352,7 @@ def make_testcase(
             },
             **data.events,
         },
-        coverage=coverage if observability.coverage else None,
+        coverage=coverage if observability and observability.coverage else None,
         timing=timing,
         metadata=ObservationMetadata(
             **{
@@ -365,8 +365,12 @@ def make_testcase(
                 "data_status": data.status,
                 "phase": phase,
                 "interesting_origin": data.interesting_origin,
-                "choice_nodes": (data.nodes if observability.choices else None),
-                "choice_spans": (data.spans if observability.choices else None),
+                "choice_nodes": (
+                    data.nodes if observability and observability.choices else None
+                ),
+                "choice_spans": (
+                    data.spans if observability and observability.choices else None
+                ),
                 **_system_metadata(),
                 # unpack last so it takes precedence for duplicate keys
                 **(metadata or {}),
