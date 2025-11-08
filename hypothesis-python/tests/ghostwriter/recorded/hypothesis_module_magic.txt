@@ -8,14 +8,15 @@ import random
 import typing
 from collections.abc import Hashable
 from hypothesis import given, settings, strategies as st
-from typing import Any
 
 
 @given(
-    coverage=st.booleans(), choices=st.booleans(), callbacks=st.from_type(typing.Any)
+    coverage=st.booleans(),
+    choices=st.booleans(),
+    callbacks=st.lists(st.functions()).map(tuple),
 )
 def test_fuzz_ObservabilitySettings(
-    coverage: bool, choices: bool, callbacks: typing.Any
+    coverage: bool, choices: bool, callbacks: tuple[collections.abc.Callable, Ellipsis]
 ) -> None:
     hypothesis.ObservabilitySettings(
         coverage=coverage, choices=choices, callbacks=callbacks

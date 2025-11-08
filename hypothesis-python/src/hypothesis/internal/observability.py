@@ -98,7 +98,7 @@ class ObservabilitySettings:
     choices : bool
         Include the ``metadata.choice_nodes`` and ``metadata.choice_spans``
         fields in test case observations.
-    callbacks: Collection[Callbable]
+    callbacks: Collection[Callable]
         Observability callbacks. Each callback will be called for each observation
         this test produces. See :ref:`observability <observability>` for details.
     """
