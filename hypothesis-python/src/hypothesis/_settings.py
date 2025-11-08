@@ -535,12 +535,12 @@ def _validate_backend(backend: str) -> str:
 
 
 def _validate_observability(observability: Any) -> ObservabilityConfig | None:
-    check_type((bool, ObservabilityConfig), observability, name="observability")
+    check_type((bool, ObservabilityConfig, type(None)), observability, name="observability")
 
     if isinstance(observability, ObservabilityConfig):
         return observability
 
-    assert isinstance(observability, bool)
+    assert observability in {True, False, None}
     return ObservabilityConfig() if observability else None
 
 
@@ -690,7 +690,7 @@ class settings(metaclass=settingsMeta):
         deadline: int | float | datetime.timedelta | None = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
         backend: str = not_set,  # type: ignore
-        observability: bool | ObservabilitySettings = not_set,  # type: ignore
+        observability: bool | ObservabilityConfig | None = not_set,  # type: ignore
     ) -> None:
         self._in_definition = True
 
@@ -1061,10 +1061,12 @@ class settings(metaclass=settingsMeta):
         """
         Controls the :ref:`observability <observability>` behavior of Hypothesis.
 
-        Valid values are ``True``, ``False``, or |ObservabilitySettings|. If
-        ``True`` or ``False``, observability is enabled or disabled respectively.
-        If |ObservabilitySettings|, observability is enabled, but is further
-        configured based on the options passed to |ObservabilitySettings|.
+        Valid values are ``True``, ``False``, ``None``, or |ObservabilityConfig|. If
+        ``True`` is passed, observability is enabled, and if ``False`` or ``None``
+        is passed, observability is disabled.
+
+        If |ObservabilityConfig| is passed, observability is enabled, and is
+        further configured based on the options passed to |ObservabilityConfig|.
 
         For example:
 

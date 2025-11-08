@@ -468,8 +468,6 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"verbosity": "nonexistent_verbosity"},
         {"observability": "bad_option"},
         {"observability": 10},
-        # users should pass False instead of None
-        {"observability": None},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
@@ -693,7 +691,7 @@ def test_settings_observability():
     s = settings(observability=False)
     assert s.observability is None
 
-    s = settings(observability=False)
+    s = settings(observability=None)
     assert s.observability is None
 
     s = settings(observability=ObservabilityConfig(coverage=True))
