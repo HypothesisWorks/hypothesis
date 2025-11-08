@@ -174,7 +174,7 @@ Settings
 .. autoclass:: hypothesis.Verbosity
     :members:
 
-.. autoclass:: hypothesis.ObservabilitySettings
+.. autoclass:: hypothesis.ObservabilityConfig
 
 .. autoclass:: hypothesis.HealthCheck
    :undoc-members:

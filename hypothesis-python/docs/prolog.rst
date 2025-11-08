@@ -67,7 +67,7 @@
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
 
-.. |ObservabilitySettings| replace:: :obj:`ObservabilitySettings <hypothesis.ObservabilitySettings>`
+.. |ObservabilityConfig| replace:: :obj:`ObservabilityConfig <hypothesis.ObservabilityConfig>`
 
 .. |HypothesisException| replace:: :obj:`HypothesisException <hypothesis.errors.HypothesisException>`
 .. |HypothesisDeprecationWarning| replace:: :obj:`HypothesisDeprecationWarning <hypothesis.errors.HypothesisDeprecationWarning>`

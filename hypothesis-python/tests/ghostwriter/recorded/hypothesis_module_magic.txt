@@ -15,10 +15,10 @@ from hypothesis import given, settings, strategies as st
     choices=st.booleans(),
     callbacks=st.lists(st.functions()).map(tuple),
 )
-def test_fuzz_ObservabilitySettings(
+def test_fuzz_ObservabilityConfig(
     coverage: bool, choices: bool, callbacks: tuple[collections.abc.Callable, Ellipsis]
 ) -> None:
-    hypothesis.ObservabilitySettings(
+    hypothesis.ObservabilityConfig(
         coverage=coverage, choices=choices, callbacks=callbacks
     )
 
@@ -109,7 +109,7 @@ def test_fuzz_settings(
     deadline: typing.Union[int, float, datetime.timedelta, None],
     print_blob: bool,
     backend: str,
-    observability: typing.Union[bool, hypothesis.ObservabilitySettings],
+    observability: typing.Union[bool, hypothesis.ObservabilityConfig],
 ) -> None:
     hypothesis.settings(
         parent=parent,

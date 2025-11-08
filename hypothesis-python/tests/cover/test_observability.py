@@ -19,7 +19,7 @@ from contextlib import nullcontext
 import pytest
 
 from hypothesis import (
-    ObservabilitySettings,
+    ObservabilityConfig,
     assume,
     event,
     example,
@@ -70,7 +70,7 @@ def test_observability():
         database=InMemoryExampleDatabase(),
         deadline=None,
         max_examples=100,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     @given(st.lists(st.integers()), st.integers(), st.integers(), st.data())
     def do_it_all(l, a, x, data):
@@ -109,7 +109,7 @@ def test_capture_unnamed_arguments():
     observations = []
 
     @given(st.integers(), st.floats(), st.data())
-    @settings(observability=ObservabilitySettings(callbacks=[observations.append]))
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(v1, v2, data):
         data.draw(st.booleans())
 
@@ -134,7 +134,7 @@ def test_failure_includes_explain_phase_comments():
     @given(st.integers(), st.integers())
     @settings(
         database=None,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     def test_fails(x, y):
         if x:
@@ -166,7 +166,7 @@ def test_failure_includes_notes():
     @given(st.data())
     @settings(
         database=None,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     def test_fails_with_note(data):
         note("not included 1")
@@ -193,7 +193,7 @@ def test_normal_representation_includes_draws():
     observations = []
 
     @given(st.data())
-    @settings(observability=ObservabilitySettings(callbacks=[observations.append]))
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(data):
         b1 = data.draw(st.booleans())
         note("not included")
@@ -229,7 +229,7 @@ def test_capture_named_arguments():
     @given(named1=st.integers(), named2=st.floats(), data=st.data())
     @settings(
         database=None,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     def f(named1, named2, data):
         data.draw(st.booleans())
@@ -250,7 +250,7 @@ def test_assume_has_status_reason():
     observations = []
 
     @given(st.booleans())
-    @settings(observability=ObservabilitySettings(callbacks=[observations.append]))
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(b):
         assume(b)
 
@@ -272,7 +272,7 @@ def test_minimal_failing_observation():
     @given(st.integers(), st.integers())
     @settings(
         database=None,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     def test_fails(x, y):
         if x:
@@ -318,7 +318,7 @@ def test_all_failing_observations_have_reproduction_decorator():
     observations = []
 
     @given(st.integers())
-    @settings(observability=ObservabilitySettings(callbacks=[observations.append]))
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def test_fails(x):
         raise AssertionError
 
@@ -341,7 +341,7 @@ def test_observability_captures_stateful_reprs():
     @settings(
         max_examples=20,
         stateful_step_count=5,
-        observability=ObservabilitySettings(callbacks=[observations.append]),
+        observability=ObservabilityConfig(callbacks=[observations.append]),
     )
     class UltraSimpleMachine(RuleBasedStateMachine):
         value = 0
@@ -393,7 +393,7 @@ def test_fuzz_one_input_status(buffer, expected_status):
     observations = []
 
     @given(st.booleans(), st.booleans())
-    @settings(observability=ObservabilitySettings(callbacks=[observations.append]))
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def test_fails(should_fail, should_fail_assume):
         if should_fail:
             raise AssertionError
@@ -569,9 +569,7 @@ def test_metadata_to_json():
 
     @given(st.integers())
     @settings(
-        observability=ObservabilitySettings(
-            callbacks=[observations.append], choices=True
-        )
+        observability=ObservabilityConfig(callbacks=[observations.append], choices=True)
     )
     def f(n):
         pass
@@ -613,7 +611,7 @@ def test_only_receives_callbacks_from_this_thread():
 
     @given(st.integers())
     @settings(
-        observability=ObservabilitySettings(
+        observability=ObservabilityConfig(
             callbacks=[callback],
             # Observability tries to record coverage, but we don't currently
             # support concurrent coverage collection, and issue a warning instead.

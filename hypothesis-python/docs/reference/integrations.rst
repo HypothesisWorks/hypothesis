@@ -108,7 +108,7 @@ Configuring observability
 
 The standard way to configure observability is with |settings.observability|.
 
-Alternatively, observability can be configured by setting the ``HYPOTHESIS_OBSERVABILITY`` environment variable. If ``HYPOTHESIS_OBSERVABILITY`` is set to one of ``True``, ``true``, or ``1``, |settings.observability| defaults to ``True``. Note that unlike |settings.observability|, ``HYPOTHESIS_OBSERVABILITY`` only configures whether observability is enabled or disabled, not additional options like |ObservabilitySettings|.
+Alternatively, observability can be configured by setting the ``HYPOTHESIS_OBSERVABILITY`` environment variable. If ``HYPOTHESIS_OBSERVABILITY`` is set to one of ``True``, ``true``, or ``1``, |settings.observability| defaults to ``True``. Note that unlike |settings.observability|, ``HYPOTHESIS_OBSERVABILITY`` only configures whether observability is enabled or disabled, not additional options like |ObservabilityConfig|.
 
 When observability is enabled, Hypothesis will log various observations to jsonlines files in the
 ``.hypothesis/observed/`` directory.  You can load and explore these with e.g.
@@ -173,7 +173,7 @@ While the observability format is agnostic to the property-based testing library
 Choices metadata
 ++++++++++++++++
 
-These additional metadata elements are included in ``metadata`` (as e.g. ``metadata["choice_nodes"]`` or ``metadata["choice_spans"]``), if and only if observability is configured to include choices (see |ObservabilitySettings|).
+These additional metadata elements are included in ``metadata`` (as e.g. ``metadata["choice_nodes"]`` or ``metadata["choice_spans"]``), if and only if observability is configured to include choices (see |ObservabilityConfig|).
 
 .. jsonschema:: ./schema_metadata_choices.json
    :hide_key: /additionalProperties, /type

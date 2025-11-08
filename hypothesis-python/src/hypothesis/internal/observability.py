@@ -86,7 +86,7 @@ def _deliver_to_file(observation: Observation) -> None:  # pragma: no cover
 
 
 @dataclass(slots=True, frozen=False)
-class ObservabilitySettings:
+class ObservabilityConfig:
     """
     Options for the |settings.observability| argument to |@settings|.
 
@@ -336,7 +336,7 @@ def make_testcase(
     # is used
     metadata: dict[str, Any] | None = None,
     # observability settings from settings.observability
-    observability: ObservabilitySettings | None,
+    observability: ObservabilityConfig | None,
 ) -> TestCaseObservation:
     from hypothesis.core import reproduction_decorator
     from hypothesis.internal.conjecture.data import Status
@@ -422,22 +422,22 @@ def _system_metadata() -> dict[str, Any]:
     }
 
 
-envvar_observability: ObservabilitySettings | None = None
+envvar_observability: ObservabilityConfig | None = None
 
 # supported for backwards compat. These two were always marked experimental, so
 # they can be removed whenever. 6 months would be more than generous.
 if (
     envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY")
 ) is not None:  # pragma: no cover
-    envvar_observability = ObservabilitySettings()
+    envvar_observability = ObservabilityConfig()
 
 if (
     envvar_value := os.environ.get("HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_CHOICES")
 ) is not None:  # pragma: no cover
-    envvar_observability = ObservabilitySettings(choices=True)
+    envvar_observability = ObservabilityConfig(choices=True)
 
 if (
     envvar_value := os.environ.get("HYPOTHESIS_OBSERVABILITY")
 ) is not None:  # pragma: no cover
     enabled = envvar_value in {"True", "true", "1"}
-    envvar_observability = ObservabilitySettings()
+    envvar_observability = ObservabilityConfig()

@@ -36,7 +36,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.observability import (
-    ObservabilitySettings,
+    ObservabilityConfig,
     envvar_observability,
 )
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -534,14 +534,14 @@ def _validate_backend(backend: str) -> str:
     return backend
 
 
-def _validate_observability(observability: Any) -> ObservabilitySettings | None:
-    check_type((bool, ObservabilitySettings), observability, name="observability")
+def _validate_observability(observability: Any) -> ObservabilityConfig | None:
+    check_type((bool, ObservabilityConfig), observability, name="observability")
 
-    if isinstance(observability, ObservabilitySettings):
+    if isinstance(observability, ObservabilityConfig):
         return observability
 
     assert isinstance(observability, bool)
-    return ObservabilitySettings() if observability else None
+    return ObservabilityConfig() if observability else None
 
 
 class settingsMeta(type):
@@ -1070,13 +1070,13 @@ class settings(metaclass=settingsMeta):
 
         .. code-block:: python
 
-            from hypothesis import settings, ObservabilitySettings
+            from hypothesis import settings, ObservabilityConfig
 
             # enables observability
             settings(observability=True)
 
             # enables observability, with choice sequence data
-            settings(observability=ObservabilitySettings(choices=True))
+            settings(observability=ObservabilityConfig(choices=True))
 
         By default, |settings.observability| is inherited from the
         :ref:`HYPOTHESIS_OBSERVABILITY <observability-configuration>`

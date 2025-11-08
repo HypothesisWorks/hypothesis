@@ -35,7 +35,7 @@ from hypothesis.errors import (
     InvalidArgument,
 )
 from hypothesis.internal.observability import (
-    ObservabilitySettings,
+    ObservabilityConfig,
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
@@ -688,7 +688,7 @@ def test_invalid_integer_healthcheck_raises():
 
 def test_settings_observability():
     s = settings(observability=True)
-    assert s.observability == ObservabilitySettings()
+    assert s.observability == ObservabilityConfig()
 
     s = settings(observability=False)
     assert s.observability is None
@@ -696,11 +696,11 @@ def test_settings_observability():
     s = settings(observability=False)
     assert s.observability is None
 
-    s = settings(observability=ObservabilitySettings(coverage=True))
-    assert s.observability == ObservabilitySettings(coverage=True)
+    s = settings(observability=ObservabilityConfig(coverage=True))
+    assert s.observability == ObservabilityConfig(coverage=True)
 
-    s = settings(observability=ObservabilitySettings(choices=True))
-    assert s.observability == ObservabilitySettings(choices=True)
+    s = settings(observability=ObservabilityConfig(choices=True))
+    assert s.observability == ObservabilityConfig(choices=True)
 
-    s = settings(observability=ObservabilitySettings(coverage=True, choices=True))
-    assert s.observability == ObservabilitySettings(coverage=True, choices=True)
+    s = settings(observability=ObservabilityConfig(coverage=True, choices=True))
+    assert s.observability == ObservabilityConfig(coverage=True, choices=True)

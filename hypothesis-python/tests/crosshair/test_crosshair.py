@@ -13,7 +13,7 @@ import pytest
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
 
 from hypothesis import (
-    ObservabilitySettings,
+    ObservabilityConfig,
     Phase,
     Verbosity,
     event,
@@ -185,7 +185,7 @@ def test_observability_and_verbosity_dont_add_choices(strategy, extra_observabil
         database=None,
         max_examples=2,
         # pass an arbitrary callback, to enable observability
-        observability=ObservabilitySettings(callbacks=[lambda observation: None]),
+        observability=ObservabilityConfig(callbacks=[lambda observation: None]),
     )
     def f_observability(value):
         nonlocal called
@@ -223,7 +223,7 @@ def test_realizes_event():
     @settings(
         backend="crosshair",
         max_examples=5,
-        observability=ObservabilitySettings(callbacks=[callback]),
+        observability=ObservabilityConfig(callbacks=[callback]),
     )
     def test(n):
         event("myevent", n)

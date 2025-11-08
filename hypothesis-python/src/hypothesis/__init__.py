@@ -35,13 +35,13 @@ from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.entry_points import run
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.internal.entropy import register_random
-from hypothesis.internal.observability import ObservabilitySettings
+from hypothesis.internal.observability import ObservabilityConfig
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
 __all__ = [
     "HealthCheck",
-    "ObservabilitySettings",
+    "ObservabilityConfig",
     "Phase",
     "Verbosity",
     "__version__",

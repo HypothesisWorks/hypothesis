@@ -21,7 +21,7 @@ import pytest
 
 from hypothesis import (
     HealthCheck,
-    ObservabilitySettings,
+    ObservabilityConfig,
     Verbosity,
     assume,
     errors,
@@ -489,7 +489,7 @@ def test_realization_with_observability():
         @given(st.data())
         @settings(
             backend="realize",
-            observability=ObservabilitySettings(callbacks=[observations.append]),
+            observability=ObservabilityConfig(callbacks=[observations.append]),
         )
         def test_function(data):
             data.draw(st.integers())
@@ -532,7 +532,7 @@ def test_custom_observations_from_backend():
         @settings(
             backend="observable",
             database=None,
-            observability=ObservabilitySettings(callbacks=[observations.append]),
+            observability=ObservabilityConfig(callbacks=[observations.append]),
         )
         def test_function(_):
             pass
