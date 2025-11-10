@@ -51,18 +51,10 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
     @given(st.lists(st.integers() | st.floats(allow_nan=False)))
     def test_sort_correct(lst):
-        # We can check my_sort against a trusted reference on many inputs:
-        assert my_sort(lst) == sorted(lst)
-
-        # We can also check if the result is correct, without our test knowing
-        # how to find it.  e.g., sorting returns the same elements, in order:
+        # We can check if the result is correct without a trusted reference:
         result = my_sort(lst)
-        assert collections.Counter(lst) == collections.Counter(result)
+        assert set(lst) == set(result)  # or collections.Counter
         assert all(a <= b for a, b in zip(result, result[1:]))
-
-        # Or we can just look for bugs using incomplete specifications, e.g.
-        assert my_sort(lst) == my_sort(my_sort(lst))  # idempotence
-        assert my_sort(lst) == my_sort(shuffled(lst))  # input order irrelevant
 
     @given(
         st.recursive(
