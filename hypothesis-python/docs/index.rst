@@ -49,12 +49,30 @@ Hypothesis is the property-based testing library for Python. With Hypothesis, yo
 
     from hypothesis import given, strategies as st
 
-    @given(st.lists(st.integers() | st.floats()))
+    @given(st.lists(st.integers() | st.floats(allow_nan=False)))
     def test_sort_correct(lst):
-        # hypothesis generates random lists of numbers to test
+        # We can check my_sort against a trusted reference on many inputs:
         assert my_sort(lst) == sorted(lst)
 
-    test_sort_correct()
+        # We can also check if the result is correct, without our test knowing
+        # how to find it.  e.g., sorting returns the same elements, in order:
+        result = my_sort(lst)
+        assert collections.Counter(lst) == collections.Counter(result)
+        assert all(a <= b for a, b in zip(result, result[1:]))
+
+        # Or we can just look for bugs using incomplete specifications, e.g.
+        assert my_sort(lst) == my_sort(my_sort(lst))  # idempotence
+        assert my_sort(lst) == my_sort(shuffled(lst))  # input order irrelevant
+
+    @given(
+        st.recursive(
+            st.from_type(None | bool | int | float | str),
+            lambda elem: st.lists(elem) | st.dictionaries(st.text(), elem),
+        )
+    )
+    def test_json_roundtrip(value):
+        assume(value == value)  # exclude e.g. NaN
+        assert value == json.loads(json.dumps(value))
 
 You should start with the :doc:`tutorial <tutorial/index>`, or alternatively the more condensed :doc:`quickstart <quickstart>`.
 
