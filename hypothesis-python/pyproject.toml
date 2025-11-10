@@ -10,7 +10,7 @@ dynamic = ["version"]
 authors = [
     { name = "David R. MacIver and Zac Hatfield-Dodds", email = "david@drmaciver.com" }
 ]
-description = "A library for property-based testing"
+description = "The property-based testing library for Python"
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
 readme = {"text" = """<div align="center">
   <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
