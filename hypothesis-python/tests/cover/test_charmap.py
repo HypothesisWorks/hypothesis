@@ -15,6 +15,8 @@ import time
 import unicodedata
 from typing import get_args
 
+import pytest
+
 from hypothesis import given, strategies as st
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
@@ -91,6 +93,23 @@ def test_recreate_charmap():
     assert x == y
 
 
+# This test fails flakily (every 1 in ~10 full CI runs), but only on the test-pyodide
+# ci job:
+#
+#      os.utime(cm.charmap_file(), (mtime, mtime))
+#      ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#   FileNotFoundError: [Errno 44] No such file or directory:
+#   '/home/runner/work/hypothesis/hypothesis/.hypothesis/unicode_data/15.1.0/charmap.json.gz'
+#
+# I suspect this is from a race condition due to how we parallelize the pyodide
+# tests in CI, (splitting test files across 20 processes). It's also possible
+# it's from some pyodide-specific weirdness, but since the test only fails sometimes,
+# I find this less likely.
+#
+# I'm xfailing this on emscripten for now, to get a consistent green CI.
+@pytest.mark.xfail(
+    condition=sys.platform == "emscripten", strict=False, reason="see comment"
+)
 @skipif_threading
 def test_uses_cached_charmap():
     cm.charmap()

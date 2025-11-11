@@ -33,14 +33,19 @@ DISPLAY_PAGES_ON_MENU = False
 CATEGORY_URL = "articles/"
 CATEGORY_SAVE_AS = "articles/index.html"
 
+# Disable the default archives page
+ARCHIVES_SAVE_AS = ""
+
 FILENAME_METADATA = r"(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>.+)"
 
 THEME = "./theme/"
 STATIC_PATHS = [
     "../../brand/favicon.ico",
     "../../brand/dragonfly-rainbow.svg",
+    "../archive-redirect.html",
 ]
 EXTRA_PATH_METADATA = {k: {"path": basename(k)} for k in STATIC_PATHS}
+EXTRA_PATH_METADATA["../archive-redirect.html"] = {"path": "archives.html"}
 PROFILE_IMAGE_URL = "/dragonfly-rainbow.svg"
 
 MENUITEMS = (
