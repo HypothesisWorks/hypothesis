@@ -618,6 +618,13 @@ def test_register_profile_avoids_intermediate_profiles():
         assert settings.get_profile("for_intermediate_test")._fallback is parent
 
 
+@checks_deprecated_behaviour
+@settings(max_examples=10)
+@given(st.integers())
+def test_cannot_register_profile_from_inside_test(x):
+    settings.register_profile("problematic", settings(max_examples=20))
+
+
 def test_can_set_verbosity_to_strings():
     assert settings(verbosity="quiet").verbosity is Verbosity.quiet
     assert settings(verbosity="normal").verbosity is Verbosity.normal
