@@ -1126,7 +1126,7 @@ class settings(metaclass=settingsMeta):
                 "Cannot register a settings profile when the current settings differ "
                 "from the current profile (usually due to an @settings decorator). "
                 "Register profiles at module level instead.",
-                since="RELEASEDAY",
+                since="2025-11-15",
                 has_codemod=False,
             )
 

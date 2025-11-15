@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.0:
+
+--------------------
+6.148.0 - 2025-11-15
+--------------------
+
+Calling :func:`~hypothesis.settings.register_profile` from within a test
+decorated with :func:`@settings <hypothesis.settings>` is now deprecated,
+to avoid confusion about which settings are used as the baseline for the
+new profile.
+
 .. _v6.147.0:
 
 --------------------
