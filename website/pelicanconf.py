@@ -55,6 +55,34 @@ MENUITEMS = (
     ("PyPI", "https://pypi.org/project/hypothesis/"),
 )
 
+# Author information - map from short alias to full name and URL
+AUTHOR_NAMES = {
+    "alexwlchan": "Alex Chan",
+    "carlini": "Nicholas Carlini",
+    "drmaciver": "David R. MacIver",
+    "giorgiosironi": "Giorgio Sironi",
+    "hwayne": "Hillel Wayne",
+    "jml": "Jonathan M. Lange",
+    "liam": "Liam DeVoe",
+    "maaz": "Muhammad Maaz",
+    "nchammas": "Nicholas Chammas",
+    "zac-hd": "Zac Hatfield-Dodds",
+}
+
+AUTHOR_URLS = {
+    "alexwlchan": "https://alexwlchan.net",
+    "carlini": "https://nicholas.carlini.com/",
+    "drmaciver": "http://www.drmaciver.com",
+    "giorgiosironi": "http://giorgiosironi.com",
+    "hwayne": "https://www.hillelwayne.com/",
+    "jml": "https://jml.io",
+    "liam": "https://tybug.dev",
+    "maaz": "https://www.mmaaz.ca/",
+    "nchammas": "http://nchammas.com",
+    "zac-hd": "https://zhd.dev",
+}
+assert set(AUTHOR_URLS).issubset(AUTHOR_NAMES)
+
 DEFAULT_PAGINATION = False
 
 # same as the default from https://docs.getpelican.com/en/latest/settings.html#MARKDOWN,

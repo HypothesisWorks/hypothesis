@@ -1,7 +1,7 @@
 ---
 date: 2025-11-01 00:00
 title: A Claude Code command for Hypothesis
-author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
+authors: liam, maaz, zac-hd, carlini
 ---
 
 <div class="cta-buttons">

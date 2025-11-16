@@ -2,7 +2,7 @@
 tags: python intro technical properties
 date: 2020-06-08 15:00
 title: Property Testing with Complex Inputs
-author: Hillel Wayne
+author: hwayne
 ---
 
 Once you learn the basics, there are two hard parts to using property-based testing:
