@@ -76,7 +76,7 @@ typing-extensions==4.15.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via crosshair-tool
-z3-solver==4.15.4.0
+z3-solver==4.15.3.0
     # via crosshair-tool
 zipp==3.23.0
     # via importlib-metadata
