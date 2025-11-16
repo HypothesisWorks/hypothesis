@@ -8,7 +8,7 @@ exceptiongroup==1.3.0 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   pytest
-execnet==2.1.1
+execnet==2.1.2
     # via pytest-xdist
 iniconfig==2.3.0
     # via pytest
@@ -22,7 +22,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.19.2
     # via pytest
-pytest==8.4.2
+pytest==9.0.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
