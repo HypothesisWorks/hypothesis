@@ -21,21 +21,20 @@ We have an Exam which consists of a set of questions and multiple-choice answers
 For the purposes of this tutorial we will make the data classes as simple as possible:
 
 ```py
-import typing as t
-from dataclasses import field, dataclass
+from dataclasses import dataclass
 
 @dataclass
 class Exam:
     """The abstract exam. Students take ExamInstances."""
     name: str
-    answer_key: t.List[int]
+    answer_key: list[int]
 
 @dataclass
 class ExamInstance:
     """The instantiation of the exam."""
     student: int
     exam: Exam
-    answers: t.List[t.Optional[int]] # must be same length, but answers may be blank
+    answers: list[int | None]  # must be same length, but answers may be blank
 ```
 
 For our property tests we need to generate both Exams and ExamInstances. We have some restrictions on the Exam, and we need the ExamInstances to match the Exam in terms of answer length. This makes it somewhat more complex than the usual "generate an integer" case.
@@ -52,9 +51,9 @@ We don't _have to_ write a special generator for Exam. We've already type-annota
 
 ```py
 from hypothesis import given
-import hypothesis.strategies as s
+import hypothesis.strategies as st
 
-@given(s.from_type(Exam))
+@given(st.from_type(Exam))
 def test_1(exam):
     ...
 ```
@@ -62,7 +61,7 @@ def test_1(exam):
 In fact, it can even generate valid ExamInstances, as all those fields are typed, too:
 
 ```py
-@given(s.from_type(ExamInstance))
+@given(st.from_type(ExamInstance))
 def test_2(ei):
     ...
 ```
@@ -77,7 +76,7 @@ Sometimes this is good enough. In our case it is not for a couple of reasons:
 If our requirements are simple and we know that most generated inputs will be correct, we can usually get away with using `filter` and `assume`. `filter` is a method on all strategies, while `assume` goes in the body of the test itself. Both of them, when false, tell hypothesis to discard the invalid data and make a new draw. We can also use `assume` to relate several parameters to each other.
 
 ```py
-@given(s.from_type(Exam).filter(lambda x: x.answer_key and min(x.answer_key) >= 0))
+@given(st.from_type(Exam).filter(lambda x: x.answer_key and min(x.answer_key) >= 0))
 def test_2(exam):
     assume(max(exam.answer_key) <= 5)
     ...
@@ -93,7 +92,7 @@ We're better off writing a customized generator that _always_ generates good inp
 The `builds` strategy takes in an object and a set of initialization strategies, draws the corresponding values, and passes them into the object's `__init__`. Let's say we want to make sure that `answer_key` only uses numbers between 1 and 5. We can use `builds` to do this.
 
 ```py
-@given(s.builds(Exam, answer_key=s.lists(s.integers(min_value=1, max_value=5))))
+@given(st.builds(Exam, answer_key=st.lists(st.integers(min_value=1, max_value=5))))
 def test_3(exam):
     for x in exam.answer_key:
         assert x in range(6)
@@ -104,7 +103,7 @@ def test_3(exam):
 We haven't specified what `name` is, so Hypothesis will use the default generator for text. If we want to always use the same name, we can use the `just` strategy:
 
 ```py
-@given(s.builds(Exam, name=s.just(""), answer_key=s.lists(s.integers(min_value=1, max_value=5))))
+@given(st.builds(Exam, name=st.just(""), answer_key=st.lists(st.integers(min_value=1, max_value=5))))
 def test_3(exam):
     # same
 ```
@@ -113,9 +112,9 @@ At this point we should probably pull it into its own function:
 
 ```py
 def exam_strategy():
-    return s.builds(Exam,
-        name=s.just(""),
-        answer_key=s.lists(s.integers(min_value=1, max_value=5)))
+    return st.builds(Exam,
+        name=st.just(""),
+        answer_key=st.lists(st.integers(min_value=1, max_value=5)))
 
 @given(exam_strategy())
 def test_3(exam):
@@ -131,13 +130,13 @@ Now that we have a custom builder, we can tell Hypothesis to always use it when 
 def exam_strategy():
     ...
 
-s.register_type_strategy(Exam, exam_strategy())
+st.register_type_strategy(Exam, exam_strategy())
 ```
 
 This will now be used any time Hypothesis infers that it needs to build an Exam, even if it needs to do so as part of generating something else, like an ExamInstance.
 
 ```py
-@given(s.from_type(Exam))
+@given(st.from_type(Exam))
 def test_4(exam):
     ...
 ```
@@ -145,9 +144,9 @@ def test_4(exam):
 
 That takes care of the Exam. But we still have a problem with the ExamInstance: its `answer` must have the same length as its exam's `answer_key`. But there's no way to guarantee that with our builder. We can't link strategies to each other.
 
- ```py
- # This will fail
-@given(s.from_type(ExamInstance))
+```py
+# This will fail
+@given(st.from_type(ExamInstance))
 def test_5(ei):
     assert len(ei.answers) == len(ei.exam.answer_key)
 ```
@@ -159,10 +158,10 @@ In order to combine multiple strategies we need to use something a little more p
 Composite strategies are user-written functions "lifted" into full strategies. They can be a little bit unintuitive at first, so let's start with a simple example. This composite strategy returns a list of numbers where the first element of the list is always the smallest number in the list:
 
 ```py
-@s.composite
+@st.composite
 def example(draw):
-    i = draw(s.integers())
-    l = draw(s.lists(s.integers(min_value=i)))
+    i = draw(st.integers())
+    l = draw(st.lists(st.integers(min_value=i)))
     return [i] + l
 ```
 
@@ -179,15 +178,15 @@ We can do anything we want inside the body of the composite function, making it 
 ```py
 # Helper function to make the following examples terser
 def ei_answers_strategy(exam):
-    return s.lists(
-        s.one_of(s.none(), s.integers(min_value=1, max_value=5)),
+    return st.lists(
+        st.one_of(st.none(), st.integers(min_value=1, max_value=5)),
         min_size=len(exam.answer_key),
         max_size=len(exam.answer_key),
     )
 
-@s.composite
+@st.composite
 def exam_instance_strategy(draw):
-    exam = draw(s.from_type(Exam))
+    exam = draw(st.from_type(Exam))
     answers = ei_answers_strategy(exam)
     return ExamInstance(student=1, exam=exam, answers=draw(answers))
 ```
@@ -195,27 +194,25 @@ def exam_instance_strategy(draw):
 We use it like any other strategy.
 
 ```py
-@given(exam_instance_strategy()) #pylint: disable=no-value-for-parameter
+@given(exam_instance_strategy())
 def test_6(ei):
     assert len(ei.answers) == len(ei.exam.answer_key)
 ```
-
-(Pylint might complain at you here since we're not passing in an argument for `draw`. There's no actual bug; the `@composite` decorator handles that argument. You can disable the warning by adding `# pylint: disable=no-value-for-parameter` to the line.)
 
 ### More with `composite`
 
 Composite strategies are just functions and can be called in other strategies. This means you can use it to create complex connected data. Let's say we want to generate several `ExamInstances` for the same student and exam. We can break this into several composable pieces:
 
 ```py
-@s.composite
+@st.composite
 def exam_instance_for_exam(draw, exam, student=""):
     answers = ei_answers_strategy(exam)
     return ExamInstance(student=student, exam=exam, answers=draw(answers))
 
-@s.composite
+@st.composite
 def many_exam_instances(draw, student=""):
-    exam = draw(s.from_type(Exam))
-    exams = s.lists(exam_instance_for_exam(exam, student), min_size=1)
+    exam = draw(st.from_type(Exam))
+    exams = st.lists(exam_instance_for_exam(exam, student), min_size=1)
     return draw(exams)
 
 @given(many_exam_instances("brian"))
@@ -226,8 +223,8 @@ def test_7(eis):
 In this case we're only passing raw values into the composite. This means we can't randomize the name of the student. In some cases this is an advantage, as it restricts the state space we have to search. In other cases this is a disadvantage, as it  goes against the spirit of property testing. If you want the more thorough testing, you can pass in strategies instead into the composite and draw values in the body of the function.
 
 ```py
-@s.composite
-def exam_instance_for_exam(draw, exam, student=s.just("")):
+@st.composite
+def exam_instance_for_exam(draw, exam, student=st.just("")):
     student = draw(student)
     exam = draw(exam)
     answers = ei_answers_strategy(exam)
@@ -240,8 +237,8 @@ def exam_instance_for_exam(draw, exam, student=s.just("")):
 There's a usability problem with this, though. Imagine we have `many_exam_instances` pass in complex strategies for `exam` and `student`. How do we know what values we drew? In this _particular_ case we can extract them from the returned ExamInstance, but we can't always rely on that, especially if we do more complex transformations. For this reason it's usually a good idea to pass back all the draws from the composite.
 
 ```diff
-@s.composite
-def exam_instance_for_exam(draw, exam, student=s.just("")):
+@st.composite
+def exam_instance_for_exam(draw, exam, student=st.just("")):
 -  return ExamInstance(student=student, exam=exam, answers=draw(answers))
 +  return exam, student, ExamInstance(student=student, exam=exam, answers=draw(answers))
 ```
@@ -249,21 +246,21 @@ def exam_instance_for_exam(draw, exam, student=s.just("")):
 We also have to adjust `many_exam_instances` and our test. In particular we can't use the `lists` strategy anymore, as that assumed `exam_instance_for_exam` only returned an ExamInstance. Now that we're returning a tuple of data it gets a bit messier.
 
 ```py
-@s.composite
-def many_exam_instances(draw, student=s.just("")):
-    number = draw(s.integers(min_value=1, max_value=5))
-    exam = draw(s.from_type(Exam))
+@st.composite
+def many_exam_instances(draw, student=st.just("")):
+    number = draw(st.integers(min_value=1, max_value=5))
+    exam = draw(st.from_type(Exam))
     student = draw(student)
     instances = []
 
     # Getting the values in a loop
     for _ in range(number):
-        ei_strategy = exam_instance_for_exam(exam=s.just(exam), student=s.just(student))
+        ei_strategy = exam_instance_for_exam(exam=st.just(exam), student=st.just(student))
         _, _, ei = draw(ei_strategy)
         instances.append(ei)
     return number, exam, student, instances
 
-@given(many_exam_instances(student=s.characters()))
+@given(many_exam_instances(student=st.characters()))
 def test_8(stuff):
     _, exam, _, eis = stuff
     ...
@@ -278,7 +275,7 @@ As you can see, this leads to a lot more boilerplate. We also had to change from
 The last way to generate complex inputs is the `data` strategy. Like `composite`, it gives us a `draw` function that we can use to interactively pick values. Unlike `composite`, we can use it in the test body! Instead of `exam_instance_strategy`, we can do this instead:
 
 ```py
-@given(s.data(), s.from_type(Exam))
+@given(st.data(), st.from_type(Exam))
 def test_data(data, exam):
     answers = data.draw(ei_answers_strategy(exam))
 
