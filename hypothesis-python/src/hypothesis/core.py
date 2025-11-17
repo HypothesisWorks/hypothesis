@@ -1649,9 +1649,6 @@ class HypothesisHandle:
         """
         Run the test as a fuzz target, driven with the ``buffer`` of bytes.
 
-        Returns None if ``buffer`` was invalid for the strategy, canonical pruned
-        bytes if the buffer was valid, and leaves raised exceptions alone.
-
         Depending on the passed ``buffer`` one of three things will happen:
 
         * If the bytestring was invalid, for example because it was too short or was
@@ -1665,6 +1662,14 @@ class HypothesisHandle:
           and then re-raise that exception.  All you need to do to reproduce,
           minimize, and de-duplicate all the failures found via fuzzing is run
           your test suite!
+
+        To reduce the performance impact of database writes, |fuzz_one_input| only
+        records failing inputs which would be valid shrinks for a known failure -
+        meaning writes are somewhere between constant and log(N) rather than linear
+        in runtime.  However, this tracking only works within a persistent fuzzing
+        process; for forkserver fuzzers we recommend ``database=None`` for the main
+        run, and then replaying with a database enabled if you need to analyse
+        failures.
 
         Note that the interpretation of both input and output bytestrings is
         specific to the exact version of Hypothesis you are using and the strategies

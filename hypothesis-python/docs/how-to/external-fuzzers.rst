@@ -1,11 +1,14 @@
-Use an external fuzzer with Hypothesis
+Use Hypothesis with an external fuzzer
 ======================================
 
-.. seealso::
+We think property-based testing is great, but sometimes you might want to point a traditional fuzzer at your code, such as `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` (which instruments both Python and native extensions).
 
-    If you're looking to fuzz property-based tests, `HypoFuzz <https://hypofuzz.com/>`_ is a coverage-guided fuzzer built for Hypothesis.
+You might also want to use Hypothesis strategies to describe your input data, and our world-class shrinking and observability tools to wrangle the results.  That's exactly what this how-to guide is about!
 
-In a standard Hypothesis test run, Hypothesis is responsible for generating each test case. However, you might instead want to point a traditional fuzzer at your code, such as `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` (which instruments both Python and native extensions).
+.. note::
+
+    This page is about writing traditional 'fuzz harnesses' for an external fuzzer, using parts of Hypothesis.
+    If you already have Hypothesis tests and want to fuzz them, we strongly recommend the purpose-built `HypoFuzz <https://hypofuzz.com/>`_.
 
 In order to support this workflow, Hypothesis exposes the |fuzz_one_input| method. |fuzz_one_input| takes a bytestring, parses it into a test case, and executes the corresponding test once. This means you can treat each of your Hypothesis tests as a traditional fuzz target, by pointing the fuzzer at |fuzz_one_input|.
 
@@ -27,10 +30,10 @@ Note that |fuzz_one_input| bypasses the standard test lifecycle. In a standard t
 
 See the documentation of |fuzz_one_input| for details of how it interacts with other features of Hypothesis, such as |@settings|.
 
-Using Atheris with |fuzz_one_input|
------------------------------------
+Worked example: using Atheris
+-----------------------------
 
-Here is an example that uses the `Atheris <https://github.com/google/atheris>`__ coverage-guided fuzzer (which is built on top of `libFuzzer <https://llvm.org/docs/LibFuzzer.html>`_) with |fuzz_one_input|:
+Here is an example that uses |fuzz_one_input| with the `Atheris <https://github.com/google/atheris>`__ coverage-guided fuzzer (which is built on top of `libFuzzer <https://llvm.org/docs/LibFuzzer.html>`_):
 
 .. code-block:: python
 
@@ -41,28 +44,18 @@ Here is an example that uses the `Atheris <https://github.com/google/atheris>`__
 
     from hypothesis import given, strategies as st
 
-    json_strategy = st.deferred(lambda: st.none() | st.floats() | st.text() | lists)
-    lists = st.lists(json_strategy)
-
-    @given(json_strategy)
-    def test_json_dums_valid_json(value):
+    @given(
+        st.recursive(
+            st.none() | st.booleans() | st.integers() | st.floats() | st.text(),
+            lambda j: st.lists(j) | st.dictionaries(st.text(), j)
+        )
+    )
+    def test_json_dumps_valid_json(value):
         json.dumps(value)
 
-    atheris.Setup(sys.argv, test_json_dums_valid_json.hypothesis.fuzz_one_input)
+    atheris.Setup(sys.argv, test_json_dumps_valid_json.hypothesis.fuzz_one_input)
     atheris.Fuzz()
 
-You may also want to use ``atheris.instrument_all`` or ``atheris.instrument_imports`` in order to add coverage instrumentation to Atheris. For example, to instrument the ``json`` module for coverage:
+Generating valid JSON objects based only on Atheris' ``FuzzDataProvider`` interface would be considerably more difficult.
 
-
-.. code-block:: python
-
-    ...
-
-    import atheris
-
-    with atheris.instrument_imports():
-        import json  # fmt: off
-
-    ...
-
-See the `Atheris <https://github.com/google/atheris>`__ documentation for full details.
+You may also want to use ``atheris.instrument_all`` or ``atheris.instrument_imports`` in order to add coverage instrumentation to Atheris.  See the `Atheris <https://github.com/google/atheris>`__ documentation for full details.
