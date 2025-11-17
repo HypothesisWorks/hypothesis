@@ -47,7 +47,7 @@ Here is an example that uses |fuzz_one_input| with the `Atheris <https://github.
     @given(
         st.recursive(
             st.none() | st.booleans() | st.integers() | st.floats() | st.text(),
-            lambda j: st.lists(j) | st.dictionaries(st.text(), j)
+            lambda j: st.lists(j) | st.dictionaries(st.text(), j),
         )
     )
     def test_json_dumps_valid_json(value):
