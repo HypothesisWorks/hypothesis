@@ -14,6 +14,8 @@ from hypothesis import Phase, example, given, settings, strategies as st
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 
+from tests.common.utils import skipif_emscripten
+
 
 @example(11)
 @settings(phases=(Phase.explicit,))
@@ -29,6 +31,7 @@ def test_does_not_use_explicit_examples(i):
     assert isinstance(i, bool)
 
 
+@skipif_emscripten  # TODO: actually Pytest 9.0, remove this workaround ASAP
 @settings(phases=(Phase.reuse, Phase.shrink), database=InMemoryExampleDatabase())
 @given(st.booleans())
 def test_this_would_fail_if_you_ran_it(b):

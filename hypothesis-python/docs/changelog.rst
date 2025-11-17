@@ -18,6 +18,62 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.1:
+
+--------------------
+6.148.1 - 2025-11-16
+--------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.148.0:
+
+--------------------
+6.148.0 - 2025-11-15
+--------------------
+
+Calling :func:`~hypothesis.settings.register_profile` from within a test
+decorated with :func:`@settings <hypothesis.settings>` is now deprecated,
+to avoid confusion about which settings are used as the baseline for the
+new profile.
+
+.. _v6.147.0:
+
+--------------------
+6.147.0 - 2025-11-06
+--------------------
+
+This release drops support for :pypi:`nose`, which ceased development 9 years ago and does not support Python 3.10 or newer.
+
+Hypothesis still supports :pypi:`nose2`. While we do not test ``nose2`` in our CI, we will fix any bugs that get reported.
+
+.. _v6.146.0:
+
+--------------------
+6.146.0 - 2025-11-05
+--------------------
+
+|@settings| now accepts equivalent string representations for |settings.verbosity|, |settings.phases|, and |settings.suppress_health_check|. For example:
+
+.. code-block:: python
+
+  # these two are now equivalent...
+  settings(verbosity=Verbosity.verbose)
+  settings(verbosity="verbose")
+
+  # ...as are these two...
+  settings(phases=[Phase.explicit])
+  settings(phases=["explicit"])
+
+  # ...and these two.
+  settings(suppress_health_check=[HealthCheck.filter_too_much])
+  settings(suppress_health_check=["filter_too_much"])
+
+This release also changes the canonical value of |Verbosity|, |Phase|, and |HealthCheck| members to a string instead of an integer. For example, ``Phase.reuse.value == "explicit"`` as of this release, where previously ``Phase.reuse.value == 1``.
+
+Instantiating |Verbosity|, |Phase|, or |HealthCheck| with an integer, such as ``Verbosity(0)``, is now deprecated.
+
 .. _v6.145.1:
 
 --------------------

@@ -20,7 +20,8 @@ import inspect
 import os
 import warnings
 from collections.abc import Collection, Generator, Sequence
-from enum import Enum, EnumMeta, IntEnum, unique
+from enum import Enum, EnumMeta, unique
+from functools import total_ordering
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -61,73 +62,138 @@ all_settings: list[str] = [
 
 
 @unique
-class Verbosity(IntEnum):
+@total_ordering
+class Verbosity(Enum):
     """Options for the |settings.verbosity| argument to |@settings|."""
 
-    quiet = 0
+    quiet = "quiet"
     """
     Hypothesis will not print any output, not even the final falsifying example.
     """
 
-    normal = 1
+    normal = "normal"
     """
     Standard verbosity. Hypothesis will print the falsifying example, alongside
     any notes made with |note| (only for the falsfying example).
     """
 
-    verbose = 2
+    verbose = "verbose"
     """
     Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
     will print each example as it tries it, as well as any notes made with |note|
     for every example. Hypothesis will also print shrinking attempts.
     """
 
-    debug = 3
+    debug = "debug"
     """
     Even more verbosity. Useful for debugging Hypothesis internals. You probably
     don't want this.
     """
 
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {0: "quiet", 1: "normal", 2: "verbose", 3: "debug"}
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing Verbosity({value}) as an integer is deprecated. "
+                    "Hypothesis now treats Verbosity values as strings, not integers. "
+                    f"Use Verbosity.{int_to_name[value]} instead.",
+                    since="2025-11-05",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
+
     def __repr__(self) -> str:
         return f"Verbosity.{self.name}"
 
+    @staticmethod
+    def _int_value(value: "Verbosity") -> int:
+        # we would just map Verbosity keys, except it's not hashable
+        mapping = {
+            Verbosity.quiet.name: 0,
+            Verbosity.normal.name: 1,
+            Verbosity.verbose.name: 2,
+            Verbosity.debug.name: 3,
+        }
+        # make sure we don't forget any new verbosity members
+        assert list(mapping.keys()) == [verbosity.name for verbosity in Verbosity]
+        return mapping[value.name]
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Verbosity):
+            return super().__eq__(other)
+        return Verbosity._int_value(self) == other
+
+    def __gt__(self, other: Any) -> bool:
+        value1 = Verbosity._int_value(self)
+        value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
+        return value1 > value2
+
 
 @unique
-class Phase(IntEnum):
+class Phase(Enum):
     """Options for the |settings.phases| argument to |@settings|."""
 
-    explicit = 0
+    explicit = "explicit"
     """
     Controls whether explicit examples are run.
     """
 
-    reuse = 1
+    reuse = "reuse"
     """
     Controls whether previous examples will be reused.
     """
 
-    generate = 2
+    generate = "generate"
     """
     Controls whether new examples will be generated.
     """
 
-    target = 3
+    target = "target"
     """
     Controls whether examples will be mutated for targeting.
     """
 
-    shrink = 4
+    shrink = "shrink"
     """
     Controls whether examples will be shrunk.
     """
 
-    explain = 5
+    explain = "explain"
     """
     Controls whether Hypothesis attempts to explain test failures.
 
     The explain phase has two parts, each of which is best-effort - if Hypothesis
     can't find a useful explanation, we'll just print the minimal failing example.
     """
+
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {
+                0: "explicit",
+                1: "reuse",
+                2: "generate",
+                3: "target",
+                4: "shrink",
+                5: "explain",
+            }
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing Phase({value}) as an integer is deprecated. "
+                    "Hypothesis now treats Phase values as strings, not integers. "
+                    f"Use Phase.{int_to_name[value]} instead.",
+                    since="2025-11-05",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
 
     def __repr__(self) -> str:
         return f"Phase.{self.name}"
@@ -184,6 +250,33 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     suppressing them may result in an unsound test.
     """
 
+    @classmethod
+    def _missing_(cls, value):
+        # deprecation pathway for integer values. Can be removed in Hypothesis 7.
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_to_name = {
+                1: "data_too_large",
+                2: "filter_too_much",
+                3: "too_slow",
+                5: "return_value",
+                7: "large_base_example",
+                8: "not_a_test_method",
+                9: "function_scoped_fixture",
+                10: "differing_executors",
+                11: "nested_given",
+            }
+            if value in int_to_name:
+                note_deprecation(
+                    f"Passing HealthCheck({value}) as an integer is deprecated. "
+                    "Hypothesis now treats HealthCheck values as strings, not integers. "
+                    f"Use HealthCheck.{int_to_name[value]} instead.",
+                    since="2025-11-05",
+                    has_codemod=False,
+                    stacklevel=2,
+                )
+                return cls(int_to_name[value])
+        return None
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
@@ -198,7 +291,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
         )
         return list(HealthCheck)
 
-    data_too_large = 1
+    data_too_large = "data_too_large"
     """Checks if too many examples are aborted for being too large.
 
     This is measured by the number of random choices that Hypothesis makes
@@ -208,33 +301,33 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     this health check.
     """
 
-    filter_too_much = 2
+    filter_too_much = "filter_too_much"
     """Check for when the test is filtering out too many examples, either
     through use of |assume| or |.filter|, or occasionally for Hypothesis
     internal reasons."""
 
-    too_slow = 3
+    too_slow = "too_slow"
     """
     Check for when input generation is very slow. Since Hypothesis generates 100
     (by default) inputs per test execution, a slowdown in generating each input
     can result in very slow tests overall.
     """
 
-    return_value = 5
+    return_value = "return_value"
     """Deprecated; we always error if a test returns a non-None value."""
 
-    large_base_example = 7
+    large_base_example = "large_base_example"
     """
     Checks if the smallest natural input to your test is very large. This makes
     it difficult for Hypothesis to generate good inputs, especially when trying to
     shrink failing inputs.
     """
 
-    not_a_test_method = 8
+    not_a_test_method = "not_a_test_method"
     """Deprecated; we always error if |@given| is applied
     to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
-    function_scoped_fixture = 9
+    function_scoped_fixture = "function_scoped_fixture"
     """Checks if |@given| has been applied to a test
     with a pytest function-scoped fixture. Function-scoped fixtures run once
     for the whole function, not once per example, and this is usually not what
@@ -252,7 +345,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
     which is enabled by default when running Hypothesis inside pytest."""
 
-    differing_executors = 10
+    differing_executors = "differing_executors"
     """Checks if |@given| has been applied to a test
     which is executed by different :ref:`executors<custom-function-execution>`.
     If your test function is defined as a method on a class, that class will be
@@ -264,7 +357,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     subclasses, or to refactor so that |@given| is
     specified on leaf subclasses."""
 
-    nested_given = 11
+    nested_given = "nested_given"
     """Checks if |@given| is used inside another
     |@given|. This results in quadratic generation and
     shrinking behavior, and can usually be expressed more cleanly by using
@@ -326,6 +419,16 @@ def _validate_choices(name: str, value: T, *, choices: Sequence[object]) -> T:
     return value
 
 
+def _validate_enum_value(cls: Any, value: object, *, name: str) -> Any:
+    try:
+        return cls(value)
+    except ValueError:
+        raise InvalidArgument(
+            f"{name}={value} is not a valid value. The options "
+            f"are: {', '.join(repr(m.name) for m in cls)}"
+        ) from None
+
+
 def _validate_max_examples(max_examples: int) -> int:
     check_type(int, max_examples, name="max_examples")
     if max_examples < 1:
@@ -351,10 +454,11 @@ def _validate_database(
 
 
 def _validate_phases(phases: Collection[Phase]) -> Sequence[Phase]:
-    phases = tuple(phases)
-    for phase in phases:
-        if not isinstance(phase, Phase):
-            raise InvalidArgument(f"{phase!r} is not a valid phase")
+    phases = try_convert(tuple, phases, "phases")
+    phases = tuple(
+        _validate_enum_value(Phase, phase, name="phases") for phase in phases
+    )
+    # sort by definition order
     return tuple(phase for phase in list(Phase) if phase in phases)
 
 
@@ -367,14 +471,9 @@ def _validate_stateful_step_count(stateful_step_count: int) -> int:
     return stateful_step_count
 
 
-def _validate_suppress_health_check(suppressions):
+def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, ...]:
     suppressions = try_convert(tuple, suppressions, "suppress_health_check")
     for health_check in suppressions:
-        if not isinstance(health_check, HealthCheck):
-            raise InvalidArgument(
-                f"Non-HealthCheck value {health_check!r} of type {type(health_check).__name__} "
-                "is invalid in suppress_health_check."
-            )
         if health_check in (HealthCheck.return_value, HealthCheck.not_a_test_method):
             note_deprecation(
                 f"The {health_check.name} health check is deprecated, because this is always an error.",
@@ -382,36 +481,39 @@ def _validate_suppress_health_check(suppressions):
                 has_codemod=False,
                 stacklevel=2,
             )
-    return suppressions
+    return tuple(
+        _validate_enum_value(HealthCheck, health_check, name="suppress_health_check")
+        for health_check in suppressions
+    )
 
 
 def _validate_deadline(
-    x: int | float | datetime.timedelta | None,
+    deadline: int | float | datetime.timedelta | None,
 ) -> duration | None:
-    if x is None:
-        return x
+    if deadline is None:
+        return deadline
     invalid_deadline_error = InvalidArgument(
-        f"deadline={x!r} (type {type(x).__name__}) must be a timedelta object, "
+        f"deadline={deadline!r} (type {type(deadline).__name__}) must be a timedelta object, "
         "an integer or float number of milliseconds, or None to disable the "
         "per-test-case deadline."
     )
-    if isinstance(x, (int, float)):
-        if isinstance(x, bool):
+    if isinstance(deadline, (int, float)):
+        if isinstance(deadline, bool):
             raise invalid_deadline_error
         try:
-            x = duration(milliseconds=x)
+            deadline = duration(milliseconds=deadline)
         except OverflowError:
             raise InvalidArgument(
-                f"deadline={x!r} is invalid, because it is too large to represent "
+                f"deadline={deadline!r} is invalid, because it is too large to represent "
                 "as a timedelta. Use deadline=None to disable deadlines."
             ) from None
-    if isinstance(x, datetime.timedelta):
-        if x <= datetime.timedelta(0):
+    if isinstance(deadline, datetime.timedelta):
+        if deadline <= datetime.timedelta(0):
             raise InvalidArgument(
-                f"deadline={x!r} is invalid, because it is impossible to meet a "
+                f"deadline={deadline!r} is invalid, because it is impossible to meet a "
                 "deadline <= 0. Use deadline=None to disable deadlines."
             )
-        return duration(seconds=x.total_seconds())
+        return duration(seconds=deadline.total_seconds())
     raise invalid_deadline_error
 
 
@@ -481,16 +583,15 @@ class settings(metaclass=settingsMeta):
     it uses the value specified for each attribute. Any attribute which is
     not specified will inherit from its value in the ``parent`` settings object.
     If ``parent`` is not passed, any attributes which are not specified will inherit
-    from the currently active settings profile instead.
+    from the current settings profile instead.
 
     For instance, ``settings(max_examples=10)`` will have a ``max_examples`` of ``10``,
     and the value of all other attributes will be equal to its value in the
-    currently active settings profile.
+    current settings profile.
 
-    A settings object is immutable once created. Changes made from activating a new
-    settings profile with |settings.load_profile| will be reflected in
-    settings objects created after the profile was made active, but not in existing
-    settings objects.
+    Changes made from activating a new settings profile with |settings.load_profile|
+    will be reflected in settings objects created after the profile was loaded,
+    but not in existing settings objects.
 
     .. _builtin-profiles:
 
@@ -537,7 +638,7 @@ class settings(metaclass=settingsMeta):
             suppress_health_check=[HealthCheck.too_slow],
         )
 
-    You can configure either of the built-in profiles with |settings.register_profile|:
+    You can replace either of the built-in profiles with |settings.register_profile|:
 
     .. code-block:: python
 
@@ -604,7 +705,7 @@ class settings(metaclass=settingsMeta):
         self._verbosity = (
             self._fallback.verbosity  # type: ignore
             if verbosity is not_set  # type: ignore
-            else _validate_choices("verbosity", verbosity, choices=tuple(Verbosity))
+            else _validate_enum_value(Verbosity, verbosity, name="verbosity")
         )
         self._phases = (
             self._fallback.phases  # type: ignore
@@ -759,6 +860,16 @@ class settings(metaclass=settingsMeta):
         not even the final falsifying example. |Verbosity.debug| is basically
         |Verbosity.verbose| but a bit more so. You probably don't want it.
 
+        Verbosity can be passed either as a |Verbosity| enum value, or as the
+        corresponding string value, or as the corresponding integer value. For
+        example:
+
+        .. code-block:: python
+
+            # these three are equivalent
+            settings(verbosity=Verbosity.verbose)
+            settings(verbosity="verbose")
+
         If you are using :pypi:`pytest`, you may also need to :doc:`disable
         output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`
         to see verbose output as tests run.
@@ -780,6 +891,21 @@ class settings(metaclass=settingsMeta):
         - |Phase.shrink|: Shrinking failing examples.
         - |Phase.explain|: Attempting to explain why a failure occurred.
           Requires |Phase.shrink|.
+
+        The phases argument accepts a collection with any subset of these. E.g.
+        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
+        and shrink them, but will not run explicit examples or reuse previous failures,
+        while ``settings(phases=[Phase.explicit])`` will only run explicit examples
+        from |@example|.
+
+        Phases can be passed either as a |Phase| enum value, or as the corresponding
+        string value. For example:
+
+        .. code-block:: python
+
+            # these two are equivalent
+            settings(phases=[Phase.explicit])
+            settings(phases=["explicit"])
 
         Following the first failure, Hypothesis will (usually, depending on
         which |Phase| is enabled) track which lines of code are always run on
@@ -806,16 +932,6 @@ class settings(metaclass=settingsMeta):
         Just remember that the *lack* of an explanation sometimes just means that
         Hypothesis couldn't efficiently find one, not that no explanation (or
         simpler failing example) exists.
-
-
-        The phases setting provides you with fine grained control over which of
-        these run, with each phase corresponding to a value on the |Phase| enum.
-
-        The phases argument accepts a collection with any subset of these. e.g.
-        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
-        and shrink them, but will not run explicit examples or reuse previous failures,
-        while ``settings(phases=[Phase.explicit])`` will only run the explicit
-        examples.
         """
 
         return self._phases
@@ -851,6 +967,15 @@ class settings(metaclass=settingsMeta):
         Suppress the given |HealthCheck| exceptions. Those health checks will not
         be raised by Hypothesis. To suppress all health checks, you can pass
         ``suppress_health_check=list(HealthCheck)``.
+
+        Health checks can be passed either as a |HealthCheck| enum value, or as
+        the corresponding string value. For example:
+
+        .. code-block:: python
+
+            # these two are equivalent
+            settings(suppress_health_check=[HealthCheck.filter_too_much])
+            settings(suppress_health_check=["filter_too_much"])
 
         Health checks are proactive warnings, not correctness errors, so we
         encourage suppressing health checks where you have evaluated they will
@@ -991,6 +1116,20 @@ class settings(metaclass=settingsMeta):
         |settings.get_profile|.
         """
         check_type(str, name, "name")
+
+        if (
+            default_variable.value
+            and settings._current_profile
+            and default_variable.value != settings._profiles[settings._current_profile]
+        ):
+            note_deprecation(
+                "Cannot register a settings profile when the current settings differ "
+                "from the current profile (usually due to an @settings decorator). "
+                "Register profiles at module level instead.",
+                since="2025-11-15",
+                has_codemod=False,
+            )
+
         # if we just pass the parent and no kwargs, like
         #   settings.register_profile(settings(max_examples=10))
         # then optimize out the pointless intermediate settings object which

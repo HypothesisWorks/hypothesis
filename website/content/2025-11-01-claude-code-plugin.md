@@ -1,16 +1,16 @@
 ---
 date: 2025-11-01 00:00
 title: A Claude Code command for Hypothesis
-author: Liam DeVoe, Muhammad Maaz, Zac Hatfield-Dodds, Nicholas Carlini
+authors: liam, maaz, zac-hd, carlini
 ---
 
 <div class="cta-buttons">
   <a href="https://github.com/HypothesisWorks/hypothesis/blob/master/.claude/commands/hypothesis.md" class="cta-button">
-    <img src="/theme/icon-code.svg" alt="" class="cta-icon">
+    <img src="/theme/icon-code.svg" alt="icon-code" class="cta-icon">
     View the command
   </a>
   <a href="https://mmaaz-git.github.io/agentic-pbt-site/" class="cta-button">
-    <img src="/theme/icon-paper.svg" alt="" class="cta-icon">
+    <img src="/theme/icon-paper.svg" alt="icon-paper" class="cta-icon">
     Read the paper
   </a>
 </div>

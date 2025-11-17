@@ -1,7 +1,7 @@
 ---
 date: 2025-08-07 00:00
 title: Hypothesis is now thread-safe
-author: Liam DeVoe
+author: liam
 ---
 
 *TL;DR: as of [version 6.136.9](https://hypothesis.readthedocs.io/en/latest/changelog.html#v6-136-9), Hypothesis supports running the same test simultaneously from multiple threads.*

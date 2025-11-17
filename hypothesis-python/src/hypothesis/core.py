@@ -769,7 +769,7 @@ def skip_exceptions_to_reraise():
     like another to be added please open an issue or pull request adding
     it to this function and to tests/cover/test_lazy_import.py
     """
-    # This is a set because nose may simply re-export unittest.SkipTest
+    # This is a set in case any library simply re-exports another's Skip exception
     exceptions = set()
     # We use this sys.modules trick to avoid importing libraries -
     # you can't be an instance of a type from an unimported module!
@@ -777,10 +777,6 @@ def skip_exceptions_to_reraise():
     # and more importantly it avoids possible side-effects :-)
     if "unittest" in sys.modules:
         exceptions.add(sys.modules["unittest"].SkipTest)
-    if "unittest2" in sys.modules:
-        exceptions.add(sys.modules["unittest2"].SkipTest)
-    if "nose" in sys.modules:
-        exceptions.add(sys.modules["nose"].SkipTest)
     if "_pytest.outcomes" in sys.modules:
         exceptions.add(sys.modules["_pytest.outcomes"].Skipped)
     return tuple(sorted(exceptions, key=str))
