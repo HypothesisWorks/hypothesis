@@ -6,7 +6,7 @@ Sometimes you might want to point a traditional fuzzer like `python-afl <https:/
 .. note::
 
     If you already have Hypothesis tests and want to fuzz them, or are targeting pure Python code, we strongly recommend the purpose-built `HypoFuzz <https://hypofuzz.com/>`_.
-    This page is about writing traditional 'fuzz harnesses' for native code with an external fuzzer, using parts of Hypothesis.
+    This page is about writing traditional 'fuzz harnesses' with an external fuzzer, using parts of Hypothesis.
 
 In order to support this workflow, Hypothesis exposes the |fuzz_one_input| method. |fuzz_one_input| takes a bytestring, parses it into a test case, and executes the corresponding test once. This means you can treat each of your Hypothesis tests as a traditional fuzz target, by pointing the fuzzer at |fuzz_one_input|.
 
