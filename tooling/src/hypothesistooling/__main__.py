@@ -577,6 +577,19 @@ def live_website():
     )
 
 
+@task()
+def live_docs():
+    pip_tool(
+        "sphinx-autobuild",
+        "docs",
+        "docs/_build/html",
+        "--watch",
+        "src",
+        "--open-browser",
+        cwd=hp.HYPOTHESIS_PYTHON,
+    )
+
+
 def run_tox(task, version, *args):
     python = install.python_executable(version)
 

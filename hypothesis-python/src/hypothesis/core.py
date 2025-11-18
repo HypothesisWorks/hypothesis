@@ -1642,10 +1642,84 @@ class HypothesisHandle:
     def fuzz_one_input(
         self,
     ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
-        """Run the test as a fuzz target, driven with the `buffer` of bytes.
+        """
+        Run the test as a fuzz target, driven with the ``buffer`` of bytes.
 
-        Returns None if buffer invalid for the strategy, canonical pruned
-        bytes if the buffer was valid, and leaves raised exceptions alone.
+        Depending on the passed ``buffer`` one of three things will happen:
+
+        * If the bytestring was invalid, for example because it was too short or was
+          filtered out by |assume| or |.filter|, |fuzz_one_input| returns ``None``.
+        * If the bytestring was valid and the test passed, |fuzz_one_input| returns
+          a canonicalised and pruned bytestring which will replay that test case.
+          This is provided as an option to improve the performance of mutating
+          fuzzers, but can safely be ignored.
+        * If the test *failed*, i.e. raised an exception, |fuzz_one_input| will
+          add the pruned buffer to :ref:`the Hypothesis example database <database>`
+          and then re-raise that exception.  All you need to do to reproduce,
+          minimize, and de-duplicate all the failures found via fuzzing is run
+          your test suite!
+
+        To reduce the performance impact of database writes, |fuzz_one_input| only
+        records failing inputs which would be valid shrinks for a known failure -
+        meaning writes are somewhere between constant and log(N) rather than linear
+        in runtime.  However, this tracking only works within a persistent fuzzing
+        process; for forkserver fuzzers we recommend ``database=None`` for the main
+        run, and then replaying with a database enabled if you need to analyse
+        failures.
+
+        Note that the interpretation of both input and output bytestrings is
+        specific to the exact version of Hypothesis you are using and the strategies
+        given to the test, just like the :ref:`database <database>` and
+        |@reproduce_failure|.
+
+        Interaction with |@settings|
+        ----------------------------
+
+        |fuzz_one_input| uses just enough of Hypothesis' internals to drive your
+        test function with a bytestring, and most settings therefore have no effect
+        in this mode.  We recommend running your tests the usual way before fuzzing
+        to get the benefits of health checks, as well as afterwards to replay,
+        shrink, deduplicate, and report whatever errors were discovered.
+
+        * |settings.database| *is* used by |fuzz_one_input| - adding failures to
+          the database to be replayed when
+          you next run your tests is our preferred reporting mechanism and response
+          to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
+        * |settings.verbosity| and |settings.stateful_step_count| work as usual.
+        * The |~settings.deadline|, |~settings.derandomize|, |~settings.max_examples|,
+          |~settings.phases|, |~settings.print_blob|, |~settings.report_multiple_bugs|,
+          and |~settings.suppress_health_check| settings do not affect |fuzz_one_input|.
+
+        Example Usage
+        -------------
+
+        .. code-block:: python
+
+            @given(st.text())
+            def test_foo(s): ...
+
+            # This is a traditional fuzz target - call it with a bytestring,
+            # or a binary IO object, and it runs the test once.
+            fuzz_target = test_foo.hypothesis.fuzz_one_input
+
+            # For example:
+            fuzz_target(b"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00")
+            fuzz_target(io.BytesIO(b"\\x01"))
+
+        .. tip::
+
+            If you expect to discover many failures while using |fuzz_one_input|,
+            consider wrapping your database with |BackgroundWriteDatabase|, for
+            low-overhead writes of failures.
+
+        .. tip::
+
+            | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
+            | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs with the same tests!
+
+        .. seealso::
+
+            See also the :doc:`/how-to/external-fuzzers` how-to.
         """
         # Note: most users, if they care about fuzzer performance, will access the
         # property and assign it to a local variable to move the attribute lookup

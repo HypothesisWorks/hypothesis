@@ -9,7 +9,9 @@ accessible-pygments==0.0.5
 alabaster==1.0.0
     # via sphinx
 anyio==4.11.0
-    # via watchfiles
+    # via
+    #   starlette
+    #   watchfiles
 asgiref==3.10.0
     # via django
 asttokens==3.0.1
@@ -48,10 +50,13 @@ click==8.3.1
     # via
     #   black
     #   pip-tools
+    #   uvicorn
 codespell==2.4.1
     # via -r requirements/tools.in
 colorama==0.4.6
-    # via tox
+    # via
+    #   sphinx-autobuild
+    #   tox
 com2ann==0.3.0
     # via shed
 coverage==7.11.3
@@ -94,6 +99,8 @@ filelock==3.20.0
     #   virtualenv
 furo==2025.9.25
     # via -r requirements/tools.in
+h11==0.16.0
+    # via uvicorn
 id==1.5.0
     # via twine
 idna==3.11
@@ -286,8 +293,11 @@ sphinx==8.1.3
     # via
     #   -r requirements/tools.in
     #   furo
+    #   sphinx-autobuild
     #   sphinx-basic-ng
     #   sphinx-codeautolink
+sphinx-autobuild==2024.10.3
+    # via -r requirements/tools.in
 sphinx-basic-ng==1.0.0b2
     # via furo
 sphinx-codeautolink==0.17.5
@@ -312,6 +322,8 @@ sqlparse==0.5.3
     # via django
 stack-data==0.6.3
     # via ipython
+starlette==0.50.0
+    # via sphinx-autobuild
 tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.3.0
@@ -358,7 +370,9 @@ typing-extensions==4.15.0
     #   mypy
     #   pyright
     #   sortedcontainers-stubs
+    #   starlette
     #   tox
+    #   uvicorn
     #   virtualenv
 unidecode==1.4.0
     # via pelican
@@ -366,14 +380,20 @@ urllib3==2.5.0
     # via
     #   requests
     #   twine
+uvicorn==0.38.0
+    # via sphinx-autobuild
 virtualenv==20.35.4
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
 watchfiles==1.1.1
-    # via pelican
+    # via
+    #   pelican
+    #   sphinx-autobuild
 wcwidth==0.2.14
     # via prompt-toolkit
+websockets==15.0.1
+    # via sphinx-autobuild
 wheel==0.45.1
     # via pip-tools
 zipp==3.23.0
