@@ -25,7 +25,7 @@
                 {% for author in article.authors %}
                   {% set author_name = AUTHOR_NAMES.get(author|string|trim, author|string|trim) %}
                   {% set author_url = AUTHOR_URLS.get(author|string|trim) %}
-                  {% if author_url %}<a href="{{ author_url }}">{{ author_name }}</a>{% else %}{{ author_name }}{% endif %}{% if not loop.last %}{% if loop.revindex == 2 %}, and {% else %}, {% endif %}{% endif %}
+                  {% if author_url %}<a href="{{ author_url }}">{{ author_name }}</a>{% else %}{{ author_name }}{% endif %}{% if not loop.last %}{% if loop.revindex == 2 %}{% if loop.length > 2 %}, and {% else %} and {% endif %}{% else %}, {% endif %}{% endif %}
                 {% endfor %}
               {% else %}
                 {% set author_name = AUTHOR_NAMES.get(article.author, article.author) %}
@@ -43,10 +43,8 @@
       </div>
     </div>
 
-    <div class="article__content">
-      <div class="article-content">
-        {{ article.content }}
-      </div>
+    <div class="article-content">
+      {{ article.content }}
     </div>
   </div>
 

@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from os.path import basename
-
 SITENAME = AUTHOR = "Hypothesis"
 SITESUBTITLE = "The property-based testing library for Python"
 # SITEURL = "https://hypothesis.works"
@@ -40,12 +38,16 @@ FILENAME_METADATA = r"(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>.+)"
 
 THEME = "./theme/"
 STATIC_PATHS = [
+    "images",
     "../../brand/favicon.ico",
     "../../brand/dragonfly-rainbow.svg",
     "../archive-redirect.html",
 ]
-EXTRA_PATH_METADATA = {k: {"path": basename(k)} for k in STATIC_PATHS}
-EXTRA_PATH_METADATA["../archive-redirect.html"] = {"path": "archives.html"}
+EXTRA_PATH_METADATA = {
+    "../../brand/favicon.ico": {"path": "favicon.ico"},
+    "../../brand/dragonfly-rainbow.svg": {"path": "dragonfly-rainbow.svg"},
+    "../archive-redirect.html": {"path": "archives.html"},
+}
 PROFILE_IMAGE_URL = "/dragonfly-rainbow.svg"
 
 MENUITEMS = (
