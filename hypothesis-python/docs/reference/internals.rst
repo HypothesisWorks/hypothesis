@@ -30,14 +30,7 @@ Alternative backends
 Observability
 -------------
 
-.. autofunction:: hypothesis.internal.observability.add_observability_callback
-.. autofunction:: hypothesis.internal.observability.remove_observability_callback
-.. autofunction:: hypothesis.internal.observability.with_observability_callback
 .. autofunction:: hypothesis.internal.observability.observability_enabled
-
-.. autodata:: hypothesis.internal.observability.TESTCASE_CALLBACKS
-.. autodata:: hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
-.. autodata:: hypothesis.internal.observability.OBSERVABILITY_CHOICES
 
 Engine constants
 ----------------
