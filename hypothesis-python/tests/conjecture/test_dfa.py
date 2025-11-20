@@ -179,7 +179,7 @@ def test_dfa_with_cached_dead():
     assert dfa.is_dead(0)
 
 
-@pytest.mark.parametrize("order", itertools.permutations((0, 1, 2)))
+@pytest.mark.parametrize("order", list(itertools.permutations((0, 1, 2))))
 def test_dead_nodes(order):
     dfa = ConcreteDFA([{0: 1, 1: 2}, {}, {}], {2})
     for i in order:
