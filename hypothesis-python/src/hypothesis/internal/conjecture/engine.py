@@ -14,13 +14,13 @@ import math
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
-from random import Random, getrandbits
-from typing import Callable, Final, Literal, NoReturn, Optional, Union, cast
+from random import Random
+from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
@@ -71,11 +71,15 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report
 
+# In most cases, the following constants are all Final. However, we do allow users
+# to monkeypatch all of these variables, which means we cannot annotate them as
+# Final or mypyc will inline them and render monkeypatching useless.
+
 #: The maximum number of times the shrinker will reduce the complexity of a failing
 #: input before giving up. This avoids falling down a trap of exponential (or worse)
 #: complexity, where the shrinker appears to be making progress but will take a
 #: substantially long time to finish completely.
-MAX_SHRINKS: Final[int] = 500
+MAX_SHRINKS: int = 500
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
@@ -87,7 +91,7 @@ MAX_SHRINKS: Final[int] = 500
 #: for before giving up. This is across all shrinks for the same failure, so even
 #: if the shrinker successfully reduces the complexity of a single failure several
 #: times, it will stop when it hits |MAX_SHRINKING_SECONDS| of total time taken.
-MAX_SHRINKING_SECONDS: Final[int] = 300
+MAX_SHRINKING_SECONDS: int = 300
 
 #: The maximum amount of entropy a single test case can use before giving up
 #: while making random choices during input generation.
@@ -95,16 +99,21 @@ MAX_SHRINKING_SECONDS: Final[int] = 300
 #: The "unit" of one |BUFFER_SIZE| does not have any defined semantics, and you
 #: should not rely on it, except that a linear increase |BUFFER_SIZE| will linearly
 #: increase the amount of entropy a test case can use during generation.
-BUFFER_SIZE: Final[int] = 8 * 1024
-CACHE_SIZE: Final[int] = 10000
-MIN_TEST_CALLS: Final[int] = 10
+BUFFER_SIZE: int = 8 * 1024
+CACHE_SIZE: int = 10000
+MIN_TEST_CALLS: int = 10
+
+# we use this to isolate Hypothesis from interacting with the global random,
+# to make it easier to reason about our global random warning logic easier (see
+# deprecate_random_in_strategy).
+_random = Random()
 
 
 def shortlex(s):
     return (len(s), s)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class HealthCheckState:
     valid_examples: int = field(default=0)
     invalid_examples: int = field(default=0)
@@ -165,9 +174,12 @@ class RunIsComplete(Exception):
     pass
 
 
-def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
-    mname, cname = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
-    provider_cls = getattr(importlib.import_module(mname), cname)
+def _get_provider(backend: str) -> PrimitiveProvider | type[PrimitiveProvider]:
+    provider_cls = AVAILABLE_PROVIDERS[backend]
+    if isinstance(provider_cls, str):
+        module_name, class_name = provider_cls.rsplit(".", 1)
+        provider_cls = getattr(importlib.import_module(module_name), class_name)
+
     if provider_cls.lifetime == "test_function":
         return provider_cls(None)
     elif provider_cls.lifetime == "test_case":
@@ -209,7 +221,7 @@ StatisticsDict = TypedDict(
 )
 
 
-def choice_count(choices: Sequence[Union[ChoiceT, ChoiceTemplate]]) -> Optional[int]:
+def choice_count(choices: Sequence[ChoiceT | ChoiceTemplate]) -> int | None:
     count = 0
     for choice in choices:
         if isinstance(choice, ChoiceTemplate):
@@ -275,23 +287,23 @@ class ConjectureRunner:
         self,
         test_function: Callable[[ConjectureData], None],
         *,
-        settings: Optional[Settings] = None,
-        random: Optional[Random] = None,
-        database_key: Optional[bytes] = None,
+        settings: Settings | None = None,
+        random: Random | None = None,
+        database_key: bytes | None = None,
         ignore_limits: bool = False,
-        thread_overlap: Optional[dict[int, bool]] = None,
+        thread_overlap: dict[int, bool] | None = None,
     ) -> None:
         self._test_function: Callable[[ConjectureData], None] = test_function
         self.settings: Settings = settings or Settings()
         self.shrinks: int = 0
-        self.finish_shrinking_deadline: Optional[float] = None
+        self.finish_shrinking_deadline: float | None = None
         self.call_count: int = 0
         self.misaligned_count: int = 0
         self.valid_examples: int = 0
         self.invalid_examples: int = 0
         self.overrun_examples: int = 0
-        self.random: Random = random or Random(getrandbits(128))
-        self.database_key: Optional[bytes] = database_key
+        self.random: Random = random or Random(_random.getrandbits(128))
+        self.database_key: bytes | None = database_key
         self.ignore_limits: bool = ignore_limits
         self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
@@ -303,17 +315,14 @@ class ConjectureRunner:
 
         self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
-        self.first_bug_found_at: Optional[int] = None
-        self.last_bug_found_at: Optional[int] = None
+        self.first_bug_found_at: int | None = None
+        self.last_bug_found_at: int | None = None
+        self.first_bug_found_time: float = math.inf
 
-        # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.shrunk_examples: set[Optional[InterestingOrigin]] = set()
-
-        self.health_check_state: Optional[HealthCheckState] = None
-
+        self.shrunk_examples: set[InterestingOrigin] = set()
+        self.health_check_state: HealthCheckState | None = None
         self.tree: DataTree = DataTree()
-
-        self.provider: Union[type, PrimitiveProvider] = _get_provider(
+        self.provider: PrimitiveProvider | type[PrimitiveProvider] = _get_provider(
             self.settings.backend
         )
 
@@ -326,7 +335,7 @@ class ConjectureRunner:
         # is only marginally useful at present, but speeds up local development
         # because it means that large targets will be quickly surfaced in your
         # testing.
-        self.pareto_front: Optional[ParetoFront] = None
+        self.pareto_front: ParetoFront | None = None
         if self.database_key is not None and self.settings.database is not None:
             self.pareto_front = ParetoFront(self.random)
             self.pareto_front.on_evict(self.on_pareto_evict)
@@ -336,19 +345,19 @@ class ConjectureRunner:
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache[
-            tuple[ChoiceKeyT, ...], Union[ConjectureResult, _Overrun]
+            tuple[ChoiceKeyT, ...], ConjectureResult | _Overrun
         ](CACHE_SIZE)
 
         self.reused_previously_shrunk_test_case: bool = False
 
-        self.__pending_call_explanation: Optional[str] = None
+        self.__pending_call_explanation: str | None = None
         self._backend_found_failure: bool = False
         self._backend_exceeded_deadline: bool = False
         self._switch_to_hypothesis_provider: bool = False
 
         self.__failed_realize_count: int = 0
         # note unsound verification by alt backends
-        self._verified_by: Optional[str] = None
+        self._verified_by: str | None = None
 
     @contextmanager
     def _with_switch_to_hypothesis_provider(
@@ -383,8 +392,6 @@ class ConjectureRunner:
             self._current_phase = phase
             yield
         finally:
-            # We ignore the mypy type error here. Because `phase` is a string literal and "-phase" is a string literal
-            # as well, the concatenation will always be valid key in the dictionary.
             self.statistics[phase + "-phase"] = {  # type: ignore
                 "duration-seconds": time.perf_counter() - start_time,
                 "test-cases": list(self.stats_per_test_case),
@@ -432,11 +439,11 @@ class ConjectureRunner:
 
     def cached_test_function(
         self,
-        choices: Sequence[Union[ChoiceT, ChoiceTemplate]],
+        choices: Sequence[ChoiceT | ChoiceTemplate],
         *,
         error_on_discard: bool = False,
-        extend: Union[int, Literal["full"]] = 0,
-    ) -> Union[ConjectureResult, _Overrun]:
+        extend: int | Literal["full"] = 0,
+    ) -> ConjectureResult | _Overrun:
         """
         If ``error_on_discard`` is set to True this will raise ``ContainsDiscard``
         in preference to running the actual test function. This is to allow us
@@ -472,7 +479,7 @@ class ConjectureRunner:
         # The reason is we don't expect simulate_test_function to explore new choices
         # and write back to the tree, so we don't want the overhead of the
         # TreeRecordingObserver tracking those calls.
-        trial_observer: Optional[DataObserver] = DataObserver()
+        trial_observer: DataObserver | None = DataObserver()
         if error_on_discard:
             trial_observer = DiscardObserver()
 
@@ -656,6 +663,7 @@ class ConjectureRunner:
                 self.last_bug_found_at = self.call_count
                 if self.first_bug_found_at is None:
                     self.first_bug_found_at = self.call_count
+                    self.first_bug_found_time = time.monotonic()
             else:
                 if sort_key(data.nodes) < sort_key(existing.nodes):
                     self.shrinks += 1
@@ -852,7 +860,7 @@ class ConjectureRunner:
             )
 
     def save_choices(
-        self, choices: Sequence[ChoiceT], sub_key: Optional[bytes] = None
+        self, choices: Sequence[ChoiceT], sub_key: bytes | None = None
     ) -> None:
         if self.settings.database is not None:
             key = self.sub_key(sub_key)
@@ -865,7 +873,7 @@ class ConjectureRunner:
         if self.settings.database is not None and self.database_key is not None:
             self.settings.database.move(self.database_key, self.secondary_key, buffer)
 
-    def sub_key(self, sub_key: Optional[bytes]) -> Optional[bytes]:
+    def sub_key(self, sub_key: bytes | None) -> bytes | None:
         if self.database_key is None:
             return None
         if sub_key is None:
@@ -873,11 +881,11 @@ class ConjectureRunner:
         return b".".join((self.database_key, sub_key))
 
     @property
-    def secondary_key(self) -> Optional[bytes]:
+    def secondary_key(self) -> bytes | None:
         return self.sub_key(b"secondary")
 
     @property
-    def pareto_key(self) -> Optional[bytes]:
+    def pareto_key(self) -> bytes | None:
         return self.sub_key(b"pareto")
 
     def debug(self, message: str) -> None:
@@ -888,7 +896,7 @@ class ConjectureRunner:
     def report_debug_info(self) -> bool:
         return self.settings.verbosity >= Verbosity.debug
 
-    def debug_data(self, data: Union[ConjectureData, ConjectureResult]) -> None:
+    def debug_data(self, data: ConjectureData | ConjectureResult) -> None:
         if not self.report_debug_info:
             return
 
@@ -922,24 +930,20 @@ class ConjectureRunner:
         return nullcontext()
 
     def run(self) -> None:
-        with local_settings(self.settings):
-            # NOTE: For compatibility with Python 3.9's LL(1)
-            # parser, this is written as a nested with-statement,
-            # instead of a compound one.
-            with self.observe_for_provider():
-                try:
-                    self._run()
-                except RunIsComplete:
-                    pass
-                for v in self.interesting_examples.values():
-                    self.debug_data(v)
-                self.debug(
-                    "Run complete after %d examples (%d valid) and %d shrinks"
-                    % (self.call_count, self.valid_examples, self.shrinks)
-                )
+        with local_settings(self.settings), self.observe_for_provider():
+            try:
+                self._run()
+            except RunIsComplete:
+                pass
+            for v in self.interesting_examples.values():
+                self.debug_data(v)
+            self.debug(
+                f"Run complete after {self.call_count} examples "
+                f"({self.valid_examples} valid) and {self.shrinks} shrinks"
+            )
 
     @property
-    def database(self) -> Optional[ExampleDatabase]:
+    def database(self) -> ExampleDatabase | None:
         if self.database_key is None:
             return None
         return self.settings.database
@@ -1073,9 +1077,11 @@ class ConjectureRunner:
             return True
         # Users who disable shrinking probably want to exit as fast as possible.
         # If we've found a bug and won't report more than one, stop looking.
+        # If we first saw a bug more than 10 seconds ago, stop looking.
         elif (
             Phase.shrink not in self.settings.phases
             or not self.settings.report_multiple_bugs
+            or time.monotonic() - self.first_bug_found_time > 10
         ):
             return False
         assert isinstance(self.first_bug_found_at, int)
@@ -1281,9 +1287,7 @@ class ConjectureRunner:
                 self._current_phase = "target"
                 self.optimise_targets()
 
-    def generate_mutations_from(
-        self, data: Union[ConjectureData, ConjectureResult]
-    ) -> None:
+    def generate_mutations_from(self, data: ConjectureData | ConjectureResult) -> None:
         # A thing that is often useful but rarely happens by accident is
         # to generate the same value at multiple different points in the
         # test case.
@@ -1513,10 +1517,10 @@ class ConjectureRunner:
 
     def new_conjecture_data(
         self,
-        prefix: Sequence[Union[ChoiceT, ChoiceTemplate]],
+        prefix: Sequence[ChoiceT | ChoiceTemplate],
         *,
-        observer: Optional[DataObserver] = None,
-        max_choices: Optional[int] = None,
+        observer: DataObserver | None = None,
+        max_choices: int | None = None,
     ) -> ConjectureData:
         provider = (
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
@@ -1574,7 +1578,7 @@ class ConjectureRunner:
                 self.shrink(example, lambda d: d.status == Status.INTERESTING)
                 return
 
-            def predicate(d: Union[ConjectureResult, _Overrun]) -> bool:
+            def predicate(d: ConjectureResult | _Overrun) -> bool:
                 if d.status < Status.INTERESTING:
                     return False
                 d = cast(ConjectureResult, d)
@@ -1616,23 +1620,23 @@ class ConjectureRunner:
 
     def shrink(
         self,
-        example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[ShrinkPredicateT] = None,
-        allow_transition: Optional[
-            Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
-        ] = None,
-    ) -> Union[ConjectureData, ConjectureResult]:
+        example: ConjectureData | ConjectureResult,
+        predicate: ShrinkPredicateT | None = None,
+        allow_transition: (
+            Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
+        ) = None,
+    ) -> ConjectureData | ConjectureResult:
         s = self.new_shrinker(example, predicate, allow_transition)
         s.shrink()
         return s.shrink_target
 
     def new_shrinker(
         self,
-        example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[ShrinkPredicateT] = None,
-        allow_transition: Optional[
-            Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
-        ] = None,
+        example: ConjectureData | ConjectureResult,
+        predicate: ShrinkPredicateT | None = None,
+        allow_transition: (
+            Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
+        ) = None,
     ) -> Shrinker:
         return Shrinker(
             self,

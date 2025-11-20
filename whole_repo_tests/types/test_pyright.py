@@ -23,7 +23,12 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
+from .revealed_types import (
+    DIFF_REVEALED_TYPES,
+    NUMPY_REVEALED_TYPES,
+    PYTHON_VERSIONS,
+    REVEALED_TYPES,
+)
 
 
 @pytest.mark.skip(
@@ -176,27 +181,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
 
 @pytest.mark.parametrize(
     "val,expect",
-    [
-        *REVEALED_TYPES,  # shared with Mypy
-        ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
-        ("data()", "DataObject"),
-        ("none() | integers()", "int | None"),
-        ("recursive(integers(), lists)", "list[Any] | int"),
-        # We have overloads for up to five types, then fall back to Any.
-        # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
-        ("one_of(integers(), text())", "int | str"),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list))",
-            "int | str | bytes | list[Unknown] | None",
-        ),
-        (
-            "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
-            "Any",
-        ),
-        ("one_of([integers(), none()])", "int | None"),
-        ("one_of(integers(), none())", "int | None"),
-        # Note: keep this in sync with the equivalent test for Mypy
-    ],
+    [*REVEALED_TYPES, *((x.value, x.pyright) for x in DIFF_REVEALED_TYPES)],
 )
 def test_revealed_types(tmp_path, val, expect):
     """Check that Pyright picks up the expected `X` in SearchStrategy[`X`]."""

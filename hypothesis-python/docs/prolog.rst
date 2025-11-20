@@ -39,6 +39,11 @@
 .. |~settings.stateful_step_count| replace:: :obj:`~hypothesis.settings.stateful_step_count`
 .. |~settings.backend| replace:: :obj:`~hypothesis.settings.backend`
 
+.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
+.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
+.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
+.. |settings.get_current_profile_name| replace:: :func:`~hypothesis.settings.get_current_profile_name`
+
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
 .. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
@@ -60,11 +65,17 @@
 .. |Verbosity.normal| replace:: :obj:`Verbosity.normal <hypothesis.Verbosity.normal>`
 .. |Verbosity.quiet| replace:: :obj:`Verbosity.quiet <hypothesis.Verbosity.quiet>`
 
+.. |HypothesisException| replace:: :obj:`HypothesisException <hypothesis.errors.HypothesisException>`
+.. |HypothesisDeprecationWarning| replace:: :obj:`HypothesisDeprecationWarning <hypothesis.errors.HypothesisDeprecationWarning>`
+.. |Flaky| replace:: :obj:`Flaky <hypothesis.errors.Flaky>`
+.. |FlakyStrategyDefinition| replace:: :obj:`FlakyStrategyDefinition <hypothesis.errors.FlakyStrategyDefinition>`
+.. |FlakyFailure| replace:: :obj:`FlakyFailure <hypothesis.errors.FlakyFailure>`
+.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
 .. |InvalidArgument| replace:: :obj:`InvalidArgument <hypothesis.errors.InvalidArgument>`
 .. |DidNotReproduce| replace:: :obj:`DidNotReproduce <hypothesis.errors.DidNotReproduce>`
 .. |DeadlineExceeded| replace:: :obj:`DeadlineExceeded <hypothesis.errors.DeadlineExceeded>`
 .. |BackendCannotProceed| replace:: :obj:`~hypothesis.errors.BackendCannotProceed`
-.. |FlakyBackendFailure| replace:: :obj:`~hypothesis.errors.FlakyBackendFailure`
+
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
@@ -94,14 +105,11 @@
 .. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
 .. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 .. |register_random| replace:: :func:`~hypothesis.register_random`
+.. |st.register_random| replace:: :func:`~hypothesis.register_random`
 
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
 .. |django.from_field| replace:: :func:`~hypothesis.extra.django.from_field`
-
-.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
-.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
-.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
@@ -129,8 +137,10 @@
 .. |PrimitiveProvider.add_observability_callback| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.add_observability_callback`
 .. |PrimitiveProvider.span_start| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_start`
 .. |PrimitiveProvider.span_end| replace:: :func:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.span_end`
+.. |PrimitiveProvider.avoid_realization| replace:: :data:`~hypothesis.internal.conjecture.providers.PrimitiveProvider.avoid_realization`
 
 .. |AVAILABLE_PROVIDERS| replace:: :data:`~hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`
+.. |run_conformance_test| replace:: :func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`
 
 .. |add_observability_callback| replace:: :data:`~hypothesis.internal.observability.add_observability_callback`
 .. |remove_observability_callback| replace:: :data:`~hypothesis.internal.observability.remove_observability_callback`
@@ -175,6 +185,10 @@
 .. |is_hypothesis_test| replace:: :func:`~hypothesis.is_hypothesis_test`
 .. |currently_in_test_context| replace:: :func:`~hypothesis.currently_in_test_context`
 
+.. |hypothesis-numpy| replace:: :ref:`NumPy <hypothesis-numpy>`
+.. |hypothesis-pandas| replace:: :ref:`pandas <hypothesis-pandas>`
+.. |hypothesis-django| replace:: :ref:`Django <hypothesis-django>`
+
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
 .. |bool| replace:: :obj:`python:bool`
@@ -187,3 +201,12 @@
 .. |random.Random| replace:: :class:`python:random.Random`
 .. |ellipsis| replace:: :obj:`python:Ellipsis`
 .. |Ellipsis| replace:: :obj:`python:Ellipsis`
+
+.. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
+.. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
+.. |NewType| replace:: :class:`python:typing.NewType`
+
+.. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
+.. |alternative backends| replace:: :ref:`alternative backends <alternative-backends>`
+
+.. |pytest.mark.parametrize| replace:: :ref:`pytest.mark.parametrize <pytest:pytest.mark.parametrize ref>`

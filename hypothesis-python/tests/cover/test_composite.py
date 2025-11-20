@@ -195,7 +195,6 @@ def test_drawfn_cannot_be_instantiated():
         st.DrawFn()
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="stack depth varies???")
 def test_warns_on_strategy_annotation():
     # TODO: print the stack on Python 3.10 and 3.11 to determine the appropriate
     #       stack depth to use.  Consider adding a debug-print if IN_COVERAGE_TESTS
@@ -225,5 +224,5 @@ def test_composite_allows_overload_without_draw():
     def overloaded(draw: st.DrawFn, *, x: str) -> typing.Literal[False]: ...
 
     @st.composite
-    def overloaded(draw: st.DrawFn, *, x: typing.Union[int, str]) -> bool:
+    def overloaded(draw: st.DrawFn, *, x: int | str) -> bool:
         return draw(st.just(isinstance(x, int)))

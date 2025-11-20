@@ -108,7 +108,7 @@ than one element) and then successfully reduced it to the simplest possible exam
 Importantly, when the test is rerun, Hypothesis will start from the falsifying example it found last time rather than
 trying to generate and shrink a new one from scratch. In this particular case that doesn't matter very much - the
 example is found very quickly and it always finds the same one - but for more complex and slower tests this is an
-vital part of the development work flow: It means that tests run much faster and don't stop failing until
+vital part of the development workflow: It means that tests run much faster and don't stop failing until
 the bug is actually fixed.
 
 Tests can also draw more data as they execute:

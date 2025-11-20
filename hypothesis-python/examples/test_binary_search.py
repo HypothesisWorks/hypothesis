@@ -18,6 +18,8 @@ It also demonstrates the useful testing technique of testing how the answer
 should change (or not) in response to movements in the underlying data.
 """
 
+import itertools
+
 from hypothesis import given, strategies as st
 
 
@@ -70,7 +72,7 @@ def binary_search(ls, v):
 
 def is_sorted(ls):
     """Is this list sorted?"""
-    return all(x <= y for x, y in zip(ls, ls[1:]))
+    return all(x <= y for x, y in itertools.pairwise(ls))
 
 
 Values = st.integers()

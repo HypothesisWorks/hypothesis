@@ -18,12 +18,12 @@ execution to date.
 import collections
 import dataclasses
 import inspect
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
+from typing import Any, ClassVar, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
@@ -112,9 +112,9 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
 
     @settings
     @given(st.data())
-    def run_state_machine(factory, data):
+    def run_state_machine(data):
         cd = data.conjecture_data
-        machine: RuleBasedStateMachine = factory()
+        machine: RuleBasedStateMachine = state_machine_factory()
         check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         cd.hypothesis_runner = machine
         machine._observability_predicates = cd._observability_predicates  # alias
@@ -254,7 +254,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
     state_machine_test = get_state_machine_test(
         state_machine_factory, settings=settings, _min_steps=_min_steps
     )
-    state_machine_test(state_machine_factory)
+    state_machine_test()
 
 
 class StateMachineMeta(type):
@@ -269,7 +269,7 @@ class StateMachineMeta(type):
         return super().__setattr__(name, value)
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class _SetupState:
     rules: list["Rule"]
     invariants: list["Invariant"]
@@ -492,18 +492,18 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Rule:
     targets: Any
     function: Any
     arguments: Any
     preconditions: Any
     bundles: tuple["Bundle", ...] = field(init=False)
-    _cached_hash: Optional[int] = field(init=False, default=None)
-    _cached_repr: Optional[str] = field(init=False, default=None)
+    _cached_hash: int | None = field(init=False, default=None)
+    _cached_repr: str | None = field(init=False, default=None)
+    arguments_strategies: dict[Any, Any] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
             assert not isinstance(v, BundleReferenceStrategy)
@@ -610,12 +610,12 @@ class Bundle(SearchStrategy[Ex]):
         # We assume that a bundle will grow over time
         return False
 
-    def _available(self, data):
+    def is_currently_empty(self, data):
         # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
         # Hence drawing from it only returns the current state machine without
-        # modifying the underlying buffer.
+        # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
-        return bool(machine.bundle(self.name))
+        return not bool(machine.bundle(self.name))
 
     def flatmap(self, expand):
         if self.draw_references:
@@ -658,7 +658,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     return BundleConsumer(bundle)
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class MultipleResults(Iterable[Ex]):
     values: tuple[Ex, ...]
 
@@ -719,7 +719,7 @@ PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-_RuleType = Callable[..., Union[MultipleResults[Ex], Ex]]
+_RuleType = Callable[..., MultipleResults[Ex] | Ex]
 _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 
 
@@ -787,10 +787,10 @@ def rule(
 
 def rule(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine. Any Bundle present in ``target`` or
     ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -882,10 +882,10 @@ def initialize(
 
 def initialize(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
@@ -941,7 +941,7 @@ def initialize(
     return accept
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class VarReference:
     name: str
 
@@ -1010,7 +1010,7 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
     return decorator
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Invariant:
     function: Any
     preconditions: Any

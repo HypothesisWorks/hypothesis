@@ -20,7 +20,7 @@ from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 from tests.common.utils import assert_falsifying_output, fails_with
 
 pytestmark = pytest.mark.skipif(
-    settings._current_profile == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="takes a long time because we don't monkeypatch time",
 )
 
@@ -36,7 +36,7 @@ def test_raises_deadline_on_slow_test():
 
 
 @pytest.mark.skipif(
-    settings.get_profile(settings._current_profile).deadline is None,
+    settings().deadline is None,
     reason="not expected to fail if deadline is disabled",
 )
 @fails_with(DeadlineExceeded)

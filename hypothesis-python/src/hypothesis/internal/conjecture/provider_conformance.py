@@ -11,7 +11,7 @@
 import math
 import sys
 from collections.abc import Collection, Iterable, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis import (
     HealthCheck,
@@ -29,7 +29,9 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.providers import (
     COLLECTION_DEFAULT_MAX_SIZE,
+    HypothesisProvider,
     PrimitiveProvider,
+    with_register_backend,
 )
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
 from hypothesis.internal.intervalsets import IntervalSet
@@ -72,7 +74,7 @@ def intervals(
 
 @st.composite
 def integer_weights(
-    draw: DrawFn, min_value: Optional[int] = None, max_value: Optional[int] = None
+    draw: DrawFn, min_value: int | None = None, max_value: int | None = None
 ) -> dict[int, float]:
     # Sampler doesn't play well with super small floats, so exclude them
     weights = draw(
@@ -165,9 +167,9 @@ def integer_constraints(
 def _collection_constraints(
     draw: DrawFn,
     *,
-    forced: Optional[Any],
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    forced: Any | None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
 ) -> dict[str, int]:
     min_size = 0
     max_size = COLLECTION_DEFAULT_MAX_SIZE
@@ -201,8 +203,8 @@ def _collection_constraints(
 def string_constraints(
     draw: DrawFn,
     *,
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
     use_forced: bool = False,
 ) -> Any:
     interval_set = draw(intervals())
@@ -226,8 +228,8 @@ def string_constraints(
 def bytes_constraints(
     draw: DrawFn,
     *,
-    use_min_size: Optional[bool] = None,
-    use_max_size: Optional[bool] = None,
+    use_min_size: bool | None = None,
+    use_max_size: bool | None = None,
     use_forced: bool = False,
 ) -> Any:
     forced = draw(st.binary()) if use_forced else None
@@ -337,7 +339,7 @@ def run_conformance_test(
     Provider: type[PrimitiveProvider],
     *,
     context_manager_exceptions: Collection[type[BaseException]] = (),
-    settings: Optional[Settings] = None,
+    settings: Settings | None = None,
     _realize_objects: SearchStrategy[Any] = (
         st.from_type(object) | st.from_type(type).flatmap(st.from_type)
     ),
@@ -348,7 +350,7 @@ def run_conformance_test(
 
     For instance, this tests that ``Provider`` does not return out of bounds
     choices from any of the ``draw_*`` methods, or violate other invariants
-    depended on by Hypothesis.
+    which Hypothesis depends on.
 
     This function is intended to be called at test-time, not at runtime. It is
     provided by Hypothesis to make it easy for third-party backend authors to
@@ -369,119 +371,132 @@ def run_conformance_test(
     treat those exceptions as fatal errors.
     """
 
-    @Settings(settings, suppress_health_check=[HealthCheck.too_slow])
-    class ProviderConformanceTest(RuleBasedStateMachine):
-        def __init__(self):
-            super().__init__()
+    class CopiesRealizationProvider(HypothesisProvider):
+        avoid_realization = Provider.avoid_realization
 
-        @initialize(random=st.randoms())
-        def setup(self, random):
-            if Provider.lifetime == "test_case":
-                data = ConjectureData(random=random, provider=Provider)
-                self.provider = data.provider
-            else:
-                self.provider = Provider(None)
+    with with_register_backend("copies_realization", CopiesRealizationProvider):
 
-            self.context_manager = self.provider.per_test_case_context_manager()
-            self.context_manager.__enter__()
-            self.frozen = False
+        @Settings(
+            settings,
+            suppress_health_check=[HealthCheck.too_slow],
+            backend="copies_realization",
+        )
+        class ProviderConformanceTest(RuleBasedStateMachine):
+            def __init__(self):
+                super().__init__()
 
-        def _draw(self, choice_type, constraints):
-            del constraints["forced"]
-            draw_func = getattr(self.provider, f"draw_{choice_type}")
+            @initialize(random=st.randoms())
+            def setup(self, random):
+                if Provider.lifetime == "test_case":
+                    data = ConjectureData(random=random, provider=Provider)
+                    self.provider = data.provider
+                else:
+                    self.provider = Provider(None)
 
-            try:
-                choice = draw_func(**constraints)
-                note(f"drew {choice_type} {choice}")
-                expected_type = {
-                    "integer": int,
-                    "float": float,
-                    "bytes": bytes,
-                    "string": str,
-                    "boolean": bool,
-                }[choice_type]
-                assert isinstance(choice, expected_type)
-                assert choice_permitted(choice, constraints)
-            except context_manager_exceptions as e:
-                note(f"caught exception {type(e)} in context_manager_exceptions: {e}")
+                self.context_manager = self.provider.per_test_case_context_manager()
+                self.context_manager.__enter__()
+                self.frozen = False
+
+            def _draw(self, choice_type, constraints):
+                del constraints["forced"]
+                draw_func = getattr(self.provider, f"draw_{choice_type}")
+
                 try:
-                    self.context_manager.__exit__(type(e), e, None)
-                except BackendCannotProceed:
-                    self.frozen = True
-                    return None
+                    choice = draw_func(**constraints)
+                    note(f"drew {choice_type} {choice}")
+                    expected_type = {
+                        "integer": int,
+                        "float": float,
+                        "bytes": bytes,
+                        "string": str,
+                        "boolean": bool,
+                    }[choice_type]
+                    assert isinstance(choice, expected_type)
+                    assert choice_permitted(choice, constraints)
+                except context_manager_exceptions as e:
+                    note(
+                        f"caught exception {type(e)} in context_manager_exceptions: {e}"
+                    )
+                    try:
+                        self.context_manager.__exit__(type(e), e, None)
+                    except BackendCannotProceed:
+                        self.frozen = True
+                        return None
 
-            return choice
+                return choice
 
-        @precondition(lambda self: not self.frozen)
-        @rule(constraints=integer_constraints())
-        def draw_integer(self, constraints):
-            self._draw("integer", constraints)
+            @precondition(lambda self: not self.frozen)
+            @rule(constraints=integer_constraints())
+            def draw_integer(self, constraints):
+                self._draw("integer", constraints)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(constraints=float_constraints())
-        def draw_float(self, constraints):
-            self._draw("float", constraints)
+            @precondition(lambda self: not self.frozen)
+            @rule(constraints=float_constraints())
+            def draw_float(self, constraints):
+                self._draw("float", constraints)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(constraints=bytes_constraints())
-        def draw_bytes(self, constraints):
-            self._draw("bytes", constraints)
+            @precondition(lambda self: not self.frozen)
+            @rule(constraints=bytes_constraints())
+            def draw_bytes(self, constraints):
+                self._draw("bytes", constraints)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(constraints=string_constraints())
-        def draw_string(self, constraints):
-            self._draw("string", constraints)
+            @precondition(lambda self: not self.frozen)
+            @rule(constraints=string_constraints())
+            def draw_string(self, constraints):
+                self._draw("string", constraints)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(constraints=boolean_constraints())
-        def draw_boolean(self, constraints):
-            self._draw("boolean", constraints)
+            @precondition(lambda self: not self.frozen)
+            @rule(constraints=boolean_constraints())
+            def draw_boolean(self, constraints):
+                self._draw("boolean", constraints)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(label=st.integers())
-        def span_start(self, label):
-            self.provider.span_start(label)
+            @precondition(lambda self: not self.frozen)
+            @rule(label=st.integers())
+            def span_start(self, label):
+                self.provider.span_start(label)
 
-        @precondition(lambda self: not self.frozen)
-        @rule(discard=st.booleans())
-        def span_end(self, discard):
-            self.provider.span_end(discard)
+            @precondition(lambda self: not self.frozen)
+            @rule(discard=st.booleans())
+            def span_end(self, discard):
+                self.provider.span_end(discard)
 
-        @precondition(lambda self: not self.frozen)
-        @rule()
-        def freeze(self):
-            # phase-transition, mimicking data.freeze() at the end of a test case.
-            self.frozen = True
-            self.context_manager.__exit__(None, None, None)
-
-        @precondition(lambda self: self.frozen)
-        @rule(value=_realize_objects)
-        def realize(self, value):
-            # filter out nans and weirder things
-            try:
-                assume(value == value)
-            except Exception:
-                # e.g. value = Decimal('-sNaN')
-                assume(False)
-
-            # if `value` is non-symbolic, the provider should return it as-is.
-            assert self.provider.realize(value) == value
-
-        @precondition(lambda self: self.frozen)
-        @rule()
-        def observe_test_case(self):
-            observations = self.provider.observe_test_case()
-            assert isinstance(observations, dict)
-
-        @precondition(lambda self: self.frozen)
-        @rule(lifetime=st.sampled_from(["test_function", "test_case"]))
-        def observe_information_messages(self, lifetime):
-            observations = self.provider.observe_information_messages(lifetime=lifetime)
-            for observation in observations:
-                assert isinstance(observation, dict)
-
-        def teardown(self):
-            if not self.frozen:
+            @precondition(lambda self: not self.frozen)
+            @rule()
+            def freeze(self):
+                # phase-transition, mimicking data.freeze() at the end of a test case.
+                self.frozen = True
                 self.context_manager.__exit__(None, None, None)
 
-    ProviderConformanceTest.TestCase().runTest()
+            @precondition(lambda self: self.frozen)
+            @rule(value=_realize_objects)
+            def realize(self, value):
+                # filter out nans and weirder things
+                try:
+                    assume(value == value)
+                except Exception:
+                    # e.g. value = Decimal('-sNaN')
+                    assume(False)
+
+                # if `value` is non-symbolic, the provider should return it as-is.
+                assert self.provider.realize(value) == value
+
+            @precondition(lambda self: self.frozen)
+            @rule()
+            def observe_test_case(self):
+                observations = self.provider.observe_test_case()
+                assert isinstance(observations, dict)
+
+            @precondition(lambda self: self.frozen)
+            @rule(lifetime=st.sampled_from(["test_function", "test_case"]))
+            def observe_information_messages(self, lifetime):
+                observations = self.provider.observe_information_messages(
+                    lifetime=lifetime
+                )
+                for observation in observations:
+                    assert isinstance(observation, dict)
+
+            def teardown(self):
+                if not self.frozen:
+                    self.context_manager.__exit__(None, None, None)
+
+        ProviderConformanceTest.TestCase().runTest()

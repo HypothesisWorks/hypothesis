@@ -89,11 +89,11 @@ def git(*args):
     subprocess.check_call(("git", *args))
 
 
-TOOLING_COMMITER_NAME = "CI on behalf of the Hypothesis team"
+TOOLING_COMMITTER_NAME = "CI on behalf of the Hypothesis team"
 
 
 def configure_git():
-    git("config", "user.name", TOOLING_COMMITER_NAME)
+    git("config", "user.name", TOOLING_COMMITTER_NAME)
     git("config", "user.email", "david@drmaciver.com")
 
 
@@ -129,13 +129,13 @@ def modified_files():
         for l in diff_output.split("\n"):
             filepath = l.strip()
             if filepath and os.path.exists(filepath):
-                files.add(filepath)
+                files.add(Path(filepath))
     return files
 
 
-def all_files():
+def all_files() -> list[Path]:
     return [
-        f
+        Path(f)
         for f in subprocess.check_output(["git", "ls-files"])
         .decode("ascii")
         .splitlines()

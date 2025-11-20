@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
-from typing import NamedTuple, Optional, Union
+from types import EllipsisType
+from typing import NamedTuple
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import EllipsisType
 from hypothesis.internal.conjecture.utils import _calc_p_continue
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -38,7 +38,7 @@ __all__ = [
 
 
 Shape = tuple[int, ...]
-BasicIndex = tuple[Union[int, slice, None, EllipsisType], ...]
+BasicIndex = tuple[int | slice | None | EllipsisType, ...]
 
 
 class BroadcastableShapes(NamedTuple):
@@ -81,9 +81,9 @@ def check_valid_dims(dims, name):
 def array_shapes(
     *,
     min_dims: int = 1,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     min_side: int = 1,
-    max_side: Optional[int] = None,
+    max_side: int | None = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for array shapes (tuples of int >= 1).
 
@@ -120,7 +120,7 @@ def valid_tuple_axes(
     ndim: int,
     *,
     min_size: int = 0,
-    max_size: Optional[int] = None,
+    max_size: int | None = None,
 ) -> st.SearchStrategy[tuple[int, ...]]:
     """All tuples will have a length >= ``min_size`` and <= ``max_size``. The default
     value for ``max_size`` is ``ndim``.
@@ -165,9 +165,9 @@ def broadcastable_shapes(
     shape: Shape,
     *,
     min_dims: int = 0,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     min_side: int = 1,
-    max_side: Optional[int] = None,
+    max_side: int | None = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for shapes that are broadcast-compatible with the
     provided shape.
@@ -237,7 +237,7 @@ def broadcastable_shapes(
 
     if not strict_check:
         # reduce max_dims to exclude unsatisfiable dimensions
-        for n, s in zip(range(max_dims), shape[::-1]):
+        for n, s in zip(range(max_dims), shape[::-1], strict=False):
             if s < min_side and s != 1:
                 max_dims = n
                 break
@@ -344,13 +344,13 @@ def _hypothesis_parse_gufunc_signature(signature):
 @defines_strategy()
 def mutually_broadcastable_shapes(
     *,
-    num_shapes: Union[UniqueIdentifier, int] = not_set,
-    signature: Union[UniqueIdentifier, str] = not_set,
+    num_shapes: UniqueIdentifier | int = not_set,
+    signature: UniqueIdentifier | str = not_set,
     base_shape: Shape = (),
     min_dims: int = 0,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     min_side: int = 1,
-    max_side: Optional[int] = None,
+    max_side: int | None = None,
 ) -> st.SearchStrategy[BroadcastableShapes]:
     """Return a strategy for a specified number of shapes N that are
     mutually-broadcastable with one another and with the provided base shape.
@@ -462,7 +462,7 @@ def mutually_broadcastable_shapes(
 
     if not strict_check:
         # reduce max_dims to exclude unsatisfiable dimensions
-        for n, s in zip(range(max_dims), base_shape[::-1]):
+        for n, s in zip(range(max_dims), base_shape[::-1], strict=False):
             if s < min_side and s != 1:
                 max_dims = n
                 break
@@ -525,7 +525,9 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
             return tuple(x for x in (loop + core)[-NDIM_MAX:] if x is not None)
 
         return BroadcastableShapes(
-            input_shapes=tuple(add_shape(l_in, c) for l_in, c in zip(loop_in, core_in)),
+            input_shapes=tuple(
+                add_shape(l_in, c) for l_in, c in zip(loop_in, core_in, strict=True)
+            ),
             result_shape=add_shape(loop_res, core_res),
         )
 

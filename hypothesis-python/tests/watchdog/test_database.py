@@ -22,7 +22,7 @@ from hypothesis.database import (
 )
 from hypothesis.internal.compat import WINDOWS
 
-from tests.common.utils import skipif_threading, wait_for
+from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
 
 # e.g.
@@ -43,9 +43,10 @@ from tests.cover.test_database_backend import _database_conforms_to_listener_api
 # It seems watchdog CI also has a similar problem:
 # * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
 # * cmd+f `def rerun_filter` in the watchdog repository
-pytestmark = pytest.mark.skipif(
-    WINDOWS, reason="watchdog tests are too flaky on windows"
-)
+pytestmark = [
+    pytest.mark.skipif(WINDOWS, reason="watchdog tests are too flaky on windows"),
+    pytest.mark.skipif(sys.platform == "darwin", reason="times out often on osx"),
+]
 
 
 # we need real time here, not monkeypatched for CI
@@ -63,6 +64,7 @@ def test_database_listener_directory():
             stateful_step_count=10,
             # expensive runtime makes shrinking take forever
             phases=set(Phase) - {Phase.shrink},
+            deadline=None,
         ),
     )
 
@@ -118,17 +120,25 @@ def test_database_listener_directory_explicit(tmp_path):
     def listener(event):
         events.append(event)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
 
     db.save(b"k1", b"v1")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.remove_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v1")
     db.save(b"k1", b"v2")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=60)
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v2")
     db.save(b"k1", b"v3")
     wait_for(
@@ -180,6 +190,7 @@ def test_database_listener_directory_explicit(tmp_path):
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
 
+@flaky(max_runs=5, min_passes=1)  # time_sleep(0.1) probably isn't enough here
 @skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)

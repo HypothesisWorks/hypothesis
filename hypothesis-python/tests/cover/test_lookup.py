@@ -55,7 +55,7 @@ from tests.common.debug import (
 from tests.common.utils import fails_with, temp_registered
 
 # we'll continue testing the typing variants until their removal from the stdlib
-# ruff: noqa: UP006, UP035
+# ruff: noqa: UP006, UP035, UP045, UP007
 
 sentinel = object()
 BUILTIN_TYPES = tuple(
@@ -106,7 +106,12 @@ def test_does_not_resolve_special_cases(typ):
 
 @pytest.mark.parametrize(
     "typ,instance_of",
-    [(typing.Union[int, str], (int, str)), (typing.Optional[int], (int, type(None)))],
+    [
+        (typing.Union[int, str], (int, str)),
+        (int | str, (int, str)),
+        (typing.Optional[int], (int, type(None))),
+        (int | None, (int, type(None))),
+    ],
 )
 @given(data=st.data())
 def test_specialised_scalar_types(data, typ, instance_of):
@@ -119,9 +124,7 @@ def test_typing_Type_int():
         assert_simple_property(from_type(t), lambda x: x is int)
 
 
-@given(
-    from_type(type[typing.Union[str, list]]) | from_type(_Type[typing.Union[str, list]])
-)
+@given(from_type(type[str | list]) | from_type(_Type[str | list]))
 def test_typing_Type_Union(ex):
     assert ex in (str, list)
 
@@ -339,7 +342,7 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
         (typing.TypeVar("V"), object),
         (typing.TypeVar("V", bound=int), int),
         (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
-        (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str)),
+        (typing.TypeVar("V", bound=int | str), (int, str)),
         (typing.TypeVar("V", int, str), (int, str)),
     ],
 )
@@ -510,7 +513,7 @@ def test_error_if_has_unresolvable_hints():
 def test_resolves_NewType():
     typ = typing.NewType("T", int)
     nested = typing.NewType("NestedT", typ)
-    uni = typing.NewType("UnionT", typing.Optional[int])
+    uni = typing.NewType("UnionT", int | None)
     assert_simple_property(from_type(typ), lambda x: isinstance(x, int))
     assert_simple_property(from_type(nested), lambda x: isinstance(x, int))
     assert_simple_property(from_type(uni), lambda x: isinstance(x, (int, type(None))))
@@ -623,7 +626,7 @@ class Tree:
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
 )
 @given(tree=st.builds(Tree))
@@ -986,7 +989,7 @@ def test_no_byteswarning(_):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="Crosshair is too much slower at hashing values",
 )
 def test_hashable_type_unhashable_value():
@@ -1133,7 +1136,7 @@ def test_signature_is_the_most_important_source(thing):
 
 
 class AnnotatedAndDefault:
-    def __init__(self, foo: typing.Optional[bool] = None):
+    def __init__(self, foo: bool | None = None):
         self.foo = foo
 
 
@@ -1153,7 +1156,7 @@ def test_resolves_builtin_types(t):
 @given(data=st.data())
 @settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
-    if t.__name__ == "object" and settings._current_profile == "threading":
+    if t.__name__ == "object" and settings.get_current_profile_name() == "threading":
         # from_type(ForwardRef("object")) pulls from register_type_strategy,
         # and depending on threading I've seen `st.builds(Bar, st.integers())`
         # (from this file) be registered in one iteration and not the next,
@@ -1293,9 +1296,8 @@ def test_issue_4194_regression():
     inner = typing.Union[typing.Sequence["A"], MyProtocol]
     A = typing.Union[typing.Sequence[inner], MyProtocol]
 
-    with temp_registered(MyProtocol, st.just(b"")):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with temp_registered(typing.ForwardRef("A"), st.integers()):
-            find_any(st.from_type(A))
+    with (
+        temp_registered(MyProtocol, st.just(b"")),
+        temp_registered(typing.ForwardRef("A"), st.integers()),
+    ):
+        find_any(st.from_type(A))

@@ -26,18 +26,22 @@ import ast
 import inspect
 import math
 import operator
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, NamedTuple, Optional, TypeVar
+from typing import Any, NamedTuple, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
-from hypothesis.internal.reflection import (
-    get_pretty_function_description,
-    lambda_description,
-)
+from hypothesis.internal.lambda_sources import lambda_description
+from hypothesis.internal.reflection import get_pretty_function_description
+
+try:
+    # new in 3.14
+    from functools import Placeholder  # type: ignore
+except ImportError:
+    Placeholder = object()
 
 Ex = TypeVar("Ex")
 Predicate = Callable[[Ex], bool]
@@ -62,7 +66,7 @@ class ConstructivePredicate(NamedTuple):
     """
 
     constraints: dict[str, Any]
-    predicate: Optional[Predicate]
+    predicate: Predicate | None
 
     @classmethod
     def unchanged(cls, predicate: Predicate) -> "ConstructivePredicate":
@@ -191,7 +195,7 @@ def numeric_bounds_from_ast(
         ops = tree.ops
         vals = tree.comparators
         comparisons = [(tree.left, ops[0], vals[0])]
-        for i, (op, val) in enumerate(zip(ops[1:], vals[1:]), start=1):
+        for i, (op, val) in enumerate(zip(ops[1:], vals[1:], strict=True), start=1):
             comparisons.append((vals[i - 1], op, val))
         bounds = []
         for comp in comparisons:
@@ -223,10 +227,26 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     unchanged = ConstructivePredicate.unchanged(predicate)
     if (
         isinstance(predicate, partial)
-        and len(predicate.args) == 1
         and not predicate.keywords
+        and (
+            len(predicate.args) == 1
+            or (predicate.args[0] is Placeholder and len(predicate.args) == 2)
+        )
     ):
-        arg = predicate.args[0]
+        if len(predicate.args) == 1:
+            arg = predicate.args[0]
+            func = predicate.func
+        else:  # pragma: no cover  # Python 3.14+ only
+            assert predicate.args[0] is Placeholder
+            arg = predicate.args[1]
+            func = {  # reverses the table below; eq is unchanged
+                operator.lt: operator.gt,
+                operator.le: operator.ge,
+                operator.ge: operator.le,
+                operator.gt: operator.lt,
+            }.get(predicate.func, predicate.func)
+            assert func not in (min_len, max_len)  # sanity-check; these are private
+
         if (
             (isinstance(arg, Decimal) and Decimal.is_snan(arg))
             or not isinstance(arg, (int, float, Fraction, Decimal))
@@ -244,8 +264,8 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
             min_len: {"min_value": arg, "len": True},
             max_len: {"max_value": arg, "len": True},
         }
-        if predicate.func in options:
-            return ConstructivePredicate(options[predicate.func], None)
+        if func in options:
+            return ConstructivePredicate(options[func], None)
 
     # This section is a little complicated, but stepping through with comments should
     # help to clarify it.  We start by finding the source code for our predicate and

@@ -13,7 +13,7 @@ import itertools
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis.errors import Frozen, InvalidArgument
+from hypothesis.errors import Frozen
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -284,13 +284,6 @@ def test_empty_strategy_is_invalid():
     with pytest.raises(StopTest):
         d.draw(st.nothing())
     assert d.status == Status.INVALID
-
-
-def test_will_error_on_find():
-    d = ConjectureData.for_choices([])
-    d.is_find = True
-    with pytest.raises(InvalidArgument):
-        d.draw(st.data())
 
 
 def test_can_note_non_str():

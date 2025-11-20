@@ -31,15 +31,14 @@ def using_tool_id(tool_id, tool_name):
 def test_monitoring_warns_on_registered_tool_id(warns_or_raises):
 
     # scrutineer can't run if something has already registered its tool id.
-    with using_tool_id(MONITORING_TOOL_ID, "rogue"):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with warns_or_raises(HypothesisWarning, match=r"already taken by tool rogue"):
+    with (
+        using_tool_id(MONITORING_TOOL_ID, "rogue"),
+        warns_or_raises(HypothesisWarning, match=r"already taken by tool rogue"),
+    ):
 
-            @given(st.integers())
-            def f(n):
-                raise AssertionError
+        @given(st.integers())
+        def f(n):
+            raise AssertionError
 
-            with pytest.raises(AssertionError):
-                f()
+        with pytest.raises(AssertionError):
+            f()

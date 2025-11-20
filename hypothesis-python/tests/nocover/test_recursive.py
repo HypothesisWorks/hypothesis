@@ -16,7 +16,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import Why, flaky, xfail_on_crosshair
+from tests.common.utils import Why, flaky, xfail_if_gil_disabled, xfail_on_crosshair
 
 
 def test_can_generate_with_large_branching():
@@ -117,7 +117,9 @@ def test_can_form_sets_of_recursive_data():
     assert len(xs) == size
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="not threadsafe")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="not threadsafe"
+)
 def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(
         st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20
@@ -161,6 +163,7 @@ def test_self_ref_regression(_):
     pass
 
 
+@xfail_if_gil_disabled
 @flaky(min_passes=1, max_runs=2)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):
     # We were concerned in #3979 that we might see bad results from a RecursionError

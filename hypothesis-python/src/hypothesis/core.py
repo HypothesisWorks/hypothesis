@@ -26,19 +26,17 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
+from collections.abc import Callable, Coroutine, Generator, Hashable, Iterable, Sequence
 from dataclasses import dataclass, field
 from functools import partial
 from inspect import Parameter
 from random import Random
 from threading import Lock
+from types import EllipsisType
 from typing import (
     Any,
     BinaryIO,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 from unittest import TestCase
@@ -75,7 +73,6 @@ from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
-    EllipsisType,
     add_note,
     bad_django_TestCase,
     get_type_hints,
@@ -160,7 +157,7 @@ global_force_seed = None
 threadlocal = ThreadLocal(_hypothesis_global_random=lambda: None)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Example:
     args: Any
     kwargs: Any
@@ -246,9 +243,7 @@ class example:
         condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
-        raises: Union[
-            type[BaseException], tuple[type[BaseException], ...]
-        ] = BaseException,
+        raises: type[BaseException] | tuple[type[BaseException], ...] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
         :obj:`pytest.mark.xfail(strict=True) <pytest.mark.xfail>`.
@@ -557,7 +552,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     "example has too many arguments for test. Expected at most "
                     f"{len(posargs)} but got {len(example.args)}"
                 )
-            example_kwargs = dict(zip(posargs[-len(example.args) :], example.args))
+            example_kwargs = dict(
+                zip(posargs[-len(example.args) :], example.args, strict=True)
+            )
         else:
             example_kwargs = dict(example.kwargs)
         given_kws = ", ".join(
@@ -707,19 +704,21 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
     if wrapped_test._hypothesis_internal_use_seed is not None:
         return Random(wrapped_test._hypothesis_internal_use_seed)
-    elif settings.derandomize:
+
+    if settings.derandomize:
         return Random(int_from_bytes(function_digest(test)))
-    elif global_force_seed is not None:
+
+    if global_force_seed is not None:
         return Random(global_force_seed)
-    else:
-        if threadlocal._hypothesis_global_random is None:  # pragma: no cover
-            threadlocal._hypothesis_global_random = Random()
-        seed = threadlocal._hypothesis_global_random.getrandbits(128)
-        wrapped_test._hypothesis_internal_use_generated_seed = seed
-        return Random(seed)
+
+    if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+        threadlocal._hypothesis_global_random = Random()
+    seed = threadlocal._hypothesis_global_random.getrandbits(128)
+    wrapped_test._hypothesis_internal_use_generated_seed = seed
+    return Random(seed)
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Stuff:
     selfy: Any
     args: tuple
@@ -770,7 +769,7 @@ def skip_exceptions_to_reraise():
     like another to be added please open an issue or pull request adding
     it to this function and to tests/cover/test_lazy_import.py
     """
-    # This is a set because nose may simply re-export unittest.SkipTest
+    # This is a set in case any library simply re-exports another's Skip exception
     exceptions = set()
     # We use this sys.modules trick to avoid importing libraries -
     # you can't be an instance of a type from an unimported module!
@@ -778,10 +777,6 @@ def skip_exceptions_to_reraise():
     # and more importantly it avoids possible side-effects :-)
     if "unittest" in sys.modules:
         exceptions.add(sys.modules["unittest"].SkipTest)
-    if "unittest2" in sys.modules:
-        exceptions.add(sys.modules["unittest2"].SkipTest)
-    if "nose" in sys.modules:
-        exceptions.add(sys.modules["nose"].SkipTest)
     if "_pytest.outcomes" in sys.modules:
         exceptions.add(sys.modules["_pytest.outcomes"].Skipped)
     return tuple(sorted(exceptions, key=str))
@@ -867,7 +862,7 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
     try:
         yield
     except BaseExceptionGroup as excgroup:
-        frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
+        _frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
 
         # group only contains Frozen, reraise the group
         # it doesn't matter what we raise, since any exceptions get disregarded
@@ -924,7 +919,6 @@ class StateForActualGivenExecution:
         self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
         self.test_runner = get_executor(stuff.selfy)
-        self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
@@ -943,7 +937,7 @@ class StateForActualGivenExecution:
         self._timing_features = {}
 
     @property
-    def test_identifier(self):
+    def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
         ) or get_pretty_function_description(self.wrapped_test)
@@ -982,7 +976,6 @@ class StateForActualGivenExecution:
         """
 
         self.ever_executed = True
-        data.is_find = self.is_find
 
         self._string_repr = ""
         text_repr = None
@@ -990,12 +983,8 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_markers_from_group():
-                    # NOTE: For compatibility with Python 3.9's LL(1)
-                    # parser, this is written as a nested with-statement,
-                    # instead of a compound one.
-                    with ensure_free_stackframes():
-                        return self.test(*args, **kwargs)
+                with unwrap_markers_from_group(), ensure_free_stackframes():
+                    return self.test(*args, **kwargs)
 
         else:
 
@@ -1004,28 +993,24 @@ class StateForActualGivenExecution:
                 arg_drawtime = math.fsum(data.draw_times.values())
                 arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
-                start = time.perf_counter()
-                try:
-                    with unwrap_markers_from_group():
-                        # NOTE: For compatibility with Python 3.9's LL(1)
-                        # parser, this is written as a nested with-statement,
-                        # instead of a compound one.
-                        with ensure_free_stackframes():
-                            result = self.test(*args, **kwargs)
-                finally:
-                    finish = time.perf_counter()
-                    in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
-                    in_stateful = (
-                        math.fsum(data._stateful_run_times.values()) - arg_stateful
-                    )
-                    in_gctime = gc_cumulative_time() - arg_gctime
-                    runtime = finish - start - in_drawtime - in_stateful - in_gctime
-                    self._timing_features = {
-                        "execute:test": runtime,
-                        "overall:gc": in_gctime,
-                        **data.draw_times,
-                        **data._stateful_run_times,
-                    }
+                with unwrap_markers_from_group(), ensure_free_stackframes():
+                    start = time.perf_counter()
+                    try:
+                        result = self.test(*args, **kwargs)
+                    finally:
+                        finish = time.perf_counter()
+                        in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
+                        in_stateful = (
+                            math.fsum(data._stateful_run_times.values()) - arg_stateful
+                        )
+                        in_gctime = gc_cumulative_time() - arg_gctime
+                        runtime = finish - start - in_drawtime - in_stateful - in_gctime
+                        self._timing_features = {
+                            "execute:test": runtime,
+                            "overall:gc": in_gctime,
+                            **data.draw_times,
+                            **data._stateful_run_times,
+                        }
 
                 if (
                     (current_deadline := self.settings.deadline) is not None
@@ -1132,21 +1117,20 @@ class StateForActualGivenExecution:
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
-        #
-        # NOTE: For compatibility with Python 3.9's LL(1) parser, this is written as
-        # three nested with-statements, instead of one compound statement.
-        with local_settings(self.settings):
-            with deterministic_PRNG():
-                with BuildContext(
-                    data, is_final=is_final, wrapped_test=self.wrapped_test
-                ) as context:
-                    # providers may throw in per_case_context_fn, and we'd like
-                    # `result` to still be set in these cases.
-                    result = None
-                    with data.provider.per_test_case_context_manager():
-                        # Run the test function once, via the executor hook.
-                        # In most cases this will delegate straight to `run(data)`.
-                        result = self.test_runner(data, run)
+        with (
+            local_settings(self.settings),
+            deterministic_PRNG(),
+            BuildContext(
+                data, is_final=is_final, wrapped_test=self.wrapped_test
+            ) as context,
+        ):
+            # providers may throw in per_case_context_fn, and we'd like
+            # `result` to still be set in these cases.
+            result = None
+            with data.provider.per_test_case_context_manager():
+                # Run the test function once, via the executor hook.
+                # In most cases this will delegate straight to `run(data)`.
+                result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.
@@ -1364,7 +1348,7 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: InfoObservationType, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: str | dict
     ) -> None:
         deliver_observation(
             InfoObservation(
@@ -1498,7 +1482,7 @@ class StateForActualGivenExecution:
                 with with_reporter(fragments.append):
                     self.execute_once(
                         ran_example,
-                        print_example=not self.is_find,
+                        print_example=True,
                         is_final=True,
                         expected_failure=(
                             falsifying_example.expected_exception,
@@ -1639,7 +1623,7 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
-@dataclass
+@dataclass(slots=False, frozen=False)
 class HypothesisHandle:
     """This object is provided as the .hypothesis attribute on @given tests.
 
@@ -1662,7 +1646,7 @@ class HypothesisHandle:
     @property
     def fuzz_one_input(
         self,
-    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
+    ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
         """Run the test as a fuzz target, driven with the `buffer` of bytes.
 
         Returns None if buffer invalid for the strategy, canonical pruned
@@ -1683,7 +1667,7 @@ class HypothesisHandle:
 def given(
     _: EllipsisType, /
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
 ]:  # pragma: no cover
     ...
 
@@ -1692,26 +1676,24 @@ def given(
 def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 @overload
 def given(
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
-) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
-]:
+    *_given_arguments: SearchStrategy[Any] | EllipsisType,
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
+) -> Callable[[Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]]:
     """
     The |@given| decorator turns a function into a Hypothesis test. This is the
     main entry point to Hypothesis.
@@ -1768,7 +1750,7 @@ def given(
         test(manual_string="x")
 
     The reason for this "from the right" behavior is to support using |@given|
-    with instance methods, by passing through ``self``:
+    with instance methods, by automatically passing through ``self``:
 
     .. code-block:: python
 
@@ -1872,7 +1854,9 @@ def given(
                 for p in original_sig.parameters.values()
                 if p.kind is p.POSITIONAL_OR_KEYWORD
             ]
-            given_kwargs = dict(list(zip(posargs[::-1], given_arguments[::-1]))[::-1])
+            given_kwargs = dict(
+                list(zip(posargs[::-1], given_arguments[::-1], strict=False))[::-1]
+            )
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
@@ -2137,7 +2121,7 @@ def given(
                     del thread_overlap[threadid]
 
         def _get_fuzz_target() -> (
-            Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]
+            Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]
         ):
             # Because fuzzing interfaces are very performance-sensitive, we use a
             # somewhat more complicated structure here.  `_get_fuzz_target()` is
@@ -2174,8 +2158,8 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO],
-            ) -> Optional[bytes]:
+                buffer: bytes | bytearray | memoryview | BinaryIO,
+            ) -> bytes | None:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.
                 if isinstance(buffer, io.IOBase):
@@ -2259,9 +2243,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Optional[Settings] = None,
-    random: Optional[Random] = None,
-    database_key: Optional[bytes] = None,
+    settings: Settings | None = None,
+    random: Random | None = None,
+    database_key: bytes | None = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
@@ -2296,11 +2280,7 @@ def find(
     if random is not None:
         test = seed(random.getrandbits(64))(test)
 
-    # Aliasing as Any avoids mypy errors (attr-defined) when accessing and
-    # setting custom attributes on the decorated function or class.
-    _test: Any = test
-    _test._hypothesis_internal_is_find = True
-    _test._hypothesis_internal_database_key = database_key
+    test._hypothesis_internal_database_key = database_key  # type: ignore
 
     try:
         test()

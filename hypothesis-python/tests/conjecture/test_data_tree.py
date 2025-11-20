@@ -46,8 +46,9 @@ runner_settings = settings(
 
 def runner_for(*examples):
     def accept(tf):
-        runner = ConjectureRunner(tf, settings=runner_settings, random=Random(0))
-        runner.exit_with = lambda reason: None
+        runner = ConjectureRunner(
+            tf, settings=runner_settings, random=Random(0), ignore_limits=True
+        )
         ran_examples = []
         for choices in examples:
             data = runner.cached_test_function(choices)

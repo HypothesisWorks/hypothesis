@@ -28,7 +28,7 @@ from hypothesis.internal import entropy
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.common.utils import skipif_threading
+from tests.common.utils import skipif_threading, xfail_if_gil_disabled
 
 
 def gc_collect():
@@ -191,7 +191,7 @@ def test_evil_prng_registration_nonsense():
     # The first test to call deterministic_PRNG registers a new random instance.
     # If that's this test, it will throw off our n_registered count in the middle.
     # start with a no-op to ensure this registration has occurred.
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         pass
 
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -206,7 +206,7 @@ def test_evil_prng_registration_nonsense():
     register_random(r2)
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 2
 
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         del r1
         gc_collect()
         assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"
@@ -241,6 +241,7 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
         f()
 
 
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )

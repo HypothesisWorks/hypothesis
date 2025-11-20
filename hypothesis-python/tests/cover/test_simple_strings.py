@@ -15,7 +15,7 @@ from tests.common.debug import minimal
 
 
 def test_can_minimize_up_to_zero():
-    s = minimal(text(), lambda x: any(lambda t: t <= "0" for t in x))
+    s = minimal(text(), lambda x: any(t <= "0" for t in x))
     assert s == "0"
 
 

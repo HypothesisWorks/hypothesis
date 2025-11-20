@@ -8,12 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import inspect
 from inspect import Parameter
 
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis.strategies._internal.utils import _strategies
+from hypothesis.strategies._internal.utils import _all_strategies
 
 from tests.common.arguments import argument_validation_test, e
 
@@ -46,11 +47,12 @@ BAD_ARGS.extend([e(st.lists, st.nothing(), unique=True, min_size=1)])
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
 
 
-@pytest.mark.parametrize("name", sorted(_strategies))
+@pytest.mark.parametrize("name", sorted(_all_strategies))
 def test_consistent_with_api_guide_on_kwonly_args(name):
     # Enforce our style-guide: if it has a default value, it should be
-    # keyword-only with a very few exceptions.
-    for arg in _strategies[name].parameters.values():
+    # keyword-only, with a few exceptions.
+    strategy = _all_strategies[name]
+    for arg in inspect.signature(strategy).parameters.values():
         assert (
             arg.default == Parameter.empty
             or arg.kind != Parameter.POSITIONAL_OR_KEYWORD

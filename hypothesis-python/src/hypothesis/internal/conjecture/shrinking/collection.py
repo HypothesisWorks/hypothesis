@@ -36,7 +36,7 @@ class Collection(Shrinker):
             return True
 
         # examine elements one by one from the left until an element differs.
-        for v1, v2 in zip(left, right):
+        for v1, v2 in zip(left, right, strict=False):
             if self.to_order(v1) == self.to_order(v2):
                 continue
             return self.to_order(v1) < self.to_order(v2)

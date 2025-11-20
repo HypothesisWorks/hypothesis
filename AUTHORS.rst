@@ -24,6 +24,7 @@ their individual contributions.
 * `Andrea Reina <https://www.github.com/andreareina>`_
 * `Andrew Sansom <https://www.github.com/qthequartermasterman>`_
 * `Anne Archibald <https://www.github.com/td-anne>`_
+* `Arjoonn Sharma <https://github.com/thesage21>`_
 * `Ben Anhalt <https://github.com/benanhalt>`_
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)
@@ -84,6 +85,7 @@ their individual contributions.
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)
 * `Israel Fruchter <https://github.com/fruch>`_
 * `Ivan Tham <https://github.com/pickfire>`_
+* `Iyassou Shimels <https://github.com/iyassou>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `James Lamb <https://github.com/jameslamb>`_
@@ -173,6 +175,7 @@ their individual contributions.
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
 * `Sebastiaan Zeeff <https://github.com/SebastiaanZ>`_ (sebastiaan.zeeff@ordina.nl)
 * `Sharyar Memon <https://github.com/sharyar>`_ (smemon.cal@gmail.com)
+* `Shaun Read <https://github.com/philastrophist>`_
 * `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Sogata Ray <https://github.com/rayardinanda>`_ (rayardinanda@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_

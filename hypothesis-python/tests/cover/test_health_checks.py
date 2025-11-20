@@ -64,7 +64,9 @@ def test_default_health_check_can_weaken_specific():
     test()
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="nondeterministic")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="nondeterministic"
+)
 def test_suppressing_filtering_health_check():
     forbidden = set()
 
@@ -168,7 +170,7 @@ def test_it_is_an_error_to_suppress_non_iterables():
 
 def test_it_is_an_error_to_suppress_non_healthchecks():
     with pytest.raises(InvalidArgument):
-        settings(suppress_health_check=[1])
+        settings(suppress_health_check=["notahealthcheck"])
 
 
 class ReturningRuleMachine(RuleBasedStateMachine):
