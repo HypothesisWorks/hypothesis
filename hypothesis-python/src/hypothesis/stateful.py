@@ -37,9 +37,9 @@ from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import add_note, batched
-from hypothesis.internal.conjecture import calc_label_from_name
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import (
