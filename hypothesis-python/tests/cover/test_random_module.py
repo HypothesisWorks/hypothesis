@@ -272,6 +272,7 @@ def test_passing_referenced_instance_within_function_scope_warns():
     sys.version_info[:2] == (3, 14),
     reason="TODO_314: is this intentional semantics of the new gc?",
 )
+@skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
 
