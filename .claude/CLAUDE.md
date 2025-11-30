@@ -40,3 +40,4 @@ When creating a PR:
    - **Idiomatic** - follows Python and Hypothesis conventions
    - **Minimally commented** - code should be self-documenting; only add comments where truly needed
 2. **Run `./build.sh format; ./build.sh lint`** immediately before committing to auto-format and lint code
+3. **Do not reference issues or PRs in commit messages** (e.g., avoid `Fixes #1234` or `See #5678`) - this clutters the issue timeline with unnecessary links

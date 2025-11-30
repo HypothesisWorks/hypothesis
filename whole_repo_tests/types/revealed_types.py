@@ -202,4 +202,21 @@ NUMPY_REVEALED_TYPES = [
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
         "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
     ),
+    # basic_indices overloads - return type depends on allow_ellipsis/allow_newaxis
+    (
+        "basic_indices((3, 4), allow_ellipsis=False)",
+        "int | slice[Any, Any, Any] | tuple[int | slice[Any, Any, Any], ...]",
+    ),
+    (
+        "basic_indices((3, 4))",
+        "int | slice[Any, Any, Any] | EllipsisType | tuple[int | slice[Any, Any, Any] | EllipsisType, ...]",
+    ),
+    (
+        "basic_indices((3, 4), allow_newaxis=True, allow_ellipsis=False)",
+        "int | slice[Any, Any, Any] | None | tuple[int | slice[Any, Any, Any] | None, ...]",
+    ),
+    (
+        "basic_indices((3, 4), allow_newaxis=True)",
+        "int | slice[Any, Any, Any] | None | EllipsisType | tuple[int | slice[Any, Any, Any] | None | EllipsisType, ...]",
+    ),
 ]
