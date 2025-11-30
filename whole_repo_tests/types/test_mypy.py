@@ -325,10 +325,10 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
         "    ...\n",
         encoding="utf-8",
     )
-    # Also outputs "misc" error "Untyped decorator makes function "my_rule"
+    # Also outputs "untyped-decorator" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
     # variant
-    assert_mypy_errors(f, [(3, "call-overload"), (3, "misc")])
+    assert_mypy_errors(f, [(3, "call-overload"), (3, "untyped-decorator")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
