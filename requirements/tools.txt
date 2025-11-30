@@ -8,11 +8,11 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.11.0
+anyio==4.12.0
     # via
     #   starlette
     #   watchfiles
-asgiref==3.10.0
+asgiref==3.11.0
     # via django
 asttokens==3.0.1
     # via stack-data
@@ -59,7 +59,7 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.11.3
+coverage==7.12.0
     # via -r requirements/tools.in
 cryptography==46.0.3
     # via
@@ -81,7 +81,7 @@ docutils==0.21.2
     #   sphinx-jsonschema
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.3.0 ; python_version < "3.11"
+exceptiongroup==1.3.1 ; python_version < "3.11"
     # via
     #   anyio
     #   hypothesis (hypothesis-python/pyproject.toml)
@@ -135,7 +135,7 @@ jinja2==3.1.6
     #   sphinx
 jsonpointer==3.0.0
     # via sphinx-jsonschema
-keyring==25.6.0
+keyring==25.7.0
     # via twine
 lark==1.3.1
     # via -r requirements/tools.in
@@ -143,6 +143,8 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
+librt==0.6.3
+    # via mypy
 markdown==3.10
     # via pelican
 markdown-it-py==4.0.0
@@ -157,7 +159,7 @@ more-itertools==10.8.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.18.2
+mypy==1.19.0
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -243,7 +245,7 @@ python-dateutil==2.9.0.post0
     #   pelican
 pytokens==0.3.0
     # via black
-pyupgrade==3.21.1
+pyupgrade==3.21.2
     # via shed
 pyyaml==6.0.3
     # via
@@ -261,7 +263,7 @@ requests==2.32.5
     #   twine
 requests-toolbelt==1.0.0
     # via twine
-restructuredtext-lint==1.4.0
+restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
@@ -269,16 +271,14 @@ rich==14.2.0
     # via
     #   pelican
     #   twine
-ruff==0.14.5
+ruff==0.14.7
     # via -r requirements/tools.in
-secretstorage==3.4.1
+secretstorage==3.5.0
     # via keyring
 shed==2024.1.1
     # via -r requirements/tools.in
 six==1.17.0
     # via python-dateutil
-sniffio==1.3.1
-    # via anyio
 snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
@@ -318,7 +318,7 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sqlparse==0.5.3
+sqlparse==0.5.4
     # via django
 stack-data==0.6.3
     # via ipython
