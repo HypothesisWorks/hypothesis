@@ -14,7 +14,7 @@ import random
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import contextmanager
-from typing import Any, NoReturn, Optional
+from typing import Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -49,7 +49,13 @@ def reject() -> NoReturn:
     raise UnsatisfiedAssumption(where)
 
 
-def assume(condition: object) -> bool:
+@overload
+def assume(condition: Literal[False] | None) -> NoReturn: ...
+@overload
+def assume(condition: object) -> Literal[True]: ...
+
+
+def assume(condition: object) -> Literal[True]:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 

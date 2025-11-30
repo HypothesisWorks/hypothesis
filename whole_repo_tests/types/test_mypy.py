@@ -18,6 +18,7 @@ from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
+    ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
@@ -140,6 +141,23 @@ def test_revealed_types(tmp_path, val, expect):
     )
     typ = get_mypy_analysed_type(f)
     assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)
+def test_assume_revealed_types(tmp_path, val, expect):
+    """Check that Mypy infers the correct return type for assume()."""
+    f = tmp_path / "check.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis import assume
+            reveal_type({val})
+            """
+        ),
+        encoding="utf-8",
+    )
+    typ = get_mypy_analysed_type(f)
+    assert typ == expect
 
 
 @pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)

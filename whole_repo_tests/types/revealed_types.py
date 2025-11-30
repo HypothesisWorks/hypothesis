@@ -22,6 +22,13 @@ except ImportError:
 else:
     NP1 = np_version.startswith("1.")
 
+ASSUME_REVEALED_TYPES = [
+    ("assume(False)", "Never"),
+    ("assume(None)", "Never"),
+    ("assume(True)", "Literal[True]"),
+    ("assume(1)", "Literal[True]"),
+]
+
 REVEALED_TYPES = [
     ("integers()", "int"),
     ("text()", "str"),
