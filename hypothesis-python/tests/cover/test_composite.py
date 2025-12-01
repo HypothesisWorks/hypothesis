@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import typing
 
 import pytest
@@ -196,21 +195,14 @@ def test_drawfn_cannot_be_instantiated():
 
 
 def test_warns_on_strategy_annotation():
-    # TODO: print the stack on Python 3.10 and 3.11 to determine the appropriate
-    #       stack depth to use.  Consider adding a debug-print if IN_COVERAGE_TESTS
-    #       and the relevant depth is_hypothesis_file(), for easier future fixing.
-    #
-    # Meanwhile, the test is not skipped on 3.10/3.11 as it is still required for
-    # coverage of the warning-generating branch.
     with pytest.warns(HypothesisWarning, match="Return-type annotation") as w:
 
         @st.composite
         def my_integers(draw: st.DrawFn) -> st.SearchStrategy[int]:
             return draw(st.integers())
 
-    if sys.version_info[:2] > (3, 11):  # TEMP: see PR #3961
-        assert len(w.list) == 1
-        assert w.list[0].filename == __file__  # check stacklevel points to user code
+    assert len(w.list) == 1
+    assert w.list[0].filename == __file__  # check stacklevel points to user code
 
 
 def test_composite_allows_overload_without_draw():
