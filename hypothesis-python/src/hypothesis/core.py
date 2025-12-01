@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """This module provides the core primitives of Hypothesis, such as given."""
+
 import base64
 import contextlib
 import dataclasses
@@ -664,7 +665,8 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
 
                 with contextlib.suppress(StopTest):
                     empty_data.conclude_test(Status.INVALID)
-                yield (fragments_reported, err)
+                origin = InterestingOrigin.from_exception(err)
+                yield (fragments_reported, err, origin)
                 if (
                     state.settings.report_multiple_bugs
                     and pytest_shows_exceptiongroups
@@ -1562,6 +1564,52 @@ class StateForActualGivenExecution:
         )
 
 
+def _simplify_explicit_errors(errors, verbosity):
+    """Group explicit example errors by InterestingOrigin and keep simplest.
+
+    At verbosity >= verbose, all errors are shown. Otherwise, for each
+    origin only the simplest (shortlex) example is kept, with a note
+    about how many other examples failed with the same error.
+
+    Args:
+        errors: List of (fragments, err, origin) tuples
+        verbosity: Current verbosity setting
+
+    Returns:
+        List of (fragments, err) tuples for _raise_to_user
+    """
+    if verbosity >= Verbosity.verbose:
+        return [(fragments, err) for fragments, err, _origin in errors]
+
+    # Group errors by origin, preserving order of first occurrence
+    by_origin: dict[InterestingOrigin, list[tuple]] = {}
+    for fragments, err, origin in errors:
+        by_origin.setdefault(origin, []).append((fragments, err))
+
+    result = []
+    for _origin, group in by_origin.items():
+        if len(group) == 1:
+            result.append(group[0])
+        else:
+            # Sort by shortlex of representation (first fragment)
+            def shortlex_key(item):
+                fragments, _err = item
+                repr_str = fragments[0] if fragments else ""
+                return (len(repr_str), repr_str)
+
+            sorted_group = sorted(group, key=shortlex_key)
+            fragments, err = sorted_group[0]
+            other_count = len(group) - 1
+            add_note(
+                err,
+                f"{other_count} other explicit example{'s' * (other_count > 1)} "
+                "also failed with this error; only showing the simplest.",
+            )
+            result.append((fragments, err))
+
+    return result
+
+
 def _raise_to_user(
     errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
@@ -2119,7 +2167,14 @@ def given(
                         # Covered by `test_issue_3453_regression`, just in a subprocess.
                         del errors[:-1]  # pragma: no cover
 
-                    _raise_to_user(errors, state.settings, [], " in explicit examples")
+                    # Group errors by origin and simplify to show only the simplest
+                    # example for each distinct failure, unless verbosity is high.
+                    simplified = _simplify_explicit_errors(
+                        errors, state.settings.verbosity
+                    )
+                    _raise_to_user(
+                        simplified, state.settings, [], " in explicit examples"
+                    )
 
                 # If there were any explicit examples, they all ran successfully.
                 # The next step is to use the Conjecture engine to run the test on
