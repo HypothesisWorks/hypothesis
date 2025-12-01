@@ -15,6 +15,7 @@ a single value.
 Notably, the set of steps available at any point may depend on the
 execution to date.
 """
+
 import collections
 import dataclasses
 import inspect
@@ -116,6 +117,7 @@ def get_state_machine_test(
         # Because settings can vary via e.g. profiles, settings.stateful_step_count
         # overrides this argument and we don't bother cross-validating.
         raise InvalidArgument(f"_min_steps={_min_steps} must be non-negative.")
+    _flaky_state = _flaky_state or {}
 
     @settings
     @given(st.data())
@@ -169,8 +171,7 @@ def get_state_machine_test(
 
                 # Choose a rule to run, preferring an initialize rule if there are
                 # any which have not been run yet.
-                if _flaky_state is not None:
-                    _flaky_state["selecting_rule"] = True
+                _flaky_state["selecting_rule"] = True
                 if machine._initialize_rules_to_run:
                     init_rules = [
                         st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
@@ -180,8 +181,7 @@ def get_state_machine_test(
                     machine._initialize_rules_to_run.remove(rule)
                 else:
                     rule, data = cd.draw(machine._rules_strategy)
-                if _flaky_state is not None:
-                    _flaky_state["selecting_rule"] = False
+                _flaky_state["selecting_rule"] = False
                 draw_label = f"generate:rule:{rule.function.__name__}"
                 cd.draw_times.setdefault(draw_label, 0.0)
                 in_gctime = gc_cumulative_time() - start_gc

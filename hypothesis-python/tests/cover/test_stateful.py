@@ -171,6 +171,26 @@ def test_flaky_precondition_error_message():
     assert any("flaky precondition" in note for note in exc_info.value.__notes__)
 
 
+class FlakyDrawInRuleMachine(RuleBasedStateMachine):
+    # Flakiness inside rule execution (via data().draw()) happens AFTER rule selection,
+    # so the "flaky precondition" note should NOT be added.
+    @rule(d=data())
+    def action(self, d):
+        if current_build_context().is_final:
+            d.draw(st.integers(0, 0))
+        d.draw(st.integers())
+        raise AssertionError
+
+
+def test_flaky_draw_in_rule_no_precondition_note():
+    # When flakiness occurs during rule execution (not rule selection),
+    # the error message should NOT mention flaky preconditions.
+    with raises(FlakyStrategyDefinition) as exc_info:
+        FlakyDrawInRuleMachine.TestCase().runTest()
+    notes = getattr(exc_info.value, "__notes__", [])
+    assert not any("flaky precondition" in note for note in notes)
+
+
 def test_get_state_machine_test_is_importable():
     # Regression test: get_state_machine_test is used by HypoFuzz
     assert callable(get_state_machine_test)
@@ -1335,7 +1355,6 @@ def test_targets_repr(bundle_names, initial, repr_):
     bundles = {name: Bundle(name) for name in bundle_names}
 
     class Machine(RuleBasedStateMachine):
-
         @initialize(targets=[bundles[name] for name in bundle_names])
         def init(self):
             return initial
