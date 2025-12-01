@@ -1833,11 +1833,15 @@ def recursive(
     base: SearchStrategy[Ex],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
     *,
+    min_leaves: int = 1,
     max_leaves: int = 100,
 ) -> SearchStrategy[T | Ex]:
     """base: A strategy to start from.
 
     extend: A function which takes a strategy and returns a new strategy.
+
+    min_leaves: The minimum number of elements to be drawn from base on a given
+    run.
 
     max_leaves: The maximum number of elements to be drawn from base on a given
     run.
@@ -1857,7 +1861,7 @@ def recursive(
 
     """
 
-    return RecursiveStrategy(base, extend, max_leaves)
+    return RecursiveStrategy(base, extend, min_leaves, max_leaves)
 
 
 class PermutationStrategy(SearchStrategy):
