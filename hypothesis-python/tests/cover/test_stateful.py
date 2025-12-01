@@ -28,11 +28,18 @@ from hypothesis import (
 from hypothesis.control import current_build_context
 from hypothesis.core import encode_failure
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.errors import (
+    DidNotReproduce,
+    Flaky,
+    FlakyStrategyDefinition,
+    InvalidArgument,
+    InvalidDefinition,
+)
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
     consumes,
+    get_state_machine_test,
     initialize,
     invariant,
     multiple,
@@ -149,6 +156,24 @@ class FlakyStateMachine(RuleBasedStateMachine):
 def test_flaky_raises_flaky():
     with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
+
+
+class FlakyPreconditionMachine(RuleBasedStateMachine):
+    @precondition(lambda self: not current_build_context().is_final)
+    @rule()
+    def action(self):
+        raise AssertionError
+
+
+def test_flaky_precondition_error_message():
+    with raises(FlakyStrategyDefinition) as exc_info:
+        FlakyPreconditionMachine.TestCase().runTest()
+    assert any("flaky precondition" in note for note in exc_info.value.__notes__)
+
+
+def test_get_state_machine_test_is_importable():
+    # Regression test: get_state_machine_test is used by HypoFuzz
+    assert callable(get_state_machine_test)
 
 
 class FlakyRatchettingMachine(RuleBasedStateMachine):
