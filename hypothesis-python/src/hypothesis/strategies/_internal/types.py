@@ -214,6 +214,25 @@ def type_sorting_key(t):
     return (is_container, repr(t))
 
 
+def _resolve_forward_ref_in_caller(forward_arg: str):
+    """Try to resolve a forward reference name by walking up the call stack.
+
+    This allows us to resolve recursive forward references like:
+        A = list[Union["A", str]]
+
+    where "A" refers to the type alias being defined.
+    """
+    frame = sys._getframe()
+    while frame is not None:
+        # Check locals first, then globals
+        if forward_arg in frame.f_locals:
+            return frame.f_locals[forward_arg]
+        if forward_arg in frame.f_globals:
+            return frame.f_globals[forward_arg]
+        frame = frame.f_back
+    return None
+
+
 def _compatible_args(args, superclass_args):
     """Check that the args of two generic types are compatible for try_issubclass."""
     assert superclass_args is not None
@@ -562,6 +581,12 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+    elif (not mapping) and isinstance(thing, typing.ForwardRef):
+        # Try to resolve non-builtin forward references by walking up the call stack.
+        # This handles recursive forward references like A = list[Union["A", str]].
+        resolved = _resolve_forward_ref_in_caller(thing.__forward_arg__)
+        if resolved is not None and is_a_type(resolved):
+            return st.from_type(resolved)
 
     def is_maximal(t):
         # For each k in the mapping, we use it if it's the most general type
@@ -1140,8 +1165,7 @@ def resolve_TypeVar(thing):
     return st.shared(
         st.sampled_from(
             # Constraints may be None or () on various Python versions.
-            getattr(thing, "__constraints__", None)
-            or builtin_scalar_types,
+            getattr(thing, "__constraints__", None) or builtin_scalar_types,
         ),
         key=type_var_key,
     ).flatmap(st.from_type)
