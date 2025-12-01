@@ -22,6 +22,13 @@ except ImportError:
 else:
     NP1 = np_version.startswith("1.")
 
+ASSUME_REVEALED_TYPES = [
+    ("assume(False)", "Never"),
+    ("assume(None)", "Never"),
+    ("assume(True)", "Literal[True]"),
+    ("assume(1)", "Literal[True]"),
+]
+
 REVEALED_TYPES = [
     ("integers()", "int"),
     ("text()", "str"),
@@ -201,5 +208,31 @@ NUMPY_REVEALED_TYPES = [
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
         "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
+    ),
+    # basic_indices with allow_ellipsis=False (no EllipsisType differences)
+    (
+        "basic_indices((3, 4), allow_ellipsis=False)",
+        "int | slice[Any, Any, Any] | tuple[int | slice[Any, Any, Any], ...]",
+    ),
+]
+
+# basic_indices tests where mypy/pyright differ in EllipsisType representation
+NUMPY_DIFF_REVEALED_TYPES = [
+    # mypy uses types.EllipsisType, pyright uses EllipsisType
+    DifferingRevealedTypes(
+        "basic_indices((3, 4))",
+        "int | slice[Any, Any, Any] | types.EllipsisType | tuple[int | slice[Any, Any, Any] | types.EllipsisType, ...]",
+        "int | slice[Any, Any, Any] | EllipsisType | tuple[int | slice[Any, Any, Any] | EllipsisType, ...]",
+    ),
+    # pyright also reorders None to the end
+    DifferingRevealedTypes(
+        "basic_indices((3, 4), allow_newaxis=True, allow_ellipsis=False)",
+        "int | slice[Any, Any, Any] | None | tuple[int | slice[Any, Any, Any] | None, ...]",
+        "int | slice[Any, Any, Any] | tuple[int | slice[Any, Any, Any] | None, ...] | None",
+    ),
+    DifferingRevealedTypes(
+        "basic_indices((3, 4), allow_newaxis=True)",
+        "int | slice[Any, Any, Any] | None | types.EllipsisType | tuple[int | slice[Any, Any, Any] | None | types.EllipsisType, ...]",
+        "int | slice[Any, Any, Any] | EllipsisType | tuple[int | slice[Any, Any, Any] | EllipsisType | None, ...] | None",
     ),
 ]

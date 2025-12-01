@@ -30,11 +30,15 @@ from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
+    _BIE,
     NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
     BroadcastableShapes,
     Shape,
+    _BIENoEllipsis,
+    _BIENoEllipsisNoNewaxis,
+    _BIENoNewaxis,
     array_shapes,
     broadcastable_shapes,
     check_argument,
@@ -1090,6 +1094,52 @@ mutually_broadcastable_shapes.__doc__ = f"""
         BroadcastableShapes(input_shapes=((4, 2), (1, 2, 3)), result_shape=(4, 3))
 
     """
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[False] = ...,
+    allow_ellipsis: Literal[False],
+) -> st.SearchStrategy[
+    _BIENoEllipsisNoNewaxis | tuple[_BIENoEllipsisNoNewaxis, ...]
+]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[False] = ...,
+    allow_ellipsis: Literal[True] = ...,
+) -> st.SearchStrategy[_BIENoNewaxis | tuple[_BIENoNewaxis, ...]]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[True],
+    allow_ellipsis: Literal[False],
+) -> st.SearchStrategy[_BIENoEllipsis | tuple[_BIENoEllipsis, ...]]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[True],
+    allow_ellipsis: Literal[True] = ...,
+) -> st.SearchStrategy[_BIE | tuple[_BIE, ...]]: ...
 
 
 @defines_strategy()

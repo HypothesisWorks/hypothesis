@@ -19,9 +19,9 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
-    # We're on GitHub Actions or Codespaces and already set up a suitable Python
-    PYTHON=$(command -v python)
+if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-}" ] ; then
+    # We're on GitHub Actions, Codespaces, or Claude Code and already have a suitable Python
+    PYTHON=$(command -v python3 || command -v python)
 else
     # Otherwise, we install it from scratch
     # NOTE: tooling keeps this version in sync with ci_version in tooling
@@ -40,9 +40,14 @@ export PYTHONPATH="$ROOT/tooling/src"
 
 if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   rm -rf "$TOOL_VIRTUALENV"
-  "$PYTHON" -m pip install --upgrade pip
-  "$PYTHON" -m pip install --upgrade virtualenv
-  "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
+  if [ -n "${CLAUDECODE-}" ] ; then
+    # Claude Code: use venv (available) and skip pip upgrades (debian-managed)
+    "$PYTHON" -m venv "$TOOL_VIRTUALENV"
+  else
+    "$PYTHON" -m pip install --upgrade pip
+    "$PYTHON" -m pip install --upgrade virtualenv
+    "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
+  fi
   "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
 fi
 
