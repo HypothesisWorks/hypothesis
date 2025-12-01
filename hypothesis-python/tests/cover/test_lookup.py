@@ -625,6 +625,16 @@ def test_cannot_resolve_type_forward_reference(thing):
         check_can_generate_examples(st.from_type(t))
 
 
+def test_forward_ref_resolved_from_local_scope():
+    # Test that forward refs can be resolved from local variables (f_locals)
+    # This explicitly tests the f_locals lookup path in _resolve_forward_ref_in_caller
+    class LocalClass:
+        pass
+
+    LocalType = list[typing.Union["LocalClass", str]]
+    check_can_generate_examples(st.from_type(LocalType))
+
+
 class Tree:
     def __init__(self, left: typing.Optional["Tree"], right: typing.Optional["Tree"]):
         self.left = left

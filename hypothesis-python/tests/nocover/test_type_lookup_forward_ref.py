@@ -81,15 +81,3 @@ def test_forward_ref_to_undefined_still_fails():
 
     with pytest.raises(ResolutionFailed, match=r"Could not resolve"):
         find_any(st.from_type(A))
-
-
-def test_forward_ref_resolved_from_local_scope():
-    # Test that forward refs can be resolved from local variables (f_locals)
-    # This explicitly tests the f_locals lookup path in _resolve_forward_ref_in_caller
-    class LocalClass:
-        pass
-
-    # Forward reference to a locally-defined class
-    LocalType = list[Union["LocalClass", str]]
-    result = find_any(st.from_type(LocalType))
-    assert isinstance(result, list)
