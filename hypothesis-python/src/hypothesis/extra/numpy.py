@@ -30,12 +30,12 @@ from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
+    _BIE,
+    NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
     BroadcastableShapes,
-    NDIM_MAX,
     Shape,
-    _BIE,
     _BIENoEllipsis,
     _BIENoEllipsisNoNewaxis,
     _BIENoNewaxis,
