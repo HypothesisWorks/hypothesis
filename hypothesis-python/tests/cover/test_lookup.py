@@ -609,10 +609,19 @@ def test_override_args_for_namedtuple(thing):
     assert thing.a is None
 
 
-@pytest.mark.parametrize("thing", [typing.Optional, list, type, _List, _Type])
-def test_cannot_resolve_bare_forward_reference(thing):
+@pytest.mark.parametrize("thing", [typing.Optional, list, _List])
+def test_can_resolve_forward_reference_to_class(thing):
+    # Forward references to classes in scope should now be resolved
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4542
     t = thing["ConcreteFoo"]
-    with pytest.raises(InvalidArgument):
+    check_can_generate_examples(st.from_type(t))
+
+
+@pytest.mark.parametrize("thing", [type, _Type])
+def test_cannot_resolve_type_forward_reference(thing):
+    # Type[ForwardRef] still fails because it needs special handling
+    t = thing["ConcreteFoo"]
+    with pytest.raises(ResolutionFailed):
         check_can_generate_examples(st.from_type(t))
 
 
