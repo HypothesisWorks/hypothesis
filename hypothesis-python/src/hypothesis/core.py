@@ -1034,8 +1034,8 @@ class StateForActualGivenExecution:
             args = self.stuff.args
             kwargs = dict(self.stuff.kwargs)
             if example_kwargs is None:
-                kw, argslices = context.prep_args_kwargs_from_strategies(
-                    self.stuff.given_kwargs
+                _, kw, argslices = context.prep_args_kwargs_from_strategies(
+                    kwarg_strategies=self.stuff.given_kwargs
                 )
             else:
                 kw = example_kwargs
