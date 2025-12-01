@@ -26,6 +26,7 @@ from hypothesistooling.scripts import pip_tool, tool_path
 from .revealed_types import (
     ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
     REVEALED_TYPES,
@@ -220,9 +221,12 @@ def test_assume_revealed_types(tmp_path, val, expect):
     assert typ == (expect if expect != "Never" else "NoReturn")
 
 
-@pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)
+@pytest.mark.parametrize(
+    "val,expect",
+    [*NUMPY_REVEALED_TYPES, *((x.value, x.pyright) for x in NUMPY_DIFF_REVEALED_TYPES)],
+)
 def test_numpy_revealed_types(tmp_path, val, expect):
-    f = tmp_path / (expect + ".py")
+    f = tmp_path / "check.py"
     f.write_text(
         textwrap.dedent(
             f"""
