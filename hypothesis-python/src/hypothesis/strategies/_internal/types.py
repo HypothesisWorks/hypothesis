@@ -24,6 +24,7 @@ import os
 import random
 import re
 import sys
+import types
 import typing
 import uuid
 import warnings
@@ -214,7 +215,7 @@ def type_sorting_key(t):
     return (is_container, repr(t))
 
 
-def _resolve_forward_ref_in_caller(forward_arg: str):
+def _resolve_forward_ref_in_caller(forward_arg: str) -> typing.Any:
     """Try to resolve a forward reference name by walking up the call stack.
 
     This allows us to resolve recursive forward references like:
@@ -222,7 +223,7 @@ def _resolve_forward_ref_in_caller(forward_arg: str):
 
     where "A" refers to the type alias being defined.
     """
-    frame = sys._getframe()
+    frame: types.FrameType | None = sys._getframe()
     while frame is not None:
         # Check locals first, then globals
         if forward_arg in frame.f_locals:
@@ -1165,7 +1166,8 @@ def resolve_TypeVar(thing):
     return st.shared(
         st.sampled_from(
             # Constraints may be None or () on various Python versions.
-            getattr(thing, "__constraints__", None) or builtin_scalar_types,
+            getattr(thing, "__constraints__", None)
+            or builtin_scalar_types,
         ),
         key=type_var_key,
     ).flatmap(st.from_type)
