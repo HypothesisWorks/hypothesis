@@ -15,6 +15,7 @@ a single value.
 Notably, the set of steps available at any point may depend on the
 execution to date.
 """
+
 import collections
 import dataclasses
 import inspect
@@ -35,7 +36,11 @@ from hypothesis._settings import (
 )
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
-from hypothesis.errors import InvalidArgument, InvalidDefinition
+from hypothesis.errors import (
+    FlakyStrategyDefinition,
+    InvalidArgument,
+    InvalidDefinition,
+)
 from hypothesis.internal.compat import add_note, batched
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
@@ -95,7 +100,11 @@ class TestCaseProperty:  # pragma: no cover
         raise AttributeError("Cannot delete TestCase")
 
 
-def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0):
+def get_state_machine_test(
+    state_machine_factory, *, settings=None, _min_steps=0, _flaky_state=None
+):
+    # This function is split out from run_state_machine_as_test so that
+    # HypoFuzz can get and call the test function directly.
     if settings is None:
         try:
             settings = state_machine_factory.TestCase.settings
@@ -108,6 +117,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
         # Because settings can vary via e.g. profiles, settings.stateful_step_count
         # overrides this argument and we don't bother cross-validating.
         raise InvalidArgument(f"_min_steps={_min_steps} must be non-negative.")
+    _flaky_state = _flaky_state or {}
 
     @settings
     @given(st.data())
@@ -161,6 +171,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
 
                 # Choose a rule to run, preferring an initialize rule if there are
                 # any which have not been run yet.
+                _flaky_state["selecting_rule"] = True
                 if machine._initialize_rules_to_run:
                     init_rules = [
                         st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
@@ -170,6 +181,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                     machine._initialize_rules_to_run.remove(rule)
                 else:
                     rule, data = cd.draw(machine._rules_strategy)
+                _flaky_state["selecting_rule"] = False
                 draw_label = f"generate:rule:{rule.function.__name__}"
                 cd.draw_times.setdefault(draw_label, 0.0)
                 in_gctime = gc_cumulative_time() - start_gc
@@ -250,10 +262,23 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
     RuleBasedStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
+    flaky_state = {"selecting_rule": False}
     state_machine_test = get_state_machine_test(
-        state_machine_factory, settings=settings, _min_steps=_min_steps
+        state_machine_factory,
+        settings=settings,
+        _min_steps=_min_steps,
+        _flaky_state=flaky_state,
     )
-    state_machine_test()
+    try:
+        state_machine_test()
+    except FlakyStrategyDefinition as err:
+        if flaky_state["selecting_rule"]:
+            add_note(
+                err,
+                "while selecting a rule to run. This is usually caused by "
+                "a flaky precondition, or a bundle that was unexpectedly empty.",
+            )
+        raise
 
 
 class StateMachineMeta(type):
