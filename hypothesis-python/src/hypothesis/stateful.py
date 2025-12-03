@@ -37,9 +37,9 @@ from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import add_note, batched
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import (
@@ -60,8 +60,7 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 T = TypeVar("T")
-STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
-SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
+STATE_MACHINE_RUN_LABEL = calc_label_from_name("another state machine step")
 
 
 def _is_singleton(obj: object) -> bool:
@@ -1073,9 +1072,6 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
         return invariant_wrapper
 
     return accept
-
-
-LOOP_LABEL = cu.calc_label_from_name("RuleStrategy loop iteration")
 
 
 class RuleStrategy(SearchStrategy):

@@ -1,4 +1,3 @@
-======================
 Third-party extensions
 ======================
 
@@ -10,7 +9,6 @@ If there's something missing which you think should be here, let us know!
     Being listed on this page does not imply that the Hypothesis
     maintainers endorse a package.
 
--------------------
 External strategies
 -------------------
 
@@ -50,7 +48,6 @@ Or some other custom integration, such as a :ref:`"hypothesis" entry point <entr
   :func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`
   "just work" regardless of the underlying implementation.
 
------------------
 Other cool things
 -----------------
 
@@ -78,9 +75,6 @@ and verification framework with multi-level hardware modeling support", which
 ships with Hypothesis integrations to check that all of those levels are
 equivalent, from function-level to register-transfer level and even to hardware.
 
-:pypi:`libarchimedes` makes it easy to use Hypothesis in
-`the Hy language <https://github.com/hylang/hy>`_, a Lisp embedded in Python.
-
 :pypi:`battle-tested` is a fuzzing tool that will show you how your code can
 fail - by trying all kinds of inputs and reporting whatever happens.
 
@@ -98,7 +92,6 @@ and
 you can run a quick 'smoke test' with only a few keystrokes for any type-annotated
 function, even if it doesn't have any contracts!
 
---------------------
 Writing an extension
 --------------------
 
@@ -130,7 +123,6 @@ test is using Hypothesis. For that, see |currently_in_test_context|.
 
 .. _entry-points:
 
----------------------------------------
 Hypothesis integration via entry points
 ---------------------------------------
 
@@ -193,7 +185,7 @@ And that's all it takes!
 
 
 Interaction with :pypi:`pytest-cov`
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Because pytest does not load plugins from entrypoints in any particular order,
 using the Hypothesis entrypoint may import your module before :pypi:`pytest-cov`
@@ -231,7 +223,6 @@ Then, set the relevant environment variable and run normally::
 
 .. _alternative-backends:
 
------------------------------------
 Alternative backends for Hypothesis
 -----------------------------------
 

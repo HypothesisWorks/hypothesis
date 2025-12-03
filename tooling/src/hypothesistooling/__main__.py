@@ -391,9 +391,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.25",
-    "5.1": "5.1.13",
-    "5.2": "5.2.7",
+    "4.2": "4.2.26",
+    "5.1": "5.1.14",
+    "5.2": "5.2.8",
 }
 
 
@@ -577,6 +577,19 @@ def live_website():
     )
 
 
+@task()
+def live_docs():
+    pip_tool(
+        "sphinx-autobuild",
+        "docs",
+        "docs/_build/html",
+        "--watch",
+        "src",
+        "--open-browser",
+        cwd=hp.HYPOTHESIS_PYTHON,
+    )
+
+
 def run_tox(task, version, *args):
     python = install.python_executable(version)
 
@@ -608,7 +621,7 @@ PYTHONS = {
     "3.13t": "3.13t-dev",
     "3.14": "3.14.0",
     "3.14t": "3.14t-dev",
-    "3.15": "3.15.0a1",
+    "3.15": "3.15.0a2",
     "3.15t": "3.15t-dev",
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",

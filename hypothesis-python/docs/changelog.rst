@@ -18,6 +18,57 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.4:
+
+--------------------
+6.148.4 - 2025-12-01
+--------------------
+
+This patch improves the type annotations for :func:`~hypothesis.extra.numpy.basic_indices`.
+The return type now accurately reflects the ``allow_ellipsis`` and ``allow_newaxis``
+parameters, excluding ``EllipsisType`` or ``None`` from the union when those index
+types are disabled (:issue:`4607`).
+
+Additionally, :func:`~hypothesis.assume` now has overloaded type annotations:
+``assume(True)`` returns ``Literal[True]``, while ``assume(False)`` and
+``assume(None)`` return ``NoReturn``.
+
+.. _v6.148.3:
+
+--------------------
+6.148.3 - 2025-11-27
+--------------------
+
+Clean up some internal code.
+
+.. _v6.148.2:
+
+--------------------
+6.148.2 - 2025-11-18
+--------------------
+
+Document |fuzz_one_input|.
+
+.. _v6.148.1:
+
+--------------------
+6.148.1 - 2025-11-16
+--------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.148.0:
+
+--------------------
+6.148.0 - 2025-11-15
+--------------------
+
+Calling :func:`~hypothesis.settings.register_profile` from within a test
+decorated with :func:`@settings <hypothesis.settings>` is now deprecated,
+to avoid confusion about which settings are used as the baseline for the
+new profile.
+
 .. _v6.147.0:
 
 --------------------

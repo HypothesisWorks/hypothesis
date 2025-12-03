@@ -583,16 +583,15 @@ class settings(metaclass=settingsMeta):
     it uses the value specified for each attribute. Any attribute which is
     not specified will inherit from its value in the ``parent`` settings object.
     If ``parent`` is not passed, any attributes which are not specified will inherit
-    from the currently active settings profile instead.
+    from the current settings profile instead.
 
     For instance, ``settings(max_examples=10)`` will have a ``max_examples`` of ``10``,
     and the value of all other attributes will be equal to its value in the
-    currently active settings profile.
+    current settings profile.
 
-    A settings object is immutable once created. Changes made from activating a new
-    settings profile with |settings.load_profile| will be reflected in
-    settings objects created after the profile was made active, but not in existing
-    settings objects.
+    Changes made from activating a new settings profile with |settings.load_profile|
+    will be reflected in settings objects created after the profile was loaded,
+    but not in existing settings objects.
 
     .. _builtin-profiles:
 
@@ -639,7 +638,7 @@ class settings(metaclass=settingsMeta):
             suppress_health_check=[HealthCheck.too_slow],
         )
 
-    You can configure either of the built-in profiles with |settings.register_profile|:
+    You can replace either of the built-in profiles with |settings.register_profile|:
 
     .. code-block:: python
 
@@ -1117,6 +1116,20 @@ class settings(metaclass=settingsMeta):
         |settings.get_profile|.
         """
         check_type(str, name, "name")
+
+        if (
+            default_variable.value
+            and settings._current_profile
+            and default_variable.value != settings._profiles[settings._current_profile]
+        ):
+            note_deprecation(
+                "Cannot register a settings profile when the current settings differ "
+                "from the current profile (usually due to an @settings decorator). "
+                "Register profiles at module level instead.",
+                since="2025-11-15",
+                has_codemod=False,
+            )
+
         # if we just pass the parent and no kwargs, like
         #   settings.register_profile(settings(max_examples=10))
         # then optimize out the pointless intermediate settings object which
