@@ -1594,8 +1594,8 @@ def _simplify_explicit_errors(errors: list[ReportableError]) -> list[ReportableE
             other_count = len(group) - 1
             add_note(
                 simplest.exception,
-                f"{other_count} other explicit example{'s' * (other_count > 1)} "
-                "also failed with this error; only showing the simplest.",
+                f"(note: {other_count} other explicit example{'s' * (other_count > 1)} "
+                "also failed with this error; use Verbosity.verbose to view)",
             )
             result.append(simplest)
 
