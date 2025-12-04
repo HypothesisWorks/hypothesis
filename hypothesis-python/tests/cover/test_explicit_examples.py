@@ -260,6 +260,69 @@ def test_multiple_example_reporting(exc):
         inner_test_multiple_failing_examples()
 
 
+def test_simplifies_multiple_examples_with_same_error():
+    # When multiple examples fail with the same error, only the simplest is shown
+    @example(x=1000)
+    @example(x=1)
+    @example(x=100)
+    @settings(report_multiple_bugs=True, phases=[Phase.explicit])
+    @given(x=integers())
+    def test_fn(x):
+        assert x < 0
+
+    with pytest.raises(AssertionError) as exc_info:
+        test_fn()
+
+    err = exc_info.value
+    # Should show note about other examples
+    assert any(
+        "2 other explicit examples also failed" in note for note in err.__notes__
+    )
+    # Should show the simplest example (x=1 is shorter than x=100 or x=1000)
+    assert any("x=1," in note for note in err.__notes__)
+
+
+def test_shows_all_examples_at_verbose():
+    # At verbose, all examples with same error should be shown
+    @example(x=1000)
+    @example(x=1)
+    @settings(
+        report_multiple_bugs=True, phases=[Phase.explicit], verbosity=Verbosity.verbose
+    )
+    @given(x=integers())
+    def test_fn(x):
+        assert x < 0
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        test_fn()
+
+    group = exc_info.value
+    # Both examples should be shown
+    assert len(group.exceptions) == 2
+    # No simplification note should be present
+    for exc in group.exceptions:
+        assert not any(
+            "other explicit example" in note for note in getattr(exc, "__notes__", [])
+        )
+
+
+def test_different_errors_not_simplified():
+    # Examples with different errors should all be shown
+    @example(x=1)
+    @example(x=2)
+    @settings(report_multiple_bugs=True, phases=[Phase.explicit])
+    @given(x=integers())
+    def test_fn(x):
+        if x == 1:
+            raise ValueError("one")
+        raise TypeError("two")
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        test_fn()
+
+    assert {type(e) for e in exc_info.value.exceptions} == {ValueError, TypeError}
+
+
 @example(text())
 @given(text())
 def test_example_decorator_accepts_strategies(s):
