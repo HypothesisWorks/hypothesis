@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.6:
+
+--------------------
+6.148.6 - 2025-12-04
+--------------------
+
+Fix a bug where we persisted symbolics from solver-based :ref:`alternative backends <alternative-backends>` in |event|.
+
 .. _v6.148.5:
 
 --------------------
