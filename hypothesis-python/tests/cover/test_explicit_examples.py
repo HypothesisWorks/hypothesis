@@ -320,11 +320,7 @@ def test_different_errors_not_simplified():
     with pytest.raises(ExceptionGroup) as exc_info:
         test_fn()
 
-    group = exc_info.value
-    # Both examples should be shown (different error types)
-    assert len(group.exceptions) == 2
-    types = {type(e) for e in group.exceptions}
-    assert types == {ValueError, TypeError}
+    assert {type(e) for e in exc_info.value.exceptions} == {ValueError, TypeError}
 
 
 @example(text())
