@@ -24,7 +24,9 @@ from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHO
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
+    ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
     REVEALED_TYPES,
@@ -200,9 +202,31 @@ def test_revealed_types(tmp_path, val, expect):
     assert typ == f"SearchStrategy[{expect}]"
 
 
-@pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)
+@pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)
+def test_assume_revealed_types(tmp_path, val, expect):
+    """Check that Pyright infers the correct return type for assume()."""
+    f = tmp_path / "check.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis import assume
+            reveal_type({val})
+            """
+        ),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path)
+    typ = get_pyright_analysed_type(f)
+    # Pyright uses NoReturn, mypy uses Never
+    assert typ == (expect if expect != "Never" else "NoReturn")
+
+
+@pytest.mark.parametrize(
+    "val,expect",
+    [*NUMPY_REVEALED_TYPES, *((x.value, x.pyright) for x in NUMPY_DIFF_REVEALED_TYPES)],
+)
 def test_numpy_revealed_types(tmp_path, val, expect):
-    f = tmp_path / (expect + ".py")
+    f = tmp_path / "check.py"
     f.write_text(
         textwrap.dedent(
             f"""

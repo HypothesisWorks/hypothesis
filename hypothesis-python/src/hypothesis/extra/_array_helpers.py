@@ -22,11 +22,15 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
     "NDIM_MAX",
+    "_BIE",
     "BasicIndex",
     "BasicIndexStrategy",
     "BroadcastableShapes",
     "MutuallyBroadcastableShapesStrategy",
     "Shape",
+    "_BIENoEllipsis",
+    "_BIENoEllipsisNoNewaxis",
+    "_BIENoNewaxis",
     "array_shapes",
     "broadcastable_shapes",
     "check_argument",
@@ -38,7 +42,15 @@ __all__ = [
 
 
 Shape = tuple[int, ...]
-BasicIndex = tuple[int | slice | None | EllipsisType, ...]
+
+# Type aliases for basic array index elements. Variants exist to accurately
+# type the return value of basic_indices() based on allow_ellipsis/allow_newaxis.
+_BIE = int | slice | None | EllipsisType
+_BIENoEllipsis = int | slice | None
+_BIENoNewaxis = int | slice | EllipsisType
+_BIENoEllipsisNoNewaxis = int | slice
+
+BasicIndex = _BIE | tuple[_BIE, ...]
 
 
 class BroadcastableShapes(NamedTuple):
