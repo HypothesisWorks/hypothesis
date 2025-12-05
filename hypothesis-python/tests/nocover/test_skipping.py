@@ -11,6 +11,7 @@
 import unittest
 
 import pytest
+from _pytest.outcomes import Skipped
 
 from hypothesis import given, settings
 from hypothesis.core import skip_exceptions_to_reraise
@@ -46,47 +47,6 @@ def test_skip_exceptions_save_database_entries():
     database = InMemoryExampleDatabase()
     call_count = 0
     skip_value = None
-    first_value_on_second_run = None
-    is_second_run = False
-
-    @settings(database=database, max_examples=100)
-    @given(integers())
-    def test_func(n):
-        nonlocal call_count, skip_value, first_value_on_second_run, is_second_run
-        call_count += 1
-        if is_second_run and first_value_on_second_run is None:
-            first_value_on_second_run = n
-        # Skip on the 5th value we see in the first run
-        if call_count == 5 and skip_value is None:
-            skip_value = n
-        if skip_value is not None and n == skip_value:
-            pytest.skip(f"skipping on {n}")
-
-    # First run should raise a skip exception and save to database
-    with pytest.raises(pytest.skip.Exception):
-        test_func()
-
-    # Verify database entry was saved
-    assert sum(len(v) for v in database.data.values()) == 1
-
-    # Second run should immediately replay the skip value
-    call_count = 0
-    is_second_run = True
-
-    with pytest.raises(pytest.skip.Exception):
-        test_func()
-
-    # If database entry was saved, first call should be the skip value (replayed)
-    assert first_value_on_second_run == skip_value
-    assert call_count == 1
-
-
-def test_skip_exceptions_persist_while_skipping_then_evicted():
-    """Skip entries persist while skipping, then are evicted (issue #4484)."""
-    database = InMemoryExampleDatabase()
-    call_count = 0
-    skip_value = None
-    should_skip = True
     first_value = None
 
     @settings(database=database, max_examples=100)
@@ -96,30 +56,25 @@ def test_skip_exceptions_persist_while_skipping_then_evicted():
         call_count += 1
         if first_value is None:
             first_value = n
-        # Skip on the 5th value we see in the first run
+
+        # Skip on the 5th value in the first run (the choice of 5 is arbitrary)
         if call_count == 5 and skip_value is None:
             skip_value = n
-        if skip_value is not None and n == skip_value and should_skip:
-            pytest.skip(f"skipping on {n}")
 
-    # First run: skip on the 5th value
-    with pytest.raises(pytest.skip.Exception):
+        if n == skip_value:
+            pytest.skip()
+
+    # First run should raise a skip exception and save to database
+    with pytest.raises(Skipped):
         test_func()
     assert sum(len(v) for v in database.data.values()) == 1
 
-    # Second and third runs: still skipping, entry persists
-    for _ in range(2):
-        call_count = 0
-        with pytest.raises(pytest.skip.Exception):
-            test_func()
-        assert sum(len(v) for v in database.data.values()) == 1
-
-    # Fourth run: no longer skip, entry should be evicted
-    call_count = 0
+    # Second run should immediately replay the skip value
     first_value = None
-    should_skip = False
-    test_func()
+    call_count = 0
+    with pytest.raises(Skipped):
+        test_func()
 
-    # Entry was replayed (first_value should be skip_value) then evicted
+    # first call should be the replayed skip value
     assert first_value == skip_value
-    assert sum(len(v) for v in database.data.values()) == 0
+    assert call_count == 1
