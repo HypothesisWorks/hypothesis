@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.7:
+
+--------------------
+6.148.7 - 2025-12-05
+--------------------
+
+When multiple explicit |@example| decorators fail with the same error,
+Hypothesis now shows only the simplest failing example (by shortlex order)
+with a note about how many other examples also failed (:issue:`4520`).
+
+To see all failing examples, use |Verbosity.verbose| or higher.
+
 .. _v6.148.6:
 
 --------------------
