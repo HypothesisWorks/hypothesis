@@ -609,11 +609,30 @@ def test_override_args_for_namedtuple(thing):
     assert thing.a is None
 
 
-@pytest.mark.parametrize("thing", [typing.Optional, list, type, _List, _Type])
-def test_cannot_resolve_bare_forward_reference(thing):
+@pytest.mark.parametrize("thing", [typing.Optional, list, _List])
+def test_can_resolve_forward_reference_to_class(thing):
+    # Forward references to classes in scope should now be resolved
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4542
     t = thing["ConcreteFoo"]
-    with pytest.raises(InvalidArgument):
+    check_can_generate_examples(st.from_type(t))
+
+
+@pytest.mark.parametrize("thing", [type, _Type])
+def test_cannot_resolve_type_forward_reference(thing):
+    # Type[ForwardRef] still fails because it needs special handling
+    t = thing["ConcreteFoo"]
+    with pytest.raises(ResolutionFailed):
         check_can_generate_examples(st.from_type(t))
+
+
+def test_forward_ref_resolved_from_local_scope():
+    # Test that forward refs can be resolved from local variables (f_locals)
+    # This explicitly tests the f_locals lookup path in _resolve_forward_ref_in_caller
+    class LocalClass:
+        pass
+
+    LocalType = list[typing.Union["LocalClass", str]]
+    check_can_generate_examples(st.from_type(LocalType))
 
 
 class Tree:
