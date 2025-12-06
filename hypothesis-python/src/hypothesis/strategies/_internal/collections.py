@@ -64,7 +64,28 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
         return all(recur(e) for e in self.element_strategies)
 
     def do_draw(self, data: ConjectureData) -> tuple[Ex, ...]:
-        return tuple(data.draw(e) for e in self.element_strategies)
+        from hypothesis.control import current_build_context
+        from hypothesis.vendor.pretty import IDKey, _tuple_pprinter
+
+        context = current_build_context()
+        arg_labels: dict[str, tuple[int, int]] = {}
+        elements = []
+        for i, strategy in enumerate(self.element_strategies):
+            label = f"arg[{i}]"
+            start = len(data.nodes)
+            context._label_path.append(label)
+            try:
+                elements.append(data.draw(strategy))
+            finally:
+                context._label_path.pop()
+            context._record_arg_slice(label, start, len(data.nodes), arg_labels)
+
+        result = tuple(elements)
+        if arg_labels:
+            context.known_object_printers[IDKey(result)].append(
+                _tuple_pprinter(arg_labels)
+            )
+        return result
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return any(recur(e) for e in self.element_strategies)
@@ -366,19 +387,44 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         self.optional = optional
 
     def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
-        value = data.draw(self.fixed)
-        if self.optional is None:
-            return value
+        from hypothesis.control import current_build_context
+        from hypothesis.vendor.pretty import IDKey, _fixeddict_pprinter
 
-        remaining = [k for k, v in self.optional.items() if not v.is_empty]
-        should_draw = cu.many(
-            data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
-        )
-        while should_draw.more():
-            j = data.draw_integer(0, len(remaining) - 1)
-            remaining[-1], remaining[j] = remaining[j], remaining[-1]
-            key = remaining.pop()
-            value[key] = data.draw(self.optional[key])
+        context = current_build_context()
+        arg_labels: dict[str, tuple[int, int]] = {}
+        value = type(self.mapping)()
+
+        def draw_key(key: Any, strategy: SearchStrategy[Any]) -> None:
+            label = str(key)
+            start = len(data.nodes)
+            context._label_path.append(label)
+            try:
+                value[key] = data.draw(strategy)
+            finally:
+                context._label_path.pop()
+            context._record_arg_slice(label, start, len(data.nodes), arg_labels)
+
+        for key, strategy in self.mapping.items():
+            draw_key(key, strategy)
+
+        if self.optional is not None:
+            remaining = [k for k, v in self.optional.items() if not v.is_empty]
+            should_draw = cu.many(
+                data,
+                min_size=0,
+                max_size=len(remaining),
+                average_size=len(remaining) / 2,
+            )
+            while should_draw.more():
+                j = data.draw_integer(0, len(remaining) - 1)
+                remaining[-1], remaining[j] = remaining[j], remaining[-1]
+                key = remaining.pop()
+                draw_key(key, self.optional[key])
+
+        if arg_labels:
+            context.known_object_printers[IDKey(value)].append(
+                _fixeddict_pprinter(arg_labels, self.mapping)
+            )
         return value
 
     def calc_is_empty(self, recur: RecurT) -> bool:

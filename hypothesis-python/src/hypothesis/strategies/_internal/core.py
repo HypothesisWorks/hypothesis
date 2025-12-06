@@ -1053,8 +1053,10 @@ class BuildsStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        args = [data.draw(s) for s in self.args]
-        kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
+        context = current_build_context()
+        args, kwargs, arg_labels = context.prep_args_kwargs_from_strategies(
+            self.args, self.kwargs
+        )
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
@@ -1086,7 +1088,9 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
+        context.record_call(
+            obj, self.target, args=args, kwargs=kwargs, arg_labels=arg_labels
+        )
         return obj
 
     def do_validate(self) -> None:
