@@ -13,7 +13,7 @@ cattrs==25.3.0
     # via
     #   lsprotocol
     #   pygls
-crosshair-tool==0.0.98
+crosshair-tool==0.0.99
     # via
     #   -r requirements/crosshair.in
     #   hypothesis-crosshair

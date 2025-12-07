@@ -80,8 +80,13 @@ class Verbosity(Enum):
     verbose = "verbose"
     """
     Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
-    will print each example as it tries it, as well as any notes made with |note|
-    for every example. Hypothesis will also print shrinking attempts.
+    will:
+
+    * Print each test case as it tries it
+    * Print any notes made with |note| for each test case
+    * Print each shrinking attempt
+    * Print all explicit failing examples when using |@example|, instead of only
+      the simplest one
     """
 
     debug = "debug"

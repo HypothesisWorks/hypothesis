@@ -18,6 +18,35 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.7:
+
+--------------------
+6.148.7 - 2025-12-05
+--------------------
+
+When multiple explicit |@example| decorators fail with the same error,
+Hypothesis now shows only the simplest failing example (by shortlex order)
+with a note about how many other examples also failed (:issue:`4520`).
+
+To see all failing examples, use |Verbosity.verbose| or higher.
+
+.. _v6.148.6:
+
+--------------------
+6.148.6 - 2025-12-04
+--------------------
+
+Fix a bug where we persisted symbolics from solver-based :ref:`alternative backends <alternative-backends>` in |event|.
+
+.. _v6.148.5:
+
+--------------------
+6.148.5 - 2025-12-01
+--------------------
+
+This patch improves the error message for :class:`~hypothesis.errors.FlakyStrategyDefinition`
+when the precondition for a rule is flaky (:issue:`4206`).
+
 .. _v6.148.4:
 
 --------------------

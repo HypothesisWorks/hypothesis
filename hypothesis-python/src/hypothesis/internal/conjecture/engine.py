@@ -563,6 +563,10 @@ class ConjectureRunner:
             if not interrupted:  # pragma: no branch
                 assert data.cannot_proceed_scope is None
                 data.freeze()
+
+                if self.settings.backend != "hypothesis":
+                    realize_choices(data, for_failure=data.status is Status.INTERESTING)
+
                 call_stats: CallStats = {
                     "status": data.status.name.lower(),
                     "runtime": data.finish_time - data.start_time,
@@ -573,8 +577,6 @@ class ConjectureRunner:
                     ),
                 }
                 self.stats_per_test_case.append(call_stats)
-                if self.settings.backend != "hypothesis":
-                    realize_choices(data, for_failure=data.status is Status.INTERESTING)
 
                 self._cache(data)
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
