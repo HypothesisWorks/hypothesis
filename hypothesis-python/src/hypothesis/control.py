@@ -12,7 +12,7 @@ import inspect
 import math
 import random
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
@@ -160,17 +160,31 @@ class BuildContext:
         # Track nested strategy calls for explain-phase label paths
         self._label_path: list[str] = []
 
-    def _record_arg_slice(
-        self,
-        label: str,
-        start: int,
-        end: int,
-        arg_labels: dict[str, tuple[int, int]],
-    ) -> None:
-        """Record a slice range for explain-phase comments."""
-        if start < end:
-            arg_labels[label] = (start, end)
-            self.data.arg_slices.add((start, end))
+    @contextmanager
+    def track_arg_label(
+        self, label: str
+    ) -> Generator[dict[str, tuple[int, int]], None, None]:
+        start = len(self.data.nodes)
+        self._label_path.append(label)
+        result: dict[str, tuple[int, int]] = {}
+        try:
+            yield result
+        finally:
+            self._label_path.pop()
+
+            # This high up the stack, we can't see or really do much with
+            # Span / SpanRecord - not least because they're only materialized
+            # after the test case is completed.
+            #
+            # Instead, we'll stash the (start_idx, end_idx) pair on our data object
+            # for the ConjectureRunner engine to deal with, and mutate the arg_labels
+            # dict so that the pretty-printer knows where to place the
+            # which-parts-matter comments later.
+            end = len(self.data.nodes)
+            assert start <= end
+            if start != end:
+                result[label] = (start, end)
+                self.data.arg_slices.add((start, end))
 
     def record_call(
         self,
@@ -194,37 +208,20 @@ class BuildContext:
 
     def prep_args_kwargs_from_strategies(
         self,
-        args_strategies: Sequence[Any] = (),
-        kwarg_strategies: dict[str, Any] | None = None,
-    ) -> tuple[list[Any], dict[str, Any], dict[str, tuple[int, int]]]:
+        kwarg_strategies: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, tuple[int, int]]]:
         arg_labels: dict[str, tuple[int, int]] = {}
-        args: list[Any] = []
         kwargs: dict[str, Any] = {}
 
-        all_strategies: list[tuple[str, Any]] = [
-            (f"arg[{i}]", s) for i, s in enumerate(args_strategies)
-        ]
-        if kwarg_strategies:
-            all_strategies.extend(kwarg_strategies.items())
+        for k, s in kwarg_strategies.items():
+            with (
+                self.track_arg_label(k) as arg_label,
+                deprecate_random_in_strategy("from {}={!r}", k, s),
+            ):
+                kwargs[k] = self.data.draw(s, observe_as=f"generate:{k}")
+            arg_labels |= arg_label
 
-        for label, s in all_strategies:
-            prefix = ".".join(self._label_path)
-            full_label = f"{prefix}.{label}" if prefix else label
-            start = len(self.data.nodes)
-            self._label_path.append(label)
-            try:
-                with deprecate_random_in_strategy("from {}={!r}", full_label, s):
-                    obj = self.data.draw(s, observe_as=f"generate:{full_label}")
-            finally:
-                self._label_path.pop()
-            self._record_arg_slice(label, start, len(self.data.nodes), arg_labels)
-
-            if label.startswith("arg["):
-                args.append(obj)
-            else:
-                kwargs[label] = obj
-
-        return args, kwargs, arg_labels
+        return kwargs, arg_labels
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)

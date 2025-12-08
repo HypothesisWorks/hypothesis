@@ -1054,9 +1054,19 @@ class BuildsStrategy(SearchStrategy[Ex]):
 
     def do_draw(self, data: ConjectureData) -> Ex:
         context = current_build_context()
-        args, kwargs, arg_labels = context.prep_args_kwargs_from_strategies(
-            self.args, self.kwargs
-        )
+        arg_labels: dict[str, tuple[int, int]] = {}
+
+        args = []
+        for i, s in enumerate(self.args):
+            with context.track_arg_label(f"arg[{i}]") as arg_label:
+                args.append(data.draw(s))
+            arg_labels |= arg_label
+
+        kwargs = {}
+        for k, v in self.kwargs.items():
+            with context.track_arg_label(k) as arg_label:
+                kwargs[k] = data.draw(v)
+            arg_labels |= arg_label
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
