@@ -165,7 +165,7 @@ class BuildContext:
         label: str,
         start: int,
         end: int,
-        arg_labels: "dict[str, tuple[int, int]]",
+        arg_labels: dict[str, tuple[int, int]],
     ) -> None:
         """Record a slice range for explain-phase comments."""
         if start < end:
@@ -179,7 +179,7 @@ class BuildContext:
         *,
         args: Sequence[object],
         kwargs: dict[str, object],
-        arg_labels: "dict[str, tuple[int, int]] | None" = None,
+        arg_labels: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         self.known_object_printers[IDKey(obj)].append(
             lambda obj, p, cycle, *, _func=func, _arg_labels=arg_labels: p.maybe_repr_known_object_as_call(  # type: ignore
@@ -194,9 +194,9 @@ class BuildContext:
 
     def prep_args_kwargs_from_strategies(
         self,
-        args_strategies: "Sequence[Any]" = (),
-        kwarg_strategies: "dict[str, Any] | None" = None,
-    ) -> "tuple[list[Any], dict[str, Any], dict[str, tuple[int, int]]]":
+        args_strategies: Sequence[Any] = (),
+        kwarg_strategies: dict[str, Any] | None = None,
+    ) -> tuple[list[Any], dict[str, Any], dict[str, tuple[int, int]]]:
         arg_labels: dict[str, tuple[int, int]] = {}
         args: list[Any] = []
         kwargs: dict[str, Any] = {}
