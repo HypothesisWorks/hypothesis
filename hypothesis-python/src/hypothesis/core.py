@@ -70,7 +70,6 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -103,9 +102,8 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     InfoObservation,
     InfoObservationType,
-    deliver_observation,
+    Observation,
     make_testcase,
-    observability_enabled,
 )
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -688,7 +686,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     )
 
                 empty_data.freeze()
-                if observability_enabled():
+                if state.settings.observability is not None:
                     tc = make_testcase(
                         run_start=state._start_timestamp,
                         property=state.test_identifier,
@@ -696,8 +694,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         how_generated="explicit example",
                         representation=state._string_repr,
                         timing=state._timing_features,
+                        observability=state.settings.observability,
                     )
-                    deliver_observation(tc)
+                    state._deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -916,7 +915,14 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
 
 class StateForActualGivenExecution:
     def __init__(
-        self, stuff, test, settings, random, wrapped_test, *, thread_overlap=None
+        self,
+        stuff: Stuff,
+        test: Any,
+        settings: Settings,
+        random: Random,
+        wrapped_test: Any,
+        *,
+        thread_overlap: Any = None,
     ):
         self.stuff = stuff
         self.test = test
@@ -933,15 +939,16 @@ class StateForActualGivenExecution:
         self.last_exception = None
         self.falsifying_examples = ()
         self.ever_executed = False
-        self.xfail_example_reprs = set()
-        self.files_to_propagate = set()
+        self.xfail_example_reprs: set[Any] = set()
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces = defaultdict(set)
+        self.explain_traces: Any = defaultdict(set)
         self._start_timestamp = time.time()
         self._string_repr = ""
-        self._timing_features = {}
+        self._timing_features: dict[str, float] = {}
+
+        self._runner: ConjectureRunner | None = None
 
     @property
     def test_identifier(self) -> str:
@@ -953,7 +960,8 @@ class StateForActualGivenExecution:
         # NOTE: we explicitly support monkeypatching this. Keep the namespace
         # access intact.
         _trace_obs = (
-            observability_enabled() and observability.OBSERVABILITY_COLLECT_COVERAGE
+            self.settings.observability is not None
+            and self.settings.observability.coverage
         )
         _trace_failure = (
             self.failed_normally
@@ -986,7 +994,7 @@ class StateForActualGivenExecution:
 
         self._string_repr = ""
         text_repr = None
-        if self.settings.deadline is None and not observability_enabled():
+        if self.settings.deadline is None and self.settings.observability is None:
 
             @proxies(self.test)
             def test(*args, **kwargs):
@@ -1076,7 +1084,7 @@ class StateForActualGivenExecution:
                     )
                 report(printer.getvalue())
 
-            if observability_enabled():
+            if self.settings.observability is not None:
                 printer = RepresentationPrinter(context=context)
                 printer.repr_call(
                     test.__name__,
@@ -1109,7 +1117,7 @@ class StateForActualGivenExecution:
                 if data._stateful_repr_parts is not None:
                     self._string_repr = "\n".join(data._stateful_repr_parts)
 
-                if observability_enabled():
+                if self.settings.observability is not None:
                     printer = RepresentationPrinter(context=context)
                     for name, value in data._observability_args.items():
                         if name.startswith("generate:Draw "):
@@ -1128,7 +1136,9 @@ class StateForActualGivenExecution:
             local_settings(self.settings),
             deterministic_PRNG(),
             BuildContext(
-                data, is_final=is_final, wrapped_test=self.wrapped_test
+                data,
+                is_final=is_final,
+                wrapped_test=self.wrapped_test,
             ) as context,
         ):
             # providers may throw in per_case_context_fn, and we'd like
@@ -1172,6 +1182,7 @@ class StateForActualGivenExecution:
     def _flaky_replay_to_failure(
         self, err: FlakyReplay, context: BaseException
     ) -> FlakyFailure:
+        assert self._runner is not None
         # Note that in the mark_interesting case, _context_ itself
         # is part of err._interesting_examples - but it's not in
         # _runner.interesting_examples - this is fine, as the context
@@ -1309,7 +1320,7 @@ class StateForActualGivenExecution:
             except BackendCannotProceed:
                 data.events = {}
 
-            if observability_enabled():
+            if self.settings.observability is not None:
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals
@@ -1345,8 +1356,9 @@ class StateForActualGivenExecution:
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
+                    observability=self.settings.observability,
                 )
-                deliver_observation(tc)
+                self._deliver_observation(tc)
 
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
@@ -1354,10 +1366,18 @@ class StateForActualGivenExecution:
                     self._deliver_information_message(**msg)
             self._timing_features = {}
 
+    def _deliver_observation(self, observation: Observation) -> None:
+        # nocover because we currently guard all calls to this by checking if
+        # observability is enabled, but that might not always be true
+        if self.settings.observability is None:  # pragma: no cover
+            return
+        for callback in self.settings.observability.callbacks:
+            callback(observation)
+
     def _deliver_information_message(
         self, *, type: InfoObservationType, title: str, content: str | dict
     ) -> None:
-        deliver_observation(
+        self._deliver_observation(
             InfoObservation(
                 type=type,
                 run_start=self._start_timestamp,
@@ -1381,18 +1401,19 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = self._runner = ConjectureRunner(
+        runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
             database_key=database_key,
             thread_overlap=self.thread_overlap,
         )
+        self._runner = runner
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
         runner.run()
         note_statistics(runner.statistics)
-        if observability_enabled():
+        if self.settings.observability is not None:
             self._deliver_information_message(
                 type="info",
                 title="Hypothesis Statistics",
@@ -1532,7 +1553,7 @@ class StateForActualGivenExecution:
                 raise NotImplementedError("This should be unreachable")
             finally:
                 ran_example.freeze()
-                if observability_enabled():
+                if self.settings.observability is not None:
                     # log our observability line for the final failing example
                     tc = make_testcase(
                         run_start=self._start_timestamp,
@@ -1546,8 +1567,9 @@ class StateForActualGivenExecution:
                         status="passed" if sys.exc_info()[0] else "failed",
                         status_reason=str(origin or "unexpected/flaky pass"),
                         metadata={"traceback": tb},
+                        observability=self.settings.observability,
                     )
-                    deliver_observation(tc)
+                    self._deliver_observation(tc)
 
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
@@ -2310,7 +2332,7 @@ def given(
                     status = Status.INTERESTING
                     raise
                 finally:
-                    if observability_enabled():
+                    if state.settings.observability is not None:
                         data.freeze()
                         tc = make_testcase(
                             run_start=state._start_timestamp,
@@ -2323,8 +2345,9 @@ def given(
                             coverage=None,
                             status=status,
                             backend_metadata=data.provider.observe_test_case(),
+                            observability=state.settings.observability,
                         )
-                        deliver_observation(tc)
+                        state._deliver_observation(tc)
                         state._timing_features = {}
 
                 assert isinstance(data.provider, BytestringProvider)

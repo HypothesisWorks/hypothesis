@@ -10,6 +10,19 @@ from collections.abc import Hashable
 from hypothesis import given, settings, strategies as st
 
 
+@given(
+    coverage=st.booleans(),
+    choices=st.booleans(),
+    callbacks=st.lists(st.functions()).map(tuple),
+)
+def test_fuzz_ObservabilityConfig(
+    coverage: bool, choices: bool, callbacks: tuple
+) -> None:
+    hypothesis.ObservabilityConfig(
+        coverage=coverage, choices=choices, callbacks=callbacks
+    )
+
+
 @given(condition=st.from_type(object))
 def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)
@@ -81,6 +94,7 @@ def test_fuzz_seed(seed: collections.abc.Hashable) -> None:
     deadline=st.just(not_set),
     print_blob=st.just(not_set),
     backend=st.just(not_set),
+    observability=st.just(not_set),
 )
 def test_fuzz_settings(
     parent: typing.Optional[hypothesis.settings],
@@ -95,6 +109,7 @@ def test_fuzz_settings(
     deadline: typing.Union[int, float, datetime.timedelta, None],
     print_blob: bool,
     backend: str,
+    observability: typing.Union[bool, hypothesis.ObservabilityConfig, None],
 ) -> None:
     hypothesis.settings(
         parent=parent,
@@ -109,6 +124,7 @@ def test_fuzz_settings(
         deadline=deadline,
         print_blob=print_blob,
         backend=backend,
+        observability=observability,
     )
 
 

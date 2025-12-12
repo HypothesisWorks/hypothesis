@@ -45,7 +45,6 @@ from typing import (
 )
 from uuid import UUID
 
-from hypothesis._settings import note_deprecation
 from hypothesis.control import (
     cleanup,
     current_build_context,
@@ -138,6 +137,7 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 

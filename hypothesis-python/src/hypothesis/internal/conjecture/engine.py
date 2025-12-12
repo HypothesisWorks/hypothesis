@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import importlib
 import inspect
 import math
@@ -15,15 +16,16 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
-from contextlib import AbstractContextManager, contextmanager, nullcontext, suppress
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import date, timedelta
 from enum import Enum
 from random import Random
 from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
-from hypothesis._settings import local_settings, note_deprecation
+from hypothesis._settings import local_settings
+from hypothesis.configuration import storage_directory
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -68,8 +70,12 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import Observation, with_observability_callback
+from hypothesis.internal.observability import (
+    ObservabilityConfig,
+    Observation,
+)
 from hypothesis.reporting import base_report, report
+from hypothesis.utils.deprecation import note_deprecation
 
 # In most cases, the following constants are all Final. However, we do allow users
 # to monkeypatch all of these variables, which means we cannot annotate them as
@@ -107,6 +113,9 @@ MIN_TEST_CALLS: int = 10
 # to make it easier to reason about our global random warning logic easier (see
 # deprecate_random_in_strategy).
 _random = Random()
+
+# used internally to only evict .hypothesis/observed files once per process.
+_have_evicted_observations: bool = False
 
 
 def shortlex(s):
@@ -909,15 +918,8 @@ class ConjectureRunner:
             f"{', ' + data.output if data.output else ''}"
         )
 
-    def observe_for_provider(self) -> AbstractContextManager:
-        def on_observation(observation: Observation) -> None:
-            assert observation.type == "test_case"
-            # because lifetime == "test_function"
-            assert isinstance(self.provider, PrimitiveProvider)
-            # only fire if we actually used that provider to generate this observation
-            if not self._switch_to_hypothesis_provider:
-                self.provider.on_observation(observation)
-
+    @contextmanager
+    def observe_for_provider(self):
         if (
             self.settings.backend != "hypothesis"
             # only for lifetime = "test_function" providers (guaranteed
@@ -926,10 +928,46 @@ class ConjectureRunner:
             # and the provider opted-in to observations
             and self.provider.add_observability_callback
         ):
-            return with_observability_callback(on_observation)
-        return nullcontext()
+
+            def callback(observation: Observation) -> None:
+                assert observation.type == "test_case"
+                # because lifetime == "test_function"
+                assert isinstance(self.provider, PrimitiveProvider)
+                # only fire if we actually used that provider to generate this observation
+                if not self._switch_to_hypothesis_provider:
+                    self.provider.on_observation(observation)
+
+            old_value = self.settings.observability
+            self.settings._observability = (
+                ObservabilityConfig(callbacks=[callback])
+                if old_value is None
+                else dataclasses.replace(
+                    old_value, callbacks=old_value.callbacks + (callback,)
+                )
+            )
+            try:
+                yield
+            finally:
+                self.settings._observability = old_value
+        else:
+            yield
+
+    def _maybe_evict_observations(self) -> None:
+        global _have_evicted_observations
+
+        # Remove files more than a week old, to cap the size on disk.
+        # Do so no more than once per process, to avoid disk overhead.
+        if not _have_evicted_observations:
+            max_age = (date.today() - timedelta(days=8)).isoformat()
+            for f in storage_directory("observed", intent_to_write=False).glob(
+                "*.jsonl"
+            ):  # pragma: no cover
+                if f.stem < max_age:
+                    f.unlink(missing_ok=True)
+            _have_evicted_observations = True
 
     def run(self) -> None:
+        self._maybe_evict_observations()
         with local_settings(self.settings), self.observe_for_provider():
             try:
                 self._run()
