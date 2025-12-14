@@ -9,19 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
-import contextlib
 import json
 import math
 import textwrap
 import threading
-import warnings
 from collections import defaultdict
 from contextlib import nullcontext
 
 import pytest
 
-import hypothesis.internal.observability
 from hypothesis import (
+    ObservabilityConfig,
     assume,
     event,
     example,
@@ -40,15 +38,9 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import (
-    TESTCASE_CALLBACKS,
-    InfoObservation,
-    TestCaseObservation,
-    add_observability_callback,
     choices_to_json,
     nodes_to_json,
     observability_enabled,
-    remove_observability_callback,
-    with_observability_callback,
 )
 from hypothesis.stateful import (
     RuleBasedStateMachine,
@@ -60,7 +52,6 @@ from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import (
     Why,
-    capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
     skipif_threading,
@@ -69,35 +60,40 @@ from tests.common.utils import (
 from tests.conjecture.common import choices, integer_constr, nodes
 
 
-@seed("deterministic so we don't miss some combination of features")
-@example(l=[1], a=0, x=4, data=None)
-# explicitly set max_examples=100 to override our lower example limit for coverage tests.
-@settings(database=InMemoryExampleDatabase(), deadline=None, max_examples=100)
-@given(st.lists(st.integers()), st.integers(), st.integers(), st.data())
-def do_it_all(l, a, x, data):
-    event(f"{x%2=}")
-    target(x % 5, label="x%5")
-    assume(a % 9)
-    assume(len(l) > 0)
-    if data:
-        data.draw(st.text("abcdef", min_size=a % 3), label="interactive")
-    1 / ((x or 1) % 7)
-
-
 @xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 @skipif_threading  # captures observations from other threads
 def test_observability():
-    with capture_observations() as ls:
-        with pytest.raises(ZeroDivisionError):
-            do_it_all()
-        with pytest.raises(ZeroDivisionError):
-            do_it_all()
+    observations = []
 
-    infos = [t for t in ls if t.type == "info"]
+    @seed("deterministic so we don't miss some combination of features")
+    @example(l=[1], a=0, x=4, data=None)
+    # explicitly set max_examples=100 to override our lower example limit for coverage tests.
+    @settings(
+        database=InMemoryExampleDatabase(),
+        deadline=None,
+        max_examples=100,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    @given(st.lists(st.integers()), st.integers(), st.integers(), st.data())
+    def do_it_all(l, a, x, data):
+        event(f"{x%2=}")
+        target(x % 5, label="x%5")
+        assume(a % 9)
+        assume(len(l) > 0)
+        if data:
+            data.draw(st.text("abcdef", min_size=a % 3), label="interactive")
+        1 / ((x or 1) % 7)
+
+    with pytest.raises(ZeroDivisionError):
+        do_it_all()
+    with pytest.raises(ZeroDivisionError):
+        do_it_all()
+
+    infos = [t for t in observations if t.type == "info"]
     assert len(infos) == 2
     assert {t.title for t in infos} == {"Hypothesis Statistics"}
 
-    testcases = [t for t in ls if t.type == "test_case"]
+    testcases = [t for t in observations if t.type == "test_case"]
     assert len(testcases) > 50
     assert {t.property for t in testcases} == {do_it_all.__name__}
     assert len({t.run_start for t in testcases}) == 2
@@ -112,12 +108,14 @@ def test_observability():
 
 @xfail_on_crosshair(Why.other)
 def test_capture_unnamed_arguments():
+    observations = []
+
     @given(st.integers(), st.floats(), st.data())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(v1, v2, data):
         data.draw(st.booleans())
 
-    with capture_observations() as observations:
-        f()
+    f()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     for test_case in test_cases:
@@ -133,13 +131,18 @@ def test_capture_unnamed_arguments():
     PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
 )
 def test_failure_includes_explain_phase_comments():
+    observations = []
+
     @given(st.integers(), st.integers())
-    @settings(database=None)
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
     def test_fails(x, y):
         if x:
             raise AssertionError
 
-    with capture_observations() as observations, pytest.raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_fails()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
@@ -160,15 +163,20 @@ def test_failure_includes_explain_phase_comments():
 
 
 def test_failure_includes_notes():
+    observations = []
+
     @given(st.data())
-    @settings(database=None)
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
     def test_fails_with_note(data):
         note("not included 1")
         data.draw(st.booleans())
         note("not included 2")
         raise AssertionError
 
-    with capture_observations() as observations, pytest.raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_fails_with_note()
 
     expected = textwrap.dedent(
@@ -184,15 +192,17 @@ def test_failure_includes_notes():
 
 
 def test_normal_representation_includes_draws():
+    observations = []
+
     @given(st.data())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(data):
         b1 = data.draw(st.booleans())
         note("not included")
         b2 = data.draw(st.booleans(), label="second")
         assume(b1 and b2)
 
-    with capture_observations() as observations:
-        f()
+    f()
 
     crosshair = settings.get_current_profile_name() == "crosshair"
     expected = textwrap.dedent(
@@ -216,12 +226,17 @@ def test_normal_representation_includes_draws():
 
 @xfail_on_crosshair(Why.other)
 def test_capture_named_arguments():
+    observations = []
+
     @given(named1=st.integers(), named2=st.floats(), data=st.data())
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
     def f(named1, named2, data):
         data.draw(st.booleans())
 
-    with capture_observations() as observations:
-        f()
+    f()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     for test_case in test_cases:
@@ -234,14 +249,18 @@ def test_capture_named_arguments():
 
 
 def test_assume_has_status_reason():
+    observations = []
+
     @given(st.booleans())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def f(b):
         assume(b)
 
-    with capture_observations() as ls:
-        f()
+    f()
 
-    gave_ups = [t for t in ls if t.type == "test_case" and t.status == "gave_up"]
+    gave_ups = [
+        t for t in observations if t.type == "test_case" and t.status == "gave_up"
+    ]
     for gave_up in gave_ups:
         assert gave_up.status_reason.startswith("failed to satisfy assume() in f")
 
@@ -250,13 +269,18 @@ def test_assume_has_status_reason():
     PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
 )
 def test_minimal_failing_observation():
+    observations = []
+
     @given(st.integers(), st.integers())
-    @settings(database=None)
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
     def test_fails(x, y):
         if x:
             raise AssertionError
 
-    with capture_observations() as observations, pytest.raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_fails()
 
     observation = [tc for tc in observations if tc.type == "test_case"][-1]
@@ -293,11 +317,14 @@ def test_minimal_failing_observation():
     PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
 )
 def test_all_failing_observations_have_reproduction_decorator():
+    observations = []
+
     @given(st.integers())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def test_fails(x):
         raise AssertionError
 
-    with capture_observations() as observations, pytest.raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_fails()
 
     # all failed test case observations should have reprodution_decorator
@@ -309,29 +336,33 @@ def test_all_failing_observations_have_reproduction_decorator():
         assert decorator.startswith("@reproduce_failure")
 
 
-@settings(max_examples=20, stateful_step_count=5)
-class UltraSimpleMachine(RuleBasedStateMachine):
-    value = 0
-
-    @rule()
-    def inc(self):
-        self.value += 1
-
-    @rule()
-    def dec(self):
-        self.value -= 1
-
-    @invariant()
-    def limits(self):
-        assert abs(self.value) <= 100
-
-
 @xfail_on_crosshair(Why.other, strict=False)
 def test_observability_captures_stateful_reprs():
-    with capture_observations() as ls:
-        run_state_machine_as_test(UltraSimpleMachine)
+    observations = []
 
-    for x in ls:
+    @settings(
+        max_examples=20,
+        stateful_step_count=5,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    class UltraSimpleMachine(RuleBasedStateMachine):
+        value = 0
+
+        @rule()
+        def inc(self):
+            self.value += 1
+
+        @rule()
+        def dec(self):
+            self.value -= 1
+
+        @invariant()
+        def limits(self):
+            assert abs(self.value) <= 100
+
+    run_state_machine_as_test(UltraSimpleMachine)
+
+    for x in observations:
         if x.type != "test_case" or x.status == "gave_up":
             continue
         r = x.representation
@@ -361,7 +392,10 @@ def test_observability_captures_stateful_reprs():
     ],
 )
 def test_fuzz_one_input_status(buffer, expected_status):
+    observations = []
+
     @given(st.booleans(), st.booleans())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
     def test_fails(should_fail, should_fail_assume):
         if should_fail:
             raise AssertionError
@@ -369,13 +403,12 @@ def test_fuzz_one_input_status(buffer, expected_status):
             assume(False)
 
     with (
-        capture_observations() as ls,
         pytest.raises(AssertionError) if expected_status == "failed" else nullcontext(),
     ):
         test_fails.hypothesis.fuzz_one_input(buffer)
-    assert len(ls) == 1
-    assert ls[0].status == expected_status
-    assert ls[0].how_generated == "fuzz_one_input"
+    assert len(observations) == 1
+    assert observations[0].status == expected_status
+    assert observations[0].how_generated == "fuzz_one_input"
 
 
 def _decode_choice(value):
@@ -534,12 +567,16 @@ def test_choice_nodes_to_json_explicit(choice_node, expected):
 def test_metadata_to_json():
     # this is mostly a covering test than testing anything particular about
     # ObservationMetadata.
+    observations = []
+
     @given(st.integers())
+    @settings(
+        observability=ObservabilityConfig(callbacks=[observations.append], choices=True)
+    )
     def f(n):
         pass
 
-    with capture_observations(choices=True) as observations:
-        f()
+    f()
 
     observations = [obs for obs in observations if obs.type == "test_case"]
     for observation in observations:
@@ -567,209 +604,41 @@ def test_metadata_to_json():
             assert 0 <= span.end <= len(observation.metadata.choice_nodes)
 
 
-@contextlib.contextmanager
-def restore_callbacks():
-    callbacks = hypothesis.internal.observability._callbacks.copy()
-    callbacks_all = hypothesis.internal.observability._callbacks_all_threads.copy()
-    try:
-        yield
-    finally:
-        hypothesis.internal.observability._callbacks = callbacks
-        hypothesis.internal.observability._callbacks_all_threads = callbacks_all
-
-
-@contextlib.contextmanager
-def with_collect_coverage(*, value: bool):
-    original_value = hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE
-    hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = value
-    try:
-        yield
-    finally:
-        hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = (
-            original_value
-        )
-
-
-def _callbacks():
-    # respect changes from the restore_callbacks context manager by re-accessing
-    # its namespace, instead of keeping
-    # `from hypothesis.internal.observability import _callbacks` around
-    return hypothesis.internal.observability._callbacks
-
-
-@skipif_threading
-def test_observability_callbacks():
-    def f(observation):
-        pass
-
-    def g(observation):
-        pass
-
-    thread_id = threading.get_ident()
-
-    with restore_callbacks():
-        assert not observability_enabled()
-
-        add_observability_callback(f)
-        assert _callbacks() == {thread_id: [f]}
-        assert observability_enabled()
-
-        add_observability_callback(g)
-        assert _callbacks() == {thread_id: [f, g]}
-        assert observability_enabled()
-
-        remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
-        assert observability_enabled()
-
-        remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
-        assert observability_enabled()
-
-        remove_observability_callback(f)
-        assert _callbacks() == {}
-        assert not observability_enabled()
-
-
-@skipif_threading
-def test_observability_callbacks_all_threads():
-    thread_id = threading.get_ident()
-
-    def f(observation, thread_id):
-        pass
-
-    with restore_callbacks():
-        assert not observability_enabled()
-
-        add_observability_callback(f, all_threads=True)
-        assert hypothesis.internal.observability._callbacks_all_threads == [f]
-        assert _callbacks() == {}
-        assert observability_enabled()
-
-        add_observability_callback(f)
-        assert hypothesis.internal.observability._callbacks_all_threads == [f]
-        assert _callbacks() == {thread_id: [f]}
-        assert observability_enabled()
-
-        # remove_observability_callback removes it both from per-thread and
-        # all_threads. The semantics of duplicated callbacks is weird enough
-        # that I don't want to commit to anything here, so I'm leaving this as
-        # somewhat undefined behavior, and recommending that users simply not
-        # register a callback both normally and for all threads.
-        remove_observability_callback(f)
-        assert hypothesis.internal.observability._callbacks_all_threads == []
-        assert _callbacks() == {}
-        assert not observability_enabled()
-
-
-@checks_deprecated_behaviour
-def test_testcase_callbacks_deprecation_bool():
-    bool(TESTCASE_CALLBACKS)
-
-
-@checks_deprecated_behaviour
-def test_testcase_callbacks_deprecation_append():
-    with restore_callbacks():
-        TESTCASE_CALLBACKS.append(lambda x: None)
-
-
-@checks_deprecated_behaviour
-def test_testcase_callbacks_deprecation_remove():
-    with restore_callbacks():
-        TESTCASE_CALLBACKS.remove(lambda x: None)
-
-
-def test_testcase_callbacks():
-    def f(observation):
-        pass
-
-    def g(observation):
-        pass
-
-    thread_id = threading.get_ident()
-
-    with restore_callbacks(), warnings.catch_warnings():
-        # ignore TESTCASE_CALLBACKS deprecation warnings
-        warnings.simplefilter("ignore")
-
-        assert not bool(TESTCASE_CALLBACKS)
-        add_observability_callback(f)
-        assert _callbacks() == {thread_id: [f]}
-
-        assert bool(TESTCASE_CALLBACKS)
-        add_observability_callback(g)
-        assert _callbacks() == {thread_id: [f, g]}
-
-        assert bool(TESTCASE_CALLBACKS)
-        remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
-
-        assert bool(TESTCASE_CALLBACKS)
-        remove_observability_callback(f)
-        assert _callbacks() == {}
-
-        assert not bool(TESTCASE_CALLBACKS)
-
-
 def test_only_receives_callbacks_from_this_thread():
-    @given(st.integers())
-    def g(n):
-        pass
-
-    def test():
-        count_observations = 0
-
-        def callback(observation):
-            nonlocal count_observations
-            count_observations += 1
-
-        add_observability_callback(callback)
-
-        with warnings.catch_warnings():
-            g()
-
-        # one per example, plus one for the overall run
-        assert count_observations == settings().max_examples + 1
-
-    with (
-        restore_callbacks(),
-        # Observability tries to record coverage, but we don't currently
-        # support concurrent coverage collection, and issue a warning instead.
-        #
-        # I tried to fix this with:
-        #
-        #    warnings.filterwarnings(
-        #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
-        #    )
-        #
-        # but that had a race condition somehow and sometimes still didn't work?? The
-        # warnings module is not thread-safe until 3.14, I think.
-        with_collect_coverage(value=False),
-    ):
-        run_concurrently(test, n=5)
-
-
-def test_all_threads_callback():
     n_threads = 5
+    count_observations = defaultdict(int)
 
-    # thread_id: count
-    calls = defaultdict(int)
-
-    def global_callback(observation, thread_id):
-        assert isinstance(observation, (TestCaseObservation, InfoObservation))
-        assert isinstance(thread_id, int)
-
-        calls[thread_id] += 1
+    def callback(observation):
+        count_observations[threading.get_ident()] += 1
 
     @given(st.integers())
+    @settings(
+        observability=ObservabilityConfig(
+            callbacks=[callback],
+            # Observability tries to record coverage, but we don't currently
+            # support concurrent coverage collection, and issue a warning instead.
+            #
+            # I tried to fix this with:
+            #
+            #    warnings.filterwarnings(
+            #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+            #    )
+            #
+            # but that had a race condition somehow and sometimes still didn't work?? The
+            # warnings module is not thread-safe until 3.14, I think.
+            coverage=False,
+        )
+    )
     def f(n):
         pass
 
-    with (
-        with_collect_coverage(value=False),
-        with_observability_callback(global_callback, all_threads=True),
-    ):
-        run_concurrently(f, n=n_threads)
+    run_concurrently(f, n=n_threads)
 
-    assert len(calls) == n_threads
-    assert all(count == (settings().max_examples + 1) for count in calls.values())
+    assert len(count_observations) == n_threads
+    # one observation per example, plus one info observation for the overall run
+    assert set(count_observations.values()) == {settings().max_examples + 1}
+
+
+@checks_deprecated_behaviour
+def test_observability_enabled_is_deprecated():
+    observability_enabled()

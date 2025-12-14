@@ -27,7 +27,6 @@ from typing import (
 import numpy as np
 
 from hypothesis import strategies as st
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
     _BIE,
@@ -60,6 +59,7 @@ from hypothesis.strategies._internal.strategies import (
     check_strategy,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
+from hypothesis.utils.deprecation import note_deprecation
 
 
 def _try_import(mod_name: str, attr_name: str) -> Any:

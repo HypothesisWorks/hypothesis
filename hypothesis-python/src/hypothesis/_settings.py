@@ -18,7 +18,6 @@ import contextlib
 import datetime
 import inspect
 import os
-import warnings
 from collections.abc import Collection, Generator, Sequence
 from enum import Enum, EnumMeta, unique
 from functools import total_ordering
@@ -30,14 +29,16 @@ from typing import (
     TypeVar,
 )
 
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    InvalidArgument,
-)
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+from hypothesis.internal.observability import (
+    ObservabilityConfig,
+    envvar_observability,
+)
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if TYPE_CHECKING:
@@ -58,6 +59,7 @@ all_settings: list[str] = [
     "deadline",
     "print_blob",
     "backend",
+    "observability",
 ]
 
 
@@ -534,6 +536,18 @@ def _validate_backend(backend: str) -> str:
     return backend
 
 
+def _validate_observability(observability: Any) -> ObservabilityConfig | None:
+    check_type(
+        (bool, ObservabilityConfig, type(None)), observability, name="observability"
+    )
+
+    if isinstance(observability, ObservabilityConfig):
+        return observability
+
+    assert observability in {True, False, None}
+    return ObservabilityConfig() if observability else None
+
+
 class settingsMeta(type):
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -574,7 +588,8 @@ class settings(metaclass=settingsMeta):
     |~settings.max_examples|, |~settings.derandomize|, |~settings.database|,
     |~settings.verbosity|, |~settings.phases|, |~settings.stateful_step_count|,
     |~settings.report_multiple_bugs|, |~settings.suppress_health_check|,
-    |~settings.deadline|, |~settings.print_blob|, and |~settings.backend|.
+    |~settings.deadline|, |~settings.print_blob|, |~settings.backend|, and
+    |~settings.observability|.
 
     A settings object can be applied as a decorator to a test function, in which
     case that test function will use those settings. A test may only have one
@@ -622,7 +637,7 @@ class settings(metaclass=settingsMeta):
             "default",
             max_examples=100,
             derandomize=False,
-            database=not_set,  # see settings.database for the default database
+            database=not_set,  # see settings.database for default behavior
             verbosity=Verbosity.normal,
             phases=tuple(Phase),
             stateful_step_count=50,
@@ -631,6 +646,7 @@ class settings(metaclass=settingsMeta):
             deadline=duration(milliseconds=200),
             print_blob=False,
             backend="hypothesis",
+            observability=False,
         )
 
         ci = settings.register_profile(
@@ -677,6 +693,7 @@ class settings(metaclass=settingsMeta):
         deadline: int | float | datetime.timedelta | None = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
         backend: str = not_set,  # type: ignore
+        observability: bool | ObservabilityConfig | None = not_set,  # type: ignore
     ) -> None:
         self._in_definition = True
 
@@ -703,10 +720,12 @@ class settings(metaclass=settingsMeta):
             if derandomize is not_set  # type: ignore
             else _validate_choices("derandomize", derandomize, choices=[True, False])
         )
+
         if database is not not_set:  # type: ignore
             database = _validate_database(database)
         self._database = database
         self._cached_database = None
+
         self._verbosity = (
             self._fallback.verbosity  # type: ignore
             if verbosity is not_set  # type: ignore
@@ -749,6 +768,15 @@ class settings(metaclass=settingsMeta):
             if backend is not_set  # type: ignore
             else _validate_backend(backend)
         )
+
+        if observability is not_set:  # type: ignore
+            self._observability = (
+                envvar_observability
+                if self._fallback is None
+                else self._fallback.observability
+            )
+        else:
+            self._observability = _validate_observability(observability)
 
         self._in_definition = False
 
@@ -1031,6 +1059,37 @@ class settings(metaclass=settingsMeta):
         """
         return self._backend
 
+    @property
+    def observability(self):
+        """
+        Controls the :ref:`observability <observability>` behavior of Hypothesis.
+
+        Valid values are ``True``, ``False``, ``None``, or |ObservabilityConfig|. If
+        ``True`` is passed, observability is enabled, and if ``False`` or ``None``
+        is passed, observability is disabled.
+
+        If |ObservabilityConfig| is passed, observability will be configured based
+        on the options passed to |ObservabilityConfig|.
+
+        For example:
+
+        .. code-block:: python
+
+            from hypothesis import settings, ObservabilityConfig
+
+            # enables observability
+            settings(observability=True)
+
+            # enables observability, with choice sequence data
+            settings(observability=ObservabilityConfig(choices=True))
+
+        By default, |settings.observability| is inherited from the
+        :ref:`HYPOTHESIS_OBSERVABILITY <observability-configuration>`
+        environment variable. If that environment variable is also not set,
+        |settings.observability| defaults to ``False``.
+        """
+        return self._observability
+
     def __call__(self, test: T) -> T:
         """Make the settings object (self) an attribute of the test.
 
@@ -1191,20 +1250,6 @@ def local_settings(s: settings) -> Generator[settings, None, None]:
         yield s
 
 
-def note_deprecation(
-    message: str, *, since: str, has_codemod: bool, stacklevel: int = 0
-) -> None:
-    if since != "RELEASEDAY":
-        date = datetime.date.fromisoformat(since)
-        assert datetime.date(2021, 1, 1) <= date
-    if has_codemod:
-        message += (
-            "\n    The `hypothesis codemod` command-line tool can automatically "
-            "refactor your code to fix this warning."
-        )
-    warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2 + stacklevel)
-
-
 default = settings(
     max_examples=100,
     derandomize=False,
@@ -1217,6 +1262,7 @@ default = settings(
     deadline=duration(milliseconds=200),
     print_blob=False,
     backend="hypothesis",
+    observability=not_set,  # type: ignore
 )
 settings.register_profile("default", default)
 settings.load_profile("default")
