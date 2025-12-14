@@ -635,6 +635,22 @@ def test_forward_ref_resolved_from_local_scope():
     check_can_generate_examples(st.from_type(LocalType))
 
 
+def test_ambiguous_forward_ref_is_not_resolved():
+    # If different frames define the same name with different values,
+    # we should not resolve it (ambiguous) to avoid false positives.
+    class Ambiguous:
+        pass
+
+    def helper():
+        Ambiguous = int  # shadows outer class
+        # "Ambiguous" now refers to different things in different frames
+        AmbiguousType = list[typing.Union["Ambiguous", str]]
+        with pytest.raises(ResolutionFailed):
+            check_can_generate_examples(st.from_type(AmbiguousType))
+
+    helper()
+
+
 class Tree:
     def __init__(self, left: typing.Optional["Tree"], right: typing.Optional["Tree"]):
         self.left = left
