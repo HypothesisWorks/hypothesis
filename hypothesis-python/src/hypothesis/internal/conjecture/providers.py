@@ -183,6 +183,8 @@ _constant_strings = {
     "INF",
     "NaN",
     "9" * 30,
+    # javascript keywords
+    "__proto__",
     # common ascii characters
     ",./;'[]\\-=<>?:\"{}|_+!@#$%^&*()`~",
     # common unicode characters
