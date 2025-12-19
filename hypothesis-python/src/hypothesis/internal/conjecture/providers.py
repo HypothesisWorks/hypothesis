@@ -171,7 +171,7 @@ _constant_strings = {
     "then",
     "else",
     "__dict__",
-    "__proto__", # javascript
+    "__proto__",  # javascript
     # strings which can be interpreted as a number
     "0",
     "1e100",
