@@ -687,10 +687,11 @@ def standard_tox_task(name, py=ci_version):
 # standard_tox_task("py310-pytest46", py="3.10")
 standard_tox_task("pytest62")
 
+dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
-    standard_tox_task(f"django{n.replace('.', '')}")
+    standard_tox_task(f"django{n.replace('.', '')}", py=dj_version)
 # we also test no-contrib on the latest django version
-standard_tox_task("django-nocontrib")
+standard_tox_task("django-nocontrib", py=dj_version)
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")

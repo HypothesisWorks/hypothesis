@@ -2744,7 +2744,7 @@ This patch fixes a significant slowdown when using the :func:`~hypothesis.statef
 6.100.2 - 2024-04-28
 --------------------
 
-Explicitly cast :obj:`numpy.finfo.smallest_normal` to builtin `float` in
+Explicitly cast :obj:`numpy.finfo.smallest_normal <numpy.finfo>` to builtin `float` in
 preparation for the :pypi:`numpy==2.0 <numpy>` release (:issue:`3950`)
 
 .. _v6.100.1:
