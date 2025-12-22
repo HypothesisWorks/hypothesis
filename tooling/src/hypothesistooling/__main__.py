@@ -605,6 +605,8 @@ def run_tox(task, version, *args):
     python = install.python_executable(version)
 
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
+    # Set environment variable for tox to use in basepython substitution
+    env["TOX_PYTHON_VERSION"] = ALIASES[version]
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
