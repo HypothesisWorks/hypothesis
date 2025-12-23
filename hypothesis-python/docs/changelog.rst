@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.8:
+
+--------------------
+6.148.8 - 2025-12-23
+--------------------
+
+Add ``__dict__`` and ``__proto__`` to the list of constant strings Hypothesis sometimes generates.
+
 .. _v6.148.7:
 
 --------------------
