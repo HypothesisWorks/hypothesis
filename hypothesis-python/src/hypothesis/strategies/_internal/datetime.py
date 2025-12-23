@@ -424,7 +424,7 @@ def timezone_keys(
     with warnings.catch_warnings():
         try:
             warnings.simplefilter("ignore", EncodingWarning)
-        except NameError:
+        except NameError:  # pragma: no cover
             pass
         # On Python 3.12 (and others?), `available_timezones()` opens files
         # without specifying an encoding - which our selftests make an error.

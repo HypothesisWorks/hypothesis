@@ -606,7 +606,12 @@ def run_tox(task, version, *args):
 
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
     # Set environment variable for tox to use in basepython substitution
-    env["TOX_PYTHON_VERSION"] = ALIASES[version]
+    if version.startswith("pypy"):
+        # For PyPy, use the version name from e.g. "pypy3.11-7.3.20"
+        # to match tox's environment name inference.
+        env["TOX_PYTHON_VERSION"] = version.split("-")[0]  # "pypy3.11"
+    else:
+        env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
