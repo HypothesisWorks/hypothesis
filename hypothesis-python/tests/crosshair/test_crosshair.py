@@ -28,7 +28,14 @@ def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
     # test effectiveness.
     @given(st.integers())
-    @settings(backend="crosshair", deadline=1000, verbosity=verbosity, database=None)
+    @settings(
+        backend="crosshair",
+        deadline=1000,
+        verbosity=verbosity,
+        derandomize=True,
+        max_examples=1000,
+        phases=[Phase.generate],
+    )
     def f(n):
         assert n != 123456
 
@@ -40,7 +47,13 @@ def test_crosshair_works_for_all_verbosities(verbosity):
 def test_crosshair_works_for_all_verbosities_data(verbosity):
     # data draws have their own print path
     @given(st.data())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(
+        backend="crosshair",
+        verbosity=verbosity,
+        derandomize=True,
+        max_examples=1000,
+        phases=[Phase.generate],
+    )
     def f(data):
         n = data.draw(st.integers())
         assert n != 123456
