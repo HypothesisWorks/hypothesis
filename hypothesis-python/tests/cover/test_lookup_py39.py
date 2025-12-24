@@ -10,13 +10,11 @@
 
 import collections.abc
 import dataclasses
-import sys
 import typing
 
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import (
     assert_all_examples,
@@ -87,12 +85,11 @@ class User:
     following: list["User"]  # works with typing.List
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 11), reason="works in new Pythons")
-def test_string_forward_ref_message():
-    # See https://github.com/HypothesisWorks/hypothesis/issues/3016
+def test_string_forward_ref_resolved():
+    # Forward references to types in scope now work
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4542
     s = st.builds(User)
-    with pytest.raises(InvalidArgument, match="`from __future__ import annotations`"):
-        check_can_generate_examples(s)
+    check_can_generate_examples(s)
 
 
 @pytest.mark.parametrize("typ", (typing.Union[list[int], int], list[int] | int))
