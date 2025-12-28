@@ -109,7 +109,7 @@ idna==3.11
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.7.0
+importlib-metadata==8.7.1
     # via keyring
 iniconfig==2.3.0
     # via pytest
@@ -119,9 +119,9 @@ isort==7.0.0
     # via shed
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==6.0.1
+jaraco-context==6.0.2
     # via keyring
-jaraco-functools==4.3.0
+jaraco-functools==4.4.0
     # via keyring
 jedi==0.19.2
     # via ipython
@@ -143,7 +143,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.7.4
+librt==0.7.5
     # via mypy
 markdown==3.10
     # via pelican
@@ -355,7 +355,7 @@ types-pytz==2025.2.0.20251108
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==80.9.0.20250822
+types-setuptools==80.9.0.20251223
     # via types-cffi
 typing-extensions==4.15.0
     # via
@@ -380,7 +380,7 @@ urllib3==2.6.2
     # via
     #   requests
     #   twine
-uvicorn==0.38.0
+uvicorn==0.40.0
     # via sphinx-autobuild
 virtualenv==20.35.4
     # via tox
