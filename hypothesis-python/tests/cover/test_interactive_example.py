@@ -127,9 +127,12 @@ def test_selftests_exception_contains_note(pytester):
 def test_script_example_does_not_emit_warning(tmp_path):
     script = tmp_path / "script.py"
     script.write_text(
-        "from hypothesis.strategies import integers\nintegers().example()\n"
+        "from hypothesis.strategies import integers\nintegers().example()\n",
+        encoding="utf-8",
     )
-    subprocess.check_call([sys.executable, "-Werror", str(script)])
+    # reset env to get rid of PYTEST_CURRENT_TEST which would force this
+    # warning to still appear
+    subprocess.check_call([sys.executable, "-Werror", str(script)], env={})
 
 
 @skipif_emscripten
