@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import subprocess
 import sys
 import warnings
 from decimal import Decimal
@@ -121,6 +122,14 @@ def test_selftests_exception_contains_note(pytester):
             pytester.makepyfile(EXAMPLE_GENERATING_TEST), "-p", "no:cacheprovider"
         )
         assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
+
+
+def test_script_example_does_not_emit_warning(tmp_path):
+    script = tmp_path / "script.py"
+    script.write_text(
+        "from hypothesis.strategies import integers\nintegers().example()\n"
+    )
+    subprocess.check_call([sys.executable, "-Werror", str(script)])
 
 
 @skipif_emscripten

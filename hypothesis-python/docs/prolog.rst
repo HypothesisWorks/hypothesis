@@ -68,6 +68,7 @@
 
 .. |HypothesisException| replace:: :obj:`HypothesisException <hypothesis.errors.HypothesisException>`
 .. |HypothesisDeprecationWarning| replace:: :obj:`HypothesisDeprecationWarning <hypothesis.errors.HypothesisDeprecationWarning>`
+.. |NonInteractiveExampleWarning| replace:: :obj:`NonInteractiveExampleWarning <hypothesis.errors.NonInteractiveExampleWarning>`
 .. |Flaky| replace:: :obj:`Flaky <hypothesis.errors.Flaky>`
 .. |FlakyStrategyDefinition| replace:: :obj:`FlakyStrategyDefinition <hypothesis.errors.FlakyStrategyDefinition>`
 .. |FlakyFailure| replace:: :obj:`FlakyFailure <hypothesis.errors.FlakyFailure>`
@@ -122,6 +123,7 @@
 .. |map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 .. |.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |.example| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 .. |.example()| replace:: :func:`.example() <hypothesis.strategies.SearchStrategy.example>`
 
 .. |PrimitiveProvider| replace:: :class:`~hypothesis.internal.conjecture.providers.PrimitiveProvider`
