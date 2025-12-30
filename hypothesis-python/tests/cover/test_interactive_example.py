@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import subprocess
 import sys
 import warnings
@@ -130,9 +131,11 @@ def test_script_example_does_not_emit_warning(tmp_path):
         "from hypothesis.strategies import integers\nintegers().example()\n",
         encoding="utf-8",
     )
-    # reset env to get rid of PYTEST_CURRENT_TEST which would force this
+    # get rid of PYTEST_CURRENT_TEST, which we special-case as forcing this
     # warning to still appear
-    subprocess.check_call([sys.executable, "-Werror", str(script)], env={})
+    env = os.environ.copy()
+    env.pop("PYTEST_CURRENT_TEST")
+    subprocess.check_call([sys.executable, "-Werror", str(script)], env=env)
 
 
 @skipif_emscripten
