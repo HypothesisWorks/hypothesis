@@ -125,6 +125,7 @@ def test_selftests_exception_contains_note(pytester):
         assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
 
 
+@skipif_emscripten
 def test_script_example_does_not_emit_warning(tmp_path):
     script = tmp_path / "script.py"
     script.write_text(
