@@ -9,11 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import typing
+import warnings
 
 import numpy as np
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import SmallSearchSpaceWarning
 from hypothesis.extra.numpy import ArrayLike, NDArray, _NestedSequence, _SupportsArray
 
 from .test_from_dtype import STANDARD_TYPES
@@ -33,13 +35,16 @@ def test_resolves_dtype_type(dtype):
 def test_does_not_resolve_nonscalar_types():
     # this was previously a parametrized test over np.object_ and np.void which
     # used the same repr code path for the test. But then numpy changed their types
-    # such that st.from_type(np.object_) deferred evaluation and was no longer
-    # st.builds(np.object_), but something morally equivalent to it. So we have
-    # this slightly more complicated check.
-    assert_simple_property(st.from_type(np.object_), lambda value: value is None)
-    # Comparing the objects directly fails on Windows,
-    # so compare their reprs instead.
-    assert repr(st.from_type(np.void)) == repr(st.builds(np.void))
+    # such that we defer evaluation for st.from_type and are no longer identical
+    # to st.builds, but rather something morally equivalent to it. So we have
+    # these slightly more complicated checks.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSearchSpaceWarning)
+        assert_simple_property(st.from_type(np.object_), lambda value: value is None)
+
+    with pytest.raises(TypeError):
+        # np.void() requires an argument, and so throws when instantiated
+        assert_simple_property(st.from_type(np.void))
 
 
 @pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
