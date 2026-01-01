@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.9:
+
+--------------------
+6.148.9 - 2026-01-01
+--------------------
+
+|.example| no longer emits |NonInteractiveExampleWarning| when running a python file directly. This means that e.g. ``python my_sandbox.py`` during exploratory work with |.example| will no longer raise warnings.
+
 .. _v6.148.8:
 
 --------------------
