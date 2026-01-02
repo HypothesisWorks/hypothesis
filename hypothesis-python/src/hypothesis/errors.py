@@ -289,7 +289,9 @@ class SmallSearchSpaceWarning(HypothesisWarning):
     in a meaningful way, for example by only creating default instances."""
 
 
+# keep these two in sync
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
+_valid_cannot_proceed_scopes = ["verified", "exhausted", "discard_test_case", "other"]
 
 
 class BackendCannotProceed(HypothesisException):
@@ -317,4 +319,9 @@ class BackendCannotProceed(HypothesisException):
     """
 
     def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
+        if scope not in _valid_cannot_proceed_scopes:
+            raise InvalidArgument(
+                f"Got scope={scope}, but expected one of "
+                f"{_valid_cannot_proceed_scopes!r}"
+            )
         self.scope = scope
