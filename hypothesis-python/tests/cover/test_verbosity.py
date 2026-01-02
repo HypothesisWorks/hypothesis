@@ -34,7 +34,7 @@ def test_prints_intermediate_in_success():
             pass
 
         test_works()
-    assert "Trying example" in o.getvalue()
+    assert "Test case:" in o.getvalue()
 
 
 def test_does_not_log_in_quiet_mode():
@@ -59,7 +59,7 @@ def test_includes_progress_in_verbose_mode():
         )
     out = o.getvalue()
     assert out
-    assert "Trying example: " in out
+    assert "Test case: " in out
 
 
 @xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
@@ -83,7 +83,7 @@ def test_prints_initial_attempts_on_find():
 
         foo()
 
-    assert "Trying example" in o.getvalue()
+    assert "Test case:" in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
@@ -102,7 +102,7 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if "example" in l]) > 2
+    assert len([l for l in lines if "Test case:" in l]) > 2
     assert [l for l in lines if "AssertionError" in l]
 
 

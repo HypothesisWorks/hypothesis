@@ -765,7 +765,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     You can use this for sharing example databases between CI runs and developers, allowing
     the latter to get read-only access to the former. This is particularly useful for
     continuous fuzzing (i.e. with `HypoFuzz <https://hypofuzz.com/>`_),
-    where the CI system can help find new failing examples through fuzzing,
+    where the CI system can help find new failing test cases through fuzzing,
     and developers can reproduce them locally without any manual effort.
 
     .. note::

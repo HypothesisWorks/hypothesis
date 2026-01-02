@@ -17,7 +17,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
-from tests.common.utils import assert_falsifying_output, fails_with
+from tests.common.utils import assert_failing_output, fails_with
 
 pytestmark = pytest.mark.skipif(
     settings.get_current_profile_name() == "threading",
@@ -78,7 +78,7 @@ def test_deadlines_participate_in_shrinking():
         if i >= 1000:
             time.sleep(1)
 
-    assert_falsifying_output(
+    assert_failing_output(
         slow_if_large,
         expected_exception=DeadlineExceeded,
         i=1000,

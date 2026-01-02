@@ -61,7 +61,7 @@ As a result, running ``test_fails_flakily()`` will raise |FlakyFailure|. |FlakyF
 
   + Exception Group Traceback (most recent call last):
   | hypothesis.errors.FlakyFailure: Hypothesis test_fails_flakily(n=0) produces unreliable results: Falsified on the first call but did not on a subsequent one (1 sub-exception)
-  | Falsifying example: test_fails_flakily(
+  | Failing test case: test_fails_flakily(
   |     n=0,
   | )
   | Failed to reproduce exception. Expected:

@@ -31,7 +31,7 @@ def note_statistics(stats_dict: "StatisticsDict") -> None:
 def describe_targets(best_targets: dict[str, float]) -> list[str]:
     """Return a list of lines describing the results of `target`, if any."""
     # These lines are included in the general statistics description below,
-    # but also printed immediately below failing examples to alleviate the
+    # but also printed immediately below failing test cases to alleviate the
     # "threshold problem" where shrinking can make severe bug look trivial.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2180
     if not best_targets:
@@ -92,8 +92,9 @@ def describe_statistics(stats_dict: "StatisticsDict") -> str:
         lines.append(
             f"  - during {phase} phase ({d['duration-seconds']:.2f} seconds):\n"
             f"    - Typical runtimes: {runtime_ms}, of which {drawtime_ms} in data generation\n"
-            f"    - {statuses['valid']} passing examples, {statuses['interesting']} "
-            f"failing examples, {statuses['invalid'] + statuses['overrun']} invalid examples"
+            f"    - {statuses['valid']} passing test cases, {statuses['interesting']} "
+            f"failing test cases, {statuses['invalid'] + statuses['overrun']} "
+            "invalid test cases"
         )
         # If we've found new distinct failures in this phase, report them
         distinct_failures = d["distinct-failures"] - prev_failures

@@ -33,7 +33,7 @@ def test_output_without_capture(testdir, capture, expected):
     result = testdir.runpytest(script, "--verbose", "--capture", capture)
     out = "\n".join(result.stdout.lines)
     assert "test_should_be_verbose" in out
-    assert ("Trying example" in out) == expected
+    assert ("Test case:" in out) == expected
     assert result.ret == 0
 
 

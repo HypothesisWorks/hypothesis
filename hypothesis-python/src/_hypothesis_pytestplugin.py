@@ -405,7 +405,7 @@ else:
                 terminalreporter.write_line(f"observations written to {fname}")
 
         if failing_examples:
-            # This must have been imported already to write the failing examples
+            # This must have been imported already to write the failing test cases
             from hypothesis.extra._patching import gc_patches, make_patch, save_patch
 
             patch = make_patch(failing_examples)
@@ -418,7 +418,7 @@ else:
             if not _WROTE_TO:
                 terminalreporter.section("Hypothesis")
             terminalreporter.write_line(
-                f"`git apply {fname}` to add failing examples to your code."
+                f"`git apply {fname}` to add failing test cases to your code."
             )
 
     def pytest_collection_modifyitems(items):

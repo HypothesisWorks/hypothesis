@@ -70,7 +70,7 @@ fuzzing: The code does not correctly handle the empty string.
 
 
 ```
-Falsifying example: test_decode_inverts_encode(s='')
+Failing test case: test_decode_inverts_encode(s='')
 
 UnboundLocalError: local variable 'character' referenced before assignment
 ```
@@ -125,7 +125,7 @@ E         + 110
 
 test_encoding.py:35: AssertionError
 ------------------------------------ Hypothesis ------------------------------------
-Falsifying example: test_decode_inverts_encode(s='110')
+Failing test case: test_decode_inverts_encode(s='110')
 
 ```
 

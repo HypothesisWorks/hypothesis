@@ -99,7 +99,7 @@ Then on running we would see the following output:
 
   ---- Hypothesis ----
 
-  Falsifying example: test_sort_is_idempotent(ls=[0, 1])
+  Failing test case: test_sort_is_idempotent(ls=[0, 1])
 ```
 
 Hypothesis probably started with a much more complicated example (the test fails for essentially any list with more
@@ -135,7 +135,7 @@ This fails because we've forgotten than `i` may be zero, and also about Python's
 
   ---- Hypothesis ----
 
-  Falsifying example: test_sort_is_idempotent(ls=[0, 1], data=data(...))
+  Failing test case: test_sort_is_idempotent(ls=[0, 1], data=data(...))
   Draw 1: 0
 ```
 

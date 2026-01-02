@@ -84,7 +84,7 @@ MAX_SHRINKS: int = 500
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
 # no output, and appearing to hang isn't great for interactive use either -
-# showing partially-shrunk examples is better than quitting with no examples!
+# showing partially-shrunk test cases is better than quitting with no test cases!
 # (but make it monkeypatchable, for the rare users who need to keep on shrinking)
 
 #: The maximum total time in seconds that the shrinker will try to shrink a failure
@@ -161,7 +161,7 @@ class ExitReason(Enum):
         "settings.max_examples={s.max_examples}, "
         "but < 10% of examples satisfied assumptions"
     )
-    max_shrinks = f"shrunk example {MAX_SHRINKS} times"
+    max_shrinks = f"shrunk test case {MAX_SHRINKS} times"
     finished = "nothing left to do"
     flaky = "test was flaky"
     very_slow_shrinking = "shrinking was very slow"
@@ -690,7 +690,7 @@ class ConjectureRunner:
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
             report(
                 "WARNING: Hypothesis has spent more than five minutes working to shrink"
-                " a failing example, and stopped because it is making very slow"
+                " a failing test case, and stopped because it is making very slow"
                 " progress.  When you re-run your tests, shrinking will resume and may"
                 " take this long before aborting again.\nPLEASE REPORT THIS if you can"
                 " provide a reproducing example, so that we can improve shrinking"
@@ -1099,12 +1099,12 @@ class ConjectureRunner:
         if Phase.generate not in self.settings.phases:
             return
         if self.interesting_examples:
-            # The example database has failing examples from a previous run,
+            # The example database has failing test cases from a previous run,
             # so we'd rather report that they're still failing ASAP than take
             # the time to look for additional failures.
             return
 
-        self.debug("Generating new examples")
+        self.debug("Generating new test cases")
 
         assert self.should_generate_more()
         self._switch_to_hypothesis_provider = True

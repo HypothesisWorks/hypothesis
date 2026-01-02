@@ -722,7 +722,7 @@ class ValidSyntaxRepr:
 
 @given(st.data())
 def test_pprint_with_call_or_repr_as_call(data):
-    # mapped pprint repr only triggers for failing examples - which makes an
+    # mapped pprint repr only triggers for failing test cases - which makes an
     # end to end test given hypothesis difficult. fake our way around it.
     current_build_context().is_final = True
 

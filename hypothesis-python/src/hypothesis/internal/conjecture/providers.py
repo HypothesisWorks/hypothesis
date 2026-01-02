@@ -537,10 +537,10 @@ class PrimitiveProvider(abc.ABC):
         The returned value should be non-symbolic.  If you cannot provide a value,
         raise |BackendCannotProceed| with a value of ``"discard_test_case"``.
 
-        If ``for_failure`` is ``True``, the value is associated with a failing example.
+        If ``for_failure`` is ``True``, the value is associated with a failing test case.
         In this case, the backend should spend substantially more effort when
         attempting to realize the value, since it is important to avoid discarding
-        failing examples. Backends may still raise |BackendCannotProceed| when
+        failing test cases. Backends may still raise |BackendCannotProceed| when
         ``for_failure`` is ``True``, if realization is truly impossible or if
         realization takes significantly longer than expected (say, 5 minutes).
         """
