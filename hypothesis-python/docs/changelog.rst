@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.11:
+
+---------------------
+6.148.11 - 2026-01-03
+---------------------
+
+Hypothesis now prints a |Verbosity.verbose| log when we switch away from an :ref:`alternative backend <alternative-backends>`.
+
 .. _v6.148.10:
 
 ---------------------
