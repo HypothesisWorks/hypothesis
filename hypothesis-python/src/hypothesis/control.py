@@ -12,7 +12,7 @@ import inspect
 import math
 import random
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
@@ -157,6 +157,35 @@ class BuildContext:
             defaultdict(list)
         )
 
+        # Track nested strategy calls for explain-phase label paths
+        self._label_path: list[str] = []
+
+    @contextmanager
+    def track_arg_label(
+        self, label: str
+    ) -> Generator[dict[str, tuple[int, int]], None, None]:
+        start = len(self.data.nodes)
+        self._label_path.append(label)
+        result: dict[str, tuple[int, int]] = {}
+        try:
+            yield result
+        finally:
+            self._label_path.pop()
+
+            # This high up the stack, we can't see or really do much with
+            # Span / SpanRecord - not least because they're only materialized
+            # after the test case is completed.
+            #
+            # Instead, we'll stash the (start_idx, end_idx) pair on our data object
+            # for the ConjectureRunner engine to deal with, and mutate the arg_labels
+            # dict so that the pretty-printer knows where to place the
+            # which-parts-matter comments later.
+            end = len(self.data.nodes)
+            assert start <= end
+            if start != end:
+                result[label] = (start, end)
+                self.data.arg_slices.add((start, end))
+
     def record_call(
         self,
         obj: object,
@@ -164,34 +193,33 @@ class BuildContext:
         *,
         args: Sequence[object],
         kwargs: dict[str, object],
+        arg_labels: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         self.known_object_printers[IDKey(obj)].append(
-            # _func=func prevents mypy from inferring lambda type. Would need
-            # paramspec I think - not worth it.
-            lambda obj, p, cycle, *, _func=func: p.maybe_repr_known_object_as_call(  # type: ignore
-                obj, cycle, get_pretty_function_description(_func), args, kwargs
+            lambda obj, p, cycle, *, _func=func, _arg_labels=arg_labels: p.maybe_repr_known_object_as_call(  # type: ignore
+                obj,
+                cycle,
+                get_pretty_function_description(_func),
+                args,
+                kwargs,
+                arg_labels=_arg_labels,
             )
         )
 
-    def prep_args_kwargs_from_strategies(self, kwarg_strategies):
-        arg_labels = {}
-        kwargs = {}
-        for k, s in kwarg_strategies.items():
-            start_idx = len(self.data.nodes)
-            with deprecate_random_in_strategy("from {}={!r}", k, s):
-                obj = self.data.draw(s, observe_as=f"generate:{k}")
-            end_idx = len(self.data.nodes)
-            kwargs[k] = obj
+    def prep_args_kwargs_from_strategies(
+        self,
+        kwarg_strategies: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, tuple[int, int]]]:
+        arg_labels: dict[str, tuple[int, int]] = {}
+        kwargs: dict[str, Any] = {}
 
-            # This high up the stack, we can't see or really do much with the conjecture
-            # Example objects - not least because they're only materialized after the
-            # test case is completed.  Instead, we'll stash the (start_idx, end_idx)
-            # pair on our data object for the ConjectureRunner engine to deal with, and
-            # pass a dict of such out so that the pretty-printer knows where to place
-            # the which-parts-matter comments later.
-            if start_idx != end_idx:
-                arg_labels[k] = (start_idx, end_idx)
-                self.data.arg_slices.add((start_idx, end_idx))
+        for k, s in kwarg_strategies.items():
+            with (
+                self.track_arg_label(k) as arg_label,
+                deprecate_random_in_strategy("from {}={!r}", k, s),
+            ):
+                kwargs[k] = self.data.draw(s, observe_as=f"generate:{k}")
+            arg_labels |= arg_label
 
         return kwargs, arg_labels
 
