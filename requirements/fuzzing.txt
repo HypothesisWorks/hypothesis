@@ -57,7 +57,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.148.7
+hypothesis[cli,watchdog]==6.148.8
     # via hypofuzz
 idna==3.11
     # via
@@ -101,7 +101,7 @@ pluggy==1.6.0
     #   pytest-cov
 priority==2.0.0
     # via hypercorn
-psutil==7.1.3
+psutil==7.2.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect

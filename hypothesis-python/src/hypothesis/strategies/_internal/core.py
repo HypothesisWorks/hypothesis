@@ -1585,7 +1585,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 f"{from_type_repr} resolved to {builds_repr}, because we could not "
                 "find any (non-varargs) arguments. Use st.register_type_strategy() "
                 "to resolve to a strategy which can generate more than one value, "
-                "or silence this warning.",
+                "or to silence this warning.",
                 SmallSearchSpaceWarning,
                 stacklevel=2,
             )
