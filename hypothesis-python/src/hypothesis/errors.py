@@ -290,7 +290,7 @@ class SmallSearchSpaceWarning(HypothesisWarning):
 
 
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
-_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__
+_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 
 
 class BackendCannotProceed(HypothesisException):
