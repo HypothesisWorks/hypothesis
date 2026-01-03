@@ -68,12 +68,12 @@ class Verbosity(Enum):
 
     quiet = "quiet"
     """
-    Hypothesis will not print any output, not even the final falsifying example.
+    Hypothesis will not print any output, not even the final failing test case.
     """
 
     normal = "normal"
     """
-    Standard verbosity. Hypothesis will print the falsifying example, alongside
+    Standard verbosity. Hypothesis will print the failing test case, alongside
     any notes made with |note| (only for the falsfying example).
     """
 
@@ -173,7 +173,7 @@ class Phase(Enum):
     Controls whether Hypothesis attempts to explain test failures.
 
     The explain phase has two parts, each of which is best-effort - if Hypothesis
-    can't find a useful explanation, we'll just print the minimal failing example.
+    can't find a useful explanation, we'll just print the minimal failing test case.
     """
 
     @classmethod
@@ -851,18 +851,18 @@ class settings(metaclass=settingsMeta):
             ... def f(x):
             ...     assert not any(x)
             ... f()
-            Trying example: []
-            Falsifying example: [-1198601713, -67, 116, -29578]
-            Shrunk example to [-1198601713]
-            Shrunk example to [-128]
-            Shrunk example to [32]
-            Shrunk example to [1]
+            Test case: []
+            Failing test case: [-1198601713, -67, 116, -29578]
+            Shrunk test case to [-1198601713]
+            Shrunk test case to [-128]
+            Shrunk test case to [32]
+            Shrunk test case to [1]
             [1]
 
         The four levels are |Verbosity.quiet|, |Verbosity.normal|,
         |Verbosity.verbose|, and |Verbosity.debug|. |Verbosity.normal| is the
         default. For |Verbosity.quiet|, Hypothesis will not print anything out,
-        not even the final falsifying example. |Verbosity.debug| is basically
+        not even the final failing test case. |Verbosity.debug| is basically
         |Verbosity.verbose| but a bit more so. You probably don't want it.
 
         Verbosity can be passed either as a |Verbosity| enum value, or as the
@@ -889,16 +889,16 @@ class settings(metaclass=settingsMeta):
         Hypothesis divides tests into logically distinct phases.
 
         - |Phase.explicit|: Running explicit examples from |@example|.
-        - |Phase.reuse|: Running examples from the database which previously failed.
-        - |Phase.generate|: Generating new random examples.
-        - |Phase.target|: Mutating examples for :ref:`targeted property-based
+        - |Phase.reuse|: Running test cases from the database which previously failed.
+        - |Phase.generate|: Generating new random test cases.
+        - |Phase.target|: Mutating test cases for :ref:`targeted property-based
           testing <targeted>`. Requires |Phase.generate|.
-        - |Phase.shrink|: Shrinking failing examples.
+        - |Phase.shrink|: Shrinking failing test cases.
         - |Phase.explain|: Attempting to explain why a failure occurred.
           Requires |Phase.shrink|.
 
         The phases argument accepts a collection with any subset of these. E.g.
-        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
+        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new test cases
         and shrink them, but will not run explicit examples or reuse previous failures,
         while ``settings(phases=[Phase.explicit])`` will only run explicit examples
         from |@example|.
@@ -921,10 +921,10 @@ class settings(metaclass=settingsMeta):
         there are no clearly suspicious lines of code, :pep:`we refuse the
         temptation to guess <20>`.
 
-        After shrinking to a minimal failing example, Hypothesis will try to find
-        parts of the example -- e.g. separate args to |@given|
+        After shrinking to a minimal failing test case, Hypothesis will try to find
+        parts of the test case -- e.g. separate args to |@given|
         -- which can vary freely without changing the result
-        of that minimal failing example. If the automated experiments run without
+        of that minimal failing test case. If the automated experiments run without
         finding a passing variation, we leave a comment in the final report:
 
         .. code-block:: python
@@ -936,7 +936,7 @@ class settings(metaclass=settingsMeta):
 
         Just remember that the *lack* of an explanation sometimes just means that
         Hypothesis couldn't efficiently find one, not that no explanation (or
-        simpler failing example) exists.
+        simpler failing test case) exists.
         """
 
         return self._phases
@@ -1011,8 +1011,8 @@ class settings(metaclass=settingsMeta):
     @property
     def print_blob(self):
         """
-        If set to ``True``, Hypothesis will print code for failing examples that
-        can be used with |@reproduce_failure| to reproduce the failing example.
+        If set to ``True``, Hypothesis will print code for failing test cases that
+        can be used with |@reproduce_failure| to reproduce the failing test case.
 
         The default value is ``False``. If running on CI, the default is ``True`` instead.
         """

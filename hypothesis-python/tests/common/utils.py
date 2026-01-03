@@ -174,8 +174,12 @@ def assert_output_contains_failure(output, test, **kwargs):
         assert f"{k}={v!r}" in output, (f"{k}={v!r}", output)
 
 
-def assert_falsifying_output(
-    test, example_type="Falsifying", expected_exception=AssertionError, **kwargs
+def assert_failing_output(
+    test,
+    example_type="Failing test case",
+    *,
+    expected_exception=AssertionError,
+    **kwargs,
 ):
     with capture_out() as out:
         if expected_exception is None:
@@ -189,7 +193,7 @@ def assert_falsifying_output(
             msg = str(exc_info.value) + "\n" + notes
 
     output = out.getvalue() + msg
-    assert f"{example_type} example:" in output
+    assert f"{example_type}:" in output, (example_type, output)
     assert_output_contains_failure(output, test, **kwargs)
 
 

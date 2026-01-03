@@ -240,7 +240,7 @@ SITE_PACKAGES_DIRS = {
 
 EXPLANATION_STUB = (
     "Explanation:",
-    "    These lines were always and only run by failing examples:",
+    "    These lines were always and only run by failing test cases:",
 )
 
 

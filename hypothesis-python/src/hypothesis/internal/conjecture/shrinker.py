@@ -471,18 +471,18 @@ class Shrinker:
 
         # Before we start running experiments, let's check for known inputs which would
         # make them redundant.  The shrinking process means that we've already tried many
-        # variations on the minimal example, so this can save a lot of time.
+        # variations on the minimal test case, so this can save a lot of time.
         seen_passing_seq = self.engine.passing_choice_sequences(
             prefix=self.nodes[: min(self.shrink_target.arg_slices)[0]]
         )
 
-        # Now that we've shrunk to a minimal failing example, it's time to try
+        # Now that we've shrunk to a minimal failing test case, it's time to try
         # varying each part that we've noted will go in the final report.  Consider
         # slices in largest-first order
         for start, end in sorted(
             self.shrink_target.arg_slices, key=lambda x: (-(x[1] - x[0]), x)
         ):
-            # Check for any previous examples that match the prefix and suffix,
+            # Check for any previous test cases that match the prefix and suffix,
             # so we can skip if we found a passing example while shrinking.
             if any(
                 startswith(seen, nodes[:start]) and endswith(seen, nodes[end:])
@@ -1594,7 +1594,7 @@ class Shrinker:
         x = data.draw(integers())
         assert x < 10
 
-        then in our shrunk example, x = 10 rather than say 97.
+        then in our shrunk test case, x = 10 rather than say 97.
 
         If we are unsuccessful at minimizing a choice of interest we then
         check if that's because it's changing the size of the test case and,

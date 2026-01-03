@@ -43,7 +43,7 @@ from hypothesis.strategies import (
 
 from tests.common.utils import (
     Why,
-    assert_falsifying_output,
+    assert_failing_output,
     capture_out,
     fails,
     fails_with,
@@ -230,7 +230,7 @@ def test_prints_on_failure_by_default():
         assume(evans >= 0)
         assert balthazar <= evans
 
-    assert_falsifying_output(test_ints_are_sorted, balthazar=1, evans=0)
+    assert_failing_output(test_ints_are_sorted, balthazar=1, evans=0)
 
 
 def test_does_not_print_on_success():
@@ -405,7 +405,7 @@ def test_mixed_text(x):
     assert set(x).issubset(set("abcdefg"))
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # runs ~five failing examples
+@xfail_on_crosshair(Why.other, strict=False)  # runs ~five failing test cases
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = []
 
@@ -426,7 +426,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
         foo()
     assert len(failing) == 2
     assert len(set(failing)) == 1
-    assert "Falsifying example" in "\n".join(err.value.__notes__)
+    assert "Failing test case" in "\n".join(err.value.__notes__)
     assert "Lo" in err.value.__notes__
 
 

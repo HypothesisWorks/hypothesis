@@ -647,7 +647,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 with contextlib.suppress(StopTest):
                     empty_data.conclude_test(Status.INVALID)
             except BaseException as err:
-                # In order to support reporting of multiple failing examples, we yield
+                # In order to support reporting of multiple failing test cases, we yield
                 # each of the (report text, error) pairs we find back to the top-level
                 # runner.  This also ensures that user-facing stack traces have as few
                 # frames of Hypothesis internals as possible.
@@ -682,9 +682,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 break
             finally:
                 if fragments_reported:
-                    assert fragments_reported[0].startswith("Falsifying example")
+                    assert fragments_reported[0].startswith("Failing test case")
                     fragments_reported[0] = fragments_reported[0].replace(
-                        "Falsifying example", "Falsifying explicit example", 1
+                        "Failing test case", "Failing explicit example", 1
                     )
 
                 empty_data.freeze()
@@ -700,7 +700,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     deliver_observation(tc)
 
             if fragments_reported:
-                verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
+                verbose_report(fragments_reported[0].replace("Failing", "Trying", 1))
                 for f in fragments_reported[1:]:
                     verbose_report(f)
 
@@ -1055,9 +1055,9 @@ class StateForActualGivenExecution:
             if print_example or current_verbosity() >= Verbosity.verbose:
                 printer = RepresentationPrinter(context=context)
                 if print_example:
-                    printer.text("Falsifying example:")
+                    printer.text("Failing test case:")
                 else:
-                    printer.text("Trying example:")
+                    printer.text("Test case:")
 
                 if self.print_given_args:
                     printer.text(" ")
@@ -1533,12 +1533,12 @@ class StateForActualGivenExecution:
             finally:
                 ran_example.freeze()
                 if observability_enabled():
-                    # log our observability line for the final failing example
+                    # log our observability line for the final failing test case
                     tc = make_testcase(
                         run_start=self._start_timestamp,
                         property=self.test_identifier,
                         data=ran_example,
-                        how_generated="minimal failing example",
+                        how_generated="minimal failing test case",
                         representation=self._string_repr,
                         arguments=ran_example._observability_args,
                         timing=self._timing_features,
@@ -1550,12 +1550,12 @@ class StateForActualGivenExecution:
                     deliver_observation(tc)
 
                 # Whether or not replay actually raised the exception again, we want
-                # to print the reproduce_failure decorator for the failing example.
+                # to print the reproduce_failure decorator for the failing test case.
                 if self.settings.print_blob:
                     fragments.append(
-                        "\nYou can reproduce this example by temporarily adding "
+                        "\nYou can reproduce this test case by temporarily adding "
                         f"{reproduction_decorator(falsifying_example.choices)} "
-                        "as a decorator on your test case"
+                        "as a decorator on your test function"
                     )
 
         _raise_to_user(
@@ -1611,7 +1611,7 @@ def _raise_to_user(
     errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
     """Helper function for attaching notes and grouping multiple errors."""
-    failing_prefix = "Falsifying example: "
+    failing_prefix = "Failing test case: "
     ls = []
     for error in errors_to_report:
         for note in error.fragments:
@@ -1648,14 +1648,14 @@ def _raise_to_user(
 def fake_subTest(self, msg=None, **__):
     """Monkeypatch for `unittest.TestCase.subTest` during `@given`.
 
-    If we don't patch this out, each failing example is reported as a
+    If we don't patch this out, each failing test case is reported as a
     separate failing test by the unittest test runner, which is
     obviously incorrect. We therefore replace it for the duration with
     this version.
     """
     warnings.warn(
-        "subTest per-example reporting interacts badly with Hypothesis "
-        "trying hundreds of examples, so we disable it for the duration of "
+        "subTest per-test-case reporting interacts badly with Hypothesis "
+        "trying hundreds of test cases, so we disable it for the duration of "
         "any test that uses `@given`.",
         HypothesisWarning,
         stacklevel=2,
@@ -2179,7 +2179,7 @@ def given(
                     and getattr(wrapped_test, "hypothesis_explicit_examples", ())
                 )
                 SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
-                    "Hypothesis has been told to run no examples for this test."
+                    "Hypothesis has been told to run no test cases for this test."
                 )
                 if not (
                     Phase.reuse in settings.phases or Phase.generate in settings.phases

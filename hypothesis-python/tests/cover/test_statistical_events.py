@@ -197,7 +197,7 @@ def test_stops_after_x_shrinks(monkeypatch):
         assert n < 10
 
     stats = call_for_statistics(test)
-    assert "shrunk example" in stats["stopped-because"]
+    assert "shrunk test case" in stats["stopped-because"]
 
 
 def test_stateful_states_are_deduped():
@@ -248,12 +248,12 @@ def test_statistics_for_threshold_problem():
     def threshold(error):
         target(error, label="error")
         assert error <= 10
-        target(0.0, label="never in failing example")
+        target(0.0, label="never in failing test case")
 
     stats = call_for_statistics(threshold)
     assert "  - Highest target scores:" in describe_statistics(stats)
-    assert "never in failing example" in describe_statistics(stats)
-    # Check that we report far-from-threshold failing examples
+    assert "never in failing test case" in describe_statistics(stats)
+    # Check that we report far-from-threshold failing test cases
     assert stats["targets"]["error"] > 10
 
 
