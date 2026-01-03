@@ -289,9 +289,8 @@ class SmallSearchSpaceWarning(HypothesisWarning):
     in a meaningful way, for example by only creating default instances."""
 
 
-# keep these two in sync
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
-_valid_cannot_proceed_scopes = ["verified", "exhausted", "discard_test_case", "other"]
+_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__
 
 
 class BackendCannotProceed(HypothesisException):
