@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.148.10:
+
+---------------------
+6.148.10 - 2026-01-03
+---------------------
+
+Fixes :ref:`Ghostwriter <ghostwriter>` output for :pypi:`numpy` >= 2.4.0. Also adds support |st.from_type| for :pypi:`numpy` 2.5.0 nightly (which has not yet been released).
+
 .. _v6.148.9:
 
 --------------------
