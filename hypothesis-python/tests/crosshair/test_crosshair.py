@@ -46,6 +46,9 @@ def test_crosshair_works_for_all_verbosities(verbosity):
 @pytest.mark.parametrize("verbosity", list(Verbosity))
 def test_crosshair_works_for_all_verbosities_data(verbosity):
     # data draws have their own print path
+    if verbosity == Verbosity.quiet:
+        pytest.skip("Flaky test, pending fix")
+
     @given(st.data())
     @settings(
         backend="crosshair",

@@ -1348,6 +1348,37 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             if strategy is not NotImplemented:
                 return strategy
         return _from_type(thing.__value__)  # type: ignore
+    # Parameterized type aliases: get_origin(A[int]) is the TypeAliasType A
+    origin = get_origin(thing)
+    if origin is not None and types.is_a_type_alias_type(origin):  # pragma: no cover
+        if origin in types._global_type_lookup:
+            strategy = as_strategy(types._global_type_lookup[origin], thing)
+            if strategy is not NotImplemented:
+                return strategy
+
+        args = get_args(thing)
+        assert args, f"Parameterized type alias {thing} has no type arguments"
+        type_params = origin.__type_params__
+        value_params = get_args(origin.__value__)
+        value_typevars = tuple(p for p in value_params if p in type_params)
+
+        if len(args) != len(value_typevars):
+            # e.g. type MyList[T1, T2] = list[T1] is ambiguous
+            raise InvalidArgument(
+                f"Cannot resolve {thing!r}: type alias {origin.__name__} declares "
+                f"{len(type_params)} type parameter(s) but only uses "
+                f"{len(value_typevars)} in its definition. This is ambiguous - "
+                f"consider using st.register_type_strategy() to explicitly "
+                f"define the desired behavior."
+            )
+
+        # Substitute type parameters in order of use, not declaration
+        needed_args = tuple(args[type_params.index(p)] for p in value_typevars)
+        if len(needed_args) == 1:
+            substituted = origin.__value__[needed_args[0]]
+        else:
+            substituted = origin.__value__[needed_args]
+        return _from_type(substituted)
     if types.is_a_union(thing):
         args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
         return one_of([_from_type(t) for t in args])
