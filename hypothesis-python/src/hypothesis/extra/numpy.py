@@ -1433,7 +1433,9 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
             st.recursive(st.tuples(base_strat, base_strat), st.tuples),
         )
 
-    if origin in [np.ndarray, _SupportsArray]:
+    # note: get_origin(np.typing.NDArray[np.int64]) is np.ndarray in numpy < 2.5.0,
+    # but is np.typing.NDArray in numpy >= 2.5.0. Support both here.
+    if origin in [np.typing.NDArray, np.ndarray, _SupportsArray]:
         dtype = _dtype_from_args(args)
         return arrays(dtype, array_shapes(max_dims=2))  # type: ignore[return-value]
 

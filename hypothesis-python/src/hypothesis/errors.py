@@ -188,8 +188,11 @@ class FailedHealthCheck(_Trimmable):
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
-    """SearchStrategy.example() is designed for interactive use,
-    but should never be used in the body of a test.
+    """
+    Emitted when |.example| is used outside of interactive use.
+
+    |.example| is intended for exploratory and interactive work, not to be run as
+    part of a test suite.
     """
 
 
@@ -287,6 +290,7 @@ class SmallSearchSpaceWarning(HypothesisWarning):
 
 
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
+_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 
 
 class BackendCannotProceed(HypothesisException):
@@ -314,4 +318,9 @@ class BackendCannotProceed(HypothesisException):
     """
 
     def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
+        if scope not in _valid_cannot_proceed_scopes:
+            raise InvalidArgument(
+                f"Got scope={scope}, but expected one of "
+                f"{_valid_cannot_proceed_scopes!r}"
+            )
         self.scope = scope

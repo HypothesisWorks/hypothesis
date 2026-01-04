@@ -90,7 +90,7 @@ jobs:
           - check-quality
           - check-pytest62
           - check-pytest62
-          - check-django51
+          - check-django60
           - check-django42
           - check-pandas22
           - check-pandas21

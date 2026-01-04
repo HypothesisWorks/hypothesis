@@ -11,6 +11,7 @@
 .DS_Store
 .hypothesis
 .vscode/
+.claude/settings.local.json
 
 # generic build components
 

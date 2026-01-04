@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import zipfile
 from collections import Counter
 from collections.abc import Iterable, Iterator
@@ -65,6 +66,9 @@ from tests.common.utils import (
     wait_for,
 )
 from tests.conjecture.common import nodes, nodes_inline
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
 
 
 @given(lists(tuples(binary(), binary())))
@@ -602,6 +606,8 @@ def _database_conforms_to_listener_api(
         @rule()
         def add_listener(self):
             self.db.add_listener(self.listener)
+            # wait for watchdog to initialize the listener asynchronously
+            time_sleep(0.1)
             self.active_listeners.append(self.listener)
 
         @precondition(lambda self: self.listener in self.active_listeners)

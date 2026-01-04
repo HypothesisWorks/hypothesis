@@ -69,7 +69,7 @@ from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, 
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import Observation, with_observability_callback
-from hypothesis.reporting import base_report, report
+from hypothesis.reporting import base_report, report, verbose_report
 
 # In most cases, the following constants are all Final. However, we do allow users
 # to monkeypatch all of these variables, which means we cannot annotate them as
@@ -353,11 +353,10 @@ class ConjectureRunner:
         self.__pending_call_explanation: str | None = None
         self._backend_found_failure: bool = False
         self._backend_exceeded_deadline: bool = False
-        self._switch_to_hypothesis_provider: bool = False
-
-        self.__failed_realize_count: int = 0
+        self._backend_discard_count: int = 0
         # note unsound verification by alt backends
-        self._verified_by: str | None = None
+        self._verified_by_backend: str | None = None
+        self._switch_to_hypothesis_provider: bool = False
 
     @contextmanager
     def _with_switch_to_hypothesis_provider(
@@ -531,13 +530,21 @@ class ConjectureRunner:
             if exc.scope in ("verified", "exhausted"):
                 self._switch_to_hypothesis_provider = True
                 if exc.scope == "verified":
-                    self._verified_by = self.settings.backend
+                    self._verified_by_backend = self.settings.backend
             elif exc.scope == "discard_test_case":
-                self.__failed_realize_count += 1
+                self._backend_discard_count += 1
                 if (
-                    self.__failed_realize_count > 10
-                    and (self.__failed_realize_count / self.call_count) > 0.2
+                    self._backend_discard_count > 10
+                    and (self._backend_discard_count / self.call_count) > 0.2
                 ):
+                    verbose_report(
+                        f"Switching away from backend {self.settings.backend!r} "
+                        "to the Hypothesis backend, "
+                        f"because {self._backend_discard_count} of {self.call_count} "
+                        "attempted test cases "
+                        f"({self._backend_discard_count / self.call_count * 100:0.1f}%) "
+                        f"were discarded by backend {self.settings.backend!r}"
+                    )
                     self._switch_to_hypothesis_provider = True
 
             # treat all BackendCannotProceed exceptions as invalid. This isn't

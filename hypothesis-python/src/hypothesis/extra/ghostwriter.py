@@ -491,11 +491,16 @@ def _get_params(func: Callable) -> dict[str, inspect.Parameter]:
             # we're out of ideas and should just re-raise the exception.
             raise
     else:
-        # If the params we got look like an uninformative placeholder, try fallbacks.
         P = inspect.Parameter
         placeholder = [("args", P.VAR_POSITIONAL), ("kwargs", P.VAR_KEYWORD)]
-        if [(p.name, p.kind) for p in params] == placeholder:
-            params = _get_params_ufunc(func) or _get_params_builtin_fn(func) or params
+        if ufunc_params := _get_params_ufunc(func):
+            # If func is a ufunc, prefer _get_params_ufunc over get_signature,
+            # as the latter includes keyword arguments we aren't well-equipped
+            # to ghostwrite.
+            params = ufunc_params
+        elif [(p.name, p.kind) for p in params] == placeholder:
+            # If the params we got look like an uninformative placeholder, try fallbacks.
+            params = _get_params_builtin_fn(func) or params
     return _params_to_dict(params)
 
 

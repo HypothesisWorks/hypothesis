@@ -1566,8 +1566,8 @@ class StateForActualGivenExecution:
             # which is to be interpreted as "there are no more failures *other
             # than what we already reported*". Do not report this as unsound.
             unsound_backend=(
-                runner._verified_by
-                if runner._verified_by and not runner._backend_found_failure
+                runner._verified_by_backend
+                if runner._verified_by_backend and not runner._backend_found_failure
                 else None
             ),
         )

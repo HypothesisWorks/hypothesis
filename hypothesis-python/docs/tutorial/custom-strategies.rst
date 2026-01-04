@@ -58,7 +58,7 @@ Let's see this new strategy in action:
 
 .. note::
 
-    Just like all other strategies, we called ``sums_to_one`` before passing it to |@given|. |st.composite| should be thought of as turning its decorated function into a function which returns a stratgy when called. This is actually the same as existing strategies in Hypothesis; |st.integers| is really a function, which returns a strategy for integers when called.
+    Just like all other strategies, we called ``sums_to_one`` before passing it to |@given|. |st.composite| should be thought of as turning its decorated function into a function which returns a strategy when called. This is actually the same as existing strategies in Hypothesis; |st.integers| is really a function, which returns a strategy for integers when called.
 
 Combining |st.composite| with parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
