@@ -38,7 +38,12 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
-from hypothesis.vendor.pretty import IDKey, _fixeddict_pprinter, _tuple_pprinter
+from hypothesis.vendor.pretty import (
+    ArgLabelsT,
+    IDKey,
+    _fixeddict_pprinter,
+    _tuple_pprinter,
+)
 
 
 class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
@@ -67,14 +72,14 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
 
     def do_draw(self, data: ConjectureData) -> tuple[Ex, ...]:
         context = current_build_context()
-        arg_labels: dict[str, tuple[int, int]] = {}
-        elements = []
+        arg_labels: ArgLabelsT = {}
+        result = []
         for i, strategy in enumerate(self.element_strategies):
             with context.track_arg_label(f"arg[{i}]") as arg_label:
-                elements.append(data.draw(strategy))
+                result.append(data.draw(strategy))
             arg_labels |= arg_label
 
-        result = tuple(elements)
+        result = tuple(result)
         if arg_labels:
             context.known_object_printers[IDKey(result)].append(
                 _tuple_pprinter(arg_labels)
@@ -382,7 +387,7 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
 
     def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
         context = current_build_context()
-        arg_labels: dict[str, tuple[int, int]] = {}
+        arg_labels: ArgLabelsT = {}
         value = type(self.mapping)()
 
         for key, strategy in self.mapping.items():

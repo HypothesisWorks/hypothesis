@@ -83,6 +83,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 PrettyPrintFunction: TypeAlias = Callable[[Any, "RepresentationPrinter", bool], None]
+ArgLabelsT: TypeAlias = dict[str, tuple[int, int]]
 
 __all__ = [
     "IDKey",
@@ -415,7 +416,7 @@ class RepresentationPrinter:
         name: str,
         args: Sequence[object],
         kwargs: dict[str, object],
-        arg_labels: dict[str, tuple[int, int]] | None = None,
+        arg_labels: ArgLabelsT | None = None,
     ) -> None:
         # pprint this object as a call, _unless_ the call would be invalid syntax
         # and the repr would be valid and there are not comments on arguments.
@@ -451,7 +452,7 @@ class RepresentationPrinter:
         kwargs: dict[str, object],
         *,
         force_split: bool | None = None,
-        arg_slices: dict[str, tuple[int, int]] | None = None,
+        arg_slices: ArgLabelsT | None = None,
         leading_comment: str | None = None,
         avoid_realization: bool = False,
     ) -> None:
@@ -815,7 +816,7 @@ def pprint_fields(
 
 def _get_slice_comment(
     p: RepresentationPrinter,
-    arg_labels: dict[str, tuple[int, int]],
+    arg_labels: ArgLabelsT,
     key: Any,
 ) -> tuple[str, tuple[int, int]] | None:
     """Look up a comment for a slice, if not already printed at a higher level."""
@@ -825,9 +826,7 @@ def _get_slice_comment(
     return None
 
 
-def _tuple_pprinter(
-    arg_labels: dict[str, tuple[int, int]],
-) -> PrettyPrintFunction:
+def _tuple_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
     """Pretty printer for tuples that shows sub-argument comments."""
 
     def inner(obj: tuple, p: RepresentationPrinter, cycle: bool) -> None:
@@ -854,7 +853,7 @@ def _tuple_pprinter(
 
 
 def _fixeddict_pprinter(
-    arg_labels: dict[str, tuple[int, int]],
+    arg_labels: ArgLabelsT,
     mapping: dict[Any, Any],
 ) -> PrettyPrintFunction:
     """Pretty printer for fixed_dictionaries that shows sub-argument comments."""

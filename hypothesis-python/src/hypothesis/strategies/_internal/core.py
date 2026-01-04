@@ -138,7 +138,7 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
-from hypothesis.vendor.pretty import RepresentationPrinter
+from hypothesis.vendor.pretty import ArgLabelsT, RepresentationPrinter
 
 
 @cacheable
@@ -1054,7 +1054,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
 
     def do_draw(self, data: ConjectureData) -> Ex:
         context = current_build_context()
-        arg_labels: dict[str, tuple[int, int]] = {}
+        arg_labels: ArgLabelsT = {}
 
         args = []
         for i, s in enumerate(self.args):

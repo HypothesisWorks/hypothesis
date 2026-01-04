@@ -27,7 +27,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
-from hypothesis.vendor.pretty import IDKey, PrettyPrintFunction, pretty
+from hypothesis.vendor.pretty import ArgLabelsT, IDKey, PrettyPrintFunction, pretty
 
 
 def _calling_function_location(what: str, frame: Any) -> str:
@@ -161,14 +161,12 @@ class BuildContext:
         self._label_path: list[str] = []
 
     @contextmanager
-    def track_arg_label(
-        self, label: str
-    ) -> Generator[dict[str, tuple[int, int]], None, None]:
+    def track_arg_label(self, label: str) -> Generator[ArgLabelsT, None, None]:
         start = len(self.data.nodes)
         self._label_path.append(label)
-        result: dict[str, tuple[int, int]] = {}
+        arg_labels: ArgLabelsT = {}
         try:
-            yield result
+            yield arg_labels
         finally:
             self._label_path.pop()
 
@@ -183,7 +181,7 @@ class BuildContext:
             end = len(self.data.nodes)
             assert start <= end
             if start != end:
-                result[label] = (start, end)
+                arg_labels[label] = (start, end)
                 self.data.arg_slices.add((start, end))
 
     def record_call(
@@ -193,7 +191,7 @@ class BuildContext:
         *,
         args: Sequence[object],
         kwargs: dict[str, object],
-        arg_labels: dict[str, tuple[int, int]] | None = None,
+        arg_labels: ArgLabelsT | None = None,
     ) -> None:
         self.known_object_printers[IDKey(obj)].append(
             lambda obj, p, cycle, *, _func=func, _arg_labels=arg_labels: p.maybe_repr_known_object_as_call(  # type: ignore
@@ -209,8 +207,8 @@ class BuildContext:
     def prep_args_kwargs_from_strategies(
         self,
         kwarg_strategies: dict[str, Any],
-    ) -> tuple[dict[str, Any], dict[str, tuple[int, int]]]:
-        arg_labels: dict[str, tuple[int, int]] = {}
+    ) -> tuple[dict[str, Any], ArgLabelsT]:
+        arg_labels: ArgLabelsT = {}
         kwargs: dict[str, Any] = {}
 
         for k, s in kwarg_strategies.items():
