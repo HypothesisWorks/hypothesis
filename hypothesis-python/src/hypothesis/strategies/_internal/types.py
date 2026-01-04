@@ -257,7 +257,7 @@ def try_issubclass(thing, superclass):
         return False
 
 
-def _evaluate_type_alias_type(thing, *, typevars):
+def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
     if isinstance(thing, typing.TypeVar):
         if thing not in typevars:
             raise ValueError(
@@ -309,7 +309,7 @@ def _evaluate_type_alias_type(thing, *, typevars):
     return origin[concrete_args]
 
 
-def evaluate_type_alias_type(thing):
+def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
     # this function takes a GenericAlias whose origin is a TypeAliasType,
     # which corresponds to `type A[T] = list[T]; thing = A[int]`, and returns
     # the fully-instantiated underlying type.
