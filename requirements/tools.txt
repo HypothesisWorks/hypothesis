@@ -59,7 +59,7 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.13.0
+coverage==7.13.1
     # via -r requirements/tools.in
 cryptography==46.0.3
     # via
@@ -93,7 +93,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.20.1
+filelock==3.20.2
     # via
     #   tox
     #   virtualenv
@@ -143,7 +143,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.7.5
+librt==0.7.7
     # via mypy
 markdown==3.10
     # via pelican
@@ -337,7 +337,7 @@ tomli==2.3.0
     #   pytest
     #   sphinx
     #   tox
-tox==4.32.0
+tox==4.33.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
