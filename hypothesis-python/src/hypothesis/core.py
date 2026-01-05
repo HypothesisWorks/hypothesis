@@ -918,7 +918,7 @@ class StateForActualGivenExecution:
     def __init__(
         self,
         stuff: Stuff,
-        test: Any,
+        test: Callable[..., Any],
         settings: Settings,
         random: Random,
         wrapped_test: Any,
