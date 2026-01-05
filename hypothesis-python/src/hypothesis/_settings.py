@@ -621,7 +621,7 @@ class settings(metaclass=settingsMeta):
             "default",
             max_examples=100,
             derandomize=False,
-            database=not_set,  # see settings.database for the default database
+            database=not_set,  # see settings.database for default behavior
             verbosity=Verbosity.normal,
             phases=tuple(Phase),
             stateful_step_count=50,

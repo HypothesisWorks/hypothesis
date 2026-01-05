@@ -916,7 +916,14 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
 
 class StateForActualGivenExecution:
     def __init__(
-        self, stuff, test, settings, random, wrapped_test, *, thread_overlap=None
+        self,
+        stuff: Stuff,
+        test: Any,
+        settings: Settings,
+        random: Random,
+        wrapped_test: Any,
+        *,
+        thread_overlap: dict[int, bool] | None = None,
     ):
         self.stuff = stuff
         self.test = test
@@ -933,15 +940,16 @@ class StateForActualGivenExecution:
         self.last_exception = None
         self.falsifying_examples = ()
         self.ever_executed = False
-        self.xfail_example_reprs = set()
-        self.files_to_propagate = set()
+        self.xfail_example_reprs: set[Any] = set()
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces = defaultdict(set)
+        self.explain_traces: Any = defaultdict(set)
         self._start_timestamp = time.time()
         self._string_repr = ""
-        self._timing_features = {}
+        self._timing_features: dict[str, float] = {}
+
+        self._runner: ConjectureRunner | None = None
 
     @property
     def test_identifier(self) -> str:
@@ -1172,6 +1180,7 @@ class StateForActualGivenExecution:
     def _flaky_replay_to_failure(
         self, err: FlakyReplay, context: BaseException
     ) -> FlakyFailure:
+        assert self._runner is not None
         # Note that in the mark_interesting case, _context_ itself
         # is part of err._interesting_examples - but it's not in
         # _runner.interesting_examples - this is fine, as the context
@@ -1381,13 +1390,14 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = self._runner = ConjectureRunner(
+        runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
             database_key=database_key,
             thread_overlap=self.thread_overlap,
         )
+        self._runner = runner
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
         runner.run()
