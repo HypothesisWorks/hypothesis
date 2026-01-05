@@ -18,7 +18,6 @@ import contextlib
 import datetime
 import inspect
 import os
-import warnings
 from collections.abc import Collection, Generator, Sequence
 from enum import Enum, EnumMeta, unique
 from functools import total_ordering
@@ -31,13 +30,13 @@ from typing import (
 )
 
 from hypothesis.errors import (
-    HypothesisDeprecationWarning,
     InvalidArgument,
 )
 from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if TYPE_CHECKING:
@@ -1189,20 +1188,6 @@ class settings(metaclass=settingsMeta):
 def local_settings(s: settings) -> Generator[settings, None, None]:
     with default_variable.with_value(s):
         yield s
-
-
-def note_deprecation(
-    message: str, *, since: str, has_codemod: bool, stacklevel: int = 0
-) -> None:
-    if since != "RELEASEDAY":
-        date = datetime.date.fromisoformat(since)
-        assert datetime.date(2021, 1, 1) <= date
-    if has_codemod:
-        message += (
-            "\n    The `hypothesis codemod` command-line tool can automatically "
-            "refactor your code to fix this warning."
-        )
-    warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2 + stacklevel)
 
 
 default = settings(

@@ -23,7 +23,7 @@ from random import Random
 from typing import Literal, NoReturn, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
-from hypothesis._settings import local_settings, note_deprecation
+from hypothesis._settings import local_settings
 from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -70,6 +70,7 @@ from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report, verbose_report
+from hypothesis.utils.deprecation import note_deprecation
 
 # In most cases, the following constants are all Final. However, we do allow users
 # to monkeypatch all of these variables, which means we cannot annotate them as

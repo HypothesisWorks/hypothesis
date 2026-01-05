@@ -222,8 +222,8 @@ class Frozen(HypothesisException):
 
 def __getattr__(name: str) -> Any:
     if name == "MultipleFailures":
-        from hypothesis._settings import note_deprecation
         from hypothesis.internal.compat import BaseExceptionGroup
+        from hypothesis.utils.deprecation import note_deprecation
 
         note_deprecation(
             "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
