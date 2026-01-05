@@ -12,6 +12,7 @@ import math
 import time
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import cached_property
 from random import Random
@@ -20,14 +21,11 @@ from typing import (
     Any,
     Literal,
     NoReturn,
-    Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
-
-import attr
 
 from hypothesis.errors import (
     CannotProceedScopeT,
@@ -72,11 +70,10 @@ from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
 from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.threading import ThreadLocal
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.strategies import SearchStrategy
     from hypothesis.strategies._internal.core import DataObject
     from hypothesis.strategies._internal.random import RandomState
@@ -85,7 +82,6 @@ if TYPE_CHECKING:
 
 def __getattr__(name: str) -> Any:
     if name == "AVAILABLE_PROVIDERS":
-        from hypothesis._settings import note_deprecation
         from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 
         note_deprecation(
@@ -103,29 +99,14 @@ def __getattr__(name: str) -> Any:
 
 
 T = TypeVar("T")
-TargetObservations = dict[str, Union[int, float]]
+TargetObservations = dict[str, int | float]
 # index, choice_type, constraints, forced value
-MisalignedAt: "TypeAlias" = tuple[
-    int, ChoiceTypeT, ChoiceConstraintsT, Optional[ChoiceT]
-]
+MisalignedAt: TypeAlias = tuple[int, ChoiceTypeT, ChoiceConstraintsT, ChoiceT | None]
 
 TOP_LABEL = calc_label_from_name("top")
 MAX_DEPTH = 100
 
 threadlocal = ThreadLocal(global_test_counter=int)
-
-
-class ExtraInformation:
-    """A class for holding shared state on a ``ConjectureData`` that should
-    be added to the final ``ConjectureResult``."""
-
-    def __repr__(self) -> str:
-        return "ExtraInformation({})".format(
-            ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()),
-        )
-
-    def has_information(self) -> bool:
-        return bool(self.__dict__)
 
 
 class Status(IntEnum):
@@ -138,9 +119,9 @@ class Status(IntEnum):
         return f"Status.{self.name}"
 
 
-@attr.s(slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class StructuralCoverageTag:
-    label: int = attr.ib()
+    label: int
 
 
 STRUCTURAL_COVERAGE_CACHE: dict[int, StructuralCoverageTag] = {}
@@ -217,7 +198,7 @@ class Span:
         return self.owner.labels[self.owner.label_indices[self.index]]
 
     @property
-    def parent(self) -> Optional[int]:
+    def parent(self) -> int | None:
         """The index of the span that this one is nested directly within."""
         if self.index == 0:
             return None
@@ -337,7 +318,7 @@ class SpanRecord:
 
     def __init__(self) -> None:
         self.labels: list[int] = []
-        self.__index_of_labels: Optional[dict[int, int]] = {}
+        self.__index_of_labels: dict[int, int] | None = {}
         self.trail = IntList()
         self.nodes: list[ChoiceNode] = []
 
@@ -464,7 +445,7 @@ class Spans:
         self.__length = self.trail.count(
             TrailType.STOP_SPAN_DISCARD
         ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
-        self.__children: Optional[list[Sequence[int]]] = None
+        self.__children: list[Sequence[int]] | None = None
 
     @cached_property
     def starts_and_ends(self) -> tuple[IntList, IntList]:
@@ -549,7 +530,7 @@ class DataObserver:
     def conclude_test(
         self,
         status: Status,
-        interesting_origin: Optional[InterestingOrigin],
+        interesting_origin: InterestingOrigin | None,
     ) -> None:
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
@@ -586,28 +567,27 @@ class DataObserver:
         pass
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=True)
 class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
 
-    status: Status = attr.ib()
-    interesting_origin: Optional[InterestingOrigin] = attr.ib()
-    nodes: tuple[ChoiceNode, ...] = attr.ib(eq=False, repr=False)
-    length: int = attr.ib()
-    output: str = attr.ib()
-    extra_information: Optional[ExtraInformation] = attr.ib()
-    expected_exception: Optional[BaseException] = attr.ib()
-    expected_traceback: Optional[str] = attr.ib()
-    has_discards: bool = attr.ib()
-    target_observations: TargetObservations = attr.ib()
-    tags: frozenset[StructuralCoverageTag] = attr.ib()
-    spans: Spans = attr.ib(repr=False, eq=False)
-    arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
-    slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
-    misaligned_at: Optional[MisalignedAt] = attr.ib(repr=False)
-    cannot_proceed_scope: Optional[CannotProceedScopeT] = attr.ib(repr=False)
+    status: Status
+    interesting_origin: InterestingOrigin | None
+    nodes: tuple[ChoiceNode, ...] = field(repr=False, compare=False)
+    length: int
+    output: str
+    expected_exception: BaseException | None
+    expected_traceback: str | None
+    has_discards: bool
+    target_observations: TargetObservations
+    tags: frozenset[StructuralCoverageTag]
+    spans: Spans = field(repr=False, compare=False)
+    arg_slices: set[tuple[int, int]] = field(repr=False)
+    slice_comments: dict[tuple[int, int], str] = field(repr=False)
+    misaligned_at: MisalignedAt | None = field(repr=False)
+    cannot_proceed_scope: CannotProceedScopeT | None = field(repr=False)
 
     def as_result(self) -> "ConjectureResult":
         return self
@@ -621,11 +601,11 @@ class ConjectureData:
     @classmethod
     def for_choices(
         cls,
-        choices: Sequence[Union[ChoiceTemplate, ChoiceT]],
+        choices: Sequence[ChoiceTemplate | ChoiceT],
         *,
-        observer: Optional[DataObserver] = None,
-        provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        random: Optional[Random] = None,
+        observer: DataObserver | None = None,
+        provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
+        random: Random | None = None,
     ) -> "ConjectureData":
         from hypothesis.internal.conjecture.engine import choice_count
 
@@ -640,12 +620,12 @@ class ConjectureData:
     def __init__(
         self,
         *,
-        random: Optional[Random],
-        observer: Optional[DataObserver] = None,
-        provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        prefix: Optional[Sequence[Union[ChoiceTemplate, ChoiceT]]] = None,
-        max_choices: Optional[int] = None,
-        provider_kw: Optional[dict[str, Any]] = None,
+        random: Random | None,
+        observer: DataObserver | None = None,
+        provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
+        prefix: Sequence[ChoiceTemplate | ChoiceT] | None = None,
+        max_choices: int | None = None,
+        provider_kw: dict[str, Any] | None = None,
     ) -> None:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
@@ -663,7 +643,6 @@ class ConjectureData:
         self.observer = observer
         self.max_choices = max_choices
         self.max_length = BUFFER_SIZE
-        self.is_find = False
         self.overdraw = 0
         self._random = random
 
@@ -676,8 +655,8 @@ class ConjectureData:
         threadlocal.global_test_counter += 1
         self.start_time = time.perf_counter()
         self.gc_start_time = gc_cumulative_time()
-        self.events: dict[str, Union[str, int, float]] = {}
-        self.interesting_origin: Optional[InterestingOrigin] = None
+        self.events: dict[str, str | int | float] = {}
+        self.interesting_origin: InterestingOrigin | None = None
         self.draw_times: dict[str, float] = {}
         self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth = 0
@@ -688,7 +667,7 @@ class ConjectureData:
         )
         assert isinstance(self.provider, PrimitiveProvider)
 
-        self.__result: Optional[ConjectureResult] = None
+        self.__result: ConjectureResult | None = None
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
@@ -702,7 +681,7 @@ class ConjectureData:
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__spans: Optional[Spans] = None
+        self.__spans: Spans | None = None
 
         # We want the top level span to have depth 0, so we start
         # at -1.
@@ -718,24 +697,23 @@ class ConjectureData:
             PredicateCounts
         )
 
-        self._sampled_from_all_strategies_elements_message: Optional[
-            tuple[str, object]
-        ] = None
-        self._shared_strategy_draws: dict[Hashable, tuple[int, Any]] = {}
-        self._shared_data_strategy: Optional[DataObject] = None
-        self._stateful_repr_parts: Optional[list[Any]] = None
-        self.states_for_ids: Optional[dict[int, RandomState]] = None
-        self.seeds_to_states: Optional[dict[Any, RandomState]] = None
-        self.hypothesis_runner = not_set
+        self._sampled_from_all_strategies_elements_message: (
+            tuple[str, object] | None
+        ) = None
+        self._shared_strategy_draws: dict[Hashable, tuple[Any, SearchStrategy]] = {}
+        self._shared_data_strategy: DataObject | None = None
+        self._stateful_repr_parts: list[Any] | None = None
+        self.states_for_ids: dict[int, RandomState] | None = None
+        self.seeds_to_states: dict[Any, RandomState] | None = None
+        self.hypothesis_runner: Any = not_set
 
-        self.expected_exception: Optional[BaseException] = None
-        self.expected_traceback: Optional[str] = None
-        self.extra_information = ExtraInformation()
+        self.expected_exception: BaseException | None = None
+        self.expected_traceback: str | None = None
 
         self.prefix = prefix
         self.nodes: tuple[ChoiceNode, ...] = ()
-        self.misaligned_at: Optional[MisalignedAt] = None
-        self.cannot_proceed_scope: Optional[CannotProceedScopeT] = None
+        self.misaligned_at: MisalignedAt | None = None
+        self.cannot_proceed_scope: CannotProceedScopeT | None = None
         self.start_span(TOP_LABEL)
 
     def __repr__(self) -> str:
@@ -765,7 +743,7 @@ class ConjectureData:
         constraints: IntegerConstraints,
         *,
         observe: bool,
-        forced: Optional[int],
+        forced: int | None,
     ) -> int: ...
 
     @overload
@@ -775,7 +753,7 @@ class ConjectureData:
         constraints: FloatConstraints,
         *,
         observe: bool,
-        forced: Optional[float],
+        forced: float | None,
     ) -> float: ...
 
     @overload
@@ -785,7 +763,7 @@ class ConjectureData:
         constraints: StringConstraints,
         *,
         observe: bool,
-        forced: Optional[str],
+        forced: str | None,
     ) -> str: ...
 
     @overload
@@ -795,7 +773,7 @@ class ConjectureData:
         constraints: BytesConstraints,
         *,
         observe: bool,
-        forced: Optional[bytes],
+        forced: bytes | None,
     ) -> bytes: ...
 
     @overload
@@ -805,7 +783,7 @@ class ConjectureData:
         constraints: BooleanConstraints,
         *,
         observe: bool,
-        forced: Optional[bool],
+        forced: bool | None,
     ) -> bool: ...
 
     def _draw(
@@ -814,7 +792,7 @@ class ConjectureData:
         constraints: ChoiceConstraintsT,
         *,
         observe: bool,
-        forced: Optional[ChoiceT],
+        forced: ChoiceT | None,
     ) -> ChoiceT:
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
@@ -886,12 +864,12 @@ class ConjectureData:
 
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
-        forced: Optional[int] = None,
+        forced: int | None = None,
         observe: bool = True,
     ) -> int:
         # Validate arguments
@@ -933,7 +911,7 @@ class ConjectureData:
         # TODO: consider supporting these float widths at the choice sequence
         # level in the future.
         # width: Literal[16, 32, 64] = 64,
-        forced: Optional[float] = None,
+        forced: float | None = None,
         observe: bool = True,
     ) -> float:
         assert smallest_nonzero_magnitude > 0
@@ -973,7 +951,7 @@ class ConjectureData:
         *,
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
-        forced: Optional[str] = None,
+        forced: str | None = None,
         observe: bool = True,
     ) -> str:
         assert forced is None or min_size <= len(forced) <= max_size
@@ -996,7 +974,7 @@ class ConjectureData:
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         *,
-        forced: Optional[bytes] = None,
+        forced: bytes | None = None,
         observe: bool = True,
     ) -> bytes:
         assert forced is None or min_size <= len(forced) <= max_size
@@ -1011,7 +989,7 @@ class ConjectureData:
         self,
         p: float = 0.5,
         *,
-        forced: Optional[bool] = None,
+        forced: bool | None = None,
         observe: bool = True,
     ) -> bool:
         assert (forced is not True) or p > 0
@@ -1065,7 +1043,7 @@ class ConjectureData:
         choice_type: ChoiceTypeT,
         constraints: ChoiceConstraintsT,
         *,
-        forced: Optional[ChoiceT],
+        forced: ChoiceT | None,
     ) -> ChoiceT:
         assert self.prefix is not None
         # checked in _draw
@@ -1149,7 +1127,7 @@ class ConjectureData:
         self.index += 1
         return choice
 
-    def as_result(self) -> Union[ConjectureResult, _Overrun]:
+    def as_result(self) -> ConjectureResult | _Overrun:
         """Convert the result of running this test into
         either an Overrun object or a ConjectureResult."""
 
@@ -1166,11 +1144,6 @@ class ConjectureData:
                 output=self.output,
                 expected_traceback=self.expected_traceback,
                 expected_exception=self.expected_exception,
-                extra_information=(
-                    self.extra_information
-                    if self.extra_information.has_information()
-                    else None
-                ),
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),
@@ -1195,18 +1168,12 @@ class ConjectureData:
     def draw(
         self,
         strategy: "SearchStrategy[Ex]",
-        label: Optional[int] = None,
-        observe_as: Optional[str] = None,
+        label: int | None = None,
+        observe_as: str | None = None,
     ) -> "Ex":
         from hypothesis.internal.observability import observability_enabled
         from hypothesis.strategies._internal.lazy import unwrap_strategies
         from hypothesis.strategies._internal.utils import to_jsonable
-
-        if self.is_find and not strategy.supports_find:
-            raise InvalidArgument(
-                f"Cannot use strategy {strategy!r} within a call to find "
-                "(presumably because it would be invalid after the call had ended)."
-            )
 
         at_top_level = self.depth == 0
         start_time = None
@@ -1345,7 +1312,7 @@ class ConjectureData:
         self,
         values: Sequence[T],
         *,
-        forced: Optional[T] = None,
+        forced: T | None = None,
         observe: bool = True,
     ) -> T:
         forced_i = None if forced is None else values.index(forced)
@@ -1360,7 +1327,7 @@ class ConjectureData:
     def conclude_test(
         self,
         status: Status,
-        interesting_origin: Optional[InterestingOrigin] = None,
+        interesting_origin: InterestingOrigin | None = None,
     ) -> NoReturn:
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
@@ -1372,7 +1339,7 @@ class ConjectureData:
     def mark_interesting(self, interesting_origin: InterestingOrigin) -> NoReturn:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self, why: Optional[str] = None) -> NoReturn:
+    def mark_invalid(self, why: str | None = None) -> NoReturn:
         if why is not None:
             self.events["invalid because"] = why
         self.conclude_test(Status.INVALID)

@@ -100,7 +100,7 @@ def test_efficient_dicts_with_sampled_keys(x):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes 3-5 mins and raises Unsatisfiable",
 )
 @pytest.mark.parametrize(
@@ -203,7 +203,7 @@ class AnnotationsInsteadOfElements(enum.Enum):
 
 
 def test_suggests_elements_instead_of_annotations():
-    with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
+    with pytest.raises(InvalidArgument, match=r"Cannot sample.*annotations.*dataclass"):
         check_can_generate_examples(st.sampled_from(AnnotationsInsteadOfElements))
 
 
@@ -313,7 +313,7 @@ class TestErrorNoteBehavior3819:
             matching_messages = [
                 n
                 for n in notes
-                if n.startswith("sample_from was given a collection of strategies")
+                if n.startswith("sampled_from was given a collection of strategies")
                 and n.endswith("Was one_of intended?")
             ]
             assert len(matching_messages) == (1 if should_exp_msg else 0)

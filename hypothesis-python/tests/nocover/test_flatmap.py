@@ -86,7 +86,7 @@ def test_flatmap_has_original_strategy_repr():
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~6 mins in CI, but ~7 sec in isolation. Unsure why",
 )
 def test_mixed_list_flatmap():

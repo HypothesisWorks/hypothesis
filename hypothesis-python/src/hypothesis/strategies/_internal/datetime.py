@@ -10,12 +10,12 @@
 
 import datetime as dt
 import operator as op
+import warnings
 import zoneinfo
 from calendar import monthrange
 from functools import cache, partial
 from importlib import resources
 from pathlib import Path
-from typing import Optional
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -165,7 +165,7 @@ def datetimes(
     min_value: dt.datetime = dt.datetime.min,
     max_value: dt.datetime = dt.datetime.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    timezones: SearchStrategy[dt.tzinfo | None] = none(),
     allow_imaginary: bool = True,
 ) -> SearchStrategy[dt.datetime]:
     """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none(), allow_imaginary=True)
@@ -236,7 +236,7 @@ def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    timezones: SearchStrategy[dt.tzinfo | None] = none(),
 ) -> SearchStrategy[dt.time]:
     """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
 
@@ -421,7 +421,14 @@ def timezone_keys(
     # check_type(bool, allow_deprecated, "allow_deprecated")
     check_type(bool, allow_prefix, "allow_prefix")
 
-    available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
+    with warnings.catch_warnings():
+        try:
+            warnings.simplefilter("ignore", EncodingWarning)
+        except NameError:  # pragma: no cover
+            pass
+        # On Python 3.12 (and others?), `available_timezones()` opens files
+        # without specifying an encoding - which our selftests make an error.
+        available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
 
     # TODO: filter out alias and deprecated names if disallowed
 

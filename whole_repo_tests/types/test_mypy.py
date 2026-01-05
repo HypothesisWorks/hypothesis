@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import subprocess
 import textwrap
 
@@ -17,15 +18,13 @@ from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
+    ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
     REVEALED_TYPES,
 )
-
-
-def test_mypy_passes_on_hypothesis():
-    pip_tool("mypy", str(PYTHON_SRC))
 
 
 @pytest.mark.skip(
@@ -37,10 +36,18 @@ def test_mypy_passes_on_hypothesis_strict():
 
 
 def get_mypy_output(fname, *extra_args):
+    # Work around a mypy cache bug,
+    # https://github.com/HypothesisWorks/hypothesis/pull/4256
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+
     proc = subprocess.run(
-        # --no-incremental is substantially slower, but works around a mypy cache
-        # bug https://github.com/HypothesisWorks/hypothesis/pull/4256
-        [tool_path("mypy"), "--no-incremental", *extra_args, str(fname)],
+        [
+            tool_path("mypy"),
+            "--cache-dir",
+            f".mypy_caches/{worker_id}",
+            *extra_args,
+            str(fname),
+        ],
         encoding="utf-8",
         capture_output=True,
         text=True,
@@ -137,7 +144,27 @@ def test_revealed_types(tmp_path, val, expect):
     assert typ == f"SearchStrategy[{expect}]"
 
 
-@pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)
+@pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)
+def test_assume_revealed_types(tmp_path, val, expect):
+    """Check that Mypy infers the correct return type for assume()."""
+    f = tmp_path / "check.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis import assume
+            reveal_type({val})
+            """
+        ),
+        encoding="utf-8",
+    )
+    typ = get_mypy_analysed_type(f)
+    assert typ == expect
+
+
+@pytest.mark.parametrize(
+    "val,expect",
+    [*NUMPY_REVEALED_TYPES, *((x.value, x.mypy) for x in NUMPY_DIFF_REVEALED_TYPES)],
+)
 def test_numpy_revealed_types(tmp_path, val, expect):
     f = tmp_path / "check.py"
     f.write_text(
@@ -320,10 +347,10 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
         "    ...\n",
         encoding="utf-8",
     )
-    # Also outputs "misc" error "Untyped decorator makes function "my_rule"
+    # Also outputs "untyped-decorator" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
     # variant
-    assert_mypy_errors(f, [(3, "call-overload"), (3, "misc")])
+    assert_mypy_errors(f, [(3, "call-overload"), (3, "untyped-decorator")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])

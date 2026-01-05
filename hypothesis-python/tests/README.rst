@@ -107,7 +107,7 @@ Still here?  Here's a note on what to expect in each directory.
 
 ``pytest/``
     Hypothesis has excellent integration with ``pytest``, though we are careful
-    to support other test runners including unittest and nose.  This is where we
+    to support other test runners such as unittest.  This is where we
     test that our pytest integration is working properly.
 
 ``quality/``

@@ -22,6 +22,7 @@ from tests.django.toystore.models import (
     Company,
     CouldBeCharming,
     Customer,
+    FileFields,
     ManyNumerics,
     ManyTimes,
     OddFields,
@@ -46,6 +47,12 @@ class ReprForm(forms.Form):
 class CouldBeCharmingForm(ReprModelForm):
     class Meta:
         model = CouldBeCharming
+        fields = "__all__"
+
+
+class FileFieldsForm(ReprModelForm):
+    class Meta:
+        model = FileFields
         fields = "__all__"
 
 

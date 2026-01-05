@@ -13,6 +13,7 @@ import decimal
 import math
 import operator
 import re
+import sys
 from fractions import Fraction
 from functools import partial
 from sys import float_info
@@ -643,3 +644,37 @@ def test_dates_filter_rewriting():
     new = bare.filter(partial(operator.le, today))
     assert not new.is_empty
     assert new is not bare
+
+
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 14), reason="functools.Placeholder is new in 3.14"
+)
+def test_partial_placeholder():
+    from functools import Placeholder
+
+    assert st.integers(0, 5).filter(partial(operator.gt, Placeholder, 5)).is_empty
+
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.lt, Placeholder, 3))
+    )
+    assert (s.start, s.end) == (-5, 2)
+
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.le, Placeholder, 3))
+    )
+    assert (s.start, s.end) == (-5, 3)
+
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.gt, Placeholder, 3))
+    )
+    assert (s.start, s.end) == (4, 5)
+
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.ge, Placeholder, 3))
+    )
+    assert (s.start, s.end) == (3, 5)
+
+    s = unwrap_strategies(
+        st.integers(-5, 5).filter(partial(operator.eq, Placeholder, 3))
+    )
+    assert (s.start, s.end) == (3, 3)

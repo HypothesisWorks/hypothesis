@@ -20,12 +20,12 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
+    _CI_VARS,
     HealthCheck,
     Phase,
     Verbosity,
     default_variable,
     local_settings,
-    note_deprecation,
     settings,
 )
 from hypothesis.database import InMemoryExampleDatabase
@@ -35,6 +35,7 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 
 from tests.common.utils import (
     checks_deprecated_behaviour,
@@ -67,8 +68,7 @@ def restore_profile():
     with _restore_profile_lock:
         # avoid polluting global state by resetting the loaded profile back to its
         # previous value in tests which use load_profile
-        current_profile = settings._current_profile
-        assert current_profile is not None
+        current_profile = settings.get_current_profile_name()
         try:
             yield
         finally:
@@ -381,22 +381,6 @@ def test_deadline_given_valid_timedelta():
     assert x.microseconds == 30000
 
 
-@pytest.mark.parametrize(
-    "x",
-    [
-        0,
-        -0.7,
-        -1,
-        86400000000000000.2,
-        datetime.timedelta(microseconds=-1),
-        datetime.timedelta(0),
-    ],
-)
-def test_invalid_deadline(x):
-    with pytest.raises(InvalidArgument):
-        settings(deadline=x)
-
-
 @pytest.mark.parametrize("value", ["always"])
 def test_can_not_set_print_blob_to_non_print_settings(value):
     with pytest.raises(InvalidArgument):
@@ -467,9 +451,18 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"stateful_step_count": 2.5},
         {"deadline": -1},
         {"deadline": 0},
+        {"deadline": -0.7},
+        {"deadline": 86400000000000000.2},
+        {"deadline": datetime.timedelta(microseconds=-1)},
+        {"deadline": datetime.timedelta(0)},
         {"deadline": True},
         {"deadline": False},
-        {"backend": "this_backend_does_not_exist"},
+        {"backend": "nonexistent_backend"},
+        {"suppress_health_check": ["nonexistent_healthcheck"]},
+        {"phases": ["nonexistent_phase"]},
+        {"phases": 0},
+        {"verbosity": -1},
+        {"verbosity": "nonexistent_verbosity"},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
@@ -484,10 +477,8 @@ def test_invalid_parent():
 
     not_settings = NotSettings()
 
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument, match=r"parent=\(not settings repr\)"):
         settings(not_settings)
-
-    assert "parent=(not settings repr)" in str(excinfo.value)
 
 
 def test_default_settings_do_not_use_ci():
@@ -554,8 +545,9 @@ def test_check_defaults_to_derandomize_when_running_on_ci():
 @skipif_emscripten
 def test_check_defaults_to_randomize_when_not_running_on_ci():
     env = dict(os.environ)
-    env.pop("CI", None)
-    env.pop("TF_BUILD", None)
+    for key in _CI_VARS:
+        env.pop(key, None)
+
     assert (
         subprocess.check_output(
             [
@@ -610,3 +602,85 @@ def test_register_profile_avoids_intermediate_profiles():
     s = settings(parent, max_examples=10)
     with temp_register_profile("for_intermediate_test", s):
         assert settings.get_profile("for_intermediate_test")._fallback is parent
+
+
+@checks_deprecated_behaviour
+@settings(max_examples=10)
+@given(st.integers())
+def test_cannot_register_profile_from_inside_test(x):
+    settings.register_profile("problematic", settings(max_examples=20))
+
+
+def test_can_set_verbosity_to_strings():
+    assert settings(verbosity="quiet").verbosity is Verbosity.quiet
+    assert settings(verbosity="normal").verbosity is Verbosity.normal
+    assert settings(verbosity="verbose").verbosity is Verbosity.verbose
+    assert settings(verbosity="debug").verbosity is Verbosity.debug
+
+
+def test_can_set_phase_to_strings():
+    assert settings(phases=["reuse"]).phases == (Phase.reuse,)
+    assert settings(phases=["reuse", "explicit"]).phases == (
+        Phase.explicit,
+        Phase.reuse,
+    )
+
+
+def test_can_set_suppressions_to_strings():
+    assert settings(
+        suppress_health_check=["filter_too_much"]
+    ).suppress_health_check == (HealthCheck.filter_too_much,)
+    assert settings(
+        suppress_health_check=["filter_too_much", "too_slow"]
+    ).suppress_health_check == (HealthCheck.filter_too_much, HealthCheck.too_slow)
+
+
+def test_verbosity_is_comparable():
+    assert Verbosity.quiet < Verbosity.normal
+    assert Verbosity.quiet <= Verbosity.quiet
+    assert Verbosity.quiet == Verbosity.quiet
+    assert Verbosity.quiet >= Verbosity.quiet
+    assert Verbosity.debug > Verbosity.quiet
+
+    # make sure we're comparing by int value, not by str value
+    assert Verbosity.quiet < Verbosity.normal < Verbosity.verbose < Verbosity.debug
+
+    # also comparable with other ints
+    assert Verbosity.quiet < 1
+    assert Verbosity.quiet <= 1
+    assert Verbosity.quiet == 0
+    assert Verbosity.quiet >= 0
+    assert Verbosity.normal > 0
+
+
+@checks_deprecated_behaviour
+def test_can_set_verbosity_to_integers():
+    assert Verbosity(0) is Verbosity.quiet
+    assert Verbosity(1) is Verbosity.normal
+    assert Verbosity(2) is Verbosity.verbose
+    assert Verbosity(3) is Verbosity.debug
+
+
+@checks_deprecated_behaviour
+def test_can_set_phase_to_integers():
+    assert Phase(0) is Phase.explicit
+    assert Phase(1) is Phase.reuse
+    assert Phase(2) is Phase.generate
+    assert Phase(4) is Phase.shrink
+
+
+@checks_deprecated_behaviour
+def test_can_set_suppressions_to_integers():
+    assert HealthCheck(1) is HealthCheck.data_too_large
+    assert HealthCheck(2) is HealthCheck.filter_too_much
+    assert HealthCheck(3) is HealthCheck.too_slow
+
+
+def test_invalid_integer_phase_raises():
+    with pytest.raises(ValueError):
+        Phase(99)
+
+
+def test_invalid_integer_healthcheck_raises():
+    with pytest.raises(ValueError):
+        HealthCheck(99)

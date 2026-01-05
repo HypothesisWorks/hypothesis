@@ -9,14 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from inspect import signature
-from typing import Optional, get_type_hints
+from typing import get_type_hints
 
 from hypothesis import given, strategies as st
 
 from tests.common.debug import find_any
 
 
-def use_this_signature(self, a: int, b: Optional[list] = None, *, x: float, y: str):
+def use_this_signature(self, a: int, b: list | None = None, *, x: float, y: str):
     pass
 
 
@@ -57,13 +57,13 @@ def test_from_type_can_be_default_or_annotation():
 
 
 def use_annotations(
-    self, test_a: int, test_b: Optional[str] = None, *, test_x: float, test_y: str
+    self, test_a: int, test_b: str | None = None, *, test_x: float, test_y: str
 ):
     pass
 
 
 def use_signature(
-    self, testA: int, testB: Optional[str] = None, *, testX: float, testY: list[str]
+    self, testA: int, testB: str | None = None, *, testX: float, testY: list[str]
 ):
     pass
 

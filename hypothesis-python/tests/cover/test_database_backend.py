@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import zipfile
 from collections import Counter
 from collections.abc import Iterable, Iterator
@@ -19,7 +20,6 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
-from typing import Optional
 
 import pytest
 
@@ -66,6 +66,9 @@ from tests.common.utils import (
     wait_for,
 )
 from tests.conjecture.common import nodes, nodes_inline
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
 
 
 @given(lists(tuples(binary(), binary())))
@@ -220,7 +223,7 @@ def test_ga_require_readonly_wrapping():
 
 @contextmanager
 def ga_empty_artifact(
-    date: Optional[datetime] = None, path: Optional[Path] = None
+    date: datetime | None = None, path: Path | None = None
 ) -> Iterator[tuple[Path, Path]]:
     """Creates an empty GitHub artifact."""
     if date:
@@ -286,9 +289,6 @@ def test_ga_no_artifact(tmp_path):
 
 def test_ga_corrupted_artifact():
     """Tests that corrupted artifacts are properly detected and warned about."""
-    # NOTE: For compatibility with Python 3.9's LL(1)
-    # parser, this is written as a nested with-statement,
-    # instead of a compound one.
     with ga_empty_artifact() as (path, zip_path):
         # Corrupt the CRC of the zip file
         with open(zip_path, "rb+") as f:
@@ -304,19 +304,18 @@ def test_ga_corrupted_artifact():
 def test_ga_deletes_old_artifacts():
     """Tests that old artifacts are automatically deleted."""
     now = datetime.now(timezone.utc)
-    with ga_empty_artifact(date=now) as (path, file_now):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
+    with (
+        ga_empty_artifact(date=now) as (path, file_now),
+        ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
             _,
             file_old,
-        ):
-            database = GitHubArtifactDatabase("test", "test", path=path)
-            # Trigger initialization
-            list(database.fetch(b""))
-            assert file_now.exists()
-            assert not file_old.exists()
+        ),
+    ):
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        # Trigger initialization
+        list(database.fetch(b""))
+        assert file_now.exists()
+        assert not file_old.exists()
 
 
 @skipif_threading
@@ -324,7 +323,7 @@ def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
         # We patch the _fetch_artifact method to return our artifact
-        def fake_fetch_artifact(self) -> Optional[Path]:
+        def fake_fetch_artifact(self) -> Path | None:
             return artifact
 
         monkeypatch.setattr(
@@ -375,7 +374,7 @@ def test_ga_fallback_expired(monkeypatch):
         )
 
         # This should trigger the fallback
-        def fake_fetch_artifact(self) -> Optional[Path]:
+        def fake_fetch_artifact(self) -> Path | None:
             return None
 
         monkeypatch.setattr(
@@ -525,7 +524,7 @@ def test_nodes_roundtrips(nodes1):
     ir2 = choices_from_bytes(s1)
     assert len(nodes1) == len(ir2)
 
-    for n1, v2 in zip(nodes1, ir2):
+    for n1, v2 in zip(nodes1, ir2, strict=True):
         assert choice_equal(n1.value, v2)
 
     s2 = choices_to_bytes(ir2)
@@ -607,6 +606,8 @@ def _database_conforms_to_listener_api(
         @rule()
         def add_listener(self):
             self.db.add_listener(self.listener)
+            # wait for watchdog to initialize the listener asynchronously
+            time_sleep(0.1)
             self.active_listeners.append(self.listener)
 
         @precondition(lambda self: self.listener in self.active_listeners)
@@ -684,7 +685,9 @@ def test_database_listener_memory():
 
 
 @skipif_emscripten
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ages")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="takes ages"
+)
 def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),

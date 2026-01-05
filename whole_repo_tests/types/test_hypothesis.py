@@ -8,15 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import subprocess
-
-import hypothesistooling as tools
-from hypothesistooling import installers as install
-
-SCRIPTS = [f for f in tools.all_files() if f.endswith(".sh")]
+from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.scripts import pip_tool
 
 
-def test_all_shell_scripts_are_valid():
-    subprocess.check_call(
-        [install.SHELLCHECK, "--exclude=SC1073,SC1072", *SCRIPTS], cwd=tools.ROOT
-    )
+def test_mypy_passes_on_hypothesis():
+    pip_tool("mypy", str(PYTHON_SRC))

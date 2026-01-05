@@ -32,14 +32,15 @@ from hypothesis.errors import (
     DidNotReproduce,
     FailedHealthCheck,
     Flaky,
+    FlakyStrategyDefinition,
     InvalidArgument,
     InvalidDefinition,
 )
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
     consumes,
+    get_state_machine_test,
     initialize,
     invariant,
     multiple,
@@ -52,6 +53,7 @@ from hypothesis.strategies import binary, data, integers, just, lists
 from tests.common.utils import (
     Why,
     capture_out,
+    skipif_threading,
     validate_deprecation,
     xfail_on_crosshair,
 )
@@ -155,6 +157,44 @@ class FlakyStateMachine(RuleBasedStateMachine):
 def test_flaky_raises_flaky():
     with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
+
+
+class FlakyPreconditionMachine(RuleBasedStateMachine):
+    @precondition(lambda self: not current_build_context().is_final)
+    @rule()
+    def action(self):
+        raise AssertionError
+
+
+def test_flaky_precondition_error_message():
+    with raises(FlakyStrategyDefinition) as exc_info:
+        FlakyPreconditionMachine.TestCase().runTest()
+    assert any("flaky precondition" in note for note in exc_info.value.__notes__)
+
+
+class FlakyDrawInRuleMachine(RuleBasedStateMachine):
+    # Flakiness inside rule execution (via data().draw()) happens AFTER rule selection,
+    # so the "flaky precondition" note should NOT be added.
+    @rule(d=data())
+    def action(self, d):
+        if current_build_context().is_final:
+            d.draw(st.integers(0, 0))
+        d.draw(st.integers())
+        raise AssertionError
+
+
+def test_flaky_draw_in_rule_no_precondition_note():
+    # When flakiness occurs during rule execution (not rule selection),
+    # the error message should NOT mention flaky preconditions.
+    with raises(FlakyStrategyDefinition) as exc_info:
+        FlakyDrawInRuleMachine.TestCase().runTest()
+    notes = getattr(exc_info.value, "__notes__", [])
+    assert not any("flaky precondition" in note for note in notes)
+
+
+def test_get_state_machine_test_is_importable():
+    # Regression test: get_state_machine_test is used by HypoFuzz
+    assert callable(get_state_machine_test)
 
 
 class FlakyRatchettingMachine(RuleBasedStateMachine):
@@ -266,7 +306,7 @@ def test_multiple_variables_printed():
     # Make sure MultipleResult is iterable so the printed code is valid.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2311
     state = ProducesMultiple()
-    b_0, b_1 = state.populate_bundle()
+    _b_0, _b_1 = state.populate_bundle()
     with raises(AssertionError):
         state.fail_fast()
 
@@ -413,6 +453,7 @@ class FailsEventually(RuleBasedStateMachine):
 FailsEventually.TestCase.settings = Settings(stateful_step_count=5)
 
 
+@skipif_threading
 def test_can_explicitly_pass_settings():
     run_state_machine_as_test(FailsEventually)
     try:
@@ -438,6 +479,7 @@ def test_runner_that_checks_factory_produced_a_machine():
         run_state_machine_as_test(object)
 
 
+@skipif_threading
 def test_settings_attribute_is_validated():
     real_settings = FailsEventually.TestCase.settings
     try:
@@ -459,14 +501,10 @@ def test_saves_failing_example_in_database():
 
 
 def test_can_run_with_no_db():
-    with deterministic_PRNG():
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with raises(AssertionError):
-            run_state_machine_as_test(
-                DepthMachine, settings=Settings(database=None, max_examples=10_000)
-            )
+    with raises(AssertionError):
+        run_state_machine_as_test(
+            DepthMachine, settings=Settings(database=None, max_examples=10_000)
+        )
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):
@@ -924,7 +962,7 @@ def test_initialize_rule_dont_mix_with_precondition():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachine.initialize has been decorated with both @initialize "
+            "BadStateMachine\\.initialize has been decorated with both @initialize "
             "and @precondition"
         ),
     ):
@@ -940,7 +978,7 @@ def test_initialize_rule_dont_mix_with_precondition():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "BadStateMachineReverseOrder\\.initialize has been decorated with both "
             "@initialize and @precondition"
         ),
     ):
@@ -955,7 +993,7 @@ def test_initialize_rule_dont_mix_with_precondition():
 def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(
         InvalidDefinition,
-        match="BadStateMachine.initialize has been decorated with both @rule and @initialize",
+        match="BadStateMachine\\.initialize has been decorated with both @rule and @initialize",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -967,7 +1005,7 @@ def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachineReverseOrder.initialize has been decorated with both "
+            "BadStateMachineReverseOrder\\.initialize has been decorated with both "
             "@rule and @initialize"
         ),
     ):
@@ -982,7 +1020,7 @@ def test_initialize_rule_dont_mix_with_regular_rule():
 def test_initialize_rule_cannot_be_double_applied():
     with pytest.raises(
         InvalidDefinition,
-        match="BadStateMachine.initialize has been decorated with @initialize twice",
+        match="BadStateMachine\\.initialize has been decorated with @initialize twice",
     ):
 
         class BadStateMachine(RuleBasedStateMachine):
@@ -1257,7 +1295,7 @@ class ErrorsOnClassAttributeSettings(RuleBasedStateMachine):
 def test_fails_on_settings_class_attribute():
     with pytest.raises(
         InvalidDefinition,
-        match="Assigning .+ as a class attribute does nothing",
+        match=r"Assigning .+ as a class attribute does nothing",
     ):
         run_state_machine_as_test(ErrorsOnClassAttributeSettings)
 
@@ -1318,7 +1356,6 @@ def test_targets_repr(bundle_names, initial, repr_):
     bundles = {name: Bundle(name) for name in bundle_names}
 
     class Machine(RuleBasedStateMachine):
-
         @initialize(targets=[bundles[name] for name in bundle_names])
         def init(self):
             return initial
@@ -1432,7 +1469,7 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 
 
 @pytest.mark.skipif(
-    Settings._current_profile == "crosshair",
+    Settings.get_current_profile_name() == "crosshair",
     reason="takes hours; too much symbolic data",
 )
 def test_lots_of_entropy():
@@ -1734,7 +1771,7 @@ def test_precondition_cannot_be_used_without_rule():
     with pytest.raises(
         InvalidDefinition,
         match=(
-            "BadStateMachine.has_precondition_but_no_rule has been decorated "
+            "BadStateMachine\\.has_precondition_but_no_rule has been decorated "
             "with @precondition, but not @rule"
         ),
     ):

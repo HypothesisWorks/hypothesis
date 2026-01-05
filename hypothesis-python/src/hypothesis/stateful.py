@@ -15,32 +15,32 @@ a single value.
 Notably, the set of steps available at any point may depend on the
 execution to date.
 """
+
 import collections
 import dataclasses
 import inspect
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
+from typing import Any, ClassVar, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
-from hypothesis._settings import (
-    HealthCheck,
-    Verbosity,
-    note_deprecation,
-    settings as Settings,
-)
+from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
-from hypothesis.errors import InvalidArgument, InvalidDefinition
+from hypothesis.errors import (
+    FlakyStrategyDefinition,
+    InvalidArgument,
+    InvalidDefinition,
+)
 from hypothesis.internal.compat import add_note, batched
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import (
@@ -61,11 +61,11 @@ from hypothesis.strategies._internal.strategies import (
     check_strategy,
     filter_not_satisfied,
 )
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 T = TypeVar("T")
-STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
-SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
+STATE_MACHINE_RUN_LABEL = calc_label_from_name("another state machine step")
 
 
 def _is_singleton(obj: object) -> bool:
@@ -100,7 +100,11 @@ class TestCaseProperty:  # pragma: no cover
         raise AttributeError("Cannot delete TestCase")
 
 
-def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0):
+def get_state_machine_test(
+    state_machine_factory, *, settings=None, _min_steps=0, _flaky_state=None
+):
+    # This function is split out from run_state_machine_as_test so that
+    # HypoFuzz can get and call the test function directly.
     if settings is None:
         try:
             settings = state_machine_factory.TestCase.settings
@@ -113,12 +117,13 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
         # Because settings can vary via e.g. profiles, settings.stateful_step_count
         # overrides this argument and we don't bother cross-validating.
         raise InvalidArgument(f"_min_steps={_min_steps} must be non-negative.")
+    _flaky_state = _flaky_state or {}
 
     @settings
     @given(st.data())
-    def run_state_machine(factory, data):
+    def run_state_machine(data):
         cd = data.conjecture_data
-        machine: RuleBasedStateMachine = factory()
+        machine: RuleBasedStateMachine = state_machine_factory()
         check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         cd.hypothesis_runner = machine
         machine._observability_predicates = cd._observability_predicates  # alias
@@ -166,6 +171,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
 
                 # Choose a rule to run, preferring an initialize rule if there are
                 # any which have not been run yet.
+                _flaky_state["selecting_rule"] = True
                 if machine._initialize_rules_to_run:
                     init_rules = [
                         st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
@@ -175,6 +181,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                     machine._initialize_rules_to_run.remove(rule)
                 else:
                     rule, data = cd.draw(machine._rules_strategy)
+                _flaky_state["selecting_rule"] = False
                 draw_label = f"generate:rule:{rule.function.__name__}"
                 cd.draw_times.setdefault(draw_label, 0.0)
                 in_gctime = gc_cumulative_time() - start_gc
@@ -255,10 +262,23 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
     RuleBasedStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
+    flaky_state = {"selecting_rule": False}
     state_machine_test = get_state_machine_test(
-        state_machine_factory, settings=settings, _min_steps=_min_steps
+        state_machine_factory,
+        settings=settings,
+        _min_steps=_min_steps,
+        _flaky_state=flaky_state,
     )
-    state_machine_test(state_machine_factory)
+    try:
+        state_machine_test()
+    except FlakyStrategyDefinition as err:
+        if flaky_state["selecting_rule"]:
+            add_note(
+                err,
+                "while selecting a rule to run. This is usually caused by "
+                "a flaky precondition, or a bundle that was unexpectedly empty.",
+            )
+        raise
 
 
 class StateMachineMeta(type):
@@ -273,7 +293,7 @@ class StateMachineMeta(type):
         return super().__setattr__(name, value)
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class _SetupState:
     rules: list["Rule"]
     invariants: list["Invariant"]
@@ -496,18 +516,18 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
-@dataclass
+@dataclass(slots=True, frozen=False)
 class Rule:
     targets: Any
     function: Any
     arguments: Any
     preconditions: Any
     bundles: tuple["Bundle", ...] = field(init=False)
-    _cached_hash: Optional[int] = field(init=False, default=None)
-    _cached_repr: Optional[str] = field(init=False, default=None)
+    _cached_hash: int | None = field(init=False, default=None)
+    _cached_repr: str | None = field(init=False, default=None)
+    arguments_strategies: dict[Any, Any] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
             assert not isinstance(v, BundleReferenceStrategy)
@@ -559,7 +579,7 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         name: str,
         *,
         consume: bool = False,
-        force_repr: Optional[str] = None,
+        force_repr: str | None = None,
         transformations: SampledFromTransformationsT = (),
     ):
         super().__init__(
@@ -654,7 +674,7 @@ class Bundle(SearchStrategy[Ex]):
         name: str,
         *,
         consume: bool = False,
-        force_repr: Optional[str] = None,
+        force_repr: str | None = None,
         transformations: SampledFromTransformationsT = (),
     ) -> None:
         super().__init__()
@@ -707,10 +727,10 @@ class Bundle(SearchStrategy[Ex]):
         # We assume that a bundle will grow over time
         return False
 
-    def _available(self, data):
+    def is_currently_empty(self, data):
         # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
         # Hence drawing from it only returns the current state machine without
-        # modifying the underlying buffer.
+        # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
         return bool(machine.bundle(self.name))
 
@@ -746,7 +766,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     )
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class MultipleResults(Iterable[Ex]):
     values: tuple[Ex, ...]
 
@@ -807,7 +827,7 @@ PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-_RuleType = Callable[..., Union[MultipleResults[Ex], Ex]]
+_RuleType = Callable[..., MultipleResults[Ex] | Ex]
 _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 
 
@@ -875,10 +895,10 @@ def rule(
 
 def rule(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine. Any Bundle present in ``target`` or
     ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -970,10 +990,10 @@ def initialize(
 
 def initialize(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
-    target: Optional[Bundle[Ex]] = None,
+    targets: Sequence[Bundle[Ex]] | _OmittedArgument = (),
+    target: Bundle[Ex] | None = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> _RuleWrapper[Ex] | Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
@@ -1029,7 +1049,7 @@ def initialize(
     return accept
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class VarReference:
     name: str
     value: Any
@@ -1099,7 +1119,7 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
     return decorator
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Invariant:
     function: Any
     preconditions: Any
@@ -1162,9 +1182,6 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
         return invariant_wrapper
 
     return accept
-
-
-LOOP_LABEL = cu.calc_label_from_name("RuleStrategy loop iteration")
 
 
 class RuleStrategy(SearchStrategy):

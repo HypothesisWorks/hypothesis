@@ -12,13 +12,12 @@ import inspect
 import math
 import random
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import contextmanager
-from typing import Any, Callable, NoReturn, Optional, Union
+from typing import Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -26,6 +25,7 @@ from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.vendor.pretty import IDKey, PrettyPrintFunction, pretty
 
@@ -49,7 +49,13 @@ def reject() -> NoReturn:
     raise UnsatisfiedAssumption(where)
 
 
-def assume(condition: object) -> bool:
+@overload
+def assume(condition: Literal[False] | None) -> NoReturn: ...
+@overload
+def assume(condition: object) -> Literal[True]: ...
+
+
+def assume(condition: object) -> Literal[True]:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 
@@ -155,6 +161,7 @@ class BuildContext:
         self,
         obj: object,
         func: object,
+        *,
         args: Sequence[object],
         kwargs: dict[str, object],
     ) -> None:
@@ -237,7 +244,7 @@ def note(value: object) -> None:
         report(value)
 
 
-def event(value: str, payload: Union[str, int, float] = "") -> None:
+def event(value: str, payload: str | int | float = "") -> None:
     """Record an event that occurred during this test. Statistics on the number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
@@ -247,22 +254,34 @@ def event(value: str, payload: Union[str, int, float] = "") -> None:
     """
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument("Cannot make record events outside of a test")
+        raise InvalidArgument("Cannot record events outside of a test")
 
-    payload = _event_to_string(payload, (str, int, float))
-    context.data.events[_event_to_string(value)] = payload
+    avoid_realization = context.data.provider.avoid_realization
+    payload = _event_to_string(
+        payload, allowed_types=(str, int, float), avoid_realization=avoid_realization
+    )
+    value = _event_to_string(value, avoid_realization=avoid_realization)
+    context.data.events[value] = payload
 
 
 _events_to_strings: WeakKeyDictionary = WeakKeyDictionary()
 
 
-def _event_to_string(event, allowed_types=str):
+def _event_to_string(event, *, allowed_types=str, avoid_realization):
     if isinstance(event, allowed_types):
         return event
+
+    # _events_to_strings is a cache which persists across iterations, causing
+    # problems for symbolic backends. see
+    # https://github.com/pschanely/hypothesis-crosshair/issues/41
+    if avoid_realization:
+        return str(event)
+
     try:
         return _events_to_strings[event]
     except (KeyError, TypeError):
         pass
+
     result = str(event)
     try:
         _events_to_strings[event] = result
@@ -271,7 +290,7 @@ def _event_to_string(event, allowed_types=str):
     return result
 
 
-def target(observation: Union[int, float], *, label: str = "") -> Union[int, float]:
+def target(observation: int | float, *, label: str = "") -> int | float:
     """Calling this function with an ``int`` or ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.

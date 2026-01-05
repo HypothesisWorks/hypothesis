@@ -10,41 +10,36 @@
 
 import dataclasses
 import sys
+from collections.abc import Callable
 from functools import partial
-from inspect import signature
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import Literal, TypeAlias, TypeVar
+from weakref import WeakValueDictionary
 
-import attr
-
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.floats import clamp, float_to_int
 from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
-    from hypothesis.strategies._internal.strategies import SearchStrategy
-
 T = TypeVar("T")
-ValueKey: "TypeAlias" = tuple[type, object]
+ValueKey: TypeAlias = tuple[type, object]
 # (fn, args, kwargs)
-StrategyCacheKey: "TypeAlias" = tuple[
+StrategyCacheKey: TypeAlias = tuple[
     object, tuple[ValueKey, ...], frozenset[tuple[str, ValueKey]]
 ]
 
-_strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
+_all_strategies: WeakValueDictionary[str, Callable] = WeakValueDictionary()
 # note: LRUReusedCache is already thread-local internally
 _STRATEGY_CACHE = LRUReusedCache[StrategyCacheKey, object](1024)
 
 
-def convert_value(v: object) -> ValueKey:
-    if isinstance(v, float):
-        return (float, float_to_int(v))
-    return (type(v), v)
+def _value_key(value: object) -> ValueKey:
+    if isinstance(value, float):
+        return (float, float_to_int(value))
+    return (type(value), value)
 
 
-def clear_cache() -> None:
+def clear_strategy_cache() -> None:
     _STRATEGY_CACHE.clear()
 
 
@@ -59,65 +54,85 @@ def cacheable(fn: T) -> T:
             return fn(*args, **kwargs)
 
         try:
-            kwargs_cache_key = {(k, convert_value(v)) for k, v in kwargs.items()}
+            kwargs_cache_key = {(k, _value_key(v)) for k, v in kwargs.items()}
         except TypeError:
             return fn(*args, **kwargs)
-        cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
-        try:
-            if cache_key in _STRATEGY_CACHE:
-                return _STRATEGY_CACHE[cache_key]
-        except TypeError:
-            return fn(*args, **kwargs)
-        else:
-            result = fn(*args, **kwargs)
-            if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                result._is_singleton = True
-                _STRATEGY_CACHE[cache_key] = result
-            return result
 
-    cached_strategy.__clear_cache = clear_cache  # type: ignore
+        cache_key = (
+            fn,
+            tuple(_value_key(v) for v in args),
+            frozenset(kwargs_cache_key),
+        )
+        try:
+            return _STRATEGY_CACHE[cache_key]
+        except KeyError:
+            pass
+        except TypeError:
+            return fn(*args, **kwargs)
+
+        result = fn(*args, **kwargs)
+        if not isinstance(result, SearchStrategy) or result.is_cacheable:
+            _STRATEGY_CACHE[cache_key] = result
+        return result
+
+    # note that calling this clears the full _STRATEGY_CACHE for all strategies,
+    # not just the cache for this strategy.
+    cached_strategy.__clear_cache = clear_strategy_cache  # type: ignore
     return cached_strategy
 
 
 def defines_strategy(
     *,
     force_reusable_values: bool = False,
-    try_non_lazy: bool = False,
-    never_lazy: bool = False,
+    eager: bool | Literal["try"] = False,
 ) -> Callable[[T], T]:
-    """Returns a decorator for strategy functions.
+    """
+    Each standard strategy function provided to users by Hypothesis should be
+    decorated with @defines_strategy. This registers the strategy with _all_strategies,
+    which is used in our own test suite to check that e.g. we document all strategies
+    in sphinx.
 
-    If ``force_reusable_values`` is True, the returned strategy will be marked
-    with ``.has_reusable_values == True`` even if it uses maps/filters or
-    non-reusable strategies internally. This tells our numpy/pandas strategies
-    that they can implicitly use such strategies as background values.
+    If you're reading this and are the author of a third-party strategy library:
+    don't worry, third-party strategies don't need to be decorated with
+    @defines_strategy. This function is internal to Hypothesis and not intended
+    for outside use.
 
-    If ``try_non_lazy`` is True, attempt to execute the strategy definition
-    function immediately, so that a LazyStrategy is only returned if this
-    raises an exception.
+    Parameters
+    ----------
+    force_reusable_values : bool
+        If ``True``, strategies returned from the strategy function will have
+        ``.has_reusable_values == True`` set, even if it uses maps/filters or
+        non-reusable strategies internally. This tells our numpy/pandas strategies
+        that they can implicitly use such strategies as background values.
+    eager : bool | "try"
+        If ``True``, strategies returned by the strategy function are returned
+        as-is, and not wrapped in LazyStrategy.
 
-    If ``never_lazy`` is True, the decorator performs no lazy-wrapping at all,
-    and instead returns the original function.
+        If "try", we first attempt to call the strategy function and return the
+        resulting strategy. If this throws an exception, we treat it the same as
+        ``eager = False``, by returning the strategy function wrapped in a
+        LazyStrategy.
     """
 
+    if eager is not False and force_reusable_values:  # pragma: no cover
+        # We could support eager + force_reusable_values with a suitable wrapper,
+        # but there are currently no callers that request this combination.
+        raise InvalidArgument(
+            f"Passing both eager={eager} and force_reusable_values=True is "
+            "currently not supported"
+        )
+
     def decorator(strategy_definition):
-        """A decorator that registers the function as a strategy and makes it
-        lazily evaluated."""
-        _strategies[strategy_definition.__name__] = signature(strategy_definition)
+        _all_strategies[strategy_definition.__name__] = strategy_definition
 
-        if never_lazy:
-            assert not try_non_lazy
-            # We could potentially support never_lazy + force_reusable_values
-            # with a suitable wrapper, but currently there are no callers that
-            # request this combination.
-            assert not force_reusable_values
+        if eager is True:
             return strategy_definition
-
-        from hypothesis.strategies._internal.lazy import LazyStrategy
 
         @proxies(strategy_definition)
         def accept(*args, **kwargs):
-            if try_non_lazy:
+            from hypothesis.strategies._internal.lazy import LazyStrategy
+
+            if eager == "try":
                 # Why not try this unconditionally?  Because we'd end up with very
                 # deep nesting of recursive strategies - better to be lazy unless we
                 # *know* that eager evaluation is the right choice.
@@ -141,13 +156,7 @@ def defines_strategy(
     return decorator
 
 
-def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
-    """Recursively convert an object to json-encodable form.
-
-    This is not intended to round-trip, but rather provide an analysis-ready
-    format for observability.  To avoid side affects, we pretty-print all but
-    known types.
-    """
+def _to_jsonable(obj: object, *, avoid_realization: bool, seen: set[int]) -> object:
     if isinstance(obj, (str, int, float, bool, type(None))):
         # We convert integers of 2**63 to floats, to avoid crashing external
         # utilities with a 64 bit integer cap (notable, sqlite). See
@@ -164,7 +173,13 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
     if avoid_realization:
         return "<symbolic>"
 
-    recur = partial(to_jsonable, avoid_realization=avoid_realization)
+    obj_id = id(obj)
+    if obj_id in seen:
+        return pretty(obj, cycle=True)
+
+    recur = partial(
+        _to_jsonable, avoid_realization=avoid_realization, seen=seen | {obj_id}
+    )
     if isinstance(obj, (list, tuple, set, frozenset)):
         if isinstance(obj, tuple) and hasattr(obj, "_asdict"):
             return recur(obj._asdict())  # treat namedtuples as dicts
@@ -183,21 +198,27 @@ def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
         pass
 
     # Special handling for dataclasses, attrs, and pydantic classes
-    if (
-        (dcs := sys.modules.get("dataclasses"))
-        and dcs.is_dataclass(obj)
-        and not isinstance(obj, type)
-    ):
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         # Avoid dataclasses.asdict here to ensure that inner to_json overrides
         # can get called as well
         return {
             field.name: recur(getattr(obj, field.name))
-            for field in dataclasses.fields(obj)  # type: ignore
+            for field in dataclasses.fields(obj)
         }
-    if attr.has(type(obj)):
-        return recur(attr.asdict(obj, recurse=False))  # type: ignore
+    if (attr := sys.modules.get("attr")) is not None and attr.has(type(obj)):
+        return recur(attr.asdict(obj, recurse=False))
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
         return recur(obj.model_dump())
 
     # If all else fails, we'll just pretty-print as a string.
     return pretty(obj)
+
+
+def to_jsonable(obj: object, *, avoid_realization: bool) -> object:
+    """Recursively convert an object to json-encodable form.
+
+    This is not intended to round-trip, but rather provide an analysis-ready
+    format for observability.  To avoid side affects, we pretty-print all but
+    known types.
+    """
+    return _to_jsonable(obj, avoid_realization=avoid_realization, seen=set())

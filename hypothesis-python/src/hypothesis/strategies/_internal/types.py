@@ -32,10 +32,15 @@ from collections.abc import Iterator
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
 
 from hypothesis import strategies as st
-from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
+from hypothesis.errors import (
+    HypothesisException,
+    HypothesisWarning,
+    InvalidArgument,
+    ResolutionFailed,
+)
 from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
@@ -224,7 +229,7 @@ def _compatible_args(args, superclass_args):
         # good enough for all the cases that I've seen so far and has the
         # substantial virtue of (relative) simplicity.
         a == b or isinstance(a, typing.TypeVar) or isinstance(b, typing.TypeVar)
-        for a, b in zip(args, superclass_args)
+        for a, b in zip(args, superclass_args, strict=True)
     )
 
 
@@ -242,8 +247,6 @@ def try_issubclass(thing, superclass):
             # generics, and so on.  If you need to change this code, read PEP-560
             # and Hypothesis issue #2951 closely first, and good luck.  The tests
             # will help you, I hope - good luck.
-            if getattr(thing, "__args__", None) is not None:
-                return True  # pragma: no cover  # only possible on Python <= 3.9
             for orig_base in getattr(thing, "__orig_bases__", None) or [None]:
                 args = getattr(orig_base, "__args__", None)
                 if _compatible_args(args, superclass_args):
@@ -254,18 +257,65 @@ def try_issubclass(thing, superclass):
         return False
 
 
-def is_a_new_type(thing):
-    if not isinstance(typing.NewType, type):
-        # At runtime, `typing.NewType` returns an identity function rather
-        # than an actual type, but we can check whether that thing matches.
-        return (  # pragma: no cover  # Python <= 3.9 only
-            hasattr(thing, "__supertype__")
-            and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
-            and inspect.isfunction(thing)
-        )
-    # In 3.10 and later, NewType is actually a class - which simplifies things.
-    # See https://bugs.python.org/issue44353 for links to the various patches.
-    return isinstance(thing, typing.NewType)
+def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
+    if isinstance(thing, typing.TypeVar):
+        if thing not in typevars:
+            raise ValueError(
+                f"Cannot look up value for unbound type var {thing}. "
+                f"Bound typevars: {typevars}"
+            )
+        return typevars[thing]
+
+    origin = get_origin(thing)
+    if origin is None:
+        # not a parametrized type, so nothing to substitute.
+        return thing
+
+    args = get_args(thing)
+    # we had an origin, so we must have an args
+    # note: I'm only mostly confident this is true and there may be a subtle
+    # violator.
+    assert args
+
+    concrete_args = tuple(
+        _evaluate_type_alias_type(arg, typevars=typevars) for arg in args
+    )
+    if isinstance(origin, typing.TypeAliasType):
+        for param in origin.__type_params__:
+            # there's no principled reason not to support these, they're just
+            # annoying to implement.
+            if isinstance(param, typing.TypeVarTuple):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for TypeVarTuple "
+                    f"{param} (in origin: {origin!r}). Please open an issue if "
+                    "you would like to see support for this."
+                )
+            if isinstance(param, typing.ParamSpec):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for ParamSpec "
+                    f"{param} (in origin: {origin!r}). Please open an issue if you "
+                    "would like to see support for this."
+                )
+        # this zip is non-strict to allow for e.g.
+        # `type A[T1, T2] = list[T1]; st.from_type(A[int]).example()`,
+        # which leaves T2 free but is still acceptable as it never references
+        # it.
+        #
+        # We disallow referencing a free / unbound type var by erroring
+        # elsewhere in this function.
+        typevars |= dict(zip(origin.__type_params__, concrete_args, strict=False))
+        return _evaluate_type_alias_type(origin.__value__, typevars=typevars)
+
+    return origin[concrete_args]
+
+
+def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
+    # this function takes a GenericAlias whose origin is a TypeAliasType,
+    # which corresponds to `type A[T] = list[T]; thing = A[int]`, and returns
+    # the fully-instantiated underlying type.
+    assert isinstance(thing, GenericAlias)
+    assert is_a_type_alias_type(get_origin(thing))
+    return _evaluate_type_alias_type(thing, typevars={})
 
 
 def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
@@ -291,7 +341,7 @@ def is_a_type(thing: object) -> bool:
     return (
         isinstance(thing, type)
         or is_generic_type(thing)
-        or is_a_new_type(thing)
+        or isinstance(thing, NewType)
         or is_a_type_alias_type(thing)
         # union and forwardref checks necessary from 3.14+. Before 3.14, they
         # were covered by is_generic_type(thing).
@@ -668,7 +718,7 @@ utc_offsets = st.builds(
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
 _global_type_lookup: dict[
-    type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
+    type, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
 ] = {
     type(None): st.none(),
     bool: st.booleans(),
@@ -852,16 +902,14 @@ _global_type_lookup.update(
 # installed. To avoid the performance hit of importing anything here, we defer
 # it until the method is called the first time, at which point we replace the
 # entry in the lookup table with the direct call.
-def _from_numpy_type(thing: type) -> typing.Optional[st.SearchStrategy]:
+def _from_numpy_type(thing: type) -> st.SearchStrategy | None:
     from hypothesis.extra.numpy import _from_type
 
     _global_extra_lookup["numpy"] = _from_type
     return _from_type(thing)
 
 
-_global_extra_lookup: dict[
-    str, typing.Callable[[type], typing.Optional[st.SearchStrategy]]
-] = {
+_global_extra_lookup: dict[str, typing.Callable[[type], st.SearchStrategy | None]] = {
     "numpy": _from_numpy_type,
 }
 

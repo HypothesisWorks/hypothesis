@@ -56,7 +56,6 @@ from dataclasses import dataclass, field
 from enum import Enum, Flag
 from functools import partial
 
-import attrs
 import pytest
 
 from hypothesis import given, strategies as st
@@ -235,7 +234,7 @@ def test_sets():
         "frozenset({1, 2})",
         "{-3, -2, -1}",
     ]
-    for obj, expected_output in zip(objects, expected):
+    for obj, expected_output in zip(objects, expected, strict=True):
         got_output = pretty.pretty(obj)
         assert got_output == expected_output
 
@@ -561,14 +560,10 @@ class BigList(list):
         if cycle:
             return "[...]"
         else:
-            with printer.group(open="[", close="]"):
-                # NOTE: For compatibility with Python 3.9's LL(1)
-                # parser, this is written as a nested with-statement,
-                # instead of a compound one.
-                with printer.indent(5):
-                    for v in self:
-                        printer.pretty(v)
-                        printer.breakable(",")
+            with printer.group(open="[", close="]"), printer.indent(5):
+                for v in self:
+                    printer.pretty(v)
+                    printer.breakable(",")
 
 
 def test_print_with_indent():
@@ -787,67 +782,6 @@ def test_pretty_prints_data_classes():
     assert pretty.pretty(SomeDataClass(ReprDetector())) == "SomeDataClass(x=GOOD)"
 
 
-@attrs.define
-class SomeAttrsClass:
-    x: ReprDetector
-
-
-def test_pretty_prints_attrs_classes():
-    assert pretty.pretty(SomeAttrsClass(ReprDetector())) == "SomeAttrsClass(x=GOOD)"
-
-
-@attrs.define
-class SomeAttrsClassWithCustomPretty:
-    def _repr_pretty_(self, p, cycle):
-        """Exercise the IPython callback interface."""
-        p.text("I am a banana")
-
-
-def test_custom_pretty_print_method_overrides_field_printing():
-    assert pretty.pretty(SomeAttrsClassWithCustomPretty()) == "I am a banana"
-
-
-@attrs.define
-class SomeAttrsClassWithLotsOfFields:
-    a: int
-    b: int
-    c: int
-    d: int
-    e: int
-    f: int
-    g: int
-    h: int
-    i: int
-    j: int
-    k: int
-    l: int
-    m: int
-    n: int
-    o: int
-    p: int
-    q: int
-    r: int
-    s: int
-
-
-def test_will_line_break_between_fields():
-    obj = SomeAttrsClassWithLotsOfFields(
-        **{
-            at.name: 12345678900000000000000001
-            for at in SomeAttrsClassWithLotsOfFields.__attrs_attrs__
-        }
-    )
-    assert "\n" in pretty.pretty(obj)
-
-
-@attrs.define
-class SomeDataClassWithNoFields: ...
-
-
-def test_prints_empty_dataclass_correctly():
-    assert pretty.pretty(SomeDataClassWithNoFields()) == "SomeDataClassWithNoFields()"
-
-
 def test_handles_cycles_in_dataclass():
     x = SomeDataClass(x=1)
     x.x = x
@@ -868,26 +802,9 @@ def test_does_not_include_no_init_fields_in_dataclass_printing():
     assert pretty.pretty(record) == "DataClassWithNoInitField(x=1)"
 
 
-@attrs.define
-class AttrsClassWithNoInitField:
-    x: int
-    y: int = attrs.field(init=False)
-
-
-def test_does_not_include_no_init_fields_in_attrs_printing():
-    record = AttrsClassWithNoInitField(x=1)
-    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
-    record.y = 1
-    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
-
-
 class Namespace:
     @dataclass
     class DC:
-        x: int
-
-    @attrs.define
-    class A:
         x: int
 
     class E(Enum):
@@ -896,7 +813,6 @@ class Namespace:
 
 NAMESPACED_VALUES = [
     Namespace.DC(x=1),
-    Namespace.A(x=1),
     Namespace.E.A,
 ]
 

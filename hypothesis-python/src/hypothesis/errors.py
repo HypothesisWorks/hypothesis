@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from hypothesis.internal.compat import ExceptionGroup
 
@@ -28,7 +28,7 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, reason: Optional[str] = None) -> None:
+    def __init__(self, reason: str | None = None) -> None:
         self.reason = reason
 
 
@@ -188,8 +188,11 @@ class FailedHealthCheck(_Trimmable):
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
-    """SearchStrategy.example() is designed for interactive use,
-    but should never be used in the body of a test.
+    """
+    Emitted when |.example| is used outside of interactive use.
+
+    |.example| is intended for exploratory and interactive work, not to be run as
+    part of a test suite.
     """
 
 
@@ -219,8 +222,8 @@ class Frozen(HypothesisException):
 
 def __getattr__(name: str) -> Any:
     if name == "MultipleFailures":
-        from hypothesis._settings import note_deprecation
         from hypothesis.internal.compat import BaseExceptionGroup
+        from hypothesis.utils.deprecation import note_deprecation
 
         note_deprecation(
             "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
@@ -243,7 +246,9 @@ class DeadlineExceeded(_Trimmable):
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
             f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
-            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms"
+            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms. If you "
+            "expect test cases to take this long, you can use @settings(deadline=...) "
+            "to either set a higher deadline, or to disable it with deadline=None."
         )
         self.runtime = runtime
         self.deadline = deadline
@@ -285,6 +290,7 @@ class SmallSearchSpaceWarning(HypothesisWarning):
 
 
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
+_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 
 
 class BackendCannotProceed(HypothesisException):
@@ -312,4 +318,9 @@ class BackendCannotProceed(HypothesisException):
     """
 
     def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
+        if scope not in _valid_cannot_proceed_scopes:
+            raise InvalidArgument(
+                f"Got scope={scope}, but expected one of "
+                f"{_valid_cannot_proceed_scopes!r}"
+            )
         self.scope = scope

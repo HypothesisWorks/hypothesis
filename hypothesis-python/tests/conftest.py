@@ -24,6 +24,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from hypothesis import is_hypothesis_test, settings
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
+from hypothesis.internal import lambda_sources
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import junkdrawer
 
@@ -100,9 +101,42 @@ except ImportError:
     pass
 
 
+if sys.version_info >= (3, 11):
+    # To detect if changes in code generation causes lambda test compilation
+    # to fail. Older versions (3.10 and earlier) have a few known false
+    # negatives which we ignore.
+    @pytest.fixture(scope="function", autouse=True)
+    def _make_unknown_lambdas_fail(monkeypatch):
+
+        def fail(candidate):
+            msg = (
+                f"Failed to find a matching source for {candidate}. "
+                "This could indicate changes in the Python code generator,\n"
+                "or just a previously unknown case. To quickly resolve this "
+                "problem, use the `allow_unknown_lambdas` fixture."
+            )
+            raise AssertionError(msg)
+
+        monkeypatch.setattr(
+            lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail
+        )
+
+
+@pytest.fixture(scope="function")
+def allow_unknown_lambdas(monkeypatch):
+    # Will run after make...fail since autouse are run first
+
+    def nofail(candidate):
+        pass
+
+    monkeypatch.setattr(
+        lambda_sources, "_check_unknown_perfectly_aligned_lambda", nofail
+    )
+
+
 # monkeypatch is not thread-safe, so pytest-run-parallel will skip all our tests
 # if we define this.
-if settings._current_profile != "threading":
+if settings.get_current_profile_name() != "threading":
 
     @pytest.fixture(scope="function", autouse=True)
     def _consistently_increment_time(monkeypatch):
@@ -196,7 +230,7 @@ def pytest_runtest_call(item):
         not (hasattr(item, "obj") and is_hypothesis_test(item.obj))
         # we disable this check on the threading job, due to races in the global
         # state.
-        or settings._current_profile == "threading"
+        or settings.get_current_profile_name() == "threading"
     ):
         outcome = yield
     elif "pytest_randomly" in sys.modules:

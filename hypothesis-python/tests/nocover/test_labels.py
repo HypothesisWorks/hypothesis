@@ -34,8 +34,17 @@ def bar(draw):
     return draw(st.none())
 
 
+@st.composite
+def baz(draw):
+    return draw(st.booleans())
+
+
+def test_equivalent_composites_have_same_label():
+    assert foo().label == bar().label
+
+
 def test_different_composites_have_different_labels():
-    assert foo().label != bar().label
+    assert foo().label != baz().label
 
 
 def test_one_of_label_is_distinct():

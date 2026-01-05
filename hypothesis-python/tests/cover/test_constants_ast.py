@@ -146,7 +146,7 @@ def test_frozenset_constants(value):
 @skipif_threading
 @skipif_emscripten
 @pytest.mark.xfail(
-    condition=settings._current_profile != "ci",
+    condition=settings.get_current_profile_name() != "ci",
     strict=False,
     reason="Requires clean environment",
 )

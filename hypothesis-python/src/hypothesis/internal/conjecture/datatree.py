@@ -10,10 +10,9 @@
 
 import math
 from collections.abc import Generator, Set
+from dataclasses import dataclass, field
 from random import Random
-from typing import TYPE_CHECKING, Final, Optional, Union, cast
-
-import attr
+from typing import TYPE_CHECKING, Final, TypeAlias, cast
 
 from hypothesis.errors import (
     FlakyReplay,
@@ -43,11 +42,9 @@ from hypothesis.internal.floats import (
 )
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from hypothesis.vendor.pretty import RepresentationPrinter
 
-ChildrenCacheValueT: "TypeAlias" = tuple[
+ChildrenCacheValueT: TypeAlias = tuple[
     Generator[ChoiceT, None, None], list[ChoiceT], set[ChoiceT]
 ]
 
@@ -66,14 +63,14 @@ _FLAKY_STRAT_MSG = (
 EMPTY: frozenset[int] = frozenset()
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=True)
 class Killed:
     """Represents a transition to part of the tree which has been marked as
     "killed", meaning we want to treat it as not worth exploring, so it will
     be treated as if it were completely explored for the purposes of
     exhaustion."""
 
-    next_node: "TreeNode" = attr.ib()
+    next_node: "TreeNode"
 
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
@@ -91,14 +88,14 @@ def _node_pretty(
     return f"{choice_type} {value!r}{forced_marker} {constraints}"
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
-    constraints: ChoiceConstraintsT = attr.ib()
-    choice_type: ChoiceTypeT = attr.ib()
-    children: dict[ChoiceT, "TreeNode"] = attr.ib(repr=False)
+    constraints: ChoiceConstraintsT
+    choice_type: ChoiceTypeT
+    children: dict[ChoiceT, "TreeNode"] = field(repr=False)
 
     @property
     def max_children(self) -> int:
@@ -119,12 +116,12 @@ class Branch:
                 p.pretty(child)
 
 
-@attr.s(slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class Conclusion:
     """Represents a transition to a finished state."""
 
-    status: Status = attr.ib()
-    interesting_origin: Optional[InterestingOrigin] = attr.ib()
+    status: Status
+    interesting_origin: InterestingOrigin | None
 
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
@@ -220,7 +217,7 @@ def compute_max_children(
         # or downwards with our full 128 bit generation, but only half of these
         # (plus one for the case of generating zero) result in a probe in the
         # direction we want. ((2**128 - 1) // 2) + 1 == 2 ** 127
-        assert (min_value is None) ^ (max_value is None)
+        assert (min_value is None) != (max_value is None)
         return 2**127
     elif choice_type == "boolean":
         constraints = cast(BooleanConstraints, constraints)
@@ -336,7 +333,7 @@ def all_children(
             yield from _floats_between(min_point, max_value)
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class TreeNode:
     """
     A node, or collection of directly descended nodes, in a DataTree.
@@ -402,15 +399,15 @@ class TreeNode:
 
     # The constraints, value, and choice_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    constraints: list[ChoiceConstraintsT] = attr.ib(factory=list)
-    values: list[ChoiceT] = attr.ib(factory=list)
-    choice_types: list[ChoiceTypeT] = attr.ib(factory=list)
+    constraints: list[ChoiceConstraintsT] = field(default_factory=list)
+    values: list[ChoiceT] = field(default_factory=list)
+    choice_types: list[ChoiceTypeT] = field(default_factory=list)
 
     # The indices of nodes which had forced values.
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: Optional[set[int]] = attr.ib(default=None, init=False)
+    __forced: set[int] | None = field(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -421,14 +418,14 @@ class TreeNode:
     # - Conclusion (ConjectureData.conclude_test was called here)
     # - Killed (this branch is valid and may even have children, but should not
     #   be explored when generating novel prefixes)
-    transition: Union[None, Branch, Conclusion, Killed] = attr.ib(default=None)
+    transition: None | Branch | Conclusion | Killed = None
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
     # change the answer.
     #
     # See also TreeNode.check_exhausted.
-    is_exhausted: bool = attr.ib(default=False, init=False)
+    is_exhausted: bool = field(default=False, init=False)
 
     @property
     def forced(self) -> Set[int]:
@@ -528,7 +525,7 @@ class TreeNode:
         assert cycle is False
         indent = 0
         for i, (choice_type, constraints, value) in enumerate(
-            zip(self.choice_types, self.constraints, self.values)
+            zip(self.choice_types, self.constraints, self.values, strict=True)
         ):
             with p.indent(indent):
                 if i > 0:
@@ -730,6 +727,7 @@ class DataTree:
                     current_node.choice_types,
                     current_node.constraints,
                     current_node.values,
+                    strict=True,
                 )
             ):
                 if i in current_node.forced:
@@ -852,7 +850,7 @@ class DataTree:
         try:
             while True:
                 for i, (choice_type, constraints, previous) in enumerate(
-                    zip(node.choice_types, node.constraints, node.values)
+                    zip(node.choice_types, node.constraints, node.values, strict=True)
                 ):
                     v = draw(
                         choice_type,
@@ -1140,7 +1138,7 @@ class TreeRecordingObserver(DataObserver):
         self._trail.append(self._current_node)
 
     def conclude_test(
-        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+        self, status: Status, interesting_origin: InterestingOrigin | None
     ) -> None:
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""

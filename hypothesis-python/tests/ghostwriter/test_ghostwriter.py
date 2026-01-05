@@ -13,6 +13,7 @@ import enum
 import json
 import re
 import socket
+import sys
 import unittest
 import unittest.mock
 from collections.abc import KeysView, Sequence, Sized, ValuesView
@@ -20,7 +21,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, ModuleType
-from typing import Any, Union
+from typing import Any, ForwardRef
 
 import attr
 import click
@@ -38,7 +39,7 @@ varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.e
 
 
 pytestmark = pytest.mark.skipif(
-    settings._current_profile == "threading",
+    settings.get_current_profile_name() == "threading",
     reason="ghostwriter is not thread safe",
 )
 
@@ -132,7 +133,7 @@ def non_resolvable_arg(x: NotResolvable):
 
 
 def test_flattens_one_of_repr():
-    strat = from_type(Union[int, Sequence[int]])
+    strat = from_type(int | Sequence[int])
     assert repr(strat).count("one_of(") == 2
     assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
@@ -209,6 +210,27 @@ def test_binary_op_also_handles_frozensets():
     exec(source_code, {})
 
 
+def test_binary_op_with_numpy_arrays_includes_imports():
+    # Regression test for issue #4576: binary_operation should include imports
+    # for numpy strategies like arrays(), scalar_dtypes(), and array_shapes()
+    pytest.importorskip("numpy")
+    import numpy as np
+
+    def numpy_add(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return a + b
+
+    source_code = ghostwriter.binary_operation(
+        numpy_add, associative=True, commutative=True, identity=None
+    )
+    # Check that the necessary imports are present
+    assert "from hypothesis.extra.numpy import" in source_code
+    assert "arrays" in source_code
+    assert "scalar_dtypes" in source_code
+    assert "array_shapes" in source_code
+    # Most importantly: the code should execute without NameError
+    exec(source_code, {})
+
+
 @varied_excepts
 @pytest.mark.parametrize(
     "func", [re.compile, json.loads, json.dump, timsort, ast.literal_eval]
@@ -260,11 +282,11 @@ def test_invalid_func_inputs(gw, args):
 
 class A:
     @classmethod
-    def to_json(cls, obj: Union[dict, list]) -> str:
+    def to_json(cls, obj: dict | list) -> str:
         return json.dumps(obj)
 
     @classmethod
-    def from_json(cls, obj: str) -> Union[dict, list]:
+    def from_json(cls, obj: str) -> dict | list:
         return json.loads(obj)
 
     @staticmethod
@@ -520,3 +542,30 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
 
 def test_gets_public_location_not_impl_location():
     assert ghostwriter._get_module(assume) == "hypothesis"  # not "hypothesis.control"
+
+
+class ForwardRefA:
+    pass
+
+
+@pytest.mark.parametrize(
+    "parameter, type_name",
+    [
+        (ForwardRef("this_ref_does_not_exist"), None),
+        # ForwardRef.evaluate() logic is new in 3.14
+        *(
+            []
+            if sys.version_info[:2] < (3, 14)
+            else [
+                (
+                    ForwardRef("ForwardRefA", owner=A),
+                    ghostwriter._AnnotationData(
+                        "test_ghostwriter.ForwardRefA", {"test_ghostwriter"}
+                    ),
+                )
+            ]
+        ),
+    ],
+)
+def test_parameter_to_annotation(parameter, type_name):
+    assert ghostwriter._parameter_to_annotation(parameter) == type_name
