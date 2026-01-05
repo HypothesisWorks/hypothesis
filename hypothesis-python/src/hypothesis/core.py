@@ -940,7 +940,7 @@ class StateForActualGivenExecution:
         self.last_exception = None
         self.falsifying_examples = ()
         self.ever_executed = False
-        self.xfail_example_reprs: set[Any] = set()
+        self.xfail_example_reprs: set[str] = set()
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
