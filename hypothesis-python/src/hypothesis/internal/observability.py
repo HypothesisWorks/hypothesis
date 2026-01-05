@@ -312,11 +312,10 @@ def observability_enabled() -> bool:
     from hypothesis._settings import settings
 
     note_deprecation(
-        "observability_enabled() is deprecated. To determine whether the user has "
-        "enabled observability, we instead recommend checking "
-        "`settings().observability is not None`. You may also wish to check "
-        "settings().observability.callbacks, in case a user passes an observability "
-        "config with no callbacks. See the settings.observability docs for details.",
+        "observability_enabled() is deprecated. To determine whether observability "
+        "is enabled, we instead recommend checking "
+        "`settings().observability is not None`. See the settings.observability "
+        "docs for details.",
         since="RELEASEDAY",
         stacklevel=1,
         has_codemod=False,
