@@ -1136,9 +1136,7 @@ class StateForActualGivenExecution:
             local_settings(self.settings),
             deterministic_PRNG(),
             BuildContext(
-                data,
-                is_final=is_final,
-                wrapped_test=self.wrapped_test,
+                data, is_final=is_final, wrapped_test=self.wrapped_test
             ) as context,
         ):
             # providers may throw in per_case_context_fn, and we'd like
