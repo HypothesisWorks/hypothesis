@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterable
 from typing import Any, overload
 
 from hypothesis import strategies as st
+from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -37,6 +38,12 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.vendor.pretty import (
+    ArgLabelsT,
+    IDKey,
+    _fixeddict_pprinter,
+    _tuple_pprinter,
+)
 
 
 class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
@@ -64,7 +71,20 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
         return all(recur(e) for e in self.element_strategies)
 
     def do_draw(self, data: ConjectureData) -> tuple[Ex, ...]:
-        return tuple(data.draw(e) for e in self.element_strategies)
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+        result = []
+        for i, strategy in enumerate(self.element_strategies):
+            with context.track_arg_label(f"arg[{i}]") as arg_label:
+                result.append(data.draw(strategy))
+            arg_labels |= arg_label
+
+        result = tuple(result)
+        if arg_labels:
+            context.known_object_printers[IDKey(result)].append(
+                _tuple_pprinter(arg_labels)
+            )
+        return result
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return any(recur(e) for e in self.element_strategies)
@@ -366,19 +386,35 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         self.optional = optional
 
     def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
-        value = data.draw(self.fixed)
-        if self.optional is None:
-            return value
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+        value = type(self.mapping)()
 
-        remaining = [k for k, v in self.optional.items() if not v.is_empty]
-        should_draw = cu.many(
-            data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
-        )
-        while should_draw.more():
-            j = data.draw_integer(0, len(remaining) - 1)
-            remaining[-1], remaining[j] = remaining[j], remaining[-1]
-            key = remaining.pop()
-            value[key] = data.draw(self.optional[key])
+        for key, strategy in self.mapping.items():
+            with context.track_arg_label(str(key)) as arg_label:
+                value[key] = data.draw(strategy)
+            arg_labels |= arg_label
+
+        if self.optional is not None:
+            remaining = [k for k, v in self.optional.items() if not v.is_empty]
+            should_draw = cu.many(
+                data,
+                min_size=0,
+                max_size=len(remaining),
+                average_size=len(remaining) / 2,
+            )
+            while should_draw.more():
+                j = data.draw_integer(0, len(remaining) - 1)
+                remaining[-1], remaining[j] = remaining[j], remaining[-1]
+                key = remaining.pop()
+                with context.track_arg_label(str(key)) as arg_label:
+                    value[key] = data.draw(self.optional[key])
+                arg_labels |= arg_label
+
+        if arg_labels:
+            context.known_object_printers[IDKey(value)].append(
+                _fixeddict_pprinter(arg_labels, self.mapping)
+            )
         return value
 
     def calc_is_empty(self, recur: RecurT) -> bool:
