@@ -21,6 +21,7 @@ import pytest
 
 from hypothesis import (
     HealthCheck,
+    ObservabilityConfig,
     Verbosity,
     assume,
     errors,
@@ -51,11 +52,10 @@ from hypothesis.internal.conjecture.providers import (
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.observability import Observation, _callbacks
+from hypothesis.internal.observability import Observation, _deliver_to_file
 
 from tests.common.debug import minimal
 from tests.common.utils import (
-    capture_observations,
     capture_out,
     checks_deprecated_behaviour,
 )
@@ -378,7 +378,7 @@ def test_case_lifetime():
 
 
 def test_flaky_with_backend():
-    with temp_register_backend("trivial", TrivialProvider), capture_observations():
+    with temp_register_backend("trivial", TrivialProvider):
 
         calls = 0
 
@@ -482,15 +482,19 @@ def test_realization_with_verbosity_draw(verbosity):
 
 
 def test_realization_with_observability():
+
+    observations = []
     with temp_register_backend("realize", RealizeProvider):
 
         @given(st.data())
-        @settings(backend="realize")
+        @settings(
+            backend="realize",
+            observability=ObservabilityConfig(callbacks=[observations.append]),
+        )
         def test_function(data):
             data.draw(st.integers())
 
-        with capture_observations() as observations:
-            test_function()
+        test_function()
 
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     assert {tc.representation for tc in test_cases} == {
@@ -520,25 +524,30 @@ class ObservableProvider(TrivialProvider):
 
 
 def test_custom_observations_from_backend():
+    observations = []
+
     with temp_register_backend("observable", ObservableProvider):
 
         @given(st.booleans())
-        @settings(backend="observable", database=None)
+        @settings(
+            backend="observable",
+            database=None,
+            observability=ObservabilityConfig(callbacks=[observations.append]),
+        )
         def test_function(_):
             pass
 
-        with capture_observations() as ls:
-            test_function()
+        test_function()
 
-    assert len(ls) >= 3
-    cases = [t.metadata.backend for t in ls if t.type == "test_case"]
+    assert len(observations) >= 3
+    cases = [t.metadata.backend for t in observations if t.type == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
-    assert "<backend failed to realize symbolic arguments>" in repr(ls)
+    assert "<backend failed to realize symbolic arguments>" in repr(observations)
 
     infos = [
         {k: v for k, v in dataclasses.asdict(t).items() if k in ("title", "content")}
-        for t in ls
+        for t in observations
         if t.type != "test_case"
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
@@ -756,10 +765,26 @@ class ObservationProvider(TrivialProvider):
 
 @temp_register_backend("observation", ObservationProvider)
 def test_on_observation_alternates():
+    # there are no assertions in this test, because the assertions are inside of
+    # ObservationProvider
     @given(st.integers())
     @settings(backend="observation")
     def f(n):
         pass
+
+    f()
+
+
+@temp_register_backend("observation", ObservationProvider)
+def test_backend_adds_observability_callback():
+    @given(st.integers())
+    @settings(backend="observation")
+    def f(n):
+        callbacks = settings().observability.callbacks
+        # it's hard to reach in and identify the exact local function which *should*
+        # be in here, but it should not be the standard _deliver_to_file callback.
+        assert len(callbacks) == 1
+        assert _deliver_to_file not in callbacks
 
     f()
 
@@ -783,7 +808,7 @@ def test_on_observation_no_override():
     @given(st.integers())
     @settings(backend="observation")
     def f(n):
-        assert _callbacks == {}
+        assert settings().observability is None
 
     f()
 
