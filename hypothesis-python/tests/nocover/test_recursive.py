@@ -163,6 +163,7 @@ def test_self_ref_regression(_):
     pass
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason="gc changes")
 @xfail_if_gil_disabled
 @flaky(min_passes=1, max_runs=2)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):

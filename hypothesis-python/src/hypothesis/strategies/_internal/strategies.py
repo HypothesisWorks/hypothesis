@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import sys
 import threading
 import warnings
@@ -301,9 +302,18 @@ class SearchStrategy(Generic[Ex]):
         called from inside |@given| or a strategy definition.  For serious use,
         see |@composite| or |st.data|.
         """
-        if getattr(sys, "ps1", None) is None:  # pragma: no branch
-            # The other branch *is* covered in cover/test_examples.py; but as that
-            # uses `pexpect` for an interactive session `coverage` doesn't see it.
+        if getattr(sys, "ps1", None) is None and (
+            # The main module's __spec__ is None when running interactively
+            # or running a source file directly.
+            # See https://docs.python.org/3/reference/import.html#main-spec.
+            sys.modules["__main__"].__spec__ is not None
+            # __spec__ is also None under pytest-xdist. To avoid an unfortunate
+            # missed alarm here, always warn under pytest.
+            or os.environ.get("PYTEST_CURRENT_TEST") is not None
+        ):  # pragma: no branch
+            # The other branch *is* covered in cover/test_interactive_example.py;
+            # but as that uses `pexpect` for an interactive session `coverage`
+            # doesn't see it.
             warnings.warn(
                 "The `.example()` method is good for exploring strategies, but should "
                 "only be used interactively.  We recommend using `@given` for tests - "
@@ -320,18 +330,19 @@ class SearchStrategy(Generic[Ex]):
                     "Using example() inside a strategy definition is a bad "
                     "idea. Instead consider using hypothesis.strategies.builds() "
                     "or @hypothesis.strategies.composite to define your strategy."
-                    " See https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#hypothesis.strategies.builds or "
-                    "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#composite-strategies for more details."
+                    " See https://hypothesis.readthedocs.io/en/latest/reference/"
+                    "strategies.html#hypothesis.strategies.builds or "
+                    "https://hypothesis.readthedocs.io/en/latest/reference/"
+                    "strategies.html#hypothesis.strategies.composite for more "
+                    "details."
                 )
             else:
                 raise HypothesisException(
                     "Using example() inside a test function is a bad "
                     "idea. Instead consider using hypothesis.strategies.data() "
                     "to draw more examples during testing. See "
-                    "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#drawing-interactively-in-tests for more details."
+                    "https://hypothesis.readthedocs.io/en/latest/reference/"
+                    "strategies.html#hypothesis.strategies.data for more details."
                 )
 
         try:

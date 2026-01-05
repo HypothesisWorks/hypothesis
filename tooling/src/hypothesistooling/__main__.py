@@ -391,9 +391,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.26",
-    "5.1": "5.1.14",
-    "5.2": "5.2.8",
+    "4.2": "4.2.27",
+    "5.2": "5.2.9",
+    "6.0": "6.0.0",
 }
 
 
@@ -605,6 +605,13 @@ def run_tox(task, version, *args):
     python = install.python_executable(version)
 
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
+    # Set environment variable for tox to use in basepython substitution
+    if version.startswith("pypy"):
+        # For PyPy, use the version name from e.g. "pypy3.11-7.3.20"
+        # to match tox's environment name inference.
+        env["TOX_PYTHON_VERSION"] = version.split("-")[0]  # "pypy3.11"
+    else:
+        env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
@@ -617,11 +624,11 @@ PYTHONS = {
     "3.10": "3.10.19",
     "3.11": "3.11.14",
     "3.12": "3.12.12",
-    "3.13": "3.13.9",
+    "3.13": "3.13.11",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0",
+    "3.14": "3.14.2",
     "3.14t": "3.14t-dev",
-    "3.15": "3.15.0a2",
+    "3.15": "3.15.0a3",
     "3.15t": "3.15t-dev",
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",
@@ -687,10 +694,11 @@ def standard_tox_task(name, py=ci_version):
 # standard_tox_task("py310-pytest46", py="3.10")
 standard_tox_task("pytest62")
 
+dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
-    standard_tox_task(f"django{n.replace('.', '')}")
+    standard_tox_task(f"django{n.replace('.', '')}", py=dj_version)
 # we also test no-contrib on the latest django version
-standard_tox_task("django-nocontrib")
+standard_tox_task("django-nocontrib", py=dj_version)
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
