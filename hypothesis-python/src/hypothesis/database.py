@@ -37,11 +37,11 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
-from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.utils.deprecation import note_deprecation
 
 __all__ = [
     "DirectoryBasedExampleDatabase",

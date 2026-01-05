@@ -26,7 +26,6 @@ from hypothesis._settings import (
     Verbosity,
     default_variable,
     local_settings,
-    note_deprecation,
     settings,
 )
 from hypothesis.database import InMemoryExampleDatabase
@@ -36,6 +35,7 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 
 from tests.common.utils import (
     checks_deprecated_behaviour,
@@ -381,22 +381,6 @@ def test_deadline_given_valid_timedelta():
     assert x.microseconds == 30000
 
 
-@pytest.mark.parametrize(
-    "x",
-    [
-        0,
-        -0.7,
-        -1,
-        86400000000000000.2,
-        datetime.timedelta(microseconds=-1),
-        datetime.timedelta(0),
-    ],
-)
-def test_invalid_deadline(x):
-    with pytest.raises(InvalidArgument):
-        settings(deadline=x)
-
-
 @pytest.mark.parametrize("value", ["always"])
 def test_can_not_set_print_blob_to_non_print_settings(value):
     with pytest.raises(InvalidArgument):
@@ -467,6 +451,10 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"stateful_step_count": 2.5},
         {"deadline": -1},
         {"deadline": 0},
+        {"deadline": -0.7},
+        {"deadline": 86400000000000000.2},
+        {"deadline": datetime.timedelta(microseconds=-1)},
+        {"deadline": datetime.timedelta(0)},
         {"deadline": True},
         {"deadline": False},
         {"backend": "nonexistent_backend"},
@@ -489,10 +477,8 @@ def test_invalid_parent():
 
     not_settings = NotSettings()
 
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument, match=r"parent=\(not settings repr\)"):
         settings(not_settings)
-
-    assert "parent=(not settings repr)" in str(excinfo.value)
 
 
 def test_default_settings_do_not_use_ci():

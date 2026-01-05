@@ -51,6 +51,7 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.utils.deprecation import note_deprecation
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData, Spans, Status
@@ -355,8 +356,6 @@ class _TestcaseCallbacks:
         return bool(_callbacks)
 
     def _note_deprecation(self):
-        from hypothesis._settings import note_deprecation
-
         note_deprecation(
             "hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated. "
             "Replace TESTCASE_CALLBACKS.append with add_observability_callback, "
