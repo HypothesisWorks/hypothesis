@@ -808,3 +808,8 @@ def test_backend_deadline_exceeded_raised_as_flaky_backend_failure():
 
         with pytest.raises(FlakyBackendFailure):
             f()
+
+
+def test_backend_cannot_proceed_raises_on_invalid_scope():
+    with pytest.raises(InvalidArgument):
+        BackendCannotProceed("not a valid scope")

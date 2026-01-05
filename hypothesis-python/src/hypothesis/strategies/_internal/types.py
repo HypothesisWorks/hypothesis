@@ -35,7 +35,12 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
 
 from hypothesis import strategies as st
-from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
+from hypothesis.errors import (
+    HypothesisException,
+    HypothesisWarning,
+    InvalidArgument,
+    ResolutionFailed,
+)
 from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
@@ -250,6 +255,67 @@ def try_issubclass(thing, superclass):
     except (AttributeError, TypeError):
         # Some types can't be the subject or object of an instance or subclass check
         return False
+
+
+def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
+    if isinstance(thing, typing.TypeVar):
+        if thing not in typevars:
+            raise ValueError(
+                f"Cannot look up value for unbound type var {thing}. "
+                f"Bound typevars: {typevars}"
+            )
+        return typevars[thing]
+
+    origin = get_origin(thing)
+    if origin is None:
+        # not a parametrized type, so nothing to substitute.
+        return thing
+
+    args = get_args(thing)
+    # we had an origin, so we must have an args
+    # note: I'm only mostly confident this is true and there may be a subtle
+    # violator.
+    assert args
+
+    concrete_args = tuple(
+        _evaluate_type_alias_type(arg, typevars=typevars) for arg in args
+    )
+    if isinstance(origin, typing.TypeAliasType):
+        for param in origin.__type_params__:
+            # there's no principled reason not to support these, they're just
+            # annoying to implement.
+            if isinstance(param, typing.TypeVarTuple):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for TypeVarTuple "
+                    f"{param} (in origin: {origin!r}). Please open an issue if "
+                    "you would like to see support for this."
+                )
+            if isinstance(param, typing.ParamSpec):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for ParamSpec "
+                    f"{param} (in origin: {origin!r}). Please open an issue if you "
+                    "would like to see support for this."
+                )
+        # this zip is non-strict to allow for e.g.
+        # `type A[T1, T2] = list[T1]; st.from_type(A[int]).example()`,
+        # which leaves T2 free but is still acceptable as it never references
+        # it.
+        #
+        # We disallow referencing a free / unbound type var by erroring
+        # elsewhere in this function.
+        typevars |= dict(zip(origin.__type_params__, concrete_args, strict=False))
+        return _evaluate_type_alias_type(origin.__value__, typevars=typevars)
+
+    return origin[concrete_args]
+
+
+def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
+    # this function takes a GenericAlias whose origin is a TypeAliasType,
+    # which corresponds to `type A[T] = list[T]; thing = A[int]`, and returns
+    # the fully-instantiated underlying type.
+    assert isinstance(thing, GenericAlias)
+    assert is_a_type_alias_type(get_origin(thing))
+    return _evaluate_type_alias_type(thing, typevars={})
 
 
 def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests

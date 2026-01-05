@@ -27,14 +27,17 @@ from typing import (
 import numpy as np
 
 from hypothesis import strategies as st
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
+    _BIE,
     NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
     BroadcastableShapes,
     Shape,
+    _BIENoEllipsis,
+    _BIENoEllipsisNoNewaxis,
+    _BIENoNewaxis,
     array_shapes,
     broadcastable_shapes,
     check_argument,
@@ -56,6 +59,7 @@ from hypothesis.strategies._internal.strategies import (
     check_strategy,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
+from hypothesis.utils.deprecation import note_deprecation
 
 
 def _try_import(mod_name: str, attr_name: str) -> Any:
@@ -1092,6 +1096,52 @@ mutually_broadcastable_shapes.__doc__ = f"""
     """
 
 
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[False] = ...,
+    allow_ellipsis: Literal[False],
+) -> st.SearchStrategy[
+    _BIENoEllipsisNoNewaxis | tuple[_BIENoEllipsisNoNewaxis, ...]
+]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[False] = ...,
+    allow_ellipsis: Literal[True] = ...,
+) -> st.SearchStrategy[_BIENoNewaxis | tuple[_BIENoNewaxis, ...]]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[True],
+    allow_ellipsis: Literal[False],
+) -> st.SearchStrategy[_BIENoEllipsis | tuple[_BIENoEllipsis, ...]]: ...
+
+
+@overload
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int | None = None,
+    allow_newaxis: Literal[True],
+    allow_ellipsis: Literal[True] = ...,
+) -> st.SearchStrategy[_BIE | tuple[_BIE, ...]]: ...
+
+
 @defines_strategy()
 def basic_indices(
     shape: Shape,
@@ -1383,7 +1433,9 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
             st.recursive(st.tuples(base_strat, base_strat), st.tuples),
         )
 
-    if origin in [np.ndarray, _SupportsArray]:
+    # note: get_origin(np.typing.NDArray[np.int64]) is np.ndarray in numpy < 2.5.0,
+    # but is np.typing.NDArray in numpy >= 2.5.0. Support both here.
+    if origin in [np.typing.NDArray, np.ndarray, _SupportsArray]:
         dtype = _dtype_from_args(args)
         return arrays(dtype, array_shapes(max_dims=2))  # type: ignore[return-value]
 

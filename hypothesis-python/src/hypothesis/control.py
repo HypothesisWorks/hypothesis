@@ -12,13 +12,12 @@ import inspect
 import math
 import random
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
-from typing import Any, NoReturn, Optional
+from typing import Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -26,8 +25,9 @@ from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
-from hypothesis.vendor.pretty import IDKey, PrettyPrintFunction, pretty
+from hypothesis.vendor.pretty import ArgLabelsT, IDKey, PrettyPrintFunction, pretty
 
 
 def _calling_function_location(what: str, frame: Any) -> str:
@@ -49,7 +49,13 @@ def reject() -> NoReturn:
     raise UnsatisfiedAssumption(where)
 
 
-def assume(condition: object) -> bool:
+@overload
+def assume(condition: Literal[False] | None) -> NoReturn: ...
+@overload
+def assume(condition: object) -> Literal[True]: ...
+
+
+def assume(condition: object) -> Literal[True]:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 
@@ -151,6 +157,33 @@ class BuildContext:
             defaultdict(list)
         )
 
+        # Track nested strategy calls for explain-phase label paths
+        self._label_path: list[str] = []
+
+    @contextmanager
+    def track_arg_label(self, label: str) -> Generator[ArgLabelsT, None, None]:
+        start = len(self.data.nodes)
+        self._label_path.append(label)
+        arg_labels: ArgLabelsT = {}
+        try:
+            yield arg_labels
+        finally:
+            self._label_path.pop()
+
+            # This high up the stack, we can't see or really do much with
+            # Span / SpanRecord - not least because they're only materialized
+            # after the test case is completed.
+            #
+            # Instead, we'll stash the (start_idx, end_idx) pair on our data object
+            # for the ConjectureRunner engine to deal with, and mutate the arg_labels
+            # dict so that the pretty-printer knows where to place the
+            # which-parts-matter comments later.
+            end = len(self.data.nodes)
+            assert start <= end
+            if start != end:
+                arg_labels[label] = (start, end)
+                self.data.arg_slices.add((start, end))
+
     def record_call(
         self,
         obj: object,
@@ -158,34 +191,33 @@ class BuildContext:
         *,
         args: Sequence[object],
         kwargs: dict[str, object],
+        arg_labels: ArgLabelsT | None = None,
     ) -> None:
         self.known_object_printers[IDKey(obj)].append(
-            # _func=func prevents mypy from inferring lambda type. Would need
-            # paramspec I think - not worth it.
-            lambda obj, p, cycle, *, _func=func: p.maybe_repr_known_object_as_call(  # type: ignore
-                obj, cycle, get_pretty_function_description(_func), args, kwargs
+            lambda obj, p, cycle, *, _func=func, _arg_labels=arg_labels: p.maybe_repr_known_object_as_call(  # type: ignore
+                obj,
+                cycle,
+                get_pretty_function_description(_func),
+                args,
+                kwargs,
+                arg_labels=_arg_labels,
             )
         )
 
-    def prep_args_kwargs_from_strategies(self, kwarg_strategies):
-        arg_labels = {}
-        kwargs = {}
-        for k, s in kwarg_strategies.items():
-            start_idx = len(self.data.nodes)
-            with deprecate_random_in_strategy("from {}={!r}", k, s):
-                obj = self.data.draw(s, observe_as=f"generate:{k}")
-            end_idx = len(self.data.nodes)
-            kwargs[k] = obj
+    def prep_args_kwargs_from_strategies(
+        self,
+        kwarg_strategies: dict[str, Any],
+    ) -> tuple[dict[str, Any], ArgLabelsT]:
+        arg_labels: ArgLabelsT = {}
+        kwargs: dict[str, Any] = {}
 
-            # This high up the stack, we can't see or really do much with the conjecture
-            # Example objects - not least because they're only materialized after the
-            # test case is completed.  Instead, we'll stash the (start_idx, end_idx)
-            # pair on our data object for the ConjectureRunner engine to deal with, and
-            # pass a dict of such out so that the pretty-printer knows where to place
-            # the which-parts-matter comments later.
-            if start_idx != end_idx:
-                arg_labels[k] = (start_idx, end_idx)
-                self.data.arg_slices.add((start_idx, end_idx))
+        for k, s in kwarg_strategies.items():
+            with (
+                self.track_arg_label(k) as arg_label,
+                deprecate_random_in_strategy("from {}={!r}", k, s),
+            ):
+                kwargs[k] = self.data.draw(s, observe_as=f"generate:{k}")
+            arg_labels |= arg_label
 
         return kwargs, arg_labels
 
@@ -248,22 +280,34 @@ def event(value: str, payload: str | int | float = "") -> None:
     """
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument("Cannot make record events outside of a test")
+        raise InvalidArgument("Cannot record events outside of a test")
 
-    payload = _event_to_string(payload, (str, int, float))
-    context.data.events[_event_to_string(value)] = payload
+    avoid_realization = context.data.provider.avoid_realization
+    payload = _event_to_string(
+        payload, allowed_types=(str, int, float), avoid_realization=avoid_realization
+    )
+    value = _event_to_string(value, avoid_realization=avoid_realization)
+    context.data.events[value] = payload
 
 
 _events_to_strings: WeakKeyDictionary = WeakKeyDictionary()
 
 
-def _event_to_string(event, allowed_types=str):
+def _event_to_string(event, *, allowed_types=str, avoid_realization):
     if isinstance(event, allowed_types):
         return event
+
+    # _events_to_strings is a cache which persists across iterations, causing
+    # problems for symbolic backends. see
+    # https://github.com/pschanely/hypothesis-crosshair/issues/41
+    if avoid_realization:
+        return str(event)
+
     try:
         return _events_to_strings[event]
     except (KeyError, TypeError):
         pass
+
     result = str(event)
     try:
         _events_to_strings[event] = result

@@ -10,6 +10,7 @@
 
 import datetime as dt
 import operator as op
+import warnings
 import zoneinfo
 from calendar import monthrange
 from functools import cache, partial
@@ -420,7 +421,14 @@ def timezone_keys(
     # check_type(bool, allow_deprecated, "allow_deprecated")
     check_type(bool, allow_prefix, "allow_prefix")
 
-    available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
+    with warnings.catch_warnings():
+        try:
+            warnings.simplefilter("ignore", EncodingWarning)
+        except NameError:  # pragma: no cover
+            pass
+        # On Python 3.12 (and others?), `available_timezones()` opens files
+        # without specifying an encoding - which our selftests make an error.
+        available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
 
     # TODO: filter out alias and deprecated names if disallowed
 

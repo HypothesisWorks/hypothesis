@@ -26,6 +26,7 @@ from hypothesis import (
     strategies as st,
     target,
 )
+from hypothesis.control import current_build_context
 from hypothesis.statistics import collector, describe_statistics
 
 from tests.common.utils import Why, xfail_on_crosshair
@@ -92,6 +93,8 @@ def test_formats_are_evaluated_only_once():
 
     @given(st.integers())
     def test(i):
+        if current_build_context().data.provider.avoid_realization:
+            pytest.skip("event() cache is disabled under avoid_realization = True")
         event(Foo())
 
     stats = call_for_statistics(test)
@@ -254,8 +257,6 @@ def test_statistics_for_threshold_problem():
     assert stats["targets"]["error"] > 10
 
 
-# describe_statistics causes not-deterministic crosshair errors for some reason?
-@xfail_on_crosshair(Why.other)
 def test_statistics_with_events_and_target():
     @given(st.integers(0, 10_000))
     def test(value):

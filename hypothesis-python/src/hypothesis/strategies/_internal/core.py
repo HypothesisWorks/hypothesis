@@ -45,7 +45,6 @@ from typing import (
 )
 from uuid import UUID
 
-from hypothesis._settings import note_deprecation
 from hypothesis.control import (
     cleanup,
     current_build_context,
@@ -138,7 +137,8 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
-from hypothesis.vendor.pretty import RepresentationPrinter
+from hypothesis.utils.deprecation import note_deprecation
+from hypothesis.vendor.pretty import ArgLabelsT, RepresentationPrinter
 
 
 @cacheable
@@ -1053,8 +1053,20 @@ class BuildsStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        args = [data.draw(s) for s in self.args]
-        kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+
+        args = []
+        for i, s in enumerate(self.args):
+            with context.track_arg_label(f"arg[{i}]") as arg_label:
+                args.append(data.draw(s))
+            arg_labels |= arg_label
+
+        kwargs = {}
+        for k, v in self.kwargs.items():
+            with context.track_arg_label(k) as arg_label:
+                kwargs[k] = data.draw(v)
+            arg_labels |= arg_label
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
@@ -1086,7 +1098,9 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
+        context.record_call(
+            obj, self.target, args=args, kwargs=kwargs, arg_labels=arg_labels
+        )
         return obj
 
     def do_validate(self) -> None:
@@ -1348,6 +1362,16 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             if strategy is not NotImplemented:
                 return strategy
         return _from_type(thing.__value__)  # type: ignore
+    if types.is_a_type_alias_type(origin := get_origin(thing)):  # pragma: no cover
+        # Handle parametrized type aliases like `type A[T] = list[T]; thing = A[int]`.
+        # In this case, `thing` is a GenericAlias whose origin is a TypeAliasType.
+        #
+        # covered by 3.12+ tests.
+        if origin in types._global_type_lookup:
+            strategy = as_strategy(types._global_type_lookup[origin], thing)
+            if strategy is not NotImplemented:
+                return strategy
+        return _from_type(types.evaluate_type_alias_type(thing))
     if types.is_a_union(thing):
         args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
         return one_of([_from_type(t) for t in args])
@@ -1397,9 +1421,9 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 return strategy
         elif (
             isinstance(thing, GenericAlias)
-            and (to := get_origin(thing)) in types._global_type_lookup
+            and (origin := get_origin(thing)) in types._global_type_lookup
         ):
-            strategy = as_strategy(types._global_type_lookup[to], thing)
+            strategy = as_strategy(types._global_type_lookup[origin], thing)
             if strategy is not NotImplemented:
                 return strategy
     except TypeError:  # pragma: no cover
@@ -1585,7 +1609,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 f"{from_type_repr} resolved to {builds_repr}, because we could not "
                 "find any (non-varargs) arguments. Use st.register_type_strategy() "
                 "to resolve to a strategy which can generate more than one value, "
-                "or silence this warning.",
+                "or to silence this warning.",
                 SmallSearchSpaceWarning,
                 stacklevel=2,
             )
