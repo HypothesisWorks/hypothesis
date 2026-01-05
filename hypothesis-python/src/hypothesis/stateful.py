@@ -28,12 +28,7 @@ from typing import Any, ClassVar, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
-from hypothesis._settings import (
-    HealthCheck,
-    Verbosity,
-    note_deprecation,
-    settings as Settings,
-)
+from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import (
@@ -62,6 +57,7 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 T = TypeVar("T")

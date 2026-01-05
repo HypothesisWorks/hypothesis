@@ -70,6 +70,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
 from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.threading import ThreadLocal
 
 if TYPE_CHECKING:
@@ -81,7 +82,6 @@ if TYPE_CHECKING:
 
 def __getattr__(name: str) -> Any:
     if name == "AVAILABLE_PROVIDERS":
-        from hypothesis._settings import note_deprecation
         from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 
         note_deprecation(

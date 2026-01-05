@@ -19,7 +19,6 @@ import numpy as np
 import pandas
 
 from hypothesis import strategies as st
-from hypothesis._settings import note_deprecation
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
@@ -33,6 +32,7 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal.strategies import Ex, check_strategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
+from hypothesis.utils.deprecation import note_deprecation
 
 try:
     from pandas.core.arrays.integer import IntegerDtype
