@@ -846,3 +846,54 @@ def test_prefers_singleton_printing_to_repr_pretty():
     )
     printer.pretty(banana)
     assert "Actually a fish" in out.getvalue()
+
+
+def test_tuple_pprinter_cycle():
+    # Test that _tuple_pprinter handles cycles correctly
+    from hypothesis.vendor.pretty import _tuple_pprinter
+
+    t = (1, 2, 3)
+    arg_labels = {"arg[0]": (0, 1), "arg[1]": (1, 2), "arg[2]": (2, 3)}
+    pprinter = _tuple_pprinter(arg_labels)
+
+    out = io.StringIO()
+    p = pretty.RepresentationPrinter(out)
+    # Simulate a cycle by adding the tuple's id to the stack
+    p.stack.append(id(t))
+    pprinter(t, p, cycle=True)
+    p.flush()
+    assert out.getvalue() == "(...)"
+
+
+def test_fixeddict_pprinter_cycle():
+    # Test that _fixeddict_pprinter handles cycles correctly
+    from hypothesis.vendor.pretty import _fixeddict_pprinter
+
+    d = {"a": 1, "b": 2}
+    mapping = {"a": None, "b": None}  # dummy mapping for key ordering
+    arg_labels = {"a": (0, 1), "b": (1, 2)}
+    pprinter = _fixeddict_pprinter(arg_labels, mapping)
+
+    out = io.StringIO()
+    p = pretty.RepresentationPrinter(out)
+    # Simulate a cycle by adding the dict's id to the stack
+    p.stack.append(id(d))
+    pprinter(d, p, cycle=True)
+    p.flush()
+    assert out.getvalue() == "{...}"
+
+
+def test_get_slice_comment_skips_already_commented():
+    # Test that _get_slice_comment returns None for already-commented slices
+    from hypothesis.vendor.pretty import _get_slice_comment
+
+    out = io.StringIO()
+    p = pretty.RepresentationPrinter(out)
+    p.slice_comments = {(0, 5): "or any other generated value"}
+    # Mark the slice as already commented
+    p._commented_slices.add((0, 5))
+
+    arg_labels = {"arg[0]": (0, 5)}
+    # Should return None because slice is already in _commented_slices
+    result = _get_slice_comment(p, arg_labels, "arg[0]")
+    assert result is None

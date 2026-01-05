@@ -138,7 +138,7 @@ from hypothesis.strategies._internal.strings import (
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
 from hypothesis.utils.deprecation import note_deprecation
-from hypothesis.vendor.pretty import RepresentationPrinter
+from hypothesis.vendor.pretty import ArgLabelsT, RepresentationPrinter
 
 
 @cacheable
@@ -1053,8 +1053,20 @@ class BuildsStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        args = [data.draw(s) for s in self.args]
-        kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+
+        args = []
+        for i, s in enumerate(self.args):
+            with context.track_arg_label(f"arg[{i}]") as arg_label:
+                args.append(data.draw(s))
+            arg_labels |= arg_label
+
+        kwargs = {}
+        for k, v in self.kwargs.items():
+            with context.track_arg_label(k) as arg_label:
+                kwargs[k] = data.draw(v)
+            arg_labels |= arg_label
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
@@ -1086,7 +1098,9 @@ class BuildsStrategy(SearchStrategy[Ex]):
                 ) from err
             raise
 
-        current_build_context().record_call(obj, self.target, args=args, kwargs=kwargs)
+        context.record_call(
+            obj, self.target, args=args, kwargs=kwargs, arg_labels=arg_labels
+        )
         return obj
 
     def do_validate(self) -> None:
