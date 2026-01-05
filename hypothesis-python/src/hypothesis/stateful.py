@@ -28,11 +28,7 @@ from typing import Any, ClassVar, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
-from hypothesis._settings import (
-    HealthCheck,
-    Verbosity,
-    settings as Settings,
-)
+from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import (
