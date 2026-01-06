@@ -2,9 +2,6 @@
 The Hypothesis Documentation Handbook
 =====================================
 
-Note: Currently this guide is very specific to the *Python* version of Hypothesis.
-It needs updating for the Ruby version (and, in future, other versions).
-
 Good documentation can make the difference between good code and useful code -
 and Hypothesis is written to be used, as widely as possible.
 
