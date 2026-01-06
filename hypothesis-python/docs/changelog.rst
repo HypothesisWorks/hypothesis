@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.149.1:
+
+--------------------
+6.149.1 - 2026-01-05
+--------------------
+
+Add type hints to an internal class.
+
 .. _v6.149.0:
 
 --------------------

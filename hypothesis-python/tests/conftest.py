@@ -76,11 +76,6 @@ def pytest_addoption(parser):
     parser.addoption("--hypothesis-benchmark-shrinks", type=str, choices=["new", "old"])
     parser.addoption("--hypothesis-benchmark-output", type=str)
 
-    # New in pytest 6, so we add a shim on old versions to avoid missing-arg errors
-    arg = "--durations-min"
-    if arg not in sum((a._long_opts for g in parser._groups for a in g.options), []):
-        parser.addoption(arg, action="store", default=1.0)
-
 
 @pytest.fixture(scope="function", params=["warns", "raises"])
 def warns_or_raises(request):
