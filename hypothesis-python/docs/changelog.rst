@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.150.0:
+
+--------------------
+6.150.0 - 2026-01-06
+--------------------
+
+This release adds a ``min_leaves`` argument to :func:`~hypothesis.strategies.recursive`,
+which ensures that generated recursive structures have at least the specified number
+of leaf nodes (:issue:`4205`).
+
 .. _v6.149.1:
 
 --------------------
