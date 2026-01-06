@@ -122,6 +122,7 @@ def test_respects_min_leaves(data):
 
 
 @given(st.recursive(st.none(), lambda x: st.tuples(x, x), min_leaves=5, max_leaves=5))
+@settings(suppress_health_check=["filter_too_much"])
 def test_can_set_exact_leaf_count(tree):
     assert _count_leaves(tree) == 5
 
