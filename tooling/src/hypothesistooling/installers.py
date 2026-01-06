@@ -88,11 +88,6 @@ def ensure_shellcheck():
     subprocess.check_call([STACK, "install", "ShellCheck"])
 
 
-@once
-def ensure_rustup():
-    scripts.run_script("ensure-rustup.sh")
-
-
 # RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, "plugins", "ruby-build")
 
 # RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, "bin")

@@ -20,9 +20,7 @@ import requests
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.projects.hypothesisruby as hr
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -800,79 +798,9 @@ def shell():
     IPython.start_ipython([])
 
 
-def ruby_task(fn):
-    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
-
-
-@ruby_task
-def lint_ruby():
-    hr.rake_task("checkformat")
-
-
-@ruby_task
-def check_ruby_tests():
-    hr.rake_task("rspec")
-    hr.rake_task("minitest")
-
-
-@ruby_task
-def format_rust_in_ruby():
-    hr.cargo("fmt")
-
-
-@ruby_task
-def check_rust_in_ruby_format():
-    hr.cargo("fmt", "--", "--check")
-
-
-@ruby_task
-def lint_rust_in_ruby():
-    hr.cargo("clippy")
-
-
-@ruby_task
-def audit_rust_in_ruby():
-    hr.cargo("install", "cargo-audit")
-    hr.cargo("audit")
-
-
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable, *args))
-
-
-@task()
-def bundle(*args):
-    hr.bundle(*args)
-
-
-rust_task = task(if_changed=(cr.BASE_DIR,))
-
-
-@rust_task
-def check_rust_tests():
-    cr.cargo("test")
-
-
-@rust_task
-def format_conjecture_rust_code():
-    cr.cargo("fmt")
-
-
-@rust_task
-def check_conjecture_rust_format():
-    cr.cargo("fmt", "--", "--check")
-
-
-@rust_task
-def lint_conjecture_rust():
-    cr.cargo("clippy")
-
-
-@rust_task
-def audit_conjecture_rust():
-    cr.cargo("install", "cargo-audit")
-    cr.cargo("audit")
 
 
 @task()

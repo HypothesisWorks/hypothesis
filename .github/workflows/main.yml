@@ -170,16 +170,6 @@ jobs:
           - check-threading
           - check-py310-oldestnumpy
           - check-numpy-nightly
-          ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
-          # - lint-ruby
-          # - check-ruby-tests
-          # - check-rust-in-ruby-format
-          # - lint-rust-in-ruby
-          # - audit-rust-in-ruby
-          # - check-conjecture-rust-format
-          # - check-rust-tests
-          # - audit-conjecture-rust
-          # - lint-conjecture-rust
       fail-fast: false
     env:
       PYTHON_VERSION: "3.10"
