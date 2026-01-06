@@ -46,8 +46,6 @@ dist
 secrets.tar
 secrets
 
-# Rust build targets
-target
 
 _site/
 .sass-cache/

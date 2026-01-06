@@ -2,9 +2,6 @@
 House API Style
 ===============
 
-Note: Currently this guide is very specific to the *Python* version of Hypothesis.
-It needs updating for the Ruby version (and, in future, other versions).
-
 Here are some guidelines for how to write APIs so that they "feel" like
 a Hypothesis API. This is particularly focused on writing new strategies, as
 that's the major place where we add APIs, but also applies more generally.

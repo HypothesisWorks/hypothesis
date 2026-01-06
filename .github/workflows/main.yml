@@ -170,16 +170,6 @@ jobs:
           - check-threading
           - check-py310-oldestnumpy
           - check-numpy-nightly
-          ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
-          # - lint-ruby
-          # - check-ruby-tests
-          # - check-rust-in-ruby-format
-          # - lint-rust-in-ruby
-          # - audit-rust-in-ruby
-          # - check-conjecture-rust-format
-          # - check-rust-tests
-          # - audit-conjecture-rust
-          # - lint-conjecture-rust
       fail-fast: false
     env:
       PYTHON_VERSION: "3.10"
@@ -331,7 +321,5 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: |
         TASK=${{ matrix.task }} ./build.sh

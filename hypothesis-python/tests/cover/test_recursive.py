@@ -10,10 +10,15 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import given, note, settings, strategies as st
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 
-from tests.common.debug import check_can_generate_examples, find_any, minimal
+from tests.common.debug import (
+    assert_all_examples,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
@@ -83,8 +88,44 @@ def test_issue_1502_regression(s):
         st.recursive(st.none(), st.lists, max_leaves=-1),
         st.recursive(st.none(), st.lists, max_leaves=0),
         st.recursive(st.none(), st.lists, max_leaves=1.0),
+        st.recursive(st.none(), st.lists, min_leaves=-1),
+        st.recursive(st.none(), st.lists, min_leaves=0),
+        st.recursive(st.none(), st.lists, min_leaves=1.0),
+        st.recursive(st.none(), st.lists, min_leaves=10, max_leaves=5),
     ],
 )
 def test_invalid_args(s):
     with pytest.raises(InvalidArgument):
         check_can_generate_examples(s)
+
+
+def _count_leaves(tree):
+    if isinstance(tree, tuple):
+        return sum(_count_leaves(child) for child in tree)
+    return 1
+
+
+@given(st.data())
+@settings(max_examples=5, suppress_health_check=["filter_too_much"])
+def test_respects_min_leaves(data):
+    min_leaves = data.draw(st.integers(1, 20))
+    max_leaves = data.draw(st.integers(min_leaves, 40))
+    note(f"{min_leaves=}")
+    note(f"{max_leaves=}")
+    s = st.recursive(
+        st.none(),
+        lambda x: st.tuples(x, x),
+        min_leaves=min_leaves,
+        max_leaves=max_leaves,
+    )
+    assert_all_examples(s, lambda tree: min_leaves <= _count_leaves(tree) <= max_leaves)
+
+
+@given(st.recursive(st.none(), lambda x: st.tuples(x, x), min_leaves=5, max_leaves=5))
+def test_can_set_exact_leaf_count(tree):
+    assert _count_leaves(tree) == 5
+
+
+def test_identity_extend_warns():
+    with pytest.warns(HypothesisWarning, match="extend=lambda x: x is a no-op"):
+        st.recursive(st.none(), lambda x: x)
