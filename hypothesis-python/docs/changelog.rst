@@ -18,6 +18,511 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.150.0:
+
+--------------------
+6.150.0 - 2026-01-06
+--------------------
+
+This release adds a ``min_leaves`` argument to :func:`~hypothesis.strategies.recursive`,
+which ensures that generated recursive structures have at least the specified number
+of leaf nodes (:issue:`4205`).
+
+.. _v6.149.1:
+
+--------------------
+6.149.1 - 2026-01-05
+--------------------
+
+Add type hints to an internal class.
+
+.. _v6.149.0:
+
+--------------------
+6.149.0 - 2026-01-05
+--------------------
+
+This release extends the explain-phase ``# or any other generated value`` comments
+to sub-arguments within :func:`~hypothesis.strategies.builds`,
+:func:`~hypothesis.strategies.tuples`, and :func:`~hypothesis.strategies.fixed_dictionaries`.
+
+Previously, these comments only appeared on top-level test arguments. Now, when
+the explain phase determines that a sub-argument can vary freely without affecting
+the test failure, you'll see comments like::
+
+    Falsifying example: test_foo(
+        obj=MyClass(
+            x=0,  # or any other generated value
+            y=True,
+        ),
+        data=(
+            '',  # or any other generated value
+            42,
+        ),
+    )
+
+This makes it easier to understand which parts of complex inputs actually matter
+for reproducing a failure.
+
+.. _v6.148.13:
+
+---------------------
+6.148.13 - 2026-01-05
+---------------------
+
+Clean up an internal helper.
+
+.. _v6.148.12:
+
+---------------------
+6.148.12 - 2026-01-04
+---------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` to properly handle
+parameterized type aliases created with Python 3.12+'s :pep:`695` ``type``
+statement. For example, ``st.from_type(A[int])`` where ``type A[T] = list[T]``
+now correctly resolves to ``lists(integers())`` instead of raising a
+``TypeError`` (:issue:`4628`).
+
+.. _v6.148.11:
+
+---------------------
+6.148.11 - 2026-01-03
+---------------------
+
+Hypothesis now prints a |Verbosity.verbose| log when we switch away from an :ref:`alternative backend <alternative-backends>`.
+
+.. _v6.148.10:
+
+---------------------
+6.148.10 - 2026-01-03
+---------------------
+
+Fixes :ref:`Ghostwriter <ghostwriter>` output for :pypi:`numpy` >= 2.4.0. Also adds support |st.from_type| for :pypi:`numpy` 2.5.0 nightly (which has not yet been released).
+
+.. _v6.148.9:
+
+--------------------
+6.148.9 - 2026-01-01
+--------------------
+
+|.example| no longer emits |NonInteractiveExampleWarning| when running a python file directly. This means that e.g. ``python my_sandbox.py`` during exploratory work with |.example| will no longer raise warnings.
+
+.. _v6.148.8:
+
+--------------------
+6.148.8 - 2025-12-23
+--------------------
+
+Add ``__dict__`` and ``__proto__`` to the list of constant strings Hypothesis sometimes generates.
+
+.. _v6.148.7:
+
+--------------------
+6.148.7 - 2025-12-05
+--------------------
+
+When multiple explicit |@example| decorators fail with the same error,
+Hypothesis now shows only the simplest failing example (by shortlex order)
+with a note about how many other examples also failed (:issue:`4520`).
+
+To see all failing examples, use |Verbosity.verbose| or higher.
+
+.. _v6.148.6:
+
+--------------------
+6.148.6 - 2025-12-04
+--------------------
+
+Fix a bug where we persisted symbolics from solver-based :ref:`alternative backends <alternative-backends>` in |event|.
+
+.. _v6.148.5:
+
+--------------------
+6.148.5 - 2025-12-01
+--------------------
+
+This patch improves the error message for :class:`~hypothesis.errors.FlakyStrategyDefinition`
+when the precondition for a rule is flaky (:issue:`4206`).
+
+.. _v6.148.4:
+
+--------------------
+6.148.4 - 2025-12-01
+--------------------
+
+This patch improves the type annotations for :func:`~hypothesis.extra.numpy.basic_indices`.
+The return type now accurately reflects the ``allow_ellipsis`` and ``allow_newaxis``
+parameters, excluding ``EllipsisType`` or ``None`` from the union when those index
+types are disabled (:issue:`4607`).
+
+Additionally, :func:`~hypothesis.assume` now has overloaded type annotations:
+``assume(True)`` returns ``Literal[True]``, while ``assume(False)`` and
+``assume(None)`` return ``NoReturn``.
+
+.. _v6.148.3:
+
+--------------------
+6.148.3 - 2025-11-27
+--------------------
+
+Clean up some internal code.
+
+.. _v6.148.2:
+
+--------------------
+6.148.2 - 2025-11-18
+--------------------
+
+Document |fuzz_one_input|.
+
+.. _v6.148.1:
+
+--------------------
+6.148.1 - 2025-11-16
+--------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.148.0:
+
+--------------------
+6.148.0 - 2025-11-15
+--------------------
+
+Calling :func:`~hypothesis.settings.register_profile` from within a test
+decorated with :func:`@settings <hypothesis.settings>` is now deprecated,
+to avoid confusion about which settings are used as the baseline for the
+new profile.
+
+.. _v6.147.0:
+
+--------------------
+6.147.0 - 2025-11-06
+--------------------
+
+This release drops support for :pypi:`nose`, which ceased development 9 years ago and does not support Python 3.10 or newer.
+
+Hypothesis still supports :pypi:`nose2`. While we do not test ``nose2`` in our CI, we will fix any bugs that get reported.
+
+.. _v6.146.0:
+
+--------------------
+6.146.0 - 2025-11-05
+--------------------
+
+|@settings| now accepts equivalent string representations for |settings.verbosity|, |settings.phases|, and |settings.suppress_health_check|. For example:
+
+.. code-block:: python
+
+  # these two are now equivalent...
+  settings(verbosity=Verbosity.verbose)
+  settings(verbosity="verbose")
+
+  # ...as are these two...
+  settings(phases=[Phase.explicit])
+  settings(phases=["explicit"])
+
+  # ...and these two.
+  settings(suppress_health_check=[HealthCheck.filter_too_much])
+  settings(suppress_health_check=["filter_too_much"])
+
+This release also changes the canonical value of |Verbosity|, |Phase|, and |HealthCheck| members to a string instead of an integer. For example, ``Phase.reuse.value == "explicit"`` as of this release, where previously ``Phase.reuse.value == 1``.
+
+Instantiating |Verbosity|, |Phase|, or |HealthCheck| with an integer, such as ``Verbosity(0)``, is now deprecated.
+
+.. _v6.145.1:
+
+--------------------
+6.145.1 - 2025-11-03
+--------------------
+
+Refactor some internal logic around strategy definitions.
+
+.. _v6.145.0:
+
+--------------------
+6.145.0 - 2025-11-03
+--------------------
+
+Hypothesis previously required :pypi:`attrs` as a dependency. This release removes that dependency, so that the only required dependency of Hypothesis is :pypi:`sortedcontainers`.
+
+All attrs-specific features of Hypothesis, such as using |st.from_type| with attrs classes, will continue to behave as before.
+
+.. _v6.144.1:
+
+--------------------
+6.144.1 - 2025-11-03
+--------------------
+
+Tweak how Hypothesis hides internal tracebacks to fix an error under rare conditions (:issue:`3822`).
+
+.. _v6.144.0:
+
+--------------------
+6.144.0 - 2025-11-02
+--------------------
+
+This release adds support for :class:`~fractions.Fraction` objects as ``min_value``
+and ``max_value`` bounds in :func:`~hypothesis.strategies.decimals`, if they can
+be exactly represented as decimals in the target precision (:issue:`4466`).
+
+Bounding :func:`~hypothesis.strategies.decimals` with *other* values that cannot
+be exactly represented is now deprecated; previously the bounds could be off by one.
+
+.. _v6.143.1:
+
+--------------------
+6.143.1 - 2025-11-02
+--------------------
+
+:func:`~hypothesis.strategies.from_type` now correctly handles :pypi:`annotated-types`
+annotations on :class:`typing.TypedDict` fields which are also marked as being
+:obj:`~typing.ReadOnly`, :obj:`~typing.Required`, or :obj:`~typing.NotRequired`
+(:issue:`4474`).
+
+.. _v6.143.0:
+
+--------------------
+6.143.0 - 2025-11-01
+--------------------
+
+The extras for |hypothesis-numpy| and |hypothesis-pandas| now support automatically inferring a strategy for ``dtype="O"``. Previously, Hypothesis required an explicit elements strategy to be passed, for example ``nps.arrays("O", shape=(1,), elements=st.just(object()))``. Now, Hypothesis automatically infers ``elements=st.from_type(object)``.
+
+Thanks to Shaun Read for identifying and fixing this!
+
+.. _v6.142.5:
+
+--------------------
+6.142.5 - 2025-10-31
+--------------------
+
+This patch fixes :func:`~hypothesis.extra.ghostwriter.binary_operation` to
+include imports for :mod:`hypothesis.extra.numpy` strategies such as
+:func:`~hypothesis.extra.numpy.arrays`, :func:`~hypothesis.extra.numpy.scalar_dtypes`,
+and :func:`~hypothesis.extra.numpy.array_shapes` when ghostwriting tests for
+functions with numpy array parameters (:issue:`4576`).
+
+.. _v6.142.4:
+
+--------------------
+6.142.4 - 2025-10-25
+--------------------
+
+Improve the accuracy of test timing reports, by tracking the start time of each test case closer to when the test is executed.
+
+.. _v6.142.3:
+
+--------------------
+6.142.3 - 2025-10-22
+--------------------
+
+Fix a recursion error when :ref:`observability <observability>` is enabled and a test generates an object with a recursive reference, like ``a = []; a.append(a)``.
+
+.. _v6.142.2:
+
+--------------------
+6.142.2 - 2025-10-20
+--------------------
+
+Remove a case where Hypothesis would interact with the global |random.Random| instance if Hypothesis internals were used directly.
+
+.. _v6.142.1:
+
+--------------------
+6.142.1 - 2025-10-16
+--------------------
+
+Simplify some internal typing logic after dropping Python 3.9.
+
+.. _v6.142.0:
+
+--------------------
+6.142.0 - 2025-10-16
+--------------------
+
+This release drops support for Python 3.9, `which reached end of life in
+October 2025 <https://devguide.python.org/versions/>`__.
+
+.. _v6.141.1:
+
+--------------------
+6.141.1 - 2025-10-15
+--------------------
+
+Fixes an error when using :ref:`the Ghostwriter <ghostwriter>` with annotations that include :obj:`python:typing.ForwardRef` on Python 3.14 (:issue:`4565`).
+
+.. _v6.141.0:
+
+--------------------
+6.141.0 - 2025-10-15
+--------------------
+
+The |django.from_field| and |django.from_form| strategies from our :ref:`Django extra <hypothesis-django>` now support :obj:`~django:django.db.models.FileField`.
+
+Thanks to Arjoonn Sharma for this fix!
+
+.. _v6.140.4:
+
+--------------------
+6.140.4 - 2025-10-14
+--------------------
+
+Clean up internal ``@overload`` type annotations.
+
+.. _v6.140.3:
+
+--------------------
+6.140.3 - 2025-10-04
+--------------------
+
+Fixes our bundled |run_conformance_test| not respecting |PrimitiveProvider.avoid_realization|.
+
+.. _v6.140.2:
+
+--------------------
+6.140.2 - 2025-09-23
+--------------------
+
+The automatic switch to the CI :class:`settings profile <hypothesis.settings>` now works under :pypi:`tox` (for ``tox >= 4.30.0``).
+
+.. _v6.140.1:
+
+--------------------
+6.140.1 - 2025-09-22
+--------------------
+
+This patch re-enables the warning for incompatible :func:`~hypothesis.strategies.shared`
+strategies that was first enabled in :v:`6.133.0` but disabled in :v:`6.135.15`.
+
+.. _v6.140.0:
+
+--------------------
+6.140.0 - 2025-09-22
+--------------------
+
+|st.characters| now validates that the elements of the ``exclude_characters`` and ``include_characters`` arguments are single characters, which was always assumed internally. For example, ``exclude_characters=["a", "b"]`` is valid while ``exclude_characters=["ab"]`` will now raise an error up-front.
+
+.. _v6.139.3:
+
+--------------------
+6.139.3 - 2025-09-22
+--------------------
+
+Add ``phase`` to the :ref:`hypothesis-specific metadata <observability-hypothesis-metadata>` in :ref:`observability <observability>`.
+
+.. _v6.139.2:
+
+--------------------
+6.139.2 - 2025-09-18
+--------------------
+
+Internal refactoring for new lint rules.
+
+.. _v6.139.1:
+
+--------------------
+6.139.1 - 2025-09-16
+--------------------
+
+Fixed another typo in error message around function-scoped fixtures.
+
+.. _v6.139.0:
+
+--------------------
+6.139.0 - 2025-09-16
+--------------------
+
+Add |settings.get_current_profile_name|, which returns the name of the current settings profile.
+
+.. _v6.138.17:
+
+---------------------
+6.138.17 - 2025-09-15
+---------------------
+
+Fixed typo in error message around function-scoped fixtures.
+
+.. _v6.138.16:
+
+---------------------
+6.138.16 - 2025-09-13
+---------------------
+
+Improved error message for |DeadlineExceeded|.
+
+.. _v6.138.15:
+
+---------------------
+6.138.15 - 2025-09-08
+---------------------
+
+Refactor some stateful testing internals for easier use by third-party libraries.
+
+.. _v6.138.14:
+
+---------------------
+6.138.14 - 2025-09-02
+---------------------
+
+Patch files written by hypothesis now use a deterministic ordering when multiple |@example| decorators are present.
+
+.. _v6.138.13:
+
+---------------------
+6.138.13 - 2025-09-01
+---------------------
+
+Fix a typo affecting pretty-printing of lambdas with complex default
+arguments.
+
+.. _v6.138.12:
+
+---------------------
+6.138.12 - 2025-09-01
+---------------------
+
+Improve automatic detection of the :ref:`CI profile <builtin-profiles>` on various vendor-specific CI systems.
+
+.. _v6.138.11:
+
+---------------------
+6.138.11 - 2025-09-01
+---------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.138.10:
+
+---------------------
+6.138.10 - 2025-08-31
+---------------------
+
+Internal refactor to simplify |SearchStrategy|.
+
+.. _v6.138.9:
+
+--------------------
+6.138.9 - 2025-08-31
+--------------------
+
+This patch further improves stringification of lambdas, by
+never returning a lambda source unless it is confirmed to
+compile to the same code object. This stricter check makes
+it possible to widen the search for a matching source block,
+so that it can often be found even if the file has been
+edited.
+
+.. _v6.138.8:
+
+--------------------
+6.138.8 - 2025-08-29
+--------------------
+
+Fixes a race condition under threading when using |st.deferred|.
+
 .. _v6.138.7:
 
 --------------------
@@ -2337,7 +2842,7 @@ This patch fixes a significant slowdown when using the :func:`~hypothesis.statef
 6.100.2 - 2024-04-28
 --------------------
 
-Explicitly cast :obj:`numpy.finfo.smallest_normal` to builtin `float` in
+Explicitly cast :obj:`numpy.finfo.smallest_normal <numpy.finfo>` to builtin `float` in
 preparation for the :pypi:`numpy==2.0 <numpy>` release (:issue:`3950`)
 
 .. _v6.100.1:
@@ -3924,7 +4429,7 @@ Thanks to Felix Divo for the new feature!
 -------------------
 
 This patch fixes invalid annotations detected for the tests generated by
-:ref:`Ghostwritter <ghostwriter>`. It will now correctly generate ``Optional``
+:ref:`Ghostwriter <ghostwriter>`. It will now correctly generate ``Optional``
 types with just one type argument and handle union expressions inside of type
 arguments correctly. Additionally, it now supports code with the
 ``from __future__ import annotations`` marker for Python 3.10 and newer.
@@ -3958,7 +4463,7 @@ For now, we capture calls made via :func:`~hypothesis.strategies.builds`, and vi
 6.64.0 - 2023-01-23
 -------------------
 
-The :ref:`Ghostwritter <ghostwriter>` will now include type annotations on tests
+The :ref:`Ghostwriter <ghostwriter>` will now include type annotations on tests
 for type-annotated code.  If you want to force this to happen (or not happen),
 pass a boolean to the new ``annotate=`` argument to the Python functions, or
 the ``--[no-]annotate`` CLI flag.
@@ -4501,7 +5006,7 @@ This PR was kindly supported by `Ordina Pythoneers
 6.47.0 - 2022-06-07
 -------------------
 
-The :ref:`Ghostwritter <ghostwriter>` can now write tests for
+The :ref:`Ghostwriter <ghostwriter>` can now write tests for
 :obj:`@classmethod <classmethod>` or :obj:`@staticmethod <staticmethod>`
 methods, in addition to the existing support for functions and other callables
 (:issue:`3318`).  Thanks to Cheuk Ting Ho for the patch.

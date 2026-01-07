@@ -26,6 +26,10 @@ from tests.common.debug import (
 )
 from tests.common.utils import temp_registered
 
+# Union[A, B] is not equivalent to A | B until 3.14. We'll continue to test both
+# until then.
+# ruff: noqa: UP007
+
 
 @pytest.mark.parametrize(
     "annotated_type,expected_strategy_repr",
@@ -91,9 +95,10 @@ def test_string_forward_ref_message():
         check_can_generate_examples(s)
 
 
-def test_issue_3080():
+@pytest.mark.parametrize("typ", (typing.Union[list[int], int], list[int] | int))
+def test_issue_3080(typ):
     # Check for https://github.com/HypothesisWorks/hypothesis/issues/3080
-    s = st.from_type(typing.Union[list[int], int])
+    s = st.from_type(typ)
     find_any(s, lambda x: isinstance(x, int))
     find_any(s, lambda x: isinstance(x, list))
 

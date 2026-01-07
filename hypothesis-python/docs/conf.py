@@ -18,8 +18,9 @@ from docutils import nodes
 from sphinx.util.docutils import SphinxRole
 
 root = Path(__file__).parent.parent
-sys.path.append(str(root / "src"))
-sys.path.append(str(Path(__file__).parent / "_ext"))
+# insert so the local versions are consulted first, before any installed version
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 needs_sphinx = re.search(
     r"sphinx==([0-9\.]+)", root.joinpath("../requirements/tools.txt").read_text()
@@ -220,7 +221,12 @@ html_theme = "furo"
 # remove "Hypothesis <version> documentation" from just below logo on the sidebar
 html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
-html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
+html_css_files = [
+    "better-signatures.css",
+    "wrap-in-tables.css",
+    "no-scroll.css",
+    "dark-fix.css",
+]
 htmlhelp_basename = "Hypothesisdoc"
 html_favicon = "../../brand/favicon.ico"
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"

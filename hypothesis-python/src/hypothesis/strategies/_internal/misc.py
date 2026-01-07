@@ -8,7 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -56,14 +57,14 @@ class JustStrategy(SampledFromStrategy[Ex]):
     def calc_is_cacheable(self, recur: RecurT) -> bool:
         return is_hashable(self.value)
 
-    def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
+    def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # The parent class's `do_draw` implementation delegates directly to
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. (This also avoids drawing any data.)
         return self._transform(self.value)
 
 
-@defines_strategy(never_lazy=True)
+@defines_strategy(eager=True)
 def just(value: T) -> SearchStrategy[T]:
     """Return a strategy which only generates ``value``.
 
@@ -119,7 +120,7 @@ NOTHING = Nothing()
 
 
 @cacheable
-@defines_strategy(never_lazy=True)
+@defines_strategy(eager=True)
 def nothing() -> SearchStrategy["Never"]:
     """This strategy never successfully draws a value and will always reject on
     an attempt to draw.

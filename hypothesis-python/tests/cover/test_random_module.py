@@ -191,7 +191,7 @@ def test_evil_prng_registration_nonsense():
     # The first test to call deterministic_PRNG registers a new random instance.
     # If that's this test, it will throw off our n_registered count in the middle.
     # start with a no-op to ensure this registration has occurred.
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         pass
 
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -206,7 +206,7 @@ def test_evil_prng_registration_nonsense():
     register_random(r2)
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 2
 
-    with deterministic_PRNG(0):
+    with deterministic_PRNG():
         del r1
         gc_collect()
         assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"
@@ -272,6 +272,7 @@ def test_passing_referenced_instance_within_function_scope_warns():
     sys.version_info[:2] == (3, 14),
     reason="TODO_314: is this intentional semantics of the new gc?",
 )
+@skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
 

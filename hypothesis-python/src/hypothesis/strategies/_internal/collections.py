@@ -10,10 +10,11 @@
 
 import copy
 import math
-from collections.abc import Iterable
-from typing import Any, Callable, Optional, Union, overload
+from collections.abc import Callable, Iterable
+from typing import Any, overload
 
 from hypothesis import strategies as st
+from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -27,6 +28,7 @@ from hypothesis.strategies._internal.strategies import (
     T4,
     T5,
     Ex,
+    FilteredStrategy,
     RecurT,
     SampledFromStrategy,
     SearchStrategy,
@@ -36,6 +38,12 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.vendor.pretty import (
+    ArgLabelsT,
+    IDKey,
+    _fixeddict_pprinter,
+    _tuple_pprinter,
+)
 
 
 class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
@@ -63,7 +71,20 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
         return all(recur(e) for e in self.element_strategies)
 
     def do_draw(self, data: ConjectureData) -> tuple[Ex, ...]:
-        return tuple(data.draw(e) for e in self.element_strategies)
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+        result = []
+        for i, strategy in enumerate(self.element_strategies):
+            with context.track_arg_label(f"arg[{i}]") as arg_label:
+                result.append(data.draw(strategy))
+            arg_labels |= arg_label
+
+        result = tuple(result)
+        if arg_labels:
+            context.known_object_printers[IDKey(result)].append(
+                _tuple_pprinter(arg_labels)
+            )
+        return result
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return any(recur(e) for e in self.element_strategies)
@@ -148,7 +169,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int = 0,
-        max_size: Optional[Union[float, int]] = math.inf,
+        max_size: float | int | None = math.inf,
     ):
         super().__init__()
         self.min_size = min_size or 0
@@ -187,8 +208,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
     def calc_is_empty(self, recur: RecurT) -> bool:
         if self.min_size == 0:
             return False
-        else:
-            return recur(self.element_strategy)
+        return recur(self.element_strategy)
 
     def do_draw(self, data: ConjectureData) -> list[Ex]:
         if self.element_strategy.is_empty:
@@ -252,11 +272,11 @@ class UniqueListStrategy(ListStrategy[Ex]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int,
-        max_size: Optional[Union[float, int]],
+        max_size: float | int | None,
         # TODO: keys are guaranteed to be Hashable, not just Any, but this makes
         # other things harder to type
         keys: tuple[Callable[[Ex], Any], ...],
-        tuple_suffixes: Optional[SearchStrategy[tuple[Ex, ...]]],
+        tuple_suffixes: SearchStrategy[tuple[Ex, ...]] | None,
     ):
         super().__init__(elements, min_size, max_size)
         self.keys = keys
@@ -284,10 +304,13 @@ class UniqueListStrategy(ListStrategy[Ex]):
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
         def not_yet_in_unique_list(val: Ex) -> bool:  # type: ignore # covariant type param
-            return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
+            return all(
+                key(val) not in seen
+                for key, seen in zip(self.keys, seen_sets, strict=True)
+            )
 
-        filtered = self.element_strategy._filter_for_filtered_draw(
-            not_yet_in_unique_list
+        filtered = FilteredStrategy(
+            self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
         while elements.more():
             value = filtered.do_filtered_draw(data)
@@ -295,7 +318,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
                 assert not isinstance(value, UniqueIdentifier)
-                for key, seen in zip(self.keys, seen_sets):
+                for key, seen in zip(self.keys, seen_sets, strict=True):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))  # type: ignore
@@ -323,9 +346,10 @@ class UniqueSampledListStrategy(UniqueListStrategy):
             j = data.draw_integer(0, len(remaining) - 1)
             value = self.element_strategy._transform(remaining.pop(j))
             if value is not filter_not_satisfied and all(
-                key(value) not in seen for key, seen in zip(self.keys, seen_sets)
+                key(value) not in seen
+                for key, seen in zip(self.keys, seen_sets, strict=True)
             ):
-                for key, seen in zip(self.keys, seen_sets):
+                for key, seen in zip(self.keys, seen_sets, strict=True):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))
@@ -350,31 +374,47 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         self,
         mapping: dict[Any, SearchStrategy[Any]],
         *,
-        optional: Optional[dict[Any, SearchStrategy[Any]]],
+        optional: dict[Any, SearchStrategy[Any]] | None,
     ):
         super().__init__()
         dict_type = type(mapping)
         self.mapping = mapping
         keys = tuple(mapping.keys())
         self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
-            lambda value: dict_type(zip(keys, value))
+            lambda value: dict_type(zip(keys, value, strict=True))
         )
         self.optional = optional
 
     def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
-        value = data.draw(self.fixed)
-        if self.optional is None:
-            return value
+        context = current_build_context()
+        arg_labels: ArgLabelsT = {}
+        value = type(self.mapping)()
 
-        remaining = [k for k, v in self.optional.items() if not v.is_empty]
-        should_draw = cu.many(
-            data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
-        )
-        while should_draw.more():
-            j = data.draw_integer(0, len(remaining) - 1)
-            remaining[-1], remaining[j] = remaining[j], remaining[-1]
-            key = remaining.pop()
-            value[key] = data.draw(self.optional[key])
+        for key, strategy in self.mapping.items():
+            with context.track_arg_label(str(key)) as arg_label:
+                value[key] = data.draw(strategy)
+            arg_labels |= arg_label
+
+        if self.optional is not None:
+            remaining = [k for k, v in self.optional.items() if not v.is_empty]
+            should_draw = cu.many(
+                data,
+                min_size=0,
+                max_size=len(remaining),
+                average_size=len(remaining) / 2,
+            )
+            while should_draw.more():
+                j = data.draw_integer(0, len(remaining) - 1)
+                remaining[-1], remaining[j] = remaining[j], remaining[-1]
+                key = remaining.pop()
+                with context.track_arg_label(str(key)) as arg_label:
+                    value[key] = data.draw(self.optional[key])
+                arg_labels |= arg_label
+
+        if arg_labels:
+            context.known_object_printers[IDKey(value)].append(
+                _fixeddict_pprinter(arg_labels, self.mapping)
+            )
         return value
 
     def calc_is_empty(self, recur: RecurT) -> bool:

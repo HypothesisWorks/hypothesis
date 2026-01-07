@@ -87,6 +87,8 @@ def fn_ktest(*fnkwargs):
     (st.decimals, {"max_value": "inf", "allow_infinity": False}),
     (st.decimals, {"min_value": complex(1, 2)}),
     (st.decimals, {"min_value": "0.1", "max_value": "0.9", "places": 0}),
+    (st.decimals, {"min_value": fractions.Fraction(1, 3)}),
+    (st.decimals, {"max_value": fractions.Fraction(2, 3), "places": 1}),
     (
         st.dictionaries,
         {"keys": st.booleans(), "values": st.booleans(), "min_size": 10, "max_size": 1},
@@ -241,6 +243,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (st.decimals, {"max_value": 1.0, "min_value": -1.0, "allow_nan": False}),
     (st.decimals, {"min_value": "-inf"}),
     (st.decimals, {"max_value": "inf"}),
+    (st.decimals, {"min_value": fractions.Fraction(3, 20)}),
+    (st.decimals, {"max_value": fractions.Fraction(1, 8), "places": 10}),
     (st.fractions, {"min_value": -1, "max_value": 1, "max_denominator": 1000}),
     (st.fractions, {"min_value": 1, "max_value": 1}),
     (st.fractions, {"min_value": 1, "max_value": 1, "max_denominator": 2}),
@@ -586,27 +590,29 @@ def test_builds_error_messages(data):
     data.draw(st.sampled_from(AnEnum))
 
 
-@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
-        (st.integers(), st.integers(0)),
-        (st.builds(int), st.builds(float)),
-        (st.none(), st.integers()),
         pytest.param(
-            st.composite(lambda draw: draw(st.none()))(),
-            st.composite(lambda draw: draw(st.integers()))(),
+            st.integers(),
+            st.integers(0),
             marks=pytest.mark.xfail(
-                # https://github.com/pytest-dev/pytest/issues/8928
+                # this is the exception raised by failed pytest.warns(),
+                # ref https://github.com/pytest-dev/pytest/issues/8928
                 raises=pytest.fail.Exception,
                 strict=True,
-                reason="same-name incompatible @composite",
+                reason="constraints not checked",
             ),
+        ),
+        (st.builds(int), st.builds(float)),
+        (st.none(), st.integers()),
+        (
+            st.composite(lambda draw: draw(st.none()))(),
+            st.composite(lambda draw: draw(st.integers()))(),
         ),
     ],
 )
 def test_incompatible_shared_strategies_warns(strat_a, strat_b):
-
     shared_a = st.shared(strat_a, key="share")
     shared_b = st.shared(strat_b, key="share")
 
@@ -629,31 +635,17 @@ def _composite2(draw):
     return draw(st.integers())
 
 
-@pytest.mark.skip("pending resolution of #4301")
 @pytest.mark.parametrize(
     "strat_a,strat_b",
     [
         (st.floats(allow_nan=False), st.floats(allow_nan=False)),
         (st.builds(float), st.builds(float)),
         (_composite1(), _composite1()),
-        pytest.param(
-            st.floats(allow_nan=False),
-            st.floats(allow_nan=0),
-            marks=pytest.mark.xfail(
-                raises=HypothesisWarning,
-                strict=True,
-                reason="un-normalized constraint value (issue #4417)",
-            ),
+        (
+            st.floats(allow_nan=False, allow_infinity=False),
+            st.floats(allow_nan=False, allow_infinity=0),
         ),
-        pytest.param(
-            _composite1(),
-            _composite2(),
-            marks=pytest.mark.xfail(
-                raises=HypothesisWarning,
-                strict=True,
-                reason="differently named @composites",
-            ),
-        ),
+        (_composite1(), _composite2()),
         pytest.param(
             st.integers().flatmap(st.just),
             st.integers(),
@@ -665,7 +657,7 @@ def _composite2(draw):
         ),
     ],
 )
-def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
+def test_compatible_shared_strategies_do_not_warn(strat_a, strat_b):
     shared_a = st.shared(strat_a, key="share")
     shared_b = st.shared(strat_b, key="share")
 
@@ -677,3 +669,17 @@ def test_compatible_shared_strategies_do_not_raise(strat_a, strat_b):
     with warnings.catch_warnings():
         warnings.simplefilter("error", HypothesisWarning)
         test_it()
+
+
+def test_compatible_nested_shared_strategies_do_not_warn():
+    shared_a = st.shared(st.integers(), key="share")
+    shared_b = st.shared(st.integers(), key="share")
+    shared_c = st.shared(shared_a, key="nested_share")
+    shared_d = st.shared(shared_b, key="nested_share")
+
+    @given(shared_a, shared_b, shared_c, shared_d)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b, c, d):
+        assert a == b == c == d
+
+    test_it()

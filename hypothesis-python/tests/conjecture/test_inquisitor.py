@@ -115,3 +115,172 @@ def test_inquisitor_doesnt_break_on_varying_forced_nodes(n1, n2):
 def test_issue_3755_regression(start_date, data):
     data.draw(st.datetimes(min_value=start_date))
     raise ZeroDivisionError
+
+
+# Tests for sub-argument explanations
+
+
+class MyClass:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_builds_subargs(
+    obj=MyClass(
+        0,  # or any other generated value
+        True,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.builds(MyClass, st.integers(), st.booleans()))
+def test_inquisitor_builds_subargs(obj):
+    assert not obj.y
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_builds_kwargs_subargs(
+    obj=MyClass(
+        x=0,  # or any other generated value
+        y=True,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.builds(MyClass, x=st.integers(), y=st.booleans()))
+def test_inquisitor_builds_kwargs_subargs(obj):
+    assert not obj.y
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_tuple_subargs(
+    t=(
+        0,  # or any other generated value
+        True,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.tuples(st.integers(), st.booleans()))
+def test_inquisitor_tuple_subargs(t):
+    assert not t[1]
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_fixeddict_subargs(
+    d={
+        'x': 0,  # or any other generated value
+        'y': True,
+    },
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.fixed_dictionaries({"x": st.integers(), "y": st.booleans()}))
+def test_inquisitor_fixeddict_subargs(d):
+    assert not d["y"]
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_tuple_multiple_varying(
+    t=(
+        0,  # or any other generated value
+        '',  # or any other generated value
+        True,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.tuples(st.integers(), st.text(), st.booleans()))
+def test_inquisitor_tuple_multiple_varying(t):
+    # Multiple sub-arguments can vary, but the "together" comment only applies
+    # to top-level test arguments, not to sub-arguments within composites.
+    assert not t[2]
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_skip_subset_slices(
+    obj=MyClass(
+        (0, False),  # or any other generated value
+        y=False,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(st.builds(MyClass, st.tuples(st.integers(), st.booleans()), y=st.booleans()))
+def test_inquisitor_skip_subset_slices(obj):
+    # The tuple can vary freely, but the booleans inside it shouldn't
+    # get individual comments since they're part of a larger varying slice.
+    assert obj.y
+
+
+# Test for duplicate param names at different nesting levels
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_duplicate_param_names(
+    kw=0,  # or any other generated value
+    b={
+        'kw': '',  # or any other generated value
+        'c': True,
+    },
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(kw=st.integers(), b=st.fixed_dictionaries({"kw": st.text(), "c": st.booleans()}))
+def test_inquisitor_duplicate_param_names(kw, b):
+    # Both "kw" (top-level) and "b['kw']" can vary - they get separate comments
+    # even though they have the same name at different nesting levels.
+    # b['c'] is the critical value that determines the failure.
+    assert not b["c"]
+
+
+# Test for multi-level nesting: bare, nested, and double-nested
+class Outer:
+    def __init__(self, inner, value):
+        self.inner = inner
+        self.value = value
+
+
+class Inner:
+    def __init__(self, x):
+        self.x = x
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_multi_level_nesting(
+    bare=0,  # or any other generated value
+    outer=Outer(
+        inner=Inner(x=0),  # or any other generated value
+        value=True,
+    ),
+)
+"""
+)
+@settings(print_blob=False, derandomize=True)
+@given(
+    bare=st.integers(),
+    outer=st.builds(
+        Outer, inner=st.builds(Inner, x=st.integers()), value=st.booleans()
+    ),
+)
+def test_inquisitor_multi_level_nesting(bare, outer):
+    # Comments on: bare (top-level) and outer.inner (nested). The inner.x slice
+    # is the same as inner's slice since Inner has only one argument, so the
+    # comment appears only once on inner. outer.value doesn't get a comment
+    # because it's the critical value that determines the failure.
+    assert not outer.value

@@ -10,3 +10,4 @@ These how-to pages are practical guides for applying Hypothesis in specific scen
    type-strategies
    custom-database
    detect-hypothesis-tests
+   external-fuzzers

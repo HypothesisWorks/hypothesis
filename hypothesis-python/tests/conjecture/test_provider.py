@@ -17,7 +17,6 @@ import warnings
 from contextlib import contextmanager, nullcontext
 from random import Random
 from threading import RLock
-from typing import Optional
 
 import pytest
 
@@ -49,6 +48,7 @@ from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
     HypothesisProvider,
+    with_register_backend,
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
@@ -80,10 +80,10 @@ class PrngProvider(PrimitiveProvider):
 
     def draw_integer(
         self,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         *,
-        weights: Optional[dict[int, float]] = None,
+        weights: dict[int, float] | None = None,
         shrink_towards: int = 0,
     ) -> int:
         # shrink_towards is fully ignored here. It would be nice to implement
@@ -166,23 +166,17 @@ class PrngProvider(PrimitiveProvider):
         # cap max size for performance
         max_size = 100 if max_size is None else min(max_size, 100)
         size = self.prng.randint(min_size, max_size)
-        try:
-            return self.prng.randbytes(size)
-        except AttributeError:  # randbytes is new in python 3.9
-            return bytes(self.prng.randint(0, 255) for _ in range(size))
+        return self.prng.randbytes(size)
 
 
 _temp_register_backend_lock = RLock()
 
 
+# same as with_register_backend, but adds a lock for our threading tests.
 @contextmanager
-def temp_register_backend(name, cls):
-    with _temp_register_backend_lock:
-        try:
-            AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
-            yield
-        finally:
-            AVAILABLE_PROVIDERS.pop(name)
+def temp_register_backend(name, provider_cls):
+    with _temp_register_backend_lock, with_register_backend(name, provider_cls):
+        yield
 
 
 @pytest.mark.parametrize(
@@ -310,14 +304,11 @@ class InvalidLifetime(TrivialProvider):
 
 
 def test_invalid_lifetime():
-    with temp_register_backend("invalid_lifetime", InvalidLifetime):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with pytest.raises(InvalidArgument):
-            ConjectureRunner(
-                lambda: True, settings=settings(backend="invalid_lifetime")
-            )
+    with (
+        temp_register_backend("invalid_lifetime", InvalidLifetime),
+        pytest.raises(InvalidArgument),
+    ):
+        ConjectureRunner(lambda: True, settings=settings(backend="invalid_lifetime"))
 
 
 function_lifetime_init_count = 0
@@ -418,7 +409,7 @@ def test_bad_realize():
 
         with pytest.raises(
             HypothesisException,
-            match="expected .* from BadRealizeProvider.realize",
+            match=r"expected .* from BadRealizeProvider.realize",
         ):
             test_function()
 
@@ -655,23 +646,24 @@ def test_available_providers_deprecation():
     "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
 )
 def test_can_generate_from_all_available_providers(backend, strategy):
+    # note: database=InMemoryExampleDatabase() is for compatibility with HypoFuzz
+    # here.
     @given(strategy)
-    @settings(backend=backend, database=None)
+    @settings(backend=backend, database=InMemoryExampleDatabase())
     def f(x):
         raise ValueError
 
-    with pytest.raises(ValueError):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with (
+    with (
+        pytest.raises(ValueError),
+        (
             pytest.warns(
                 HypothesisWarning, match="/dev/urandom is not available on windows"
             )
             if backend == "hypothesis-urandom" and WINDOWS
             else nullcontext()
-        ):
-            f()
+        ),
+    ):
+        f()
 
 
 def test_saves_on_fatal_error_with_backend():
@@ -823,3 +815,8 @@ def test_backend_deadline_exceeded_raised_as_flaky_backend_failure():
 
         with pytest.raises(FlakyBackendFailure):
             f()
+
+
+def test_backend_cannot_proceed_raises_on_invalid_scope():
+    with pytest.raises(InvalidArgument):
+        BackendCannotProceed("not a valid scope")

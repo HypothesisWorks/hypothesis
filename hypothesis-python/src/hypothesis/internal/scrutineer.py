@@ -21,18 +21,18 @@ from enum import IntEnum
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, TypeAlias
 
 from hypothesis._settings import Phase, Verbosity
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.escalation import is_hypothesis_file
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
+    from typing_extensions import Self
 
-Location: "TypeAlias" = tuple[str, int]
-Branch: "TypeAlias" = tuple[Optional[Location], Location]
-Trace: "TypeAlias" = set[Branch]
+Location: TypeAlias = tuple[str, int]
+Branch: TypeAlias = tuple[Location | None, Location]
+Trace: TypeAlias = frozenset[Branch]
 
 
 @functools.cache
@@ -55,15 +55,15 @@ class Tracer:
     """A super-simple branch coverage tracer."""
 
     __slots__ = (
+        "_branches",
         "_previous_location",
         "_should_trace",
         "_tried_and_failed_to_trace",
-        "branches",
     )
 
     def __init__(self, *, should_trace: bool) -> None:
-        self.branches: Trace = set()
-        self._previous_location: Optional[Location] = None
+        self._branches: set[Branch] = set()
+        self._previous_location: Location | None = None
         self._tried_and_failed_to_trace = False
         self._should_trace = should_trace and self.can_trace()
 
@@ -75,6 +75,10 @@ class Tracer:
             return sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
         return sys.gettrace() is None
 
+    @property
+    def branches(self) -> Trace:
+        return frozenset(self._branches)
+
     def trace(self, frame, event, arg):
         try:
             if event == "call":
@@ -83,7 +87,7 @@ class Tracer:
                 fname = frame.f_code.co_filename
                 if should_trace_file(fname):
                     current_location = (fname, frame.f_lineno)
-                    self.branches.add((self._previous_location, current_location))
+                    self._branches.add((self._previous_location, current_location))
                     self._previous_location = current_location
         except RecursionError:
             pass
@@ -96,10 +100,10 @@ class Tracer:
             return sys.monitoring.DISABLE  # type: ignore
 
         current_location = (fname, line_number)
-        self.branches.add((self._previous_location, current_location))
+        self._branches.add((self._previous_location, current_location))
         self._previous_location = current_location
 
-    def __enter__(self):
+    def __enter__(self) -> "Self":
         self._tried_and_failed_to_trace = False
 
         if not self._should_trace:

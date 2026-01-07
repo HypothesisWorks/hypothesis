@@ -13,8 +13,8 @@ import random
 import sys
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass
+from typing import Any
 
-import attr
 import pytest
 
 from hypothesis import given, strategies as st
@@ -22,6 +22,7 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.utils import to_jsonable
+from hypothesis.utils.conventions import UniqueIdentifier
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
 from tests.common.utils import checks_deprecated_behaviour
@@ -122,20 +123,10 @@ class HasDefaultDict:
     x: defaultdict
 
 
-@attr.s
-class AttrsClass:
-    n = attr.ib()
-
-
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
     assert to_jsonable(obj, avoid_realization=False) == {"x": {"a": [42]}}
-
-
-def test_jsonable_attrs():
-    obj = AttrsClass(n=10)
-    assert to_jsonable(obj, avoid_realization=False) == {"n": 10}
 
 
 def test_jsonable_namedtuple():
@@ -196,6 +187,41 @@ def test_jsonable_to_json_nested():
     obj = Outer(Inner(42))
     assert to_jsonable(obj, avoid_realization=False) == {"inner": "custom"}
     assert to_jsonable(obj, avoid_realization=True) == "<symbolic>"
+
+
+recursive_list = []
+recursive_list.append(recursive_list)
+
+recursive_dict = {}
+recursive_dict["a"] = recursive_dict
+
+mutual1 = []
+mutual2 = [mutual1]
+mutual1.append(mutual2)
+
+shared = UniqueIdentifier("shared")
+
+
+@dataclass
+class A:
+    a: Any
+    b: Any
+
+
+@pytest.mark.parametrize(
+    "obj, value",
+    [
+        (recursive_list, ["[...]"]),
+        (recursive_dict, {"a": "{...}"}),
+        (mutual1, [["[...]"]]),
+        (mutual2, [["[...]"]]),
+        # same id object in different fields. no cycle
+        (A(a=shared, b=shared), {"a": "shared", "b": "shared"}),
+        (A(a=recursive_list, b=recursive_dict), {"a": ["[...]"], "b": {"a": "{...}"}}),
+    ],
+)
+def test_to_jsonable_handles_reference_cycles(obj, value):
+    assert to_jsonable(obj, avoid_realization=False) == value
 
 
 def test_deferred_strategy_draw():

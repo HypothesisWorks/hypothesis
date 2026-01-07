@@ -13,11 +13,12 @@ import os
 import sys
 import textwrap
 import traceback
+from collections.abc import Callable
+from dataclasses import dataclass
 from functools import partial
-from inspect import getframeinfo
+from inspect import getfile, getsourcefile
 from pathlib import Path
 from types import ModuleType, TracebackType
-from typing import Callable, NamedTuple, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -57,8 +58,8 @@ is_hypothesis_file = belongs_to(hypothesis)
 
 
 def get_trimmed_traceback(
-    exception: Optional[BaseException] = None,
-) -> Optional[TracebackType]:
+    exception: BaseException | None = None,
+) -> TracebackType | None:
     """Return the current traceback, minus any frames added by Hypothesis."""
     if exception is None:
         _, exception, tb = sys.exc_info()
@@ -81,7 +82,7 @@ def get_trimmed_traceback(
         return tb
     while tb.tb_next is not None and (
         # If the frame is from one of our files, it's been added by Hypothesis.
-        is_hypothesis_file(getframeinfo(tb.tb_frame).filename)
+        is_hypothesis_file(getsourcefile(tb.tb_frame) or getfile(tb.tb_frame))
         # But our `@proxies` decorator overrides the source location,
         # so we check for an attribute it injects into the frame too.
         or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
@@ -90,7 +91,8 @@ def get_trimmed_traceback(
     return tb
 
 
-class InterestingOrigin(NamedTuple):
+@dataclass(slots=True, frozen=True)
+class InterestingOrigin:
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even
     # if report_multiple_bugs=False).  We traditionally use the exception type and
@@ -98,8 +100,8 @@ class InterestingOrigin(NamedTuple):
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
     exc_type: type[BaseException]
-    filename: Optional[str]
-    lineno: Optional[int]
+    filename: str | None
+    lineno: int | None
     context: "InterestingOrigin | tuple[()]"
     group_elems: "tuple[InterestingOrigin, ...]"
 

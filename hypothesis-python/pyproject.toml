@@ -10,9 +10,42 @@ dynamic = ["version"]
 authors = [
     { name = "David R. MacIver and Zac Hatfield-Dodds", email = "david@drmaciver.com" }
 ]
-description = "A library for property-based testing"
-# Avoid changing this by hand. This is automatically updated by update_changelog_and_version
-readme = {"text" = """<div align="center">
+description = "The property-based testing library for Python"
+
+license = "MPL-2.0"
+requires-python = ">= 3.10"
+keywords = ["python", "testing", "fuzzing", "property-based-testing"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Hypothesis",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Education :: Testing",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "exceptiongroup>=1.0.0; python_version<'3.11'",
+    "sortedcontainers>=2.1.0,<3.0.0",
+]
+
+# Avoid changing this by hand. This is automatically updated by update_changelog_and_version.
+[project.readme]
+text = """<div align="center">
   <img src="https://raw.githubusercontent.com/HypothesisWorks/hypothesis/master/brand/dragonfly-rainbow.svg" width="300">
 </div>
 
@@ -59,38 +92,8 @@ pip install hypothesis
 ```
 
 There are also [optional extras available](https://hypothesis.readthedocs.io/en/latest/extras.html).
-""", "content-type" = "text/markdown"}
-license = "MPL-2.0"
-requires-python = ">= 3.9"
-keywords = ["python", "testing", "fuzzing", "property-based-testing"]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Framework :: Hypothesis",
-    "Framework :: Pytest",
-    "Intended Audience :: Developers",
-    "Operating System :: Unix",
-    "Operating System :: POSIX",
-    "Operating System :: Microsoft :: Windows",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-    "Topic :: Education :: Testing",
-    "Topic :: Software Development :: Testing",
-    "Typing :: Typed",
-]
-
-dependencies = [
-    "attrs>=22.2.0",
-    "exceptiongroup>=1.0.0; python_version<'3.11'",
-    "sortedcontainers>=2.1.0,<3.0.0",
-]
+"""
+content-type = "text/markdown"
 
 [project.urls]
 homepage = "https://hypothesis.works"
@@ -106,14 +109,14 @@ ghostwriter = ["black>=20.8b0"]
 pytz = ["pytz>=2014.1"]
 dateutil = ["python-dateutil>=1.4"]
 lark = ["lark>=0.10.1"]  # probably still works with old `lark-parser` too
-numpy = ["numpy>=1.19.3"]  # oldest with wheels for non-EOL Python (for now)
+numpy = ["numpy>=1.21.6"]  # oldest with wheels for non-EOL Python (for now)
 pandas = ["pandas>=1.1"]
 pytest = ["pytest>=4.6"]
 dpcontracts = ["dpcontracts>=0.4"]
 redis = ["redis>=3.0.0"]
-crosshair = ["hypothesis-crosshair>=0.0.25", "crosshair-tool>=0.0.95"]
+crosshair = ["hypothesis-crosshair>=0.0.27", "crosshair-tool>=0.0.101"]
 # zoneinfo is an odd one: every dependency is platform-conditional.
-zoneinfo = ["tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'"]
+zoneinfo = ["tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscripten'"]
 # We only support Django versions with upstream support - see
 # https://www.djangoproject.com/download/#supported-versions
 # We also leave the choice of timezone library to the user, since it
@@ -121,7 +124,7 @@ zoneinfo = ["tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscrip
 django = ["django>=4.2"]
 watchdog = ["watchdog>=4.0.0"]
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
-all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.95", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.25", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
+all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.101", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.27", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.21.6", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "hypothesis.version.__version__"}
@@ -134,3 +137,46 @@ hypothesis = "hypothesis.extra.cli:main"
 
 [project.entry-points.pytest11]
 hypothesispytest = "_hypothesis_pytestplugin"
+
+[tool.coverage.run]
+parallel = true
+branch = true
+source = ["hypothesis"]
+omit = [
+    "**/_hypothesis_ftz_detector.py",
+    "**/_hypothesis_pytestplugin.py",
+    "**/_hypothesis_globals.py",
+    "**/extra/array_api.py",
+    "**/extra/cli.py",
+    "**/extra/django/*.py",
+    "**/extra/ghostwriter.py",
+    "**/extra/pytestplugin.py",
+    "**/internal/scrutineer.py",
+    "**/utils/terminal.py",
+    "**/internal/conjecture/provider_conformance.py",
+    # covered by our attrs tests in check-niche
+    "**/strategies/_internal/attrs.py"
+]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "def __repr__",
+    "def _repr_pretty_",
+    "def __ne__",
+    "def __copy__",
+    "def __deepcopy__",
+    "except ImportError:",
+    "except ModuleNotFoundError:",
+    "if PYPY:",
+    "if TYPE_CHECKING:",
+    "if sys\\.version_info",
+    "if \"[\\w\\.]+\" in sys\\.modules:",
+    "if .+ := sys\\.modules\\.get\\(\"[\\w\\.]+\"\\)",
+    "@overload",
+    "if .*\\bnot .*provider.avoid_realization",
+]

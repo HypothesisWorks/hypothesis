@@ -23,7 +23,7 @@ def byte_order(draw):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes 300s; may get faster after https://github.com/pschanely/CrossHair/issues/332",
 )
 @example({0}, [1])

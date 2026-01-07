@@ -47,7 +47,6 @@ def ensure_python(version):
 
 
 STACK = os.path.join(HOME, ".local", "bin", "stack")
-GHC = os.path.join(HOME, ".local", "bin", "ghc")
 SHELLCHECK = shutil.which("shellcheck") or os.path.join(
     HOME, ".local", "bin", "shellcheck"
 )
@@ -72,56 +71,8 @@ def update_stack():
 
 
 @once
-def ensure_ghc():
-    if os.path.exists(GHC):
-        return
-    update_stack()
-    subprocess.check_call([STACK, "setup"])
-
-
-@once
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
     update_stack()
-    ensure_ghc()
     subprocess.check_call([STACK, "install", "ShellCheck"])
-
-
-@once
-def ensure_rustup():
-    scripts.run_script("ensure-rustup.sh")
-
-
-# RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, "plugins", "ruby-build")
-
-# RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, "bin")
-
-# BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "bundle")
-# GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "gem")
-
-# RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, "bin", "rbenv")
-
-
-# @once
-# def ensure_ruby():
-#     if not os.path.exists(scripts.RBENV_ROOT):
-#         git("clone", "https://github.com/rbenv/rbenv.git", scripts.RBENV_ROOT)
-#
-#     if not os.path.exists(RUBY_BUILD):
-#         git("clone", "https://github.com/rbenv/ruby-build.git", RUBY_BUILD)
-#
-#     if not os.path.exists(
-#         os.path.join(scripts.RBENV_ROOT, "versions", scripts.RBENV_VERSION)
-#     ):
-#         subprocess.check_call([RBENV_COMMAND, "install", scripts.RBENV_VERSION])
-#
-#     subprocess.check_call([GEM_EXECUTABLE, "update", "--system"])
-#
-#     if not (
-#         os.path.exists(BUNDLER_EXECUTABLE)
-#         and subprocess.call([BUNDLER_EXECUTABLE, "version"]) == 0
-#     ):
-#         subprocess.check_call([GEM_EXECUTABLE, "install", "bundler"])
-#
-#     assert os.path.exists(BUNDLER_EXECUTABLE)

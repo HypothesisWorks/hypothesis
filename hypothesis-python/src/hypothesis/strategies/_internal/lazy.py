@@ -8,9 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from inspect import signature
-from typing import Any, Callable, Optional
+from typing import Any
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization
@@ -77,19 +77,15 @@ class LazyStrategy(SearchStrategy[Ex]):
         kwargs: dict[str, object],
         *,
         transforms: tuple[tuple[str, Callable[..., Any]], ...] = (),
-        force_repr: Optional[str] = None,
+        force_repr: str | None = None,
     ):
         super().__init__()
-        self.__wrapped_strategy: Optional[SearchStrategy[Ex]] = None
-        self.__representation: Optional[str] = force_repr
+        self.__wrapped_strategy: SearchStrategy[Ex] | None = None
+        self.__representation: str | None = force_repr
         self.function = function
         self.__args = args
         self.__kwargs = kwargs
         self._transformations = transforms
-
-    @property
-    def supports_find(self) -> bool:
-        return self.wrapped_strategy.supports_find
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)

@@ -105,7 +105,7 @@ def test_matching(category, predicate, invert, is_unicode):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~30s each; CrossHair strings just aren't fast enough",
 )
 @pytest.mark.parametrize(
@@ -195,7 +195,7 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="takes ~30s each; CrossHair strings just aren't fast enough",
 )
 @pytest.mark.parametrize(

@@ -33,7 +33,7 @@ Anyway, this creates an *excellent* use case for property based testing, because
 to always return the same answer, you can test that: Just call both functions with the same data and assert
 that their answer is the same.
 
-Lets look at this in the fancy algorithm case. Suppose we implemented [merge sort](
+Let's look at this in the fancy algorithm case. Suppose we implemented [merge sort](
 https://en.wikipedia.org/wiki/Merge_sort):
 
 ```python
@@ -75,7 +75,7 @@ def bubble_sort(ls):
     return ls
 ```
 
-These *should* always give the same answer,  so lets test that:
+These *should* always give the same answer,  so let's test that:
 
 ```python
 @given(lists(integers()))

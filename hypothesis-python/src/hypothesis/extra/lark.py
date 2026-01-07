@@ -21,7 +21,6 @@ your own at all.
 """
 
 from inspect import signature
-from typing import Optional
 
 import lark
 from lark.grammar import NonTerminal, Rule, Symbol, Terminal
@@ -64,7 +63,7 @@ class LarkStrategy(st.SearchStrategy):
     def __init__(
         self,
         grammar: Lark,
-        start: Optional[str],
+        start: str | None,
         explicit: dict[str, st.SearchStrategy[str]],
         alphabet: st.SearchStrategy[str],
     ) -> None:
@@ -209,8 +208,8 @@ def check_explicit(name):
 def from_lark(
     grammar: lark.lark.Lark,
     *,
-    start: Optional[str] = None,
-    explicit: Optional[dict[str, st.SearchStrategy[str]]] = None,
+    start: str | None = None,
+    explicit: dict[str, st.SearchStrategy[str]] | None = None,
     alphabet: st.SearchStrategy[str] = st.characters(codec="utf-8"),
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.

@@ -19,17 +19,14 @@ from functools import lru_cache
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TypeAlias
 
 import hypothesis
 from hypothesis.configuration import storage_directory
 from hypothesis.internal.conjecture.choice import ChoiceTypeT
 from hypothesis.internal.escalation import is_hypothesis_file
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
-ConstantT: "TypeAlias" = Union[int, float, bytes, str]
+ConstantT: TypeAlias = int | float | bytes | str
 
 # unfortunate collision with builtin. I don't want to name the init arg bytes_.
 bytesT = bytes
@@ -39,10 +36,10 @@ class Constants:
     def __init__(
         self,
         *,
-        integers: Optional[MutableSet[int]] = None,
-        floats: Optional[MutableSet[float]] = None,
-        bytes: Optional[MutableSet[bytes]] = None,
-        strings: Optional[MutableSet[str]] = None,
+        integers: MutableSet[int] | None = None,
+        floats: MutableSet[float] | None = None,
+        bytes: MutableSet[bytes] | None = None,
+        strings: MutableSet[str] | None = None,
     ):
         self.integers: MutableSet[int] = set() if integers is None else integers
         self.floats: MutableSet[float] = set() if floats is None else floats
@@ -50,8 +47,8 @@ class Constants:
         self.strings: MutableSet[str] = set() if strings is None else strings
 
     def set_for_type(
-        self, constant_type: Union[type[ConstantT], ChoiceTypeT]
-    ) -> Union[MutableSet[int], MutableSet[float], MutableSet[bytes], MutableSet[str]]:
+        self, constant_type: type[ConstantT] | ChoiceTypeT
+    ) -> MutableSet[int] | MutableSet[float] | MutableSet[bytes] | MutableSet[str]:
         if constant_type is int or constant_type == "integer":
             return self.integers
         elif constant_type is float or constant_type == "float":
@@ -178,7 +175,7 @@ class ConstantVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def _constants_from_source(source: Union[str, bytes], *, limit: bool) -> Constants:
+def _constants_from_source(source: str | bytes, *, limit: bool) -> Constants:
     tree = ast.parse(source)
     visitor = ConstantVisitor(limit=limit)
 
@@ -257,9 +254,7 @@ def is_local_module_file(path: str) -> bool:
         # Skip expensive path lookup for stdlib modules.
         # This will cause false negatives if a user names their module the
         # same as a stdlib module.
-        #
-        # sys.stdlib_module_names is new in 3.10
-        not (sys.version_info >= (3, 10) and path in sys.stdlib_module_names)
+        path not in sys.stdlib_module_names
         # A path containing site-packages is extremely likely to be
         # ModuleLocation.SITE_PACKAGES. Skip the expensive path lookup here.
         and "/site-packages/" not in path

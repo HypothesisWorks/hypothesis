@@ -20,9 +20,7 @@ import requests
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.projects.hypothesisruby as hr
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -80,7 +78,21 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
+    codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
+
+    matches = subprocess.run(
+        r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
+        "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        from textwrap import indent
+
+        print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
+        print(indent(matches, "    "))
+        sys.exit(1)
 
 
 def do_release(package):
@@ -164,10 +176,9 @@ rst_pattern = re.compile(
 )
 
 
-def remove_consecutive_newlines_in_rst(path):
+def remove_consecutive_newlines_in_rst(path: Path):
     # replace 2+ empty lines in `.. code-block:: python` blocks with just one empty
     # line
-    path = Path(path)
     content = path.read_text()
     processed_content = rst_pattern.sub(
         lambda m: m["before"] + re.sub(r"\n{3,}", "\n\n", m["code"]), content
@@ -178,12 +189,6 @@ def remove_consecutive_newlines_in_rst(path):
 
 @task()
 def format():
-    def should_format_file(path):
-        return path.endswith(".py")
-
-    def should_format_doc_file(path):
-        return path.endswith((".rst", ".md"))
-
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
@@ -192,12 +197,12 @@ def format():
         # logic, so we need to rerun formatters.
         format_all = True
 
-    files = tools.all_files() if format_all else changed
+    paths = tools.all_files() if format_all else changed
 
-    doc_files_to_format = [f for f in sorted(files) if should_format_doc_file(f)]
-    files_to_format = [f for f in sorted(files) if should_format_file(f)]
+    doc_paths_to_format = [p for p in sorted(paths) if p.suffix in {".rst", ".md"}]
+    paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
 
-    if not (files_to_format or doc_files_to_format):
+    if not (paths_to_format or doc_paths_to_format):
         return
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and
@@ -211,9 +216,9 @@ def format():
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
     last_header_line = HEADER.splitlines()[-1].rstrip()
 
-    for f in files_to_format:
+    for p in paths_to_format:
         lines = []
-        with open(f, encoding="utf-8") as fp:
+        with open(p, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
@@ -230,7 +235,7 @@ def format():
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
 
         source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as fp:
+        with open(p, "w", encoding="utf-8") as fp:
             if shebang is not None:
                 fp.write(shebang)
                 fp.write("\n")
@@ -240,12 +245,12 @@ def format():
                 fp.write(source)
             fp.write("\n")
 
-    codespell("--write-changes", *files_to_format, *doc_files_to_format)
+    codespell("--write-changes", *paths_to_format, *doc_paths_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py310-plus", *paths_to_format, *doc_paths_to_format)
 
-    for f in doc_files_to_format:
-        remove_consecutive_newlines_in_rst(f)
+    for p in doc_paths_to_format:
+        remove_consecutive_newlines_in_rst(p)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -256,16 +261,40 @@ def check_format():
     format()
     n = max(map(len, VALID_STARTS))
     bad = False
-    for f in tools.all_files():
-        if not f.endswith(".py"):
+    for p in tools.all_files():
+        if p.suffix != ".py":
             continue
-        with open(f, encoding="utf-8") as fp:
+        with open(p, encoding="utf-8") as fp:
             start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
-                print(f"{f} has incorrect start {start!r}", file=sys.stderr)
+                print(f"{p} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
-    check_not_changed()
+    try:
+        check_not_changed()
+    except Exception:
+        box_width = 50
+        inner_width = box_width - 2
+        content_width = inner_width - 2
+        msg1 = "Note: code differed after formatting."
+        msg2 = "To fix this, run:"
+        msg3 = "    ./build.sh format"
+
+        lines = [
+            "",
+            "    " + "*" * box_width,
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg1 + " " * (content_width - len(msg1)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg2 + " " * (content_width - len(msg2)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg3 + " " * (content_width - len(msg3)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    " + "*" * box_width,
+            "",
+        ]
+        print("\n".join(lines), file=sys.stderr)
+        raise
 
 
 def check_not_changed():
@@ -360,9 +389,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.23",
-    "5.1": "5.1.11",
-    "5.2": "5.2.5",
+    "4.2": "4.2.27",
+    "5.2": "5.2.9",
+    "6.0": "6.0.0",
 }
 
 
@@ -546,6 +575,19 @@ def live_website():
     )
 
 
+@task()
+def live_docs():
+    pip_tool(
+        "sphinx-autobuild",
+        "docs",
+        "docs/_build/html",
+        "--watch",
+        "src",
+        "--open-browser",
+        cwd=hp.HYPOTHESIS_PYTHON,
+    )
+
+
 def run_tox(task, version, *args):
     python = install.python_executable(version)
 
@@ -561,6 +603,13 @@ def run_tox(task, version, *args):
     python = install.python_executable(version)
 
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
+    # Set environment variable for tox to use in basepython substitution
+    if version.startswith("pypy"):
+        # For PyPy, use the version name from e.g. "pypy3.11-7.3.20"
+        # to match tox's environment name inference.
+        env["TOX_PYTHON_VERSION"] = version.split("-")[0]  # "pypy3.11"
+    else:
+        env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
@@ -570,17 +619,15 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.23",
-    "3.10": "3.10.18",
-    "3.11": "3.11.13",
-    "3.12": "3.12.11",
-    "3.13": "3.13.7",
+    "3.10": "3.10.19",
+    "3.11": "3.11.14",
+    "3.12": "3.12.12",
+    "3.13": "3.13.11",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0rc2",
+    "3.14": "3.14.2",
     "3.14t": "3.14t-dev",
-    "3.15": "3.15-dev",
+    "3.15": "3.15.0a3",
     "3.15t": "3.15t-dev",
-    "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",
 }
@@ -590,9 +637,9 @@ python_tests = task(
     if_changed=(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
-        os.path.join(tools.ROOT, "pytest.ini"),
-        os.path.join(tools.ROOT, "tooling"),
-        os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
+        hp.HYPOTHESIS_PYTHON / "pyproject.toml",
+        tools.ROOT / "tooling",
+        hp.HYPOTHESIS_PYTHON / "scripts",
     )
 )
 
@@ -609,7 +656,15 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
-    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+    for subtask in (
+        "brief",
+        "full",
+        "cover",
+        "rest",
+        "nocover",
+        "niche",
+        "custom",
+    ):
         TASKS[f"check-{name}-{subtask}"] = python_tests(
             lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
         )
@@ -634,27 +689,30 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-standard_tox_task("py39-nose", py="3.9")
-standard_tox_task("py39-pytest46", py="3.9")
-standard_tox_task("py39-pytest54", py="3.9")
+# standard_tox_task("py310-pytest46", py="3.10")
 standard_tox_task("pytest62")
 
+dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
-    standard_tox_task(f"django{n.replace('.', '')}")
+    standard_tox_task(f"django{n.replace('.', '')}", py=dj_version)
 # we also test no-contrib on the latest django version
-standard_tox_task("django-nocontrib")
+standard_tox_task("django-nocontrib", py=dj_version)
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
-standard_tox_task("py39-pandas11", py="3.9")
-standard_tox_task("py39-pandas12", py="3.9")
+standard_tox_task("py310-pandas11", py="3.10")
+standard_tox_task("py310-pandas12", py="3.10")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
+for kind in ("rest", "nocover"):
+    # Note, in CI these are executed on alternative platforms (e.g., windows)
+    # directly in tox (and not via build.sh)
+    standard_tox_task(f"alt-{kind}")
+
 standard_tox_task("threading")
-standard_tox_task("py39-oldestnumpy", py="3.9")
-standard_tox_task("py39-oldparser", py="3.9")
+standard_tox_task("py310-oldestnumpy", py="3.10")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")
@@ -679,7 +737,57 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_documentation(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "types"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_api(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_hypothesis(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        testcase = "types/test_hypothesis.py"
+        args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -690,79 +798,9 @@ def shell():
     IPython.start_ipython([])
 
 
-def ruby_task(fn):
-    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
-
-
-@ruby_task
-def lint_ruby():
-    hr.rake_task("checkformat")
-
-
-@ruby_task
-def check_ruby_tests():
-    hr.rake_task("rspec")
-    hr.rake_task("minitest")
-
-
-@ruby_task
-def format_rust_in_ruby():
-    hr.cargo("fmt")
-
-
-@ruby_task
-def check_rust_in_ruby_format():
-    hr.cargo("fmt", "--", "--check")
-
-
-@ruby_task
-def lint_rust_in_ruby():
-    hr.cargo("clippy")
-
-
-@ruby_task
-def audit_rust_in_ruby():
-    hr.cargo("install", "cargo-audit")
-    hr.cargo("audit")
-
-
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable, *args))
-
-
-@task()
-def bundle(*args):
-    hr.bundle(*args)
-
-
-rust_task = task(if_changed=(cr.BASE_DIR,))
-
-
-@rust_task
-def check_rust_tests():
-    cr.cargo("test")
-
-
-@rust_task
-def format_conjecture_rust_code():
-    cr.cargo("fmt")
-
-
-@rust_task
-def check_conjecture_rust_format():
-    cr.cargo("fmt", "--", "--check")
-
-
-@rust_task
-def lint_conjecture_rust():
-    cr.cargo("clippy")
-
-
-@rust_task
-def audit_conjecture_rust():
-    cr.cargo("install", "cargo-audit")
-    cr.cargo("audit")
 
 
 @task()

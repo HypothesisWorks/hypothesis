@@ -145,13 +145,12 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
     def test_positive(x):
         assert x > 0
 
-    with reporting.with_reporter(reporting.default):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with pytest.raises(AssertionError):
-            with capture_out() as out:
-                test_positive()
+    with (
+        reporting.with_reporter(reporting.default),
+        pytest.raises(AssertionError),
+        capture_out() as out,
+    ):
+        test_positive()
     out = out.getvalue()
     assert "Falsifying example: test_positive(1)" not in out
 
@@ -199,12 +198,8 @@ def test_examples_are_tried_in_order():
     def test(x):
         print(f"x -> {x}")
 
-    with capture_out() as out:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with reporting.with_reporter(reporting.default):
-            test()
+    with capture_out() as out, reporting.with_reporter(reporting.default):
+        test()
     ls = out.getvalue().splitlines()
     assert ls == ["x -> 1", "x -> 2", "x -> 3"]
 
@@ -263,6 +258,69 @@ def test_multiple_example_reporting(exc):
 
     with pytest.raises(exc):
         inner_test_multiple_failing_examples()
+
+
+def test_simplifies_multiple_examples_with_same_error():
+    # When multiple examples fail with the same error, only the simplest is shown
+    @example(x=1000)
+    @example(x=1)
+    @example(x=100)
+    @settings(report_multiple_bugs=True, phases=[Phase.explicit])
+    @given(x=integers())
+    def test_fn(x):
+        assert x < 0
+
+    with pytest.raises(AssertionError) as exc_info:
+        test_fn()
+
+    err = exc_info.value
+    # Should show note about other examples
+    assert any(
+        "2 other explicit examples also failed" in note for note in err.__notes__
+    )
+    # Should show the simplest example (x=1 is shorter than x=100 or x=1000)
+    assert any("x=1," in note for note in err.__notes__)
+
+
+def test_shows_all_examples_at_verbose():
+    # At verbose, all examples with same error should be shown
+    @example(x=1000)
+    @example(x=1)
+    @settings(
+        report_multiple_bugs=True, phases=[Phase.explicit], verbosity=Verbosity.verbose
+    )
+    @given(x=integers())
+    def test_fn(x):
+        assert x < 0
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        test_fn()
+
+    group = exc_info.value
+    # Both examples should be shown
+    assert len(group.exceptions) == 2
+    # No simplification note should be present
+    for exc in group.exceptions:
+        assert not any(
+            "other explicit example" in note for note in getattr(exc, "__notes__", [])
+        )
+
+
+def test_different_errors_not_simplified():
+    # Examples with different errors should all be shown
+    @example(x=1)
+    @example(x=2)
+    @settings(report_multiple_bugs=True, phases=[Phase.explicit])
+    @given(x=integers())
+    def test_fn(x):
+        if x == 1:
+            raise ValueError("one")
+        raise TypeError("two")
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        test_fn()
+
+    assert {type(e) for e in exc_info.value.exceptions} == {ValueError, TypeError}
 
 
 @example(text())

@@ -10,9 +10,8 @@
 
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
-
-import attr
 
 from hypothesis.errors import InvalidArgument
 
@@ -20,12 +19,12 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class Entry(Generic[K, V]):
-    key: K = attr.ib()
-    value: V = attr.ib()
-    score: int = attr.ib()
-    pins: int = attr.ib(default=0)
+    key: K
+    value: V
+    score: int
+    pins: int = 0
 
     @property
     def sort_key(self) -> tuple[int, ...]:
@@ -117,24 +116,7 @@ class GenericCache(Generic[K, V]):
                     raise ValueError(
                         "Cannot increase size of cache where all keys have been pinned."
                     ) from None
-                try:
-                    del self.keys_to_indices[evicted.key]
-                except KeyError:  # pragma: no cover
-                    # This can't happen, but happens nevertheless with
-                    #   id(key1) == id(key2)
-                    # but
-                    #   hash(key1) != hash(key2)
-                    # (see https://github.com/HypothesisWorks/hypothesis/issues/4442)
-                    # Rebuild keys_to_indices to match data.
-                    self.keys_to_indices.clear()
-                    self.keys_to_indices.update(
-                        {
-                            entry.key: i
-                            for i, entry in enumerate(self.data)
-                            if entry is not evicted
-                        }
-                    )
-                    assert len(self.keys_to_indices) == len(self.data) - 1
+                del self.keys_to_indices[evicted.key]
                 i = 0
                 self.data[0] = entry
             else:

@@ -24,7 +24,8 @@ from tests.common.debug import check_can_generate_examples
 from tests.common.utils import run_concurrently
 
 pytestmark = pytest.mark.skipif(
-    settings._current_profile == "crosshair", reason="crosshair is not thread safe"
+    settings.get_current_profile_name() == "crosshair",
+    reason="crosshair is not thread safe",
 )
 
 

@@ -17,11 +17,11 @@ from hypothesis import HealthCheck, Phase, given, seed, settings, strategies as 
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 pytestmark = pytest.mark.skipif(
-    settings._current_profile == "crosshair", reason="slow - large number of symbolics"
+    settings.get_current_profile_name() == "crosshair",
+    reason="slow - large number of symbolics",
 )
 
 large_strategy = st.binary(min_size=7000, max_size=7000)
@@ -94,17 +94,16 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
 
     monkeypatch.setattr(ConjectureData, "draw_integer", draw_integer)
 
-    with deterministic_PRNG():
-        for _ in range(100):
-            # Setting max_examples=11 ensures we have enough examples for the
-            # health checks to finish running, but cuts the generation short
-            # after that point to allow this test to run in reasonable time.
-            @settings(database=None, max_examples=11, phases=[Phase.generate])
-            @given(st.integers())
-            def test(n):
-                pass
+    for _ in range(100):
+        # Setting max_examples=11 ensures we have enough examples for the
+        # health checks to finish running, but cuts the generation short
+        # after that point to allow this test to run in reasonable time.
+        @settings(database=None, max_examples=11, phases=[Phase.generate])
+        @given(st.integers())
+        def test(n):
+            pass
 
-            test()
+        test()
 
 
 def test_does_not_trigger_health_check_when_most_examples_are_small():

@@ -173,6 +173,6 @@ def test_minimize_dicts_with_incompatible_keys():
     )
 )
 def test_lists_unique_by_tuple_funcs(ls):
-    firstitems, seconditems = zip(*ls)
+    firstitems, seconditems = zip(*ls, strict=True)
     assert len(set(firstitems)) == len(firstitems)
     assert len(set(seconditems)) == len(seconditems)
