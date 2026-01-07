@@ -177,33 +177,11 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v4
+    - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
+      uses: ./.github/actions/install-base
       with:
-        python-version: "3.13"
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache
-          ~/wheelhouse
-          ~/.local
-          vendor/bundle
-          .tox/
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
-          deps-${{ runner.os }}
-    - name: Install dotnet6 for Pyjion
-      if: ${{ endsWith(matrix.task, '-pyjion') }}
-      run: |
-        wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-        sudo dpkg -i packages-microsoft-prod.deb
-        rm packages-microsoft-prod.deb
-        sudo apt-get update
-        sudo apt-get install -y apt-transport-https && \
-          sudo apt-get update && \
-          sudo apt-get install -y dotnet-sdk-6.0
+        python-version: ${{ env.PYTHON_VERSION }}
+        task: ${{ matrix.task }}
     - name: Run tests
       run: |
         export TASK=${{ matrix.task }}
@@ -260,37 +238,9 @@ jobs:
         pip install --upgrade setuptools pip wheel
         pip install tox
     - name: Run tests
-      # remove this ignore when https://github.com/pschanely/hypothesis-crosshair/issues/40 is fixed
-      run: python -m pytest -W "ignore:hypothesis.internal.observability.TESTCASE_CALLBACKS is deprecated" --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
-
-  test-osx:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        task:
-          - check-py310-cover
-          - check-py310-nocover
-          - check-py310-niche
-          - check-py311-cover
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.13"
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache
-          ~/Library/Caches/pip
-          .tox/
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
-    - name: Run tests
-      run: TASK=${{ matrix.task }} ./build.sh
+      working-directory: ./hypothesis-python
+      run: |
+        tox -e ${{ matrix.task }}
 
   # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
@@ -364,22 +314,9 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v4
+    - uses: ./.github/actions/install-base
       with:
         python-version: "3.13"
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache
-          ~/wheelhouse
-          ~/.local
-          vendor/bundle
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
-          deps-${{ runner.os }}
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
