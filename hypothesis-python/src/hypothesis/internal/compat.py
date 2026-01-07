@@ -27,10 +27,10 @@ from typing import (
     get_args,
 )
 
-try:
-    BaseExceptionGroup = BaseExceptionGroup
-    ExceptionGroup = ExceptionGroup  # pragma: no cover
-except NameError:
+if sys.version_info >= (3, 11):
+    BaseExceptionGroup = BaseExceptionGroup  # noqa: F821
+    ExceptionGroup = ExceptionGroup  # noqa: F821
+else:
     from exceptiongroup import (
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,

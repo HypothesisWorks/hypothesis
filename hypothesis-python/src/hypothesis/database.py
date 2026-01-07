@@ -134,16 +134,26 @@ class _EDMeta(abc.ABCMeta):
 # downstream ExampleDatabase subclasses too.
 if "sphinx" in sys.modules:
     try:
+        from types import ModuleType
+
         import sphinx.ext.autodoc
 
         signature = "hypothesis.database._EDMeta.__call__"
+        _module: ModuleType  # make mypy happy
+
+        # _METACLASS_CALL_BLACKLIST moved in newer sphinx versions
+        try:
+            import sphinx.ext.autodoc._dynamic._signatures as _module
+        except ImportError:
+            _module = sphinx.ext.autodoc
+
         # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
-        if isinstance(sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST, frozenset):
-            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST = (
-                sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST | {signature}
+        if isinstance(_module._METACLASS_CALL_BLACKLIST, frozenset):
+            _module._METACLASS_CALL_BLACKLIST = (  # type: ignore
+                _module._METACLASS_CALL_BLACKLIST | {signature}
             )
         else:
-            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST.append(signature)
+            _module._METACLASS_CALL_BLACKLIST.append(signature)
     except Exception:
         pass
 

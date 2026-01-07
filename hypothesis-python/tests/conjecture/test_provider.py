@@ -795,8 +795,8 @@ def test_provider_conformance(provider):
         # emitted by available_timezones() from st.timezone_keys() on 3.11+
         # with tzdata installed. see https://github.com/python/cpython/issues/137841.
         # Once cpython fixes this, we can remove this.
-        if sys.version_info >= (3, 10):
-            warnings.simplefilter("ignore", EncodingWarning)  # noqa: F821
+        if sys.version_info >= (3, 11):
+            warnings.simplefilter("ignore", EncodingWarning)
         run_conformance_test(
             provider, settings=settings(max_examples=20, stateful_step_count=20)
         )

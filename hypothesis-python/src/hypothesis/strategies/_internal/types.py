@@ -717,8 +717,13 @@ utc_offsets = st.builds(
 # exposed for it, and NotImplemented itself is typed as Any so that it can be
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
+if sys.version_info < (3, 12):
+    _RegistryKeyT: typing.TypeAlias = type
+else:  # pragma: no cover
+    _RegistryKeyT: typing.TypeAlias = type | typing.TypeAliasType
+
 _global_type_lookup: dict[
-    type, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
+    _RegistryKeyT, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
 ] = {
     type(None): st.none(),
     bool: st.booleans(),

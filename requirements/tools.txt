@@ -14,6 +14,8 @@ asgiref==3.11.0
     # via django
 asttokens==3.0.1
     # via stack-data
+attrs==25.4.0
+    # via -r requirements/tools.in
 autoflake==2.3.1
     # via shed
 babel==2.17.0
@@ -60,7 +62,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==6.0.1
+django==5.2.10
     # via -r requirements/tools.in
 docutils==0.22.4
     # via
@@ -268,7 +270,7 @@ sortedcontainers-stubs==2.4.3
     # via -r requirements/tools.in
 soupsieve==2.8.1
     # via beautifulsoup4
-sphinx==9.1.0
+sphinx==9.0.4
     # via
     #   -r requirements/tools.in
     #   furo
