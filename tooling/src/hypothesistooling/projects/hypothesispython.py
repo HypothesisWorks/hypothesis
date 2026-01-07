@@ -172,8 +172,8 @@ def update_pyproject_toml():
     readme = (tools.ROOT / "README.md").read_text()
     content = toml_p.read_text()
     content = re.sub(
-        r'readme = {"text" = """.*""", "content-type" = "text/markdown"}',
-        f'readme = {{"text" = """{readme}""", "content-type" = "text/markdown"}}',
+        r'\[project\.readme\].*content-type = "text/markdown"',
+        f'[project.readme]\ntext = """{readme}"""\ncontent-type = "text/markdown"',
         content,
         flags=re.DOTALL,
     )
