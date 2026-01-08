@@ -13,8 +13,8 @@ Write patches which add @example() decorators for discovered test cases.
 
 Requires `hypothesis[codemods,ghostwriter]` installed, i.e. black and libcst.
 
-This module is used by Hypothesis' builtin pytest plugin for failing examples
-discovered during testing, and by HypoFuzz for _covering_ examples discovered
+This module is used by Hypothesis' builtin pytest plugin for failing test cases
+discovered during testing, and by HypoFuzz for _covering_ test cases discovered
 during fuzzing.
 """
 
@@ -98,7 +98,7 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
             [m.Arg(m.SimpleString() & value_in_strip_via)],
         )
 
-        # Codemod the failing examples to Call nodes usable as decorators
+        # Codemod the failing test cases to Call nodes usable as decorators
         self.fn_examples = {
             k: tuple(
                 d

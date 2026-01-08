@@ -22,10 +22,10 @@ from tests.common.utils import capture_out
 
 
 @pytest.mark.parametrize("skip_exception", skip_exceptions_to_reraise())
-def test_no_falsifying_example_if_unittest_skip(skip_exception):
+def test_no_failing_test_case_if_unittest_skip(skip_exception):
     """If a ``SkipTest`` exception is raised during a test, Hypothesis should
     not continue running the test and shrink process, nor should it print
-    anything about falsifying examples."""
+    anything about failing test cases."""
 
     class DemoTest(unittest.TestCase):
         @given(xs=integers())
@@ -39,7 +39,7 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(DemoTest)
         unittest.TextTestRunner().run(suite)
 
-    assert "Falsifying example" not in o.getvalue()
+    assert "Failing test case" not in o.getvalue()
 
 
 def test_skip_exceptions_save_database_entries():
