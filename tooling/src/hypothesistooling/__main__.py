@@ -698,10 +698,14 @@ for n in DJANGO_VERSIONS:
 # we also test no-contrib on the latest django version
 standard_tox_task("django-nocontrib", py=dj_version)
 
-for n in [13, 14, 15, 20, 21, 22]:
-    standard_tox_task(f"pandas{n}")
 standard_tox_task("py310-pandas11", py="3.10")
 standard_tox_task("py310-pandas12", py="3.10")
+standard_tox_task("py310-pandas13", py="3.10")
+standard_tox_task("py310-pandas14", py="3.10")
+standard_tox_task("py311-pandas15", py="3.11")
+standard_tox_task("py311-pandas20", py="3.11")
+standard_tox_task("py312-pandas21", py="3.12")
+standard_tox_task("py313-pandas22", py="3.13")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")

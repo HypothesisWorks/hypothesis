@@ -92,12 +92,12 @@ jobs:
           - check-pytest62
           - check-django60
           - check-django42
-          - check-pandas22
-          - check-pandas21
-          - check-pandas20
-          - check-pandas15
-          - check-pandas14
-          - check-pandas13
+          - check-py313-pandas22
+          - check-py312-pandas21
+          - check-py311-pandas20
+          - check-py311-pandas15
+          - check-py310-pandas14
+          - check-py310-pandas13
           ## FIXME: actions update means Python builds without eg _bz2, which was required
           # - check-py310-pandas12
           # - check-py310-pandas11
