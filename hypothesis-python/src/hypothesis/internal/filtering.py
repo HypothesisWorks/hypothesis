@@ -26,12 +26,12 @@ import ast
 import inspect
 import math
 import operator
+import sys
 from collections.abc import Callable, Collection
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
 from typing import Any, NamedTuple, TypeVar
-import sys
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
