@@ -981,8 +981,11 @@ def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
         return st.lists(st.from_type(elem_types[0])).map(tuple)
-    elif len(elem_types) == 1 and elem_types[0] == ():
-        return st.tuples()  # Empty tuple; see issue #1583
+    elif len(elem_types) == 1 and elem_types[0] == ():  # pragma: no cover
+        # Empty tuple; see issue #1583.
+        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`.
+        # is ((),) on 3.10, and () on 3.11+.
+        return st.tuples()
     return st.tuples(*map(st.from_type, elem_types))
 
 
