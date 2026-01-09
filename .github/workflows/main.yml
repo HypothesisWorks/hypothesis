@@ -33,7 +33,7 @@ jobs:
           - check-format
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.13"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -105,7 +105,7 @@ jobs:
           # - check-py310-pandas11
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.13"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -174,7 +174,7 @@ jobs:
           - check-numpy-nightly
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.13"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -203,7 +203,7 @@ jobs:
           - macos-latest
         python-version:
           - "3.11"
-          - "3.13"
+          - "3.14"
         python-architecture:
           - null
           - "x86"
@@ -215,11 +215,11 @@ jobs:
           - alt-rest
         exclude:
           - { os: macos-latest, python-architecture: "x86" }
-          - { python-version: "3.13", python-architecture: "x86" }
+          - { python-version: "3.14", python-architecture: "x86" }
           - { python-version: "3.11", task: nocover }
           - { python-version: "3.11", task: rest }
-          - { python-version: "3.13", task: alt-nocover }
-          - { python-version: "3.13", task: alt-rest }
+          - { python-version: "3.14", task: alt-nocover }
+          - { python-version: "3.14", task: alt-rest }
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -255,7 +255,7 @@ jobs:
       # The versions of pyodide-build and the Pyodide runtime may differ.
       PYODIDE_VERSION: 0.29.0
       PYODIDE_BUILD_VERSION: 0.31.1
-      PYTHON_VERSION: 3.13.2
+      PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@v3
       with:
@@ -318,7 +318,7 @@ jobs:
         token: ${{ secrets.GH_TOKEN }}
     - uses: ./.github/actions/install-base
       with:
-        python-version: "3.13"
+        python-version: "3.14"
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
