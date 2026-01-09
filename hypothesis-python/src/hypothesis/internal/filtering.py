@@ -31,16 +31,16 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import partial
 from typing import Any, NamedTuple, TypeVar
+import sys
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.lambda_sources import lambda_description
 from hypothesis.internal.reflection import get_pretty_function_description
 
-try:
-    # new in 3.14
-    from functools import Placeholder  # type: ignore
-except ImportError:
+if sys.version_info[:2] >= (3, 14):
+    from functools import Placeholder
+else:  # pragma: no cover
     Placeholder = object()
 
 Ex = TypeVar("Ex")
