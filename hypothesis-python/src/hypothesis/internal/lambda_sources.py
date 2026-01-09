@@ -301,7 +301,7 @@ def _lambda_code_matches_node(f, node):
     return _function_key(f) == _function_key(compiled)
 
 
-def _check_unknown_perfectly_aligned_lambda(candidate):
+def _check_unknown_perfectly_aligned_lambda(candidate):  # pragma: no cover
     # This is a monkeypatch point for our self-tests, to make unknown
     # lambdas raise.
     pass

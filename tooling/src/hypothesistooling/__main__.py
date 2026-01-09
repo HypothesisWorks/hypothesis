@@ -689,8 +689,10 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-# standard_tox_task("py310-pytest46", py="3.10")
-standard_tox_task("pytest62")
+standard_tox_task("py311-pytest62", py="3.11")  # hits "ast.Str is deprecated" in 3.12+
+standard_tox_task("pytest74")
+standard_tox_task("pytest84")
+standard_tox_task("pytest9")
 
 dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
@@ -698,6 +700,7 @@ for n in DJANGO_VERSIONS:
 # we also test no-contrib on the latest django version
 standard_tox_task("django-nocontrib", py=dj_version)
 
+# test each pandas version with the latest python version they support
 standard_tox_task("py310-pandas11", py="3.10")
 standard_tox_task("py310-pandas12", py="3.10")
 standard_tox_task("py310-pandas13", py="3.10")
