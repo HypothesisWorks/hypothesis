@@ -202,7 +202,7 @@ for name in (
 ):
     try:
         NON_RUNTIME_TYPES += (getattr(typing, name),)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         pass
     try:
         NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)

@@ -665,27 +665,27 @@ def test_recursive_type_with_defaults_minimizes_to_defaults():
     assert minimal(from_type(MyList), lambda ex: True) == MyList()
 
 
-class A:
-    def __init__(self, nxt: typing.Optional["B"]):
+class MutualA:
+    def __init__(self, nxt: typing.Optional["MutualB"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"A({self.nxt})"
 
 
-class B:
-    def __init__(self, nxt: typing.Optional["A"]):
+class MutualB:
+    def __init__(self, nxt: typing.Optional["MutualA"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"B({self.nxt})"
 
 
-@given(nxt=st.from_type(A))
+@given(nxt=st.from_type(MutualA))
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
     while nxt:
-        assert isinstance(nxt, [A, B][i % 2])
+        assert isinstance(nxt, [MutualA, MutualB][i % 2])
         nxt = nxt.nxt
         i += 1
 
@@ -696,7 +696,7 @@ def test_resolving_mutually_recursive_types_with_limited_stack():
     sys.setrecursionlimit(current_stack_depth + 100)
     try:
 
-        @given(nxt=st.from_type(A))
+        @given(nxt=st.from_type(MutualA))
         def test(nxt):
             pass
 

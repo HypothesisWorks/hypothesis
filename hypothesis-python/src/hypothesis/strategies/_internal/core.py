@@ -1067,6 +1067,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
             with context.track_arg_label(k) as arg_label:
                 kwargs[k] = data.draw(v)
             arg_labels |= arg_label
+
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
