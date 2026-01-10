@@ -631,7 +631,7 @@ PYTHONS = {
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",
 }
-ci_version = "3.13"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
+ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(
     if_changed=(
