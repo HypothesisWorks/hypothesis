@@ -255,7 +255,8 @@ jobs:
       # The versions of pyodide-build and the Pyodide runtime may differ.
       PYODIDE_VERSION: 0.29.0
       PYODIDE_BUILD_VERSION: 0.31.1
-      PYTHON_VERSION: 3.14.2
+      # pyodide 0.29.0 (latest at time of writing) doesn't yet support 3.14
+      PYTHON_VERSION: 3.13.2
     steps:
     - uses: actions/checkout@v3
       with:
