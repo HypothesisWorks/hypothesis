@@ -244,7 +244,7 @@ def get_seeder_and_restorer(
 def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     """Context manager that handles random.seed without polluting global state.
 
-    See issue #1255 and PR #1295 for details and motivation - in short,
+    See issue #1266 and PR #1295 for details and motivation - in short,
     leaving the global pseudo-random number generator (PRNG) seeded is a very
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.

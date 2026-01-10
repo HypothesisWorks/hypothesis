@@ -258,14 +258,14 @@ class Why(enum.Enum):
 
 def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     # run `pytest -m xf_crosshair` to select these tests!
-    kw = {
-        "strict": strict and why != Why.undiscovered,
-        "reason": f"Expected failure due to: {why.value}",
-        "condition": settings().backend == "crosshair",
-    }
+    mark = pytest.mark.xfail(
+        strict=strict and why != Why.undiscovered,
+        reason=f"Expected failure due to: {why.value}",
+        condition=settings().backend == "crosshair",
+    )
     if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
-        return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
-    return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
+        return (pytest.mark.xf_crosshair, mark)
+    return lambda fn: pytest.mark.xf_crosshair(mark(fn))
 
 
 def skipif_threading(f):

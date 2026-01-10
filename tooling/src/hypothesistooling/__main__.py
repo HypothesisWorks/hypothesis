@@ -631,7 +631,7 @@ PYTHONS = {
     "pypy3.10": "pypy3.10-7.3.19",
     "pypy3.11": "pypy3.11-7.3.20",
 }
-ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
+ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(
     if_changed=(
@@ -689,8 +689,10 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-# standard_tox_task("py310-pytest46", py="3.10")
-standard_tox_task("pytest62")
+standard_tox_task("py311-pytest62", py="3.11")  # hits "ast.Str is deprecated" in 3.12+
+standard_tox_task("pytest74")
+standard_tox_task("pytest84")
+standard_tox_task("pytest9")
 
 dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
@@ -698,10 +700,15 @@ for n in DJANGO_VERSIONS:
 # we also test no-contrib on the latest django version
 standard_tox_task("django-nocontrib", py=dj_version)
 
-for n in [13, 14, 15, 20, 21, 22]:
-    standard_tox_task(f"pandas{n}")
+# test each pandas version with the latest python version they support
 standard_tox_task("py310-pandas11", py="3.10")
 standard_tox_task("py310-pandas12", py="3.10")
+standard_tox_task("py310-pandas13", py="3.10")
+standard_tox_task("py310-pandas14", py="3.10")
+standard_tox_task("py311-pandas15", py="3.11")
+standard_tox_task("py311-pandas20", py="3.11")
+standard_tox_task("py312-pandas21", py="3.12")
+standard_tox_task("py313-pandas22", py="3.13")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")

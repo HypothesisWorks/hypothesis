@@ -33,6 +33,7 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def is_ascii(s):
@@ -409,6 +410,9 @@ def test_shared_union():
 
 
 @given(st.data())
+@xfail_on_crosshair(
+    Why.other
+)  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 def test_issue_992_regression(data):
     strat = st.from_regex(
         re.compile(

@@ -94,7 +94,7 @@ DIFF_REVEALED_TYPES = [
 NUMPY_REVEALED_TYPES = [
     (
         'arrays(dtype=np.dtype("int32"), shape=1)',
-        "ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]]",
+        "ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]]",
     ),
     # (
     #     "arrays(dtype=np.dtype(int), shape=1)",
@@ -199,15 +199,15 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "integer_array_indices(shape=(2, 3))",
-        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[Any]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[signedinteger[Any]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-        "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[unsignedinteger[_8Bit]]], ...]",
     ),
     # basic_indices with allow_ellipsis=False (no EllipsisType differences)
     (

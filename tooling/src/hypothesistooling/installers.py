@@ -56,6 +56,9 @@ def ensure_stack():
     if os.path.exists(STACK):
         return
     subprocess.check_call("mkdir -p ~/.local/bin", shell=True)
+    # if you're on macos, this will error with "--wildcards is not supported"
+    # or similar. You should put shellcheck on your PATH with your package
+    # manager of choice; eg `brew install shellcheck`.
     subprocess.check_call(
         "curl -L https://www.stackage.org/stack/linux-x86_64 "
         "| tar xz --wildcards --strip-components=1 -C $HOME"
