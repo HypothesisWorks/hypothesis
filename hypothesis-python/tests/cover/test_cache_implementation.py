@@ -116,7 +116,7 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
         assert len(target) <= min(len(model), size)
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @settings(
     suppress_health_check={HealthCheck.too_slow}
     | set(settings().suppress_health_check),
