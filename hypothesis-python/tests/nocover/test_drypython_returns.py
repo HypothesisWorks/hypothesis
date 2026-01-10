@@ -60,7 +60,7 @@ def target_func(mappable: "MappableN[_FirstType]") -> bool:
 
 @given(st.data())
 @xfail_on_crosshair(
-    Why.other
+    Why.other, strict=False
 )  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_my_mappable(source: st.DataObject) -> None:
     """

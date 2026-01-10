@@ -165,7 +165,7 @@ def test_non_executed_tests_raise_skipped(test_fn):
 )
 @given(st.data())
 @xfail_on_crosshair(
-    Why.other
+    Why.other, strict=False
 )  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 def test_characters_codec(codec, max_codepoint, exclude_categories, categories, data):
     strategy = st.characters(
