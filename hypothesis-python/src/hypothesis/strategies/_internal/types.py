@@ -983,7 +983,7 @@ def resolve_Tuple(thing):
         return st.lists(st.from_type(elem_types[0])).map(tuple)
     elif len(elem_types) == 1 and elem_types[0] == ():  # pragma: no cover
         # Empty tuple; see issue #1583.
-        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`.
+        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`
         # is ((),) on 3.10, and () on 3.11+.
         return st.tuples()
     return st.tuples(*map(st.from_type, elem_types))
