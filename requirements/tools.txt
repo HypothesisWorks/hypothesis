@@ -8,7 +8,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.12.0
+anyio==4.12.1
     # via
     #   starlette
     #   watchfiles
@@ -32,13 +32,13 @@ black==25.12.0
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.3.0
+build==1.4.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
 cachetools==6.2.4
     # via tox
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 cffi==2.0.0
     # via cryptography
@@ -70,7 +70,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==5.2.9
+django==5.2.10
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -93,7 +93,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.20.2
+filelock==3.20.3
     # via
     #   tox
     #   virtualenv
@@ -113,7 +113,7 @@ importlib-metadata==8.7.1
     # via keyring
 iniconfig==2.3.0
     # via pytest
-ipython==8.37.0
+ipython==8.38.0
     # via -r requirements/tools.in
 isort==7.0.0
     # via shed
@@ -184,7 +184,7 @@ packaging==25.0
     #   twine
 parso==0.8.5
     # via jedi
-pathspec==0.12.1
+pathspec==1.0.3
     # via
     #   black
     #   mypy
@@ -231,7 +231,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.407
+pyright==1.1.408
     # via -r requirements/tools.in
 pytest==9.0.2
     # via
@@ -271,7 +271,7 @@ rich==14.2.0
     # via
     #   pelican
     #   twine
-ruff==0.14.10
+ruff==0.14.11
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -322,7 +322,7 @@ sqlparse==0.5.5
     # via django
 stack-data==0.6.3
     # via ipython
-starlette==0.50.0
+starlette==0.51.0
     # via sphinx-autobuild
 tokenize-rt==6.2.0
     # via pyupgrade
@@ -337,7 +337,7 @@ tomli==2.3.0
     #   pytest
     #   sphinx
     #   tox
-tox==4.33.0
+tox==4.34.1
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -376,13 +376,13 @@ typing-extensions==4.15.0
     #   virtualenv
 unidecode==1.4.0
     # via pelican
-urllib3==2.6.2
+urllib3==2.6.3
     # via
     #   requests
     #   twine
 uvicorn==0.40.0
     # via sphinx-autobuild
-virtualenv==20.35.4
+virtualenv==20.36.1
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -392,7 +392,7 @@ watchfiles==1.1.1
     #   sphinx-autobuild
 wcwidth==0.2.14
     # via prompt-toolkit
-websockets==15.0.1
+websockets==16.0
     # via sphinx-autobuild
 wheel==0.45.1
     # via pip-tools
