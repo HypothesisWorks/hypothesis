@@ -28,7 +28,7 @@ from hypothesis.internal import entropy
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.common.utils import skipif_threading
+from tests.common.utils import skipif_threading, xfail_if_gil_disabled
 
 
 def gc_collect():
@@ -229,6 +229,7 @@ def test_passing_unreferenced_instance_raises():
         register_random(random.Random(0))
 
 
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
@@ -255,6 +256,7 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
         f()
 
 
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
