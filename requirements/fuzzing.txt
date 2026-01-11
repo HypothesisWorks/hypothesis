@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.0
+numpy==2.4.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -78,7 +78,7 @@ packaging==25.0
     #   pytest
 pandas==2.3.3
     # via -r requirements/coverage.in
-pathspec==1.0.1
+pathspec==1.0.3
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -136,7 +136,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.50.0
+starlette==0.51.0
     # via hypofuzz
 trio==0.32.0
     # via hypofuzz
