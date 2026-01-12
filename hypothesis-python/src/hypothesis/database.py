@@ -134,14 +134,22 @@ class _EDMeta(abc.ABCMeta):
 # This code only runs if Sphinx has already been imported; and it would live in our
 # docs/conf.py except that we would also like it to work for anyone documenting
 # downstream ExampleDatabase subclasses too.
-if "sphinx" in sys.modules:
+#
+# We avoid type-checking this block due to this combination facts:
+# * our check-types-api CI job runs under 3.14
+# * tools.txt therefore pins to a newer version of sphinx which uses 3.12+ `type`
+#   syntax
+# * in test_mypy.py, mypy sees this block, sees sphinx is installed, tries parsing
+#   sphinx code, and errors
+#
+# Putting `and not TYPE_CHECKING` here is just a convenience for our testing setup
+# (because we don't split mypy tests by running CI version, eg), not for runtime
+#  behavior.
+if "sphinx" in sys.modules and not TYPE_CHECKING:
     try:
-        from types import ModuleType
-
         import sphinx.ext.autodoc
 
         signature = "hypothesis.database._EDMeta.__call__"
-        _module: ModuleType  # make mypy happy
 
         # _METACLASS_CALL_BLACKLIST moved in newer sphinx versions
         try:
@@ -151,7 +159,7 @@ if "sphinx" in sys.modules:
 
         # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
         if isinstance(_module._METACLASS_CALL_BLACKLIST, frozenset):
-            _module._METACLASS_CALL_BLACKLIST = (  # type: ignore
+            _module._METACLASS_CALL_BLACKLIST = (
                 _module._METACLASS_CALL_BLACKLIST | {signature}
             )
         else:
