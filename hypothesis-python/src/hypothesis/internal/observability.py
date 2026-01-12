@@ -48,7 +48,7 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.validation import try_convert
+from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.deprecation import note_deprecation
 
 if TYPE_CHECKING:
@@ -119,6 +119,33 @@ class ObservabilityConfig:
                 "Must pass at least one callback to ObservabilityConfig. "
                 f"Got: {self!r}."
             )
+
+    def __or__(self, other: object) -> "ObservabilityConfig":
+        if other is None or other is False:
+            return self
+
+        if other is True:
+            other = ObservabilityConfig()
+
+        if isinstance(other, ObservabilityConfig):
+            return ObservabilityConfig(
+                coverage=self.coverage or other.coverage,
+                choices=self.choices or other.choices,
+                callbacks=(
+                    self.callbacks
+                    + tuple(f for f in other.callbacks if f not in self.callbacks)
+                ),
+            )
+        return NotImplemented
+
+    __ror__ = __or__
+
+    def union(
+        self, other: "ObservabilityConfig | bool | None"
+    ) -> "ObservabilityConfig":
+        """Returns the union of this ObservabilityConfig with another."""
+        check_type((ObservabilityConfig, bool, type(None)), other, "other")
+        return self | other
 
 
 @dataclass(slots=True, frozen=False)

@@ -642,3 +642,53 @@ def test_only_receives_callbacks_from_this_thread():
 @checks_deprecated_behaviour
 def test_observability_enabled_is_deprecated():
     observability_enabled()
+
+
+@pytest.mark.parametrize("other", [None, False])
+def test_config_union_returns_self(other):
+    config = ObservabilityConfig(callbacks=[lambda _obs: None])
+    assert config | other is config
+    assert other | config is config
+
+
+def test_observability_config_or_with_true_merges_with_default():
+    cb = lambda _obs: None
+    config = ObservabilityConfig(coverage=False, choices=True, callbacks=[cb])
+
+    for result in [config | True, True | config]:
+        assert result.coverage is True
+        assert result.choices is True
+        assert cb in result.callbacks
+        assert len(result.callbacks) == 2
+
+
+@pytest.mark.parametrize("left", [False, True])
+@pytest.mark.parametrize("right", [False, True])
+def test_config_union(left, right):
+    cb1 = lambda _obs: None
+    cb2 = lambda _obs: None
+    config1 = ObservabilityConfig(coverage=left, choices=left, callbacks=[cb1])
+    config2 = ObservabilityConfig(coverage=right, choices=right, callbacks=[cb2])
+
+    for result in [config1 | config2, config1.union(config2)]:
+        assert result.coverage is (left or right)
+        assert result.choices is (left or right)
+        assert result.callbacks == (cb1, cb2)
+
+
+def test_config_deduplicates_callbacks():
+    cb1 = lambda _obs: None
+    cb2 = lambda _obs: None
+    cb3 = lambda _obs: None
+    config1 = ObservabilityConfig(callbacks=[cb1, cb2])
+    config2 = ObservabilityConfig(callbacks=[cb2, cb3])
+
+    assert (config1 | config2).callbacks == (cb1, cb2, cb3)
+
+
+def test_config_invalid_unions():
+    config = ObservabilityConfig(callbacks=[lambda _obs: None])
+    with pytest.raises(TypeError):
+        config | "invalid"
+    with pytest.raises(TypeError):
+        "invalid" | config
