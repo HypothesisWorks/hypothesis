@@ -686,9 +686,11 @@ def test_config_deduplicates_callbacks():
     assert (config1 | config2).callbacks == (cb1, cb2, cb3)
 
 
-def test_config_invalid_unions():
+def test_config_invalid_union():
     config = ObservabilityConfig(callbacks=[lambda _obs: None])
     with pytest.raises(TypeError):
         config | "invalid"
     with pytest.raises(TypeError):
         "invalid" | config
+    with pytest.raises(TypeError):
+        config.union("invalid")
