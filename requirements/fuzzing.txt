@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-anyio==4.12.0
+anyio==4.12.1
     # via starlette
 async-timeout==5.0.1
     # via redis
@@ -57,7 +57,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.148.11
+hypothesis[cli,watchdog]==6.150.0
     # via hypofuzz
 idna==3.11
     # via
@@ -89,7 +89,7 @@ packaging==25.0
     #   pytest
 pandas==2.3.3
     # via -r requirements/coverage.in
-pathspec==0.12.1
+pathspec==1.0.3
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -147,7 +147,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.50.0
+starlette==0.51.0
     # via hypofuzz
 taskgroup==0.2.2
     # via hypercorn

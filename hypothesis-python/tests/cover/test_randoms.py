@@ -236,6 +236,12 @@ def test_handles_singleton_regions_of_triangular_correctly(rnd):
     assert rnd.triangular(0.0, -0.0) == 0.0
 
 
+@given(st.randoms(use_true_random=False))
+def test_triangular_with_mode(rnd):
+    x = rnd.triangular(0.0, 1.0, mode=0.5)
+    assert 0.0 <= x <= 1.0
+
+
 @pytest.mark.parametrize("use_true_random", [False, True])
 def test_outputs_random_calls(use_true_random):
     @given(st.randoms(use_true_random=use_true_random, note_method_calls=True))

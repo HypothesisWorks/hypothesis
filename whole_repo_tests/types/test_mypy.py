@@ -60,10 +60,11 @@ def get_mypy_output(fname, *extra_args):
 def get_mypy_analysed_type(fname):
     attempts = 0
     while True:
-        out = get_mypy_output(fname).rstrip()
-        msg = "Success: no issues found in 1 source file"
-        if out.endswith(msg):
-            out = out[: -len(msg)]
+        out = (
+            get_mypy_output(fname)
+            .rstrip()
+            .removesuffix("Success: no issues found in 1 source file")
+        )
         # we've noticed some flakiness in getting an empty output here. Give it
         # a couple tries.
         if len(out.splitlines()) == 0:
