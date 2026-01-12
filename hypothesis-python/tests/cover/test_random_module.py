@@ -75,20 +75,22 @@ def test_cannot_register_non_Random():
 
 
 @skipif_threading
-@pytest.mark.filterwarnings(
-    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
-)
-@pytest.mark.xfail(
-    sys.version_info[:2] == (3, 14),
-    reason="TODO_314: is this intentional semantics of the new gc?",
-)
 def test_registering_a_Random_is_idempotent():
     gc_collect()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
-    r = random.Random()
+    # on 3.14+, python introduced the LOAD_FAST_BORROW opcode, which does
+    # not increment the refcount. Passing a bare r to register_random here on 3.14+
+    # would use LOAD_FAST_BORROW and entropy.py would see a non-increasing refcount
+    # and hard-error. On 3.13 and earlier, this is a warning instead.
+    #
+    # For compatibility with both versions, this test forces a refcount increment
+    # with a redundant container.
+    container = [random.Random()]
+    r = container[0]
     register_random(r)
     register_random(r)
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
+    del container
     del r
     gc_collect()
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered
@@ -174,13 +176,6 @@ def test_find_does_not_pollute_state():
         assert state_a2 != state_b2
 
 
-@pytest.mark.filterwarnings(
-    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
-)
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 14),
-    reason="TODO_314: is this intentional semantics of the new gc?",
-)
 @skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_evil_prng_registration_nonsense():
     # my guess is that other tests may register randoms that are then marked for
@@ -195,7 +190,10 @@ def test_evil_prng_registration_nonsense():
         pass
 
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
-    r1, r2, r3 = random.Random(1), random.Random(2), random.Random(3)
+    # put inside a list to increment ref count and avoid our warning/error about no
+    # referrers
+    c1, c2, c3 = [random.Random(1)], [random.Random(2)], [random.Random(3)]
+    r1, r2, r3 = c1[0], c2[0], c3[0]
     s2 = r2.getstate()
 
     # We're going to be totally evil here: register two randoms, then
@@ -208,6 +206,7 @@ def test_evil_prng_registration_nonsense():
 
     with deterministic_PRNG():
         del r1
+        del c1
         gc_collect()
         assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"
         assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
@@ -230,6 +229,7 @@ def test_passing_unreferenced_instance_raises():
         register_random(random.Random(0))
 
 
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
@@ -240,18 +240,12 @@ def test_passing_unreferenced_instance_within_function_scope_raises():
     with pytest.raises(ReferenceError):
         f()
 
-
-@xfail_if_gil_disabled
-@pytest.mark.skipif(
-    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
-)
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 14),
-    reason="TODO_314: is this intentional semantics of the new gc?",
-)
-def test_passing_referenced_instance_within_function_scope_warns():
+    # we have two error paths for register_random: one which warns and one which
+    # errors. We use an alias to bump the refcount while not adding a gc referrer,
+    # which covers the warning path.
     def f():
         r = random.Random(0)
+        _r2 = r
         register_random(r)
 
     with pytest.warns(
@@ -262,22 +256,38 @@ def test_passing_referenced_instance_within_function_scope_warns():
         f()
 
 
-@pytest.mark.filterwarnings(
-    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
-)
+@xfail_if_gil_disabled
 @pytest.mark.skipif(
     PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
 @pytest.mark.skipif(
-    sys.version_info[:2] == (3, 14),
-    reason="TODO_314: is this intentional semantics of the new gc?",
+    sys.version_info[:2] < (3, 14),
+    reason="warns instead of raises on 3.13 or earlier due to gc changes",
+)
+def test_passing_referenced_instance_within_function_scope_raises():
+    def f():
+        r = random.Random(0)
+        register_random(r)
+
+    with pytest.raises(
+        ReferenceError,
+        match=r"`register_random` was passed .* which will be garbage collected",
+    ):
+        f()
+
+
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
 )
 @skipif_threading  # we assume we're the only writer to entropy.RANDOMS_TO_MANAGE
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
 
     def f():
-        r = random.Random()
+        # put inside a list to increment ref count and avoid our warning/error about no
+        # referrers
+        container = [random.Random()]
+        r = container[0]
         register_random(r)
         assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
 

@@ -1002,6 +1002,18 @@ def test_hashable_type_unhashable_value():
     )
 
 
+def test_unhashable_type():
+    class UnhashableMeta(type):
+        __hash__ = None
+
+    class UnhashableType(metaclass=UnhashableMeta):
+        pass
+
+    assert_simple_property(
+        st.from_type(UnhashableType), lambda x: isinstance(x, UnhashableType)
+    )
+
+
 class _EmptyClass:
     def __init__(self, value=-1) -> None:
         pass

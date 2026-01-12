@@ -31,7 +31,8 @@ fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
 
-TOOL_HASH=$("$PYTHON" "$SCRIPTS/tool-hash.py" < "$TOOL_REQUIREMENTS")
+# append PYTHON_VERSION to bust caches when we upgrade versions
+TOOL_HASH=$( (cat "$TOOL_REQUIREMENTS" && echo "$PYTHON_VERSION") | "$PYTHON" "$SCRIPTS/tool-hash.py")
 
 TOOL_VIRTUALENV="$VIRTUALENVS/build-$TOOL_HASH"
 TOOL_PYTHON="$TOOL_VIRTUALENV/bin/python"
