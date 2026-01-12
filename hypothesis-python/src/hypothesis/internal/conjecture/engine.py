@@ -912,7 +912,7 @@ class ConjectureRunner:
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
         elif data.status == Status.INVALID and isinstance(data, ConjectureData):
-            assert isinstance(data, ConjectureData)
+            assert isinstance(data, ConjectureData)  # mypy is silly
             status = f"{status} ({data.events.get('invalid because', '?')})"
 
         newline_tab = "\n\t"

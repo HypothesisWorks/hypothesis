@@ -97,7 +97,7 @@ class RecursiveStrategy(SearchStrategy):
         while 2 ** (len(strategies) - 1) <= max_leaves:
             strategies.append(extend(OneOfStrategy(tuple(strategies))))
         # If min_leaves > 1, we can never draw from base directly
-        if isinstance(min_leaves, int) and min_leaves > 1:
+        if min_leaves is not None and min_leaves > 1:
             strategies = strategies[1:]
         self.strategy = OneOfStrategy(strategies)
 
@@ -116,6 +116,7 @@ class RecursiveStrategy(SearchStrategy):
         check_strategy(extended, f"extend({self.limited_base!r})")
         self.limited_base.validate()
         extended.validate()
+
         if is_identity_function(self.extend):
             warnings.warn(
                 "extend=lambda x: x is a no-op; you probably want to use a "
@@ -123,6 +124,7 @@ class RecursiveStrategy(SearchStrategy):
                 HypothesisWarning,
                 stacklevel=5,
             )
+
         if not is_first_param_referenced_in_function(self.extend):
             msg = (
                 f"extend={get_pretty_function_description(self.extend)} doesn't use "
@@ -137,6 +139,7 @@ class RecursiveStrategy(SearchStrategy):
                 )
             else:
                 raise InvalidArgument(msg)
+
         if self.min_leaves is not None:
             check_type(int, self.min_leaves, "min_leaves")
         check_type(int, self.max_leaves, "max_leaves")
