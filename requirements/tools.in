@@ -16,6 +16,7 @@ restructuredtext-lint
 ruff
 shed==2024.1.1
 sphinx
+sphinx-autobuild
 sphinx-codeautolink
 sphinx-jsonschema
 furo
