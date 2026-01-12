@@ -917,12 +917,12 @@ class StateForActualGivenExecution:
     def __init__(
         self,
         stuff: Stuff,
-        test: Any,
+        test: Callable[..., Any],
         settings: Settings,
         random: Random,
         wrapped_test: Any,
         *,
-        thread_overlap: Any = None,
+        thread_overlap: dict[int, bool] | None = None,
     ):
         self.stuff = stuff
         self.test = test
@@ -939,11 +939,13 @@ class StateForActualGivenExecution:
         self.last_exception = None
         self.falsifying_examples = ()
         self.ever_executed = False
-        self.xfail_example_reprs: set[Any] = set()
+        self.xfail_example_reprs: set[str] = set()
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces: Any = defaultdict(set)
+        self.explain_traces: dict[None | InterestingOrigin, set[Trace]] = defaultdict(
+            set
+        )
         self._start_timestamp = time.time()
         self._string_repr = ""
         self._timing_features: dict[str, float] = {}
@@ -1202,7 +1204,7 @@ class StateForActualGivenExecution:
         This allows the engine to assume that any exception other than
         ``StopTest`` must be a fatal error, and should stop the entire engine.
         """
-        trace: Trace = set()
+        trace: Trace = frozenset()
         try:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
@@ -1212,7 +1214,7 @@ class StateForActualGivenExecution:
                     ):  # pragma: no cover
                         # This is in fact covered by our *non-coverage* tests, but due
                         # to the settrace() contention *not* by our coverage tests.
-                        self.explain_traces[None].add(frozenset(tracer.branches))
+                        self.explain_traces[None].add(tracer.branches)
                 finally:
                     trace = tracer.branches
             if result is not None:
@@ -1296,7 +1298,7 @@ class StateForActualGivenExecution:
                 interesting_origin = InterestingOrigin.from_exception(e)
                 if trace:  # pragma: no cover
                     # Trace collection is explicitly disabled under coverage.
-                    self.explain_traces[interesting_origin].add(frozenset(trace))
+                    self.explain_traces[interesting_origin].add(trace)
                 if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()

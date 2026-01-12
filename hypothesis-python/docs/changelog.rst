@@ -18,6 +18,52 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.150.0:
+
+--------------------
+6.150.0 - 2026-01-06
+--------------------
+
+This release adds a ``min_leaves`` argument to :func:`~hypothesis.strategies.recursive`,
+which ensures that generated recursive structures have at least the specified number
+of leaf nodes (:issue:`4205`).
+
+.. _v6.149.1:
+
+--------------------
+6.149.1 - 2026-01-05
+--------------------
+
+Add type hints to an internal class.
+
+.. _v6.149.0:
+
+--------------------
+6.149.0 - 2026-01-05
+--------------------
+
+This release extends the explain-phase ``# or any other generated value`` comments
+to sub-arguments within :func:`~hypothesis.strategies.builds`,
+:func:`~hypothesis.strategies.tuples`, and :func:`~hypothesis.strategies.fixed_dictionaries`.
+
+Previously, these comments only appeared on top-level test arguments. Now, when
+the explain phase determines that a sub-argument can vary freely without affecting
+the test failure, you'll see comments like::
+
+    Falsifying example: test_foo(
+        obj=MyClass(
+            x=0,  # or any other generated value
+            y=True,
+        ),
+        data=(
+            '',  # or any other generated value
+            42,
+        ),
+    )
+
+This makes it easier to understand which parts of complex inputs actually matter
+for reproducing a failure.
+
 .. _v6.148.13:
 
 ---------------------

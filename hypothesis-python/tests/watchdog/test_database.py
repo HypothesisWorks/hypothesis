@@ -83,6 +83,7 @@ def test_database_listener_multiplexed(tmp_path):
         events.append(event)
 
     db.add_listener(listener)
+    time_sleep(0.1)
 
     db.save(b"a", b"a")
     wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
@@ -93,6 +94,8 @@ def test_database_listener_multiplexed(tmp_path):
     wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
 
     db.add_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"a", b"b")
     db.save(b"a", b"c")
     # InMemory database fires immediately, while DirectoryBased has to

@@ -9,10 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
+import warnings
 from contextlib import contextmanager
 
-from hypothesis.errors import InvalidArgument
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.internal.reflection import (
+    get_pretty_function_description,
+    is_identity_function,
+)
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import (
     OneOfStrategy,
@@ -72,24 +76,36 @@ class LimitedStrategy(SearchStrategy):
 
 
 class RecursiveStrategy(SearchStrategy):
-    def __init__(self, base, extend, max_leaves):
+    def __init__(self, base, extend, min_leaves, max_leaves):
         super().__init__()
+        self.min_leaves = min_leaves
         self.max_leaves = max_leaves
         self.base = base
         self.limited_base = LimitedStrategy(base)
         self.extend = extend
 
+        if is_identity_function(extend):
+            warnings.warn(
+                "extend=lambda x: x is a no-op; you probably want to use a "
+                "different extend function, or just use the base strategy directly.",
+                HypothesisWarning,
+                stacklevel=5,
+            )
+
         strategies = [self.limited_base, self.extend(self.limited_base)]
         while 2 ** (len(strategies) - 1) <= max_leaves:
             strategies.append(extend(OneOfStrategy(tuple(strategies))))
+        # If min_leaves > 1, we can never draw from base directly
+        if min_leaves > 1:
+            strategies = strategies[1:]
         self.strategy = OneOfStrategy(strategies)
 
     def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "recursive(%r, %s, max_leaves=%d)" % (
-                self.base,
-                get_pretty_function_description(self.extend),
-                self.max_leaves,
+            self._cached_repr = (
+                f"recursive({self.base!r}, "
+                f"{get_pretty_function_description(self.extend)}, "
+                f"min_leaves={self.min_leaves}, max_leaves={self.max_leaves})"
             )
         return self._cached_repr
 
@@ -99,20 +115,41 @@ class RecursiveStrategy(SearchStrategy):
         check_strategy(extended, f"extend({self.limited_base!r})")
         self.limited_base.validate()
         extended.validate()
+        check_type(int, self.min_leaves, "min_leaves")
         check_type(int, self.max_leaves, "max_leaves")
+        if self.min_leaves <= 0:
+            raise InvalidArgument(
+                f"min_leaves={self.min_leaves!r} must be greater than zero"
+            )
         if self.max_leaves <= 0:
             raise InvalidArgument(
                 f"max_leaves={self.max_leaves!r} must be greater than zero"
             )
+        if self.min_leaves > self.max_leaves:
+            raise InvalidArgument(
+                f"min_leaves={self.min_leaves!r} must be less than or equal to "
+                f"max_leaves={self.max_leaves!r}"
+            )
 
     def do_draw(self, data):
-        count = 0
+        min_leaves_retries = 0
         while True:
             try:
                 with self.limited_base.capped(self.max_leaves):
-                    return data.draw(self.strategy)
+                    result = data.draw(self.strategy)
+                    leaves_drawn = self.max_leaves - self.limited_base.marker
+                    if leaves_drawn < self.min_leaves:
+                        data.events[
+                            f"Draw for {self!r} had fewer than "
+                            f"min_leaves={self.min_leaves} and had to be retried"
+                        ] = ""
+                        min_leaves_retries += 1
+                        if min_leaves_retries < 5:
+                            continue
+                        data.mark_invalid(f"min_leaves={self.min_leaves} unsatisfied")
+                    return result
             except LimitReached:
-                if count == 0:
-                    msg = f"Draw for {self!r} exceeded max_leaves and had to be retried"
-                    data.events[msg] = ""
-                count += 1
+                data.events[
+                    f"Draw for {self!r} exceeded "
+                    f"max_leaves={self.max_leaves} and had to be retried"
+                ] = ""
