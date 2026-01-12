@@ -76,7 +76,9 @@ def _usable_dir(path: StrPathT) -> bool:
             # Loop terminates because the root dir ('/' on unix) always exists.
             path = path.parent
         return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
-    except PermissionError:
+    except PermissionError:  # pragma: no cover
+        # path.exists() returns False on 3.14+ instead of raising. See
+        # https://docs.python.org/3.14/library/pathlib.html#querying-file-type-and-status
         return False
 
 
