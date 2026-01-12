@@ -10,11 +10,13 @@
 
 import threading
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.reflection import (
     get_pretty_function_description,
+    is_first_param_referenced_in_function,
     is_identity_function,
 )
 from hypothesis.internal.validation import check_type
@@ -23,6 +25,7 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
+from hypothesis.utils.deprecation import note_deprecation
 
 
 class LimitReached(BaseException):
@@ -76,7 +79,13 @@ class LimitedStrategy(SearchStrategy):
 
 
 class RecursiveStrategy(SearchStrategy):
-    def __init__(self, base, extend, min_leaves, max_leaves):
+    def __init__(
+        self,
+        base: SearchStrategy,
+        extend: Callable[[SearchStrategy], SearchStrategy],
+        min_leaves: int | None,
+        max_leaves: int,
+    ):
         super().__init__()
         self.min_leaves = min_leaves
         self.max_leaves = max_leaves
@@ -84,19 +93,11 @@ class RecursiveStrategy(SearchStrategy):
         self.limited_base = LimitedStrategy(base)
         self.extend = extend
 
-        if is_identity_function(extend):
-            warnings.warn(
-                "extend=lambda x: x is a no-op; you probably want to use a "
-                "different extend function, or just use the base strategy directly.",
-                HypothesisWarning,
-                stacklevel=5,
-            )
-
         strategies = [self.limited_base, self.extend(self.limited_base)]
         while 2 ** (len(strategies) - 1) <= max_leaves:
             strategies.append(extend(OneOfStrategy(tuple(strategies))))
         # If min_leaves > 1, we can never draw from base directly
-        if min_leaves > 1:
+        if min_leaves is not None and min_leaves > 1:
             strategies = strategies[1:]
         self.strategy = OneOfStrategy(strategies)
 
@@ -115,9 +116,34 @@ class RecursiveStrategy(SearchStrategy):
         check_strategy(extended, f"extend({self.limited_base!r})")
         self.limited_base.validate()
         extended.validate()
-        check_type(int, self.min_leaves, "min_leaves")
+
+        if is_identity_function(self.extend):
+            warnings.warn(
+                "extend=lambda x: x is a no-op; you probably want to use a "
+                "different extend function, or just use the base strategy directly.",
+                HypothesisWarning,
+                stacklevel=5,
+            )
+
+        if not is_first_param_referenced_in_function(self.extend):
+            msg = (
+                f"extend={get_pretty_function_description(self.extend)} doesn't use "
+                "it's argument, and thus can't actually recurse!"
+            )
+            if self.min_leaves is None:
+                note_deprecation(
+                    msg,
+                    since="2026-01-12",
+                    has_codemod=False,
+                    stacklevel=1,
+                )
+            else:
+                raise InvalidArgument(msg)
+
+        if self.min_leaves is not None:
+            check_type(int, self.min_leaves, "min_leaves")
         check_type(int, self.max_leaves, "max_leaves")
-        if self.min_leaves <= 0:
+        if self.min_leaves is not None and self.min_leaves <= 0:
             raise InvalidArgument(
                 f"min_leaves={self.min_leaves!r} must be greater than zero"
             )
@@ -125,7 +151,7 @@ class RecursiveStrategy(SearchStrategy):
             raise InvalidArgument(
                 f"max_leaves={self.max_leaves!r} must be greater than zero"
             )
-        if self.min_leaves > self.max_leaves:
+        if (self.min_leaves or 1) > self.max_leaves:
             raise InvalidArgument(
                 f"min_leaves={self.min_leaves!r} must be less than or equal to "
                 f"max_leaves={self.max_leaves!r}"
@@ -138,7 +164,7 @@ class RecursiveStrategy(SearchStrategy):
                 with self.limited_base.capped(self.max_leaves):
                     result = data.draw(self.strategy)
                     leaves_drawn = self.max_leaves - self.limited_base.marker
-                    if leaves_drawn < self.min_leaves:
+                    if self.min_leaves and leaves_drawn < self.min_leaves:
                         data.events[
                             f"Draw for {self!r} had fewer than "
                             f"min_leaves={self.min_leaves} and had to be retried"

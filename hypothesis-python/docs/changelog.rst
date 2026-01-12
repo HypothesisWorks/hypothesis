@@ -18,6 +18,20 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.150.1:
+
+--------------------
+6.150.1 - 2026-01-12
+--------------------
+
+This patch fixes a bug where |st.recursive| would fail in cases where the
+``extend=`` function does not reference it's argument - which was assumed
+by the recent ``min_leaves=`` feature, because the strategy can't actually
+recurse otherwise.  (:issue:`4638`)
+
+Now, the historical behavior is working-but-deprecated, or an error if you
+explicitly pass ``min_leaves=``.
+
 .. _v6.150.0:
 
 --------------------
@@ -579,7 +593,7 @@ The type annotations for |st.register_type_strategy| now indicate that it accept
 6.138.1 - 2025-08-15
 --------------------
 
-Internal refactoring and cleanup. As a result, ``hypothesis[black]`` now requires ``black>=20.8b0`` instead of the previous ``black>=19.10b0``.
+Internal refactoring and cleanup. As a result, ``hypothesis[cli]`` and ``hypothesis[ghostwriter]`` now require ``black>=20.8b0`` instead of the previous ``black>=19.10b0``.
 
 .. _v6.138.0:
 
@@ -2427,7 +2441,7 @@ This patch makes progress towards adding type hints to our internal conjecture e
 
 This release allows using :obj:`~python:typing.Annotated`
 and :obj:`!ReadOnly` types
-for :class:`~python:typing.TypedDict` value types
+for :obj:`~python:typing.TypedDict` value types
 with :func:`~hypothesis.strategies.from_type`.
 
 .. _v6.108.10:
@@ -5075,7 +5089,7 @@ scans.
 -------------------
 
 This patch by Cheuk Ting Ho adds support for :pep:`655` ``Required`` and ``NotRequired`` as attributes of
-:class:`~python:typing.TypedDict` in :func:`~hypothesis.strategies.from_type` (:issue:`3339`).
+:obj:`~python:typing.TypedDict` in :func:`~hypothesis.strategies.from_type` (:issue:`3339`).
 
 .. _v6.46.5:
 
@@ -5248,7 +5262,7 @@ already been decorated with :func:`@given() <hypothesis.given>`.  Previously,
 6.42.3 - 2022-04-10
 -------------------
 
-This patch fixes :func:`~hypothesis.strategies.from_type` on a :class:`~python:typing.TypedDict`
+This patch fixes :func:`~hypothesis.strategies.from_type` on a :obj:`~python:typing.TypedDict`
 with complex annotations, defined in a file using ``from __future__ import annotations``.
 Thanks to Katelyn Gigante for identifying and fixing this bug!
 
@@ -6760,7 +6774,7 @@ creating import cycles.  There is no user-visible change.
 ------------------
 
 This patch enables :func:`~hypothesis.strategies.register_type_strategy` for subclasses of
-:class:`python:typing.TypedDict`.  Previously, :func:`~hypothesis.strategies.from_type`
+:obj:`python:typing.TypedDict`.  Previously, :func:`~hypothesis.strategies.from_type`
 would ignore the registered strategy (:issue:`2872`).
 
 Thanks to Ilya Lebedev for identifying and fixing this bug!
@@ -8074,7 +8088,7 @@ deprecated - you can explicitly pass ``min_magnitude=0``, or omit the argument e
 -------------------
 
 This patch fixes an internal error in :func:`~hypothesis.strategies.from_type`
-for :class:`python:typing.NamedTuple` in Python 3.9.  Thanks to Michel Salim
+for :obj:`python:typing.NamedTuple` in Python 3.9.  Thanks to Michel Salim
 for reporting and fixing :issue:`2427`!
 
 .. _v5.13.0:
@@ -12603,7 +12617,7 @@ not matter.
 -------------------
 
 This patch fixes inference in the :func:`~hypothesis.strategies.builds`
-strategy with subtypes of :class:`python:typing.NamedTuple`, where the
+strategy with subtypes of :obj:`python:typing.NamedTuple`, where the
 ``__init__`` method is not useful for introspection.  We now use the
 field types instead - thanks to James Uther for identifying this bug.
 
