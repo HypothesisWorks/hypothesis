@@ -133,7 +133,7 @@ class RecursiveStrategy(SearchStrategy):
             if self.min_leaves is None:
                 note_deprecation(
                     msg,
-                    since="RELEASEDAY",
+                    since="2026-01-12",
                     has_codemod=False,
                     stacklevel=1,
                 )
