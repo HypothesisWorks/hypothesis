@@ -15,10 +15,12 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 
 from tests.common.debug import (
     assert_all_examples,
+    assert_no_examples,
     check_can_generate_examples,
     find_any,
     minimal,
 )
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
@@ -80,6 +82,28 @@ def test_issue_1502_regression(s):
     pass
 
 
+def test_recursive_can_generate_varied_structures():
+    values = st.recursive(st.none(), st.lists)
+
+    find_any(values, lambda x: x is None)
+    find_any(values, lambda x: isinstance(x, list))
+    find_any(
+        values, lambda x: isinstance(x, list) and any(isinstance(y, list) for y in x)
+    )
+
+
+@checks_deprecated_behaviour
+def test_recursive_can_generate_varied_structures_without_using_leaves():
+    values = st.recursive(st.none(), lambda _: st.lists(st.none()))
+
+    find_any(values, lambda x: x is None)
+    find_any(values, lambda x: isinstance(x, list))
+    # The bad `extend` function means we can't actually recurse!
+    assert_no_examples(
+        values, lambda x: isinstance(x, list) and any(isinstance(y, list) for y in x)
+    )
+
+
 @pytest.mark.parametrize(
     "s",
     [
@@ -92,6 +116,7 @@ def test_issue_1502_regression(s):
         st.recursive(st.none(), st.lists, min_leaves=0),
         st.recursive(st.none(), st.lists, min_leaves=1.0),
         st.recursive(st.none(), st.lists, min_leaves=10, max_leaves=5),
+        st.recursive(st.none(), lambda _: st.lists(st.none()), min_leaves=1),
     ],
 )
 def test_invalid_args(s):
@@ -129,4 +154,4 @@ def test_can_set_exact_leaf_count(tree):
 
 def test_identity_extend_warns():
     with pytest.warns(HypothesisWarning, match="extend=lambda x: x is a no-op"):
-        st.recursive(st.none(), lambda x: x)
+        st.recursive(st.none(), lambda x: x).validate()

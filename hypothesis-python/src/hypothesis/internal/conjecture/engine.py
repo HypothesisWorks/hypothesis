@@ -911,10 +911,14 @@ class ConjectureRunner:
         status = repr(data.status)
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
+        elif data.status == Status.INVALID and isinstance(data, ConjectureData):
+            assert isinstance(data, ConjectureData)  # mypy is silly
+            status = f"{status} ({data.events.get('invalid because', '?')})"
 
+        newline_tab = "\n\t"
         self.debug(
-            f"{len(data.choices)} choices {data.choices} -> {status}"
-            f"{', ' + data.output if data.output else ''}"
+            f"{len(data.choices)} choices -> {status}\n\t{data.choices}"
+            f"{newline_tab + data.output if data.output else ''}"
         )
 
     def observe_for_provider(self) -> AbstractContextManager:

@@ -646,12 +646,12 @@ class ConjectureData:
         self.overdraw = 0
         self._random = random
 
-        self.length = 0
-        self.index = 0
-        self.output = ""
-        self.status = Status.VALID
-        self.frozen = False
-        self.testcounter = threadlocal.global_test_counter
+        self.length: int = 0
+        self.index: int = 0
+        self.output: str = ""
+        self.status: Status = Status.VALID
+        self.frozen: bool = False
+        self.testcounter: int = threadlocal.global_test_counter
         threadlocal.global_test_counter += 1
         self.start_time = time.perf_counter()
         self.gc_start_time = gc_cumulative_time()
@@ -659,8 +659,8 @@ class ConjectureData:
         self.interesting_origin: InterestingOrigin | None = None
         self.draw_times: dict[str, float] = {}
         self._stateful_run_times: dict[str, float] = defaultdict(float)
-        self.max_depth = 0
-        self.has_discards = False
+        self.max_depth: int = 0
+        self.has_discards: bool = False
 
         self.provider: PrimitiveProvider = (
             provider(self, **provider_kw) if isinstance(provider, type) else provider
@@ -683,9 +683,8 @@ class ConjectureData:
         # examples for reporting purposes.
         self.__spans: Spans | None = None
 
-        # We want the top level span to have depth 0, so we start
-        # at -1.
-        self.depth = -1
+        # We want the top level span to have depth 0, so we start at -1.
+        self.depth: int = -1
         self.__span_record = SpanRecord()
 
         # Slice indices for discrete reportable parts that which-parts-matter can
