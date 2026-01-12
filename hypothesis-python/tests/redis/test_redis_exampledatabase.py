@@ -164,6 +164,15 @@ def test_redis_move_into_key_with_value():
     db.move(b"a", b"b", b"x")
 
 
+def test_redis_move_to_same_key():
+    # explicit covering test for:
+    # * moving a value where src == dest
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.move(b"a", b"a", b"x")
+    assert list(db.fetch(b"a")) == [b"x"]
+
+
 def test_redis_equality():
     redis = FakeRedis()
     assert RedisExampleDatabase(redis) == RedisExampleDatabase(redis)

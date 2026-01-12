@@ -145,7 +145,7 @@ class _EDMeta(abc.ABCMeta):
 # Putting `and not TYPE_CHECKING` here is just a convenience for our testing setup
 # (because we don't split mypy tests by running CI version, eg), not for runtime
 #  behavior.
-if "sphinx" in sys.modules and not TYPE_CHECKING:
+if "sphinx" in sys.modules and not TYPE_CHECKING:  # pragma: no cover
     try:
         import sphinx.ext.autodoc
 
