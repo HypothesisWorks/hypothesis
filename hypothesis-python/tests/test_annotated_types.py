@@ -20,7 +20,7 @@ from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.types import _get_constraints
 
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import assert_simple_property, check_can_generate_examples
 
 try:
     import annotated_types as at
@@ -116,6 +116,11 @@ def test_collection_size_from_slice(data):
     t = Annotated[MyCollection, "we just ignore this", slice(1, 10)]
     value = data.draw(st.from_type(t))
     assert 1 <= len(value) <= 10
+
+
+def test_unhashable_annotated_metadata():
+    t = Annotated[int, {"key": "value"}]
+    assert_simple_property(st.from_type(t), lambda x: isinstance(x, int))
 
 
 class GroupedStuff:
