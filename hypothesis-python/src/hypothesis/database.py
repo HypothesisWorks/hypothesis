@@ -159,9 +159,9 @@ if "sphinx" in sys.modules and not TYPE_CHECKING:
 
         # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
         if isinstance(_module._METACLASS_CALL_BLACKLIST, frozenset):
-            _module._METACLASS_CALL_BLACKLIST = (
-                _module._METACLASS_CALL_BLACKLIST | {signature}
-            )
+            _module._METACLASS_CALL_BLACKLIST = _module._METACLASS_CALL_BLACKLIST | {
+                signature
+            }
         else:
             _module._METACLASS_CALL_BLACKLIST.append(signature)
     except Exception:
