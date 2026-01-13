@@ -27,6 +27,7 @@ from typing import (
     overload,
 )
 
+from hypothesis._settings import settings
 from hypothesis.errors import (
     CannotProceedScopeT,
     ChoiceTooLarge,
@@ -1170,7 +1171,6 @@ class ConjectureData:
         label: int | None = None,
         observe_as: str | None = None,
     ) -> "Ex":
-        from hypothesis.internal.observability import observability_enabled
         from hypothesis.strategies._internal.lazy import unwrap_strategies
         from hypothesis.strategies._internal.utils import to_jsonable
 
@@ -1219,7 +1219,7 @@ class ConjectureData:
                     f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
                 )
                 raise
-            if observability_enabled():
+            if settings().observability is not None:
                 avoid = self.provider.avoid_realization
                 self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
             return v
