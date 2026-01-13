@@ -104,7 +104,7 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
-    TypeGuardTypes += (typing.TypeIs,)  # type: ignore
+    TypeGuardTypes += (typing.TypeIs,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -115,7 +115,7 @@ except AttributeError:  # pragma: no cover
 
 RequiredTypes: tuple = ()
 try:
-    RequiredTypes += (typing.Required,)  # type: ignore
+    RequiredTypes += (typing.Required,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -126,7 +126,7 @@ except AttributeError:  # pragma: no cover
 
 NotRequiredTypes: tuple = ()
 try:
-    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
+    NotRequiredTypes += (typing.NotRequired,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -137,7 +137,7 @@ except AttributeError:  # pragma: no cover
 
 ReadOnlyTypes: tuple = ()
 try:
-    ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
+    ReadOnlyTypes += (typing.ReadOnly,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -148,7 +148,7 @@ except AttributeError:  # pragma: no cover
 
 LiteralStringTypes: tuple = ()
 try:
-    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
+    LiteralStringTypes += (typing.LiteralString,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -202,7 +202,7 @@ for name in (
 ):
     try:
         NON_RUNTIME_TYPES += (getattr(typing, name),)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         pass
     try:
         NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)
@@ -717,8 +717,13 @@ utc_offsets = st.builds(
 # exposed for it, and NotImplemented itself is typed as Any so that it can be
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
+if sys.version_info < (3, 12):
+    _RegistryKeyT: typing.TypeAlias = type
+else:  # pragma: no cover
+    _RegistryKeyT: typing.TypeAlias = type | typing.TypeAliasType
+
 _global_type_lookup: dict[
-    type, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
+    _RegistryKeyT, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
 ] = {
     type(None): st.none(),
     bool: st.booleans(),
@@ -976,8 +981,11 @@ def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
         return st.lists(st.from_type(elem_types[0])).map(tuple)
-    elif len(elem_types) == 1 and elem_types[0] == ():
-        return st.tuples()  # Empty tuple; see issue #1583
+    elif len(elem_types) == 1 and elem_types[0] == ():  # pragma: no cover
+        # Empty tuple; see issue #1583.
+        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`
+        # is ((),) on 3.10, and () on 3.11+.
+        return st.tuples()
     return st.tuples(*map(st.from_type, elem_types))
 
 

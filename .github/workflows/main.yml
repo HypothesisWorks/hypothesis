@@ -33,7 +33,7 @@ jobs:
           - check-format
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -88,22 +88,24 @@ jobs:
           - check-py313t-nocover
           - check-py313t-niche
           - check-quality
-          - check-pytest62
-          - check-pytest62
+          - check-pytest9
+          - check-pytest84
+          - check-pytest74
+          - check-py311-pytest62
           - check-django60
           - check-django42
-          - check-pandas22
-          - check-pandas21
-          - check-pandas20
-          - check-pandas15
-          - check-pandas14
-          - check-pandas13
+          - check-py313-pandas22
+          - check-py312-pandas21
+          - check-py311-pandas20
+          - check-py311-pandas15
+          - check-py310-pandas14
+          - check-py310-pandas13
           ## FIXME: actions update means Python builds without eg _bz2, which was required
           # - check-py310-pandas12
           # - check-py310-pandas11
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -172,7 +174,7 @@ jobs:
           - check-numpy-nightly
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -201,7 +203,7 @@ jobs:
           - macos-latest
         python-version:
           - "3.11"
-          - "3.13"
+          - "3.14"
         python-architecture:
           - null
           - "x86"
@@ -213,11 +215,11 @@ jobs:
           - alt-rest
         exclude:
           - { os: macos-latest, python-architecture: "x86" }
-          - { python-version: "3.13", python-architecture: "x86" }
+          - { python-version: "3.14", python-architecture: "x86" }
           - { python-version: "3.11", task: nocover }
           - { python-version: "3.11", task: rest }
-          - { python-version: "3.13", task: alt-nocover }
-          - { python-version: "3.13", task: alt-rest }
+          - { python-version: "3.14", task: alt-nocover }
+          - { python-version: "3.14", task: alt-rest }
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -253,6 +255,7 @@ jobs:
       # The versions of pyodide-build and the Pyodide runtime may differ.
       PYODIDE_VERSION: 0.29.1
       PYODIDE_BUILD_VERSION: 0.31.1
+      # pyodide 0.29.0 (latest at time of writing) doesn't yet support 3.14
       PYTHON_VERSION: 3.13.2
     steps:
     - uses: actions/checkout@v3
@@ -316,7 +319,7 @@ jobs:
         token: ${{ secrets.GH_TOKEN }}
     - uses: ./.github/actions/install-base
       with:
-        python-version: "3.10"
+        python-version: "3.14"
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}

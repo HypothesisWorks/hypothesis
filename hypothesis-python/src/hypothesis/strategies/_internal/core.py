@@ -1067,6 +1067,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
             with context.track_arg_label(k) as arg_label:
                 kwargs[k] = data.draw(v)
             arg_labels |= arg_label
+
         try:
             obj = self.target(*args, **kwargs)
         except TypeError as err:
@@ -2495,6 +2496,7 @@ def register_type_strategy(
         )
     if (
         "pydantic.generics" in sys.modules
+        and isinstance(custom_type, type)
         and issubclass(custom_type, sys.modules["pydantic.generics"].GenericModel)
         and not re.search(r"[A-Za-z_]+\[.+\]", repr(custom_type))
         and callable(strategy)

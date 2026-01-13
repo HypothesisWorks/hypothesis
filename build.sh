@@ -19,14 +19,16 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
+PYTHON_VERSION="3.14.2"
+
 if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-}" ] ; then
     # We're on GitHub Actions, Codespaces, or Claude Code and already have a suitable Python
     PYTHON=$(command -v python3 || command -v python)
 else
     # Otherwise, we install it from scratch
     # NOTE: tooling keeps this version in sync with ci_version in tooling
-    "$SCRIPTS/ensure-python.sh" 3.10.19
-    PYTHON=$(pythonloc 3.10.19)/bin/python
+    "$SCRIPTS/ensure-python.sh" "$PYTHON_VERSION"
+    PYTHON=$(pythonloc "$PYTHON_VERSION")/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"

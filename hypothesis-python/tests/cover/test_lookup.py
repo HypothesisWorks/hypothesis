@@ -52,7 +52,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import fails_with, temp_registered
+from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
 
 # we'll continue testing the typing variants until their removal from the stdlib
 # ruff: noqa: UP006, UP035, UP045, UP007
@@ -665,38 +665,44 @@ def test_recursive_type_with_defaults_minimizes_to_defaults():
     assert minimal(from_type(MyList), lambda ex: True) == MyList()
 
 
-class A:
-    def __init__(self, nxt: typing.Optional["B"]):
+class MutualA:
+    def __init__(self, nxt: typing.Optional["MutualB"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"A({self.nxt})"
 
 
-class B:
-    def __init__(self, nxt: typing.Optional["A"]):
+class MutualB:
+    def __init__(self, nxt: typing.Optional["MutualA"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"B({self.nxt})"
 
 
-@given(nxt=st.from_type(A))
+@given(nxt=st.from_type(MutualA))
+@xfail_on_crosshair(
+    Why.other
+)  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
     while nxt:
-        assert isinstance(nxt, [A, B][i % 2])
+        assert isinstance(nxt, [MutualA, MutualB][i % 2])
         nxt = nxt.nxt
         i += 1
 
 
+@xfail_on_crosshair(
+    Why.other
+)  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_resolving_mutually_recursive_types_with_limited_stack():
     orig_recursionlimit = sys.getrecursionlimit()
     current_stack_depth = stack_depth_of_caller()
     sys.setrecursionlimit(current_stack_depth + 100)
     try:
 
-        @given(nxt=st.from_type(A))
+        @given(nxt=st.from_type(MutualA))
         def test(nxt):
             pass
 
@@ -979,6 +985,9 @@ def test_timezone_lookup(type_):
 )
 @settings(suppress_health_check=[HealthCheck.data_too_large])
 @given(data=st.data())
+@xfail_on_crosshair(
+    Why.other
+)  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_generic_collections_only_use_hashable_elements(typ, data):
     data.draw(from_type(typ))
 
@@ -1101,6 +1110,9 @@ class AnnotatedConstructor(typing.Generic[_ValueType]):
 
 
 @given(st.data())
+@xfail_on_crosshair(
+    Why.other
+)  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_constructor_is_more_important(data):
     """Constructor types should take precedence over all other annotations."""
     data.draw(st.builds(AnnotatedConstructor))

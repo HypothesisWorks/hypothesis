@@ -44,7 +44,8 @@ def build_intervals(intervals: list[int]) -> list[tuple[int, int]]:
     if len(intervals) % 2:
         intervals = intervals[:-1]
     intervals.sort()
-    return list(batched(intervals, 2, strict=True))
+    # help mypy infer tuple[int, ...] -> tuple[int, int]
+    return list(batched(intervals, 2, strict=True))  # type: ignore
 
 
 def interval_lists(

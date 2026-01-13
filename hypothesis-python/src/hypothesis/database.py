@@ -76,7 +76,9 @@ def _usable_dir(path: StrPathT) -> bool:
             # Loop terminates because the root dir ('/' on unix) always exists.
             path = path.parent
         return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
-    except PermissionError:
+    except PermissionError:  # pragma: no cover
+        # path.exists() returns False on 3.14+ instead of raising. See
+        # https://docs.python.org/3.14/library/pathlib.html#querying-file-type-and-status
         return False
 
 
@@ -132,18 +134,36 @@ class _EDMeta(abc.ABCMeta):
 # This code only runs if Sphinx has already been imported; and it would live in our
 # docs/conf.py except that we would also like it to work for anyone documenting
 # downstream ExampleDatabase subclasses too.
-if "sphinx" in sys.modules:
+#
+# We avoid type-checking this block due to this combination facts:
+# * our check-types-api CI job runs under 3.14
+# * tools.txt therefore pins to a newer version of sphinx which uses 3.12+ `type`
+#   syntax
+# * in test_mypy.py, mypy sees this block, sees sphinx is installed, tries parsing
+#   sphinx code, and errors
+#
+# Putting `and not TYPE_CHECKING` here is just a convenience for our testing setup
+# (because we don't split mypy tests by running CI version, eg), not for runtime
+#  behavior.
+if "sphinx" in sys.modules and not TYPE_CHECKING:  # pragma: no cover
     try:
         import sphinx.ext.autodoc
 
         signature = "hypothesis.database._EDMeta.__call__"
+
+        # _METACLASS_CALL_BLACKLIST moved in newer sphinx versions
+        try:
+            import sphinx.ext.autodoc._dynamic._signatures as _module
+        except ImportError:
+            _module = sphinx.ext.autodoc
+
         # _METACLASS_CALL_BLACKLIST is a frozenset in later sphinx versions
-        if isinstance(sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST, frozenset):
-            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST = (
-                sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST | {signature}
-            )
+        if isinstance(_module._METACLASS_CALL_BLACKLIST, frozenset):
+            _module._METACLASS_CALL_BLACKLIST = _module._METACLASS_CALL_BLACKLIST | {
+                signature
+            }
         else:
-            sphinx.ext.autodoc._METACLASS_CALL_BLACKLIST.append(signature)
+            _module._METACLASS_CALL_BLACKLIST.append(signature)
     except Exception:
         pass
 

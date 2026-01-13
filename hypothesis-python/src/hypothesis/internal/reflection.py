@@ -116,7 +116,7 @@ def function_digest(function: Any) -> bytes:
     return hasher.digest()
 
 
-def check_signature(sig: Signature) -> None:
+def check_signature(sig: Signature) -> None:  # pragma: no cover  # 3.10 only
     # Backport from Python 3.11; see https://github.com/python/cpython/pull/92065
     for p in sig.parameters.values():
         if iskeyword(p.name) and p.kind is not p.POSITIONAL_ONLY:

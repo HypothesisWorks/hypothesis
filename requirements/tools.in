@@ -28,7 +28,8 @@ types-pytz
 types-redis
 typing-extensions
 watchdog # for typing
-attrs # for typing
 build
 sortedcontainers-stubs # for typing
+attrs # for typing
+tomli # for update_pyproject_toml
 -r test.in
