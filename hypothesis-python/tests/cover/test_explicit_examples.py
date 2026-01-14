@@ -28,7 +28,7 @@ from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
 from tests.common.utils import (
-    assert_falsifying_output,
+    assert_failing_output,
     capture_out,
     fails_with,
     skipif_threading,
@@ -152,7 +152,7 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
     ):
         test_positive()
     out = out.getvalue()
-    assert "Falsifying example: test_positive(1)" not in out
+    assert "Failing test case: test_positive(1)" not in out
 
 
 def test_prints_output_for_explicit_examples():
@@ -161,7 +161,7 @@ def test_prints_output_for_explicit_examples():
     def test_positive(x):
         assert x > 0
 
-    assert_falsifying_output(test_positive, "Falsifying explicit", x=-1)
+    assert_failing_output(test_positive, "Failing explicit example", x=-1)
 
 
 def test_prints_verbose_output_for_explicit_examples():
@@ -171,10 +171,10 @@ def test_prints_verbose_output_for_explicit_examples():
     def test_always_passes(x):
         pass
 
-    assert_falsifying_output(
+    assert_failing_output(
         test_always_passes,
         expected_exception=None,
-        example_type="Trying explicit",
+        example_type="Trying explicit example",
         x="NOT AN INTEGER",
     )
 
@@ -186,7 +186,7 @@ def test_captures_original_repr_of_example():
         x.append(1)
         assert not x
 
-    assert_falsifying_output(test_mutation, "Falsifying explicit", x=[])
+    assert_failing_output(test_mutation, "Failing explicit example", x=[])
 
 
 def test_examples_are_tried_in_order():
