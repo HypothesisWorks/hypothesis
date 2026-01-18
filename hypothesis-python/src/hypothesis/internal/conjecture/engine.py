@@ -732,7 +732,7 @@ class ConjectureRunner:
             invalid_threshold = (
                 INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
             )
-            if (self.invalid_examples + self.overrun_examples) > invalid_threshold:
+            if (self.call_count - self.valid_examples) > invalid_threshold:
                 self.exit_with(ExitReason.max_iterations)
 
         if self.__tree_is_exhausted():
@@ -1096,7 +1096,7 @@ class ConjectureRunner:
         )
         if (
             self.valid_examples >= self.settings.max_examples
-            or (self.invalid_examples + self.overrun_examples) > invalid_threshold
+            or (self.call_count - self.valid_examples) > invalid_threshold
         ):  # pragma: no cover
             return False
 
