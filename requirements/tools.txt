@@ -61,6 +61,7 @@ coverage==7.13.1
     # via -r requirements/tools.in
 cryptography==46.0.3
     # via
+    #   secretstorage
     #   types-pyopenssl
     #   types-redis
 decorator==5.2.1
@@ -110,12 +111,16 @@ isort==7.0.0
     # via shed
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==6.0.2
+jaraco-context==6.1.0
     # via keyring
 jaraco-functools==4.4.0
     # via keyring
 jedi==0.19.2
     # via ipython
+jeepney==0.9.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.6
     # via
     #   pelican
@@ -130,7 +135,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.7.7
+librt==0.7.8
     # via mypy
 markdown==3.10
     # via pelican
@@ -261,8 +266,10 @@ rich==14.2.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.14.11
+ruff==0.14.13
     # via -r requirements/tools.in
+secretstorage==3.5.0
+    # via keyring
 shed==2024.1.1
     # via -r requirements/tools.in
 six==1.17.0
