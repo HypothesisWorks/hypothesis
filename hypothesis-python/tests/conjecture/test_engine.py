@@ -36,6 +36,7 @@ from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
+    INVALID_THRESHOLD_BASE,
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
@@ -1215,11 +1216,11 @@ def test_shrink_after_max_examples():
 
 
 def test_shrink_after_max_iterations():
-    """If we find a bug, keep looking for more, and then hit the test call
-    limit, we should still proceed to shrinking.
+    """If we find a bug, keep looking for more, and then hit the invalid
+    examples limit, we should still proceed to shrinking.
     """
     max_examples = 10
-    max_iterations = max_examples * 10
+    max_iterations = INVALID_THRESHOLD_BASE
     fail_at = max_iterations - 5
 
     invalid = set()

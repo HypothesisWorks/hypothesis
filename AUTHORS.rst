@@ -8,6 +8,7 @@ their individual contributions.
 
 .. NOTE - this list is in alphabetical order by first name (or handle).
 
+* `A. Jesse Jiryu Davis <https://github.com/ajdavis>`_
 * `Aaron Meurer <https://github.com/asmeurer>`_
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Matan <https://github.com/adamatan/adamatan>_`

@@ -156,11 +156,26 @@ class HealthCheckState:
         return "\n".join(out)
 
 
+# Statistical thresholds for assumption satisfaction rate.
+# We want to stop when we're 99% confident the true valid rate is below 1%.
+#
+# With k valid examples, we need n invalid examples such that:
+#     P(seeing <=k valid in n+k trials | true rate = 1%) <= 1%
+#
+# For k=0: (0.99)^n <= 0.01  →  n >= ln(0.01)/ln(0.99) ~= 459
+# Each additional valid example adds ~153 to the threshold (solving the
+# cumulative binomial for subsequent k values).
+#
+# Formula: stop when invalid_examples > INVALID_THRESHOLD_BASE + INVALID_PER_VALID * valid_examples
+INVALID_THRESHOLD_BASE = 459
+INVALID_PER_VALID = 153
+
+
 class ExitReason(Enum):
     max_examples = "settings.max_examples={s.max_examples}"
     max_iterations = (
         "settings.max_examples={s.max_examples}, "
-        "but < 10% of examples satisfied assumptions"
+        "but < 1% of examples satisfied assumptions"
     )
     max_shrinks = f"shrunk example {MAX_SHRINKS} times"
     finished = "nothing left to do"
@@ -713,12 +728,11 @@ class ConjectureRunner:
             #  while in the other case below we just want to move on to shrinking.)
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
-            if self.call_count >= max(
-                self.settings.max_examples * 10,
-                # We have a high-ish default max iterations, so that tests
-                # don't become flaky when max_examples is too low.
-                1000,
-            ):
+            # Stop when we're 99% confident the true valid rate is below 1%.
+            invalid_threshold = (
+                INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+            )
+            if (self.invalid_examples + self.overrun_examples) > invalid_threshold:
                 self.exit_with(ExitReason.max_iterations)
 
         if self.__tree_is_exhausted():
@@ -1077,8 +1091,12 @@ class ConjectureRunner:
         # but with the important distinction that this clause will move on to
         # the shrinking phase having found one or more bugs, while the other
         # will exit having found zero bugs.
-        if self.valid_examples >= self.settings.max_examples or self.call_count >= max(
-            self.settings.max_examples * 10, 1000
+        invalid_threshold = (
+            INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+        )
+        if (
+            self.valid_examples >= self.settings.max_examples
+            or (self.invalid_examples + self.overrun_examples) > invalid_threshold
         ):  # pragma: no cover
             return False
 
