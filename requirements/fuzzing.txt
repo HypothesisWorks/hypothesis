@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.150.0
+hypothesis[cli,watchdog]==6.150.2
     # via hypofuzz
 idna==3.11
     # via
