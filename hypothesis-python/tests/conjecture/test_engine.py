@@ -924,7 +924,10 @@ def test_max_iterations_with_some_valid(n_valid):
     )
     runner.run()
 
-    assert runner.call_count == n_valid + INVALID_THRESHOLD_BASE + n_valid * INVALID_PER_VALID + 1
+    assert (
+        runner.call_count
+        == n_valid + INVALID_THRESHOLD_BASE + n_valid * INVALID_PER_VALID + 1
+    )
     assert runner.exit_reason == ExitReason.max_iterations
 
 
