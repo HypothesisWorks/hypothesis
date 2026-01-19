@@ -156,19 +156,23 @@ class HealthCheckState:
         return "\n".join(out)
 
 
-# Statistical thresholds for assumption satisfaction rate.
-# We want to stop when we're 99% confident the true valid rate is below 1%.
-#
-# With k valid examples, we need n invalid examples such that:
-#     P(seeing <=k valid in n+k trials | true rate = 1%) <= 1%
-#
-# For k=0: (0.99)^n <= 0.01  →  n >= ln(0.01)/ln(0.99) ~= 459
-# Each additional valid example adds ~153 to the threshold (solving the
-# cumulative binomial for subsequent k values).
-#
-# Formula: stop when invalid_examples > INVALID_THRESHOLD_BASE + INVALID_PER_VALID * valid_examples
-INVALID_THRESHOLD_BASE = 459
-INVALID_PER_VALID = 153
+# Stop when 99% confident the true valid rate is below 1%.
+# For k valid examples, we need n invalid such that:
+#     P(seeing <= k valid in n+k trials | rate=1%) <= 1%
+# k=0: (0.99)^n <= 0.01 -> n >= ln(0.01)/ln(0.99)
+# Each additional valid example adds ~ln(0.01)/ln(0.99)/3 to threshold.
+def _calculate_thresholds(
+    confidence: float = 0.99, min_valid_rate: float = 0.01
+) -> tuple[int, int]:
+    log_confidence = math.log(1 - confidence)
+    log_invalid_rate = math.log(1 - min_valid_rate)
+    base = math.ceil(log_confidence / log_invalid_rate)
+    # Approximate increase per valid example (from binomial CDF)
+    per_valid = math.ceil(base / 3)
+    return base, per_valid
+
+
+INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _calculate_thresholds()
 
 
 class ExitReason(Enum):
