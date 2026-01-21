@@ -424,7 +424,7 @@ class RepresentationPrinter:
             return self.text("<...>")
         # Look up comments from slice_comments if we have arg_labels
         comments = {}
-        if arg_labels:
+        if arg_labels is not None:
             for key, sr in arg_labels.items():
                 if sr in self.slice_comments:
                     comments[key] = self.slice_comments[sr]
