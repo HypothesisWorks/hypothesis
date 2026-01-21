@@ -126,6 +126,13 @@ CacheKeyT: TypeAlias = tuple[ChoiceTypeT, tuple[Any, ...]]
 CacheValueT: TypeAlias = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
 CONSTANTS_CACHE: LRUCache[CacheKeyT, CacheValueT] = LRUCache(1024)
 
+
+_powers_of_2 = [2**n for n in range(9, 64)]
+_constants_integers = (
+    _powers_of_2 + [n - 1 for n in _powers_of_2] + [n + 1 for n in _powers_of_2]
+)
+_constants_integers.extend([-x for x in _constants_integers])
+
 _constant_floats = (
     [
         0.5,
@@ -234,7 +241,7 @@ _constant_strings = {
 # we don't actually care what order the constants are sorted in, just that the
 # ordering is deterministic.
 GLOBAL_CONSTANTS = Constants(
-    integers=SortedSet(),
+    integers=SortedSet(_constants_integers),
     floats=SortedSet(_constant_floats, key=float_to_int),
     bytes=SortedSet(),
     strings=SortedSet(_constant_strings),

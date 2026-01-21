@@ -151,7 +151,7 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 running_under_pytest = False
 pytest_shows_exceptiongroups = True
 global_force_seed = None
-# `threadlocal` stores "engine-global" constants, which are global relative to a
+# this variable stores "engine-global" constants, which are global relative to a
 # ConjectureRunner instance (roughly speaking). Since only one conjecture runner
 # instance can be active per thread, making engine constants thread-local prevents
 # the ConjectureRunner instances of concurrent threads from treading on each other.
