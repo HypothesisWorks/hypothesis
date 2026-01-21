@@ -138,10 +138,10 @@ test_can_produce_below_large_power_of_2 = define_test(
     integers(), lambda x: x >= 2**9 and is_power_of_2(x + 1), p=0.01
 )
 test_can_produce_large_power_of_2_negative = define_test(
-    integers(), lambda x: x <= -2**9 and is_power_of_2(x), p=0.01
+    integers(), lambda x: x <= -(2**9) and is_power_of_2(x), p=0.01
 )
 test_can_produce_above_large_power_of_2_negative = define_test(
-    integers(), lambda x: x <= -2**9 and is_power_of_2(x - 1), p=0.01
+    integers(), lambda x: x <= -(2**9) and is_power_of_2(x - 1), p=0.01
 )
 test_can_produce_below_large_power_of_2_negative = define_test(
     integers(), lambda x: x <= 2**9 and is_power_of_2(x + 1), p=0.01
@@ -156,7 +156,7 @@ test_can_find_specific_power_of_2 = define_test(
     integers(), lambda x: x in {2**25, 2**26, 2**27, 2**28}, p=0.005
 )
 test_can_find_specific_power_of_2_negative = define_test(
-    integers(), lambda x: x in {-2**25, -2**26, -2**27, -2**28}, p=0.005
+    integers(), lambda x: x in {-(2**25), -(2**26), -(2**27), -(2**28)}, p=0.005
 )
 
 
