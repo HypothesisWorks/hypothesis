@@ -35,26 +35,25 @@ select = [
     "RUF",    # Ruff-specific rules
 ]
 ignore = [
-  "B008",
-  "B018",
-  "C408",
-  "C420",
-  "COM812",
-  "DJ007",
-  "DJ008",
-  # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
-  # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
-  # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
-  "E501",
-  "E721",
-  "E731",
-  "E741",
-  "FBT001",
-  "FBT003",
-  "FBT001",
-  "PD011",
-  "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
-  "PT001",
+    "B008",
+    "B018",
+    "C408",
+    "C420",
+    "COM812",
+    "DJ007",
+    "DJ008",
+    # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
+    # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
+    # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
+    "E501",
+    "E721",
+    "E731",
+    "E741",
+    "FBT001",
+    "FBT003",
+    "PD011",
+    "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
+    "PT001",
     "PT003",
     "PT006",
     "PT007",
