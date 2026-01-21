@@ -193,14 +193,14 @@ _constant_strings = {
     "Ⱥ",
     "Ⱦ",
     # ligatures
-    "æœÆŒﬀʤʨß"
+    "æœÆŒﬀʤʨß",
     # emoticons
     "(╯°□°）╯︵ ┻━┻)",
     # emojis
     "😍",
     "🇺🇸",
     # emoji modifiers
-    "🏻"  # U+1F3FB Light Skin Tone,
+    "🏻",  # U+1F3FB Light Skin Tone,
     "👍🏻",  # 👍 followed by U+1F3FB
     # RTL text
     "الكل في المجمو عة",
