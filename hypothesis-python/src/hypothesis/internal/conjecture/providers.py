@@ -127,11 +127,28 @@ CacheValueT: TypeAlias = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
 CONSTANTS_CACHE: LRUCache[CacheKeyT, CacheValueT] = LRUCache(1024)
 
 
-_powers_of_2 = [2**n for n in range(9, 64)]
 _constants_integers = (
-    _powers_of_2 + [n - 1 for n in _powers_of_2] + [n + 1 for n in _powers_of_2]
+    # powers of 2
+    [2**n for n in range(16, 66)]
+    # powers of 10
+    + [10**n for n in range(5, 20)]
+    # factorials
+    + [math.factorial(n) for n in range(9, 21)]
+    # a few primorial numbers https://en.wikipedia.org/wiki/Primorial
+    + [
+        510510,
+        6469693230,
+        304250263527210,
+        32589158477190044730,
+    ]
+)
+_constants_integers.extend(
+    [n - 1 for n in _constants_integers] + [n + 1 for n in _constants_integers]
 )
 _constants_integers.extend([-x for x in _constants_integers])
+
+# arbitrary cutoffs to keep our list bounded
+assert all(50_000 <= abs(n) <= 2**66 for n in _constants_integers)
 
 _constant_floats = (
     [

@@ -124,39 +124,30 @@ test_can_produce_large_positive_integers = define_test(integers(), lambda x: x >
 test_can_produce_large_negative_integers = define_test(integers(), lambda x: x < -1000)
 
 
-def is_power_of_2(x):
-    return math.log2(abs(x)).is_integer()
+_factorials = {math.factorial(n) for n in range(9, 21)}
 
 
-test_can_produce_large_power_of_2 = define_test(
-    integers(), lambda x: x >= 2**9 and is_power_of_2(x), p=0.01
+def is_factorial(n):
+    return abs(n) in _factorials
+
+
+test_can_produce_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n), p=0.01
 )
-test_can_produce_above_large_power_of_2 = define_test(
-    integers(), lambda x: x >= 2**9 and is_power_of_2(x - 1), p=0.01
+test_can_produce_above_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n - 1), p=0.01
 )
-test_can_produce_below_large_power_of_2 = define_test(
-    integers(), lambda x: x >= 2**9 and is_power_of_2(x + 1), p=0.01
+test_can_produce_below_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n + 1), p=0.01
 )
-test_can_produce_large_power_of_2_negative = define_test(
-    integers(), lambda x: x <= -(2**9) and is_power_of_2(x), p=0.01
+test_can_produce_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n), p=0.01
 )
-test_can_produce_above_large_power_of_2_negative = define_test(
-    integers(), lambda x: x <= -(2**9) and is_power_of_2(x - 1), p=0.01
+test_can_produce_above_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n - 1), p=0.01
 )
-test_can_produce_below_large_power_of_2_negative = define_test(
-    integers(), lambda x: x <= 2**9 and is_power_of_2(x + 1), p=0.01
-)
-# The above tests might be fooled by ways we upweight integers other than through
-# constants, for example the bounds on our bins falling on a power of two. Pick a
-# set of weird powers of two here that would be very unusual to upweight otherwise.
-#
-# Note that this test could have been written with a single power of 2. Picking
-# more than one is an optimization so this test finishes faster.
-test_can_find_specific_power_of_2 = define_test(
-    integers(), lambda x: x in {2**25, 2**26, 2**27, 2**28}, p=0.005
-)
-test_can_find_specific_power_of_2_negative = define_test(
-    integers(), lambda x: x in {-(2**25), -(2**26), -(2**27), -(2**28)}, p=0.005
+test_can_produce_below_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n + 1), p=0.01
 )
 
 
