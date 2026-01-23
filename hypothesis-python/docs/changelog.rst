@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.150.3:
+
+--------------------
+6.150.3 - 2026-01-23
+--------------------
+
+Hypothesis now generates powers of 2 more often when using |st.integers|.
+
 .. _v6.150.2:
 
 --------------------
