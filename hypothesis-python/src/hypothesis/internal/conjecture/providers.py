@@ -126,6 +126,30 @@ CacheKeyT: TypeAlias = tuple[ChoiceTypeT, tuple[Any, ...]]
 CacheValueT: TypeAlias = tuple[tuple["ConstantT", ...], tuple["ConstantT", ...]]
 CONSTANTS_CACHE: LRUCache[CacheKeyT, CacheValueT] = LRUCache(1024)
 
+
+_constants_integers = (
+    # powers of 2
+    [2**n for n in range(16, 66)]
+    # powers of 10
+    + [10**n for n in range(5, 20)]
+    # factorials
+    + [math.factorial(n) for n in range(9, 21)]
+    # a few primorial numbers https://en.wikipedia.org/wiki/Primorial
+    + [
+        510510,
+        6469693230,
+        304250263527210,
+        32589158477190044730,
+    ]
+)
+_constants_integers.extend(
+    [n - 1 for n in _constants_integers] + [n + 1 for n in _constants_integers]
+)
+_constants_integers.extend([-x for x in _constants_integers])
+
+# arbitrary cutoffs to keep our list bounded
+assert all(50_000 <= abs(n) <= 2**66 for n in _constants_integers)
+
 _constant_floats = (
     [
         0.5,
@@ -193,14 +217,14 @@ _constant_strings = {
     "Ⱥ",
     "Ⱦ",
     # ligatures
-    "æœÆŒﬀʤʨß"
+    "æœÆŒﬀʤʨß",
     # emoticons
     "(╯°□°）╯︵ ┻━┻)",
     # emojis
     "😍",
     "🇺🇸",
     # emoji modifiers
-    "🏻"  # U+1F3FB Light Skin Tone,
+    "🏻",  # U+1F3FB Light Skin Tone,
     "👍🏻",  # 👍 followed by U+1F3FB
     # RTL text
     "الكل في المجمو عة",
@@ -234,7 +258,7 @@ _constant_strings = {
 # we don't actually care what order the constants are sorted in, just that the
 # ordering is deterministic.
 GLOBAL_CONSTANTS = Constants(
-    integers=SortedSet(),
+    integers=SortedSet(_constants_integers),
     floats=SortedSet(_constant_floats, key=float_to_int),
     bytes=SortedSet(),
     strings=SortedSet(_constant_strings),

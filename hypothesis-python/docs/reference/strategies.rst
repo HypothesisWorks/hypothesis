@@ -33,7 +33,7 @@ Numeric
 Strings
 -------
 
-.. seealso::
+.. note::
 
   The |st.uuids| and |st.ip_addresses| strategies generate instances of :mod:`UUID <python:uuid>` and :mod:`IPAddress <python:ipaddress>` respectively. You can generate corresponding string values by using |.map|, such as ``st.uuids().map(str)``.
 
