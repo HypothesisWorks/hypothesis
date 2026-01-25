@@ -114,7 +114,7 @@ pandas = ["pandas>=1.1"]
 pytest = ["pytest>=4.6"]
 dpcontracts = ["dpcontracts>=0.4"]
 redis = ["redis>=3.0.0"]
-crosshair = ["hypothesis-crosshair>=0.0.27", "crosshair-tool>=0.0.101"]
+crosshair = ["hypothesis-crosshair>=0.0.27", "crosshair-tool>=0.0.102"]
 # zoneinfo is an odd one: every dependency is platform-conditional.
 zoneinfo = ["tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscripten'"]
 # We only support Django versions with upstream support - see
@@ -124,7 +124,7 @@ zoneinfo = ["tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscrip
 django = ["django>=4.2"]
 watchdog = ["watchdog>=4.0.0"]
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
-all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.101", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.27", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.21.6", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
+all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.102", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.27", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.21.6", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.3; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "hypothesis.version.__version__"}
