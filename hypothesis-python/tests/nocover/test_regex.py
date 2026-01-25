@@ -21,8 +21,6 @@ from hypothesis.strategies._internal.regex import (
     base_regex_strategy,
 )
 
-from tests.common.utils import Why, xfail_on_crosshair
-
 
 @st.composite
 def charset(draw):
@@ -75,9 +73,6 @@ def test_conservative_regex_are_correct_by_construction(data):
     assert pattern.search(result) is not None
 
 
-@xfail_on_crosshair(
-    Why.other
-)  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 @given(st.data())
 def test_fuzz_stuff(data):
     pattern = data.draw(
@@ -107,9 +102,6 @@ def test_fuzz_stuff(data):
     assert regex.search(ex)
 
 
-@xfail_on_crosshair(
-    Why.other
-)  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 @pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_atomic_group(data):
@@ -118,9 +110,6 @@ def test_regex_atomic_group(data):
     assert re.search(pattern, ex)
 
 
-@xfail_on_crosshair(
-    Why.other
-)  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 @pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_possessive(data):
@@ -135,9 +124,6 @@ assert I_WITH_DOT.swapcase() == "i\u0307"  # note: string of length two!
 assert re.compile(I_WITH_DOT, flags=re.IGNORECASE).match(I_WITH_DOT.swapcase())
 
 
-@xfail_on_crosshair(
-    Why.other
-)  # https://github.com/pschanely/hypothesis-crosshair/issues/48
 @given(st.data())
 def test_case_insensitive_not_literal_never_constructs_multichar_match(data):
     # So our goal is to confirm that we can never accidentally create a non-matching
