@@ -1274,7 +1274,7 @@ def _choices_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
             parts.append(bool(size))
             continue
         if size == 0b11111:
-            (offset, size) = _unpack_uleb128(buffer[idx:])
+            offset, size = _unpack_uleb128(buffer[idx:])
             idx += offset
         chunk = buffer[idx : idx + size]
         idx += size

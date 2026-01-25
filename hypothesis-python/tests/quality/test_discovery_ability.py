@@ -254,11 +254,9 @@ one_of_nested_strategy = one_of(
 )
 
 for i in range(8):
-    exec(
-        f"""test_one_of_flattens_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_branches_{i} = define_test(
         one_of_nested_strategy, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 xor_nested_strategy = just(0) | (
@@ -266,11 +264,9 @@ xor_nested_strategy = just(0) | (
 )
 
 for i in range(8):
-    exec(
-        f"""test_xor_flattens_branches_{i} = define_test(
+    exec(f"""test_xor_flattens_branches_{i} = define_test(
         xor_nested_strategy, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `map()`.  They generate integers
@@ -291,11 +287,9 @@ one_of_nested_strategy_with_map = one_of(
 )
 
 for i in (1, 4, 6, 16, 20, 24, 28, 32):
-    exec(
-        f"""test_one_of_flattens_map_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_map_branches_{i} = define_test(
         one_of_nested_strategy_with_map, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `flatmap()`.  It generates lists
@@ -313,11 +307,9 @@ one_of_nested_strategy_with_flatmap = just(None).flatmap(
 )
 
 for i in range(8):
-    exec(
-        f"""test_one_of_flattens_flatmap_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_flatmap_branches_{i} = define_test(
         one_of_nested_strategy_with_flatmap, lambda x: len(x) == {i}
-    )"""
-    )
+    )""")
 
 
 xor_nested_strategy_with_flatmap = just(None).flatmap(
@@ -333,11 +325,9 @@ xor_nested_strategy_with_flatmap = just(None).flatmap(
 )
 
 for i in range(8):
-    exec(
-        f"""test_xor_flattens_flatmap_branches_{i} = define_test(
+    exec(f"""test_xor_flattens_flatmap_branches_{i} = define_test(
         xor_nested_strategy_with_flatmap, lambda x: len(x) == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `filter()`.  It generates the even
@@ -349,11 +339,9 @@ one_of_nested_strategy_with_filter = one_of(
 ).filter(lambda x: x % 2 == 0)
 
 for i in range(4):
-    exec(
-        f"""test_one_of_flattens_filter_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_filter_branches_{i} = define_test(
         one_of_nested_strategy_with_filter, lambda x: x == 2 * {i}
-    )"""
-    )
+    )""")
 
 
 test_long_duplicates_strings = define_test(

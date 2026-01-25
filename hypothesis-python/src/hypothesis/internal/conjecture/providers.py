@@ -755,7 +755,7 @@ class HypothesisProvider(PrimitiveProvider):
 
         # split constants into two pools, so we still have a good chance to draw
         # global constants even if there are many local constants.
-        (global_constants, local_constants) = CONSTANTS_CACHE[key]
+        global_constants, local_constants = CONSTANTS_CACHE[key]
         constants_lists = ([global_constants] if global_constants else []) + (
             [local_constants] if local_constants else []
         )
