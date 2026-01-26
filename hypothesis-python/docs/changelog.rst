@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.2:
+
+--------------------
+6.151.2 - 2026-01-26
+--------------------
+
+Format our code with the latest version of :pypi:`black`.
+
 .. _v6.151.1:
 
 --------------------
