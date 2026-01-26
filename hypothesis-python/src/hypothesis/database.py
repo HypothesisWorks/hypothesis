@@ -580,7 +580,9 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         _metakeys_hash = self._metakeys_hash
         _broadcast_change = self._broadcast_change
 
-        class Handler(FileSystemEventHandler):
+        class Handler(
+            FileSystemEventHandler
+        ):  # pragma: no cover # skipped in test_database.py for now
             def on_created(_self, event: FileCreatedEvent | DirCreatedEvent) -> None:
                 # we only registered for the file creation event
                 assert not isinstance(event, DirCreatedEvent)

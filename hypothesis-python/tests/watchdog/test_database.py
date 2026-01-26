@@ -20,33 +20,21 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
-from hypothesis.internal.compat import WINDOWS
 
 from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
 
-# e.g.
-# * FAILED hypothesis-python/tests/watchdog/test_database.py::
-#   test_database_listener_multiplexed -
-#   Exception: timing out after waiting 60s for condition lambda: events ==
-#   [("save", (b"a", b"a"))] * 2
-# * FAILED hypothesis-python/tests/watchdog/test_database.py::
-#   test_still_listens_if_directory_did_not_exist -
-#   Exception: timing out after waiting 60s for condition lambda: len(events) == 1
+# Our database listener tests are tantalizingly close to being useful, but are
+# still subtly flaky. I have spent two afternoons trying to isolate the problem
+# and have concluded it would require sitting down at a deep level with not only
+# the watchdog implementation but also platform-specific filesystem watcher details.
 #
-# It seems possible the failures are correlated on windows (ie if one db test fails,
-# another is more likely to). I suspect a watchdog or windows issue: possibly a
-# change handler is not being registered by watchdog correctly, or is registered
-# too late, or... . A timeout of 60 not firing means it's unlikely "the machine is
-# slow and takes a while to fire the event" is the problem here.
+# I've seen issues like duplicate events being emitted, stopping/starting a listener
+# in quick succession repeating the previous batch of events, and other weirdness.
 #
-# It seems watchdog CI also has a similar problem:
-# * https://github.com/gorakhargosh/watchdog/pull/581#issuecomment-548257915
-# * cmd+f `def rerun_filter` in the watchdog repository
-pytestmark = [
-    pytest.mark.skipif(WINDOWS, reason="watchdog tests are too flaky on windows"),
-    pytest.mark.skipif(sys.platform == "darwin", reason="times out often on osx"),
-]
+# These tests are still useful as a manual check when changing database listener
+# code, and as an encoding of our desired semantics.
+pytestmark = pytest.mark.skip(reason="see comment")
 
 
 # we need real time here, not monkeypatched for CI
@@ -86,12 +74,12 @@ def test_database_listener_multiplexed(tmp_path):
     time_sleep(0.1)
 
     db.save(b"a", b"a")
-    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=30)
 
     db.remove_listener(listener)
     db.delete(b"a", b"a")
     db.save(b"a", b"b")
-    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=60)
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=30)
 
     db.add_listener(listener)
     time_sleep(0.1)
@@ -111,7 +99,7 @@ def test_database_listener_multiplexed(tmp_path):
             # both
             ("save", (b"a", b"c")): 2,
         },
-        timeout=60,
+        timeout=30,
     )
 
 
@@ -150,7 +138,7 @@ def test_database_listener_directory_explicit(tmp_path):
             ("delete", (b"k1", None)),
             ("save", (b"k1", b"v3")),
         ],
-        timeout=60,
+        timeout=30,
     )
 
     # moving into a nonexistent key
@@ -219,7 +207,7 @@ def test_database_listener_directory_move(tmp_path):
             # windows doesn't fire move events, so value is None
             ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
         },
-        timeout=60,
+        timeout=30,
     )
 
 
@@ -241,4 +229,4 @@ def test_still_listens_if_directory_did_not_exist(tmp_path):
 
     assert not events
     db.save(b"k1", b"v1")
-    wait_for(lambda: len(events) == 1, timeout=60)
+    wait_for(lambda: len(events) == 1, timeout=30)
