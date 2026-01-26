@@ -681,7 +681,10 @@ def _database_conforms_to_listener_api(
 
 
 def test_database_listener_memory():
-    _database_conforms_to_listener_api(lambda path: InMemoryExampleDatabase())
+    _database_conforms_to_listener_api(
+        lambda path: InMemoryExampleDatabase(),
+        parent_settings=settings(max_examples=5, stateful_step_count=10),
+    )
 
 
 @skipif_emscripten
@@ -692,6 +695,7 @@ def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
         flush=lambda db: db._join(),
+        parent_settings=settings(max_examples=5, stateful_step_count=10),
     )
 
 
