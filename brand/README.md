@@ -13,10 +13,6 @@ For example, we often bring Hypothesis stickers to conferences but can't make it
 
 ![Hypothesis stickers suitable for your laptop](./stickers.jpg)
 
-Zac also hands out [custom hard-enamel pins](./pin.jpg) to Hypothesis contributors, including anyone who has a pull request merged, does outreach, attends a paid workshop, donates money, and so on - we value all kinds of contributions!
-
-Like stickers, you can collect a pin in person at certain Python conferences, or [sponsor Zac](https://github.com/sponsors/Zac-HD/) to get them by Australia Post.
-
 ## Colour palette in GIMP format
 
 A [colour palette in GIMP format](hypothesis.gpl) (`.gpl`) is also provided with the intent of making it easier to produce graphics and documents which reuse the colours in the Hypothesis Dragonfly logo by Libby Berrie.

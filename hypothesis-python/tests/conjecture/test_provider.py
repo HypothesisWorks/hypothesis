@@ -58,7 +58,6 @@ from tests.common.debug import minimal
 from tests.common.utils import (
     capture_observations,
     capture_out,
-    checks_deprecated_behaviour,
 )
 from tests.conjecture.common import nodes
 
@@ -515,10 +514,6 @@ class ObservableProvider(TrivialProvider):
             yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
             yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
 
-    def realize(self, value, *, for_failure=False):
-        # Get coverage of the can't-realize path for observability outputs
-        raise BackendCannotProceed
-
 
 def test_custom_observations_from_backend():
     with temp_register_backend("observable", ObservableProvider):
@@ -535,8 +530,6 @@ def test_custom_observations_from_backend():
     cases = [t.metadata.backend for t in ls if t.type == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
-    assert "<backend failed to realize symbolic arguments>" in repr(ls)
-
     infos = [
         {k: v for k, v in dataclasses.asdict(t).items() if k in ("title", "content")}
         for t in ls
@@ -544,6 +537,56 @@ def test_custom_observations_from_backend():
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos
+
+
+class NeverProceedsObservable(ObservableProvider):
+    def realize(self, value, *, for_failure=False):
+        raise BackendCannotProceed
+
+
+def test_custom_observations_cannot_realize():
+    with temp_register_backend("never_proceeds", NeverProceedsObservable):
+
+        @given(st.integers())
+        @settings(backend="never_proceeds", database=None)
+        def test_function(_):
+            pass
+
+        with capture_observations() as ls:
+            test_function()
+
+    assert "<backend failed to realize symbolic arguments>" in repr(ls)
+
+
+def test_backend_realize_cannot_proceed_increments_invalid():
+    def test(data):
+        data.draw_integer()
+
+    with with_register_backend("never_proceeds", NeverProceedsObservable):
+        runner = ConjectureRunner(
+            test,
+            settings=settings(backend="never_proceeds", database=None),
+        )
+        assert runner.invalid_examples == 0
+        runner.cached_test_function([1])
+        assert runner.invalid_examples == 1
+
+
+def test_backend_realize_cannot_proceed_exception_increments_invalid():
+    # test the alternative code path where the test is interesting and we realize
+    # the values with for_failure=True
+    def test(data):
+        data.draw_integer()
+        raise ValueError
+
+    with with_register_backend("never_proceeds", NeverProceedsObservable):
+        runner = ConjectureRunner(
+            test,
+            settings=settings(backend="never_proceeds", database=None),
+        )
+        assert runner.invalid_examples == 0
+        runner.cached_test_function([1])
+        assert runner.invalid_examples == 1
 
 
 class FallibleProvider(TrivialProvider):
@@ -709,24 +752,6 @@ def test_raising_verified_after_failure_is_sound():
         # full message as of writing: "backend='soundness_test' claimed to
         # verify this test passes - please send them a bug report!"
         assert all("backend" not in note for note in e.value.__notes__)
-
-
-class NoForFailureProvider(TrivialProvider):
-    def realize(self, value):
-        return value
-
-
-@checks_deprecated_behaviour
-def test_realize_without_for_failure():
-    with temp_register_backend("no_for_failure", NoForFailureProvider):
-
-        @given(st.integers())
-        @settings(backend="no_for_failure", database=None)
-        def f(n):
-            assert n != 1
-
-        with pytest.raises(AssertionError):
-            f()
 
 
 def test_replay_choices():
