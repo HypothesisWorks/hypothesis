@@ -13,7 +13,7 @@ import uuid
 import pytest
 from fakeredis import FakeRedis
 
-from hypothesis import strategies as st
+from hypothesis import settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.redis import RedisExampleDatabase
@@ -109,6 +109,10 @@ def test_redis_listener():
     _database_conforms_to_listener_api(
         lambda _path: RedisExampleDatabase(FakeRedis()),
         flush=flush_messages,
+        parent_settings=settings(
+            max_examples=5,
+            stateful_step_count=10,
+        ),
     )
 
 

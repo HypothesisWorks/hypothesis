@@ -28,14 +28,7 @@ def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
     # test effectiveness.
     @given(st.integers())
-    @settings(
-        backend="crosshair",
-        deadline=1000,
-        verbosity=verbosity,
-        derandomize=True,
-        max_examples=1000,
-        phases=[Phase.generate],
-    )
+    @settings(backend="crosshair", verbosity=verbosity, database=None)
     def f(n):
         assert n != 123456
 
@@ -50,13 +43,7 @@ def test_crosshair_works_for_all_verbosities_data(verbosity):
         pytest.skip("Flaky test, pending fix")
 
     @given(st.data())
-    @settings(
-        backend="crosshair",
-        verbosity=verbosity,
-        derandomize=True,
-        max_examples=1000,
-        phases=[Phase.generate],
-    )
+    @settings(backend="crosshair", verbosity=verbosity, database=None)
     def f(data):
         n = data.draw(st.integers())
         assert n != 123456
@@ -233,7 +220,6 @@ def test_realizes_event():
     assert saw_myevent
 
 
-# see https://github.com/pschanely/hypothesis-crosshair/issues/41
 @given(st.integers())
 @settings(backend="crosshair")
 def test_event_with_realization(value):

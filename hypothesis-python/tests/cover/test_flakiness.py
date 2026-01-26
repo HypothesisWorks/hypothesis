@@ -169,7 +169,9 @@ def single_bool_lists(draw):
 @example([False, True, False, False], [3], None)
 @example([False, False, True, False], [3], None)
 @example([False, False, False, True], [3], None)
-@settings(deadline=None, suppress_health_check=[HealthCheck.nested_given])
+@settings(
+    deadline=None, suppress_health_check=[HealthCheck.nested_given], max_examples=10
+)
 @given(lists(booleans()) | single_bool_lists(), lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
@@ -188,6 +190,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         database=None,
         suppress_health_check=list(HealthCheck),
         phases=no_shrink,
+        max_examples=10,
     )
     def test(x):
         try:

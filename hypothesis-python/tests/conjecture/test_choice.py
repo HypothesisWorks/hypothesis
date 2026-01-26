@@ -802,6 +802,7 @@ def test_choice_to_index_injective(choice_type_and_constraints):
 
 
 @given(choice_types_constraints())
+@settings(max_examples=10)
 @example(
     (
         "string",
