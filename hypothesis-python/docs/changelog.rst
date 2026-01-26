@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.1:
+
+--------------------
+6.151.1 - 2026-01-26
+--------------------
+
+Improve internal categorization of test cases when an :ref:`alternative backend <alternative-backends>` raises |BackendCannotProceed|.
+
 .. _v6.151.0:
 
 --------------------
