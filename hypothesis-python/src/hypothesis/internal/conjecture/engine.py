@@ -504,7 +504,9 @@ class ConjectureRunner:
         self.call_count += 1
         interrupted = False
 
-        def _backend_cannot_proceed(exc: BackendCannotProceed, data: ConjectureData):
+        def _backend_cannot_proceed(
+            exc: BackendCannotProceed, data: ConjectureData
+        ) -> None:
             if exc.scope in ("verified", "exhausted"):
                 self._switch_to_hypothesis_provider = True
                 if exc.scope == "verified":
@@ -584,13 +586,16 @@ class ConjectureRunner:
                         "drawtime": math.fsum(data.draw_times.values()),
                         "gctime": data.gc_finish_time - data.gc_start_time,
                         "events": sorted(
-                            k if v == "" else f"{k}: {v}" for k, v in data.events.items()
+                            k if v == "" else f"{k}: {v}"
+                            for k, v in data.events.items()
                         ),
                     }
                     self.stats_per_test_case.append(call_stats)
 
                     self._cache(data)
-                    if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
+                    if (
+                        data.misaligned_at is not None
+                    ):  # pragma: no branch # coverage bug?
                         self.misaligned_count += 1
 
         if finally_early_return:
