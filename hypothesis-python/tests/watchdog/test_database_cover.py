@@ -19,6 +19,7 @@ from tests.common.utils import skipif_threading
 # trivial covering tests as a stopgap while we skip our proper database listener
 # tests. Can be removed when we re-enable those.
 
+
 @skipif_threading
 def test_start_stop_multiplexed_listener(tmp_path):
     db = MultiplexedDatabase(
