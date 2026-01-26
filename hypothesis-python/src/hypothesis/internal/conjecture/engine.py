@@ -1419,7 +1419,7 @@ class ConjectureRunner:
                     # case (1): duplicate the choices in start1:start2.
                     attempt = data.choices[:start2] + data.choices[start1:]
                 else:
-                    (start, end) = self.random.choice([(start1, end1), (start2, end2)])
+                    start, end = self.random.choice([(start1, end1), (start2, end2)])
                     replacement = data.choices[start:end]
                     # We attempt to replace both the examples with
                     # whichever choice we made. Note that this might end

@@ -12,7 +12,7 @@ attrs==25.4.0
     # via
     #   outcome
     #   trio
-black==25.12.0
+black==26.1.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.150.2
+hypothesis[cli,watchdog]==6.150.3
     # via hypofuzz
 idna==3.11
     # via
@@ -72,11 +72,11 @@ numpy==2.4.1
     #   pandas
 outcome==1.3.0.post0
     # via trio
-packaging==25.0
+packaging==26.0
     # via
     #   black
     #   pytest
-pandas==2.3.3
+pandas==3.0.0
     # via -r requirements/coverage.in
 pathspec==1.0.3
     # via black
@@ -94,7 +94,7 @@ psutil==7.2.1
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==22.0.0
+pyarrow==23.0.0
     # via -r requirements/coverage.in
 pygments==2.19.2
     # via
@@ -114,17 +114,15 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytokens==0.3.0
+pytokens==0.4.0
     # via black
 pytz==2025.2
-    # via
-    #   -r requirements/coverage.in
-    #   pandas
+    # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
 redis==7.1.0
     # via fakeredis
-rich==14.2.0
+rich==14.3.1
     # via hypothesis
 six==1.17.0
     # via python-dateutil
@@ -136,14 +134,12 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.51.0
+starlette==0.52.1
     # via hypofuzz
 trio==0.32.0
     # via hypofuzz
 typing-extensions==4.15.0
     # via -r requirements/coverage.in
-tzdata==2025.3
-    # via pandas
 watchdog==6.0.0
     # via
     #   -r requirements/coverage.in

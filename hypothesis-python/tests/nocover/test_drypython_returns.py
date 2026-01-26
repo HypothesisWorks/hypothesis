@@ -16,7 +16,7 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
 from tests.common.debug import check_can_generate_examples, find_any
-from tests.common.utils import Why, temp_registered, xfail_on_crosshair
+from tests.common.utils import temp_registered
 
 # Primitives:
 # ===========
@@ -59,9 +59,6 @@ def target_func(mappable: "MappableN[_FirstType]") -> bool:
 
 
 @given(st.data())
-@xfail_on_crosshair(
-    Why.other, strict=False
-)  # https://github.com/pschanely/hypothesis-crosshair/issues/49
 def test_my_mappable(source: st.DataObject) -> None:
     """
     Checks that complex types with multiple inheritance levels and strings are fine.
