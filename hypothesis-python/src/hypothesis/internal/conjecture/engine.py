@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import importlib
-import inspect
 import math
 import threading
 import time
@@ -70,7 +69,6 @@ from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report, verbose_report
-from hypothesis.utils.deprecation import note_deprecation
 
 # In most cases, the following constants are all Final. However, we do allow users
 # to monkeypatch all of these variables, which means we cannot annotate them as
@@ -241,24 +239,8 @@ class DiscardObserver(DataObserver):
 
 
 def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
-    # backwards-compatibility with backends without for_failure, can remove
-    # in a few months
-    kwargs = {}
-    if for_failure:
-        if "for_failure" in inspect.signature(data.provider.realize).parameters:
-            kwargs["for_failure"] = True
-        else:
-            note_deprecation(
-                f"{type(data.provider).__qualname__}.realize does not have the "
-                "for_failure parameter. This will be an error in future versions "
-                "of Hypothesis. (If you installed this backend from a separate "
-                "package, upgrading that package may help).",
-                has_codemod=False,
-                since="2025-05-07",
-            )
-
     for node in data.nodes:
-        value = data.provider.realize(node.value, **kwargs)
+        value = data.provider.realize(node.value, for_failure=for_failure)
         expected_type = {
             "string": str,
             "float": float,
@@ -275,7 +257,7 @@ def realize_choices(data: ConjectureData, *, for_failure: bool) -> None:
         constraints = cast(
             ChoiceConstraintsT,
             {
-                k: data.provider.realize(v, **kwargs)
+                k: data.provider.realize(v, for_failure=for_failure)
                 for k, v in node.constraints.items()
             },
         )

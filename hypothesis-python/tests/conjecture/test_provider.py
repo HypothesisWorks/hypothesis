@@ -58,7 +58,6 @@ from tests.common.debug import minimal
 from tests.common.utils import (
     capture_observations,
     capture_out,
-    checks_deprecated_behaviour,
 )
 from tests.conjecture.common import nodes
 
@@ -709,24 +708,6 @@ def test_raising_verified_after_failure_is_sound():
         # full message as of writing: "backend='soundness_test' claimed to
         # verify this test passes - please send them a bug report!"
         assert all("backend" not in note for note in e.value.__notes__)
-
-
-class NoForFailureProvider(TrivialProvider):
-    def realize(self, value):
-        return value
-
-
-@checks_deprecated_behaviour
-def test_realize_without_for_failure():
-    with temp_register_backend("no_for_failure", NoForFailureProvider):
-
-        @given(st.integers())
-        @settings(backend="no_for_failure", database=None)
-        def f(n):
-            assert n != 1
-
-        with pytest.raises(AssertionError):
-            f()
 
 
 def test_replay_choices():
