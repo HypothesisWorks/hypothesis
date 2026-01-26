@@ -69,7 +69,7 @@ def test_can_draw_local_constants_string(monkeypatch, value):
     )
 
 
-def test_actual_collection(monkeypatch):
+def test_actual_collection(monkeypatch, tmp_path):
     # covering test for doing some real work collecting constants. We'll fake
     # hypothesis as being the "local" module, just to get some real constant
     # collection going.
@@ -78,6 +78,13 @@ def test_actual_collection(monkeypatch):
     monkeypatch.setattr(providers, "_sys_modules_len", None)
     monkeypatch.setattr(providers, "_seen_modules", set())
     monkeypatch.setattr(providers, "is_local_module_file", lambda f: "hypothesis" in f)
+    # Without monkeypatching this, this test only covers all the right lines the
+    # first time it's executed, since it falls back to the cache the second time.
+    # Reset to a guaranteed-empty storage directory to ensure consistent coverage.
+    monkeypatch.setattr(
+        "hypothesis.internal.constants_ast.storage_directory",
+        lambda *names, **kwargs: tmp_path.joinpath(*names),
+    )
 
     @given(st.integers())
     @settings(max_examples=100)
