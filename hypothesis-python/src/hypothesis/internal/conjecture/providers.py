@@ -407,7 +407,7 @@ class PrimitiveProvider(abc.ABC):
     avoid_realization: ClassVar[bool] = False
 
     #: If ``True``, |PrimitiveProvider.on_observation| will be added as a
-    #: callback via |add_observability_callback|, enabling observability during
+    #: an observability callback, enabling observability during
     # the lifetime of this provider. If ``False``, |PrimitiveProvider.on_observation|
     #: will never be called by Hypothesis.
     #:
@@ -607,7 +607,7 @@ class PrimitiveProvider(abc.ABC):
         """
         Called at the end of each test case which uses this provider, with the same
         ``observation["type"] == "test_case"`` observation that is passed to
-        other callbacks added via |add_observability_callback|. This method is not
+        other callbacks. This method is not
         called with ``observation["type"] in {"info", "alert", "error"}``
         observations.
 

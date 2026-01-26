@@ -667,7 +667,8 @@ def test_compatible_shared_strategies_do_not_warn(strat_a, strat_b):
         assert a == b
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", HypothesisWarning)
+        # append so we respect temporary ci warning filters
+        warnings.simplefilter("error", HypothesisWarning, append=True)
         test_it()
 
 

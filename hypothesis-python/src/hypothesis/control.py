@@ -21,7 +21,6 @@ from hypothesis import Verbosity, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
@@ -68,9 +67,11 @@ def assume(condition: object) -> Literal[True]:
             since="2023-09-25",
             has_codemod=False,
         )
-    if observability_enabled() or not condition:
+
+    observability_enabled = settings().observability is not None
+    if observability_enabled or not condition:
         where = _calling_function_location("assume", inspect.currentframe())
-        if observability_enabled() and currently_in_test_context():
+        if observability_enabled and currently_in_test_context():
             counts = current_build_context().data._observability_predicates[where]
             counts.update_count(condition=bool(condition))
         if not condition:
