@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.3:
+
+--------------------
+6.151.3 - 2026-01-28
+--------------------
+
+This patch makes Hypothesis more tolerant of slow-to-satisfy ``assume()`` calls.
+Previously, Hypothesis would give up after ``max_examples * 10`` attempts; now it
+uses a statistical test to stop only when 99% confident that <1% of examples
+would pass (:issue:`4623`).
+
+Thanks to @ajdavis for this improvement!
+
 .. _v6.151.2:
 
 --------------------
