@@ -36,6 +36,8 @@ from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
+    INVALID_PER_VALID,
+    INVALID_THRESHOLD_BASE,
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
@@ -883,6 +885,52 @@ def test_exit_because_max_iterations():
     assert runner.exit_reason == ExitReason.max_iterations
 
 
+def test_max_iterations_with_all_invalid():
+    # With assume(False) on every example, we stop after INVALID_THRESHOLD_BASE + 1
+    # invalid attempts (the check is > not >=).
+    def f(data):
+        data.draw_integer(0, 2**64 - 1)
+        data.mark_invalid()
+
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=10_000, database=None, suppress_health_check=list(HealthCheck)
+        ),
+    )
+    runner.run()
+
+    assert runner.call_count == INVALID_THRESHOLD_BASE + 1
+    assert runner.exit_reason == ExitReason.max_iterations
+
+
+@pytest.mark.parametrize("n_valid", [1, 2, 5])
+def test_max_iterations_with_some_valid(n_valid):
+    valid_count = 0
+
+    def f(data):
+        nonlocal valid_count
+        data.draw_integer(0, 2**64 - 1)
+        if valid_count < n_valid:
+            valid_count += 1
+        else:
+            data.mark_invalid()
+
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=10_000, database=None, suppress_health_check=list(HealthCheck)
+        ),
+    )
+    runner.run()
+
+    assert (
+        runner.call_count
+        == n_valid + INVALID_THRESHOLD_BASE + n_valid * INVALID_PER_VALID + 1
+    )
+    assert runner.exit_reason == ExitReason.max_iterations
+
+
 def test_exit_because_shrink_phase_timeout(monkeypatch):
     val = 0
 
@@ -1215,11 +1263,11 @@ def test_shrink_after_max_examples():
 
 
 def test_shrink_after_max_iterations():
-    """If we find a bug, keep looking for more, and then hit the test call
-    limit, we should still proceed to shrinking.
+    """If we find a bug, keep looking for more, and then hit the invalid
+    examples limit, we should still proceed to shrinking.
     """
     max_examples = 10
-    max_iterations = max_examples * 10
+    max_iterations = INVALID_THRESHOLD_BASE
     fail_at = max_iterations - 5
 
     invalid = set()

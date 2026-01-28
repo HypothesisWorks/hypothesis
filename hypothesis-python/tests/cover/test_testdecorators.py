@@ -25,6 +25,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import Unsatisfiable
+from hypothesis.internal.conjecture.engine import INVALID_THRESHOLD_BASE
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -507,8 +508,8 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
     with pytest.raises(
         Unsatisfiable,
         match=(
-            r"Unable to satisfy assumptions of f\. 1000 of 1000 examples "
-            r"failed a \.filter\(\) or assume\(\)"
+            rf"Unable to satisfy assumptions of f\. {INVALID_THRESHOLD_BASE+1} of "
+            rf"{INVALID_THRESHOLD_BASE+1} examples failed a \.filter\(\) or assume\(\)"
         ),
     ):
         f()
@@ -532,8 +533,8 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
         pass
 
     match = (
-        r"1000 of 1000 examples were too large to finish generating; try "
-        r"reducing the typical size of your inputs\?"
+        rf"{INVALID_THRESHOLD_BASE+1} of {INVALID_THRESHOLD_BASE+1} examples were too large to"
+        rf" finish generating; try reducing the typical size of your inputs\?"
     )
     with (
         pytest.raises(Unsatisfiable, match=match),

@@ -28,7 +28,7 @@ def test_lot_of_dead_nodes():
     @run_to_nodes
     def nodes(data):
         for i in range(4):
-            if data.draw_integer(0, 2**8 - 1) != i:
+            if data.draw_integer(0, 2**7 - 1) != i:
                 data.mark_invalid()
         data.mark_interesting(interesting_origin())
 

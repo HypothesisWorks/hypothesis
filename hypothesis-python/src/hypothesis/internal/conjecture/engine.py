@@ -154,11 +154,30 @@ class HealthCheckState:
         return "\n".join(out)
 
 
+# Stop when 99% confident the true valid rate is below 1%.
+# For k valid examples, we need n invalid such that:
+#     P(seeing <= k valid in n+k trials | rate=1%) <= 1%
+# k=0: (0.99)^n <= 0.01 -> n >= ln(0.01)/ln(0.99)
+# Each additional valid example adds ~ln(0.01)/ln(0.99)/3 to threshold.
+def _calculate_thresholds(
+    confidence: float = 0.99, min_valid_rate: float = 0.01
+) -> tuple[int, int]:
+    log_confidence = math.log(1 - confidence)
+    log_invalid_rate = math.log(1 - min_valid_rate)
+    base = math.ceil(log_confidence / log_invalid_rate)
+    # Approximate increase per valid example (from binomial CDF)
+    per_valid = math.ceil(base / 3)
+    return base, per_valid
+
+
+INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _calculate_thresholds()
+
+
 class ExitReason(Enum):
     max_examples = "settings.max_examples={s.max_examples}"
     max_iterations = (
         "settings.max_examples={s.max_examples}, "
-        "but < 10% of examples satisfied assumptions"
+        "but < 1% of examples satisfied assumptions"
     )
     max_shrinks = f"shrunk example {MAX_SHRINKS} times"
     finished = "nothing left to do"
@@ -724,12 +743,11 @@ class ConjectureRunner:
             #  while in the other case below we just want to move on to shrinking.)
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
-            if self.call_count >= max(
-                self.settings.max_examples * 10,
-                # We have a high-ish default max iterations, so that tests
-                # don't become flaky when max_examples is too low.
-                1000,
-            ):
+            # Stop when we're 99% confident the true valid rate is below 1%.
+            invalid_threshold = (
+                INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+            )
+            if (self.invalid_examples + self.overrun_examples) > invalid_threshold:
                 self.exit_with(ExitReason.max_iterations)
 
         if self.__tree_is_exhausted():
@@ -1088,8 +1106,12 @@ class ConjectureRunner:
         # but with the important distinction that this clause will move on to
         # the shrinking phase having found one or more bugs, while the other
         # will exit having found zero bugs.
-        if self.valid_examples >= self.settings.max_examples or self.call_count >= max(
-            self.settings.max_examples * 10, 1000
+        invalid_threshold = (
+            INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+        )
+        if (
+            self.valid_examples >= self.settings.max_examples
+            or (self.invalid_examples + self.overrun_examples) > invalid_threshold
         ):  # pragma: no cover
             return False
 
