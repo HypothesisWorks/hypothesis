@@ -154,65 +154,16 @@ class HealthCheckState:
         return "\n".join(out)
 
 
-# We have a bernoulli trial with p successes and q failures. We are interested in
-# deciding at what point we can be c% confident that the true success rate theta
-# (observed as p / (p + q)) is lower than some rate r. We assume 0 ≤ c,r ≤ 1.
-#
-# We assume a beta-binomial model with Beta(1, 1) as our uniform prior. (AIUI,
-# it is standard to use beta here because it's a conjugate prior to the binomial
-# distribution and therefore has a closed form).
-#
-# The posterior distribution for the true success rate theta is:
-#
-#   theta | p, q ~ Beta(p + 1, q + 1)
-#
-# We want to find:
-#
-#   P(theta < r | p, q) ≥ c
-#
-# This is the CDF of the Beta distribution:
-#
-#   I_r(p + 1, q + 1) ≥ c
-#
-# Where I_r is the regularized incomplete beta function. In python,
-# I_r(p, q) = scipy.stats.beta.cdf(r, p, q).
-#
-# So our decision rule is when beta.cdf(r, p + 1, q + 1) ≥ c.
-#
-# Discretely, one might decompose this as `threshold = base + f(p, q)`. Conceptually,
-# `base` is the minimum `q` needed when `p=0`.
-#
-# We can solve for `base` as a closed form by setting p=0:
-#
-#   cdf(r, 1, q + 1) ≥ c
-#   1 - (1 - r)^(q + 1) ≥ c
-#   q + 1 ≥ log(1 - c) / log(1 - r)
-#   q ≥ log(1 - c) / log(1 - r) - 1
-#   base = ceil(log(1 - c) / log(1 - r)) - 1
-#
-# In contrast, f(p, q) does not have a closed form. We set it here to:
-#
-#   f(p, q) = p * (1 / r)
-#
-# which draws from what our stopping rule would have been in the naive, non-bayesian
-# approach. (Indeed, if we use the improper uniform prior Beta(0, 0) and set c=0.5,
-# `threshold = base + f(p, q)` would exactly reduce to `threshold = p * (1 / r)`).
-#
-# I think of this choice of f(p, q) as "this term does not update our bayesian
-# beliefs, because we do not have a closed-form expression for the update".
-#
-# In practice, this choice of f(p, q) is more aggressive about exiting than
-# a bayesian-aware term would be.
-
-
-def _thresholds(*, r: float, c: float) -> tuple[int, int]:
+def _invalid_thresholds(*, r: float, c: float) -> tuple[int, int]:
     base = math.ceil(math.log(1 - c) / math.log(1 - r)) - 1
     per_p = math.ceil(1 / r)
     return base, per_p
 
 
-# stop once we're 99% confident the true valid rate is below 1%.
-INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _thresholds(r=0.01, c=0.99)
+# stop once we're 99% confident the true valid rate is below 1%. See
+# https://github.com/HypothesisWorks/hypothesis/issues/4623#issuecomment-3814681997
+# for how we derived this formula.
+INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _invalid_thresholds(r=0.01, c=0.99)
 
 
 class ExitReason(Enum):
