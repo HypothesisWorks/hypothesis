@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.4:
+
+--------------------
+6.151.4 - 2026-01-29
+--------------------
+
+This patch adjusts how we compute the stopping threshold introduced in :version:`6.151.3`, while still maintaining 99% confidence that <1% of test cases pass.
+
 .. _v6.151.3:
 
 --------------------
