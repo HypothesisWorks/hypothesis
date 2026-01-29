@@ -154,23 +154,16 @@ class HealthCheckState:
         return "\n".join(out)
 
 
-# Stop when 99% confident the true valid rate is below 1%.
-# For k valid examples, we need n invalid such that:
-#     P(seeing <= k valid in n+k trials | rate=1%) <= 1%
-# k=0: (0.99)^n <= 0.01 -> n >= ln(0.01)/ln(0.99)
-# Each additional valid example adds ~ln(0.01)/ln(0.99)/3 to threshold.
-def _calculate_thresholds(
-    confidence: float = 0.99, min_valid_rate: float = 0.01
-) -> tuple[int, int]:
-    log_confidence = math.log(1 - confidence)
-    log_invalid_rate = math.log(1 - min_valid_rate)
-    base = math.ceil(log_confidence / log_invalid_rate)
-    # Approximate increase per valid example (from binomial CDF)
-    per_valid = math.ceil(base / 3)
-    return base, per_valid
+def _invalid_thresholds(*, r: float, c: float) -> tuple[int, int]:
+    base = math.ceil(math.log(1 - c) / math.log(1 - r)) - 1
+    per_p = math.ceil(1 / r)
+    return base, per_p
 
 
-INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _calculate_thresholds()
+# stop once we're 99% confident the true valid rate is below 1%. See
+# https://github.com/HypothesisWorks/hypothesis/issues/4623#issuecomment-3814681997
+# for how we derived this formula.
+INVALID_THRESHOLD_BASE, INVALID_PER_VALID = _invalid_thresholds(r=0.01, c=0.99)
 
 
 class ExitReason(Enum):
@@ -743,11 +736,9 @@ class ConjectureRunner:
             #  while in the other case below we just want to move on to shrinking.)
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
-            # Stop when we're 99% confident the true valid rate is below 1%.
-            invalid_threshold = (
+            if (self.invalid_examples + self.overrun_examples) > (
                 INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
-            )
-            if (self.invalid_examples + self.overrun_examples) > invalid_threshold:
+            ):
                 self.exit_with(ExitReason.max_iterations)
 
         if self.__tree_is_exhausted():
