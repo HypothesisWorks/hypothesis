@@ -427,9 +427,21 @@ else:
 
         from hypothesis import is_hypothesis_test
 
+        has_hypothesis_tests = False
         for item in items:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")
+                has_hypothesis_tests = True
+
+        if has_hypothesis_tests:
+            # Collect local constants now, during test collection, so that this
+            # time is not attributed to whatever test happens to run first.
+            # (see https://github.com/HypothesisWorks/hypothesis/issues/4627)
+            # We might miss weird wrapped uses (if there are no other PBTs!),
+            # in order to avoid the latency from inefficient 3rd party plugins.
+            from hypothesis.internal.conjecture.providers import _get_local_constants
+
+            _get_local_constants()
 
     def pytest_sessionstart(session):
         # Note: may be called multiple times, so we can go negative
