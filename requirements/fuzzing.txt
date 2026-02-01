@@ -22,7 +22,7 @@ click==8.3.1
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.13.1
+coverage[toml]==7.13.2
     # via
     #   hypofuzz
     #   pytest-cov
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.150.3
+hypothesis[cli,watchdog]==6.151.4
     # via hypofuzz
 idna==3.11
     # via
@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.1
+numpy==2.4.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -78,7 +78,7 @@ packaging==26.0
     #   pytest
 pandas==3.0.0
     # via -r requirements/coverage.in
-pathspec==1.0.3
+pathspec==1.0.4
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -90,7 +90,7 @@ pluggy==1.6.0
     #   pytest-cov
 priority==2.0.0
     # via hypercorn
-psutil==7.2.1
+psutil==7.2.2
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
@@ -114,7 +114,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytokens==0.4.0
+pytokens==0.4.1
     # via black
 pytz==2025.2
     # via -r requirements/coverage.in

@@ -34,7 +34,7 @@ build==1.4.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==6.2.4
+cachetools==6.2.6
     # via tox
 certifi==2026.1.4
     # via requests
@@ -57,9 +57,9 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.13.1
+coverage==7.13.2
     # via -r requirements/tools.in
-cryptography==46.0.3
+cryptography==46.0.4
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -161,7 +161,7 @@ nh3==0.3.2
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
-numpy==2.4.1
+numpy==2.4.2
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -177,7 +177,7 @@ packaging==26.0
     #   wheel
 parso==0.8.5
     # via jedi
-pathspec==1.0.3
+pathspec==1.0.4
     # via
     #   black
     #   mypy
@@ -237,7 +237,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-pytokens==0.4.0
+pytokens==0.4.1
     # via black
 pyupgrade==3.21.2
     # via shed
@@ -367,7 +367,7 @@ watchfiles==1.1.1
     # via
     #   pelican
     #   sphinx-autobuild
-wcwidth==0.3.3
+wcwidth==0.5.3
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
@@ -375,7 +375,7 @@ wheel==0.46.3
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.3
+pip==26.0
     # via pip-tools
-setuptools==80.10.1
+setuptools==80.10.2
     # via pip-tools
