@@ -33,7 +33,7 @@ def test_fuzz_one_input(buffer_type):
 
     # This is a standard `@given` test, which we can also use as a fuzz target.
     # Note that we specify the DB so we can make more precise assertions,
-    # and tighten the phases so we can be sure the failing examples come from fuzzing.
+    # and tighten the phases so we can be sure the failing test cases come from fuzzing.
     @given(st.text())
     @settings(database=db, phases=[Phase.reuse, Phase.shrink])
     def test(s):
@@ -47,7 +47,7 @@ def test_fuzz_one_input(buffer_type):
     assert len(seen) == 0
 
     # If we run a lot of random bytestrings through fuzz_one_input, we'll eventually
-    # find a failing example.
+    # find a failing test case.
     with pytest.raises(AssertionError):
         for _ in range(1000):
             buf = randbytes(1000)
@@ -57,7 +57,7 @@ def test_fuzz_one_input(buffer_type):
     # fuzz_one_input returns False for invalid bytestrings, due to e.g. assume(False)
     assert len(seen) <= len(seeds)
 
-    # `db` contains exactly one failing example, which is either the most
+    # `db` contains exactly one failing test case, which is either the most
     # recent seed that we tried or the pruned-and-canonicalised form of it.
     (saved_examples,) = db.data.values()
     assert len(saved_examples) == 1

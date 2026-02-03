@@ -29,22 +29,22 @@ def test_to_be_skipped(xs):
 """
 
 
-def test_no_falsifying_example_if_pytest_skip(testdir):
+def test_no_failing_test_case_if_pytest_skip(testdir):
     """If ``pytest.skip() is called during a test, Hypothesis should not
     continue running the test and shrink process, nor should it print anything
-    about falsifying examples."""
+    about failing test cases."""
     script = testdir.makepyfile(PYTEST_TESTSUITE)
     result = testdir.runpytest(
         script, "--verbose", "--strict-markers", "-m", "hypothesis"
     )
     out = "\n".join(result.stdout.lines)
-    assert "Falsifying example" not in out
+    assert "Failing test case" not in out
 
 
 def test_issue_3453_regression(testdir):
     """If ``pytest.skip() is called during a test, Hypothesis should not
     continue running the test and shrink process, nor should it print anything
-    about falsifying examples."""
+    about failing test cases."""
     script = testdir.makepyfile(
         """
 from hypothesis import example, given, strategies as st
