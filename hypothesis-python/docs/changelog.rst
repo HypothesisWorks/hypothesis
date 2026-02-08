@@ -6264,7 +6264,7 @@ affecting the :pypi:`returns` package (:issue:`3060`).
 6.14.8 - 2021-08-16
 -------------------
 
-This patch ensures that registering a strategy for a subclass of a a parametrised
+This patch ensures that registering a strategy for a subclass of a parametrised
 generic type such as ``class Lines(Sequence[str]):`` will not "leak" into unrelated
 strategies such as ``st.from_type(Sequence[int])`` (:issue:`2951`).
 Unfortunately this fix requires :pep:`560`, meaning Python 3.7 or later.
@@ -8806,7 +8806,7 @@ with :func:`~hypothesis.strategies.from_type`:
 - :class:`python:typing.SupportsRound`
 
 Note that using :func:`~hypothesis.strategies.from_type` with one of the above strategies will not
-ensure that the the specified function will execute successfully (ie : the strategy returned for
+ensure that the specified function will execute successfully (ie : the strategy returned for
 ``from_type(typing.SupportsAbs)`` may include NaNs or things which cause the :func:`python:abs`
 function to error. )
 
@@ -12837,7 +12837,7 @@ not recommended for direct use by other users of Hypothesis.
 -------------------
 
 This release adds a new mechanism to infer strategies for classes
-defined using :pypi:`attrs`, based on the the type, converter, or
+defined using :pypi:`attrs`, based on the type, converter, or
 validator of each attribute.  This inference is now built in to
 :func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`.
 
@@ -16186,7 +16186,7 @@ Bug fixes:
 1.11.0 - 2015-08-31
 -------------------
 
-* text() with a non-string alphabet would have used the repr() of the the alphabet
+* text() with a non-string alphabet would have used the repr() of the alphabet
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
 * @given will now work on methods whose definitions contains no explicit positional
