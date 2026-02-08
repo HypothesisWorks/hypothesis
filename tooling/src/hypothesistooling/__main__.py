@@ -94,6 +94,20 @@ def lint():
         print(indent(matches, "    "))
         sys.exit(1)
 
+    dupes = subprocess.run(
+        r"git grep -nP '\b([a-z]+)\s+\1\b'"
+        " -- ':!*.svg' ':!*.png' ':!*.jpg' ':!*.sketch'",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if dupes:
+        from textwrap import indent
+
+        print("\nDuplicate word(s) found:")
+        print(indent(dupes, "    "))
+        sys.exit(1)
+
 
 def do_release(package):
     if not package.has_release():
