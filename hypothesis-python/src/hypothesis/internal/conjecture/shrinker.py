@@ -1291,7 +1291,7 @@ class Shrinker:
 
         # Because we run in a random order we will often find ourselves in the middle
         # of a region where we could run the node program. We thus start by moving
-        # left to the beginning of that region if possible in order to to start from
+        # left to the beginning of that region if possible in order to start from
         # the beginning of that region.
         def offset_left(k):
             return i - k * n
