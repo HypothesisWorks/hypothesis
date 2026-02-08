@@ -1144,7 +1144,7 @@ class Shrinker:
             # case of this function of preserving from the right instead of
             # preserving from the left. see test_can_shrink_variable_string_draws.
 
-            (index, attempt_choice_type, attempt_constraints, _attempt_forced) = (
+            index, attempt_choice_type, attempt_constraints, _attempt_forced = (
                 attempt.misaligned_at
             )
             node = self.nodes[index]
@@ -1291,7 +1291,7 @@ class Shrinker:
 
         # Because we run in a random order we will often find ourselves in the middle
         # of a region where we could run the node program. We thus start by moving
-        # left to the beginning of that region if possible in order to to start from
+        # left to the beginning of that region if possible in order to start from
         # the beginning of that region.
         def offset_left(k):
             return i - k * n
