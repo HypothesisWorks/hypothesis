@@ -149,7 +149,7 @@ The main reasons for preferring this style are:
 * Errors at test import time tend to throw people and be correspondingly hard
   for them to debug.
   There's an expectation that errors in your test code result in failures in
-  your tests, and the fact that that test code happens to be defined in a
+  your tests, and the fact that the test code happens to be defined in a
   decorator doesn't seem to change that expectation for people.
 * Things like deprecation warnings etc. localize better when they happen
   inside the test - test runners will often swallow them or put them in silly

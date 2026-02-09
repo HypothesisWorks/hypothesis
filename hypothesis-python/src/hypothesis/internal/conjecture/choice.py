@@ -395,7 +395,7 @@ def choice_to_index(choice: ChoiceT, constraints: ChoiceConstraintsT) -> int:
         # Ordered by [False, True].
         p = constraints["p"]
         if not (2 ** (-64) < p < (1 - 2 ** (-64))):
-            # only one option is possible, so whatever it is is first.
+            # only one option is possible, so whatever it is comes first.
             return 0
         return int(choice)
     elif isinstance(choice, bytes):

@@ -80,6 +80,10 @@ def lint():
     pip_tool("ruff", "check", ".")
     codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
 
+    from textwrap import indent
+
+    failed = False
+
     matches = subprocess.run(
         r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
         "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
@@ -88,24 +92,23 @@ def lint():
         text=True,
     ).stdout
     if matches:
-        from textwrap import indent
-
         print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
         print(indent(matches, "    "))
-        sys.exit(1)
+        failed = True
 
     dupes = subprocess.run(
-        r"git grep -nP '\b([a-z]+)\s+\1\b'"
+        r"git grep -nP '\b([a-z]{2,})\s+\1\b'"
         " -- ':!*.svg' ':!*.png' ':!*.jpg' ':!*.sketch'",
         shell=True,
         capture_output=True,
         text=True,
     ).stdout
     if dupes:
-        from textwrap import indent
-
         print("\nDuplicate word(s) found:")
         print(indent(dupes, "    "))
+        failed = True
+
+    if failed:
         sys.exit(1)
 
 

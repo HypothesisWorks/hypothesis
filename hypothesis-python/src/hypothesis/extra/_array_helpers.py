@@ -607,7 +607,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
                 else:
                     side = dim_side
 
-                # Use a trick where where a biased coin is queried to see
+                # Use a trick where a biased coin is queried to see
                 # if the given shape-tuple will continue to be grown. All
                 # of the relevant draws will still be made for the given
                 # shape-tuple even if it is no longer being added to.

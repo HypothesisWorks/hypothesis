@@ -559,5 +559,5 @@ def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
 def bits_to_bytes(n: int) -> int:
     """The number of bytes required to represent an n-bit number.
     Equivalent to (n + 7) // 8, but slightly faster. This really is
-    called enough times that that matters."""
+    called enough times that this matters."""
     return (n + 7) >> 3

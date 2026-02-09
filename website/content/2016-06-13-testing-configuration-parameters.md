@@ -27,7 +27,7 @@ application.
 
 This means that they are relatively easy to test with property-based
 testing. You take an existing test - either one that is already using
-Hypothesis or a normal example based test test - and you vary some
+Hypothesis or a normal example based test - and you vary some
 configuration parameters and make sure the test still passes.
 
 This turns out to be remarkably effective. Here's an example where I

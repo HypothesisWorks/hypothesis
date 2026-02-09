@@ -139,7 +139,7 @@ def test_union_empty():
 
 def test_union_handles_totally_overlapped_gap():
     #   < xx  >  Imagine the intervals x and y as bit strings.
-    # | <yy yy>  The bit at position n is set if n falls inside that interval.
+    # | <y1 y2>  The bit at position n is set if n falls inside that interval.
     # = <zzzzz>  In this model _union_intervals() performs bit-wise or.
     assert _union_intervals([[2, 3]], [[1, 2], [4, 5]]) == ((1, 5),)
 

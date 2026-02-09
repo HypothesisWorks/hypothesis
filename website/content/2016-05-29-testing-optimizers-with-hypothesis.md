@@ -142,7 +142,7 @@ Draw 1: (1, 1)
 
 In this case what happens is the opposite: Previously the greedy
 algorithm was reaching for the (1, 1) item as the most appealing because
-it had the highest value to weight ratio, but by including it it only
+it had the highest value to weight ratio, but by including it, it only
 had space for one of the remaining two. When Hypothesis removed that
 option, it could fit the remaining two items into its knapsack and thus
 scored a higher point.

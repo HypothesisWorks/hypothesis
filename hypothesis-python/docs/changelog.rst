@@ -8272,7 +8272,7 @@ caused an internal error.  This bug was introduced in :ref:`version 5.8.1 <v5.8.
 5.10.1 - 2020-04-19
 -------------------
 
-This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted>` that should have no user user visible impact.
+This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted>` that should have no user visible impact.
 
 .. _v5.10.0:
 
@@ -8773,7 +8773,7 @@ Removals
 - ``hypothesis.settings.buffer``, without replacement
 - ``hypothesis.PrintSettings``, because :obj:`hypothesis.settings.print_blob` takes ``True`` or ``False``
 - ``hypothesis.settings.timeout``, in favor of :obj:`hypothesis.settings.deadline`
-- ``hypothesis.unlimited`` without replacement (only only useful as argument to ``timeout``)
+- ``hypothesis.unlimited`` without replacement (only useful as argument to ``timeout``)
 
 Hypothesis 4.x
 ==============
@@ -14193,7 +14193,7 @@ Hypothesis now emits deprecation warnings if you apply
 :func:`@given <hypothesis.given>` more than once to a target.
 
 Applying :func:`@given <hypothesis.given>` repeatedly wraps the target multiple
-times. Each wrapper will search the space of of possible parameters separately.
+times. Each wrapper will search the space of possible parameters separately.
 This is equivalent but will be much more inefficient than doing it with a
 single call to :func:`@given <hypothesis.given>`.
 
@@ -15659,7 +15659,7 @@ Minor bug fix release.
   can both now be called with an empty argument
   list, in which case they also never generate any values.
 * :func:`~hypothesis.strategies.one_of` may now be called with a single argument that is a collection of strategies
-  as well as as varargs.
+  as well as varargs.
 * Add a :func:`~hypothesis.strategies.runner` strategy which returns the instance of the current test object
   if there is one.
 * 'Bundle' for RuleBasedStateMachine is now a normal(ish) strategy and can be used
@@ -16807,7 +16807,7 @@ This release could also be called 1.0-RC1.
 
 It contains a teeny tiny bugfix, but the real point of this release is to declare
 feature freeze. There will be zero functionality changes between 0.9.0 and 1.0 unless
-something goes really really wrong. No new features will be added, no breaking API changes
+something goes seriously wrong. No new features will be added, no breaking API changes
 will occur, etc. This is the final shakedown before I declare Hypothesis stable and ready
 to use and throw a party to celebrate.
 
@@ -17026,7 +17026,7 @@ Bug fixes:
 
 Other:
 
-* A lot of internals have been been rewritten. This shouldn't affect you at all, but
+* A lot of internals have been rewritten. This shouldn't affect you at all, but
   it opens the way for certain of hypothesis's oddities to be a lot more extensible by
   users. Whether this is a good thing may be up for debate...
 

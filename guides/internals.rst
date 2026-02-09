@@ -240,7 +240,7 @@ but is now just noise.
 
 Because the shrinker runs in a big loop, if we've made progress the shrink pass
 will always be run again (assuming we don't hit some limit that terminates the
-shrink early, but by making the shrinker better we try to ensure that that
+shrink early, but by making the shrinker better we try to ensure that this
 never happens).
 This means that we will always get an opportunity to start again later if we
 made progress, and if we didn't make progress we've tried everything anyway.

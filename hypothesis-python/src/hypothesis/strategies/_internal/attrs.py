@@ -164,7 +164,7 @@ def types_to_strategy(attrib: Attribute, types: Collection[Any]) -> SearchStrate
         return st.from_type(typ)
     elif types:
         # We have a list of tuples of types, and want to find a type
-        # (or tuple of types) that is a subclass of all of of them.
+        # (or tuple of types) that is a subclass of all of them.
         type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
         # Flatten the list, filter types that would fail validation, and
         # sort so that ordering is stable between runs and shrinks well.
