@@ -69,7 +69,7 @@ from tests.conjecture.common import (
 @example(("integer", integer_constr(-(2**200), 2**200)))
 @given(choice_types_constraints())
 def test_compute_max_children_is_positive(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     assert compute_max_children(choice_type, constraints) >= 0
 
 
@@ -206,7 +206,7 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
 @given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_compute_max_children_and_all_children_agree(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     max_children = compute_max_children(choice_type, constraints)
 
     # avoid slowdowns / OOM when reifying extremely large all_children generators.
@@ -390,7 +390,7 @@ def test_data_with_same_forced_value_is_valid(node):
 @given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_all_children_are_permitted_values(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     max_children = compute_max_children(choice_type, constraints)
 
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
@@ -769,7 +769,7 @@ def test_node_template_simplest_is_actually_trivial(node):
 @example(("boolean", {"p": 0}))
 @example(("boolean", {"p": 1}))
 def test_choice_indices_are_positive(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     v = draw_value(choice_type, constraints)
     assert choice_to_index(v, constraints) >= 0
 
@@ -786,7 +786,7 @@ def test_shrink_towards_has_index_0(constraints):
 @settings(max_examples=20)
 def test_choice_to_index_injective(choice_type_and_constraints):
     # choice sequence ordering should be injective both ways.
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     # ...except for floats, which are hard to order bijectively.
     assume(choice_type != "float")
     # cap to 10k so this test finishes in a reasonable amount of time
@@ -810,7 +810,7 @@ def test_choice_to_index_injective(choice_type_and_constraints):
     )
 )
 def test_choice_from_value_injective(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     assume(choice_type != "float")
     cap = min(compute_max_children(choice_type, constraints), 10_000)
 
@@ -823,7 +823,7 @@ def test_choice_from_value_injective(choice_type_and_constraints):
 
 @given(choice_types_constraints())
 def test_choice_index_and_value_are_inverses(choice_type_and_constraints):
-    (choice_type, constraints) = choice_type_and_constraints
+    choice_type, constraints = choice_type_and_constraints
     v = draw_value(choice_type, constraints)
     index = choice_to_index(v, constraints)
     note({"v": v, "index": index})
