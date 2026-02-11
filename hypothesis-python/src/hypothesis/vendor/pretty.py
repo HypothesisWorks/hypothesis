@@ -919,7 +919,7 @@ def _repr_integer(obj: int, p: RepresentationPrinter, cycle: bool) -> None:
         # add underscores for integers over ten decimal digits
         p.text(f"{obj:#_d}")
     else:
-        # for extremely large integers, use hex because power-of-two bases are cheaper
+        # for very very large integers, use hex because power-of-two bases are cheaper
         # https://docs.python.org/3/library/stdtypes.html#integer-string-conversion-length-limitation
         p.text(f"{obj:#_x}")
 

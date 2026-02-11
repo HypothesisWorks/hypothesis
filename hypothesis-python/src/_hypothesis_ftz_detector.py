@@ -147,7 +147,7 @@ def identify_ftz_culprits() -> str:
 
 
 if __name__ == "__main__":
-    # This would be extremely annoying to write automated tests for, so I've
+    # This would be really really annoying to write automated tests for, so I've
     # done some manual exploratory testing: `pip install grequests gevent==21.12.0`,
     # and call print() as desired to observe behavior.
     import grequests  # noqa

@@ -25,7 +25,7 @@ dig up the IRC logs, but the exact number doesn't matter).
 Hypothesis said "Ah ha! Here is an example where the error is 0.500001. A bug!".
 
 Ned sighed and thought "Oh great, floating point precision issues", but on further
-investigation it turned out that this wasn't it at all. The error could be arbitrarily large,
+investigation it turned out that that wasn't it at all. The error could be arbitrarily large,
 it's just that Hypothesis reliably gave an example where it was almost as small as it could
 possibly be and still fail.
 

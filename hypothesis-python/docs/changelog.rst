@@ -16807,7 +16807,7 @@ This release could also be called 1.0-RC1.
 
 It contains a teeny tiny bugfix, but the real point of this release is to declare
 feature freeze. There will be zero functionality changes between 0.9.0 and 1.0 unless
-something goes seriously wrong. No new features will be added, no breaking API changes
+something goes really really wrong. No new features will be added, no breaking API changes
 will occur, etc. This is the final shakedown before I declare Hypothesis stable and ready
 to use and throw a party to celebrate.
 

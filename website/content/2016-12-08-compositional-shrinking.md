@@ -51,7 +51,7 @@ def test_even_numbers_are_even(n):
 ```
 
 We took a strategy and composed it with a function mapping over
-the values that the strategy produced to get a new strategy.
+the values that that strategy produced to get a new strategy.
 
 Suppose the Hypothesis strategy implementation looked something
 like the following:

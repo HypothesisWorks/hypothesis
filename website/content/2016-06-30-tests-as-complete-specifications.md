@@ -110,7 +110,7 @@ Falsifying example: test_inserting_at_smaller_index_gives_unsorted(
 
 (you may also get (ls=[-1, 0, 0, 0, 0], v=0))
 
-However when I run it, it usually *doesn't* fail the first time. It
+However when I run it it usually *doesn't* fail the first time. It
 usually takes somewhere between two and five runs before it fails. This
 is because in order to trigger this behaviour being wrong you need
 quite specific behaviour: value needs to appear in ls at least

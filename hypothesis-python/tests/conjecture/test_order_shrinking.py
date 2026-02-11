@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.shrinking import Ordering
 def test_shrinks_down_to_sorted_the_slow_way(ls):
     # We normally would short-circuit and find that we can sort this
     # automatically, but here we test that a single run_step could put the
-    # list in sorted order anyway if it had to, and that this is just an
+    # list in sorted order anyway if it had to, and that that is just an
     # optimisation.
     shrinker = Ordering(ls, lambda ls: True, full=False)
     shrinker.run_step()

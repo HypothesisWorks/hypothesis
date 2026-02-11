@@ -193,7 +193,7 @@ class GenericCache(Generic[K, V]):
         return score
 
     def on_evict(self, key: K, value: V, score: Any) -> Any:
-        """Called after a key has been evicted, with the score it had at
+        """Called after a key has been evicted, with the score it had had at
         the point of eviction."""
 
     def check_valid(self) -> None:

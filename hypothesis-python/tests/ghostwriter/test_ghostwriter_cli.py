@@ -85,7 +85,7 @@ def test_cli_python_equivalence(cli, code):
 @pytest.mark.parametrize(
     "cli,err_msg",
     [
-        ("--idempotent sorted list", "Test functions for idempotence one at a time."),
+        ("--idempotent sorted sorted", "Test functions for idempotence one at a time."),
         (
             "xxxx",
             "Found the 'builtins' module, but it doesn't have a 'xxxx' attribute.",

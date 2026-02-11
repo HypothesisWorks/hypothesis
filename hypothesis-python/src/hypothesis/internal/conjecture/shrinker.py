@@ -1144,7 +1144,7 @@ class Shrinker:
             # case of this function of preserving from the right instead of
             # preserving from the left. see test_can_shrink_variable_string_draws.
 
-            index, attempt_choice_type, attempt_constraints, _attempt_forced = (
+            (index, attempt_choice_type, attempt_constraints, _attempt_forced) = (
                 attempt.misaligned_at
             )
             node = self.nodes[index]

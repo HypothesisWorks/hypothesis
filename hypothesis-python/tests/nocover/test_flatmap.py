@@ -33,7 +33,7 @@ ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 OrderedPairs = integers(1, 200).flatmap(lambda e: tuples(integers(0, e - 1), just(e)))
 
 
-# This health check fails extremely occasionally - rarely enough to not be worth
+# This health check fails very very occasionally - rarely enough to not be worth
 # investigation
 @settings(max_examples=100, suppress_health_check=[HealthCheck.filter_too_much])
 @given(ConstantLists)
