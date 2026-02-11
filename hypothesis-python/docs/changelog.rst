@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.6:
+
+--------------------
+6.151.6 - 2026-02-11
+--------------------
+
+This patch fixes several duplicate word typos in comments and documentation.
+
 .. _v6.151.5:
 
 --------------------
