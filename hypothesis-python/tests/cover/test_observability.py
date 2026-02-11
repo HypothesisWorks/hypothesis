@@ -281,7 +281,7 @@ def test_minimal_failing_observation():
     }
     assert observation.coverage is None
     assert observation.features == {}
-    assert observation.how_generated == "minimal failing example"
+    assert observation.how_generated == "minimal failing test case"
     assert "AssertionError" in observation.metadata.traceback
     assert "test_fails" in observation.metadata.traceback
     assert observation.metadata.reproduction_decorator.startswith("@reproduce_failure")
