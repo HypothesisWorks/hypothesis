@@ -15,6 +15,7 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from textwrap import indent
 
 import requests
 from coverage.config import CoverageConfig
@@ -80,8 +81,6 @@ def lint():
     pip_tool("ruff", "check", ".")
     codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
 
-    from textwrap import indent
-
     failed = False
 
     matches = subprocess.run(
@@ -96,16 +95,15 @@ def lint():
         print(indent(matches, "    "))
         failed = True
 
-    dupes = subprocess.run(
-        r"git grep -nP '\b(the|as|a|to|because)\s+\1\b'"
-        " -- ':!*.svg' ':!*.png' ':!*.jpg' ':!*.sketch'",
+    matches = subprocess.run(
+        r"git grep -nP '\b(the|as|a|to|because|user|test|about|from|only)\s+\1\b'",
         shell=True,
         capture_output=True,
         text=True,
     ).stdout
-    if dupes:
-        print("\nDuplicate word(s) found:")
-        print(indent(dupes, "    "))
+    if matches:
+        print("\nFound duplicate words:")
+        print(indent(matches, "    "))
         failed = True
 
     if failed:
