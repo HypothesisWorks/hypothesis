@@ -1027,7 +1027,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             else:
                 warning_message = (
                     "Could not get the latest artifact from GitHub. "
-                    "This could be because because the repository "
+                    "This could be because the repository "
                     "or artifact does not exist. "
                 )
             # see https://github.com/python/cpython/issues/128734
@@ -1105,7 +1105,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         kp = self._key_path(key)
 
         with ZipFile(self._artifact) as zf:
-            # Get the all files in the the kp from the cache
+            # Get all the files in the kp from the cache
             filenames = self._access_cache.get(kp, ())
             for filename in filenames:
                 with zf.open(filename.as_posix()) as f:

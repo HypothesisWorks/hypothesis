@@ -10,7 +10,7 @@ Once you learn the basics, there are two hard parts to using property-based test
 * What are good properties to test?
 * How do I generate complex inputs?
 
-These are also the the _main_ parts of property-based testing! And both require some skill and creativity to solve. This post is to help you get some basics on the second question, how we generate complex inputs. Often we're working with data that has lots of preconditions and we want to actually generate inputs that satisfies the preconditions. We also often need to create data that depends on other data, or data with extra conditions, or [independent-but-similar](https://www.hillelwayne.com/post/metamorphic-testing/) data. We need some way to build more complex strategies.
+These are also the _main_ parts of property-based testing! And both require some skill and creativity to solve. This post is to help you get some basics on the second question, how we generate complex inputs. Often we're working with data that has lots of preconditions and we want to actually generate inputs that satisfies the preconditions. We also often need to create data that depends on other data, or data with extra conditions, or [independent-but-similar](https://www.hillelwayne.com/post/metamorphic-testing/) data. We need some way to build more complex strategies.
 
 There are a few different ways to do this, so let's go into each of them.
 

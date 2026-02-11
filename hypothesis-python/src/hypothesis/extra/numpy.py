@@ -1166,7 +1166,7 @@ def basic_indices(
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
       of the generated index. When ``min_dims == 0``, scalars and zero-dimensional
       arrays are both allowed.
-    * ``max_dims`` is the the maximum dimensionality of the resulting array,
+    * ``max_dims`` is the maximum dimensionality of the resulting array,
       defaulting to ``len(shape) if not allow_newaxis else
       max(len(shape), min_dims) + 2``.
     * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.

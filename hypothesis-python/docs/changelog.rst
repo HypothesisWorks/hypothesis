@@ -6264,7 +6264,7 @@ affecting the :pypi:`returns` package (:issue:`3060`).
 6.14.8 - 2021-08-16
 -------------------
 
-This patch ensures that registering a strategy for a subclass of a a parametrised
+This patch ensures that registering a strategy for a subclass of a parametrised
 generic type such as ``class Lines(Sequence[str]):`` will not "leak" into unrelated
 strategies such as ``st.from_type(Sequence[int])`` (:issue:`2951`).
 Unfortunately this fix requires :pep:`560`, meaning Python 3.7 or later.
@@ -8272,7 +8272,7 @@ caused an internal error.  This bug was introduced in :ref:`version 5.8.1 <v5.8.
 5.10.1 - 2020-04-19
 -------------------
 
-This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted>` that should have no user user visible impact.
+This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted>` that should have no user visible impact.
 
 .. _v5.10.0:
 
@@ -8773,7 +8773,7 @@ Removals
 - ``hypothesis.settings.buffer``, without replacement
 - ``hypothesis.PrintSettings``, because :obj:`hypothesis.settings.print_blob` takes ``True`` or ``False``
 - ``hypothesis.settings.timeout``, in favor of :obj:`hypothesis.settings.deadline`
-- ``hypothesis.unlimited`` without replacement (only only useful as argument to ``timeout``)
+- ``hypothesis.unlimited`` without replacement (only useful as argument to ``timeout``)
 
 Hypothesis 4.x
 ==============
@@ -8806,7 +8806,7 @@ with :func:`~hypothesis.strategies.from_type`:
 - :class:`python:typing.SupportsRound`
 
 Note that using :func:`~hypothesis.strategies.from_type` with one of the above strategies will not
-ensure that the the specified function will execute successfully (ie : the strategy returned for
+ensure that the specified function will execute successfully (ie : the strategy returned for
 ``from_type(typing.SupportsAbs)`` may include NaNs or things which cause the :func:`python:abs`
 function to error. )
 
@@ -12837,7 +12837,7 @@ not recommended for direct use by other users of Hypothesis.
 -------------------
 
 This release adds a new mechanism to infer strategies for classes
-defined using :pypi:`attrs`, based on the the type, converter, or
+defined using :pypi:`attrs`, based on the type, converter, or
 validator of each attribute.  This inference is now built in to
 :func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`.
 
@@ -14193,7 +14193,7 @@ Hypothesis now emits deprecation warnings if you apply
 :func:`@given <hypothesis.given>` more than once to a target.
 
 Applying :func:`@given <hypothesis.given>` repeatedly wraps the target multiple
-times. Each wrapper will search the space of of possible parameters separately.
+times. Each wrapper will search the space of possible parameters separately.
 This is equivalent but will be much more inefficient than doing it with a
 single call to :func:`@given <hypothesis.given>`.
 
@@ -15659,7 +15659,7 @@ Minor bug fix release.
   can both now be called with an empty argument
   list, in which case they also never generate any values.
 * :func:`~hypothesis.strategies.one_of` may now be called with a single argument that is a collection of strategies
-  as well as as varargs.
+  as well as varargs.
 * Add a :func:`~hypothesis.strategies.runner` strategy which returns the instance of the current test object
   if there is one.
 * 'Bundle' for RuleBasedStateMachine is now a normal(ish) strategy and can be used
@@ -16186,7 +16186,7 @@ Bug fixes:
 1.11.0 - 2015-08-31
 -------------------
 
-* text() with a non-string alphabet would have used the repr() of the the alphabet
+* text() with a non-string alphabet would have used the repr() of the alphabet
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
 * @given will now work on methods whose definitions contains no explicit positional
@@ -17026,7 +17026,7 @@ Bug fixes:
 
 Other:
 
-* A lot of internals have been been rewritten. This shouldn't affect you at all, but
+* A lot of internals have been rewritten. This shouldn't affect you at all, but
   it opens the way for certain of hypothesis's oddities to be a lot more extensible by
   users. Whether this is a good thing may be up for debate...
 

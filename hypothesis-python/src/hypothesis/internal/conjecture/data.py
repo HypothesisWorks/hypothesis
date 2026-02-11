@@ -142,7 +142,7 @@ POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCac
 class Span:
     """A span tracks the hierarchical structure of choices within a single test run.
 
-    Spans are created to mark regions of the choice sequence that that are
+    Spans are created to mark regions of the choice sequence that are
     logically related to each other. For instance, Hypothesis tracks:
     - A single top-level span for the entire choice sequence
     - A span for the choices made by each strategy

@@ -15,6 +15,7 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from textwrap import indent
 
 import requests
 from coverage.config import CoverageConfig
@@ -80,6 +81,8 @@ def lint():
     pip_tool("ruff", "check", ".")
     codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
 
+    failed = False
+
     matches = subprocess.run(
         r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
         "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
@@ -88,10 +91,22 @@ def lint():
         text=True,
     ).stdout
     if matches:
-        from textwrap import indent
-
         print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
         print(indent(matches, "    "))
+        failed = True
+
+    matches = subprocess.run(
+        r"git grep -nP '\b(the|as|a|to|because|user|test|about|from|only)\s+\1\b'",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        print("\nFound duplicate words:")
+        print(indent(matches, "    "))
+        failed = True
+
+    if failed:
         sys.exit(1)
 
 
