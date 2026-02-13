@@ -312,7 +312,7 @@ def _get_local_constants() -> Constants:
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
         new_modules = []
-        for name, module in sys.modules.items():
+        for name, module in list(sys.modules.items()):
             try:
                 seen = module in _seen_modules
             except TypeError:
