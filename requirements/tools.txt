@@ -12,7 +12,7 @@ anyio==4.12.1
     # via
     #   starlette
     #   watchfiles
-asgiref==3.11.0
+asgiref==3.11.1
     # via django
 asttokens==3.0.1
     # via stack-data
@@ -20,7 +20,7 @@ attrs==25.4.0
     # via -r requirements/tools.in
 autoflake==2.3.1
     # via shed
-babel==2.17.0
+babel==2.18.0
     # via sphinx
 beautifulsoup4==4.14.3
     # via
@@ -34,7 +34,7 @@ build==1.4.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==6.2.4
+cachetools==7.0.1
     # via tox
 certifi==2026.1.4
     # via requests
@@ -57,9 +57,9 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.13.1
+coverage==7.13.4
     # via -r requirements/tools.in
-cryptography==46.0.3
+cryptography==46.0.5
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -68,7 +68,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==6.0.1
+django==6.0.2
     # via -r requirements/tools.in
 docutils==0.22.4
     # via
@@ -85,7 +85,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.20.3
+filelock==3.24.0
     # via
     #   tox
     #   virtualenv
@@ -93,7 +93,7 @@ furo==2025.12.19
     # via -r requirements/tools.in
 h11==0.16.0
     # via uvicorn
-id==1.5.0
+id==1.6.1
     # via twine
 idna==3.11
     # via
@@ -103,7 +103,7 @@ imagesize==1.4.1
     # via sphinx
 iniconfig==2.3.0
     # via pytest
-ipython==9.9.0
+ipython==9.10.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -135,9 +135,9 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.7.8
+librt==0.8.0
     # via mypy
-markdown==3.10.1
+markdown==3.10.2
     # via pelican
 markdown-it-py==4.0.0
     # via rich
@@ -157,11 +157,11 @@ mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nh3==0.3.2
+nh3==0.3.3
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
-numpy==2.4.1
+numpy==2.4.2
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -175,9 +175,9 @@ packaging==26.0
     #   tox
     #   twine
     #   wheel
-parso==0.8.5
+parso==0.8.6
     # via jedi
-pathspec==1.0.3
+pathspec==1.0.4
     # via
     #   black
     #   mypy
@@ -187,9 +187,9 @@ pexpect==4.9.0
     # via
     #   -r requirements/test.in
     #   ipython
-pip-tools==7.5.2
+pip-tools==7.5.3
     # via -r requirements/tools.in
-platformdirs==4.5.1
+platformdirs==4.9.1
     # via
     #   black
     #   tox
@@ -237,7 +237,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-pytokens==0.4.0
+pytokens==0.4.1
     # via black
 pyupgrade==3.21.2
     # via shed
@@ -250,7 +250,6 @@ readme-renderer==44.0
 requests==2.32.5
     # via
     #   -r requirements/tools.in
-    #   id
     #   requests-toolbelt
     #   sphinx
     #   sphinx-jsonschema
@@ -261,13 +260,13 @@ restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==14.3.1
+rich==14.3.2
     # via
     #   pelican
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.14.14
+ruff==0.15.1
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -324,7 +323,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.4.0
     # via -r requirements/tools.in
-tox==4.34.1
+tox==4.35.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -342,7 +341,7 @@ types-pytz==2025.2.0.20251108
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==80.10.0.20260124
+types-setuptools==82.0.0.20260210
     # via types-cffi
 typing-extensions==4.15.0
     # via
@@ -355,6 +354,7 @@ unidecode==1.4.0
     # via pelican
 urllib3==2.6.3
     # via
+    #   id
     #   requests
     #   twine
 uvicorn==0.40.0
@@ -367,7 +367,7 @@ watchfiles==1.1.1
     # via
     #   pelican
     #   sphinx-autobuild
-wcwidth==0.3.3
+wcwidth==0.6.0
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
@@ -375,7 +375,7 @@ wheel==0.46.3
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.3
+pip==26.0.1
     # via pip-tools
-setuptools==80.10.1
+setuptools==82.0.0
     # via pip-tools
