@@ -19,7 +19,7 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-PYTHON_VERSION="3.14.2"
+PYTHON_VERSION="3.14.3"
 
 if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-}" ] ; then
     # We're on GitHub Actions, Codespaces, or Claude Code and already have a suitable Python

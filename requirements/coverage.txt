@@ -12,7 +12,7 @@ click==8.3.1
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.13.1
+coverage[toml]==7.13.4
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -28,7 +28,7 @@ libcst==1.8.6
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.1
+numpy==2.4.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -38,11 +38,11 @@ packaging==26.0
     #   pytest
 pandas==3.0.0
     # via -r requirements/coverage.in
-pathspec==1.0.3
+pathspec==1.0.4
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.5.1
+platformdirs==4.9.1
     # via black
 pluggy==1.6.0
     # via
@@ -67,13 +67,13 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytokens==0.4.0
+pytokens==0.4.1
     # via black
 pytz==2025.2
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.1.0
+redis==7.1.1
     # via fakeredis
 six==1.17.0
     # via python-dateutil

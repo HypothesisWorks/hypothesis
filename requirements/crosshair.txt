@@ -19,7 +19,7 @@ crosshair-tool==0.0.102
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.150.3
+hypothesis==6.151.6
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.27
     # via -r requirements/crosshair.in
@@ -43,7 +43,7 @@ pluggy==1.6.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pygls==2.0.0
+pygls==2.0.1
     # via crosshair-tool
 pygments==2.19.2
     # via pytest
@@ -67,7 +67,7 @@ typing-extensions==4.15.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via crosshair-tool
-z3-solver==4.15.4.0
+z3-solver==4.15.8.0
     # via crosshair-tool
 zipp==3.23.0
     # via importlib-metadata
