@@ -9,6 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -92,3 +94,14 @@ def test_actual_collection(monkeypatch, tmp_path):
         pass
 
     f()
+
+
+def test_unhashable_sys_modules_entry(monkeypatch):
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4660
+    # Some packages (e.g. cog) place unhashable objects like SimpleNamespace
+    # in sys.modules. This should not crash _get_local_constants.
+    monkeypatch.setattr(providers, "_sys_modules_len", None)
+    monkeypatch.setattr(providers, "_seen_modules", set())
+    monkeypatch.setitem(sys.modules, "_unhashable_test_mod", SimpleNamespace())
+
+    providers._get_local_constants()

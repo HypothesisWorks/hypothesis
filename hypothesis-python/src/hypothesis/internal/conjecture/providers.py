@@ -18,7 +18,6 @@ from contextlib import AbstractContextManager, contextmanager
 from functools import cached_property
 from random import Random
 from sys import float_info
-from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -274,7 +273,9 @@ _local_constants = Constants(
 # are all modules, not necessarily local ones. This lets us quickly see which
 # modules are new without an expensive path.resolve() or is_local_module_file
 # cache lookup.
-_seen_modules: set[ModuleType] = set()
+# We track by module object when hashable, falling back to the module name
+# (str key in sys.modules) for unhashable entries like SimpleNamespace.
+_seen_modules: set = set()
 _sys_modules_len: int | None = None
 
 
@@ -310,20 +311,28 @@ def _get_local_constants() -> Constants:
     # careful: store sys.modules length when we first check to avoid race conditions
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
-        # set(_seen_modules) shouldn't typically be required, but I have run into
-        # a "set changed size during iteration" error here when running
-        # test_provider_conformance_crosshair.
-        new_modules = set(sys.modules.values()) - set(_seen_modules)
+        new_modules = []
+        for name, module in list(sys.modules.items()):
+            try:
+                seen = module in _seen_modules
+            except TypeError:
+                # unhashable module (e.g. SimpleNamespace); fall back to name
+                seen = name in _seen_modules
+            if not seen:
+                new_modules.append((name, module))
         # Repeated SortedSet unions are expensive. Do the initial unions on a
         # set(), then do a one-time union with _local_constants after.
         new_constants = Constants()
-        for module in new_modules:
+        for name, module in new_modules:
             if (
                 module_file := getattr(module, "__file__", None)
             ) is not None and is_local_module_file(module_file):
                 new_constants |= constants_from_module(module)
+            try:
+                _seen_modules.add(module)
+            except TypeError:
+                _seen_modules.add(name)
         _local_constants |= new_constants
-        _seen_modules.update(new_modules)
         _sys_modules_len = sys_modules_len
 
     # if we add any new constant, invalidate the constant cache for permitted values.
