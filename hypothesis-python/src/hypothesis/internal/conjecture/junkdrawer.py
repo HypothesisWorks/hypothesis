@@ -441,49 +441,6 @@ def find_integer(f: Callable[[int], bool]) -> int:
     return lo
 
 
-class NotFound(Exception):
-    pass
-
-
-class SelfOrganisingList(Generic[T]):
-    """A self-organising list with the move-to-front heuristic.
-
-    A self-organising list is a collection which we want to retrieve items
-    that satisfy some predicate from. There is no faster way to do this than
-    a linear scan (as the predicates may be arbitrary), but the performance
-    of a linear scan can vary dramatically - if we happen to find a good item
-    on the first try it's O(1) after all. The idea of a self-organising list is
-    to reorder the list to try to get lucky this way as often as possible.
-
-    There are various heuristics we could use for this, and it's not clear
-    which are best. We use the simplest, which is that every time we find
-    an item we move it to the "front" (actually the back in our implementation
-    because we iterate in reverse) of the list.
-
-    """
-
-    def __init__(self, values: Iterable[T] = ()) -> None:
-        self.__values = list(values)
-
-    def __repr__(self) -> str:
-        return f"SelfOrganisingList({self.__values!r})"
-
-    def add(self, value: T) -> None:
-        """Add a value to this list."""
-        self.__values.append(value)
-
-    def find(self, condition: Callable[[T], bool]) -> T:
-        """Returns some value in this list such that ``condition(value)`` is
-        True. If no such value exists raises ``NotFound``."""
-        for i in range(len(self.__values) - 1, -1, -1):
-            value = self.__values[i]
-            if condition(value):
-                del self.__values[i]
-                self.__values.append(value)
-                return value
-        raise NotFound("No values satisfying condition")
-
-
 _gc_initialized = False
 _gc_start: float = 0
 _gc_cumulative_time: float = 0
