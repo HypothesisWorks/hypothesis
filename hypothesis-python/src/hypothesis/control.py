@@ -305,7 +305,7 @@ _events_to_strings: WeakKeyDictionary[Any, str] = WeakKeyDictionary()
 
 def _serialize_event(
     event: Any, *, allowed_types: tuple[type, ...] = (str,), avoid_realization: bool
-) -> str:
+) -> Any:
     if isinstance(event, allowed_types):
         return event
 

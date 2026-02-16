@@ -315,7 +315,7 @@ def _get_local_constants() -> Constants:
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
         new_modules = [
             module
-            for module in sys.modules.values().copy()
+            for module in list(sys.modules.values())
             if id(module) not in _seen_modules
         ]
         # Repeated SortedSet unions are expensive. Do the initial unions on a
