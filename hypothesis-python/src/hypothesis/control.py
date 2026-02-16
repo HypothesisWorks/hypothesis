@@ -280,7 +280,7 @@ def note(value: object) -> None:
         report(value)
 
 
-def event(value: str, payload: str | int | float = "") -> None:
+def event(value: str, payload: Any = "") -> None:
     """Record an event that occurred during this test. Statistics on the number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
@@ -293,17 +293,19 @@ def event(value: str, payload: str | int | float = "") -> None:
         raise InvalidArgument("Cannot record events outside of a test")
 
     avoid_realization = context.data.provider.avoid_realization
-    payload = _event_to_string(
+    payload = _serialize_event(
         payload, allowed_types=(str, int, float), avoid_realization=avoid_realization
     )
-    value = _event_to_string(value, avoid_realization=avoid_realization)
+    value = _serialize_event(value, avoid_realization=avoid_realization)
     context.data.events[value] = payload
 
 
-_events_to_strings: WeakKeyDictionary = WeakKeyDictionary()
+_events_to_strings: WeakKeyDictionary[Any, str] = WeakKeyDictionary()
 
 
-def _event_to_string(event, *, allowed_types=str, avoid_realization):
+def _serialize_event(
+    event: Any, *, allowed_types: tuple[type, ...] = (str,), avoid_realization: bool
+) -> str:
     if isinstance(event, allowed_types):
         return event
 
