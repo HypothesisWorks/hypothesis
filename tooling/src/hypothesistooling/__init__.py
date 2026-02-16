@@ -115,6 +115,7 @@ def assert_can_release():
 def modified_files():
     files = set()
     for command in [
+        # committed changes since we diverged from master
         [
             "git",
             "diff",
@@ -123,7 +124,10 @@ def modified_files():
             point_of_divergence(),
             "HEAD",
         ],
+        # current unstaged changes
         ["git", "diff", "--name-only"],
+        # current staged changes
+        ["git", "diff", "--cached", "--name-only"],
     ]:
         diff_output = subprocess.check_output(command).decode("ascii")
         for l in diff_output.split("\n"):
