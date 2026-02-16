@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.8:
+
+--------------------
+6.151.8 - 2026-02-16
+--------------------
+
+This patch fixes a crash when :obj:`sys.modules` contains unhashable values,
+such as :class:`~types.SimpleNamespace` objects (:issue:`4660`).
+
 .. _v6.151.7:
 
 --------------------
