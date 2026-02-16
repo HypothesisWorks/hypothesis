@@ -183,7 +183,7 @@ def get_patch_for(
     if patch is None:
         return None
 
-    (before, after) = patch
+    before, after = patch
     return (str(fname), before, after)
 
 

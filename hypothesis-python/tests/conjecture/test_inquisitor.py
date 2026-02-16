@@ -38,8 +38,7 @@ def fails_with_output(expected):
     return _inner
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     # The test always failed when commented parts were varied together.
     a=False,  # or any other generated value
@@ -48,24 +47,21 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     d=True,
     e=False,  # or any other generated value
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.booleans(), st.booleans(), st.lists(st.none()), st.booleans(), st.booleans())
 def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
     assert not (b and d)
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_comments_basic_fail_if_not_all(
     # The test sometimes passed when commented parts were varied together.
     a='',  # or any other generated value
     b='',  # or any other generated value
     c='',  # or any other generated value
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.text(), st.text(), st.text())
 def test_inquisitor_comments_basic_fail_if_not_all(a, b, c):
@@ -73,14 +69,12 @@ def test_inquisitor_comments_basic_fail_if_not_all(a, b, c):
     assert condition
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_no_together_comment_if_single_argument(
     a='',
     b='',  # or any other generated value
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.text(), st.text())
 def test_inquisitor_no_together_comment_if_single_argument(a, b):
@@ -95,14 +89,12 @@ def ints_with_forced_draw(draw):
     return n
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_doesnt_break_on_varying_forced_nodes(
     n1=100,
     n2=0,  # or any other generated value
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.integers(), ints_with_forced_draw())
 def test_inquisitor_doesnt_break_on_varying_forced_nodes(n1, n2):
@@ -126,72 +118,63 @@ class MyClass:
         self.y = y
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_builds_subargs(
     obj=MyClass(
         0,  # or any other generated value
         True,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.builds(MyClass, st.integers(), st.booleans()))
 def test_inquisitor_builds_subargs(obj):
     assert not obj.y
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_builds_kwargs_subargs(
     obj=MyClass(
         x=0,  # or any other generated value
         y=True,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.builds(MyClass, x=st.integers(), y=st.booleans()))
 def test_inquisitor_builds_kwargs_subargs(obj):
     assert not obj.y
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_tuple_subargs(
     t=(
         0,  # or any other generated value
         True,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.tuples(st.integers(), st.booleans()))
 def test_inquisitor_tuple_subargs(t):
     assert not t[1]
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_fixeddict_subargs(
     d={
         'x': 0,  # or any other generated value
         'y': True,
     },
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.fixed_dictionaries({"x": st.integers(), "y": st.booleans()}))
 def test_inquisitor_fixeddict_subargs(d):
     assert not d["y"]
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_tuple_multiple_varying(
     t=(
         0,  # or any other generated value
@@ -199,8 +182,7 @@ Falsifying example: test_inquisitor_tuple_multiple_varying(
         True,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.tuples(st.integers(), st.text(), st.booleans()))
 def test_inquisitor_tuple_multiple_varying(t):
@@ -209,16 +191,14 @@ def test_inquisitor_tuple_multiple_varying(t):
     assert not t[2]
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_skip_subset_slices(
     obj=MyClass(
         (0, False),  # or any other generated value
         y=False,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.builds(MyClass, st.tuples(st.integers(), st.booleans()), y=st.booleans()))
 def test_inquisitor_skip_subset_slices(obj):
@@ -228,8 +208,7 @@ def test_inquisitor_skip_subset_slices(obj):
 
 
 # Test for duplicate param names at different nesting levels
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_duplicate_param_names(
     kw=0,  # or any other generated value
     b={
@@ -237,8 +216,7 @@ Falsifying example: test_inquisitor_duplicate_param_names(
         'c': True,
     },
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(kw=st.integers(), b=st.fixed_dictionaries({"kw": st.text(), "c": st.booleans()}))
 def test_inquisitor_duplicate_param_names(kw, b):
@@ -260,8 +238,7 @@ class Inner:
         self.x = x
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_multi_level_nesting(
     bare=0,  # or any other generated value
     outer=Outer(
@@ -269,8 +246,7 @@ Falsifying example: test_inquisitor_multi_level_nesting(
         value=True,
     ),
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(
     bare=st.integers(),
