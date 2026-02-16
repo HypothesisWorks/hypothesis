@@ -233,7 +233,7 @@ class SearchStrategy(Generic[Ex]):
     # this works so I'm not looking into it further atm.
     __label: int | UniqueIdentifier | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.validate_called: dict[int, bool] = {}
 
     def is_currently_empty(self, data: ConjectureData) -> bool:

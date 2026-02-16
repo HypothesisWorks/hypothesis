@@ -10,6 +10,8 @@
 
 import operator
 import re
+from dataclasses import dataclass
+from re import Pattern
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
@@ -29,9 +31,12 @@ except ImportError:  # Python < 3.11
     ATOMIC_GROUP = object()
     POSSESSIVE_REPEAT = object()
 
+from typing import Any, AnyStr
+
 from hypothesis import reject, strategies as st
-from hypothesis.internal.charmap import as_general_categories, categories
+from hypothesis.internal.charmap import CategoryName, as_general_categories, categories
 from hypothesis.internal.compat import add_note, int_to_byte
+from hypothesis.strategies import SearchStrategy
 
 UNICODE_CATEGORIES = set(categories())
 
@@ -58,7 +63,7 @@ BYTES_LOOKUP = {
 }
 
 
-GROUP_CACHE_STRATEGY: st.SearchStrategy[dict] = st.shared(
+GROUP_CACHE_STRATEGY: SearchStrategy[dict] = st.shared(
     st.builds(dict), key="hypothesis.regex.group_cache"
 )
 
@@ -101,19 +106,16 @@ def clear_cache_after_draw(draw, base_strategy):
     return result
 
 
-def chars_not_in_alphabet(alphabet, string):
-    # Given a string, return a tuple of the characters which are not in alphabet
+def chars_not_in_alphabet(alphabet: SearchStrategy | None, string: str) -> set[str]:
+    # given a string, returns thez characters which are not in the alphabet
     if alphabet is None:
-        return ()
-    intset = unwrap_strategies(alphabet).intervals
-    return tuple(c for c in string if c not in intset)
+        return set()
+    return {c for c in string if c not in unwrap_strategies(alphabet).intervals}
 
 
+@dataclass(slots=True, frozen=False)
 class Context:
-    __slots__ = ["flags"]
-
-    def __init__(self, flags):
-        self.flags = flags
+    flags: int
 
 
 class CharactersBuilder:
@@ -126,13 +128,15 @@ class CharactersBuilder:
     :param flags: Regex flags. They affect how and which characters are matched
     """
 
-    def __init__(self, *, negate=False, flags=0, alphabet):
-        self._categories = set()
-        self._whitelist_chars = set()
-        self._blacklist_chars = set()
+    def __init__(
+        self, *, negate: bool = False, flags: int = 0, alphabet: SearchStrategy
+    ):
+        self._categories: set[CategoryName] = set()
+        self._whitelist_chars: set[str] = set()
+        self._blacklist_chars: set[str] = set()
         self._negate = negate
         self._ignorecase = flags & re.IGNORECASE
-        self.code_to_char = chr
+        self.code_to_char: Any = chr
         self._alphabet = unwrap_strategies(alphabet)
         if flags & re.ASCII:
             self._alphabet = OneCharStringStrategy(
@@ -140,7 +144,7 @@ class CharactersBuilder:
             )
 
     @property
-    def strategy(self):
+    def strategy(self) -> SearchStrategy:
         """Returns resulting strategy that generates configured char set."""
         # Start by getting the set of all characters allowed by the pattern
         white_chars = self._whitelist_chars - self._blacklist_chars
@@ -180,7 +184,7 @@ class CharactersBuilder:
         else:
             raise NotImplementedError(f"Unknown character category: {category}")
 
-    def add_char(self, c):
+    def add_char(self, c: str) -> None:
         """Add given char to the whitelist."""
         self._whitelist_chars.add(c)
         if (
@@ -192,7 +196,7 @@ class CharactersBuilder:
 
 
 class BytesBuilder(CharactersBuilder):
-    def __init__(self, *, negate=False, flags=0):
+    def __init__(self, *, negate: bool = False, flags: int = 0):
         self._whitelist_chars = set()
         self._blacklist_chars = set()
         self._negate = negate
@@ -227,7 +231,12 @@ def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
     return result
 
 
-def base_regex_strategy(regex, parsed=None, alphabet=None):
+def base_regex_strategy(
+    regex: Pattern[AnyStr],
+    *,
+    parsed: sre_parse.SubPattern | None = None,
+    alphabet: SearchStrategy | None,
+) -> SearchStrategy:
     if parsed is None:
         parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
     try:
@@ -244,9 +253,13 @@ def base_regex_strategy(regex, parsed=None, alphabet=None):
 
 
 def regex_strategy(
-    regex, fullmatch, *, alphabet, _temp_jsonschema_hack_no_end_newline=False
-):
-    if not hasattr(regex, "pattern"):
+    regex: AnyStr | Pattern[AnyStr],
+    fullmatch: bool,
+    *,
+    alphabet: SearchStrategy | None,
+    _temp_jsonschema_hack_no_end_newline: bool = False,
+) -> SearchStrategy:
+    if not isinstance(regex, Pattern):
         regex = re.compile(regex)
 
     is_unicode = isinstance(regex.pattern, str)
@@ -256,18 +269,22 @@ def regex_strategy(
     if fullmatch:
         if not parsed:
             return st.just("" if is_unicode else b"")
-        return base_regex_strategy(regex, parsed, alphabet).filter(regex.fullmatch)
+        return base_regex_strategy(regex, parsed=parsed, alphabet=alphabet).filter(
+            regex.fullmatch
+        )
 
     if not parsed:
         if is_unicode:
+            assert alphabet is not None
             return st.text(alphabet=alphabet)
         else:
             return st.binary()
 
     if is_unicode:
-        base_padding_strategy = st.text(alphabet=alphabet)
-        empty = st.just("")
-        newline = st.just("\n")
+        assert alphabet is not None
+        base_padding_strategy: SearchStrategy = st.text(alphabet=alphabet)
+        empty: SearchStrategy = st.just("")
+        newline: SearchStrategy = st.just("\n")
     else:
         base_padding_strategy = st.binary()
         empty = st.just(b"")
@@ -304,12 +321,20 @@ def regex_strategy(
             else:
                 left_pad = empty
 
-    base = base_regex_strategy(regex, parsed, alphabet).filter(regex.search)
+    base = base_regex_strategy(regex, parsed=parsed, alphabet=alphabet).filter(
+        regex.search
+    )
 
     return maybe_pad(regex, base, left_pad, right_pad)
 
 
-def _strategy(codes, context, is_unicode, *, alphabet):
+def _strategy(
+    codes: sre_parse.SubPattern,
+    context: Context,
+    is_unicode: bool,
+    *,
+    alphabet: SearchStrategy | None,
+) -> SearchStrategy:
     """Convert SRE regex parse tree to strategy that generates strings matching
     that regex represented by that parse tree.
 
@@ -341,8 +366,8 @@ def _strategy(codes, context, is_unicode, *, alphabet):
         return _strategy(codes, context, is_unicode, alphabet=alphabet)
 
     if is_unicode:
-        empty = ""
-        to_char = chr
+        empty: Any = ""
+        to_char: Any = chr
     else:
         empty = b""
         to_char = int_to_byte
@@ -441,6 +466,7 @@ def _strategy(codes, context, is_unicode, *, alphabet):
             # Regex '[abc0-9]' (set of characters)
             negate = value[0][0] == sre.NEGATE
             if is_unicode:
+                assert alphabet is not None
                 builder = CharactersBuilder(
                     flags=context.flags, negate=negate, alphabet=alphabet
                 )
@@ -465,7 +491,7 @@ def _strategy(codes, context, is_unicode, *, alphabet):
                     low, high = charset_value
                     chars = empty.join(map(builder.code_to_char, range(low, high + 1)))
                     if len(chars) == len(
-                        invalid := set(chars_not_in_alphabet(alphabet, chars))
+                        invalid := chars_not_in_alphabet(alphabet, chars)
                     ):
                         raise IncompatibleWithAlphabet(
                             f"Charset '[{chr(low)}-{chr(high)}]' contains characters {invalid!r} "
