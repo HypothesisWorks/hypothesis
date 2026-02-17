@@ -656,8 +656,18 @@ class Bundle(SearchStrategy[Ex]):
 
 
 class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
+    def __init__(
+        self,
+        bundle_or_name: "Bundle[Ex] | str",
+        *,
+        consume: bool = True,
+        draw_references: bool = True,
+    ) -> None:
+        if isinstance(bundle_or_name, Bundle):
+            name = bundle_or_name.name
+        else:
+            name = bundle_or_name
+        super().__init__(name, consume=consume, draw_references=draw_references)
 
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
