@@ -183,7 +183,7 @@ Hypothesis provides the `flatmap()` method to pass the output of an inner strate
     )
 )
 def test_list_and_element_from_it(self, pair):
-    (generated_list, element) = pair
+    generated_list, element = pair
     self.assertIn(element, generated_list)
 ```
 

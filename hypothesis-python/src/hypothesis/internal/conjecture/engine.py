@@ -103,7 +103,7 @@ CACHE_SIZE: int = 10000
 MIN_TEST_CALLS: int = 10
 
 # we use this to isolate Hypothesis from interacting with the global random,
-# to make it easier to reason about our global random warning logic easier (see
+# to make it easier to reason about our global random warning logic (see
 # deprecate_random_in_strategy).
 _random = Random()
 

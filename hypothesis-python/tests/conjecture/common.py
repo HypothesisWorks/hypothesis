@@ -163,14 +163,14 @@ def draw_value(choice_type, constraints):
 
 @st.composite
 def choices(draw):
-    (choice_type, constraints) = draw(choice_types_constraints())
+    choice_type, constraints = draw(choice_types_constraints())
     return draw_value(choice_type, constraints)
 
 
 @st.composite
 def nodes(draw, *, was_forced=None, choice_types=None):
     if choice_types is None:
-        (choice_type, constraints) = draw(choice_types_constraints())
+        choice_type, constraints = draw(choice_types_constraints())
     else:
         choice_type = draw(st.sampled_from(choice_types))
         constraints = draw(constraints_strategy(choice_type))
@@ -227,11 +227,11 @@ def nodes_inline(*values: list[ChoiceT]) -> list[ChoiceNode]:
     for value in values:
         override_constraints = {}
         if isinstance(value, tuple):
-            (value, override_constraints) = value
+            value, override_constraints = value
             if override_constraints is None:
                 override_constraints = {}
 
-        (choice_type, constraints) = mapping[type(value)]
+        choice_type, constraints = mapping[type(value)]
 
         nodes.append(
             ChoiceNode(
