@@ -107,7 +107,7 @@ def clear_cache_after_draw(draw, base_strategy):
 
 
 def chars_not_in_alphabet(alphabet: SearchStrategy | None, string: str) -> set[str]:
-    # given a string, returns thez characters which are not in the alphabet
+    # given a string, returns the characters which are not in the alphabet
     if alphabet is None:
         return set()
     return {c for c in string if c not in unwrap_strategies(alphabet).intervals}
