@@ -103,7 +103,7 @@ And sure enough, if you run the test enough times it eventually *does*
 fail:
 
 ```
-Falsifying example: test_inserting_at_smaller_index_gives_unsorted(
+Failing test case: test_inserting_at_smaller_index_gives_unsorted(
     ls=[0, 1, 1, 1, 1], v=1
  )
 ```

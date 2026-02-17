@@ -28,7 +28,7 @@ def test_prints_output_by_default():
 
     with pytest.raises(AssertionError) as err:
         test_int()
-    assert "Falsifying example" in "\n".join(err.value.__notes__)
+    assert "Failing test case" in "\n".join(err.value.__notes__)
 
 
 def test_does_not_print_debug_in_verbose():
