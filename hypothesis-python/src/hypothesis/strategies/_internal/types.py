@@ -24,6 +24,7 @@ import os
 import random
 import re
 import sys
+import types
 import typing
 import uuid
 import warnings
@@ -217,6 +218,35 @@ def type_sorting_key(t):
     t = get_origin(t) or t
     is_container = int(try_issubclass(t, collections.abc.Container))
     return (is_container, repr(t))
+
+
+def _resolve_forward_ref_in_caller(forward_arg: str) -> typing.Any:
+    """Try to resolve a forward reference name by walking up the call stack.
+
+    This allows us to resolve recursive forward references like:
+        A = list[Union["A", str]]
+
+    where "A" refers to the type alias being defined.
+
+    To avoid false positives from namespace collisions, we only return a value
+    if all frames that define this name have the same value (unambiguous).
+    """
+    found_value: typing.Any = None
+    found = False
+    frame: types.FrameType | None = sys._getframe()
+    while frame is not None:
+        # Check locals first, then globals
+        for namespace in (frame.f_locals, frame.f_globals):
+            if forward_arg in namespace:
+                value = namespace[forward_arg]
+                if not found:
+                    found_value = value
+                    found = True
+                elif value is not found_value:
+                    # Ambiguous: different values in different frames
+                    return None
+        frame = frame.f_back
+    return found_value if found else None
 
 
 def _compatible_args(args, superclass_args):
@@ -628,6 +658,12 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+    elif (not mapping) and isinstance(thing, typing.ForwardRef):
+        # Try to resolve non-builtin forward references by walking up the call stack.
+        # This handles recursive forward references like A = list[Union["A", str]].
+        resolved = _resolve_forward_ref_in_caller(thing.__forward_arg__)
+        if resolved is not None and is_a_type(resolved):
+            return st.from_type(resolved)
 
     def is_maximal(t):
         # For each k in the mapping, we use it if it's the most general type
