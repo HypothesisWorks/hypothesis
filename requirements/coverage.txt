@@ -18,7 +18,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.33.0
+fakeredis==2.34.0
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -36,13 +36,13 @@ packaging==26.0
     # via
     #   black
     #   pytest
-pandas==3.0.0
+pandas==3.0.1
     # via -r requirements/coverage.in
 pathspec==1.0.4
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via black
 pluggy==1.6.0
     # via
@@ -50,7 +50,7 @@ pluggy==1.6.0
     #   pytest-cov
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via -r requirements/coverage.in
 pygments==2.19.2
     # via pytest
@@ -73,7 +73,7 @@ pytz==2025.2
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.1.1
+redis==7.2.0
     # via fakeredis
 six==1.17.0
     # via python-dateutil

@@ -9,7 +9,7 @@ attrs==25.4.0
     #   cattrs
     #   lsprotocol
     #   pygls
-cattrs==25.3.0
+cattrs==26.1.0
     # via
     #   lsprotocol
     #   pygls
@@ -19,7 +19,7 @@ crosshair-tool==0.0.102
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.151.6
+hypothesis==6.151.9
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.27
     # via -r requirements/crosshair.in
@@ -67,7 +67,7 @@ typing-extensions==4.15.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via crosshair-tool
-z3-solver==4.15.8.0
+z3-solver==4.16.0.0
     # via crosshair-tool
 zipp==3.23.0
     # via importlib-metadata

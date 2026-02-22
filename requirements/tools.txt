@@ -18,7 +18,7 @@ asttokens==3.0.1
     # via stack-data
 attrs==25.4.0
     # via -r requirements/tools.in
-autoflake==2.3.1
+autoflake==2.3.3
     # via shed
 babel==2.18.0
     # via sphinx
@@ -85,7 +85,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.24.0
+filelock==3.24.3
     # via
     #   tox
     #   virtualenv
@@ -107,7 +107,7 @@ ipython==9.10.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
-isort==7.0.0
+isort==8.0.0
     # via shed
 jaraco-classes==3.4.0
     # via keyring
@@ -135,7 +135,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.8.0
+librt==0.8.1
     # via mypy
 markdown==3.10.2
     # via pelican
@@ -189,7 +189,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.5.3
     # via -r requirements/tools.in
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via
     #   black
     #   tox
@@ -260,13 +260,13 @@ restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==14.3.2
+rich==14.3.3
     # via
     #   pelican
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.1
+ruff==0.15.2
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -323,7 +323,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.4.0
     # via -r requirements/tools.in
-tox==4.35.0
+tox==4.44.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -357,9 +357,9 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uvicorn==0.40.0
+uvicorn==0.41.0
     # via sphinx-autobuild
-virtualenv==20.36.1
+virtualenv==20.38.0
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
