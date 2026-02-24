@@ -1821,9 +1821,13 @@ def decimals(
         factor = Decimal(10) ** -places
         min_num, max_num = None, None
         if min_value is not None:
-            min_num = ceil(ctx(min_value).divide(min_value, factor))
+            # Use enough precision for the actual digits of min_value, not just
+            # its magnitude, so that the division is exact.
+            ndigits = len(min_value.as_tuple().digits) + places + 1
+            min_num = ceil(Context(prec=ndigits).divide(min_value, factor))
         if max_value is not None:
-            max_num = floor(ctx(max_value).divide(max_value, factor))
+            ndigits = len(max_value.as_tuple().digits) + places + 1
+            max_num = floor(Context(prec=ndigits).divide(max_value, factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
                 f"There are no decimals with {places} places between "

@@ -112,6 +112,22 @@ def test_fuzz_decimals_bounds(data):
         assert val.as_tuple().exponent == -places
 
 
+def test_decimals_places_with_high_precision_bounds():
+    """Bounds with many significant digits should not produce out-of-range values.
+
+    Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4651
+    """
+    min_ = decimal.Decimal(f"0.{'0' * 63}1")
+    max_ = decimal.Decimal(f"{'9' * 64}.{'9' * 64}")
+
+    @given(decimals(min_value=min_, max_value=max_, places=2))
+    @settings(max_examples=1000)
+    def check(d):
+        assert min_ <= d <= max_
+
+    check()
+
+
 def test_all_decimals_can_be_exact_floats():
     find_any(
         decimals(), lambda x: assume(x.is_finite()) and decimal.Decimal(float(x)) == x
