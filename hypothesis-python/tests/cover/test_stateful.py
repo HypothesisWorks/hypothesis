@@ -1496,6 +1496,35 @@ def test_flatmap():
     run_state_machine_as_test(Machine)
 
 
+def test_consumes_flatmap():
+    """consumes(bundle).flatmap should work without TypeError.
+
+    Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4427
+    """
+
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 1
+
+        @rule(target=buns, value=st.integers())
+        def add_bun(self, value):
+            return value
+
+        @rule(data=consumes(buns).flatmap(lambda v: just(v + 10)))
+        def use_consumes_flatmap(self, data):
+            assert isinstance(data, int)
+
+    Machine.TestCase.settings = Settings(
+        stateful_step_count=5,
+        max_examples=10,
+        suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
+    )
+    run_state_machine_as_test(Machine)
+
+
 def test_use_bundle_within_other_strategies():
     class Class:
         def __init__(self, value):
