@@ -48,6 +48,7 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 from hypothesis.strategies import binary, data, integers, just, lists
+
 from tests.common.utils import (
     Why,
     capture_out,
