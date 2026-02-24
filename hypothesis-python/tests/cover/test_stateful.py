@@ -15,14 +15,6 @@ from typing import ClassVar
 import pytest
 from _pytest.outcomes import Failed, Skipped
 from pytest import raises
-from tests.common.utils import (
-    Why,
-    capture_out,
-    skipif_threading,
-    validate_deprecation,
-    xfail_on_crosshair,
-)
-from tests.nocover.test_stateful import DepthMachine
 
 from hypothesis import (
     HealthCheck,
@@ -56,6 +48,14 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 from hypothesis.strategies import binary, data, integers, just, lists
+from tests.common.utils import (
+    Why,
+    capture_out,
+    skipif_threading,
+    validate_deprecation,
+    xfail_on_crosshair,
+)
+from tests.nocover.test_stateful import DepthMachine
 
 NO_BLOB_SETTINGS = Settings(print_blob=False, phases=tuple(Phase)[:-1])
 
