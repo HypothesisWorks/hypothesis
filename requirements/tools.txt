@@ -18,7 +18,7 @@ asttokens==3.0.1
     # via stack-data
 attrs==25.4.0
     # via -r requirements/tools.in
-autoflake==2.3.1
+autoflake==2.3.3
     # via shed
 babel==2.18.0
     # via sphinx
@@ -36,12 +36,10 @@ build==1.4.0
     #   pip-tools
 cachetools==7.0.1
     # via tox
-certifi==2026.1.4
+certifi==2026.2.25
     # via requests
 cffi==2.0.0
     # via cryptography
-chardet==5.2.0
-    # via tox
 charset-normalizer==3.4.4
     # via requests
 click==8.3.1
@@ -85,8 +83,9 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.24.0
+filelock==3.24.3
     # via
+    #   python-discovery
     #   tox
     #   virtualenv
 furo==2025.12.19
@@ -107,7 +106,7 @@ ipython==9.10.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
-isort==7.0.0
+isort==8.0.1
     # via shed
 jaraco-classes==3.4.0
     # via keyring
@@ -135,7 +134,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.8.0
+librt==0.8.1
     # via mypy
 markdown==3.10.2
     # via pelican
@@ -189,9 +188,10 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.5.3
     # via -r requirements/tools.in
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via
     #   black
+    #   python-discovery
     #   tox
     #   virtualenv
 pluggy==1.6.0
@@ -237,6 +237,8 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
+python-discovery==1.1.0
+    # via virtualenv
 pytokens==0.4.1
     # via black
 pyupgrade==3.21.2
@@ -260,13 +262,13 @@ restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==14.3.2
+rich==14.3.3
     # via
     #   pelican
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.1
+ruff==0.15.4
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -323,7 +325,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.4.0
     # via -r requirements/tools.in
-tox==4.35.0
+tox==4.46.3
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -357,9 +359,9 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uvicorn==0.40.0
+uvicorn==0.41.0
     # via sphinx-autobuild
-virtualenv==20.36.1
+virtualenv==21.1.0
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
