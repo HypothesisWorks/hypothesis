@@ -263,7 +263,7 @@ def should_note():
 
 
 def note(value: object) -> None:
-    """Report this value for the minimal failing example."""
+    """Report this value for the minimal failing test case."""
     if should_note():
         if not isinstance(value, str):
             value = pretty(value)

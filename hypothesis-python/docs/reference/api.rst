@@ -121,7 +121,7 @@ For instance, in the latter case, you would see output like:
 
     - during generate phase (0.09 seconds):
         - Typical runtimes: < 1ms, ~ 59% in data generation
-        - 100 passing examples, 0 failing examples, 32 invalid examples
+        - 100 passing test cases, 0 failing test cases, 32 invalid test cases
         - Events:
           * 54.55%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
           * 31.06%, i mod 3 = 2

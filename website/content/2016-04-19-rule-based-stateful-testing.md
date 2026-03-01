@@ -86,7 +86,7 @@ E         Use -v to get the full diff
 
 binheap.py:74: AssertionError
 ----- Hypothesis -----
-Falsifying example: test_pop_in_sorted_order(ls=[0, 1, 0])
+Failing test case: test_pop_in_sorted_order(ls=[0, 1, 0])
 ```
 
 So we replace heappop with a correct implementation which rebalances the heap:
