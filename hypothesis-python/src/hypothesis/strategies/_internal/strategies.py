@@ -24,6 +24,7 @@ from typing import (
     Generic,
     Literal,
     TypeAlias,
+    TypeGuard,
     TypeVar,
     cast,
     overload,
@@ -414,7 +415,15 @@ class SearchStrategy(Generic[Ex]):
     # entire Callable[[Ex], Any] expression rather than use a type alias.
     # TypeAlias is *not* simply a macro that inserts the text. TypeAlias will not
     # reference the local TypeVar context.
-    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
+    @overload
+    def filter(
+        self, condition: Callable[[Ex], TypeGuard[T]]
+    ) -> "SearchStrategy[T]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
+    def filter(
+        self, condition: Callable[[Ex], Any | TypeGuard[T]]
+    ) -> "SearchStrategy[Ex | T]":
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition.
 
@@ -597,7 +606,15 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # guaranteed by the ("map", pack) transformation
         return cast(SearchStrategy[T], s)
 
-    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
+    @overload
+    def filter(
+        self, condition: Callable[[Ex], TypeGuard[T]]
+    ) -> "SearchStrategy[T]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
+    def filter(
+        self, condition: Callable[[Ex], Any | TypeGuard[T]]
+    ) -> "SearchStrategy[Ex | T]":
         return type(self)(
             self.elements,
             force_repr=self.force_repr,
@@ -654,7 +671,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # The worst case performance of this scheme is
         # itertools.chain(range(2**100), [st.none()]), where it degrades to
         # hashing every int in the range.
-        (elements_is_hashable, hash_value) = _is_hashable(self.elements)
+        elements_is_hashable, hash_value = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
             elements_is_hashable
             and not any(isinstance(e, SearchStrategy) for e in self.elements)
@@ -873,7 +890,15 @@ class OneOfStrategy(SearchStrategy[Ex]):
             else:
                 return [self]
 
-    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
+    @overload
+    def filter(
+        self, condition: Callable[[Ex], TypeGuard[T]]
+    ) -> "SearchStrategy[T]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
+    def filter(
+        self, condition: Callable[[Ex], Any | TypeGuard[T]]
+    ) -> SearchStrategy[Ex | T]:
         return FilteredStrategy(
             OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
             conditions=(),
@@ -1039,9 +1064,17 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
             for strategy in self.mapped_strategy.branches
         ]
 
+    @overload
+    def filter(
+        self, condition: Callable[[MappedTo], TypeGuard[T]]
+    ) -> "SearchStrategy[T]": ...
+    @overload
     def filter(
         self, condition: Callable[[MappedTo], Any]
-    ) -> "SearchStrategy[MappedTo]":
+    ) -> "SearchStrategy[MappedTo]": ...
+    def filter(
+        self, condition: Callable[[MappedTo], Any | TypeGuard[T]]
+    ) -> "SearchStrategy[MappedTo | T]":
         # Includes a special case so that we can rewrite filters on collection
         # lengths, when most collections are `st.lists(...).map(the_type)`.
         ListStrategy = _list_strategy_type()
@@ -1161,7 +1194,15 @@ class FilteredStrategy(SearchStrategy[Ex]):
             # an in-place method so we still just re-initialize the strategy!
             FilteredStrategy.__init__(self, fresh, ())
 
-    def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]":
+    @overload
+    def filter(
+        self, condition: Callable[[Ex], TypeGuard[T]]
+    ) -> "FilteredStrategy[T]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]": ...
+    def filter(
+        self, condition: Callable[[Ex], Any | TypeGuard[T]]
+    ) -> "FilteredStrategy[Ex | T]":
         # If we can, it's more efficient to rewrite our strategy to satisfy the
         # condition.  We therefore exploit the fact that the order of predicates
         # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply
