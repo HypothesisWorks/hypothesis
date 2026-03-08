@@ -10,4 +10,5 @@ strat
 tread
 rouge
 tey
+tham
 datas
