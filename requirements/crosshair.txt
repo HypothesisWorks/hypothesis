@@ -57,7 +57,7 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
-typeshed-client==2.8.2
+typeshed-client==2.9.0
     # via crosshair-tool
 typing-extensions==4.15.0
     # via

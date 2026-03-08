@@ -26,7 +26,7 @@ beautifulsoup4==4.14.3
     # via
     #   furo
     #   sphinx-codeautolink
-black==26.1.0
+black==26.3.0
     # via shed
 blinker==1.9.0
     # via pelican
@@ -34,20 +34,20 @@ build==1.4.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==7.0.1
+cachetools==7.0.3
     # via tox
 certifi==2026.2.25
     # via requests
 cffi==2.0.0
     # via cryptography
-charset-normalizer==3.4.4
+charset-normalizer==3.4.5
     # via requests
 click==8.3.1
     # via
     #   black
     #   pip-tools
     #   uvicorn
-codespell==2.4.1
+codespell==2.4.2
     # via -r requirements/tools.in
 colorama==0.4.6
     # via
@@ -66,7 +66,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==6.0.2
+django==6.0.3
     # via -r requirements/tools.in
 docutils==0.22.4
     # via
@@ -83,7 +83,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.24.3
+filelock==3.25.0
     # via
     #   python-discovery
     #   tox
@@ -98,11 +98,11 @@ idna==3.11
     # via
     #   anyio
     #   requests
-imagesize==1.4.1
+imagesize==2.0.0
     # via sphinx
 iniconfig==2.3.0
     # via pytest
-ipython==9.10.0
+ipython==9.11.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -110,7 +110,7 @@ isort==8.0.1
     # via shed
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==6.1.0
+jaraco-context==6.1.1
     # via keyring
 jaraco-functools==4.4.0
     # via keyring
@@ -188,7 +188,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.5.3
     # via -r requirements/tools.in
-platformdirs==4.9.2
+platformdirs==4.9.4
     # via
     #   black
     #   python-discovery
@@ -237,7 +237,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.1.0
+python-discovery==1.1.1
     # via virtualenv
 pytokens==0.4.1
     # via black
@@ -268,7 +268,7 @@ rich==14.3.3
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.4
+ruff==0.15.5
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -325,7 +325,9 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.4.0
     # via -r requirements/tools.in
-tox==4.46.3
+tomli-w==1.2.0
+    # via tox
+tox==4.49.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -333,13 +335,13 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.2.0
     # via -r requirements/tools.in
-types-cffi==1.17.0.20250915
+types-cffi==1.17.0.20260307
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2025.2.0.20251108
+types-pytz==2026.1.1.20260304
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
