@@ -168,7 +168,9 @@ class FlakyPreconditionMachine(RuleBasedStateMachine):
 def test_flaky_precondition_error_message():
     with raises(FlakyStrategyDefinition) as exc_info:
         FlakyPreconditionMachine.TestCase().runTest()
-    assert any("flaky precondition" in note for note in exc_info.value.__notes__)
+    notes = exc_info.value.__notes__
+    assert any("flaky precondition" in note for note in notes)
+    assert any("external state" in note for note in notes)
 
 
 class FlakyDrawInRuleMachine(RuleBasedStateMachine):

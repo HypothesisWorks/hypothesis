@@ -9,18 +9,54 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import time
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    core,
+    example,
+    given,
+    reject,
+    settings,
+)
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import Flaky, FlakyFailure, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import (
+    Flaky,
+    FlakyFailure,
+    FlakyStrategyDefinition,
+    Unsatisfiable,
+    UnsatisfiedAssumption,
+)
 from hypothesis.internal.compat import ExceptionGroup
-from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
+from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS, ConjectureRunner
+from hypothesis.internal.escalation import InterestingOrigin
+from hypothesis.internal.observability import (
+    add_observability_callback,
+    remove_observability_callback,
+)
 from hypothesis.internal.scrutineer import Tracer
-from hypothesis.strategies import booleans, composite, integers, lists, random_module
+from hypothesis.stateful import RuleBasedStateMachine, rule
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    data as st_data,
+    integers,
+    lists,
+    random_module,
+)
 
-from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_out,
+    no_shrink,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 
 
 class Nope(Exception):
@@ -71,7 +107,6 @@ def test_fails_differently_is_flaky():
 @skipif_threading  # executing into global scope
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="except* syntax")
 def test_exceptiongroup_wrapped_naked_exception_is_flaky():
-
     # Defer parsing until runtime, as "except*" is syntax error pre 3.11
     rude_def = """
 first_call = True
@@ -210,3 +245,165 @@ def test_failure_sequence_inducing(building, testing, rnd):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None
+
+
+def test_flaky_strategy_definition_includes_detail_for_different_constraints():
+    seen_choices: list[tuple[int, ...]] = []
+
+    def flaky_int(data):
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+            data.draw_integer(0, 10)
+        else:
+            data.draw_integer(0, 20)
+
+    runner = ConjectureRunner(flaky_int, settings=settings(database=None))
+    with pytest.raises(FlakyStrategyDefinition, match="different constraints"):
+        runner.run()
+
+
+def test_flaky_strategy_definition_includes_detail_for_fewer_draws():
+    seen_choices: list[tuple[int, ...]] = []
+
+    def flaky_draw_count(data):
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+            data.draw_integer(0, 10)
+        data.mark_interesting(InterestingOrigin(Nope, "", 0, (), ()))
+
+    runner = ConjectureRunner(flaky_draw_count, settings=settings(database=None))
+    # Engine suppresses flaky error because it already found a bug.
+    runner.run()
+    assert runner.interesting_examples
+    assert runner.suppressed_flaky_error is not None
+    assert "stopped drawing earlier" in str(runner.suppressed_flaky_error)
+
+
+def test_flaky_strategy_definition_includes_detail_for_type_mismatch():
+    seen_choices: list[tuple[int, ...]] = []
+
+    def flaky_type(data):
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+            data.draw_integer(0, 10)
+        else:
+            data.draw_boolean(forced=None)
+
+    runner = ConjectureRunner(flaky_type, settings=settings(database=None))
+    with pytest.raises(FlakyStrategyDefinition, match="different type"):
+        runner.run()
+
+
+def test_flaky_strategy_definition_includes_detail_for_more_draws():
+    seen_choices: list[tuple[int, ...]] = []
+
+    def flaky_more(data):
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+        else:
+            data.draw_integer(0, 10)
+        data.mark_interesting(InterestingOrigin(Nope, "", 0, (), ()))
+
+    runner = ConjectureRunner(flaky_more, settings=settings(database=None))
+    # Engine suppresses flaky error because it already found a bug.
+    runner.run()
+    assert runner.interesting_examples
+    assert runner.suppressed_flaky_error is not None
+    assert "more data" in str(runner.suppressed_flaky_error)
+
+
+def test_failed_split_sets_flaky_flag():
+    from hypothesis.internal.conjecture.datatree import DataTree
+
+    tree = DataTree()
+    int_constraints = {
+        "min_value": 0,
+        "max_value": 10,
+        "weights": None,
+        "shrink_towards": 0,
+    }
+
+    # First run: record a forced draw
+    obs1 = tree.new_observer()
+    obs1.draw_integer(5, was_forced=True, constraints=int_constraints)
+    obs1.conclude_test(Status.VALID, None)
+
+    # Second run: different value at forced position → split_at raises
+    obs2 = tree.new_observer()
+    with pytest.raises(FlakyStrategyDefinition, match="forced"):
+        obs2.draw_integer(3, was_forced=False, constraints=int_constraints)
+    assert obs2.flaky
+
+
+def test_flaky_strategy_definition_fatal_prints_seed(monkeypatch):
+    monkeypatch.setattr(core, "running_under_pytest", False)
+    upper = [10]
+
+    @settings(max_examples=200, database=None)
+    @given(data=st_data())
+    def test(data):
+        data.draw(integers(0, upper[0]))
+        upper[0] += 10
+
+    with capture_out() as o, pytest.raises(FlakyStrategyDefinition):
+        test()
+
+    output = o.getvalue()
+    assert "@seed(" in output
+
+
+def test_flaky_strategy_definition_suppressed_prints_seed(monkeypatch):
+    monkeypatch.setattr(core, "running_under_pytest", False)
+    more_count = [0]
+
+    @settings(max_examples=200, database=None)
+    @given(data=st_data())
+    def test(data):
+        data.draw(integers(0, 10))
+        more_count[0] += 1
+        if more_count[0] > 1:
+            data.draw(integers(0, 10))
+        raise AssertionError
+
+    # FlakyFailure wraps the AssertionError when flaky replay fails
+    with capture_out() as o, pytest.raises((AssertionError, FlakyFailure)):
+        test()
+
+    output = o.getvalue()
+    assert "@seed(" in output
+    assert "WARNING: a flaky strategy definition error was detected" in output
+
+
+class FlakyTimeStateMachine(RuleBasedStateMachine):
+    @rule(data=st_data())
+    def step(self, data):
+        data.draw(integers(time.time_ns(), time.time_ns() + 2))
+
+
+@pytest.mark.parametrize("observability", [False, True])
+def test_flaky_stateful_reports_steps_or_tip(monkeypatch, observability):
+    monkeypatch.setattr(core, "running_under_pytest", False)
+    callback = lambda event: None
+
+    if observability:
+        add_observability_callback(callback)
+
+    try:
+        with capture_out() as o, pytest.raises(FlakyStrategyDefinition):
+            FlakyTimeStateMachine.TestCase.settings = settings(
+                max_examples=200, database=None, stateful_step_count=5
+            )
+            FlakyTimeStateMachine.TestCase().runTest()
+
+        output = o.getvalue()
+        if observability:
+            assert "Steps leading up to this error" in output
+        else:
+            assert "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1" in output
+    finally:
+        if observability:
+            remove_observability_callback(callback)

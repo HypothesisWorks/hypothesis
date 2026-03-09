@@ -60,6 +60,7 @@ from hypothesis.errors import (
     FailedHealthCheck,
     FlakyFailure,
     FlakyReplay,
+    FlakyStrategyDefinition,
     Found,
     Frozen,
     HypothesisException,
@@ -954,6 +955,12 @@ class StateForActualGivenExecution:
         self._runner: ConjectureRunner | None = None
 
     @property
+    def has_suppressed_flaky_error(self) -> bool:
+        return (
+            self._runner is not None and self._runner.suppressed_flaky_error is not None
+        )
+
+    @property
     def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
@@ -1239,6 +1246,7 @@ class StateForActualGivenExecution:
             raise
         except (
             FailedHealthCheck,
+            FlakyStrategyDefinition,
             *skip_exceptions_to_reraise(),
         ):
             # These are fatal errors or control exceptions that should stop the
@@ -1569,6 +1577,13 @@ class StateForActualGivenExecution:
                         f"{reproduction_decorator(falsifying_example.choices)} "
                         "as a decorator on your test case"
                     )
+
+        if flaky := runner.suppressed_flaky_error:
+            report(
+                "WARNING: a flaky strategy definition error was detected "
+                "during shrinking and suppressed in favor of the real "
+                f"failure above.\n  {flaky}"
+            )
 
         _raise_to_user(
             errors_to_report,
@@ -2218,7 +2233,14 @@ def given(
                         wrapped_test._hypothesis_internal_use_generated_seed
                     )
                     with local_settings(settings):
-                        if not (state.failed_normally or generated_seed is None):
+                        # Print the seed when the failure is unexpected (not a
+                        # normal test failure), or when a flaky strategy error
+                        # was suppressed — the seed is the only way to
+                        # reproduce the flaky error during shrinking.
+                        if generated_seed is not None and (
+                            not state.failed_normally
+                            or state.has_suppressed_flaky_error
+                        ):
                             if running_under_pytest:
                                 report(
                                     f"You can add @seed({generated_seed}) to this test or "

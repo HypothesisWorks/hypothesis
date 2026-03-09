@@ -27,12 +27,18 @@ from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_
 from hypothesis.errors import (
     BackendCannotProceed,
     FlakyBackendFailure,
+    FlakyStrategyDefinition,
     HypothesisException,
     InvalidArgument,
     StopTest,
 )
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import NotRequired, TypedDict, ceil, override
+from hypothesis.internal.compat import (
+    NotRequired,
+    TypedDict,
+    ceil,
+    override,
+)
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
     ChoiceKeyT,
@@ -67,7 +73,11 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import Observation, with_observability_callback
+from hypothesis.internal.observability import (
+    Observation,
+    observability_enabled,
+    with_observability_callback,
+)
 from hypothesis.reporting import base_report, report, verbose_report
 
 # In most cases, the following constants are all Final. However, we do allow users
@@ -315,6 +325,7 @@ class ConjectureRunner:
         self.first_bug_found_time: float = math.inf
 
         self.shrunk_examples: set[InterestingOrigin] = set()
+        self.suppressed_flaky_error: FlakyStrategyDefinition | None = None
         self.health_check_state: HealthCheckState | None = None
         self.tree: DataTree = DataTree()
         self.provider: PrimitiveProvider | type[PrimitiveProvider] = _get_provider(
@@ -562,6 +573,32 @@ class ConjectureRunner:
             interrupted = True
             data.freeze()
             return
+        except FlakyStrategyDefinition:
+            # The observer's flaky flag is already set, so freeze() won't
+            # raise a duplicate from conclude_test().
+            data.freeze()
+            # _stateful_repr_parts is None for non-stateful tests (skip both
+            # branches), a non-empty list when steps were recorded, or an
+            # empty list for stateful tests where observability was off.
+            if data._stateful_repr_parts:
+                report(
+                    "Steps leading up to this error:\n"
+                    + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
+                )
+            elif data._stateful_repr_parts is not None:
+                # Stateful test, but steps weren't recorded because
+                # observability is off — suggest enabling it.
+                if not observability_enabled():
+                    report(
+                        "Tip: to see which steps led to this error, re-run with "
+                        "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
+                    )
+            # Save the (partial) choices to the database so the reuse phase
+            # replays them on the next run. If the flaky external state is
+            # still present, the user gets the same error; if they've fixed
+            # it, the replay succeeds and the entry is automatically deleted.
+            self.save_choices(data.choices)
+            raise
         except BaseException:
             data.freeze()
             if self.settings.backend != "hypothesis":
@@ -967,6 +1004,16 @@ class ConjectureRunner:
                 self._run()
             except RunIsComplete:
                 pass
+            except FlakyStrategyDefinition as e:
+                if not self.interesting_examples:
+                    raise
+                # Real bugs were found before the flaky error hit during
+                # shrinking. Stop the engine and let the replay loop
+                # report the real failures.
+                self.statistics["stopped-because"] = (
+                    "a flaky strategy was detected during shrinking"
+                )
+                self.suppressed_flaky_error = e
             for v in self.interesting_examples.values():
                 self.debug_data(v)
             self.debug(
