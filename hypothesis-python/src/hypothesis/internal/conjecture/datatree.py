@@ -464,7 +464,7 @@ class TreeNode:
             self.__forced = set()
         self.__forced.add(i)
 
-    def split_at(self, i: int) -> None:
+    def split_at(self, i: int, *, new_value: object = None) -> None:
         """
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
@@ -475,9 +475,9 @@ class TreeNode:
         if i in self.forced:
             raise FlakyStrategyDefinition(
                 _flaky_strat_msg_with_detail(
-                    f"The {self.choice_types[i]} value that was forced to a "
-                    f"specific value in the first run was given a different "
-                    f"value in the second run.\n"
+                    f"The {self.choice_types[i]} value was forced to "
+                    f"{self.values[i]!r} in the first run, but the second "
+                    f"run drew {new_value!r}.\n"
                 )
             )
 
@@ -1108,7 +1108,7 @@ class TreeRecordingObserver(DataObserver):
                 )
             elif value != node.values[i]:
                 try:
-                    node.split_at(i)
+                    node.split_at(i, new_value=value)
                 except FlakyStrategyDefinition:
                     self.flaky = True
                     raise
@@ -1146,7 +1146,7 @@ class TreeRecordingObserver(DataObserver):
                     compute_max_children(choice_type, constraints) == 1
                     and not was_forced
                 ):
-                    node.split_at(i)
+                    node.split_at(i, new_value=value)
                     assert isinstance(node.transition, Branch)
                     self._current_node = node.transition.children[value]
                     self._index_in_current_node = 0
