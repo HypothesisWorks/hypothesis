@@ -334,7 +334,7 @@ def test_failed_split_sets_flaky_flag():
 
     # Second run: different value at forced position → split_at raises
     obs2 = tree.new_observer()
-    with pytest.raises(FlakyStrategyDefinition, match="forced to 5.*drew 3"):
+    with pytest.raises(FlakyStrategyDefinition, match=r"forced to 5.*drew 3"):
         obs2.draw_integer(3, was_forced=False, constraints=int_constraints)
     assert obs2.flaky
 
