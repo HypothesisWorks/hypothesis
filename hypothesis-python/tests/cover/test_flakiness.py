@@ -247,6 +247,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         raise SatisfyMe from None
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_flaky_strategy_definition_includes_detail_for_different_constraints():
     seen_choices: list[tuple[int, ...]] = []
 
@@ -281,6 +282,7 @@ def test_flaky_strategy_definition_includes_detail_for_fewer_draws():
     assert "stopped drawing earlier" in str(runner.suppressed_flaky_error)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_flaky_strategy_definition_includes_detail_for_type_mismatch():
     seen_choices: list[tuple[int, ...]] = []
 

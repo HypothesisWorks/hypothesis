@@ -73,11 +73,7 @@ from hypothesis.internal.conjecture.providers import (
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import (
-    Observation,
-    observability_enabled,
-    with_observability_callback,
-)
+from hypothesis.internal.observability import Observation, with_observability_callback
 from hypothesis.reporting import base_report, report, verbose_report
 
 # In most cases, the following constants are all Final. However, we do allow users
@@ -586,13 +582,12 @@ class ConjectureRunner:
                     + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
                 )
             elif data._stateful_repr_parts is not None:
-                # Stateful test, but steps weren't recorded because
-                # observability is off — suggest enabling it.
-                if not observability_enabled():
-                    report(
-                        "Tip: to see which steps led to this error, re-run with "
-                        "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
-                    )
+                # Stateful test, but no steps were recorded (observability
+                # is off) — suggest enabling it.
+                report(
+                    "Tip: to see which steps led to this error, re-run with "
+                    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
+                )
             # Save the (partial) choices to the database so the reuse phase
             # replays them on the next run. If the flaky external state is
             # still present, the user gets the same error; if they've fixed
