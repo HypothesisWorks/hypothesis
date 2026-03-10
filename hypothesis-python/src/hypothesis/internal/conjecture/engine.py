@@ -723,9 +723,11 @@ class ConjectureRunner:
                 "WARNING: Hypothesis has spent more than five minutes working to shrink"
                 " a failing example, and stopped because it is making very slow"
                 " progress.  When you re-run your tests, shrinking will resume and may"
-                " take this long before aborting again.\nPLEASE REPORT THIS if you can"
-                " provide a reproducing example, so that we can improve shrinking"
-                " performance for everyone."
+                " take this long before aborting again."
+                "\nPLEASE REPORT THIS if you can provide a reproducing example, so"
+                " that we can improve shrinking performance for everyone.  You can"
+                " attempt to reproduce this failure using the @seed decorator printed"
+                " at the bottom of this output."
             )
             self.exit_with(ExitReason.very_slow_shrinking)
 

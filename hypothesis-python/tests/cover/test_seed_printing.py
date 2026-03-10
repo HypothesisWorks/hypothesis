@@ -12,7 +12,15 @@ import time
 
 import pytest
 
-from hypothesis import Verbosity, assume, core, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    core,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
 
@@ -108,3 +116,30 @@ def test_does_print_on_reuse_from_database():
         test()
 
     assert "@seed" in o.getvalue()
+
+
+def test_prints_seed_on_very_slow_shrinking(monkeypatch):
+    monkeypatch.setattr(core, "running_under_pytest", False)
+
+    @settings(database=None, deadline=None, suppress_health_check=list(HealthCheck))
+    @given(st.integers(min_value=0, max_value=2**64 - 1))
+    def test(n):
+        assert n <= 2**33
+
+    fake_time = 0
+
+    def fast_time():
+        nonlocal fake_time
+        fake_time += 1000
+        return fake_time
+
+    with monkeypatch.context() as m:
+        m.setattr(time, "perf_counter", fast_time)
+        with capture_out() as o, pytest.raises(AssertionError):
+            test()
+
+    output = o.getvalue()
+    assert "five minutes" in output
+    seed = test._hypothesis_internal_use_generated_seed
+    assert seed is not None
+    assert f"@seed({seed})" in output

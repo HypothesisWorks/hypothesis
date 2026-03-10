@@ -954,6 +954,14 @@ class StateForActualGivenExecution:
         self._runner: ConjectureRunner | None = None
 
     @property
+    def had_very_slow_shrinking(self) -> bool:
+        return (
+            self._runner is not None
+            and self._runner.statistics.get("stopped-because")
+            == "shrinking was very slow"
+        )
+
+    @property
     def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
@@ -2218,7 +2226,12 @@ def given(
                         wrapped_test._hypothesis_internal_use_generated_seed
                     )
                     with local_settings(settings):
-                        if not (state.failed_normally or generated_seed is None):
+                        # Print the seed when the failure is unexpected (not a
+                        # normal test failure), or when shrinking was very
+                        # slow — the seed helps reproduce or report the issue.
+                        if generated_seed is not None and (
+                            not state.failed_normally or state.had_very_slow_shrinking
+                        ):
                             if running_under_pytest:
                                 report(
                                     f"You can add @seed({generated_seed}) to this test or "
