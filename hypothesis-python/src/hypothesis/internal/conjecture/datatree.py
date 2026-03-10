@@ -959,7 +959,7 @@ class DataTree:
         key: ChoiceT,
         random: Random,
     ) -> ChoiceT:
-        (generator, children, rejected) = self._get_children_cache(
+        generator, children, rejected = self._get_children_cache(
             choice_type, constraints, key=key
         )
         # Keep a stock of 100 potentially-valid children at all times.
@@ -989,7 +989,7 @@ class DataTree:
         child: ChoiceT,
         key: ChoiceT,
     ) -> None:
-        (_generator, children, rejected) = self._get_children_cache(
+        _generator, children, rejected = self._get_children_cache(
             choice_type, constraints, key=key
         )
         rejected.add(child)

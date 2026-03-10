@@ -733,16 +733,13 @@ def test_invariant_failling_present_in_falsifying_example():
         run_state_machine_as_test(BadInvariant)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = BadInvariant()
 state.initialize_1()
 state.invariant_1()
 state.teardown()
 """.strip()
-    )
 
 
 def test_invariant_present_in_falsifying_example():
@@ -947,16 +944,13 @@ def test_initialize_rule_populate_bundle():
         run_state_machine_as_test(WithInitializeBundleRules)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = WithInitializeBundleRules()
 a_0 = state.initialize_a(dep='dep')
 state.fail_fast(param=a_0)
 state.teardown()
 """.strip()
-    )
 
 
 def test_initialize_rule_dont_mix_with_precondition():
@@ -1078,9 +1072,7 @@ def test_can_manually_call_initialize_rule():
         run_state_machine_as_test(StateMachine)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = StateMachine()
 state.initialize()
@@ -1088,7 +1080,6 @@ state.fail_eventually()
 state.fail_eventually()
 state.teardown()
 """.strip()
-    )
 
 
 def test_steps_printed_despite_pytest_fail():
@@ -1101,14 +1092,11 @@ def test_steps_printed_despite_pytest_fail():
 
     with pytest.raises(Failed) as err:
         run_state_machine_as_test(RaisesProblem)
-    assert (
-        "\n".join(err.value.__notes__).strip()
-        == """
+    assert "\n".join(err.value.__notes__).strip() == """
 Falsifying example:
 state = RaisesProblem()
 state.oops()
 state.teardown()""".strip()
-    )
 
 
 def test_steps_not_printed_with_pytest_skip(capsys):
@@ -1318,16 +1306,13 @@ def test_single_target_multiple():
         run_state_machine_as_test(Machine)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 state.fail_fast(param=a_2)
 state.teardown()
 """.strip()
-    )
 
 
 @pytest.mark.parametrize(
@@ -1370,16 +1355,13 @@ def test_targets_repr(bundle_names, initial, repr_):
         run_state_machine_as_test(Machine)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == f"""
+    assert result == f"""
 Falsifying example:
 state = Machine()
 {repr_}
 state.fail_fast()
 state.teardown()
 """.strip()
-    )
 
 
 def test_multiple_targets():
@@ -1407,9 +1389,7 @@ def test_multiple_targets():
         run_state_machine_as_test(Machine)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
@@ -1417,7 +1397,6 @@ b_0, b_1, b_2 = a_0, a_1, a_2
 state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
-    )
 
 
 def test_multiple_common_targets():
@@ -1448,9 +1427,7 @@ def test_multiple_common_targets():
         run_state_machine_as_test(Machine)
 
     result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    assert result == """
 Falsifying example:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
@@ -1459,7 +1436,6 @@ a_3, a_4, a_5 = a_0, a_1, a_2
 state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
-    )
 
 
 class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
