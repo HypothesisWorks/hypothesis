@@ -1819,3 +1819,56 @@ def test_discards_invalid_db_entries_pareto():
     assert not set(db.fetch(runner.database_key))
     assert not set(db.fetch(runner.pareto_key))
     assert runner.call_count == 0
+
+
+def test_flaky_stateful_reports_steps():
+    seen_choices = []
+
+    def flaky_stateful(data):
+        data._stateful_repr_parts = ["state = MyMachine()", "state.step_one()"]
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+            data.draw_integer(0, 10)
+        else:
+            data.draw_integer(0, 20)
+
+    runner = ConjectureRunner(flaky_stateful, settings=settings(database=None))
+    with pytest.raises(FlakyStrategyDefinition, match="different constraints"):
+        runner.run()
+
+
+def test_flaky_stateful_reports_observability_tip():
+    seen_choices = []
+
+    def flaky_stateful_no_obs(data):
+        data._stateful_repr_parts = []
+        val = data.draw_integer(0, 10)
+        if (val,) not in seen_choices:
+            seen_choices.append((val,))
+            data.draw_integer(0, 10)
+        else:
+            data.draw_integer(0, 20)
+
+    runner = ConjectureRunner(flaky_stateful_no_obs, settings=settings(database=None))
+    with pytest.raises(FlakyStrategyDefinition, match="different constraints"):
+        runner.run()
+
+
+def test_flaky_during_shrinking_suppressed():
+    call_count = 0
+
+    def flaky_on_shrink(data):
+        nonlocal call_count
+        data.draw_integer(0, 10)
+        call_count += 1
+        if call_count > 2:
+            data.draw_integer(0, 20)
+        else:
+            data.draw_integer(0, 10)
+        data.mark_interesting(interesting_origin())
+
+    runner = ConjectureRunner(flaky_on_shrink, settings=settings(database=None))
+    runner.run()
+    assert runner.interesting_examples
+    assert runner.suppressed_flaky_error is not None
