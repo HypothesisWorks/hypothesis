@@ -1027,10 +1027,6 @@ class TreeRecordingObserver(DataObserver):
         self._index_in_current_node: int = 0
         self._trail: list[TreeNode] = [self._current_node]
         self.killed: bool = False
-        # Set to True when draw_value or split_at raises
-        # FlakyStrategyDefinition, so that conclude_test knows not to
-        # raise a duplicate for "fewer draws" — the test didn't stop
-        # early by choice, it was interrupted by the first error.
         self.flaky: bool = False
 
     def draw_integer(

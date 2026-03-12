@@ -570,28 +570,20 @@ class ConjectureRunner:
             data.freeze()
             return
         except FlakyStrategyDefinition:
-            # The observer's flaky flag is already set, so freeze() won't
-            # raise a duplicate from conclude_test().
             data.freeze()
-            # _stateful_repr_parts is None for non-stateful tests (skip both
-            # branches), a non-empty list when steps were recorded, or an
-            # empty list for stateful tests where observability was off.
+            # _stateful_repr_parts is:
+            # None for non-stateful tests
+            # a list when steps were recorded
             if data._stateful_repr_parts:
                 report(
                     "Steps leading up to this error:\n"
                     + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
                 )
             elif data._stateful_repr_parts is not None:
-                # Stateful test, but no steps were recorded (observability
-                # is off) — suggest enabling it.
                 report(
                     "Tip: to see which steps led to this error, re-run with "
                     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
                 )
-            # Save the (partial) choices to the database so the reuse phase
-            # replays them on the next run. If the flaky external state is
-            # still present, the user gets the same error; if they've fixed
-            # it, the replay succeeds and the entry is automatically deleted.
             self.save_choices(data.choices)
             raise
         except BaseException:
@@ -1002,9 +994,6 @@ class ConjectureRunner:
             except FlakyStrategyDefinition as e:
                 if not self.interesting_examples:
                     raise
-                # Real bugs were found before the flaky error hit during
-                # shrinking. Stop the engine and let the replay loop
-                # report the real failures.
                 self.statistics["stopped-because"] = (
                     "a flaky strategy was detected during shrinking"
                 )

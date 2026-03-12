@@ -2233,10 +2233,6 @@ def given(
                         wrapped_test._hypothesis_internal_use_generated_seed
                     )
                     with local_settings(settings):
-                        # Print the seed when the failure is unexpected (not a
-                        # normal test failure), or when a flaky strategy error
-                        # was suppressed — the seed is the only way to
-                        # reproduce the flaky error during shrinking.
                         if generated_seed is not None and (
                             not state.failed_normally
                             or state.has_suppressed_flaky_error
