@@ -721,16 +721,28 @@ class ConjectureRunner:
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
             from hypothesis.control import current_build_context
             seed = current_build_context().wrapped_test._hypothesis_internal_use_generated_seed
-            report(
+            msg = (
                 "WARNING: Hypothesis has spent more than five minutes working to shrink"
                 " a failing example, and stopped because it is making very slow"
                 " progress.  When you re-run your tests, shrinking will resume and may"
                 " take this long before aborting again."
                 "\nPLEASE REPORT THIS if you can provide a reproducing example, so"
-                " that we can improve shrinking performance for everyone.  You can"
-                f" attempt to reproduce this failure either by adding @seed({seed})"
-                f" to this test or running pytest with --hypothesis-seed={seed}"
+                " that we can improve shrinking performance for everyone."
             )
+            if seed is not None:
+                from hypothesis.core import running_under_pytest
+                if running_under_pytest:
+                    msg += (
+                        f" You can add @seed({seed}) to this test or run"
+                        f" pytest with --hypothesis-seed={seed} to reproduce"
+                        " this failure."
+                    )
+                else:
+                    msg += (
+                        f" You can add @seed({seed}) to this test to"
+                        " reproduce this failure."
+                    )
+            report(msg)
             self.exit_with(ExitReason.very_slow_shrinking)
 
         if not self.interesting_examples:

@@ -118,8 +118,9 @@ def test_does_print_on_reuse_from_database():
     assert "@seed" in o.getvalue()
 
 
-def test_prints_seed_on_very_slow_shrinking(monkeypatch):
-    monkeypatch.setattr(core, "running_under_pytest", False)
+@pytest.mark.parametrize("in_pytest", [True, False])
+def test_prints_seed_on_very_slow_shrinking(monkeypatch, in_pytest):
+    monkeypatch.setattr(core, "running_under_pytest", in_pytest)
 
     @settings(database=None, deadline=None, suppress_health_check=list(HealthCheck))
     @given(st.integers(min_value=0, max_value=2**64 - 1))
@@ -142,4 +143,5 @@ def test_prints_seed_on_very_slow_shrinking(monkeypatch):
     assert "five minutes" in output
     seed = test._hypothesis_internal_use_generated_seed
     assert output.count(f"@seed({seed})") == 1
-    assert output.count(f"--hypothesis-seed={seed}") == 1
+    contains_pytest_instruction = f"--hypothesis-seed={seed}" in output
+    assert contains_pytest_instruction == in_pytest
