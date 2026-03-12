@@ -719,7 +719,8 @@ class ConjectureRunner:
             and self.finish_shrinking_deadline < time.perf_counter()
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
-            seed = build_context().wrapped_test._hypothesis_internal_use_generated_seed
+            from hypothesis.control import current_build_context
+            seed = current_build_context().wrapped_test._hypothesis_internal_use_generated_seed
             report(
                 "WARNING: Hypothesis has spent more than five minutes working to shrink"
                 " a failing example, and stopped because it is making very slow"
