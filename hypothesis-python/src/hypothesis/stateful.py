@@ -271,8 +271,10 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
         if flaky_state["selecting_rule"]:
             add_note(
                 err,
-                "while selecting a rule to run. This is usually caused by "
-                "a flaky precondition, or a bundle that was unexpectedly empty.",
+                "This error occurred while selecting a rule to run. This is "
+                "usually caused by a flaky precondition, a bundle that "
+                "was unexpectedly empty, or a rule that depends on external "
+                "state such as time or a global variable.",
             )
         raise
 

@@ -83,6 +83,7 @@ their individual contributions.
 * `Hal Blackburn <https://github.com/h4l>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
+* `Ian Hunt-Isaak <https://github.com/ianhi>`_
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)
 * `Israel Fruchter <https://github.com/fruch>`_
 * `Ivan Tham <https://github.com/pickfire>`_
