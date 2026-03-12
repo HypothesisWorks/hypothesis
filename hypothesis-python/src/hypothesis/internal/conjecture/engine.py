@@ -720,7 +720,10 @@ class ConjectureRunner:
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
             from hypothesis.control import current_build_context
-            seed = current_build_context().wrapped_test._hypothesis_internal_use_generated_seed
+
+            seed = (
+                current_build_context().wrapped_test._hypothesis_internal_use_generated_seed
+            )
             msg = (
                 "WARNING: Hypothesis has spent more than five minutes working to shrink"
                 " a failing example, and stopped because it is making very slow"
@@ -731,6 +734,7 @@ class ConjectureRunner:
             )
             if seed is not None:
                 from hypothesis.core import running_under_pytest
+
                 if running_under_pytest:
                     msg += (
                         f" You can add @seed({seed}) to this test or run"
