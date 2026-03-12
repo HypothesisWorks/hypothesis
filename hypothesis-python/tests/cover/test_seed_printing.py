@@ -141,5 +141,5 @@ def test_prints_seed_on_very_slow_shrinking(monkeypatch):
     output = o.getvalue()
     assert "five minutes" in output
     seed = test._hypothesis_internal_use_generated_seed
-    assert seed is not None
-    assert f"@seed({seed})" in output
+    assert output.count(f"@seed({seed})") == 1
+    assert output.count(f"--hypothesis-seed={seed}") == 1
