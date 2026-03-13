@@ -10,10 +10,12 @@
 
 import threading
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
+from typing import Any, TypeVar
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     get_pretty_function_description,
     is_first_param_referenced_in_function,
@@ -27,31 +29,33 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.utils.deprecation import note_deprecation
 
+T = TypeVar("T")
+
 
 class LimitReached(BaseException):
     pass
 
 
-class LimitedStrategy(SearchStrategy):
-    def __init__(self, strategy):
+class LimitedStrategy(SearchStrategy[T]):
+    def __init__(self, strategy: SearchStrategy[T]):
         super().__init__()
         self.base_strategy = strategy
         self._threadlocal = threading.local()
 
     @property
-    def marker(self):
+    def marker(self) -> int:
         return getattr(self._threadlocal, "marker", 0)
 
     @marker.setter
-    def marker(self, value):
+    def marker(self, value: int) -> None:
         self._threadlocal.marker = value
 
     @property
-    def currently_capped(self):
+    def currently_capped(self) -> bool:
         return getattr(self._threadlocal, "currently_capped", False)
 
     @currently_capped.setter
-    def currently_capped(self, value):
+    def currently_capped(self, value: bool) -> None:
         self._threadlocal.currently_capped = value
 
     def __repr__(self) -> str:
@@ -60,7 +64,7 @@ class LimitedStrategy(SearchStrategy):
     def do_validate(self) -> None:
         self.base_strategy.validate()
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> T:
         assert self.currently_capped
         if self.marker <= 0:
             raise LimitReached
@@ -68,7 +72,7 @@ class LimitedStrategy(SearchStrategy):
         return data.draw(self.base_strategy)
 
     @contextmanager
-    def capped(self, max_templates):
+    def capped(self, max_templates: int) -> Generator[None, None, None]:
         try:
             was_capped = self.currently_capped
             self.currently_capped = True
@@ -157,7 +161,7 @@ class RecursiveStrategy(SearchStrategy):
                 f"max_leaves={self.max_leaves!r}"
             )
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Any:
         min_leaves_retries = 0
         while True:
             try:

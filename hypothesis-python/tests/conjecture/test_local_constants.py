@@ -97,9 +97,7 @@ def test_actual_collection(monkeypatch, tmp_path):
 
 
 def test_unhashable_sys_modules_entry(monkeypatch):
-    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4660
-    # Some packages (e.g. cog) place unhashable objects like SimpleNamespace
-    # in sys.modules. This should not crash _get_local_constants.
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4660
     monkeypatch.setattr(providers, "_sys_modules_len", None)
     monkeypatch.setattr(providers, "_seen_modules", set())
     monkeypatch.setitem(sys.modules, "_unhashable_test_mod", SimpleNamespace())

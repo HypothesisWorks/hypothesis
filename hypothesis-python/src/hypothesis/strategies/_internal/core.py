@@ -493,7 +493,7 @@ def iterables(
 #         {"a": st.integers(), "b": st.booleans()}
 #     )
 # * the arguments may be of any dict-compatible type, in which case the return
-#  value will be of that type instead of dit
+#   value will be of that type instead of dict
 #
 # Overloads may help here, but I doubt we'll be able to satisfy all these
 # constraints.
