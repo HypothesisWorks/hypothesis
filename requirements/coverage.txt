@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-black==26.3.0
+black==26.3.1
     # via -r requirements/coverage.in
 click==8.3.1
     # via
@@ -28,7 +28,7 @@ libcst==1.8.6
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.2
+numpy==2.4.3
     # via
     #   -r requirements/coverage.in
     #   pandas
