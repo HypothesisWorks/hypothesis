@@ -60,6 +60,28 @@ _FLAKY_STRAT_MSG = (
 )
 
 
+def _flaky_strat_msg_with_detail(detail: str) -> str:
+    return f"{_FLAKY_STRAT_MSG}\n\n{detail}"
+
+
+def _mismatch_detail(expected: tuple[str, object], actual: tuple[str, object]) -> str:
+    expected_type, expected_constraints = expected
+    actual_type, actual_constraints = actual
+    if actual_type != expected_type:
+        return (
+            f"The second run drew a different type of value "
+            f"than the first run.\n"
+            f"  first run:  {expected_type}\n"
+            f"  second run: {actual_type}\n"
+        )
+    return (
+        f"The second run drew {actual_type} with different "
+        f"constraints than the first run.\n"
+        f"  first run:  {expected_constraints}\n"
+        f"  second run: {actual_constraints}\n"
+    )
+
+
 EMPTY: frozenset[int] = frozenset()
 
 
@@ -442,7 +464,7 @@ class TreeNode:
             self.__forced = set()
         self.__forced.add(i)
 
-    def split_at(self, i: int) -> None:
+    def split_at(self, i: int, *, new_value: object = None) -> None:
         """
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
@@ -451,7 +473,13 @@ class TreeNode:
         """
 
         if i in self.forced:
-            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+            raise FlakyStrategyDefinition(
+                _flaky_strat_msg_with_detail(
+                    f"The {self.choice_types[i]} value was forced to "
+                    f"{self.values[i]!r} in the first run, but the second "
+                    f"run drew {new_value!r}.\n"
+                )
+            )
 
         assert not self.is_exhausted
 
@@ -931,7 +959,7 @@ class DataTree:
         key: ChoiceT,
         random: Random,
     ) -> ChoiceT:
-        (generator, children, rejected) = self._get_children_cache(
+        generator, children, rejected = self._get_children_cache(
             choice_type, constraints, key=key
         )
         # Keep a stock of 100 potentially-valid children at all times.
@@ -961,7 +989,7 @@ class DataTree:
         child: ChoiceT,
         key: ChoiceT,
     ) -> None:
-        (_generator, children, rejected) = self._get_children_cache(
+        _generator, children, rejected = self._get_children_cache(
             choice_type, constraints, key=key
         )
         rejected.add(child)
@@ -999,6 +1027,7 @@ class TreeRecordingObserver(DataObserver):
         self._index_in_current_node: int = 0
         self._trail: list[TreeNode] = [self._current_node]
         self.killed: bool = False
+        self.flaky: bool = False
 
     def draw_integer(
         self, value: int, *, was_forced: bool, constraints: IntegerConstraints
@@ -1050,17 +1079,35 @@ class TreeRecordingObserver(DataObserver):
                 choice_type != node.choice_types[i]
                 or constraints != node.constraints[i]
             ):
-                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+                self.flaky = True
+                raise FlakyStrategyDefinition(
+                    _flaky_strat_msg_with_detail(
+                        _mismatch_detail(
+                            (node.choice_types[i], node.constraints[i]),
+                            (choice_type, constraints),
+                        )
+                    )
+                )
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
             # if we ever split the node there, but otherwise
             # may pass silently. This is acceptable because it
             # means we skip a hash set lookup on every
             # draw and that's a pretty niche failure mode.
-            if was_forced and i not in node.forced:
-                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
-            if value != node.values[i]:
-                node.split_at(i)
+            elif was_forced and i not in node.forced:
+                self.flaky = True
+                raise FlakyStrategyDefinition(
+                    _flaky_strat_msg_with_detail(
+                        f"The {choice_type} value was forced to a specific "
+                        f"value but was not forced on the first run.\n"
+                    )
+                )
+            elif value != node.values[i]:
+                try:
+                    node.split_at(i, new_value=value)
+                except FlakyStrategyDefinition:
+                    self.flaky = True
+                    raise
                 assert i == len(node.values)
                 new_node = TreeNode()
                 assert isinstance(node.transition, Branch)
@@ -1095,7 +1142,7 @@ class TreeRecordingObserver(DataObserver):
                     compute_max_children(choice_type, constraints) == 1
                     and not was_forced
                 ):
-                    node.split_at(i)
+                    node.split_at(i, new_value=value)
                     assert isinstance(node.transition, Branch)
                     self._current_node = node.transition.children[value]
                     self._index_in_current_node = 0
@@ -1103,11 +1150,24 @@ class TreeRecordingObserver(DataObserver):
                 assert trans.status != Status.OVERRUN
                 # We tried to draw where history says we should have
                 # stopped
-                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+                self.flaky = True
+                raise FlakyStrategyDefinition(
+                    _flaky_strat_msg_with_detail(
+                        "The second run drew more data than the first run.\n"
+                    )
+                )
             else:
                 assert isinstance(trans, Branch), trans
                 if choice_type != trans.choice_type or constraints != trans.constraints:
-                    raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+                    self.flaky = True
+                    raise FlakyStrategyDefinition(
+                        _flaky_strat_msg_with_detail(
+                            _mismatch_detail(
+                                (trans.choice_type, trans.constraints),
+                                (choice_type, constraints),
+                            )
+                        )
+                    )
                 try:
                     self._current_node = trans.children[value]
                 except KeyError:
@@ -1127,7 +1187,12 @@ class TreeRecordingObserver(DataObserver):
             self._current_node.transition is not None
             and not isinstance(self._current_node.transition, Killed)
         ):
-            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+            raise FlakyStrategyDefinition(
+                _flaky_strat_msg_with_detail(
+                    "The second run stopped drawing earlier than the "
+                    "first run, which continued to draw more data.\n"
+                )
+            )
 
         if self._current_node.transition is None:
             self._current_node.transition = Killed(TreeNode())
@@ -1144,11 +1209,18 @@ class TreeRecordingObserver(DataObserver):
         node if necessary and checks for consistency."""
         if status == Status.OVERRUN:
             return
+        if self.flaky:
+            return
         i = self._index_in_current_node
         node = self._current_node
 
         if i < len(node.values) or isinstance(node.transition, Branch):
-            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
+            raise FlakyStrategyDefinition(
+                _flaky_strat_msg_with_detail(
+                    "The second run stopped drawing earlier than the "
+                    "first run, which continued to draw more data.\n"
+                )
+            )
 
         new_transition = Conclusion(status, interesting_origin)
 
