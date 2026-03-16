@@ -12,7 +12,7 @@ attrs==25.4.0
     # via
     #   outcome
     #   trio
-black==26.3.0
+black==26.3.1
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.2
+numpy==2.4.3
     # via
     #   -r requirements/coverage.in
     #   pandas

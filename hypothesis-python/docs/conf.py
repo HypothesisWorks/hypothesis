@@ -173,7 +173,7 @@ linkcheck_ignore = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
     "django": (
         "http://docs.djangoproject.com/en/stable/",
