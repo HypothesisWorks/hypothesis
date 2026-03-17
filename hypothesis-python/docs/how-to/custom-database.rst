@@ -16,15 +16,13 @@ For example, here's a simple database class that uses :mod:`sqlite <sqlite3>` as
         def __init__(self, db_path: str):
             self.conn = sqlite3.connect(db_path)
 
-            self.conn.execute(
-                """
+            self.conn.execute("""
                 CREATE TABLE examples (
                     key BLOB,
                     value BLOB,
                     UNIQUE (key, value)
                 )
-            """
-            )
+            """)
 
         def save(self, key: bytes, value: bytes) -> None:
             self.conn.execute(

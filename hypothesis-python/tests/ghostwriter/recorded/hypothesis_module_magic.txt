@@ -8,6 +8,7 @@ import random
 import typing
 from collections.abc import Hashable
 from hypothesis import given, settings, strategies as st
+from typing import Any
 
 
 @given(condition=st.from_type(object))
@@ -15,8 +16,8 @@ def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)
 
 
-@given(value=st.text(), payload=st.one_of(st.floats(), st.integers(), st.text()))
-def test_fuzz_event(value: str, payload: typing.Union[str, int, float]) -> None:
+@given(value=st.text(), payload=st.from_type(typing.Any))
+def test_fuzz_event(value: str, payload: typing.Any) -> None:
     hypothesis.event(value=value, payload=payload)
 
 

@@ -233,7 +233,7 @@ class SearchStrategy(Generic[Ex]):
     # this works so I'm not looking into it further atm.
     __label: int | UniqueIdentifier | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.validate_called: dict[int, bool] = {}
 
     def is_currently_empty(self, data: ConjectureData) -> bool:
@@ -654,7 +654,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # The worst case performance of this scheme is
         # itertools.chain(range(2**100), [st.none()]), where it degrades to
         # hashing every int in the range.
-        (elements_is_hashable, hash_value) = _is_hashable(self.elements)
+        elements_is_hashable, hash_value = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
             elements_is_hashable
             and not any(isinstance(e, SearchStrategy) for e in self.elements)
