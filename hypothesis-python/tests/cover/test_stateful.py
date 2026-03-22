@@ -30,6 +30,7 @@ from hypothesis.core import encode_failure
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     DidNotReproduce,
+    FailedHealthCheck,
     Flaky,
     FlakyStrategyDefinition,
     InvalidArgument,
@@ -1475,24 +1476,141 @@ def test_lots_of_entropy():
     run_state_machine_as_test(LotsOfEntropyPerStepMachine)
 
 
-def test_flatmap():
+def test_filter():
     class Machine(RuleBasedStateMachine):
-        buns = Bundle("buns")
+        val = Bundle("val")
 
-        @initialize(target=buns)
-        def create_bun(self):
-            return 0
+        @initialize(target=val)
+        def initialize(self):
+            return multiple(1, 2, 3)
 
-        @rule(target=buns, bun=buns.flatmap(lambda x: just(x + 1)))
-        def use_flatmap(self, bun):
-            assert isinstance(bun, int)
-            return bun
+        @rule(
+            a1=val.filter(lambda x: x < 2),
+            a2=val.filter(lambda x: x > 2),
+            a3=val,
+        )
+        def fail_fast(self, a1, a2, a3):
+            raise AssertionError
 
-        @rule(bun=buns)
-        def use_directly(self, bun):
-            assert isinstance(bun, int)
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
 
-    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+val_0, val_1, val_2 = state.initialize()
+state.fail_fast(a1=val_0, a2=val_2, a3=val_2)
+state.teardown()
+""".strip()
+    )
+
+
+def test_consumes_filter():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def initialize(self):
+            return multiple(1, 2, 3)
+
+        @rule(
+            v1=consumes(values).filter(lambda x: x < 2),
+            v2=consumes(values).filter(lambda x: x > 2),
+            v3=consumes(values),
+        )
+        def fail_fast(self, v1, v2, v3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+values_0, values_1, values_2 = state.initialize()
+state.fail_fast(v1=values_0, v2=values_2, v3=values_1)
+state.teardown()
+""".strip()
+    )
+
+
+def test_consumes_map_with_filter():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def initialize(self):
+            return multiple(2, 4)
+
+        @rule(
+            v1=values.map(lambda x: x**2).filter(lambda x: x < 3**2),
+            v2=consumes(values).map(lambda x: x**2).filter(lambda x: x > 3**2),
+            v3=consumes(values),
+        )
+        def fail_fast(self, v1, v2, v3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+values_0, values_1 = state.initialize()
+state.fail_fast(v1=values_0, v2=values_1, v3=values_0)
+state.teardown()
+""".strip()
+    )
+
+
+def test_flatmap_with_combinations():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def create_values(self):
+            return 1
+
+        @rule(target=values, n=values.flatmap(lambda x: just(x + 1)))
+        def use_flatmap(self, n):
+            assert isinstance(n, int)
+            return n
+
+        @rule(
+            target=values,
+            n=values.flatmap(lambda x: just(-x)).filter(lambda x: x < -1),
+        )
+        def use_flatmap_filtered(self, n):
+            assert isinstance(n, int)
+            assert n < -1
+            return -n
+
+        @rule(
+            target=values,
+            n=values.flatmap(lambda x: just(x + 1)).map(lambda x: -x),
+        )
+        def use_flatmap_mapped(self, n):
+            assert isinstance(n, int)
+            assert n < 0
+            return -n
+
+        @rule(n=values)
+        def use_directly(self, n):
+            assert isinstance(n, int)
+            assert n >= 0
+
     run_state_machine_as_test(Machine)
 
 
@@ -1515,6 +1633,129 @@ def test_use_bundle_within_other_strategies():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_map_with_combinations():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def create_values(self):
+            return multiple(1, 2)
+
+        @rule(n=values.map(lambda x: -x))
+        def use_map_base(self, n):
+            assert isinstance(n, int)
+            assert n < 0
+
+        @rule(
+            n=values.map(lambda x: -x).filter(lambda x: x < -1),
+        )
+        def use_flatmap_filtered(self, n):
+            assert isinstance(n, int)
+            assert n < -1
+
+        @rule(
+            n=values.map(lambda x: -x).flatmap(lambda x: just(abs(x) + 1)),
+        )
+        def use_flatmap_mapped(self, n):
+            assert isinstance(n, int)
+            assert n > 0
+
+        @rule(n=values)
+        def use_directly(self, n):
+            assert isinstance(n, int)
+            assert n > 0
+
+    run_state_machine_as_test(Machine)
+
+
+def test_filter_with_combinations():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def create_values(self):
+            return multiple(0, -1, -2)
+
+        @rule(n=values.filter(lambda x: x > 0))
+        def use_filter_base(self, n):
+            assert isinstance(n, int)
+            assert n > 0
+
+        @rule(
+            n=values.filter(lambda x: x > 0).flatmap(lambda x: just(-x)),
+        )
+        def use_filter_flatmapped(self, n):
+            assert isinstance(n, int)
+            assert n < 0
+
+        @rule(
+            n=values.filter(lambda x: x < 0).map(lambda x: -x),
+        )
+        def use_flatmap_mapped(self, n):
+            assert isinstance(n, int)
+            assert n > 0
+
+        @rule(n=values)
+        def use_directly(self, n):
+            assert isinstance(n, int)
+
+    run_state_machine_as_test(Machine)
+
+
+def test_filter_not_satisfied_healthcheck():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def create_values(self):
+            return 0
+
+        @rule(n=values.filter(lambda x: False))
+        def use_filter(self, n):
+            raise ValueError("This shouldn't be raised.")
+
+    Machine.TestCase.settings = Settings(
+        stateful_step_count=2,
+        max_examples=2,
+    )
+    with pytest.raises(FailedHealthCheck, match="HealthCheck.filter_too_much"):
+        run_state_machine_as_test(Machine)
+
+
+def test_mapped_values_assigned_properly():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def initialize(self):
+            return multiple("ret1", "ret2")
+
+        @rule(
+            v1=values,
+            v2=values.map(lambda x: x + x),
+            v3=consumes(values).map(lambda x: x + x),
+            v4=values,
+        )
+        def fail_fast(self, v1, v2, v3, v4):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+values_0, values_1 = state.initialize()
+state.fail_fast(v1=values_1, v2=values_1, v3=values_1, v4=values_0)
+state.teardown()
+""".strip()
+    )
 
 
 def test_precondition_cannot_be_used_without_rule():

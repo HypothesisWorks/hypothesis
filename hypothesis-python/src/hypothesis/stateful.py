@@ -37,6 +37,7 @@ from hypothesis.errors import (
     InvalidDefinition,
 )
 from hypothesis.internal.compat import add_note, batched
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -54,8 +55,11 @@ from hypothesis.strategies._internal.featureflags import FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
     OneOfStrategy,
+    SampledFromStrategy,
+    SampledFromTransformationsT,
     SearchStrategy,
     check_strategy,
+    filter_not_satisfied,
 )
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
@@ -198,11 +202,11 @@ def get_state_machine_test(
                     data = dict(data)
                     for k, v in list(data.items()):
                         if isinstance(v, VarReference):
-                            data[k] = machine.names_to_values[v.name]
+                            data[k] = v.value
                         elif isinstance(v, list) and all(
                             isinstance(item, VarReference) for item in v
                         ):
-                            data[k] = [machine.names_to_values[item.name] for item in v]
+                            data[k] = [item.value for item in v]
 
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
@@ -330,7 +334,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         # copy since we pop from this as we run initialize rules.
         self._initialize_rules_to_run = setup_state.initializers.copy()
 
-        self.bundles: dict[str, list] = {}
+        self.bundles: dict[str, list[str]] = {}
         self.names_counters: collections.Counter = collections.Counter()
         self.names_list: list[str] = []
         self.names_to_values: dict[str, Any] = {}
@@ -459,7 +463,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 if not _is_singleton(result):
                     self.__printer.singleton_pprinters.setdefault(id(result), printer)
                 self.names_to_values[name] = result
-                self.bundles.setdefault(target, []).append(VarReference(name))
+                self.bundles.setdefault(target, []).append(name)
 
     def check_invariants(self, settings, output, runtimes):
         for invar in self.invariants:
@@ -529,8 +533,12 @@ class Rule:
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                consume = isinstance(v, BundleConsumer)
-                v = BundleReferenceStrategy(v.name, consume=consume)
+                v = BundleReferenceStrategy(
+                    v.name,
+                    consume=v.consume,
+                    force_repr=v.force_repr,
+                    transformations=v._transformations,
+                )
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -564,25 +572,60 @@ class Rule:
 self_strategy = st.runner()
 
 
-class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name: str, *, consume: bool = False):
-        super().__init__()
+class BundleReferenceStrategy(SampledFromStrategy[Ex]):
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        force_repr: str | None = None,
+        transformations: SampledFromTransformationsT = (),
+    ):
+        super().__init__(
+            [...],
+            force_repr=force_repr,
+            transformations=transformations,
+        )  # Some random items that'll get replaced in do_draw
         self.name = name
         self.consume = consume
 
-    def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        bundle = machine.bundle(self.name)
-        if not bundle:
+    def get_transformed_value(self, name: str) -> Ex:
+        value = self.machine.names_to_values[name]
+        return self._transform(value)
+
+    def get_element(self, i: int) -> int:
+        idx = self.elements[i]
+        name = self.bundle[idx]
+        value = self.get_transformed_value(name)
+        if value is filter_not_satisfied:
+            return filter_not_satisfied
+        return idx
+
+    def do_draw(self, data: ConjectureData) -> Ex:
+        self.machine = data.draw(self_strategy)
+        self.bundle = self.machine.bundle(self.name)
+        if not self.bundle:
             data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
+
+        # We use both self.bundle and self.elements to make sure an index is
+        # used to safely pop.
+
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
+        self.elements = range(len(self.bundle))[::-1]
+
+        position = super().do_draw(data)
+        name = self.bundle[position]
         if self.consume:
-            return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
-        else:
-            return bundle[position]
+            self.bundle.pop(position)  # pragma: no cover  # coverage is flaky here
+
+        value = self.get_transformed_value(name)
+
+        # We need both reference and the value itself to pretty-print deterministically
+        # and maintain any transformations that is bundle-specific
+        return VarReference(name, value)
 
 
 class Bundle(SearchStrategy[Ex]):
@@ -605,26 +648,80 @@ class Bundle(SearchStrategy[Ex]):
 
     If the ``consume`` argument is set to True, then all values that are
     drawn from this bundle will be consumed (as above) when requested.
+
+    Bundles can be combined with |.map| and |.filter|:
+
+    .. code-block:: python
+
+        class Machine(RuleBasedStateMachine):
+            values = Bundle("values")
+
+            @initialize(target=values)
+            def populate_values(self):
+                return multiple(1, 2)
+
+            @rule(n=buns.map(lambda x: -x))
+            def use_map(self, n):
+                pass
+
+            @rule(n=buns.filter(lambda x: x > 1))
+            def use_filter(self, n):
+                pass
     """
 
     def __init__(
-        self, name: str, *, consume: bool = False, draw_references: bool = True
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        force_repr: str | None = None,
+        transformations: SampledFromTransformationsT = (),
     ) -> None:
         super().__init__()
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
-        self.draw_references = draw_references
+        self.__reference_strategy = BundleReferenceStrategy(
+            name,
+            consume=consume,
+            force_repr=force_repr,
+            transformations=transformations,
+        )
 
-    def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        reference = data.draw(self.__reference_strategy)
-        return machine.names_to_values[reference.name]
+    @property
+    def consume(self):
+        return self.__reference_strategy.consume
+
+    @property
+    def force_repr(self):
+        return self.__reference_strategy.force_repr
+
+    @property
+    def _transformations(self):
+        return self.__reference_strategy._transformations
+
+    def do_draw(self, data: ConjectureData) -> Ex:
+        self.machine = data.draw(self_strategy)
+        var_reference = data.draw(self.__reference_strategy)
+        assert isinstance(var_reference, VarReference)
+        return var_reference.value
+
+    def __with_transform(self, method, fn):
+        return Bundle(
+            self.name,
+            consume=self.consume,
+            force_repr=self.force_repr,
+            transformations=(*self._transformations, (method, fn)),
+        )
+
+    def filter(self, condition):
+        return self.__with_transform("filter", condition)
+
+    def map(self, pack):
+        return self.__with_transform("map", pack)
 
     def __repr__(self):
-        consume = self.__reference_strategy.consume
-        if consume is False:
+        if self.consume is False:
             return f"Bundle(name={self.name!r})"
-        return f"Bundle(name={self.name!r}, {consume=})"
+        return f"Bundle(name={self.name!r}, {self.consume=})"
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time
@@ -635,16 +732,7 @@ class Bundle(SearchStrategy[Ex]):
         # Hence drawing from it only returns the current state machine without
         # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
-        return not bool(machine.bundle(self.name))
-
-    def flatmap(self, expand):
-        if self.draw_references:
-            return type(self)(
-                self.name,
-                consume=self.__reference_strategy.consume,
-                draw_references=False,
-            ).flatmap(expand)
-        return super().flatmap(expand)
+        return bool(machine.bundle(self.name))
 
     def __hash__(self):
         # Making this hashable means we hit the fast path of "everything is
@@ -653,11 +741,6 @@ class Bundle(SearchStrategy[Ex]):
 
         # Mix in "Bundle" for collision resistance
         return hash(("Bundle", self.name))
-
-
-class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
 
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
@@ -675,7 +758,12 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return BundleConsumer(bundle)
+    return Bundle(
+        bundle.name,
+        consume=True,
+        transformations=bundle._transformations,
+        force_repr=bundle.force_repr,
+    )
 
 
 @dataclass(slots=True, frozen=True)
@@ -720,7 +808,7 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            if isinstance(t, BundleConsumer):
+            if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
                     "This will be an error in a future version of Hypothesis.",
@@ -964,6 +1052,7 @@ def initialize(
 @dataclass(slots=True, frozen=True)
 class VarReference:
     name: str
+    value: Any
 
 
 # There are multiple alternatives for annotating the `precond` type, all of them
