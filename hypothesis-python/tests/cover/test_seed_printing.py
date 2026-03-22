@@ -133,7 +133,9 @@ def test_prints_seed_on_very_slow_shrinking(monkeypatch, in_pytest):
 
     output = o.getvalue()
     assert "Hypothesis has spent more than five minutes" in output
-    assert "This test function exited early because it took too long to shrink" in output
+    assert (
+        "This test function exited early because it took too long to shrink" in output
+    )
     seed = test._hypothesis_internal_use_generated_seed
     assert output.count(f"@seed({seed})") == 1
     assert (f"--hypothesis-seed={seed}" in output) == in_pytest
