@@ -954,14 +954,6 @@ class StateForActualGivenExecution:
         self._runner: ConjectureRunner | None = None
 
     @property
-    def had_very_slow_shrinking(self) -> bool:
-        return (
-            self._runner is not None
-            and self._runner.statistics.get("stopped-because")
-            == "shrinking was very slow"
-        )
-
-    @property
     def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
@@ -2225,23 +2217,37 @@ def given(
                     generated_seed = (
                         wrapped_test._hypothesis_internal_use_generated_seed
                     )
+                    assert state._runner is not None
+                    stopped_because_slow_shrinking = (
+                        state._runner.statistics.get("stopped-because")
+                        == "shrinking was very slow"
+                    )
                     with local_settings(settings):
                         if generated_seed is not None and (
-                            not state.failed_normally or state.had_very_slow_shrinking
+                            not state.failed_normally or stopped_because_slow_shrinking
                         ):
-                            if state.had_very_slow_shrinking:
+                            pytest_extra_msg = (
+                                (
+                                    ", or by running pytest with "
+                                    f"--hypothesis-seed={generated_seed}"
+                                )
+                                if running_under_pytest
+                                else ""
+                            )
+                            if stopped_because_slow_shrinking:
                                 msg = (
-                                    "This test function exited early because"
-                                    " it took too long to shrink. You can"
-                                    f" reproduce this by adding @seed({generated_seed}) to this test"
+                                    "\nThis test function exited early because"
+                                    " it took too long to shrink. If desired for debugging, "
+                                    f"you can reproduce this by adding @seed({generated_seed}) "
+                                    f"to this test{pytest_extra_msg}."
                                 )
                             else:
                                 msg = (
-                                    f"You can add @seed({generated_seed}) to this test"
+                                    "You can reproduce this failure by adding "
+                                    f"@seed({generated_seed}) to this test"
+                                    f"{pytest_extra_msg}."
                                 )
-                            if running_under_pytest:
-                                msg += f" or run pytest with --hypothesis-seed={generated_seed}"
-                            report(msg + ".")
+                            report(msg)
                         # The dance here is to avoid showing users long tracebacks
                         # full of Hypothesis internals they don't care about.
                         # We have to do this inline, to avoid adding another
