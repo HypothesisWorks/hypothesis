@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   cattrs
     #   lsprotocol
@@ -23,7 +23,7 @@ hypothesis==6.151.9
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.27
     # via -r requirements/crosshair.in
-importlib-metadata==8.7.1
+importlib-metadata==9.0.0
     # via crosshair-tool
 importlib-resources==6.5.2
     # via typeshed-client
@@ -43,7 +43,7 @@ pluggy==1.6.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pygls==2.0.1
+pygls==2.1.0
     # via crosshair-tool
 pygments==2.19.2
     # via pytest
