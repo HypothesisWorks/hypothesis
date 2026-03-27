@@ -210,6 +210,11 @@ Invariants can also have :func:`~hypothesis.stateful.precondition`\ s applied to
 
 Note that currently invariants can't access bundles; if you need to use invariants, you should store relevant data on the instance instead.
 
+Scaling to many rules
+---------------------
+
+As you add more rules to a state machine, it becomes harder to deeply explore any particular combination of them. Hypothesis handles this by automatically focusing each test example run on a different subset of your rules, a technique known as `swarm testing <https://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`__
+
 More fine grained control
 -------------------------
 
