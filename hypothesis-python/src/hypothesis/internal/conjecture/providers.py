@@ -1052,7 +1052,16 @@ class HypothesisProvider(PrimitiveProvider):
             # choice of unicode characters is uniform but the 32bit distribution is not.
             idx = INT_SIZES_SAMPLER.sample(self._cd)
             cap_bits = min(bits, INT_SIZES[idx])
-            upper = min(upper, lower + 2**cap_bits - 1)
+            range_size = 2**cap_bits
+            if upper - lower + 1 > range_size:
+                # Randomly position the cap window within [lower, upper] to
+                # avoid bias toward lower (min_value). Previously this always
+                # set upper = lower + 2**cap_bits - 1, anchoring the window
+                # at the bottom of the range and producing values skewed
+                # toward min_value for large integer ranges (issue #4624).
+                max_window_start = upper - range_size + 1
+                window_start = self._random.randint(lower, max_window_start)
+                return self._random.randint(window_start, window_start + range_size - 1)
             return self._random.randint(lower, upper)
 
         return self._random.randint(lower, upper)
