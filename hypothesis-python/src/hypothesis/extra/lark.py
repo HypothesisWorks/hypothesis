@@ -27,7 +27,7 @@ from lark.grammar import NonTerminal, Rule, Symbol, Terminal
 from lark.lark import Lark
 from lark.lexer import TerminalDef
 
-from hypothesis import strategies as st
+from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -69,6 +69,7 @@ class LarkStrategy(st.SearchStrategy):
     ) -> None:
         super().__init__()
         assert isinstance(grammar, lark.lark.Lark)
+        self._grammar = grammar
         start: list[str] = grammar.options.start if start is None else [start]
 
         # This is a total hack, but working around the changes is a nicer user
@@ -158,7 +159,18 @@ class LarkStrategy(st.SearchStrategy):
         state: list[str] = []
         start = data.draw(self.start)
         self.draw_symbol(data, start, state)
-        return "".join(state)
+        result = "".join(state)
+        # Validate that the generated string actually parses with this grammar.
+        # Some terminals (e.g. Lark's common.ESCAPED_STRING) use multi-pattern
+        # regexes whose to_regexp() expansion is imprecise, causing st.from_regex
+        # to occasionally emit strings that do not satisfy the full terminal
+        # pattern (issue #4325). Rejecting such examples with assume() ensures
+        # that from_lark always returns strings the grammar accepts.
+        try:
+            self._grammar.parse(result)
+        except Exception:
+            assume(False)
+        return result
 
     def rule_label(self, name: str) -> int:
         try:
