@@ -8,7 +8,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.12.1
+anyio==4.13.0
     # via
     #   starlette
     #   watchfiles
@@ -30,7 +30,7 @@ black==26.3.1
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.4.0
+build==1.4.2
     # via
     #   -r requirements/tools.in
     #   pip-tools
@@ -57,7 +57,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.13.5
     # via -r requirements/tools.in
-cryptography==46.0.5
+cryptography==46.0.6
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -102,7 +102,7 @@ imagesize==2.0.0
     # via sphinx
 iniconfig==2.3.0
     # via pytest
-ipython==9.11.0
+ipython==9.12.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -124,7 +124,7 @@ jinja2==3.1.6
     # via
     #   pelican
     #   sphinx
-jsonpointer==3.1.0
+jsonpointer==3.1.1
     # via sphinx-jsonschema
 keyring==25.7.0
     # via twine
@@ -156,7 +156,7 @@ mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nh3==0.3.3
+nh3==0.3.4
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
@@ -237,8 +237,10 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.2.0
-    # via virtualenv
+python-discovery==1.2.1
+    # via
+    #   tox
+    #   virtualenv
 pytokens==0.4.1
     # via black
 pyupgrade==3.21.2
@@ -249,7 +251,7 @@ pyyaml==6.0.3
     #   sphinx-jsonschema
 readme-renderer==44.0
     # via twine
-requests==2.32.5
+requests==2.33.0
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
@@ -268,7 +270,7 @@ rich==14.3.3
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.7
+ruff==0.15.8
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -319,15 +321,15 @@ sqlparse==0.5.5
     # via django
 stack-data==0.6.3
     # via ipython
-starlette==0.52.1
+starlette==1.0.0
     # via sphinx-autobuild
 tokenize-rt==6.2.0
     # via pyupgrade
-tomli==2.4.0
+tomli==2.4.1
     # via -r requirements/tools.in
 tomli-w==1.2.0
     # via tox
-tox==4.50.3
+tox==4.51.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via

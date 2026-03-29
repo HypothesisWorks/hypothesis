@@ -43,7 +43,7 @@ pluggy==1.6.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pygls==2.1.0
+pygls==2.1.1
     # via crosshair-tool
 pygments==2.19.2
     # via pytest

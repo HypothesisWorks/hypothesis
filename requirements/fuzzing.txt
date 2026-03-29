@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-anyio==4.12.1
+anyio==4.13.0
     # via starlette
 attrs==26.1.0
     # via
@@ -120,7 +120,7 @@ pytz==2026.1.post1
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.3.0
+redis==7.4.0
     # via fakeredis
 rich==14.3.3
     # via hypothesis
@@ -134,7 +134,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.52.1
+starlette==1.0.0
     # via hypofuzz
 trio==0.33.0
     # via hypofuzz
