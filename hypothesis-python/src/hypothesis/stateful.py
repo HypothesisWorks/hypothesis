@@ -659,6 +659,17 @@ class BundleConsumer(Bundle[Ex]):
     def __init__(self, bundle: Bundle[Ex]) -> None:
         super().__init__(bundle.name, consume=True)
 
+    def flatmap(self, expand):
+        # Override Bundle.flatmap to avoid calling type(self)(name, consume=...,
+        # draw_references=...) which fails because BundleConsumer.__init__ expects
+        # a Bundle object, not keyword arguments. Instead, delegate to a plain
+        # Bundle configured with consume=True and draw_references=False.
+        if self.draw_references:
+            return Bundle(
+                self.name, consume=True, draw_references=False
+            ).flatmap(expand)
+        return SearchStrategy.flatmap(self, expand)
+
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
