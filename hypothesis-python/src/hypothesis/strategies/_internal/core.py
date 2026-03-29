@@ -516,10 +516,10 @@ def iterables(
 
 @defines_strategy()
 def fixed_dictionaries(
-    mapping: dict[T, SearchStrategy[Ex]],
+    mapping: dict[T, SearchStrategy[Any]],
     *,
-    optional: dict[T, SearchStrategy[Ex]] | None = None,
-) -> SearchStrategy[dict[T, Ex]]:
+    optional: dict[T, SearchStrategy[Any]] | None = None,
+) -> SearchStrategy[dict[T, Any]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. ``mapping`` must be a dict subclass.
 
