@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.10:
+
+---------------------
+6.151.10 - 2026-03-29
+---------------------
+
+When shrinking takes more than five minutes, Hypothesis now prints the
+``@seed`` decorator alongside the slow-shrinking warning so you can
+reproduce the failure.
+
+Thanks to Ian Hunt-Isaak for this contribution!
+
 .. _v6.151.9:
 
 --------------------
