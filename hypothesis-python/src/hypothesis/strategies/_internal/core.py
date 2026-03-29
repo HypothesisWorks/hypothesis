@@ -516,10 +516,10 @@ def iterables(
 
 @defines_strategy()
 def fixed_dictionaries(
-    mapping: dict[T, SearchStrategy[Ex]],
+    mapping: dict[T, SearchStrategy[Any]],
     *,
-    optional: dict[T, SearchStrategy[Ex]] | None = None,
-) -> SearchStrategy[dict[T, Ex]]:
+    optional: dict[T, SearchStrategy[Any]] | None = None,
+) -> SearchStrategy[dict[T, Any]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. ``mapping`` must be a dict subclass.
 
@@ -1811,7 +1811,18 @@ def decimals(
         # Fixed-point decimals are basically integers with a scale factor
         def ctx(val):
             """Return a context in which this value is lossless."""
-            precision = ceil(math.log10(abs(val) or 1)) + places + 1
+            # Use the Decimal coefficient digit count and exponent to compute
+            # the required precision, rather than math.log10. For very small
+            # values (e.g. Decimal("0.0...01") with 60+ zeros), math.log10
+            # returns a large negative number and the resulting precision is
+            # clamped to 1, causing ctx(min_value).divide(min_value, factor)
+            # to lose almost all digits and produce out-of-bounds integers.
+            t = val.as_tuple()
+            # Digits needed to represent (val / factor) = (val * 10^places) exactly:
+            # the coefficient has len(t.digits) significant digits; the full
+            # integer magnitude is len(t.digits) + max(0, -t.exponent); adding
+            # places shifts the decimal point further right.
+            precision = len(t.digits) + max(0, -t.exponent) + places + 1
             return Context(prec=max([precision, 1]))
 
         def int_to_decimal(val):
