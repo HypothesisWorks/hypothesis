@@ -99,7 +99,7 @@ PRIMITIVE_TYPES_ALWAYS_USE_REPR = (
     str,
     bytes,
     bool,
-    None,
+    type(None),
 )
 
 

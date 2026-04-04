@@ -508,7 +508,7 @@ def test_regex_output_should_print_as_string(explain):
     @settings(phases=phases)
     @given(s=st.from_regex(r"..", fullmatch=True))
     def test(s):
-        assert False
+        raise AssertionError
 
     with pytest.raises(AssertionError) as err:
         test()
