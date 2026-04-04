@@ -14,7 +14,7 @@ import unicodedata
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, Phase, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
@@ -497,3 +497,28 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
 @given(st.from_regex(r"[^.].*", alphabet=st.sampled_from("abc") | st.just(".")))
 def test_can_pass_union_for_alphabet(_):
     pass
+
+
+@pytest.mark.parametrize("explain", [False, True])
+def test_regex_output_should_print_as_string(explain):
+    phases = [Phase.generate, Phase.shrink]
+    if explain:
+        phases.append(Phase.explain)
+
+    @settings(phases=phases)
+    @given(s=st.from_regex(r"..", fullmatch=True))
+    def test(s):
+        assert False
+
+    with pytest.raises(AssertionError) as err:
+        test()
+
+    explain_line = "  # or any other generated value" if explain else ""
+
+    expected = f"""
+Falsifying example: test(
+    s='00',{explain_line}
+)
+"""
+
+    assert "\n".join(err.value.__notes__).strip() == expected.strip()
