@@ -86,7 +86,7 @@
 # name: test_always_failing[complex_numbers]
   '''
   Falsifying example: inner(
-      z=complex(0.0, 0.0),
+      z=0j,
   )
   '''
 # ---
@@ -121,7 +121,7 @@
 # name: test_always_failing[dictionaries]
   '''
   Falsifying example: inner(
-      d=dict([]),
+      d={},
   )
   '''
 # ---
@@ -177,14 +177,14 @@
 # name: test_always_failing[from_type]
   '''
   Falsifying example: inner(
-      x=IPv4Address(b'\x00\x00\x00\x00'),
+      x=IPv4Address('0.0.0.0'),
   )
   '''
 # ---
 # name: test_always_failing[frozensets]
   '''
   Falsifying example: inner(
-      xs=frozenset([]),
+      xs=frozenset(),
   )
   '''
 # ---
@@ -205,7 +205,7 @@
 # name: test_always_failing[ip_addresses]
   '''
   Falsifying example: inner(
-      ip=IPv4Address(b'\x00\x00\x00\x00'),
+      ip=IPv4Address('0.0.0.0'),
   )
   '''
 # ---
@@ -258,7 +258,7 @@
 # name: test_always_failing[map_to_bytes]
   '''
   Falsifying example: inner(
-      b=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+      b=(lambda b: hashlib.sha256(b).digest())(b''),
   )
   '''
 # ---
@@ -273,7 +273,7 @@
   '''
   Falsifying example: inner(
       xs=[],
-      mapping=dict([]),
+      mapping={},
       choice=10,
   )
   '''
@@ -323,7 +323,7 @@
 # name: test_always_failing[sets]
   '''
   Falsifying example: inner(
-      xs=set([]),
+      xs=set(),
   )
   '''
 # ---
@@ -380,7 +380,7 @@
 # name: test_always_failing[uuids]
   '''
   Falsifying example: inner(
-      u=(lambda r: UUID(version=version, int=r.getrandbits(128)))(Random(0)),
+      u=UUID('e3e70682-c209-4cac-629f-6fbed82c07cd'),
   )
   '''
 # ---

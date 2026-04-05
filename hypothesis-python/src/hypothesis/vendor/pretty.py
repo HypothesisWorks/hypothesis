@@ -93,15 +93,6 @@ __all__ = [
     "pretty",
 ]
 
-PRIMITIVE_TYPES_ALWAYS_USE_REPR = (
-    int,
-    float,
-    str,
-    bytes,
-    bool,
-    type(None),
-)
-
 
 def _safe_getattr(obj: object, attr: str, default: Any | None = None) -> Any:
     """Safe version of getattr.
@@ -428,11 +419,12 @@ class RepresentationPrinter:
         kwargs: dict[str, object],
         arg_labels: ArgLabelsT | None = None,
     ) -> None:
-        if isinstance(obj, PRIMITIVE_TYPES_ALWAYS_USE_REPR):
-            return _repr_pprint(obj, self, cycle)
-
-        # pprint this object as a call, _unless_ the call would be invalid syntax
-        # and the repr would be valid and there are not comments on arguments.
+        # pprint this object as a call if it seems like a good idea to do so,
+        # otherwise pprint as repr.
+        # Rules:
+        # 1. If there are comments, we *must* print as a call.
+        # 2. Prefer valid syntax to invalid syntax.
+        # 3. Prefer shorter expressions.
         if cycle:
             return self.text("<...>")
         # Look up comments from slice_comments if we have arg_labels
@@ -452,6 +444,8 @@ class RepresentationPrinter:
                 p.known_object_printers = self.known_object_printers
                 p.repr_call(name, args, kwargs)
                 # If the call is not valid syntax, use the repr
+                if len(repr(obj)) < len(p.getvalue()):
+                    return _repr_pprint(obj, self, cycle)
                 try:
                     ast.parse(p.getvalue())
                 except Exception:
