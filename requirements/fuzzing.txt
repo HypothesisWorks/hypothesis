@@ -17,7 +17,7 @@ black==26.3.1
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.3.1
+click==8.3.2
     # via
     #   -r requirements/coverage.in
     #   black
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.151.9
+hypothesis[cli,watchdog]==6.151.10
     # via hypofuzz
 idna==3.11
     # via
@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.3
+numpy==2.4.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -76,7 +76,7 @@ packaging==26.0
     # via
     #   black
     #   pytest
-pandas==3.0.1
+pandas==3.0.2
     # via -r requirements/coverage.in
 pathspec==1.0.4
     # via black
@@ -96,7 +96,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==23.0.1
     # via -r requirements/coverage.in
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   pytest
     #   rich

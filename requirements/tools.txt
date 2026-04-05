@@ -40,9 +40,9 @@ certifi==2026.2.25
     # via requests
 cffi==2.0.0
     # via cryptography
-charset-normalizer==3.4.6
+charset-normalizer==3.4.7
     # via requests
-click==8.3.1
+click==8.3.2
     # via
     #   black
     #   pip-tools
@@ -146,11 +146,11 @@ matplotlib-inline==0.2.1
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.8.0
+more-itertools==11.0.1
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.19.1
+mypy==1.20.0
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -160,7 +160,7 @@ nh3==0.3.4
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
-numpy==2.4.3
+numpy==2.4.4
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -251,7 +251,7 @@ pyyaml==6.0.3
     #   sphinx-jsonschema
 readme-renderer==44.0
     # via twine
-requests==2.33.0
+requests==2.33.1
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
@@ -270,7 +270,7 @@ rich==14.3.3
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.8
+ruff==0.15.9
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -329,7 +329,7 @@ tomli==2.4.1
     # via -r requirements/tools.in
 tomli-w==1.2.0
     # via tox
-tox==4.51.0
+tox==4.52.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -337,17 +337,17 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.2.0
     # via -r requirements/tools.in
-types-cffi==2.0.0.20260316
+types-cffi==2.0.0.20260402
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2026.1.1.20260304
+types-pytz==2026.1.1.20260402
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==82.0.0.20260210
+types-setuptools==82.0.0.20260402
     # via types-cffi
 typing-extensions==4.15.0
     # via
@@ -363,7 +363,7 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uvicorn==0.42.0
+uvicorn==0.43.0
     # via sphinx-autobuild
 virtualenv==21.2.0
     # via tox

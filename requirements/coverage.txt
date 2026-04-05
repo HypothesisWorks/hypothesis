@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 black==26.3.1
     # via -r requirements/coverage.in
-click==8.3.1
+click==8.3.2
     # via
     #   -r requirements/coverage.in
     #   black
@@ -28,7 +28,7 @@ libcst==1.8.6
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.3
+numpy==2.4.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -36,7 +36,7 @@ packaging==26.0
     # via
     #   black
     #   pytest
-pandas==3.0.1
+pandas==3.0.2
     # via -r requirements/coverage.in
 pathspec==1.0.4
     # via black
@@ -52,7 +52,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==23.0.1
     # via -r requirements/coverage.in
-pygments==2.19.2
+pygments==2.20.0
     # via pytest
 pytest==9.0.2
     # via
