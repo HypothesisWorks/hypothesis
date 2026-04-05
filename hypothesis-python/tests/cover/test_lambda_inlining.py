@@ -33,134 +33,111 @@ def _repr_call(func_name, args=(), kwargs=None):
     return p.getvalue()
 
 
-# --- Success cases ---
+class BadRepr:
+    def __repr__(self):
+        return "not valid(python syntax"
 
 
-def test_no_arg_lambda():
-    assert _inline("lambda: 42") == "42"
+@pytest.mark.parametrize(
+    "func_name, args, kwargs, expected",
+    [
+        pytest.param("lambda: 42", (), {}, "42", id="no_args"),
+        pytest.param("lambda x: x + 1", (0,), {}, "0 + 1", id="single_positional"),
+        pytest.param("lambda x: x + 1", (), {"x": 0}, "0 + 1", id="single_kwarg"),
+        pytest.param(
+            "lambda a, b: (b, a)",
+            ("hello", "world"),
+            {},
+            "('world', 'hello')",
+            id="multi_positional",
+        ),
+        pytest.param(
+            "lambda a, b: a + b", (), {"a": 1, "b": 2}, "1 + 2", id="multi_kwargs"
+        ),
+        pytest.param(
+            "lambda a, b: a + b",
+            (1,),
+            {"b": 2},
+            "1 + 2",
+            id="mixed_positional_and_kwargs",
+        ),
+        pytest.param("lambda x: 42", (99,), {}, "42", id="unused_param"),
+        pytest.param(
+            "lambda a, b, c: 42", (1, 2, 3), {}, "42", id="unused_params_multi"
+        ),
+        pytest.param(
+            "lambda s: s.upper()", ("hi",), {}, "'hi'.upper()", id="method_call"
+        ),
+        pytest.param("lambda b: f(b).g()", (0,), {}, "f(0).g()", id="nested_call"),
+        pytest.param(
+            "lambda a, b=10: a + 1",
+            (),
+            {"a": 5},
+            "5 + 1",
+            id="default_not_passed",
+        ),
+        pytest.param(
+            "lambda a, b=10: a + b",
+            (),
+            {"a": 5, "b": 20},
+            "5 + 20",
+            id="default_passed",
+        ),
+        pytest.param("lambda a, b=1, c=2: a", (99,), {}, "99", id="multiple_defaults"),
+    ],
+)
+def test_inline_success(func_name, args, kwargs, expected):
+    assert _inline(func_name, args, kwargs) == expected
 
 
-def test_single_positional_arg():
-    assert _inline("lambda x: x + 1", args=(0,)) == "0 + 1"
+@pytest.mark.parametrize(
+    "func_name, args, kwargs",
+    [
+        pytest.param("not a lambda at all!!!", (), {}, id="syntax_error"),
+        pytest.param("foo", (), {}, id="not_a_lambda"),
+        pytest.param("lambda *args: args", ((1, 2),), {}, id="vararg"),
+        pytest.param("lambda **kw: kw", (), {"a": 1}, id="kwarg_star"),
+        pytest.param("lambda *, x: x", (), {"x": 1}, id="kwonly_args"),
+        pytest.param("lambda x: (x, x)", (1,), {}, id="param_used_twice"),
+        pytest.param("lambda x: x + x", (1,), {}, id="param_used_twice_different"),
+        pytest.param("lambda a, b: a + b", (1,), {}, id="too_few_args_no_default"),
+        pytest.param("lambda x: x", (), {"y": 1}, id="wrong_kwarg_name"),
+        pytest.param("lambda: 42", (1, 2), {}, id="more_args_than_params"),
+        pytest.param("lambda x: x", (BadRepr(),), {}, id="invalid_repr"),
+    ],
+)
+def test_inline_bail_out(func_name, args, kwargs):
+    assert _inline(func_name, args, kwargs) is None
 
 
-def test_single_kwarg():
-    assert _inline("lambda x: x + 1", kwargs={"x": 0}) == "0 + 1"
-
-
-def test_multi_positional_args():
-    assert (
-        _inline("lambda a, b: (b, a)", args=("hello", "world")) == "('world', 'hello')"
-    )
-
-
-def test_multi_kwargs():
-    assert _inline("lambda a, b: a + b", kwargs={"a": 1, "b": 2}) == "1 + 2"
-
-
-def test_mixed_positional_and_kwargs():
-    assert _inline("lambda a, b: a + b", args=(1,), kwargs={"b": 2}) == "1 + 2"
-
-
-def test_unused_param():
-    assert _inline("lambda x: 42", args=(99,)) == "42"
-
-
-def test_unused_params_multi():
-    assert _inline("lambda a, b, c: 42", args=(1, 2, 3)) == "42"
-
-
-def test_method_call_on_arg():
-    assert _inline("lambda s: s.upper()", args=("hi",)) == "'hi'.upper()"
-
-
-def test_nested_call():
-    result = _inline("lambda b: f(b).g()", args=(0,))
-    assert result == "f(0).g()"
-
-
-def test_param_with_default_not_passed():
-    assert _inline("lambda a, b=10: a + 1", kwargs={"a": 5}) == "5 + 1"
-
-
-def test_param_with_default_passed():
-    assert _inline("lambda a, b=10: a + b", kwargs={"a": 5, "b": 20}) == "5 + 20"
-
-
-def test_multiple_defaults():
-    assert _inline("lambda a, b=1, c=2: a", args=(99,)) == "99"
-
-
-# --- Bail-out cases ---
-
-
-def test_syntax_error_returns_none():
-    assert _inline("not a lambda at all!!!") is None
-
-
-def test_not_a_lambda_returns_none():
-    assert _inline("foo") is None
-
-
-def test_vararg_returns_none():
-    assert _inline("lambda *args: args", args=((1, 2),)) is None
-
-
-def test_kwarg_star_returns_none():
-    assert _inline("lambda **kw: kw", kwargs={"a": 1}) is None
-
-
-def test_kwonly_args_returns_none():
-    assert _inline("lambda *, x: x", kwargs={"x": 1}) is None
-
-
-def test_param_used_twice_returns_none():
-    assert _inline("lambda x: (x, x)", args=(1,)) is None
-
-
-def test_param_used_twice_in_different_contexts():
-    assert _inline("lambda x: x + x", args=(1,)) is None
-
-
-def test_too_few_args_no_default():
-    assert _inline("lambda a, b: a + b", args=(1,)) is None
-
-
-def test_wrong_kwarg_name():
-    assert _inline("lambda x: x", kwargs={"y": 1}) is None
-
-
-def test_more_args_than_params():
-    assert _inline("lambda: 42", args=(1, 2)) is None
-
-
-def test_invalid_repr_returns_none():
-    class BadRepr:
-        def __repr__(self):
-            return "not valid(python syntax"
-
-    assert _inline("lambda x: x", args=(BadRepr(),)) is None
-
-
-# --- Integration through repr_call ---
-
-
-def test_repr_call_inlines_single_use_lambda():
-    assert _repr_call("lambda x: f(x)", args=(42,)) == "f(42)"
-
-
-def test_repr_call_inlines_no_arg_lambda():
-    assert _repr_call("lambda: 42") == "42"
-
-
-def test_repr_call_wraps_when_multi_use():
-    assert _repr_call("lambda x: (x, x)", args=(1,)) == "(lambda x: (x, x))(1)"
-
-
-def test_repr_call_wraps_when_vararg():
-    assert _repr_call("lambda *args: args", args=((1, 2),)) == (
-        "(lambda *args: args)((1, 2))"
-    )
+@pytest.mark.parametrize(
+    "func_name, args, kwargs, expected",
+    [
+        pytest.param("lambda: 0", (), {}, "0", id="no_arg_lambda"),
+        pytest.param("lambda x: x", (1,), {}, "1", id="identity"),
+        pytest.param("lambda a, b: a - b", (10, 3), {}, "10 - 3", id="subtraction"),
+        pytest.param(
+            "lambda x: (x, x)", (1,), {}, "(lambda x: (x, x))(1)", id="multi_use"
+        ),
+        pytest.param("lambda x: [x]", (1,), {}, "[1]", id="list_wrap"),
+        pytest.param(
+            "lambda s: s.strip()", ("  hi  ",), {}, "'  hi  '.strip()", id="strip"
+        ),
+        pytest.param("lambda: None", (), {}, "None", id="none"),
+        pytest.param("lambda x: f(x)", (42,), {}, "f(42)", id="inlines_single_use"),
+        pytest.param("lambda: 42", (), {}, "42", id="inlines_no_arg"),
+        pytest.param(
+            "lambda *args: args",
+            ((1, 2),),
+            {},
+            "(lambda *args: args)((1, 2))",
+            id="wraps_vararg",
+        ),
+        pytest.param("foo", (1, 2), {}, "foo(1, 2)", id="non_lambda_unchanged"),
+    ],
+)
+def test_repr_call_parametrized(func_name, args, kwargs, expected):
+    assert _repr_call(func_name, args, kwargs) == expected
 
 
 def test_unparse_failure_returns_none(monkeypatch):
@@ -178,10 +155,6 @@ def test_unparse_failure_returns_none(monkeypatch):
 
     monkeypatch.setattr(ast_mod, "unparse", bad_unparse)
     assert _inline("lambda x: x", args=(1,)) is None
-
-
-def test_repr_call_non_lambda_unchanged():
-    assert _repr_call("foo", args=(1, 2)) == "foo(1, 2)"
 
 
 def test_repr_call_skips_inlining_when_comments_present():
@@ -210,19 +183,3 @@ def test_repr_call_inlines_when_arg_slices_but_no_comments():
         arg_slices={"arg[0]": (0, 5)},
     )
     assert p.getvalue() == "f(42)"
-
-
-@pytest.mark.parametrize(
-    "func_name, args, kwargs, expected",
-    [
-        ("lambda: 0", (), {}, "0"),
-        ("lambda x: x", (1,), {}, "1"),
-        ("lambda a, b: a - b", (10, 3), {}, "10 - 3"),
-        ("lambda x: (x, x)", (1,), {}, "(lambda x: (x, x))(1)"),
-        ("lambda x: [x]", (1,), {}, "[1]"),
-        ("lambda s: s.strip()", ("  hi  ",), {}, "'  hi  '.strip()"),
-        ("lambda: None", (), {}, "None"),
-    ],
-)
-def test_repr_call_parametrized(func_name, args, kwargs, expected):
-    assert _repr_call(func_name, args, kwargs) == expected
