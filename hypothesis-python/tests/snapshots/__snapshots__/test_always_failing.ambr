@@ -30,49 +30,49 @@
 # name: test_always_failing[builds_lambda_mixed_args]
   '''
   Falsifying example: inner(
-      x=(lambda x, y, z: Opaque())(0, y='', z=False),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_positional_args]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Opaque())(0, ''),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_returning_object]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Pair(x, y))(x=0, y=''),
+      x=Pair(0, ''),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_with_defaults]
   '''
   Falsifying example: inner(
-      x=(lambda a, b='hello': Opaque())(a=0),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_multi_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Opaque())(x=0, y=''),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_no_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda: Opaque())(),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_single_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(n=0),
+      x=Opaque(),
   )
   '''
 # ---
@@ -244,21 +244,21 @@
 # name: test_always_failing[map_chained_lambdas_opaque]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(0),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[map_lambda_opaque_result]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(0),
+      x=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[map_to_bytes]
   '''
   Falsifying example: inner(
-      b=(lambda b: hashlib.sha256(b).digest())(b''),
+      b=hashlib.sha256(b'').digest(),
   )
   '''
 # ---

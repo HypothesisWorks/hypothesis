@@ -9,7 +9,7 @@
 # name: test_map_to_bytes_prints_as_repr
   '''
   Falsifying example: inner(
-      b=(lambda b: hashlib.sha256(b).digest())(b''),
+      b=hashlib.sha256(b'').digest(),
   )
   '''
 # ---
