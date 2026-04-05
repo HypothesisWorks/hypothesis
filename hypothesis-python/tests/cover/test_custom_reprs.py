@@ -8,11 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import hashlib
 import re
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import Phase, given, settings, strategies as st
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
@@ -196,3 +197,35 @@ Falsifying example: inner(
 )
 def test_characters_repr(strategy, expected_repr):
     assert repr(unwrap_strategies(strategy)) == expected_repr
+
+
+def test_map_to_str_prints_as_repr():
+    @given(s=st.integers().map(str))
+    @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
+    def inner(s):
+        raise AssertionError
+
+    with pytest.raises(AssertionError) as err:
+        inner()
+    expected = """
+Falsifying example: inner(
+    s='0',
+)
+"""
+    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+
+
+def test_map_to_bytes_prints_as_repr():
+    @given(b=st.binary().map(lambda b: hashlib.sha256(b).digest()))
+    @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
+    def inner(b):
+        raise AssertionError
+
+    with pytest.raises(AssertionError) as err:
+        inner()
+    expected = f"""
+Falsifying example: inner(
+    b={hashlib.sha256(b"").digest()!r},
+)
+"""
+    assert "\n".join(err.value.__notes__).strip() == expected.strip()
