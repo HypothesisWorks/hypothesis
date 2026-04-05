@@ -1,0 +1,44 @@
+# serializer version: 1
+# name: test_map_to_bytes_prints_as_repr
+  '''
+  Falsifying example: inner(
+      b=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+  )
+  '''
+# ---
+# name: test_map_to_str_prints_as_repr
+  '''
+  Falsifying example: inner(
+      s='0',
+  )
+  '''
+# ---
+# name: test_reprs_as_created
+  '''
+  Falsifying example: inner(
+      foo=Foo(x=1),
+      bar=Bar(x=-1),
+      baz=Foo(None),
+  )
+  '''
+# ---
+# name: test_reprs_as_created_consistent_calls_despite_indentation
+  '''
+  Falsifying example: inner(
+      a=some_foo('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+      b=Bar(
+          some_foo(
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          ),
+      ),
+  )
+  '''
+# ---
+# name: test_reprs_as_created_interactive
+  '''
+  Falsifying example: inner(
+      data=data(...),
+  )
+  Draw 1: Bar(10)
+  '''
+# ---
