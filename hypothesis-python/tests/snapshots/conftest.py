@@ -1,0 +1,37 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
+import pytest
+
+from hypothesis import Phase, settings
+
+SNAPSHOT_SETTINGS = settings(
+    phases=[Phase.generate, Phase.shrink],
+    print_blob=False,
+    derandomize=True,
+    database=None,
+)
+
+EXPLAIN_SETTINGS = settings(
+    phases=[Phase.generate, Phase.shrink, Phase.explain],
+    print_blob=False,
+    derandomize=True,
+    database=None,
+)
+
+
+@pytest.fixture()
+def get_output():
+    def _get_output(test_fn):
+        with pytest.raises(AssertionError) as err:
+            test_fn()
+        return "\n".join(err.value.__notes__).strip()
+
+    return _get_output

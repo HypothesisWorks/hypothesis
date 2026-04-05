@@ -26,3 +26,5 @@ pytest-xdist==3.8.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/pyproject.toml)
+syrupy==5.1.0
+    # via -r requirements/test.in

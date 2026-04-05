@@ -57,6 +57,8 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
+syrupy==5.1.0
+    # via -r requirements/test.in
 typeshed-client==2.9.0
     # via crosshair-tool
 typing-extensions==4.15.0
