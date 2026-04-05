@@ -212,7 +212,7 @@
 # name: test_always_failing[iterables]
   '''
   Falsifying example: inner(
-      it=PrettyIter([]),
+      it=iter([]),
   )
   '''
 # ---
