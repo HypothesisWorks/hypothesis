@@ -269,13 +269,15 @@ _local_constants = Constants(
     bytes=SortedSet(),
     strings=SortedSet(),
 )
-# modules that we've already seen and processed for local constants. These are
+# Modules that we've already seen and processed for local constants. These are
 # are all modules, not necessarily local ones. This lets us quickly see which
 # modules are new without an expensive path.resolve() or is_local_module_file
 # cache lookup.
-# We track by module object when hashable, falling back to the module name
-# (str key in sys.modules) for unhashable entries like SimpleNamespace.
-_seen_modules: set = set()
+#
+# We track by id so we can handle users that put unhashable types like SimpleNamespace
+# into sys.modules. ModuleType.__hash__ falls back to id, so this is equivalent
+# in the standard case.
+_seen_modules: set[int] = set()
 _sys_modules_len: int | None = None
 
 
@@ -311,27 +313,20 @@ def _get_local_constants() -> Constants:
     # careful: store sys.modules length when we first check to avoid race conditions
     # with other threads loading a module before we set _sys_modules_len.
     if (sys_modules_len := len(sys.modules)) != _sys_modules_len:
-        new_modules = []
-        for name, module in list(sys.modules.items()):
-            try:
-                seen = module in _seen_modules
-            except TypeError:
-                # unhashable module (e.g. SimpleNamespace); fall back to name
-                seen = name in _seen_modules
-            if not seen:
-                new_modules.append((name, module))
+        new_modules = [
+            module
+            for module in list(sys.modules.values())
+            if id(module) not in _seen_modules
+        ]
         # Repeated SortedSet unions are expensive. Do the initial unions on a
         # set(), then do a one-time union with _local_constants after.
         new_constants = Constants()
-        for name, module in new_modules:
+        for module in new_modules:
             if (
                 module_file := getattr(module, "__file__", None)
             ) is not None and is_local_module_file(module_file):
                 new_constants |= constants_from_module(module)
-            try:
-                _seen_modules.add(module)
-            except TypeError:
-                _seen_modules.add(name)
+            _seen_modules.add(id(module))
         _local_constants |= new_constants
         _sys_modules_len = sys_modules_len
 
