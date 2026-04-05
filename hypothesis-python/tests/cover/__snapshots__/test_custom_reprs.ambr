@@ -1,4 +1,11 @@
 # serializer version: 1
+# name: test_invalid_call_syntax_falls_back_to_repr
+  '''
+  Falsifying example: inner(
+      x='hello world',
+  )
+  '''
+# ---
 # name: test_map_to_bytes_prints_as_repr
   '''
   Falsifying example: inner(

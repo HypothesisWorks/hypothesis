@@ -642,7 +642,7 @@ def _seq_pprinter_factory(start: str, end: str, basetype: type) -> PrettyPrintFu
 def get_class_name(cls: type[object]) -> str:
     class_name = _safe_getattr(cls, "__qualname__", cls.__name__)
     assert isinstance(class_name, str)
-    return class_name
+    return class_name.replace(".<locals>.", ".")
 
 
 def _set_pprinter_factory(
