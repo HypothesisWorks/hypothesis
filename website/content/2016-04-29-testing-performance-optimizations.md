@@ -95,7 +95,7 @@ E         Use -v to get the full diff
 
 foo.py:43: AssertionError
 ----- Hypothesis -----
-Falsifying example: test_bubble_sorting_is_same_as_merge_sorting(ls=[0, 0])
+Failing test case: test_bubble_sorting_is_same_as_merge_sorting(ls=[0, 0])
 ```
 
 What's happened is that we messed up our implementation of merge\_sorted\_lists, because we forgot

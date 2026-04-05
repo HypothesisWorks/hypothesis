@@ -89,7 +89,7 @@ def test_reprs_as_created():
     with pytest.raises(AssertionError) as err:
         inner()
     expected = """
-Falsifying example: inner(
+Failing test case: inner(
     foo=Foo(x=1),
     bar=Bar(x=-1),
     baz=Foo(None),
@@ -108,7 +108,7 @@ def test_reprs_as_created_interactive():
     with pytest.raises(AssertionError) as err:
         inner()
     expected = """
-Falsifying example: inner(
+Failing test case: inner(
     data=data(...),
 )
 Draw 1: Bar(10)
@@ -134,7 +134,7 @@ def test_as_created_reprs_fallback_for_distinct_calls_same_obj():
     with pytest.raises(AssertionError) as err:
         inner()
     expected_re = r"""
-Falsifying example: inner\(
+Failing test case: inner\(
     a=<.*Foo object at 0x[0-9A-Fa-f]+>,
     b=<.*Foo object at 0x[0-9A-Fa-f]+>,
 \)
@@ -157,7 +157,7 @@ def test_reprs_as_created_consistent_calls_despite_indentation():
     with pytest.raises(AssertionError) as err:
         inner()
     expected = f"""
-Falsifying example: inner(
+Failing test case: inner(
     a=some_foo({aas!r}),
     b=Bar(
         some_foo(

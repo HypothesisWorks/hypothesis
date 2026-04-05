@@ -70,7 +70,7 @@ This test will clearly fail, which can be confirmed by running ``pytest example.
         def test_integers(n):
     >       assert n < 50
     E       assert 50 < 50
-    E       Falsifying example: test_integers(
+    E       Failing test case: test_integers(
     E           n=50,
     E       )
 
