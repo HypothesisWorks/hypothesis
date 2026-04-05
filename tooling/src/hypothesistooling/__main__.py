@@ -739,6 +739,7 @@ standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")
+standard_tox_task("snapshots")
 
 
 @task()
