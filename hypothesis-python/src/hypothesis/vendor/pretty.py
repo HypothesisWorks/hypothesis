@@ -93,15 +93,6 @@ __all__ = [
     "pretty",
 ]
 
-PRIMITIVE_TYPES_ALWAYS_USE_REPR = (
-    int,
-    float,
-    str,
-    bytes,
-    bool,
-    type(None),
-)
-
 
 def _safe_getattr(obj: object, attr: str, default: Any | None = None) -> Any:
     """Safe version of getattr.
@@ -132,6 +123,99 @@ class IDKey:
 
     def __eq__(self, __o: object) -> bool:
         return isinstance(__o, type(self)) and id(self.value) == id(__o.value)
+
+
+def _try_inline_lambda(
+    func_name: str,
+    args: Sequence[object],
+    kwargs: dict[str, object],
+    printer: "RepresentationPrinter",
+) -> None | object:
+    """Try to inline single-use lambda arguments into the body expression.
+
+    Given e.g. func_name="lambda b: hashlib.sha256(b).hexdigest()" with
+    args=(b'',), returns the printer output for "hashlib.sha256(b'').hexdigest()"
+    by substituting the argument repr into the AST.
+
+    Returns None if inlining is not possible (parse failure, multi-use params, etc).
+    Returns a sentinel otherwise (the printer has already been written to).
+    """
+    try:
+        tree = ast.parse(func_name, mode="eval")
+    except SyntaxError:
+        return None
+    lam = tree.body
+    if not isinstance(lam, ast.Lambda):
+        return None
+
+    # Build param name -> argument repr mapping, matching Python call semantics
+    params = lam.args
+    if params.vararg or params.kwonlyargs or params.kw_defaults or params.kwarg:
+        return None
+
+    param_names = [p.arg for p in params.args]
+    # params.defaults are right-aligned: if there are 3 params and 1 default,
+    # params.defaults applies to the last param only.
+    n_defaults = len(params.defaults)
+    has_default = (
+        set(param_names[len(param_names) - n_defaults :]) if n_defaults else set()
+    )
+
+    # Bail if there are more positional args than parameters, or if any
+    # kwarg doesn't match a parameter name — these can't be inlined.
+    if len(args) > len(param_names):
+        return None
+    if any(k not in param_names for k in kwargs):
+        return None
+
+    arg_reprs: dict[str, str] = {}
+    for i, name in enumerate(param_names):
+        if i < len(args):
+            arg_reprs[name] = pretty(args[i])
+        elif name in kwargs:
+            arg_reprs[name] = pretty(kwargs[name])
+        elif name in has_default:
+            pass  # not passed, will use its default — just skip
+        else:
+            return None
+
+    # Bail if any repr is not valid Python (e.g. "HypothesisRandom(generated data)")
+    for repr_str in arg_reprs.values():
+        try:
+            ast.parse(repr_str, mode="eval")
+        except SyntaxError:
+            return None
+
+    # Count uses of each parameter in the body
+    use_counts: dict[str, int] = dict.fromkeys(param_names, 0)
+    for node in ast.walk(lam.body):
+        if isinstance(node, ast.Name) and node.id in use_counts:
+            use_counts[node.id] += 1
+
+    # Bail if any parameter is used more than once (avoid duplicating expressions)
+    if any(count > 1 for count in use_counts.values()):
+        return None
+
+    # Substitute argument reprs into the body AST
+    class _Inliner(ast.NodeTransformer):
+        def visit_Name(self, node: ast.Name) -> ast.AST:
+            if node.id in arg_reprs:
+                # Parse the repr as an expression and splice it in.
+                # Wrap in parens to preserve precedence in all contexts.
+                replacement = ast.parse(arg_reprs[node.id], mode="eval").body
+                return ast.copy_location(replacement, node)
+            return node
+
+    new_body = _Inliner().visit(lam.body)
+    ast.fix_missing_locations(new_body)
+
+    try:
+        result = ast.unparse(new_body)
+    except Exception:
+        return None
+
+    printer.text(result)
+    return True
 
 
 class RepresentationPrinter:
@@ -428,11 +512,12 @@ class RepresentationPrinter:
         kwargs: dict[str, object],
         arg_labels: ArgLabelsT | None = None,
     ) -> None:
-        if isinstance(obj, PRIMITIVE_TYPES_ALWAYS_USE_REPR):
-            return _repr_pprint(obj, self, cycle)
-
-        # pprint this object as a call, _unless_ the call would be invalid syntax
-        # and the repr would be valid and there are not comments on arguments.
+        # pprint this object as a call if it seems like a good idea to do so,
+        # otherwise pprint as repr.
+        # Rules:
+        # 1. If there are comments, we *must* print as a call.
+        # 2. Prefer valid syntax to invalid syntax.
+        # 3. Prefer shorter expressions.
         if cycle:
             return self.text("<...>")
         # Look up comments from slice_comments if we have arg_labels
@@ -452,6 +537,8 @@ class RepresentationPrinter:
                 p.known_object_printers = self.known_object_printers
                 p.repr_call(name, args, kwargs)
                 # If the call is not valid syntax, use the repr
+                if len(repr(obj)) < len(p.getvalue()):
+                    return _repr_pprint(obj, self, cycle)
                 try:
                     ast.parse(p.getvalue())
                 except Exception:
@@ -479,6 +566,19 @@ class RepresentationPrinter:
         """
         assert isinstance(func_name, str)
         if func_name.startswith(("lambda:", "lambda ")):
+            # Before wrapping the lambda in parens for a call, try to inline
+            # arguments that are used exactly once in the body. If all args
+            # get inlined, we can emit just the body expression with no call.
+            # Skip inlining only when there are actual comments on arguments,
+            # since comments need the call-style repr to attach to.
+            has_comments = arg_slices and any(
+                sr in self.slice_comments and sr not in self._commented_slices
+                for sr in arg_slices.values()
+            )
+            if not has_comments:
+                inlined = _try_inline_lambda(func_name, args, kwargs, self)
+                if inlined is not None:
+                    return
             func_name = f"({func_name})"
         self.text(func_name)
         # Build list of (label, value) pairs. Labels are "arg[i]" for positional
@@ -648,7 +748,7 @@ def _seq_pprinter_factory(start: str, end: str, basetype: type) -> PrettyPrintFu
 def get_class_name(cls: type[object]) -> str:
     class_name = _safe_getattr(cls, "__qualname__", cls.__name__)
     assert isinstance(class_name, str)
-    return class_name
+    return class_name.replace(".<locals>.", ".")
 
 
 def _set_pprinter_factory(

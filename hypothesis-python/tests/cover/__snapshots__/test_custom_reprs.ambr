@@ -1,0 +1,51 @@
+# serializer version: 1
+# name: test_invalid_call_syntax_falls_back_to_repr
+  '''
+  Falsifying example: inner(
+      x='hello world',
+  )
+  '''
+# ---
+# name: test_map_to_bytes_prints_as_repr
+  '''
+  Falsifying example: inner(
+      b=hashlib.sha256(b'').digest(),
+  )
+  '''
+# ---
+# name: test_map_to_str_prints_as_repr
+  '''
+  Falsifying example: inner(
+      s='0',
+  )
+  '''
+# ---
+# name: test_reprs_as_created
+  '''
+  Falsifying example: inner(
+      foo=Foo(x=1),
+      bar=Bar(x=-1),
+      baz=Foo(None),
+  )
+  '''
+# ---
+# name: test_reprs_as_created_consistent_calls_despite_indentation
+  '''
+  Falsifying example: inner(
+      a=some_foo('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+      b=Bar(
+          some_foo(
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          ),
+      ),
+  )
+  '''
+# ---
+# name: test_reprs_as_created_interactive
+  '''
+  Falsifying example: inner(
+      data=data(...),
+  )
+  Draw 1: Bar(10)
+  '''
+# ---

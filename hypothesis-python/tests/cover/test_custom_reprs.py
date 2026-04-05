@@ -17,6 +17,12 @@ from hypothesis import Phase, given, settings, strategies as st
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
+def _get_output(test_fn):
+    with pytest.raises(AssertionError) as err:
+        test_fn()
+    return "\n".join(err.value.__notes__).strip()
+
+
 def test_includes_non_default_args_in_repr():
     assert repr(st.integers()) == "integers()"
     assert repr(st.integers(min_value=1)) == "integers(min_value=1)"
@@ -79,41 +85,24 @@ class Bar(Foo):
     pass
 
 
-def test_reprs_as_created():
+def test_reprs_as_created(snapshot):
     @given(foo=st.builds(Foo), bar=st.from_type(Bar), baz=st.none().map(Foo))
     @settings(print_blob=False, max_examples=10_000, derandomize=True)
     def inner(foo, bar, baz):
         assert baz.x is None
         assert foo.x <= 0 or bar.x >= 0
 
-    with pytest.raises(AssertionError) as err:
-        inner()
-    expected = """
-Falsifying example: inner(
-    foo=Foo(x=1),
-    bar=Bar(x=-1),
-    baz=Foo(None),
-)
-"""
-    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+    assert _get_output(inner) == snapshot
 
 
-def test_reprs_as_created_interactive():
+def test_reprs_as_created_interactive(snapshot):
     @given(st.data())
     @settings(print_blob=False, max_examples=10_000)
     def inner(data):
         bar = data.draw(st.builds(Bar, st.just(10)))
         assert not bar.x
 
-    with pytest.raises(AssertionError) as err:
-        inner()
-    expected = """
-Falsifying example: inner(
-    data=data(...),
-)
-Draw 1: Bar(10)
-"""
-    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+    assert _get_output(inner) == snapshot
 
 
 CONSTANT_FOO = Foo(None)
@@ -143,7 +132,7 @@ Falsifying example: inner\(
     assert re.fullmatch(expected_re, got), got
 
 
-def test_reprs_as_created_consistent_calls_despite_indentation():
+def test_reprs_as_created_consistent_calls_despite_indentation(snapshot):
     aas = "a" * 60
     strat = st.builds(some_foo, st.just(aas))
 
@@ -154,19 +143,7 @@ def test_reprs_as_created_consistent_calls_despite_indentation():
     def inner(a, b):
         assert a == b
 
-    with pytest.raises(AssertionError) as err:
-        inner()
-    expected = f"""
-Falsifying example: inner(
-    a=some_foo({aas!r}),
-    b=Bar(
-        some_foo(
-            {aas!r},
-        ),
-    ),
-)
-"""
-    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+    assert _get_output(inner) == snapshot
 
 
 @pytest.mark.parametrize(
@@ -199,33 +176,36 @@ def test_characters_repr(strategy, expected_repr):
     assert repr(unwrap_strategies(strategy)) == expected_repr
 
 
-def test_map_to_str_prints_as_repr():
+def test_map_to_str_prints_as_repr(snapshot):
     @given(s=st.integers().map(str))
     @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
     def inner(s):
         raise AssertionError
 
-    with pytest.raises(AssertionError) as err:
-        inner()
-    expected = """
-Falsifying example: inner(
-    s='0',
-)
-"""
-    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+    assert _get_output(inner) == snapshot
 
 
-def test_map_to_bytes_prints_as_repr():
+def test_map_to_bytes_prints_as_repr(snapshot):
     @given(b=st.binary().map(lambda b: hashlib.sha256(b).digest()))
     @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
     def inner(b):
         raise AssertionError
 
-    with pytest.raises(AssertionError) as err:
-        inner()
-    expected = f"""
-Falsifying example: inner(
-    b={hashlib.sha256(b"").digest()!r},
-)
-"""
-    assert "\n".join(err.value.__notes__).strip() == expected.strip()
+    assert _get_output(inner) == snapshot
+
+
+def test_invalid_call_syntax_falls_back_to_repr(snapshot):
+    # When the call-style repr (e.g. "a b()") is invalid Python syntax but
+    # repr(obj) is valid, we should fall back to using repr(obj).
+    _BadName = type(
+        "a b",
+        (),
+        {"__repr__": lambda self: "'hello world'"},
+    )
+
+    @given(x=st.builds(_BadName))
+    @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
+    def inner(x):
+        raise AssertionError
+
+    assert _get_output(inner) == snapshot

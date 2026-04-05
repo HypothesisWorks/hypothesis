@@ -278,7 +278,7 @@ jobs:
       run: |
         pip install --upgrade setuptools pip wheel build
         python -m build --wheel hypothesis-python --outdir dist/
-        pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
+        pip download --dest=dist/ hypothesis-python/ pytest tzdata syrupy  # fetch all the wheels
          rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
          pyodide venv .venv-pyodide
         source .venv-pyodide/bin/activate

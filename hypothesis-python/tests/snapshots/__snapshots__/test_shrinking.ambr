@@ -1,0 +1,22 @@
+# serializer version: 1
+# name: test_shrunk_float
+  '''
+  Falsifying example: inner(
+      x=1.0,
+  )
+  '''
+# ---
+# name: test_shrunk_list
+  '''
+  Falsifying example: inner(
+      xs=[1001],
+  )
+  '''
+# ---
+# name: test_shrunk_string
+  '''
+  Falsifying example: inner(
+      s='A',
+  )
+  '''
+# ---
