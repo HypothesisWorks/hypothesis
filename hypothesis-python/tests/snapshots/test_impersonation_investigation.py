@@ -18,7 +18,6 @@ affects tracebacks. See https://github.com/HypothesisWorks/hypothesis/issues/468
 import re
 import textwrap
 
-
 from hypothesis._settings import _CI_VARS
 
 pytest_plugins = "pytester"
@@ -52,6 +51,12 @@ def normalize_output(output, test_filename, test_source_lines):
         flags=re.MULTILINE,
     )
     output = re.sub(r", line \d+,", ", line NN,", output)
+    # Normalize hypothesis source paths to a stable prefix
+    output = re.sub(
+        r'(?:File ")?.*/src/hypothesis/',
+        ".../hypothesis/",
+        output,
+    )
     # Normalize seeds
     output = re.sub(r"@seed\(\d+\)", "@seed(0)", output)
     output = re.sub(r"--hypothesis-seed=\d+", "--hypothesis-seed=0", output)
@@ -84,6 +89,9 @@ def get_failure_output(testdir, test_code, *extra_args):
     script = testdir.makepyfile(source)
     result = testdir.runpytest(script, "--tb=long", "--no-header", "-rN", *extra_args)
     raw = "\n".join(result.stdout.lines)
+    # Replace the full absolute path of the test file with just the basename,
+    # so exception group tracebacks and explain sections are stable.
+    raw = raw.replace(str(script), script.basename)
     return normalize_output(raw, script.basename, source_lines)
 
 
@@ -222,3 +230,41 @@ def test_map_failure(x):
 
 def test_map_failure_traceback(testdir, snapshot):
     assert get_failure_output(testdir, MAP_FAILURE) == snapshot
+
+
+# ---- PR #1582 motivating examples ----
+# These are the examples from the PR that introduced traceback trimming.
+# test_simple: a basic assertion failure (the simplest possible case)
+# test_multiple_failures: different exception types from branches
+
+PR1582_SIMPLE = """
+from hypothesis import given, settings
+import hypothesis.strategies as st
+
+@settings(database=None, derandomize=True)
+@given(st.integers())
+def test_simple(x):
+    assert x
+"""
+
+
+def test_pr1582_simple(testdir, snapshot):
+    assert get_failure_output(testdir, PR1582_SIMPLE) == snapshot
+
+
+PR1582_MULTIPLE_FAILURES = """
+from hypothesis import given, settings
+import hypothesis.strategies as st
+
+@settings(database=None, derandomize=True)
+@given(st.integers())
+def test_multiple_failures(x):
+    if x > 100:
+        raise ValueError("This number is too big!")
+    elif x < -100:
+        raise RuntimeError("This number is too small!")
+"""
+
+
+def test_pr1582_multiple_failures(testdir, snapshot):
+    assert get_failure_output(testdir, PR1582_MULTIPLE_FAILURES) == snapshot
