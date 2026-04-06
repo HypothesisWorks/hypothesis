@@ -78,8 +78,7 @@ def normalize_output(output, test_filename, test_source_lines):
         output,
     )
     # Normalize test session timing
-    output = re.sub(r"in [\d.]+s =", "in T =", output)
-    return output
+    return re.sub(r"in [\d.]+s =", "in T =", output)
 
 
 def get_failure_output(testdir, test_code, *extra_args):

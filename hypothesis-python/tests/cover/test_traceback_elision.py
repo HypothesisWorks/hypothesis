@@ -29,11 +29,9 @@ def test_tracebacks_omit_hypothesis_internals(monkeypatch, env_value, verbosity)
         simplest_failure()
     except ValueError as e:
         tb = traceback.extract_tb(e.__traceback__)
-        # Unless in debug mode, Hypothesis adds 2 frames:
-        # _reraise_trimmed_error and wrapped_test.
-        # (5 frames: this one, simplest_failure, _reraise_trimmed_error,
-        # wrapped_test, raise ValueError)
+        # Unless in debug mode, Hypothesis adds 1 frame - the least possible!
+        # (4 frames: this one, simplest_failure, internal frame, raise ValueError)
         if verbosity < Verbosity.debug and not env_value:
-            assert len(tb) == 5
+            assert len(tb) == 4
         else:
-            assert len(tb) >= 6
+            assert len(tb) >= 5
