@@ -357,6 +357,7 @@ from hypothesis.utils.conventions import not_set
 
 def accept({funcname}):
     def {name}{signature}:
+        __tracebackhide__ = True
         return {funcname}({invocation})
     return {name}
 """.lstrip()
@@ -468,12 +469,9 @@ def impersonate(target):
     """
 
     def accept(f):
-        # Lie shamelessly about where this code comes from, to hide the hypothesis
-        # internals from pytest, ipython, and other runtime introspection.
-        f.__code__ = f.__code__.replace(
-            co_filename=target.__code__.co_filename,
-            co_firstlineno=target.__code__.co_firstlineno,
-        )
+        # Hide hypothesis internals from tracebacks via pytest's mechanism.
+        # Previously this replaced co_filename/co_firstlineno on the code object,
+        # but that caused incorrect source lines in tracebacks (see #4681).
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
