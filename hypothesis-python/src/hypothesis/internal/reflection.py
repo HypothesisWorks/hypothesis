@@ -475,9 +475,8 @@ def impersonate(target):
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
-        f.__wrapped__ = target
         f.__globals__["__hypothesistracebackhide__"] = True
-        # But leave a breadcrumb for _describe_lambda to follow
+        # Leave a breadcrumb for _describe_lambda and _get_patch_for to follow
         f.__wrapped_target = target
         return f
 
