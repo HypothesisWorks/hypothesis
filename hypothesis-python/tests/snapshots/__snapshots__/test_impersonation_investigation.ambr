@@ -9,19 +9,6 @@
   =================================== FAILURES ===================================
   _____________________________ test_deep_traceback ______________________________
   
-  the_error_hypothesis_found = ValueError('boom')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
-      
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  
-  .../hypothesis/core.py:NN: 
-  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-  
   x = 0
   
       @settings(database=None, derandomize=True)
@@ -55,27 +42,17 @@
   =================================== FAILURES ===================================
   _____________________ test_healthcheck_traceback_is_hidden _____________________
   
-  the_error_hypothesis_found = FailedHealthCheck('Input generation is slow: Hypothesis only generated N valid inputs after T seconds.\n\n      cou...ck.too_slow]). See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck for details.')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
+  E   hypothesis.errors.FailedHealthCheck: Input generation is slow: Hypothesis only generated N valid inputs after T seconds.
       
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  E       hypothesis.errors.FailedHealthCheck: Input generation is slow: Hypothesis only generated N valid inputs after T seconds.
-  E       
-  E             count | fraction |    slowest draws (seconds)
+            count | fraction |    slowest draws (seconds)
     x | <timing data>
-  E       
-  E       This could be for a few reasons:
-  E       1. This strategy could be generating too much data per input. Try decreasing the amount of data generated, for example by decreasing the minimum size of collection strategies like st.lists().
-  E       2. Some other expensive computation could be running during input generation. For example, if @st.composite or st.data() is interspersed with an expensive computation, HealthCheck.too_slow is likely to trigger. If this computation is unrelated to input generation, move it elsewhere. Otherwise, try making it more efficient, or disable this health check if that is not possible.
-  E       
-  E       If you expect input generation to take this long, you can disable this health check with @settings(suppress_health_check=[HealthCheck.too_slow]). See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck for details.
-  
-  .../hypothesis/core.py:NN: FailedHealthCheck
+      
+      This could be for a few reasons:
+      1. This strategy could be generating too much data per input. Try decreasing the amount of data generated, for example by decreasing the minimum size of collection strategies like st.lists().
+      2. Some other expensive computation could be running during input generation. For example, if @st.composite or st.data() is interspersed with an expensive computation, HealthCheck.too_slow is likely to trigger. If this computation is unrelated to input generation, move it elsewhere. Otherwise, try making it more efficient, or disable this health check if that is not possible.
+      
+      If you expect input generation to take this long, you can disable this health check with @settings(suppress_health_check=[HealthCheck.too_slow]). See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck for details.
+  All traceback entries are hidden. Pass `--full-trace` to see hidden and internal frames.
   ---------------------------------- Hypothesis ----------------------------------
   You can reproduce this failure by adding @seed(0) to this test, or by running pytest with --hypothesis-seed=0.
   ============================== 1 failed in T ===============================
@@ -90,19 +67,6 @@
   
   =================================== FAILURES ===================================
   _____________________________ test_basic_traceback _____________________________
-  
-  the_error_hypothesis_found = ZeroDivisionError('division by zero')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
-      
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  
-  .../hypothesis/core.py:NN: 
-  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
   
   _ = None
   
@@ -128,19 +92,6 @@
   
   =================================== FAILURES ===================================
   ____________________________ test_lambda_traceback _____________________________
-  
-  the_error_hypothesis_found = ZeroDivisionError('division by zero')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
-      
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  
-  .../hypothesis/core.py:NN: 
-  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
   
   _ = None
   
@@ -189,19 +140,6 @@
   =================================== FAILURES ===================================
   _______________________________ test_map_failure _______________________________
   
-  the_error_hypothesis_found = ZeroDivisionError('division by zero')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
-      
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  
-  .../hypothesis/core.py:NN: 
-  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-  
   x = 0
   
   >   @given(st.integers().map(lambda x: 1/0))
@@ -223,7 +161,7 @@
   =================================== FAILURES ===================================
   ____________________________ test_multiple_failures ____________________________
     + Exception Group Traceback (most recent call last):
-  .../hypothesis/core.py", line NN, in _reraise_trimmed_error
+  .../hypothesis/core.py", line NN, in _reraise_exception_group
     |     raise the_error_hypothesis_found
     | ExceptionGroup: Hypothesis found 2 distinct failures. (2 sub-exceptions)
     +-+---------------- 1 ----------------
@@ -261,19 +199,6 @@
   
   =================================== FAILURES ===================================
   _________________________________ test_simple __________________________________
-  
-  the_error_hypothesis_found = AssertionError('assert 0')
-  
-      def _reraise_trimmed_error(the_error_hypothesis_found):
-          """Re-raise the error with its trimmed traceback.
-      
-          This is a separate function so that ``wrapped_test``'s
-          ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-          """
-  >       raise the_error_hypothesis_found
-  
-  .../hypothesis/core.py:NN: 
-  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
   
   x = 0
   

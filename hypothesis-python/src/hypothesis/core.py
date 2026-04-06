@@ -1619,12 +1619,9 @@ def _simplify_explicit_errors(errors: list[ReportableError]) -> list[ReportableE
     return result
 
 
-def _reraise_trimmed_error(the_error_hypothesis_found):
-    """Re-raise the error with its trimmed traceback.
-
-    This is a separate function so that ``wrapped_test``'s
-    ``__tracebackhide__ = True`` doesn't hide this frame from pytest.
-    """
+# Exists solely to insert a line in the traceback where we need to.
+def _reraise_exception_group(the_error_hypothesis_found):
+    __tracebackhide__ = False
     raise the_error_hypothesis_found
 
 
@@ -2265,7 +2262,11 @@ def given(
                             if isinstance(e, BaseExceptionGroup)
                             else get_trimmed_traceback()
                         )
-                        _reraise_trimmed_error(the_error_hypothesis_found)
+                        if isinstance(e, BaseExceptionGroup):
+                            # Insert a frame here as otherwise all base frames are
+                            # trimmed which causes pytest problems.
+                            _reraise_exception_group(the_error_hypothesis_found)
+                        raise the_error_hypothesis_found
 
                 if not (ran_explicit_examples or state.ever_executed):
                     raise SKIP_BECAUSE_NO_EXAMPLES
