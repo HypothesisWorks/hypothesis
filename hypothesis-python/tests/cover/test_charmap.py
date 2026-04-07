@@ -18,6 +18,7 @@ from typing import get_args
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -189,6 +190,11 @@ def test_regenerate_broken_charmap_file():
 
     cm._charmap = None
     cm.charmap()
+
+
+def test_query_rejects_min_codepoint_greater_than_max():
+    with pytest.raises(InvalidArgument):
+        cm.query(min_codepoint=1, max_codepoint=0)
 
 
 def test_exclude_characters_are_included_in_key():
