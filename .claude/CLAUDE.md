@@ -12,7 +12,7 @@ Run tests using the build system:
 - **Quick test run**: `./build.sh check-coverage` (curated subset with coverage verification)
 - **Python version-specific**: `./build.sh check-py311` (replace with target version)
 - **Fine-grained control**: `./build.sh tox py311-custom 3.11.3 -- [pytest args]`
-- **Direct pytest** (after setup): `pytest hypothesis-python/tests/cover/`
+- **Direct pytest** (after setup): `pytest tests/cover/`
 
 ### Writing Tests
 
@@ -27,8 +27,8 @@ Run tests using the build system:
 
 ## Changelog & Pull Requests
 
-When creating a PR that changes `hypothesis-python/src/`:
-1. Create `hypothesis-python/RELEASE.rst` with `RELEASE_TYPE: patch` (bugfixes) or `minor` (features)
+When creating a PR that changes `src/`:
+1. Create `RELEASE.rst` with `RELEASE_TYPE: patch` (bugfixes) or `minor` (features)
 2. See `RELEASE-sample.rst` for examples
 3. **Imitate the style in `changelog.rst`** for consistency
 4. Follow all changelog instructions in `CONTRIBUTING.rst`

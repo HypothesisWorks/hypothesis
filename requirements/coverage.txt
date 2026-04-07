@@ -80,7 +80,7 @@ six==1.17.0
 sortedcontainers==2.4.0
     # via
     #   fakeredis
-    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   hypothesis (pyproject.toml)
 typing-extensions==4.15.0
     # via -r requirements/coverage.in
 watchdog==6.0.0

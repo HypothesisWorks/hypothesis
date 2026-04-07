@@ -9,7 +9,7 @@ Just tell me how to make a pull request
 ---------------------------------------
 
 1. Make your change and ensure it has adequate tests
-2. Create ``hypothesis-python/RELEASE.rst`` with ``RELEASE_TYPE: patch``
+2. Create ``RELEASE.rst`` with ``RELEASE_TYPE: patch``
    for small bugfixes, or ``minor`` for new features.  See ``RELEASE-sample.rst``
    as an example.
 3. Add yourself to the list in ``AUTHORS.rst`` and open a PR!
@@ -56,10 +56,10 @@ make changes and install the changed version) you can do this with:
 
   pip install -r requirements/test.in
   pip install -r requirements/tools.in
-  pip install -e hypothesis-python/
+  pip install -e .
 
   # You don't need to run the tests, but here's the command:
-  pytest hypothesis-python/tests/cover/
+  pytest tests/cover/
 
 You may wish to do all of this in a
 `virtualenv <https://docs.python.org/3/library/venv.html>`_. For example:
@@ -112,7 +112,7 @@ or help with some of the tricky details. Don't be afraid to ask for help.
 In order to get merged, a pull request will have to have a green build (naturally) and
 to be approved by a Hypothesis maintainer (and, depending on what it is, possibly specifically
 by DRMacIver).  Most pull requests will also need to `write a changelog entry in
-hypothesis-python/RELEASE.rst <guides/documentation.rst#changelog-entries>`_.
+RELEASE.rst <guides/documentation.rst#changelog-entries>`_.
 
 The review process is the same one that all changes to Hypothesis go through, regardless of
 whether you're an established maintainer or entirely new to the project. It's very much
@@ -222,7 +222,7 @@ See the ``tox`` docs and ``pytest`` docs for more information:
 Test Layout
 ^^^^^^^^^^^
 
-See ``hypothesis-python/tests/README.rst``
+See ``tests/README.rst``
 
 ^^^^^^^^^^^^^^^^
 Useful Arguments

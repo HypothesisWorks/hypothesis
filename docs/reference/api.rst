@@ -285,7 +285,7 @@ to avoid a |HealthCheck| error due to slow example generation.
 Having set up a test class, you can now pass |@given|
 a strategy for Django models with |django.from_model|.
 For example, using :gh-file:`the trivial django project we have for testing
-<hypothesis-python/tests/django/toystore/models.py>`:
+<tests/django/toystore/models.py>`:
 
 .. code-block:: pycon
 

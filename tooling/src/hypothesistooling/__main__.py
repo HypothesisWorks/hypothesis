@@ -28,7 +28,7 @@ from hypothesistooling.scripts import pip_tool
 TASKS = {}
 BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
-    for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
+    for f in ["tooling", "requirements", ".github", "tox.ini"]
 )
 TODAY = date.today().isoformat()
 
@@ -331,7 +331,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/pyproject.toml",
+            "pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -368,7 +368,7 @@ def update_python_versions():
     stable = re.compile(r".*3\.\d+.\d+t?$")
     min_minor_version = re.search(
         r'requires-python = ">= ?3.(\d+)"',
-        Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
+        Path("pyproject.toml").read_text(encoding="utf-8"),
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):

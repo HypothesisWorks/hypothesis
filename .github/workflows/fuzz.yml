@@ -59,7 +59,7 @@ jobs:
       run: |
         pip install --upgrade setuptools pip wheel
         pip install -r requirements/fuzzing.txt
-        pip install hypothesis-python/[all]
+        pip install .[all]
 
     - name: Run hypofuzz session
       continue-on-error: true
@@ -69,9 +69,9 @@ jobs:
       # the --no-dashboard option because that also disables .patch writing.
       run: |
         timeout --preserve-status 5.5h \
-          hypothesis fuzz -- hypothesis-python/tests/ \
-            --ignore=hypothesis-python/tests/quality/ \
-            --ignore=hypothesis-python/tests/ghostwriter/
+          hypothesis fuzz -- tests/ \
+            --ignore=tests/quality/ \
+            --ignore=tests/ghostwriter/
 
     - name: Upload patch files with covering and failing `@example()`s
       uses: actions/upload-artifact@v4

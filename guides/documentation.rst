@@ -48,12 +48,12 @@ cross-references.  Without repeating the docs for Sphinx, here are some tips:
 Changelog Entries
 -----------------
 
-`Hypothesis does continuous deployment <https://github.com/HypothesisWorks/hypothesis-python/issues/555>`_,
+`Hypothesis does continuous deployment <https://github.com/HypothesisWorks/hypothesis/issues/555>`_,
 where every pull request that touches ``./src`` results in a new release.
 That means every contributor gets to write their changelog!
 
 A changelog entry should be written in a new ``RELEASE.rst`` file in
-the `hypothesis-python` directory. The first line of the file specifies the component
+the root directory. The first line of the file specifies the component
 of the version number that will be updated, according to our
 `semantic versioning <https://semver.org/>`_ policy.
 

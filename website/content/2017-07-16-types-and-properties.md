@@ -68,7 +68,7 @@ def test_mean_is_in_bounds(ls: list[float]):
 ```
 
 (this code doesn't work at the time of this writing, but it will soon -
-[the pull request to implement it](https://github.com/HypothesisWorks/hypothesis-python/pull/643)
+[the pull request to implement it](https://github.com/HypothesisWorks/hypothesis/pull/643)
 is in fairly late-stage review).
 
 But this doesn't do the right thing: We've dropped the conditions from the

@@ -23,7 +23,7 @@ from hypothesistooling import releasemanagement as rm
 
 PACKAGE_NAME = "hypothesis-python"
 
-HYPOTHESIS_PYTHON = tools.ROOT / PACKAGE_NAME
+HYPOTHESIS_PYTHON = tools.ROOT
 PYTHON_TAG_PREFIX = "hypothesis-python-"
 
 

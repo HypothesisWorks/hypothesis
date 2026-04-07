@@ -56,7 +56,7 @@ pytest-xdist==3.8.0
 sortedcontainers==2.4.0
     # via
     #   hypothesis
-    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   hypothesis (pyproject.toml)
 typeshed-client==2.9.0
     # via crosshair-tool
 typing-extensions==4.15.0

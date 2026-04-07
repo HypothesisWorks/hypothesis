@@ -302,7 +302,7 @@ def _benchmark_shrinks(item: pytest.Function) -> None:
 
     monkeypatch.undo()
 
-    # remove leading hypothesis-python/tests/...
+    # extract the test file name from the node id
     nodeid = item.nodeid.rsplit("/", 1)[1]
 
     results_p = _worker_path(item.session)

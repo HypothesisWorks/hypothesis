@@ -18,8 +18,8 @@ build:
 python:
    install:
       - requirements: requirements/tools.txt
-      - path: hypothesis-python/
+      - path: .
         extra_requirements:
            - all
 sphinx:
-   configuration: hypothesis-python/docs/conf.py
+   configuration: docs/conf.py

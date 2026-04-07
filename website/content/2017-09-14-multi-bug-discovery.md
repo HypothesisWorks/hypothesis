@@ -109,7 +109,7 @@ hypothesis.errors.MultipleFailures: Hypothesis found 2 distinct failures.
 ```
 
 (The stack traces are a bit noisy, I know.
-[We have an issue open about cleaning them up](https://github.com/HypothesisWorks/hypothesis-python/issues/848)).
+[We have an issue open about cleaning them up](https://github.com/HypothesisWorks/hypothesis/issues/848)).
 
 All of the different bugs are minimized simultaneously and take full advantage of Hypothesis's
 example shrinking, so each bug is as easy (or hard) to read as if it were the only bug we'd found.
@@ -172,7 +172,7 @@ great way to spark a lot of seemingly unrelated development and improve Hypothes
 for everyone, even outside the scope of the funded work.
 
 Another thing that really helped here is our review process, and [the review from Zac
-in particular](https://github.com/HypothesisWorks/hypothesis-python/pull/836).
+in particular](https://github.com/HypothesisWorks/hypothesis/pull/836).
 
 This wasn't the feature I originally set out to develop. It started out life as a
 much simpler feature that used much of the same machinery, and just had a goal of
@@ -180,7 +180,7 @@ avoiding slipping to new errors all together. Zac pushed back with some good que
 around whether this was really the correct thing to do, and after some experimentation
 and feedback I eventually hit on the design that lead to displaying all of the errors.
 
-Our [review handbook](https://github.com/HypothesisWorks/hypothesis-python/blob/master/guides/review.rst)
+Our [review handbook](https://github.com/HypothesisWorks/hypothesis/blob/master/guides/review.rst)
 emphasises that code review is a collaborative design process, and I feel this was
 a particularly good example of that. We've created a great culture of code review,
 and we're reaping the benefits (and if you want to get in on it, we could always

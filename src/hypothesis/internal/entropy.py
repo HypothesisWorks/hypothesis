@@ -199,7 +199,7 @@ def get_seeder_and_restorer(
         # handles this for us.
         #
         # This command reproduces at time of writing:
-        #   pytest hypothesis-python/tests/ -k test_intervals_are_equivalent_to_their_lists
+        #   pytest tests/ -k test_intervals_are_equivalent_to_their_lists
         #   --parallel-threads 2
         for k, ref in RANDOMS_TO_MANAGE.data.copy().items():  # type: ignore
             r = ref()

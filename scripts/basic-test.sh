@@ -28,19 +28,19 @@ $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
 # use pinned redis version instead of inheriting from fakeredis
-pip install "$(grep '^redis==' ../requirements/coverage.txt)"
-pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
+pip install "$(grep '^redis==' requirements/coverage.txt)"
+pip install "$(grep 'fakeredis==' requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
-pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
+pip install "$(grep 'typing-extensions==' requirements/coverage.txt)"
 $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
 
 pip install ".[lark]"
-pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
-pip install "$(grep 'lark==' ../requirements/coverage.txt)"
+pip install "$(grep 'lark==' requirements/coverage.txt)"
 $PYTEST tests/lark/
 pip uninstall -y lark
 
@@ -53,10 +53,10 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
     # Per NEP-29, this is the last version to support Python 3.10
     pip install numpy==2.2.6
   else
-    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+    pip install "$(grep 'numpy==' requirements/coverage.txt)"
   fi
 
-  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
+  pip install "$(grep -E 'black(==| @)' requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
 fi
@@ -83,10 +83,10 @@ case "$(python -c 'import platform; print(platform.python_implementation())')" i
     HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
     pip uninstall -y django pytz
 
-    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+    pip install "$(grep 'numpy==' requirements/coverage.txt)"
     $PYTEST tests/array_api
     $PYTEST tests/numpy
 
-    pip install "$(grep 'pandas==' ../requirements/coverage.txt)"
+    pip install "$(grep 'pandas==' requirements/coverage.txt)"
     $PYTEST tests/pandas
 esac

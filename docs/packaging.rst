@@ -67,7 +67,7 @@ different versions of Python.
 The tests must be run with fairly recent tooling; check the :gh-link:`tree/master/requirements/`
 directory for details.
 
-The organisation of the tests is described in the :gh-file:`hypothesis-python/tests/README.rst`.
+The organisation of the tests is described in the :gh-file:`tests/README.rst`.
 
 --------
 Examples

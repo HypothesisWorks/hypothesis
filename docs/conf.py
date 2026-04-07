@@ -161,7 +161,7 @@ pygments_style = "sphinx"
 todo_include_todos = False
 
 # To run linkcheck (last argument is the output dir)
-#   sphinx-build --builder linkcheck hypothesis-python/docs linkcheck
+#   sphinx-build --builder linkcheck docs linkcheck
 linkcheck_ignore = [
     # we'll assume that python isn't going to break peps, and github isn't going
     # to break issues/pulls. (and if they did, we'd hopefully notice quickly).

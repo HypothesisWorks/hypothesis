@@ -16,7 +16,7 @@
 # generic build components
 
 .runtimes
-/hypothesis-python/branch-check*
+/branch-check*
 /pythonpython3.*
 /pythonpypy3.*
 .pyodide-xbuildenv

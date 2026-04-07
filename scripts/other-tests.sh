@@ -30,9 +30,9 @@ $PYTEST tests/attrs/
 pip uninstall -y attrs
 
 # use pinned redis version instead of inheriting from fakeredis
-pip install "$(grep '^redis==' ../requirements/coverage.txt)"
-pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
-pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
+pip install "$(grep '^redis==' requirements/coverage.txt)"
+pip install "$(grep 'fakeredis==' requirements/coverage.txt)"
+pip install "$(grep 'typing-extensions==' requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
@@ -41,14 +41,14 @@ if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c 'import sys; print
   pip uninstall -y typing-extensions
 fi
 
-pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
+pip install "$(grep 'annotated-types==' requirements/coverage.txt)"
 $PYTEST tests/test_annotated_types.py
 pip uninstall -y annotated-types
 
 pip install ".[lark]"
-pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
-pip install "$(grep 'lark==' ../requirements/coverage.txt)"
+pip install "$(grep 'lark==' requirements/coverage.txt)"
 $PYTEST tests/lark/
 pip uninstall -y lark
 
@@ -60,10 +60,10 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
     # Per NEP-29, this is the last version to support Python 3.10
     pip install numpy==2.2.6
   else
-    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+    pip install "$(grep 'numpy==' requirements/coverage.txt)"
   fi
 
-  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
+  pip install "$(grep -E 'black(==| @)' requirements/coverage.txt)"
   $PYTEST tests/patching/
   pip uninstall -y libcst
 
@@ -79,7 +79,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
       # Run twice, interleaved by other tests, to make it more probable to tickle any problems
       # from accidentally caching/retaining crosshair proxy objects
       pip install pytest-repeat
-      pip install -r ../requirements/crosshair.txt
+      pip install -r requirements/crosshair.txt
       # requirements/crosshair.txt pins hypothesis. Re-override it with our local changes
       pip install .
       $PYTEST --count=2 --repeat-scope=session tests/numpy tests/crosshair

@@ -132,7 +132,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   hypothesis (pyproject.toml)
     #   trio
 starlette==1.0.0
     # via hypofuzz

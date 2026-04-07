@@ -53,7 +53,6 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == tox-* ]]; then
            TOX_TASK="${TASK#tox-}"
-           cd hypothesis-python
            tox -e $TOX_TASK
         else
           ./build.sh
@@ -120,7 +119,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
+          ./build.sh check-crosshair-custom -- -n auto $(echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -132,9 +131,9 @@ jobs:
         name: ${{ matrix.task }}-data
         include-hidden-files: true
         path: |
-          hypothesis-python/.coverage*
-          !hypothesis-python/.coveragerc
-          hypothesis-python/branch-check*
+          .coverage*
+          !.coveragerc
+          branch-check*
 
   nonreq:
     needs: [basic]
@@ -189,7 +188,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
+          ./build.sh check-crosshair-custom -- -n auto $(echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -240,7 +239,6 @@ jobs:
         pip install --upgrade setuptools pip wheel
         pip install tox
     - name: Run tests
-      working-directory: ./hypothesis-python
       run: |
         tox -e ${{ matrix.task }}
 
@@ -277,8 +275,8 @@ jobs:
     - name: Set up Pyodide venv and install dependencies
       run: |
         pip install --upgrade setuptools pip wheel build
-        python -m build --wheel hypothesis-python --outdir dist/
-        pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
+        python -m build --wheel . --outdir dist/
+        pip download --dest=dist/ . pytest tzdata  # fetch all the wheels
          rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
          pyodide venv .venv-pyodide
         source .venv-pyodide/bin/activate
@@ -288,7 +286,7 @@ jobs:
         source .venv-pyodide/bin/activate
         # pyodide can't run multiple processes internally, so parallelize explicitly over
         # discovered test files instead (20 at a time)
-        TEST_FILES=$(ls hypothesis-python/tests/cover/test*.py | grep -v "_py314")
+        TEST_FILES=$(ls tests/cover/test*.py | grep -v "_py314")
         echo "test files: $TEST_FILES"
         parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
           python -m pytest -p no:cacheprovider <<< $TEST_FILES
