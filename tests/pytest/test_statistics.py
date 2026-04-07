@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
+
 from _hypothesis_pytestplugin import PRINT_STATISTICS_OPTION
 
 from tests.common.utils import skipif_threading

@@ -16,7 +16,6 @@ failing examples it finds.
 """
 
 import _hypothesis_globals
-
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import (
     assume,

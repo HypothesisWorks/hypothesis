@@ -11,6 +11,7 @@
 import importlib
 
 import pytest
+
 from _hypothesis_pytestplugin import LOAD_PROFILE_OPTION
 
 pytest_plugins = "pytester"

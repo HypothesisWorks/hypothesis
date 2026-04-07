@@ -27,8 +27,9 @@ import warnings
 from fnmatch import fnmatch
 from inspect import signature
 
-import _hypothesis_globals
 import pytest
+
+import _hypothesis_globals
 
 try:
     from _pytest.junitxml import xml_key

@@ -14,7 +14,6 @@ import warnings
 from pathlib import Path
 
 import _hypothesis_globals
-
 from hypothesis.errors import HypothesisSideeffectWarning
 
 __hypothesis_home_directory_default = Path.cwd() / ".hypothesis"
