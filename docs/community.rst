@@ -27,7 +27,7 @@ If you like repo badges, we suggest the following badge, which you can add with 
 
 Finally, we have a beautiful logo which appears online, and often on stickers:
 
-.. image:: ../../brand/dragonfly-rainbow.svg
+.. image:: ../brand/dragonfly-rainbow.svg
    :alt: The Hypothesis logo, a dragonfly with rainbow wings
    :align: center
    :width: 50 %
