@@ -2,406 +2,406 @@
 # name: test_always_failing[binary]
   '''
   Falsifying example: inner(
-      b=b'',
+      v0=b'',
   )
   '''
 # ---
 # name: test_always_failing[booleans]
   '''
   Falsifying example: inner(
-      b=False,
+      v0=False,
   )
   '''
 # ---
 # name: test_always_failing[builds]
   '''
   Falsifying example: inner(
-      p=Pair(x=0, y=''),
+      v0=Pair(x=0, y=''),
   )
   '''
 # ---
 # name: test_always_failing[builds_from_type]
   '''
   Falsifying example: inner(
-      xs=[],
+      v0=[],
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_mixed_args]
   '''
   Falsifying example: inner(
-      x=(lambda x, y, z: Opaque())(0, y='', z=False),
+      v0=(lambda x, y, z: Opaque())(0, y='', z=False),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_positional_args]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Opaque())(0, ''),
+      v0=(lambda x, y: Opaque())(0, ''),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_returning_object]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Pair(x, y))(x=0, y=''),
+      v0=(lambda x, y: Pair(x, y))(x=0, y=''),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_with_defaults]
   '''
   Falsifying example: inner(
-      x=(lambda a, b='hello': Opaque())(a=0),
+      v0=(lambda a, b='hello': Opaque())(a=0),
   )
   '''
 # ---
 # name: test_always_failing[builds_multi_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda x, y: Opaque())(x=0, y=''),
+      v0=(lambda x, y: Opaque())(x=0, y=''),
   )
   '''
 # ---
 # name: test_always_failing[builds_no_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda: Opaque())(),
+      v0=(lambda: Opaque())(),
   )
   '''
 # ---
 # name: test_always_failing[builds_single_arg_lambda]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(n=0),
+      v0=(lambda n: Opaque())(n=0),
   )
   '''
 # ---
 # name: test_always_failing[characters]
   '''
   Falsifying example: inner(
-      c='0',
+      v0='0',
   )
   '''
 # ---
 # name: test_always_failing[complex_numbers]
   '''
   Falsifying example: inner(
-      z=complex(0.0, 0.0),
+      v0=complex(0.0, 0.0),
   )
   '''
 # ---
 # name: test_always_failing[dates]
   '''
   Falsifying example: inner(
-      d=datetime.date(2000, 1, 1),
+      v0=datetime.date(2000, 1, 1),
   )
   '''
 # ---
 # name: test_always_failing[datetimes]
   '''
   Falsifying example: inner(
-      dt=datetime.datetime(2000, 1, 1, 0, 0),
+      v0=datetime.datetime(2000, 1, 1, 0, 0),
   )
   '''
 # ---
 # name: test_always_failing[decimals]
   '''
   Falsifying example: inner(
-      d=Decimal('Infinity'),
+      v0=Decimal('Infinity'),
   )
   '''
 # ---
 # name: test_always_failing[deferred]
   '''
   Falsifying example: inner(
-      x=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[dictionaries]
   '''
   Falsifying example: inner(
-      d=dict([]),
+      v0=dict([]),
   )
   '''
 # ---
 # name: test_always_failing[emails]
   '''
   Falsifying example: inner(
-      e='0@A.AC',
+      v0='0@A.AC',
   )
   '''
 # ---
 # name: test_always_failing[filter]
   '''
   Falsifying example: inner(
-      n=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[fixed_dictionaries]
   '''
   Falsifying example: inner(
-      d={'name': '', 'age': 0},
+      v0={'name': '', 'age': 0},
   )
   '''
 # ---
 # name: test_always_failing[flatmap_lambda]
   '''
   Falsifying example: inner(
-      x='',
+      v0='',
   )
   '''
 # ---
 # name: test_always_failing[floats]
   '''
   Falsifying example: inner(
-      x=0.0,
+      v0=0.0,
   )
   '''
 # ---
 # name: test_always_failing[fractions]
   '''
   Falsifying example: inner(
-      f=Fraction(0, 1),
+      v0=Fraction(0, 1),
   )
   '''
 # ---
 # name: test_always_failing[from_regex]
   '''
   Falsifying example: inner(
-      s='aaa',
+      v0='aaa',
   )
   '''
 # ---
 # name: test_always_failing[from_type]
   '''
   Falsifying example: inner(
-      x=IPv4Address(b'\x00\x00\x00\x00'),
+      v0=IPv4Address(b'\x00\x00\x00\x00'),
   )
   '''
 # ---
 # name: test_always_failing[frozensets]
   '''
   Falsifying example: inner(
-      xs=frozenset([]),
+      v0=frozenset([]),
   )
   '''
 # ---
 # name: test_always_failing[functions]
   '''
   Falsifying example: inner(
-      f=lambda x: x,
+      v0=lambda x: x,
   )
   '''
 # ---
 # name: test_always_failing[integers]
   '''
   Falsifying example: inner(
-      n=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[ip_addresses]
   '''
   Falsifying example: inner(
-      ip=IPv4Address(b'\x00\x00\x00\x00'),
+      v0=IPv4Address(b'\x00\x00\x00\x00'),
   )
   '''
 # ---
 # name: test_always_failing[iterables]
   '''
   Falsifying example: inner(
-      it=PrettyIter([]),
+      v0=PrettyIter([]),
   )
   '''
 # ---
 # name: test_always_failing[just]
   '''
   Falsifying example: inner(
-      x=42,
+      v0=42,
   )
   '''
 # ---
 # name: test_always_failing[lists]
   '''
   Falsifying example: inner(
-      xs=[],
+      v0=[],
   )
   '''
 # ---
 # name: test_always_failing[many_args]
   '''
   Falsifying example: inner(
-      a=0,
-      b=0.0,
-      c='',
-      d=False,
-      e=None,
+      v0=0,
+      v1=0.0,
+      v2='',
+      v3=False,
+      v4=None,
   )
   '''
 # ---
 # name: test_always_failing[map_chained_lambdas_opaque]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(0),
+      v0=(lambda n: Opaque())(0),
   )
   '''
 # ---
 # name: test_always_failing[map_lambda_opaque_result]
   '''
   Falsifying example: inner(
-      x=(lambda n: Opaque())(0),
+      v0=(lambda n: Opaque())(0),
   )
   '''
 # ---
 # name: test_always_failing[map_to_bytes]
   '''
   Falsifying example: inner(
-      b=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+      v0=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
   )
   '''
 # ---
 # name: test_always_failing[map_to_str]
   '''
   Falsifying example: inner(
-      s='0',
+      v0='0',
   )
   '''
 # ---
 # name: test_always_failing[mixed_strategies]
   '''
   Falsifying example: inner(
-      xs=[],
-      mapping=dict([]),
-      choice=10,
+      v0=[],
+      v1=dict([]),
+      v2=10,
   )
   '''
 # ---
 # name: test_always_failing[none]
   '''
   Falsifying example: inner(
-      n=None,
+      v0=None,
   )
   '''
 # ---
 # name: test_always_failing[one_of]
   '''
   Falsifying example: inner(
-      x=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[permutations]
   '''
   Falsifying example: inner(
-      p=[0, 1, 2, 3, 4],
+      v0=[0, 1, 2, 3, 4],
   )
   '''
 # ---
 # name: test_always_failing[randoms]
   '''
   Falsifying example: inner(
-      r=HypothesisRandom(generated data),
+      v0=HypothesisRandom(generated data),
   )
   '''
 # ---
 # name: test_always_failing[recursive]
   '''
   Falsifying example: inner(
-      x=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[sampled_from]
   '''
   Falsifying example: inner(
-      x='alice',
+      v0='alice',
   )
   '''
 # ---
 # name: test_always_failing[sets]
   '''
   Falsifying example: inner(
-      xs=set([]),
+      v0=set([]),
   )
   '''
 # ---
 # name: test_always_failing[shared]
   '''
   Falsifying example: inner(
-      x=0,
+      v0=0,
   )
   '''
 # ---
 # name: test_always_failing[slices]
   '''
   Falsifying example: inner(
-      s=slice(None, None, None),
+      v0=slice(None, None, None),
   )
   '''
 # ---
 # name: test_always_failing[text]
   '''
   Falsifying example: inner(
-      s='',
+      v0='',
   )
   '''
 # ---
 # name: test_always_failing[timedeltas]
   '''
   Falsifying example: inner(
-      td=datetime.timedelta(0),
+      v0=datetime.timedelta(0),
   )
   '''
 # ---
 # name: test_always_failing[times]
   '''
   Falsifying example: inner(
-      t=datetime.time(0, 0),
+      v0=datetime.time(0, 0),
   )
   '''
 # ---
 # name: test_always_failing[tuples]
   '''
   Falsifying example: inner(
-      t=(0, '', False),
+      v0=(0, '', False),
   )
   '''
 # ---
 # name: test_always_failing[two_args]
   '''
   Falsifying example: inner(
-      n=0,
-      s='',
+      v0=0,
+      v1='',
   )
   '''
 # ---
 # name: test_always_failing[uuids]
   '''
   Falsifying example: inner(
-      u=(lambda r: UUID(version=version, int=r.getrandbits(128)))(Random(0)),
+      v0=(lambda r: UUID(version=version, int=r.getrandbits(128)))(Random(0)),
   )
   '''
 # ---
 # name: test_always_failing_explain[explain_from_regex]
   '''
   Falsifying example: inner(
-      s='00',  # or any other generated value
+      v0='00',  # or any other generated value
   )
   '''
 # ---
 # name: test_always_failing_explain[explain_map_to_str]
   '''
   Falsifying example: inner(
-      s='0',  # or any other generated value
+      v0='0',  # or any other generated value
   )
   '''
 # ---
 # name: test_always_failing_explain[map_lambda_explain_forces_call_style]
   '''
   Falsifying example: inner(
-      x=1,  # or any other generated value
+      v0=1,  # or any other generated value
   )
   '''
 # ---

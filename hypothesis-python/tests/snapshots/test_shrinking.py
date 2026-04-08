@@ -10,8 +10,9 @@
 
 from hypothesis import given, strategies as st
 
-from tests.snapshots.conftest import SNAPSHOT_SETTINGS
 from tests.common.utils import run_test_for_falsifying_example
+from tests.snapshots.conftest import SNAPSHOT_SETTINGS
+
 
 def test_shrunk_list(snapshot):
     @SNAPSHOT_SETTINGS

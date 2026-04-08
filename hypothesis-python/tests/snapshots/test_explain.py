@@ -10,8 +10,9 @@
 
 from hypothesis import given, strategies as st
 
-from tests.snapshots.conftest import EXPLAIN_SETTINGS
 from tests.common.utils import run_test_for_falsifying_example
+from tests.snapshots.conftest import EXPLAIN_SETTINGS
+
 
 def test_explain_comments_basic_fail_if_either(snapshot):
     @EXPLAIN_SETTINGS
