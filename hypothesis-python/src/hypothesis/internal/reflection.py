@@ -469,9 +469,6 @@ def impersonate(target):
     """
 
     def accept(f):
-        # Hide hypothesis internals from tracebacks via pytest's mechanism.
-        # Previously this replaced co_filename/co_firstlineno on the code object,
-        # but that caused incorrect source lines in tracebacks (see #4681).
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
