@@ -7,14 +7,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
-
-"""Snapshot tests for strategies that always fail (body is just ``raise AssertionError``).
-
-Each parametrized case defines the ``@given`` kwargs for a test function whose
-body unconditionally raises.  This exercises the pretty-printing / repr path
-for every strategy without needing a unique test function per strategy.
-"""
-
 import hashlib
 from ipaddress import IPv4Address
 
