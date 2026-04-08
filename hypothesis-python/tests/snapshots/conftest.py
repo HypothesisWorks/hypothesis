@@ -25,13 +25,3 @@ EXPLAIN_SETTINGS = settings(
     derandomize=True,
     database=None,
 )
-
-
-@pytest.fixture()
-def get_output():
-    def _get_output(test_fn):
-        with pytest.raises(AssertionError) as err:
-            test_fn()
-        return "\n".join(err.value.__notes__).strip()
-
-    return _get_output

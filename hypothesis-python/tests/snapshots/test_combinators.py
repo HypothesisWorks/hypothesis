@@ -13,7 +13,7 @@ from enum import Flag, auto
 from hypothesis import given, strategies as st
 
 from tests.snapshots.conftest import SNAPSHOT_SETTINGS
-
+from tests.common.utils import run_test_for_falsifying_example
 
 class Direction(Flag):
     NORTH = auto()
@@ -22,7 +22,7 @@ class Direction(Flag):
     WEST = auto()
 
 
-def test_data_draw(snapshot, get_output):
+def test_data_draw(snapshot):
     @SNAPSHOT_SETTINGS
     @given(data=st.data())
     def inner(data):
@@ -30,10 +30,10 @@ def test_data_draw(snapshot, get_output):
         data.draw(st.text(max_size=3))
         raise AssertionError
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_sampled_from_enum_flag(snapshot, get_output):
+def test_sampled_from_enum_flag(snapshot):
     class Color(Flag):
         RED = auto()
         GREEN = auto()
@@ -44,13 +44,13 @@ def test_sampled_from_enum_flag(snapshot, get_output):
     def inner(c):
         assert not (c & Color.RED)
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_sampled_from_module_level_enum_flag(snapshot, get_output):
+def test_sampled_from_module_level_enum_flag(snapshot):
     @SNAPSHOT_SETTINGS
     @given(d=st.sampled_from(Direction))
     def inner(d):
         assert not (d & Direction.NORTH)
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot

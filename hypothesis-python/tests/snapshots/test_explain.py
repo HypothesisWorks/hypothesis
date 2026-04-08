@@ -11,9 +11,9 @@
 from hypothesis import given, strategies as st
 
 from tests.snapshots.conftest import EXPLAIN_SETTINGS
+from tests.common.utils import run_test_for_falsifying_example
 
-
-def test_explain_comments_basic_fail_if_either(snapshot, get_output):
+def test_explain_comments_basic_fail_if_either(snapshot):
     @EXPLAIN_SETTINGS
     @given(
         st.booleans(),
@@ -25,26 +25,26 @@ def test_explain_comments_basic_fail_if_either(snapshot, get_output):
     def inner(a, b, c, d, e):
         assert not (b and d)
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_comments_basic_fail_if_not_all(snapshot, get_output):
+def test_explain_comments_basic_fail_if_not_all(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.text(), st.text(), st.text())
     def inner(a, b, c):
         condition = a and b and c
         assert condition
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_no_together_comment_if_single_argument(snapshot, get_output):
+def test_explain_no_together_comment_if_single_argument(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.text(), st.text())
     def inner(a, b):
         assert a
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
 class MyClass:
@@ -53,61 +53,61 @@ class MyClass:
         self.y = y
 
 
-def test_explain_builds_subargs(snapshot, get_output):
+def test_explain_builds_subargs(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.builds(MyClass, st.integers(), st.booleans()))
     def inner(obj):
         assert not obj.y
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_builds_kwargs_subargs(snapshot, get_output):
+def test_explain_builds_kwargs_subargs(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.builds(MyClass, x=st.integers(), y=st.booleans()))
     def inner(obj):
         assert not obj.y
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_tuple_subargs(snapshot, get_output):
+def test_explain_tuple_subargs(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.tuples(st.integers(), st.booleans()))
     def inner(t):
         assert not t[1]
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_fixeddict_subargs(snapshot, get_output):
+def test_explain_fixeddict_subargs(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.fixed_dictionaries({"x": st.integers(), "y": st.booleans()}))
     def inner(d):
         assert not d["y"]
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_tuple_multiple_varying(snapshot, get_output):
+def test_explain_tuple_multiple_varying(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.tuples(st.integers(), st.text(), st.booleans()))
     def inner(t):
         assert not t[2]
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_skip_subset_slices(snapshot, get_output):
+def test_explain_skip_subset_slices(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.builds(MyClass, st.tuples(st.integers(), st.booleans()), y=st.booleans()))
     def inner(obj):
         assert obj.y
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_explain_duplicate_param_names(snapshot, get_output):
+def test_explain_duplicate_param_names(snapshot):
     @EXPLAIN_SETTINGS
     @given(
         kw=st.integers(),
@@ -116,7 +116,7 @@ def test_explain_duplicate_param_names(snapshot, get_output):
     def inner(kw, b):
         assert not b["c"]
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
 class Outer:
@@ -130,7 +130,7 @@ class Inner:
         self.x = x
 
 
-def test_explain_multi_level_nesting(snapshot, get_output):
+def test_explain_multi_level_nesting(snapshot):
     @EXPLAIN_SETTINGS
     @given(
         bare=st.integers(),
@@ -141,4 +141,4 @@ def test_explain_multi_level_nesting(snapshot, get_output):
     def inner(bare, outer):
         assert not outer.value
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot

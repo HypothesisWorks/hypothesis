@@ -23,7 +23,7 @@ import pytest
 from hypothesis import given, strategies as st
 
 from tests.snapshots.conftest import EXPLAIN_SETTINGS, SNAPSHOT_SETTINGS
-
+from tests.common.utils import run_test_for_falsifying_example
 
 class Opaque:
     """Object with no useful repr, forcing call-style output."""
@@ -176,13 +176,13 @@ ALWAYS_FAILING_CASES = [
 
 
 @pytest.mark.parametrize("given_kwargs", ALWAYS_FAILING_CASES)
-def test_always_failing(given_kwargs, snapshot, get_output):
+def test_always_failing(given_kwargs, snapshot):
     @SNAPSHOT_SETTINGS
     @given(**given_kwargs)
     def inner(**kwargs):
         raise AssertionError
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
 ALWAYS_FAILING_EXPLAIN_CASES = [
@@ -196,10 +196,10 @@ ALWAYS_FAILING_EXPLAIN_CASES = [
 
 
 @pytest.mark.parametrize("given_kwargs", ALWAYS_FAILING_EXPLAIN_CASES)
-def test_always_failing_explain(given_kwargs, snapshot, get_output):
+def test_always_failing_explain(given_kwargs, snapshot):
     @EXPLAIN_SETTINGS
     @given(**given_kwargs)
     def inner(**kwargs):
         raise AssertionError
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
