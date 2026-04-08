@@ -2254,9 +2254,7 @@ def given(
                                     f"{pytest_extra_msg}."
                                 )
                             report(msg)
-                        # Trim the traceback to remove hypothesis internals,
-                        # then re-raise from a function without __tracebackhide__
-                        # so this frame is visible in pytest output.
+                        # Trim the traceback to remove hypothesis internals
                         the_error_hypothesis_found = e.with_traceback(
                             None
                             if isinstance(e, BaseExceptionGroup)
@@ -2264,7 +2262,7 @@ def given(
                         )
                         if isinstance(e, BaseExceptionGroup):
                             # Insert a frame here as otherwise all base frames are
-                            # trimmed which causes pytest problems.
+                            # trimmed which causes pytest problems
                             _reraise_exception_group(the_error_hypothesis_found)
                         raise the_error_hypothesis_found
 
