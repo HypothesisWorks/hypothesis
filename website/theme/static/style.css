@@ -492,6 +492,12 @@ pre code {
   text-decoration: underline;
 }
 
+.article__image {
+  display: block;
+  max-width: 85%;
+  margin: 1.5em auto;
+}
+
 .article-content hr {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
