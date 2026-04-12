@@ -259,14 +259,28 @@ _constant_strings = {
     #
     # We've seen multiple bugs caused by assuming `str.splitlines` is equivalent to
     # splitting over "\n", while it actually splits over all line breaks!
-    "\u000a",  # line feed (class: LF)
-    "\u000d",  # carriage return (class: CR)
-    "\u0085",  # next line (class: NL)
-    "\u000b",  # line tabulation (class: BK)
-    "\u000c",  # form feed (class: BK)
-    "\u2028",  # line separator (class: BK)
-    "\u2029",  # paragraph separator (class: BK)
-    "\u000d\u000a",  # CR+LF (treated as a single line break)
+    #
+    # We intersperse the line breaks with normal characters to increase the likelihood
+    # of triggering such a bug.
+    (
+        "a"
+        "\u000a"  # line feed (class: LF)
+        "b"
+        "\u000d"  # carriage return (class: CR)
+        "c"
+        "\u0085"  # next line (class: NL)
+        "d"
+        "\u000b"  # line tabulation (class: BK)
+        "e"
+        "\u000c"  # form feed (class: BK)
+        "f"
+        "\u2028"  # line separator (class: BK)
+        "g"
+        "\u2029"  # paragraph separator (class: BK)
+        "h"
+        "\u000d\u000a"  # CR+LF
+        "i"
+    ),
 }
 
 
