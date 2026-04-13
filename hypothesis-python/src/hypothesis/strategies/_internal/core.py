@@ -868,7 +868,6 @@ def from_regex(
     regex: bytes | Pattern[bytes],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] | None = characters(codec="utf-8"),
 ) -> SearchStrategy[bytes]:  # pragma: no cover
     ...
 
