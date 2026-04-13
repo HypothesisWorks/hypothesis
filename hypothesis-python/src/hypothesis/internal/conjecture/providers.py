@@ -230,6 +230,9 @@ _constant_strings = {
     # Ogham text, which contains the only character in the Space Separators
     # unicode category (Zs) that isn't visually blank:  .  # noqa: RUF003
     "᚛ᚄᚓᚐᚋᚒᚄ ᚑᚄᚂᚑᚏᚅ᚜",
+    # thai consonant + spacing vowel combinations, which have unusual visual combining behavior
+    "กา",
+    "ก ำกำ",
     # readable variations on text (bolt/italic/script)
     "𝐓𝐡𝐞 𝐪𝐮𝐢𝐜𝐤 𝐛𝐫𝐨𝐰𝐧 𝐟𝐨𝐱 𝐣𝐮𝐦𝐩𝐬 𝐨𝐯𝐞𝐫 𝐭𝐡𝐞 𝐥𝐚𝐳𝐲 𝐝𝐨𝐠",
     "𝕿𝖍𝖊 𝖖𝖚𝖎𝖈𝖐 𝖇𝖗𝖔𝖜𝖓 𝖋𝖔𝖝 𝖏𝖚𝖒𝖕𝖘 𝖔𝖛𝖊𝖗 𝖙𝖍𝖊 𝖑𝖆𝖟𝖞 𝖉𝖔𝖌",
@@ -251,6 +254,33 @@ _constant_strings = {
     "मनीष منش",
     "पन्ह पन्ह त्र र्च कृकृ ड्ड न्हृे إلا بسم الله",
     "lorem لا بسم الله ipsum 你好1234你好",
+    # unicode charaacters causing unconditional line breaks, as defined by UAX #14:
+    # https://www.unicode.org/reports/tr14/.
+    #
+    # We've seen multiple bugs caused by assuming `str.splitlines` is equivalent to
+    # splitting over "\n", while it actually splits over all line breaks!
+    #
+    # We intersperse the line breaks with normal characters to increase the likelihood
+    # of triggering such a bug.
+    (
+        "a"
+        "\u000a"  # line feed (class: LF)
+        "b"
+        "\u000d"  # carriage return (class: CR)
+        "c"
+        "\u0085"  # next line (class: NL)
+        "d"
+        "\u000b"  # line tabulation (class: BK)
+        "e"
+        "\u000c"  # form feed (class: BK)
+        "f"
+        "\u2028"  # line separator (class: BK)
+        "g"
+        "\u2029"  # paragraph separator (class: BK)
+        "h"
+        "\u000d\u000a"  # CR+LF
+        "i"
+    ),
 }
 
 

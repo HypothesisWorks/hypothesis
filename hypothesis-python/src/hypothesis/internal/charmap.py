@@ -310,6 +310,12 @@ def query(
         min_codepoint = 0
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
+
+    if min_codepoint > max_codepoint:
+        raise InvalidArgument(
+            f"min_codepoint={min_codepoint} is greater than max_codepoint={max_codepoint}"
+        )
+
     catkey = _category_key(categories)
     character_intervals = IntervalSet.from_string("".join(include_characters))
     exclude_intervals = IntervalSet.from_string("".join(exclude_characters))
@@ -326,12 +332,14 @@ def query(
             return limited_category_index_cache[qkey]
         except KeyError:
             pass
-    base = _query_for_key(catkey)
+
     result = []
-    for u, v in base:
+    for u, v in _query_for_key(catkey):
         if v >= min_codepoint and u <= max_codepoint:
             result.append((max(u, min_codepoint), min(v, max_codepoint)))
+
     result = (IntervalSet(result) | character_intervals) - exclude_intervals
     if context is None or not context.data.provider.avoid_realization:
         limited_category_index_cache[qkey] = result
+
     return result
