@@ -53,12 +53,16 @@ def test_storage_directories_are_not_created_automatically(tmp_path):
 
 def _gitignore_storage_dir_script(*, home_dir=None):
     return textwrap.dedent(f"""
-        from hypothesis import given, strategies as st
+        from hypothesis import given, settings, strategies as st
         from hypothesis.configuration import set_hypothesis_home_dir
 
         home_dir = {repr(str(home_dir)) if home_dir is not None else None}
         if home_dir:
             set_hypothesis_home_dir(home_dir)
+
+        # in CI we use the "ci" profile which sets database=None. But we actually want
+        # disk writes to happen here so we can test the .hypothesis/.gitignore behavior.
+        settings.load_profile("default")
 
         @given(st.integers())
         def f(n):
