@@ -298,7 +298,7 @@ def remove_observability_callback(f: CallbackT, /) -> None:
     callbacks for this thread.
     """
     if f in _callbacks_all_threads:
-        _callbacks_all_threads.remove(cast(CallbackAllThreadsT, f))
+        _callbacks_all_threads.remove(f)
 
     thread_id = threading.get_ident()
     if thread_id not in _callbacks:
@@ -306,7 +306,7 @@ def remove_observability_callback(f: CallbackT, /) -> None:
 
     callbacks = _callbacks[thread_id]
     if f in callbacks:
-        callbacks.remove(cast(CallbackThreadT, f))
+        callbacks.remove(f)
 
     if not callbacks:
         del _callbacks[thread_id]

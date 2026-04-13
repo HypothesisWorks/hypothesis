@@ -272,7 +272,7 @@ def get_pretty_function_description(f: object) -> str:
         return pretty(f)
     if not hasattr(f, "__name__"):
         return repr(f)
-    name = f.__name__  # type: ignore
+    name = f.__name__
     if name == "<lambda>":
         return lambda_sources.lambda_description(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
@@ -518,7 +518,7 @@ def is_identity_function(f: Callable) -> bool:
 
     # We know that f accepts a single positional argument, now check that its
     # code object is simply "return first unbound argument".
-    template = (lambda self, x: x) if bound_args else (lambda x: x)  # type: ignore
+    template = (lambda self, x: x) if bound_args else (lambda x: x)
     try:
         return code.co_code == template.__code__.co_code
     except AttributeError:  # pragma: no cover  # pypy only
