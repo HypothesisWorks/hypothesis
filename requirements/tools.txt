@@ -30,7 +30,7 @@ black==26.3.1
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.4.2
+build==1.4.3
     # via
     #   -r requirements/tools.in
     #   pip-tools
@@ -40,9 +40,9 @@ certifi==2026.2.25
     # via requests
 cffi==2.0.0
     # via cryptography
-charset-normalizer==3.4.6
+charset-normalizer==3.4.7
     # via requests
-click==8.3.1
+click==8.3.2
     # via
     #   black
     #   pip-tools
@@ -57,7 +57,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.13.5
     # via -r requirements/tools.in
-cryptography==46.0.6
+cryptography==46.0.7
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -66,7 +66,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-django==6.0.3
+django==6.0.4
     # via -r requirements/tools.in
 docutils==0.22.4
     # via
@@ -134,7 +134,7 @@ libcst==1.8.6
     # via
     #   -r requirements/tools.in
     #   shed
-librt==0.8.1
+librt==0.9.0
     # via mypy
 markdown==3.10.2
     # via pelican
@@ -146,11 +146,11 @@ matplotlib-inline==0.2.1
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.8.0
+more-itertools==11.0.2
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.19.1
+mypy==1.20.0
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -160,7 +160,7 @@ nh3==0.3.4
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
-numpy==2.4.3
+numpy==2.4.4
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -188,7 +188,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.5.3
     # via -r requirements/tools.in
-platformdirs==4.9.4
+platformdirs==4.9.6
     # via
     #   black
     #   python-discovery
@@ -227,17 +227,18 @@ pyproject-hooks==1.2.0
     #   pip-tools
 pyright==1.1.408
     # via -r requirements/tools.in
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/test.in
     #   pytest-xdist
+    #   syrupy
 pytest-xdist==3.8.0
     # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.2.1
+python-discovery==1.2.2
     # via
     #   tox
     #   virtualenv
@@ -251,7 +252,7 @@ pyyaml==6.0.3
     #   sphinx-jsonschema
 readme-renderer==44.0
     # via twine
-requests==2.33.0
+requests==2.33.1
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
@@ -264,13 +265,13 @@ restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==14.3.3
+rich==14.3.4
     # via
     #   pelican
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.8
+ruff==0.15.10
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -288,8 +289,6 @@ sortedcontainers-stubs==2.4.3
     # via -r requirements/tools.in
 soupsieve==2.8.3
     # via beautifulsoup4
-syrupy==5.1.0
-    # via -r requirements/test.in
 sphinx==9.1.0
     # via
     #   -r requirements/tools.in
@@ -325,13 +324,15 @@ stack-data==0.6.3
     # via ipython
 starlette==1.0.0
     # via sphinx-autobuild
+syrupy==5.1.0
+    # via -r requirements/test.in
 tokenize-rt==6.2.0
     # via pyupgrade
 tomli==2.4.1
     # via -r requirements/tools.in
 tomli-w==1.2.0
     # via tox
-tox==4.51.0
+tox==4.52.1
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -339,17 +340,17 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.2.0
     # via -r requirements/tools.in
-types-cffi==2.0.0.20260316
+types-cffi==2.0.0.20260408
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2026.1.1.20260304
+types-pytz==2026.1.1.20260408
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==82.0.0.20260210
+types-setuptools==82.0.0.20260408
     # via types-cffi
 typing-extensions==4.15.0
     # via
@@ -365,9 +366,9 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uvicorn==0.42.0
+uvicorn==0.44.0
     # via sphinx-autobuild
-virtualenv==21.2.0
+virtualenv==21.2.1
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
