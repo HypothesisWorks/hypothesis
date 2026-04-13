@@ -8,12 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import ast
+
 import pytest
 
 from hypothesis.vendor import pretty
 
 
-def _inline(func_name, args=(), kwargs=None):
+def _try_inline_lambda(func_name, args=(), kwargs=None):
     """Helper: run _try_inline_lambda and return the printer output, or None."""
     if kwargs is None:
         kwargs = {}
@@ -21,15 +23,6 @@ def _inline(func_name, args=(), kwargs=None):
     result = pretty._try_inline_lambda(func_name, args, kwargs, p)
     if result is None:
         return None
-    return p.getvalue()
-
-
-def _repr_call(func_name, args=(), kwargs=None):
-    """Helper: run repr_call and return the full output string."""
-    if kwargs is None:
-        kwargs = {}
-    p = pretty.RepresentationPrinter()
-    p.repr_call(func_name, args, kwargs)
     return p.getvalue()
 
 
@@ -87,7 +80,7 @@ class BadRepr:
     ],
 )
 def test_inline_success(func_name, args, kwargs, expected):
-    assert _inline(func_name, args, kwargs) == expected
+    assert _try_inline_lambda(func_name, args, kwargs) == expected
 
 
 @pytest.mark.parametrize(
@@ -107,7 +100,7 @@ def test_inline_success(func_name, args, kwargs, expected):
     ],
 )
 def test_inline_bail_out(func_name, args, kwargs):
-    assert _inline(func_name, args, kwargs) is None
+    assert _try_inline_lambda(func_name, args, kwargs) is None
 
 
 @pytest.mark.parametrize(
@@ -137,13 +130,13 @@ def test_inline_bail_out(func_name, args, kwargs):
     ],
 )
 def test_repr_call_parametrized(func_name, args, kwargs, expected):
-    assert _repr_call(func_name, args, kwargs) == expected
+    p = pretty.RepresentationPrinter()
+    p.repr_call(func_name, args, kwargs)
+    assert p.getvalue() == expected
 
 
 def test_unparse_failure_returns_none(monkeypatch):
-    import ast as ast_mod
-
-    real_unparse = ast_mod.unparse
+    real_unparse = ast.unparse
     called = False
 
     def bad_unparse(node):
@@ -153,8 +146,8 @@ def test_unparse_failure_returns_none(monkeypatch):
             raise ValueError("boom")
         return real_unparse(node)
 
-    monkeypatch.setattr(ast_mod, "unparse", bad_unparse)
-    assert _inline("lambda x: x", args=(1,)) is None
+    monkeypatch.setattr(ast, "unparse", bad_unparse)
+    assert _try_inline_lambda("lambda x: x", args=(1,)) is None
 
 
 def test_repr_call_skips_inlining_when_comments_present():
