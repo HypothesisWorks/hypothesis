@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.13:
+
+---------------------
+6.151.13 - 2026-04-13
+---------------------
+
+This patch removes some newly unnecessary ``# type: ignore`` comments.
+
 .. _v6.151.12:
 
 ---------------------
