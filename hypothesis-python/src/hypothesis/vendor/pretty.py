@@ -93,6 +93,15 @@ __all__ = [
     "pretty",
 ]
 
+PRIMITIVE_TYPES_ALWAYS_USE_REPR = (
+    int,
+    float,
+    str,
+    bytes,
+    bool,
+    type(None),
+)
+
 
 def _safe_getattr(obj: object, attr: str, default: Any | None = None) -> Any:
     """Safe version of getattr.
@@ -195,6 +204,7 @@ class RepresentationPrinter:
 
     def pretty(self, obj: object, *, cycle: bool = False) -> None:
         """Pretty print the given object."""
+
         obj_id = id(obj)
         cycle = cycle or obj_id in self.stack
         self.stack.append(obj_id)
@@ -418,6 +428,9 @@ class RepresentationPrinter:
         kwargs: dict[str, object],
         arg_labels: ArgLabelsT | None = None,
     ) -> None:
+        if isinstance(obj, PRIMITIVE_TYPES_ALWAYS_USE_REPR):
+            return _repr_pprint(obj, self, cycle)
+
         # pprint this object as a call, _unless_ the call would be invalid syntax
         # and the repr would be valid and there are not comments on arguments.
         if cycle:

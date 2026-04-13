@@ -6,23 +6,23 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-anyio==4.12.1
+anyio==4.13.0
     # via starlette
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   outcome
     #   trio
-black==26.1.0
+black==26.3.1
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.3.1
+click==8.3.2
     # via
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.13.4
+coverage[toml]==7.13.5
     # via
     #   hypofuzz
     #   pytest-cov
@@ -30,7 +30,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.33.0
+fakeredis==2.35.0
     # via -r requirements/coverage.in
 h11==0.16.0
     # via
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.151.6
+hypothesis[cli,watchdog]==6.151.12
     # via hypofuzz
 idna==3.11
     # via
@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.2
+numpy==2.4.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -76,13 +76,13 @@ packaging==26.0
     # via
     #   black
     #   pytest
-pandas==3.0.0
+pandas==3.0.2
     # via -r requirements/coverage.in
 pathspec==1.0.4
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.9.1
+platformdirs==4.9.6
     # via black
 pluggy==1.6.0
     # via
@@ -94,19 +94,20 @@ psutil==7.2.2
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via -r requirements/coverage.in
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   pytest
     #   rich
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/test.in
     #   hypofuzz
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==7.0.0
+    #   syrupy
+pytest-cov==7.1.0
     # via -r requirements/coverage.in
 pytest-xdist==3.8.0
     # via -r requirements/test.in
@@ -116,13 +117,13 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytokens==0.4.1
     # via black
-pytz==2025.2
+pytz==2026.1.post1
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.1.1
+redis==7.4.0
     # via fakeredis
-rich==14.3.2
+rich==14.3.4
     # via hypothesis
 six==1.17.0
     # via python-dateutil
@@ -134,8 +135,10 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
     #   trio
-starlette==0.52.1
+starlette==1.0.0
     # via hypofuzz
+syrupy==5.1.0
+    # via -r requirements/test.in
 trio==0.33.0
     # via hypofuzz
 typing-extensions==4.15.0

@@ -18,6 +18,53 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.13:
+
+---------------------
+6.151.13 - 2026-04-13
+---------------------
+
+This patch removes some newly unnecessary ``# type: ignore`` comments.
+
+.. _v6.151.12:
+
+---------------------
+6.151.12 - 2026-04-08
+---------------------
+
+This release improves |Phase.explain| output by excluding pytest-related :pypi:`syrupy` files as a possible source of variation.
+
+.. _v6.151.11:
+
+---------------------
+6.151.11 - 2026-04-05
+---------------------
+
+This patch improves printing of primitive values generated from complex
+strategies, particularly for :func:`~hypothesis.strategies.from_regex`.
+Previously, these would often be printed as function calls desctribing
+how to construct them. Now they will always be printed as a literal value.
+
+.. _v6.151.10:
+
+---------------------
+6.151.10 - 2026-03-29
+---------------------
+
+When shrinking takes more than five minutes, Hypothesis now prints the
+``@seed`` decorator alongside the slow-shrinking warning so you can
+reproduce the failure.
+
+Thanks to Ian Hunt-Isaak for this contribution!
+
+.. _v6.151.9:
+
+--------------------
+6.151.9 - 2026-02-16
+--------------------
+
+Remove some old unused code.
+
 .. _v6.151.8:
 
 --------------------

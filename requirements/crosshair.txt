@@ -4,12 +4,12 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   cattrs
     #   lsprotocol
     #   pygls
-cattrs==25.3.0
+cattrs==26.1.0
     # via
     #   lsprotocol
     #   pygls
@@ -19,13 +19,13 @@ crosshair-tool==0.0.102
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.151.6
+hypothesis==6.151.12
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.27
     # via -r requirements/crosshair.in
-importlib-metadata==8.7.1
+importlib-metadata==9.0.0
     # via crosshair-tool
-importlib-resources==6.5.2
+importlib-resources==7.0.0
     # via typeshed-client
 iniconfig==2.3.0
     # via pytest
@@ -43,21 +43,24 @@ pluggy==1.6.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pygls==2.0.1
+pygls==2.1.1
     # via crosshair-tool
-pygments==2.19.2
+pygments==2.20.0
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/test.in
     #   pytest-xdist
+    #   syrupy
 pytest-xdist==3.8.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/pyproject.toml)
-typeshed-client==2.8.2
+syrupy==5.1.0
+    # via -r requirements/test.in
+typeshed-client==2.9.0
     # via crosshair-tool
 typing-extensions==4.15.0
     # via
@@ -67,7 +70,7 @@ typing-extensions==4.15.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via crosshair-tool
-z3-solver==4.15.8.0
+z3-solver==4.16.0.0
     # via crosshair-tool
 zipp==3.23.0
     # via importlib-metadata

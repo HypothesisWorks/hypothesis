@@ -6,19 +6,19 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-black==26.1.0
+black==26.3.1
     # via -r requirements/coverage.in
-click==8.3.1
+click==8.3.2
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.13.4
+coverage[toml]==7.13.5
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.33.0
+fakeredis==2.35.0
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -28,7 +28,7 @@ libcst==1.8.6
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.2
+numpy==2.4.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -36,13 +36,13 @@ packaging==26.0
     # via
     #   black
     #   pytest
-pandas==3.0.0
+pandas==3.0.2
     # via -r requirements/coverage.in
 pathspec==1.0.4
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.9.1
+platformdirs==4.9.6
     # via black
 pluggy==1.6.0
     # via
@@ -50,16 +50,17 @@ pluggy==1.6.0
     #   pytest-cov
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via -r requirements/coverage.in
-pygments==2.19.2
+pygments==2.20.0
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/test.in
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==7.0.0
+    #   syrupy
+pytest-cov==7.1.0
     # via -r requirements/coverage.in
 pytest-xdist==3.8.0
     # via -r requirements/test.in
@@ -69,11 +70,11 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytokens==0.4.1
     # via black
-pytz==2025.2
+pytz==2026.1.post1
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.1.1
+redis==7.4.0
     # via fakeredis
 six==1.17.0
     # via python-dateutil
@@ -81,6 +82,8 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/pyproject.toml)
+syrupy==5.1.0
+    # via -r requirements/test.in
 typing-extensions==4.15.0
     # via -r requirements/coverage.in
 watchdog==6.0.0

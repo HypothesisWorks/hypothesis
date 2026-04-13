@@ -21,8 +21,6 @@ from hypothesis.internal.conjecture import junkdrawer
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
     LazySequenceCopy,
-    NotFound,
-    SelfOrganisingList,
     binary_search,
     endswith,
     ensure_free_stackframes,
@@ -187,6 +185,12 @@ def test_int_list_del():
     assert x == IntList([2])
 
 
+def test_int_list_insert():
+    x = IntList([1, 3])
+    x.insert(1, 2)
+    assert x == IntList([1, 2, 3])
+
+
 @pytest.mark.parametrize("n", [0, 1, 30, 70])
 def test_binary_search(n):
     i = binary_search(0, 100, lambda i: i <= n)
@@ -201,28 +205,6 @@ def recur(i):
 
 def test_stack_size_detection():
     recur(100)
-
-
-def test_self_organising_list_raises_not_found_when_none_satisfy():
-    with pytest.raises(NotFound):
-        SelfOrganisingList(range(20)).find(lambda x: False)
-
-
-def test_self_organising_list_moves_to_front():
-    count = 0
-
-    def zero(n):
-        nonlocal count
-        count += 1
-        return n == 0
-
-    x = SelfOrganisingList(range(20))
-
-    assert x.find(zero) == 0
-    assert count == 20
-
-    assert x.find(zero) == 0
-    assert count == 21
 
 
 @given(st.binary(), st.binary())
