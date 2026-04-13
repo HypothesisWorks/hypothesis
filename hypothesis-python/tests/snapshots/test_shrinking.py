@@ -10,31 +10,32 @@
 
 from hypothesis import given, strategies as st
 
+from tests.common.utils import run_test_for_falsifying_example
 from tests.snapshots.conftest import SNAPSHOT_SETTINGS
 
 
-def test_shrunk_list(snapshot, get_output):
+def test_shrunk_list(snapshot):
     @SNAPSHOT_SETTINGS
     @given(xs=st.lists(st.integers(), min_size=1))
     def inner(xs):
         assert sum(xs) <= 1000
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_shrunk_string(snapshot, get_output):
+def test_shrunk_string(snapshot):
     @SNAPSHOT_SETTINGS
     @given(s=st.text(min_size=1))
     def inner(s):
         assert s == s.lower()
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot
 
 
-def test_shrunk_float(snapshot, get_output):
+def test_shrunk_float(snapshot):
     @SNAPSHOT_SETTINGS
     @given(x=st.floats(min_value=0, max_value=1))
     def inner(x):
         assert x <= 0.5
 
-    assert get_output(inner) == snapshot
+    assert run_test_for_falsifying_example(inner) == snapshot

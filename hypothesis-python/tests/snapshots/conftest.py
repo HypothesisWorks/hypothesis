@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
-
 from hypothesis import Phase, settings
 
 SNAPSHOT_SETTINGS = settings(
@@ -25,13 +23,3 @@ EXPLAIN_SETTINGS = settings(
     derandomize=True,
     database=None,
 )
-
-
-@pytest.fixture()
-def get_output():
-    def _get_output(test_fn):
-        with pytest.raises(AssertionError) as err:
-            test_fn()
-        return "\n".join(err.value.__notes__).strip()
-
-    return _get_output

@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.151.12:
+
+---------------------
+6.151.12 - 2026-04-08
+---------------------
+
+This release improves |Phase.explain| output by excluding pytest-related :pypi:`syrupy` files as a possible source of variation.
+
 .. _v6.151.11:
 
 ---------------------
