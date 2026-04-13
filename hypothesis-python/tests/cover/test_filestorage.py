@@ -91,7 +91,7 @@ def test_writes_gitignore_to_new_storage_dir(tmp_path, set_home_dir):
     assert (home_dir / ".gitignore").exists()
 
     status = subprocess.check_output(
-        ["git", "status", "--porcelain"], cwd=tmp_path, text=True
+        ["git", "status", "--porcelain"], cwd=tmp_path, encoding="utf-8"
     )
     assert home_dir.name not in status
 
