@@ -66,7 +66,7 @@ def _gitignore_storage_dir_script(*, home_dir=None):
 
         @given(st.integers())
         def f(n):
-            # fail to guarantee we write a file to .hypothesis/examples
+            # fail, in order to guarantee we write a file to .hypothesis/examples
             raise ValueError()
 
         try:
