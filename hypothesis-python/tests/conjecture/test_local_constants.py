@@ -15,6 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.configuration import StorageDirectory
 from hypothesis.internal.conjecture import providers
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.conjecture.providers import CONSTANTS_CACHE
@@ -85,7 +86,9 @@ def test_actual_collection(monkeypatch, tmp_path):
     # Reset to a guaranteed-empty storage directory to ensure consistent coverage.
     monkeypatch.setattr(
         "hypothesis.internal.constants_ast.storage_directory",
-        lambda *names, **kwargs: tmp_path.joinpath(*names),
+        lambda *names, **kwargs: StorageDirectory(
+            tmp_path.joinpath(*names), home_directory=tmp_path
+        ),
     )
 
     @given(st.integers())
