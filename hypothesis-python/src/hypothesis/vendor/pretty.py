@@ -186,8 +186,7 @@ def _try_inline_lambda(
         except SyntaxError:
             return None
 
-    # Count uses of each parameter in the body
-    use_counts: dict[str, int] = dict.fromkeys(param_names, 0)
+    use_counts = dict.fromkeys(param_names, 0)
     for node in ast.walk(lam.body):
         if isinstance(node, ast.Name) and node.id in use_counts:
             use_counts[node.id] += 1
