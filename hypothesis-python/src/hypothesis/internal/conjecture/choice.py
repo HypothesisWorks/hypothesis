@@ -542,17 +542,14 @@ def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
         constraints = cast(StringConstraints, constraints)
         if len(choice) < constraints["min_size"]:
             return False
-        if (
-            constraints["max_size"] is not None
-            and len(choice) > constraints["max_size"]
-        ):
+        if len(choice) > constraints["max_size"]:
             return False
         return all(ord(c) in constraints["intervals"] for c in choice)
     elif isinstance(choice, bytes):
         constraints = cast(BytesConstraints, constraints)
         if len(choice) < constraints["min_size"]:
             return False
-        return constraints["max_size"] is None or len(choice) <= constraints["max_size"]
+        return len(choice) <= constraints["max_size"]
     elif isinstance(choice, bool):
         constraints = cast(BooleanConstraints, constraints)
         if constraints["p"] <= 0:
