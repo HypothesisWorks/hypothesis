@@ -70,9 +70,10 @@ Speaking of, here's the percentage of time a test spends in Hypothesis, vs its a
 
 We see a bimodal distribution. Tests with low percentage of time spent in Hypothesis run the full spectrum of total runtime, as do tests with high percentage of time spent in Hypothesis. Tests with middling time spent in Hypothesis rarely have high total runtime.
 
-This makes intuitive sense to me: when there are only two factors to runtime (test runtime and Hypothesis runtime), if either factor gets into a bad performance case, that factor dominate the runtime almost no matter how long the other factor takes.
+This makes intuitive sense to me: when there are only two factors to runtime (test runtime and Hypothesis runtime), if either factor gets into a bad performance case, that factor will dominate the runtime almost no matter how long the other factor takes.
 
-There are many more interesting relationships we can't go through in this blog post. If you're interested, I encourage you to check out the dataset.
+There are many more interesting relationships we can't go through in this blog post. If you're interested, I encourage you to check out the dataset and poke around on your own!
+
 # Conclusion
 
 Hypothesis has been lucky enough to [be the subject of many research papers](https://hypothesis.readthedocs.io/en/latest/usage.html#research-papers-about-hypothesis) over the years. Zac, David, and I all have our share of academic experience, and we think that despite this there remains a rich set of research and relationships yet to be discovered in property-based testing.
