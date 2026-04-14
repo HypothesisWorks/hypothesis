@@ -210,9 +210,8 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
 
     source_hash = hashlib.sha1(source_bytes).hexdigest()[:16]
     # separate cache files for each limit param. see discussion in pull/4398
-    cache_p = storage_directory("constants") / (
-        source_hash + ("" if limit else "_nolimit")
-    )
+    cache_dir = storage_directory("constants")
+    cache_p = cache_dir.path / (source_hash + ("" if limit else "_nolimit"))
     try:
         return _constants_from_source(cache_p.read_bytes(), limit=limit)
     except Exception:
@@ -231,7 +230,7 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
         return Constants()
 
     try:
-        cache_p.parent.mkdir(parents=True, exist_ok=True)
+        cache_dir.create_if_missing()
         cache_p.write_text(
             f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
             # somewhat arbitrary sort order. The cache file doesn't *have* to be

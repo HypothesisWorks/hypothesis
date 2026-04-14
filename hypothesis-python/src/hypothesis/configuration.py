@@ -26,7 +26,35 @@ def set_hypothesis_home_dir(directory: str | Path | None) -> None:
     __hypothesis_home_directory = None if directory is None else Path(directory)
 
 
-def storage_directory(*names: str, intent_to_write: bool = True) -> Path:
+_GITIGNORE_STRING = """\
+# This .gitignore file was automatically created by Hypothesis. Hypothesis gitignores
+# .hypothesis by default, because we generally recommend that .hypothesis not be checked
+# into version control.
+#
+# If you *would* like to check .hypothesis into version control, you should delete this
+# file. Hypothesis will not re-create this .gitignore unless .hypothesis is deleted (and
+# if it does, that's a bug - please report it!)
+
+*
+"""
+
+
+class StorageDirectory:
+    def __init__(self, path: Path, *, home_directory: Path) -> None:
+        self.path = path
+        self.home_directory = home_directory
+
+    def create_if_missing(self) -> None:
+        # create the appropriate directory and files, if necessary.
+
+        existed_before = self.home_directory.exists()
+        self.path.mkdir(parents=True, exist_ok=True)
+        if not existed_before:
+            p = self.home_directory / ".gitignore"
+            p.write_text(_GITIGNORE_STRING, encoding="utf-8")
+
+
+def storage_directory(*names: str, intent_to_write: bool = True) -> StorageDirectory:
     if intent_to_write:
         check_sideeffect_during_initialization(
             "accessing storage for {}", "/".join(names)
@@ -38,7 +66,10 @@ def storage_directory(*names: str, intent_to_write: bool = True) -> Path:
             __hypothesis_home_directory = Path(where)
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = __hypothesis_home_directory_default
-    return __hypothesis_home_directory.joinpath(*names)
+    return StorageDirectory(
+        __hypothesis_home_directory.joinpath(*names),
+        home_directory=__hypothesis_home_directory,
+    )
 
 
 _first_postinit_what = None

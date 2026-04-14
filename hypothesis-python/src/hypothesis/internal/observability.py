@@ -487,8 +487,9 @@ def _deliver_to_file(
     from hypothesis.strategies._internal.utils import to_jsonable
 
     kind = "testcases" if observation.type == "test_case" else "info"
-    fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
-    fname.parent.mkdir(exist_ok=True, parents=True)
+    observed_dir = storage_directory("observed")
+    observed_dir.create_if_missing()
+    observation_p = observed_dir.path / f"{date.today().isoformat()}_{kind}.jsonl"
 
     observation_bytes = (
         json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
@@ -500,8 +501,8 @@ def _deliver_to_file(
     # switch over to a queue if we detect multithreading, but it's tricky to get
     # right.
     with _deliver_to_file_lock:
-        _WROTE_TO.add(fname)
-        with fname.open(mode="a") as f:
+        _WROTE_TO.add(observation_p)
+        with observation_p.open(mode="a") as f:
             f.write(observation_bytes)
 
 
@@ -558,6 +559,6 @@ if (
 
     # Remove files more than a week old, to cap the size on disk
     max_age = (date.today() - timedelta(days=8)).isoformat()
-    for f in storage_directory("observed", intent_to_write=False).glob("*.jsonl"):
-        if f.stem < max_age:  # pragma: no branch
-            f.unlink(missing_ok=True)
+    for p in storage_directory("observed", intent_to_write=False).path.glob("*.jsonl"):
+        if p.stem < max_age:  # pragma: no branch
+            p.unlink(missing_ok=True)
