@@ -380,7 +380,7 @@ pre code {
 }
 
 .article-card-meta__value a {
-  color: inherit;
+  color: var(--link-color);
   text-decoration: none;
 }
 
@@ -431,7 +431,7 @@ pre code {
 }
 
 .article-meta__value a {
-  color: inherit;
+  color: var(--link-color);
   text-decoration: none;
 }
 
