@@ -50,7 +50,7 @@ Unsurprisingly, as the amount of entropy consumed by a test case increases—lab
 
 <img class="article__image" src="{static}/images/corpus_choices_generation.svg" />
 
-However, the same is not true about *execution* time: test cases which consume more entropy tend to take about as long to run as those which consume less.
+However, the relationship is much weaker for *execution* time: test cases which consume more entropy do not take much longer to run as those which consume less.
 
 <img class="article__image" src="{static}/images/corpus_choices_execution.svg" />
 
@@ -78,7 +78,7 @@ There are many more interesting relationships we can't go through in this blog p
 
 Hypothesis has been lucky enough to [be the subject of many research papers](https://hypothesis.readthedocs.io/en/latest/usage.html#research-papers-about-hypothesis) over the years. Zac, David, and I all have our share of academic experience, and we think that despite this there remains a rich set of research and relationships yet to be discovered in property-based testing.
 
-We hope that releasing this dataset will foster not only that academic research, but the industry research that is often done first by practitioners like property-based testing maintainers.
+We hope that releasing this dataset will foster not only that academic research, but also the industry research that is often first done by practitioners like property-based testing maintainers.
 
 If you're a researcher or property-based testing maintainer and want to chat about this dataset, feel free to reach out to me at `orionldevoe@gmail.com`.
 
