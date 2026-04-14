@@ -1,5 +1,5 @@
 ---
-date: 2026-04-06 00:00
+date: 2026-04-14 00:00
 title: The Hypothesis Corpus
 authors: liam
 ---
@@ -8,9 +8,9 @@ authors: liam
   <a href="https://huggingface.co/datasets/HypothesisWorks/Hypothesis-Corpus-2026" class="cta-button">View the dataset</a>
 </div>
 
-Today, we're releasing the Hypothesis Corpus; a comprehensive dataset of 28,928 Hypothesis tests across 1,529 repositories.
+Today, we're releasing the Hypothesis Corpus; a comprehensive dataset of source code and runtime behavior from 28,928 Hypothesis tests across 1,529 repositories.
 
-Hypothesis is the most widely used property-based testing library in the world. This also makes it the largest source of real-world property-based tests anywhere. My goal in building and releasing this dataset is to provide valuable insights to us as Hypothesis developers, to property-based testing researchers, and to property-based testing maintainers across all languages, so we can all work together to make property-based testing better for everyone.
+Hypothesis is the most widely used property-based testing library in the world[^2]. This also makes it the largest source of real-world property-based tests anywhere. My goal in building and releasing this dataset is to provide valuable insights to us as Hypothesis developers, to property-based testing researchers, and to property-based testing maintainers across all languages, so we can all work together to make property-based testing better for everyone.
 
 <img class="article__image" src="{static}/images/corpus_sankey.svg" alt="Sankey diagram of the repository filtering pipeline" />
 
@@ -81,4 +81,5 @@ We hope that releasing this dataset will foster not only that academic research,
 
 If you're a researcher or property-based testing maintainer and want to chat about this dataset, feel free to reach out to me at `orionldevoe@gmail.com`.
 
+[^2]: See e.g. [https://hypothesis.readthedocs.io/en/latest/usage.html](https://hypothesis.readthedocs.io/en/latest/usage.html).
 [^1]: The only reason it's not equal is the very small overhead from `@given` and similar Hypothesis engine scaffolding.
