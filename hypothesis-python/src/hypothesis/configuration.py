@@ -50,9 +50,8 @@ class StorageDirectory:
         existed_before = self.home_directory.exists()
         self.path.mkdir(parents=True, exist_ok=True)
         if not existed_before:
-            gitignore_p = self.home_directory / ".gitignore"
-            if not gitignore_p.exists():
-                gitignore_p.write_text(_GITIGNORE_STRING, encoding="utf-8")
+            p = self.home_directory / ".gitignore"
+            p.write_text(_GITIGNORE_STRING, encoding="utf-8")
 
 
 def storage_directory(*names: str, intent_to_write: bool = True) -> StorageDirectory:

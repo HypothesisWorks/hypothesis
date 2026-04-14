@@ -988,7 +988,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # Trigger warning that we suppressed earlier by intent_to_write=False
         storage_directory(self.path.name)
         # Create the cache directory if it doesn't exist
-        if self._storage_dir is not None:
+        if self._storage_dir is not None:  # pragma: no cover
             self._storage_dir.create_if_missing()
         else:
             self.path.mkdir(exist_ok=True, parents=True)

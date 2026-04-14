@@ -17,6 +17,8 @@ import pytest
 
 from hypothesis import configuration as fs
 
+from tests.common.utils import skipif_emscripten
+
 previous_home_dir = None
 
 
@@ -76,6 +78,7 @@ def _gitignore_storage_dir_script(*, home_dir=None):
         """)
 
 
+@skipif_emscripten
 @pytest.mark.parametrize("set_home_dir", [False, True])
 def test_writes_gitignore_to_new_storage_dir(tmp_path, set_home_dir):
     subprocess.check_call(["git", "init", str(tmp_path)])
@@ -96,6 +99,7 @@ def test_writes_gitignore_to_new_storage_dir(tmp_path, set_home_dir):
     assert home_dir.name not in status
 
 
+@skipif_emscripten
 @pytest.mark.parametrize("set_home_dir", [False, True])
 def test_skips_gitignore_for_existing_storage_dir(tmp_path, set_home_dir):
     home_dir = tmp_path / ("custom_storage_dir" if set_home_dir else ".hypothesis")
