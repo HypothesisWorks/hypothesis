@@ -380,7 +380,7 @@ pre code {
 }
 
 .article-card-meta__value a {
-  color: inherit;
+  color: var(--link-color);
   text-decoration: none;
 }
 
@@ -431,7 +431,7 @@ pre code {
 }
 
 .article-meta__value a {
-  color: inherit;
+  color: var(--link-color);
   text-decoration: none;
 }
 
@@ -490,6 +490,12 @@ pre code {
 
 .article-content a:hover {
   text-decoration: underline;
+}
+
+.article__image {
+  display: block;
+  max-width: 85%;
+  margin: 1.5em auto;
 }
 
 .article-content hr {
