@@ -9,4 +9,3 @@ Principle changes:
   producing a value, we now print the repr (or a pretty-printed version of it).
 * Additionally, in some cases where we would print a complex expression that involved
   a lambda, we are now able to simplify that expression into a more readable one.
-* We strip ``<locals>`` and other invalid syntax from some names.
