@@ -11,7 +11,7 @@
 # name: test_sampled_from_enum_flag
   '''
   Falsifying example: inner(
-      c=test_sampled_from_enum_flag.Color.RED,
+      c=test_sampled_from_enum_flag.<locals>.Color.RED,
   )
   '''
 # ---

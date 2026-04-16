@@ -20,8 +20,7 @@ def _try_inline_lambda(func_name, args=(), kwargs=None):
     if kwargs is None:
         kwargs = {}
     p = pretty.RepresentationPrinter()
-    result = pretty._try_inline_lambda(func_name, args, kwargs, p)
-    if result is None:
+    if not pretty._try_inline_lambda(func_name, args, kwargs, p):
         return None
     return p.getvalue()
 

@@ -130,28 +130,28 @@ def _try_inline_lambda(
     args: Sequence[object],
     kwargs: dict[str, object],
     printer: "RepresentationPrinter",
-) -> None | object:
+) -> bool:
     """Try to inline single-use lambda arguments into the body expression.
 
     Given e.g. func_name="lambda b: hashlib.sha256(b).hexdigest()" with
     args=(b'',), returns the printer output for "hashlib.sha256(b'').hexdigest()"
     by substituting the argument repr into the AST.
 
-    Returns None if inlining is not possible (parse failure, multi-use params, etc).
-    Returns a sentinel otherwise (the printer has already been written to).
+    Returns True if inlining succeeded (the printer has been written to),
+    False if inlining is not possible (parse failure, multi-use params, etc).
     """
     try:
         tree = ast.parse(func_name, mode="eval")
-    except SyntaxError:
-        return None
+    except Exception:
+        return False
     lam = tree.body
     if not isinstance(lam, ast.Lambda):
-        return None
+        return False
 
     # Build param name -> argument repr mapping, matching Python call semantics
     params = lam.args
     if params.vararg or params.kwonlyargs or params.kw_defaults or params.kwarg:
-        return None
+        return False
 
     param_names = [p.arg for p in params.args]
     # params.defaults are right-aligned: if there are 3 params and 1 default,
@@ -164,9 +164,9 @@ def _try_inline_lambda(
     # Bail if there are more positional args than parameters, or if any
     # kwarg doesn't match a parameter name — these can't be inlined.
     if len(args) > len(param_names):
-        return None
+        return False
     if any(k not in param_names for k in kwargs):
-        return None
+        return False
 
     arg_reprs: dict[str, str] = {}
     for i, name in enumerate(param_names):
@@ -177,14 +177,14 @@ def _try_inline_lambda(
         elif name in has_default:
             pass  # not passed, will use its default — just skip
         else:
-            return None
+            return False
 
     # Bail if any repr is not valid Python (e.g. "HypothesisRandom(generated data)")
     for repr_str in arg_reprs.values():
         try:
             ast.parse(repr_str, mode="eval")
-        except SyntaxError:
-            return None
+        except Exception:
+            return False
 
     use_counts = dict.fromkeys(param_names, 0)
     for node in ast.walk(lam.body):
@@ -193,7 +193,7 @@ def _try_inline_lambda(
 
     # Bail if any parameter is used more than once (avoid duplicating expressions)
     if any(count > 1 for count in use_counts.values()):
-        return None
+        return False
 
     # Substitute argument reprs into the body AST
     class _Inliner(ast.NodeTransformer):
@@ -211,7 +211,7 @@ def _try_inline_lambda(
     try:
         result = ast.unparse(new_body)
     except Exception:
-        return None
+        return False
 
     printer.text(result)
     return True
@@ -576,7 +576,7 @@ class RepresentationPrinter:
             )
             if not has_comments:
                 inlined = _try_inline_lambda(func_name, args, kwargs, self)
-                if inlined is not None:
+                if inlined:
                     return
             func_name = f"({func_name})"
         self.text(func_name)
@@ -747,7 +747,7 @@ def _seq_pprinter_factory(start: str, end: str, basetype: type) -> PrettyPrintFu
 def get_class_name(cls: type[object]) -> str:
     class_name = _safe_getattr(cls, "__qualname__", cls.__name__)
     assert isinstance(class_name, str)
-    return class_name.replace(".<locals>.", ".")
+    return class_name
 
 
 def _set_pprinter_factory(
