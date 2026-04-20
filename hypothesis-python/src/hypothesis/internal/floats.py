@@ -87,23 +87,22 @@ def int_to_float(value: int, width: int = 64) -> float:
 
 
 def next_up(value: float, width: int = 64) -> float:
-    """Return the first float larger than finite `val` - IEEE 754's `nextUp`.
-
-    From https://stackoverflow.com/a/10426033, with thanks to Mark Dickinson.
-    """
+    """Return the first float larger than finite `val` - IEEE 754's `nextUp`."""
     assert isinstance(value, float), f"{value!r} of type {type(value)}"
-    if math.isnan(value) or (math.isinf(value) and value > 0):
-        return value
+    # We order -0.0 before +0.0, so next_up(-0.0) is +0.0 rather than the
+    # smallest positive subnormal per strict IEEE 754.
     if value == 0.0 and is_negative(value):
         return 0.0
+    if width == 64:
+        return math.nextafter(value, math.inf)
+    # math.nextafter works at 64-bit precision only; for narrower widths we
+    # step through the bit representation at that width directly.
+    if math.isnan(value) or (math.isinf(value) and value > 0):
+        return value
     fmt_int, fmt_flt = STRUCT_FORMATS[width]
-    # Note: n is signed; float_to_int returns unsigned
     fmt_int_signed = TO_SIGNED_FORMAT[fmt_int]
     n = reinterpret_bits(value, fmt_flt, fmt_int_signed)
-    if n >= 0:
-        n += 1
-    else:
-        n -= 1
+    n = n + 1 if n >= 0 else n - 1
     return reinterpret_bits(n, fmt_int_signed, fmt_flt)
 
 

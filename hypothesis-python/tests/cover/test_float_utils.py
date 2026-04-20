@@ -18,6 +18,8 @@ from hypothesis.internal.conjecture.choice import choice_equal, choice_permitted
 from hypothesis.internal.conjecture.provider_conformance import float_constraints
 from hypothesis.internal.floats import (
     count_between_floats,
+    float_to_int,
+    is_negative,
     make_float_clamper,
     next_down,
     next_up,
@@ -29,6 +31,33 @@ from tests.conjecture.common import float_constr
 
 def test_can_handle_straddling_zero():
     assert count_between_floats(-0.0, 0.0) == 2
+
+
+@given(st.floats())
+def test_next_up_matches_math_nextafter(value):
+    # next_up agrees with math.nextafter(x, inf) everywhere except -0.0, where
+    # we preserve sign-aware ordering by returning +0.0 rather than the
+    # smallest positive subnormal.
+    result = next_up(value)
+    if math.isnan(value):
+        assert math.isnan(result)
+    elif value == 0.0 and is_negative(value):
+        assert result == 0.0
+        assert not is_negative(result)
+    else:
+        assert float_to_int(result) == float_to_int(math.nextafter(value, math.inf))
+
+
+@given(st.floats())
+def test_next_down_matches_math_nextafter(value):
+    result = next_down(value)
+    if math.isnan(value):
+        assert math.isnan(result)
+    elif value == 0.0 and not is_negative(value):
+        assert result == 0.0
+        assert is_negative(result)
+    else:
+        assert float_to_int(result) == float_to_int(math.nextafter(value, -math.inf))
 
 
 @pytest.mark.parametrize(
