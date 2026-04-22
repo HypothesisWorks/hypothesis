@@ -192,3 +192,20 @@ def test_map_to_bytes_prints_as_repr(snapshot):
         raise AssertionError
 
     assert _get_output(inner) == snapshot
+
+
+def test_invalid_call_syntax_falls_back_to_repr(snapshot):
+    # When the call-style repr (e.g. "a b()") is invalid Python syntax but
+    # repr(obj) is valid, we should fall back to using repr(obj).
+    _BadName = type(
+        "a b",
+        (),
+        {"__repr__": lambda self: "'hello world'"},
+    )
+
+    @given(x=st.builds(_BadName))
+    @settings(phases=[Phase.generate, Phase.shrink], print_blob=False)
+    def inner(x):
+        raise AssertionError
+
+    assert _get_output(inner) == snapshot

@@ -1,8 +1,15 @@
 # serializer version: 1
+# name: test_invalid_call_syntax_falls_back_to_repr
+  '''
+  Falsifying example: inner(
+      x='hello world',
+  )
+  '''
+# ---
 # name: test_map_to_bytes_prints_as_repr
   '''
   Falsifying example: inner(
-      b=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+      b=hashlib.sha256(b'').digest(),
   )
   '''
 # ---

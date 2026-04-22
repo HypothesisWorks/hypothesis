@@ -30,49 +30,49 @@
 # name: test_always_failing[builds_lambda_mixed_args]
   '''
   Falsifying example: inner(
-      v0=(lambda x, y, z: Opaque())(0, y='', z=False),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_positional_args]
   '''
   Falsifying example: inner(
-      v0=(lambda x, y: Opaque())(0, ''),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_returning_object]
   '''
   Falsifying example: inner(
-      v0=(lambda x, y: Pair(x, y))(x=0, y=''),
+      v0=Pair(0, ''),
   )
   '''
 # ---
 # name: test_always_failing[builds_lambda_with_defaults]
   '''
   Falsifying example: inner(
-      v0=(lambda a, b='hello': Opaque())(a=0),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_multi_arg_lambda]
   '''
   Falsifying example: inner(
-      v0=(lambda x, y: Opaque())(x=0, y=''),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_no_arg_lambda]
   '''
   Falsifying example: inner(
-      v0=(lambda: Opaque())(),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[builds_single_arg_lambda]
   '''
   Falsifying example: inner(
-      v0=(lambda n: Opaque())(n=0),
+      v0=Opaque(),
   )
   '''
 # ---
@@ -86,7 +86,7 @@
 # name: test_always_failing[complex_numbers]
   '''
   Falsifying example: inner(
-      v0=complex(0.0, 0.0),
+      v0=0j,
   )
   '''
 # ---
@@ -121,7 +121,7 @@
 # name: test_always_failing[dictionaries]
   '''
   Falsifying example: inner(
-      v0=dict([]),
+      v0={},
   )
   '''
 # ---
@@ -177,14 +177,14 @@
 # name: test_always_failing[from_type]
   '''
   Falsifying example: inner(
-      v0=IPv4Address(b'\x00\x00\x00\x00'),
+      v0=IPv4Address('0.0.0.0'),
   )
   '''
 # ---
 # name: test_always_failing[frozensets]
   '''
   Falsifying example: inner(
-      v0=frozenset([]),
+      v0=frozenset(),
   )
   '''
 # ---
@@ -205,14 +205,14 @@
 # name: test_always_failing[ip_addresses]
   '''
   Falsifying example: inner(
-      v0=IPv4Address(b'\x00\x00\x00\x00'),
+      v0=IPv4Address('0.0.0.0'),
   )
   '''
 # ---
 # name: test_always_failing[iterables]
   '''
   Falsifying example: inner(
-      v0=PrettyIter([]),
+      v0=iter([]),
   )
   '''
 # ---
@@ -244,21 +244,21 @@
 # name: test_always_failing[map_chained_lambdas_opaque]
   '''
   Falsifying example: inner(
-      v0=(lambda n: Opaque())(0),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[map_lambda_opaque_result]
   '''
   Falsifying example: inner(
-      v0=(lambda n: Opaque())(0),
+      v0=Opaque(),
   )
   '''
 # ---
 # name: test_always_failing[map_to_bytes]
   '''
   Falsifying example: inner(
-      v0=b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+      v0=hashlib.sha256(b'').digest(),
   )
   '''
 # ---
@@ -273,7 +273,7 @@
   '''
   Falsifying example: inner(
       v0=[],
-      v1=dict([]),
+      v1={},
       v2=10,
   )
   '''
@@ -323,7 +323,7 @@
 # name: test_always_failing[sets]
   '''
   Falsifying example: inner(
-      v0=set([]),
+      v0=set(),
   )
   '''
 # ---
@@ -380,7 +380,7 @@
 # name: test_always_failing[uuids]
   '''
   Falsifying example: inner(
-      v0=(lambda r: UUID(version=version, int=r.getrandbits(128)))(Random(0)),
+      v0=UUID('e3e70682-c209-4cac-629f-6fbed82c07cd'),
   )
   '''
 # ---
