@@ -1,6 +1,6 @@
-# Engine changes need to be approved by Zac-HD, as per
+# Engine changes need to be approved by Zac-HD or DRMacIver, as per
 # https://github.com/HypothesisWorks/hypothesis/blob/master/guides/review.rst#engine-changes
-/hypothesis-python/src/hypothesis/internal/conjecture/ @Zac-HD @Liam-DeVoe
+/hypothesis-python/src/hypothesis/internal/conjecture/ @Zac-HD @Liam-DeVoe @DRMacIver
 
 # Changes to the paper also need to be approved by DRMacIver or Zac, as authors
 /paper.md @DRMacIver @Zac-HD
