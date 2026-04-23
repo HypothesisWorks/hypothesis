@@ -92,8 +92,9 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
 
 def _choice_node_for_value(value: ChoiceT) -> ChoiceNode:
     """Return a ``ChoiceNode`` wrapping a primitive value, with permissive
-    constraints that accept the value. Used by ``widen_to_annotated_span``
-    to synthesise a single choice from a span's annotation."""
+    constraints that accept the value. Used by
+    ``widen_to_span_with_generated_primitive_value`` to synthesise a single
+    choice from a span's recorded generated primitive value."""
     if type(value) is bool:
         return ChoiceNode(
             type="boolean", value=value, constraints={"p": 0.5}, was_forced=False
@@ -140,7 +141,7 @@ def _choice_node_for_value(value: ChoiceT) -> ChoiceNode:
             constraints={"min_size": 0, "max_size": len(value)},
             was_forced=False,
         )
-    raise AssertionError(f"non-primitive annotation {value!r} of type {type(value)}")
+    raise AssertionError(f"non-primitive value {value!r} of type {type(value)}")
 
 
 @dataclass(slots=True, frozen=False)
@@ -375,7 +376,7 @@ class Shrinker:
             ShrinkPass(self.redistribute_numeric_pairs),
             ShrinkPass(self.lower_integers_together),
             ShrinkPass(self.lower_duplicated_characters),
-            ShrinkPass(self.widen_to_annotated_span),
+            ShrinkPass(self.widen_to_span_with_generated_primitive_value),
         ]
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
@@ -1563,16 +1564,16 @@ class Shrinker:
             ),
         )
 
-    def widen_to_annotated_span(self, chooser):
+    def widen_to_span_with_generated_primitive_value(self, chooser):
         """Try to navigate away from a specific ``one_of`` alternative into
-        an earlier one by using the span's annotation.
+        an earlier one by using the span's recorded generated primitive value.
 
         If we have an integer choice with ``min_value == 0`` currently set to
-        a non-zero value, and it is immediately followed by a span annotated
-        with a primitive value, we replace the integer with ``0`` and the
-        span's choices with a single choice holding the annotated value. The
-        engine then re-runs the test against the earlier alternative with
-        that value.
+        a non-zero value, and it is immediately followed by a span whose
+        corresponding strategy produced a primitive value, we replace the
+        integer with ``0`` and the span's choices with a single choice
+        holding that primitive value. The engine then re-runs the test
+        against the earlier alternative with that value.
 
         This is useful for ``basic_strategy | specific_strategy``, where
         the specific branch produced a primitive that the basic branch could
@@ -1595,10 +1596,11 @@ class Shrinker:
 
         candidate_spans = self.spans_starting_at[following]
         span_idx = chooser.choose(
-            candidate_spans, lambda i: self.spans[i].annotation is not None
+            candidate_spans,
+            lambda i: self.spans[i].generated_primitive_value is not None,
         )
         span = self.spans[span_idx]
-        replacement = _choice_node_for_value(span.annotation)
+        replacement = _choice_node_for_value(span.generated_primitive_value)
 
         self.consider_new_nodes(
             self.nodes[: node.index]

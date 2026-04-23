@@ -144,7 +144,7 @@ def test_widen_text_with_builds():
 
 
 # The tests below show that widening still reaches the minimum when the
-# open strategy carries restrictions, as long as the annotated value
+# open strategy carries restrictions, as long as the specific branch's value
 # respects those restrictions.
 
 

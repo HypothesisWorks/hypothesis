@@ -425,50 +425,67 @@ def test_overruns_at_exactly_max_length():
         (st.just(1.5), 1.5),
     ],
 )
-def test_primitive_strategy_spans_are_annotated(strategy, expected):
+def test_primitive_strategy_spans_record_generated_primitive_value(
+    strategy, expected
+):
     d = ConjectureData(random=Random(0))
     value = d.draw(strategy)
     d.freeze()
     assert value == expected
     strategy_span = next(ex for ex in d.spans if ex.depth == 1)
-    assert strategy_span.annotation == expected
+    assert strategy_span.generated_primitive_value == expected
 
 
-def test_non_primitive_strategy_spans_are_not_annotated():
+def test_non_primitive_strategy_spans_do_not_record_a_value():
     d = ConjectureData(random=Random(0))
     d.draw(st.just((1, "x")))
     d.freeze()
-    # A just() returning a tuple is not a primitive value - no annotation.
+    # A just() returning a tuple is not a primitive value - no value recorded.
     outer = next(ex for ex in d.spans if ex.depth == 1)
-    assert outer.annotation is None
+    assert outer.generated_primitive_value is None
 
 
-def test_top_level_span_is_not_annotated():
+def test_top_level_span_does_not_record_a_value():
     d = ConjectureData(random=Random(0))
     d.draw(st.just(0))
     d.freeze()
     # The top-level span wraps the whole test run, not a single strategy.
-    assert d.spans[0].annotation is None
+    assert d.spans[0].generated_primitive_value is None
 
 
-def test_manual_span_annotation():
-    # Test the low-level annotate_current_span API directly.
+def test_manual_record_value_for_span():
+    # Test the low-level record_value_for_span API directly.
     d = ConjectureData(random=Random(0))
     d.start_span(1)
-    d._ConjectureData__span_record.annotate_current_span("outer")
+    d._ConjectureData__span_record.record_value_for_span("outer")
     d.start_span(2)
-    d._ConjectureData__span_record.annotate_current_span(42)
+    d._ConjectureData__span_record.record_value_for_span(42)
     d.stop_span()
     d.stop_span()
     d.freeze()
-    annotations = {ex.label: ex.annotation for ex in d.spans if ex.label in (1, 2)}
-    assert annotations == {1: "outer", 2: 42}
+    values = {
+        ex.label: ex.generated_primitive_value
+        for ex in d.spans
+        if ex.label in (1, 2)
+    }
+    assert values == {1: "outer", 2: 42}
 
 
-def test_span_without_annotation_returns_none():
+def test_span_without_value_returns_none():
     d = ConjectureData(random=Random(0))
     d.start_span(1)
     d.stop_span()
     d.freeze()
     span = next(ex for ex in d.spans if ex.label == 1)
-    assert span.annotation is None
+    assert span.generated_primitive_value is None
+
+
+def test_record_value_for_span_ignores_non_primitive():
+    # record_value_for_span only records primitive choice-node types.
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d._ConjectureData__span_record.record_value_for_span([1, 2, 3])
+    d.stop_span()
+    d.freeze()
+    span = next(ex for ex in d.spans if ex.label == 1)
+    assert span.generated_primitive_value is None
