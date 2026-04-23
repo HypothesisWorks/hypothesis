@@ -47,9 +47,7 @@ def test_widen_text_with_sampled_from():
     assert (
         minimal(
             text()
-            | sampled_from(
-                ["quetzalcoatl-1", "quetzalcoatl-2", "quetzalcoatl-3"]
-            ),
+            | sampled_from(["quetzalcoatl-1", "quetzalcoatl-2", "quetzalcoatl-3"]),
             lambda s: "quetzalcoatl" in s,
         )
         == "quetzalcoatl"
@@ -173,9 +171,7 @@ def test_widen_text_with_min_size():
 
 def test_widen_text_with_max_size():
     # A 2-char distinctive sequence inside a 5-char cap - very rare.
-    assert (
-        minimal(text(max_size=5) | just("xyz"), lambda s: "xy" in s) == "xy"
-    )
+    assert minimal(text(max_size=5) | just("xyz"), lambda s: "xy" in s) == "xy"
 
 
 def test_widen_integers_with_min_value():

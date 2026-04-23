@@ -25,6 +25,7 @@ from hypothesis.internal.conjecture.data import (
     structural_coverage,
 )
 from hypothesis.strategies import SearchStrategy
+
 from tests.conjecture.common import buffer_size_limit, interesting_origin
 
 
@@ -425,9 +426,7 @@ def test_overruns_at_exactly_max_length():
         (st.just(1.5), 1.5),
     ],
 )
-def test_primitive_strategy_spans_record_generated_primitive_value(
-    strategy, expected
-):
+def test_primitive_strategy_spans_record_generated_primitive_value(strategy, expected):
     d = ConjectureData(random=Random(0))
     value = d.draw(strategy)
     d.freeze()
@@ -464,9 +463,7 @@ def test_manual_record_value_for_span():
     d.stop_span()
     d.freeze()
     values = {
-        ex.label: ex.generated_primitive_value
-        for ex in d.spans
-        if ex.label in (1, 2)
+        ex.label: ex.generated_primitive_value for ex in d.spans if ex.label in (1, 2)
     }
     assert values == {1: "outer", 2: 42}
 
