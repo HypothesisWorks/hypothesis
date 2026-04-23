@@ -49,8 +49,12 @@ def test_does_not_resolve_nonscalar_types():
 
 @pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
 def test_resolves_and_varies_numpy_scalar_type(typ):
-    # Check that we find an instance that is not equal to the default
-    x = find_any(st.from_type(typ), lambda x: x != type(x)())
+    if issubclass(typ, (np.datetime64, np.timedelta64)):
+        # numpy deprecated calling these types with no unit (the "generic" unit),
+        # and cross-unit comparisons can also fail, so use np.isnat instead.
+        x = find_any(st.from_type(typ), lambda x: not np.isnat(x))
+    else:
+        x = find_any(st.from_type(typ), lambda x: x != type(x)())
     assert isinstance(x, typ)
 
 
