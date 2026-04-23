@@ -52,10 +52,10 @@ def test_just_strategy_uses_repr():
     assert repr(st.just(WeirdRepr())) == f"just({WeirdRepr()!r})"
 
 
-def test_just_strategy_does_not_draw():
+def test_just_strategy_does_not_draw_for_non_primitive_values():
     data = ConjectureData.for_choices([])
-    s = st.just("hello")
-    assert s.do_draw(data) == "hello"
+    s = st.just([1, 2, 3])
+    assert s.do_draw(data) == [1, 2, 3]
 
 
 def test_none_strategy_does_not_draw():

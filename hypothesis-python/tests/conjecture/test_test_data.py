@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import itertools
+from random import Random
 
 import pytest
 
@@ -24,7 +25,6 @@ from hypothesis.internal.conjecture.data import (
     structural_coverage,
 )
 from hypothesis.strategies import SearchStrategy
-
 from tests.conjecture.common import buffer_size_limit, interesting_origin
 
 
@@ -162,7 +162,7 @@ def test_example_depth_marking():
 
 
 def test_has_examples_even_when_empty():
-    d = ConjectureData.for_choices([])
+    d = ConjectureData.for_choices([False])
     d.draw(st.just(False))
     d.freeze()
     assert d.spans
@@ -413,3 +413,62 @@ def test_overruns_at_exactly_max_length():
         except StopTest:
             pass
         assert data.status is Status.OVERRUN
+
+
+@pytest.mark.parametrize(
+    "strategy, expected",
+    [
+        (st.just(0), 0),
+        (st.just(True), True),
+        (st.just("hello"), "hello"),
+        (st.just(b"abc"), b"abc"),
+        (st.just(1.5), 1.5),
+    ],
+)
+def test_primitive_strategy_spans_are_annotated(strategy, expected):
+    d = ConjectureData(random=Random(0))
+    value = d.draw(strategy)
+    d.freeze()
+    assert value == expected
+    strategy_span = next(ex for ex in d.spans if ex.depth == 1)
+    assert strategy_span.annotation == expected
+
+
+def test_non_primitive_strategy_spans_are_not_annotated():
+    d = ConjectureData(random=Random(0))
+    d.draw(st.just((1, "x")))
+    d.freeze()
+    # A just() returning a tuple is not a primitive value - no annotation.
+    outer = next(ex for ex in d.spans if ex.depth == 1)
+    assert outer.annotation is None
+
+
+def test_top_level_span_is_not_annotated():
+    d = ConjectureData(random=Random(0))
+    d.draw(st.just(0))
+    d.freeze()
+    # The top-level span wraps the whole test run, not a single strategy.
+    assert d.spans[0].annotation is None
+
+
+def test_manual_span_annotation():
+    # Test the low-level annotate_current_span API directly.
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d._ConjectureData__span_record.annotate_current_span("outer")
+    d.start_span(2)
+    d._ConjectureData__span_record.annotate_current_span(42)
+    d.stop_span()
+    d.stop_span()
+    d.freeze()
+    annotations = {ex.label: ex.annotation for ex in d.spans if ex.label in (1, 2)}
+    assert annotations == {1: "outer", 2: 42}
+
+
+def test_span_without_annotation_returns_none():
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d.stop_span()
+    d.freeze()
+    span = next(ex for ex in d.spans if ex.label == 1)
+    assert span.annotation is None

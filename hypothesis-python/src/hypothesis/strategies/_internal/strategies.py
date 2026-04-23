@@ -719,6 +719,12 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         if result is filter_not_satisfied:
             data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
         assert not isinstance(result, UniqueIdentifier)
+        # one_of drives the choice of alternative through this class with
+        # strategy objects as the elements; maybe_add_choice_node_for will
+        # no-op on those. For primitive-valued sampled_from / just calls it
+        # records a forced marker choice so that the span is non-empty and
+        # annotated for the shrinker's widening pass.
+        data.maybe_add_choice_node_for(result)
         return result
 
     def get_element(self, i: int) -> Ex | UniqueIdentifier:
