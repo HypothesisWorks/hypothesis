@@ -17,7 +17,6 @@ from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.vendor import pretty
 
-
 # --- AST for printing programs ----------------------------------------
 
 
