@@ -339,105 +339,87 @@ def test_falsifying_example_shows_label_as_comment():
 # regenerating the snapshot.
 
 
-def _falsifying_output(test_fn):
-    with pytest.raises(AssertionError) as err:
-        test_fn()
-    return "\n".join(err.value.__notes__).strip()
+def snapshot_given(*strategies, **kwarg_strategies):
+    """Decorator that turns the wrapped body into a pytest test: runs it as
+    a Hypothesis property test that always fails, and asserts the captured
+    falsifying-example output equals the ``snapshot`` fixture value."""
+    import functools
+    import inspect
 
+    def decorator(body):
+        @functools.wraps(body)
+        def prop_body(*args, **kwargs):
+            body(*args, **kwargs)
+            raise AssertionError
 
-def test_snapshot_no_draws(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_single_draw(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(st.integers(min_value=0, max_value=10))
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_multiple_unlabeled_draws(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(st.integers(min_value=0, max_value=10))
-        data.draw(st.text(max_size=3))
-        data.draw(st.booleans())
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_single_labeled_draw(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(st.integers(min_value=0, max_value=10), label="Cool thing")
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_all_labeled_draws(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(st.integers(min_value=0, max_value=10), label="first number")
-        data.draw(st.integers(min_value=0, max_value=10), label="second number")
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_mixed_labeled_and_unlabeled(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(st.integers(min_value=0, max_value=10))
-        data.draw(st.text(max_size=3), label="middle")
-        data.draw(st.booleans())
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
-
-
-def test_snapshot_nested_value(snapshot):
-    @given(st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(data):
-        data.draw(
-            st.lists(st.integers(min_value=0, max_value=5), min_size=1),
-            label="a list",
+        prop_body.__signature__ = inspect.signature(body)
+        prop_test = given(*strategies, **kwarg_strategies)(
+            settings(print_blob=False, derandomize=True)(prop_body)
         )
-        raise AssertionError
 
-    assert _falsifying_output(inner) == snapshot
+        @functools.wraps(body)
+        def test_fn(snapshot):
+            with pytest.raises(AssertionError) as err:
+                prop_test()
+            assert "\n".join(err.value.__notes__).strip() == snapshot
+
+        test_fn.__signature__ = inspect.Signature(
+            [inspect.Parameter("snapshot", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+        )
+        return test_fn
+
+    return decorator
 
 
-def test_snapshot_alongside_other_args(snapshot):
-    @given(st.integers(min_value=0, max_value=10), st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(n, data):
-        data.draw(st.integers(min_value=0, max_value=10), label="inner draw")
-        raise AssertionError
-
-    assert _falsifying_output(inner) == snapshot
+@snapshot_given(st.data())
+def test_snapshot_no_draws(data):
+    pass
 
 
-def test_snapshot_two_data_args(snapshot):
-    @given(st.data(), st.data())
-    @settings(print_blob=False, derandomize=True)
-    def inner(d1, d2):
-        d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
-        d2.draw(st.integers(min_value=0, max_value=10))
-        raise AssertionError
+@snapshot_given(st.data())
+def test_snapshot_single_draw(data):
+    data.draw(st.integers(min_value=0, max_value=10))
 
-    assert _falsifying_output(inner) == snapshot
+
+@snapshot_given(st.data())
+def test_snapshot_multiple_unlabeled_draws(data):
+    data.draw(st.integers(min_value=0, max_value=10))
+    data.draw(st.text(max_size=3))
+    data.draw(st.booleans())
+
+
+@snapshot_given(st.data())
+def test_snapshot_single_labeled_draw(data):
+    data.draw(st.integers(min_value=0, max_value=10), label="Cool thing")
+
+
+@snapshot_given(st.data())
+def test_snapshot_all_labeled_draws(data):
+    data.draw(st.integers(min_value=0, max_value=10), label="first number")
+    data.draw(st.integers(min_value=0, max_value=10), label="second number")
+
+
+@snapshot_given(st.data())
+def test_snapshot_mixed_labeled_and_unlabeled(data):
+    data.draw(st.integers(min_value=0, max_value=10))
+    data.draw(st.text(max_size=3), label="middle")
+    data.draw(st.booleans())
+
+
+@snapshot_given(st.data())
+def test_snapshot_nested_value(data):
+    data.draw(
+        st.lists(st.integers(min_value=0, max_value=5), min_size=1),
+        label="a list",
+    )
+
+
+@snapshot_given(st.integers(min_value=0, max_value=10), st.data())
+def test_snapshot_alongside_other_args(n, data):
+    data.draw(st.integers(min_value=0, max_value=10), label="inner draw")
+
+
+@snapshot_given(st.data(), st.data())
+def test_snapshot_two_data_args(d1, d2):
+    d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
+    d2.draw(st.integers(min_value=0, max_value=10))

@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test_snapshot_all_labeled_draws
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_all_labeled_draws(
       data=DataObject(draws=[
           # first number
           0,
@@ -13,7 +13,7 @@
 # ---
 # name: test_snapshot_alongside_other_args
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_alongside_other_args(
       n=0,  # or any other generated value
       data=DataObject(draws=[
           # inner draw
@@ -24,7 +24,7 @@
 # ---
 # name: test_snapshot_mixed_labeled_and_unlabeled
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_mixed_labeled_and_unlabeled(
       data=DataObject(draws=[
           0,
           # middle
@@ -36,7 +36,7 @@
 # ---
 # name: test_snapshot_multiple_unlabeled_draws
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_multiple_unlabeled_draws(
       data=DataObject(draws=[
           0,
           '',
@@ -47,7 +47,7 @@
 # ---
 # name: test_snapshot_nested_value
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_nested_value(
       data=DataObject(draws=[
           # a list
           [0],
@@ -57,14 +57,14 @@
 # ---
 # name: test_snapshot_no_draws
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_no_draws(
       data=DataObject(draws=[]),
   )
   '''
 # ---
 # name: test_snapshot_single_draw
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_single_draw(
       data=DataObject(draws=[
           0,
       ]),
@@ -73,7 +73,7 @@
 # ---
 # name: test_snapshot_single_labeled_draw
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_single_labeled_draw(
       data=DataObject(draws=[
           # Cool thing
           0,
@@ -83,7 +83,7 @@
 # ---
 # name: test_snapshot_two_data_args
   '''
-  Falsifying example: inner(
+  Falsifying example: test_snapshot_two_data_args(
       d1=DataObject(draws=[]),
       d2=DataObject(draws=[
           # from d1
