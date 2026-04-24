@@ -10,39 +10,11 @@
 
 """Snapshot tests pinning the ``DataObject(draws=[...])`` rendering that
 Hypothesis produces in the falsifying example for ``st.data()``-driven
-tests. See the ``snapshot_given`` helper for the shape of each test."""
+tests."""
 
-import functools
-import inspect
+from hypothesis import strategies as st
 
-from hypothesis import given, strategies as st
-
-from tests.common.utils import run_test_for_falsifying_example
-from tests.snapshots.conftest import EXPLAIN_SETTINGS
-
-
-def snapshot_given(*strategies, **kwarg_strategies):
-    """Decorator that turns the wrapped body into a pytest test: runs it as
-    a Hypothesis property test (always forcing a failure) and asserts that
-    the captured falsifying-example output equals the ``snapshot`` fixture
-    value."""
-
-    def decorator(body):
-        @functools.wraps(body)
-        def prop_body(*args, **kwargs):
-            body(*args, **kwargs)
-
-        prop_body.__signature__ = inspect.signature(body)
-        prop_test = given(*strategies, **kwarg_strategies)(EXPLAIN_SETTINGS(prop_body))
-
-        def test_function(snapshot):
-            assert run_test_for_falsifying_example(prop_test) == snapshot
-
-        test_function.__name__ = body.__name__
-        test_function.__qualname__ = body.__qualname__
-        return test_function
-
-    return decorator
+from tests.snapshots.conftest import snapshot_given
 
 
 @snapshot_given(st.data())
@@ -105,6 +77,14 @@ def test_snapshot_two_data_args(d1, d2):
     d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
     d2.draw(st.integers(min_value=0, max_value=10))
     raise AssertionError
+
+
+@snapshot_given(st.data())
+def test_snapshot_data_from_data(d1):
+    d2 = d1.draw(st.data())
+    n2 = d2.draw(st.integers())
+    n1 = d1.draw(st.integers())
+    assert n1 == n2
 
 
 @snapshot_given(st.data())

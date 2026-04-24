@@ -60,6 +60,18 @@
   )
   '''
 # ---
+# name: test_snapshot_data_from_data
+  '''
+  Falsifying example: test_snapshot_data_from_data(
+      d1=DataObject(draws=[
+          DataObject(draws=[
+          0,  # or any other generated value
+      ]),
+          1,
+      ]),
+  )
+  '''
+# ---
 # name: test_snapshot_mixed_labeled_and_unlabeled
   '''
   Falsifying example: test_snapshot_mixed_labeled_and_unlabeled(
