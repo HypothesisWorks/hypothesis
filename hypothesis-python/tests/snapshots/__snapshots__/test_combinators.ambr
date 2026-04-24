@@ -2,10 +2,11 @@
 # name: test_data_draw
   '''
   Falsifying example: inner(
-      data=data(...),
+      data=DataObject(draws=[
+          0,
+          '',
+      ]),
   )
-  Draw 1: 0
-  Draw 2: ''
   '''
 # ---
 # name: test_sampled_from_enum_flag

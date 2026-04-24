@@ -14,7 +14,7 @@
 # name: test_snapshot_alongside_other_args
   '''
   Falsifying example: test_snapshot_alongside_other_args(
-      n=0,  # or any other generated value
+      n=0,
       data=DataObject(draws=[
           # inner draw
           0,
