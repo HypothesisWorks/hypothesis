@@ -2320,9 +2320,7 @@ class DataObject:
         draws: list | None = None,
     ) -> None:
         if (data is None) == (draws is None):
-            raise InvalidArgument(
-                "Exactly one of `data` or `draws` must be provided."
-            )
+            raise InvalidArgument("Exactly one of `data` or `draws` must be provided.")
         self.count = 0
         self.conjecture_data = data
         self.draws = list(draws) if draws is not None else None

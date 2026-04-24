@@ -44,8 +44,9 @@
 # name: test_reprs_as_created_interactive
   '''
   Falsifying example: inner(
-      data=data(...),
+      data=DataObject(draws=[
+          Bar(10),
+      ]),
   )
-  Draw 1: Bar(10)
   '''
 # ---

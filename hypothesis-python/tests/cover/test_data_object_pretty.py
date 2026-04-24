@@ -82,11 +82,7 @@ def test_repr_pretty_records_subsequent_draws():
     obj.draw(st.integers())
     obj.draw(st.integers())
     assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    1,\n"
-        "    2,\n"
-        "    3,\n"
-        "])"
+        "DataObject(draws=[\n" "    1,\n" "    2,\n" "    3,\n" "])"
     )
 
 
@@ -95,11 +91,7 @@ def test_repr_pretty_single_draw():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.text())
-    assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    'hello',\n"
-        "])"
-    )
+    assert _finalize_and_render(p) == ("DataObject(draws=[\n" "    'hello',\n" "])")
 
 
 def test_repr_pretty_does_not_record_draws_made_before_pretty():
@@ -108,11 +100,7 @@ def test_repr_pretty_does_not_record_draws_made_before_pretty():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    2,\n"
-        "])"
-    )
+    assert _finalize_and_render(p) == ("DataObject(draws=[\n" "    2,\n" "])")
 
 
 def test_repr_pretty_captures_value_at_draw_time_not_finalize_time():
@@ -121,11 +109,7 @@ def test_repr_pretty_captures_value_at_draw_time_not_finalize_time():
     p.pretty(obj)
     drawn = obj.draw(st.lists(st.integers()))
     drawn.append(999)  # mutate after the draw
-    assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    [1, 2],\n"
-        "])"
-    )
+    assert _finalize_and_render(p) == ("DataObject(draws=[\n" "    [1, 2],\n" "])")
 
 
 def test_repr_pretty_uses_pretty_representation_of_draws():
@@ -134,9 +118,7 @@ def test_repr_pretty_uses_pretty_representation_of_draws():
     p.pretty(obj)
     obj.draw(st.dictionaries(st.text(), st.integers()))
     assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    {'b': 1, 'a': 2},\n"
-        "])"
+        "DataObject(draws=[\n" "    {'b': 1, 'a': 2},\n" "])"
     )
 
 
@@ -149,10 +131,7 @@ def test_labeled_draw_renders_comment_on_preceding_line():
     p.pretty(obj)
     obj.draw(st.integers(), label="Cool thing")
     assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    # Cool thing\n"
-        "    42,\n"
-        "])"
+        "DataObject(draws=[\n" "    # Cool thing\n" "    42,\n" "])"
     )
 
 
@@ -164,12 +143,7 @@ def test_labeled_and_unlabeled_draws_mix_correctly():
     obj.draw(st.integers(), label="second")
     obj.draw(st.integers())
     assert _finalize_and_render(p) == (
-        "DataObject(draws=[\n"
-        "    1,\n"
-        "    # second\n"
-        "    2,\n"
-        "    3,\n"
-        "])"
+        "DataObject(draws=[\n" "    1,\n" "    # second\n" "    2,\n" "    3,\n" "])"
     )
 
 
@@ -209,6 +183,15 @@ def test_falsifying_example_shows_data_object_draws():
     assert re.search(_DRAWS_OPEN + r"0,?" + _DRAWS_CLOSE, notes), notes
 
 
+def _draws_section(notes):
+    """Return the text between the first ``DataObject(draws=[`` and its
+    matching ``])`` in ``notes``, so we can assert on draw values without
+    caring about surrounding explain-phase annotations."""
+    m = re.search(r"DataObject\(draws=\[(.*?)\]\)", notes, re.DOTALL)
+    assert m is not None, notes
+    return m.group(1)
+
+
 def test_falsifying_example_shows_multiple_draws_in_order():
     @given(st.data())
     def inner(data):
@@ -217,9 +200,10 @@ def test_falsifying_example_shows_multiple_draws_in_order():
         raise AssertionError
 
     notes = _collect_falsifying_notes(inner)
-    assert re.search(
-        _DRAWS_OPEN + r"0\s*,\s*''\s*,?" + _DRAWS_CLOSE, notes
-    ), notes
+    section = _draws_section(notes)
+    # The two values appear in order; each line may carry an optional
+    # "# or any other generated value" explain-phase annotation.
+    assert re.search(r"\b0\b.*?\n.*?''", section, re.DOTALL), section
 
 
 def test_falsifying_example_shows_list_draw():
@@ -230,7 +214,7 @@ def test_falsifying_example_shows_list_draw():
 
     notes = _collect_falsifying_notes(inner)
     # Minimal failing list is [0].
-    assert re.search(_DRAWS_OPEN + r"\[0\]\s*,?" + _DRAWS_CLOSE, notes), notes
+    assert re.search(r"\[0\]", _draws_section(notes)), notes
 
 
 def test_falsifying_example_snapshot_ignores_post_draw_mutation():
@@ -275,8 +259,9 @@ def test_falsifying_example_with_no_draws_shows_empty_list():
 def test_verbose_trying_example_shows_data_object_draws():
     # Verbose printing also uses the falsifying-style repr, so it should
     # receive the same draws snapshot.
-    from tests.common.utils import capture_out
     from hypothesis._settings import Verbosity
+
+    from tests.common.utils import capture_out
 
     @given(st.data())
     @settings(verbosity=Verbosity.verbose, max_examples=10)

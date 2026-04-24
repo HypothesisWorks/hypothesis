@@ -148,14 +148,12 @@ def test_failure_includes_explain_phase_comments():
     #
     # Note that the output does *not* include `Explanation:` comments. See
     # https://github.com/HypothesisWorks/hypothesis/pull/4399#discussion_r2101559648
-    expected = textwrap.dedent(
-        r"""
+    expected = textwrap.dedent(r"""
         test_fails(
             x=1,
             y=0,  # or any other generated value
         )
-    """
-    ).strip()
+    """).strip()
     assert test_cases[-1].representation == expected
 
 
@@ -171,15 +169,13 @@ def test_failure_includes_notes():
     with capture_observations() as observations, pytest.raises(AssertionError):
         test_fails_with_note()
 
-    expected = textwrap.dedent(
-        """
+    expected = textwrap.dedent("""
         test_fails_with_note(
             data=DataObject(draws=[
                 False,
             ]),
         )
-    """
-    ).strip()
+    """).strip()
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     assert test_cases[-1].representation == expected
 
@@ -197,13 +193,11 @@ def test_normal_representation_includes_draws():
 
     crosshair = settings.get_current_profile_name() == "crosshair"
     if crosshair:
-        expected = textwrap.dedent(
-            """
+        expected = textwrap.dedent("""
             f(
                 data=<symbolic>,
             )
-        """
-        ).strip()
+        """).strip()
     else:
         expected = (
             "f(\n"
@@ -270,14 +264,12 @@ def test_minimal_failing_observation():
         test_fails()
 
     observation = [tc for tc in observations if tc.type == "test_case"][-1]
-    expected_representation = textwrap.dedent(
-        r"""
+    expected_representation = textwrap.dedent(r"""
         test_fails(
             x=1,
             y=0,  # or any other generated value
         )
-    """
-    ).strip()
+    """).strip()
 
     assert observation.type == "test_case"
     assert observation.property == "test_fails"
