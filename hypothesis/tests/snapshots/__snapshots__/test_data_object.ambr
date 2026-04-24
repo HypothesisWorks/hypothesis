@@ -65,11 +65,11 @@
   '''
   Falsifying example: test_mutually_recursive_reference_to_data(
       d1=DataObject(draws=[
-          DataObject(draws=[
           DataObject(...),
       ]),
+      d2=DataObject(draws=[
+          DataObject(...),
       ]),
-      d2=DataObject(draws=[]),
   )
   '''
 # ---
