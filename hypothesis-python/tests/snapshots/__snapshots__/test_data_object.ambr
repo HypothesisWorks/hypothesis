@@ -29,8 +29,8 @@
   Falsifying example: test_data_from_data(
       d1=DataObject(draws=[
           DataObject(draws=[
-          0,  # or any other generated value
-      ]),
+              0,  # or any other generated value
+          ]),
           1,
       ]),
   )
@@ -86,7 +86,8 @@
 # name: test_no_draws
   '''
   Falsifying example: test_no_draws(
-      data=DataObject(draws=[]),
+      data=DataObject(draws=[
+      ]),
   )
   '''
 # ---

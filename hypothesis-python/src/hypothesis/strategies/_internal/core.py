@@ -2360,8 +2360,16 @@ class DataObject:
             p.text("DataObject(...)")
             return
         p.text("DataObject(draws=[")
-        self.printer = p.deferred()
-        self._printer_count = 0
+        # Wrap the deferred in a group that shifts indentation by 4. The
+        # ``break_()`` calls that ``draw()`` records inside this deferred
+        # will then emit newlines at ``parent_indent + 4``, so a DataObject
+        # drawn as a value inside another DataObject's draws list gets
+        # properly nested indentation. The closing ``])`` is emitted after
+        # the group exits, so it sits at the parent indent.
+        with p.group(4):
+            self.printer = p.deferred()
+            self._printer_count = 0
+        p.break_()
         p.text("])")
 
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
@@ -2395,18 +2403,16 @@ class DataObject:
             self.printer = None
             printer = None
         if printer is not None:
-            # Use break_() so the replayed newlines respect the parent's
-            # current indentation, and text("    ") to add the fixed indent
-            # inside the brackets. The first draw needs a leading break; on
-            # subsequent draws the preceding draw's trailing break already
-            # placed us on a fresh line.
-            if self._printer_count == 0:
-                printer.break_()
-            printer.text("    ")
+            # Each draw is prefixed with a ``break_()`` so that it lands on a
+            # fresh line at the current indent (set by the enclosing
+            # ``p.group(4)`` in ``_repr_pretty_``). The closing ``])`` is
+            # emitted with its own ``break_()`` at the dedented level, so no
+            # per-draw trailing break is needed - that would just produce
+            # double newlines between draws and before the close.
+            printer.break_()
             if label is not None:
                 printer.text(f"# {label}")
                 printer.break_()
-                printer.text("    ")
             self._printer_count += 1
             printer.pretty(result)
             printer.text(",")
@@ -2415,7 +2421,6 @@ class DataObject:
             # annotation style.
             if slice_range is not None and slice_range in printer.slice_comments:
                 printer.text(f"  # {printer.slice_comments[slice_range]}")
-            printer.break_()
         return result
 
 

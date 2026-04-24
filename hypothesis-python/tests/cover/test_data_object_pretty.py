@@ -71,7 +71,7 @@ def test_repr_pretty_empty_when_no_draws():
     obj = DataObject(draws=[1, 2, 3])
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
-    assert _finalize_and_render(p) == "DataObject(draws=[])"
+    assert _finalize_and_render(p) == "DataObject(draws=[\n])"
 
 
 def test_repr_pretty_records_subsequent_draws():
@@ -268,7 +268,8 @@ def test_falsifying_example_with_no_draws_shows_empty_list():
         raise AssertionError
 
     notes = _collect_falsifying_notes(inner)
-    assert "DataObject(draws=[])" in notes, notes
+    assert "DataObject(draws=[\n" in notes, notes
+    assert re.search(r"DataObject\(draws=\[\s*\]\)", notes), notes
 
 
 def test_verbose_trying_example_shows_data_object_draws():
