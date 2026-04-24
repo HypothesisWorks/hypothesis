@@ -10,7 +10,7 @@ rendered as a comment on the line above that draw. For example:
 
     @given(data=st.data())
     def test(data):
-        x = data.draw(st.integers(), label="Cool thing")
+        x = data.draw(st.integers(), label="Something")
         ...
 
 now reports
@@ -19,19 +19,10 @@ now reports
 
     Falsifying example: test(
         data=DataObject(draws=[
-            # Cool thing
+            # Something
             0,
         ]),
     )
 
 The previous per-draw ``Draw N: value`` notes are no longer emitted, since
 the same information is now inline in the ``draws=[...]`` rendering.
-
-Each draw is captured using the value as it was when drawn, so mutations
-made to drawn values after ``data.draw`` returns are not reflected in the
-output.
-
-Internally, :class:`~hypothesis.vendor.pretty.RepresentationPrinter` gains
-``deferred()`` and ``finalize()`` methods, which made this feature possible
-by allowing the ``draws=[...]`` list to be filled in as draws happen during
-the re-run used to produce the output.
