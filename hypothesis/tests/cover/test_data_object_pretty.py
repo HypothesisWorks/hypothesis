@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from hypothesis import Phase, given, settings, strategies as st
+from hypothesis import Phase, example, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.core import DataObject
 from hypothesis.vendor import pretty
@@ -329,4 +329,113 @@ def test_falsifying_example_shows_label_as_comment():
     assert "# Cool thing" in notes, notes
     # And the label annotates the right draw (appears before the value).
     m = re.search(r"# Cool thing\s*\n\s*0", notes)
+    assert m is not None, notes
+
+
+# --- @example(DataObject(draws=[...])) --------------------------------
+
+
+def test_example_with_draws_feeds_values_to_draw():
+    observed: list = []
+
+    @given(st.data())
+    @example(DataObject(draws=[10, 20, 30]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        a = data.draw(st.integers())
+        b = data.draw(st.integers())
+        c = data.draw(st.integers())
+        observed.append((a, b, c))
+
+    inner()
+    assert observed == [(10, 20, 30)]
+
+
+def test_example_with_empty_draws_is_accepted():
+    observed: list = []
+
+    @given(st.data())
+    @example(DataObject(draws=[]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        # Don't call data.draw; the example's draws list is empty.
+        observed.append("ran")
+
+    inner()
+    assert observed == ["ran"]
+
+
+def test_example_draw_ignores_the_strategy_argument():
+    # In replay mode the strategy is validated but its values are not used -
+    # useful for @example where the user has concrete values they want
+    # substituted directly.
+    observed: list = []
+
+    @given(st.data())
+    @example(DataObject(draws=["hello", [1, 2, 3]]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        s = data.draw(st.text())
+        lst = data.draw(st.lists(st.integers()))
+        observed.append((s, lst))
+
+    inner()
+    assert observed == [("hello", [1, 2, 3])]
+
+
+def test_multiple_examples_each_supply_their_own_draws():
+    observed: list = []
+
+    @given(st.data())
+    @example(DataObject(draws=[1]))
+    @example(DataObject(draws=[2]))
+    @example(DataObject(draws=[3]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        observed.append(data.draw(st.integers()))
+
+    inner()
+    # Examples are applied in reverse declaration order.
+    assert sorted(observed) == [1, 2, 3]
+
+
+def test_failing_example_with_draws_reports_values_in_falsifying_output():
+    @given(st.data())
+    @example(DataObject(draws=[7, 11]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        x = data.draw(st.integers())
+        y = data.draw(st.integers())
+        assert x + y != 18
+
+    with pytest.raises(AssertionError) as err:
+        inner()
+    notes = "\n".join(err.value.__notes__)
+    assert "Falsifying explicit example" in notes, notes
+    # Both drawn values from the example should appear in the rendered
+    # ``draws=[...]`` list in the order they were drawn.
+    m = re.search(r"DataObject\(draws=\[\s*7\s*,\s*11\s*,?\s*\]\)", notes)
+    assert m is not None, notes
+
+
+def test_example_with_labels_annotates_each_draw():
+    # A labeled draw on a ``@example`` DataObject still annotates the
+    # rendered value with its label when the example fails.
+    @given(st.data())
+    @example(DataObject(draws=[42, "hi"]))
+    @settings(phases=[Phase.explicit])
+    def inner(data):
+        data.draw(st.integers(), label="the number")
+        data.draw(st.text(), label="the string")
+        raise AssertionError
+
+    with pytest.raises(AssertionError) as err:
+        inner()
+    notes = "\n".join(err.value.__notes__)
+    assert "# the number" in notes, notes
+    assert "# the string" in notes, notes
+    # And the values they labelled appear in order.
+    m = re.search(
+        r"# the number\s*\n\s*42\s*,.*# the string\s*\n\s*'hi'", notes, re.DOTALL
+    )
     assert m is not None, notes
