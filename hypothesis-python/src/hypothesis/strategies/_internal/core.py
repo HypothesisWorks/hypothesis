@@ -2333,9 +2333,6 @@ class DataObject:
         # leading newline for the very first recorded draw.
         self.printer: "RepresentationPrinter | None" = None
         self._printer_count = 0
-        # Re-entrancy guard: set while ``draw()`` is pretty-printing the drawn
-        # value, so ``_repr_pretty_`` on this same object can bail out.
-        self._pretty_printing_draw = False
 
     __signature__ = Signature()  # hide internals from Sphinx introspection
 
@@ -2343,11 +2340,12 @@ class DataObject:
         return "data(...)"
 
     def _repr_pretty_(self, p, cycle):
-        # If the pretty-printer's own cycle detection fired, or we're being
-        # invoked re-entrantly because ``draw()`` is currently pretty-printing
-        # its result (e.g. ``data.draw(st.just(data))``), emit an opaque
-        # placeholder rather than recursing.
-        if cycle or self._pretty_printing_draw:
+        # Cycle is set by the pretty-printer framework when ``self`` already
+        # appears on ``p.stack``; because deferred printers inherit the stack
+        # from the point they were created, this also detects cycles where the
+        # draw happens much later than the initial pretty-print (e.g.
+        # ``data.draw(st.just(data))``).
+        if cycle:
             p.text("DataObject(...)")
             return
         p.text("DataObject(draws=[")
@@ -2399,11 +2397,7 @@ class DataObject:
                 printer.break_()
                 printer.text("    ")
             self._printer_count += 1
-            self._pretty_printing_draw = True
-            try:
-                printer.pretty(result)
-            finally:
-                self._pretty_printing_draw = False
+            printer.pretty(result)
             printer.text(",")
             # If the explain phase marked this draw as freely-varying, append
             # its comment next to the value, matching the top-level repr_call
