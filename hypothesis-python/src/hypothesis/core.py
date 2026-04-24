@@ -134,7 +134,6 @@ from hypothesis.reporting import (
     with_reporter,
 )
 from hypothesis.statistics import describe_statistics, describe_targets, note_statistics
-from hypothesis.strategies._internal.core import DataObject
 from hypothesis.strategies._internal.misc import NOTHING
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -1142,25 +1141,9 @@ class StateForActualGivenExecution:
                 if obs_printer is not None:
                     obs_printer.finalize()
                     self._string_repr = obs_printer.getvalue()
-                # Any deferred set on DataObject (class attribute) is now dead;
-                # clear it so the next test run starts from a clean slate.
-                DataObject.printer = None
 
                 if data._stateful_repr_parts is not None:
                     self._string_repr = "\n".join(data._stateful_repr_parts)
-
-                if observability_enabled():
-                    printer = RepresentationPrinter(context=context)
-                    for name, value in data._observability_args.items():
-                        if name.startswith("generate:Draw "):
-                            try:
-                                value = data.provider.realize(value)
-                            except BackendCannotProceed:  # pragma: no cover
-                                value = "<backend failed to realize symbolic>"
-                            printer.text(f"\n{name.removeprefix('generate:')}: ")
-                            printer.pretty(value)
-
-                    self._string_repr += printer.getvalue()
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.

@@ -81,16 +81,25 @@ def test_repr_pretty_records_subsequent_draws():
     obj.draw(st.integers())
     obj.draw(st.integers())
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == "DataObject(draws=[1, 2, 3])"
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    1,\n"
+        "    2,\n"
+        "    3,\n"
+        "])"
+    )
 
 
-def test_repr_pretty_draws_separated_by_commas():
-    obj = DataObject(draws=["a", "b", "c"])
+def test_repr_pretty_single_draw():
+    obj = DataObject(draws=["hello"])
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
-    for _ in range(3):
-        obj.draw(st.text())
-    assert _finalize_and_render(p) == "DataObject(draws=['a', 'b', 'c'])"
+    obj.draw(st.text())
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    'hello',\n"
+        "])"
+    )
 
 
 def test_repr_pretty_does_not_record_draws_made_before_pretty():
@@ -99,7 +108,11 @@ def test_repr_pretty_does_not_record_draws_made_before_pretty():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == "DataObject(draws=[2])"
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    2,\n"
+        "])"
+    )
 
 
 def test_repr_pretty_captures_value_at_draw_time_not_finalize_time():
@@ -108,7 +121,11 @@ def test_repr_pretty_captures_value_at_draw_time_not_finalize_time():
     p.pretty(obj)
     drawn = obj.draw(st.lists(st.integers()))
     drawn.append(999)  # mutate after the draw
-    assert _finalize_and_render(p) == "DataObject(draws=[[1, 2]])"
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    [1, 2],\n"
+        "])"
+    )
 
 
 def test_repr_pretty_uses_pretty_representation_of_draws():
@@ -116,27 +133,54 @@ def test_repr_pretty_uses_pretty_representation_of_draws():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.dictionaries(st.text(), st.integers()))
-    # Pretty-printed dict preserves insertion order, shown as {...}.
-    assert _finalize_and_render(p) == "DataObject(draws=[{'b': 1, 'a': 2}])"
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    {'b': 1, 'a': 2},\n"
+        "])"
+    )
 
 
-def test_multiple_repr_pretty_calls_do_not_conflict():
-    # Printing the same DataObject through two independent printers should
-    # yield the same content after each is finalized.
-    obj = DataObject(draws=[10, 20])
+# --- Label handling ---------------------------------------------------
 
-    p1 = pretty.RepresentationPrinter()
-    p1.pretty(obj)
-    p2 = pretty.RepresentationPrinter()
-    p2.pretty(obj)
 
+def test_labeled_draw_renders_comment_on_preceding_line():
+    obj = DataObject(draws=[42])
+    p = pretty.RepresentationPrinter()
+    p.pretty(obj)
+    obj.draw(st.integers(), label="Cool thing")
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    # Cool thing\n"
+        "    42,\n"
+        "])"
+    )
+
+
+def test_labeled_and_unlabeled_draws_mix_correctly():
+    obj = DataObject(draws=[1, 2, 3])
+    p = pretty.RepresentationPrinter()
+    p.pretty(obj)
     obj.draw(st.integers())
+    obj.draw(st.integers(), label="second")
     obj.draw(st.integers())
+    assert _finalize_and_render(p) == (
+        "DataObject(draws=[\n"
+        "    1,\n"
+        "    # second\n"
+        "    2,\n"
+        "    3,\n"
+        "])"
+    )
 
-    out1 = _finalize_and_render(p1)
-    out2 = _finalize_and_render(p2)
-    # At least one should reflect the draws; ideally both do.
-    assert "10" in out1 or "10" in out2
+
+def test_label_comment_uses_label_text_verbatim():
+    # Labels with spaces, punctuation, etc. pass through as the comment body.
+    obj = DataObject(draws=[1])
+    p = pretty.RepresentationPrinter()
+    p.pretty(obj)
+    obj.draw(st.integers(), label="some label: with : colons")
+    rendered = _finalize_and_render(p)
+    assert "# some label: with : colons" in rendered
 
 
 # --- Falsifying-example integration -----------------------------------
@@ -151,6 +195,10 @@ def _collect_falsifying_notes(test_fn):
     return notes
 
 
+_DRAWS_OPEN = r"DataObject\(draws=\[\s*"
+_DRAWS_CLOSE = r"\s*\]\)"
+
+
 def test_falsifying_example_shows_data_object_draws():
     @given(st.data())
     def inner(data):
@@ -158,7 +206,7 @@ def test_falsifying_example_shows_data_object_draws():
         raise AssertionError
 
     notes = _collect_falsifying_notes(inner)
-    assert re.search(r"DataObject\(draws=\[\s*0\s*\]\)", notes), notes
+    assert re.search(_DRAWS_OPEN + r"0,?" + _DRAWS_CLOSE, notes), notes
 
 
 def test_falsifying_example_shows_multiple_draws_in_order():
@@ -169,7 +217,9 @@ def test_falsifying_example_shows_multiple_draws_in_order():
         raise AssertionError
 
     notes = _collect_falsifying_notes(inner)
-    assert re.search(r"DataObject\(draws=\[\s*0\s*,\s*''\s*\]\)", notes), notes
+    assert re.search(
+        _DRAWS_OPEN + r"0\s*,\s*''\s*,?" + _DRAWS_CLOSE, notes
+    ), notes
 
 
 def test_falsifying_example_shows_list_draw():
@@ -180,7 +230,7 @@ def test_falsifying_example_shows_list_draw():
 
     notes = _collect_falsifying_notes(inner)
     # Minimal failing list is [0].
-    assert re.search(r"DataObject\(draws=\[\s*\[0\]\s*\]\)", notes), notes
+    assert re.search(_DRAWS_OPEN + r"\[0\]\s*,?" + _DRAWS_CLOSE, notes), notes
 
 
 def test_falsifying_example_snapshot_ignores_post_draw_mutation():
@@ -208,7 +258,7 @@ def test_falsifying_example_with_explain_mode_still_shows_draws():
         raise AssertionError
 
     notes = _collect_falsifying_notes(inner)
-    assert re.search(r"DataObject\(draws=\[\s*0\s*\]\)", notes), notes
+    assert re.search(_DRAWS_OPEN + r"0,?" + _DRAWS_CLOSE, notes), notes
 
 
 def test_falsifying_example_with_no_draws_shows_empty_list():
@@ -242,7 +292,7 @@ def test_verbose_trying_example_shows_data_object_draws():
 
 def test_falsifying_example_draws_independent_across_runs():
     # Running a failing st.data() test twice should produce fresh state both
-    # times - the class-level printer attribute must be reset between runs.
+    # times.
     @given(st.data())
     def inner(data):
         data.draw(st.integers(min_value=0, max_value=0))
@@ -250,5 +300,32 @@ def test_falsifying_example_draws_independent_across_runs():
 
     notes1 = _collect_falsifying_notes(inner)
     notes2 = _collect_falsifying_notes(inner)
-    assert "DataObject(draws=[0])" in notes1
-    assert "DataObject(draws=[0])" in notes2
+    assert re.search(r"DataObject\(draws=\[\s*0\s*,?\s*\]\)", notes1), notes1
+    assert re.search(r"DataObject\(draws=\[\s*0\s*,?\s*\]\)", notes2), notes2
+
+
+def test_falsifying_example_no_longer_emits_draw_note_lines():
+    # The per-draw ``Draw N: value`` notes have been replaced by the
+    # ``DataObject(draws=[...])`` rendering.
+    @given(st.data())
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10))
+        data.draw(st.integers(min_value=0, max_value=10))
+        raise AssertionError
+
+    notes = _collect_falsifying_notes(inner)
+    assert "Draw 1" not in notes, notes
+    assert "Draw 2" not in notes, notes
+
+
+def test_falsifying_example_shows_label_as_comment():
+    @given(st.data())
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=0), label="Cool thing")
+        raise AssertionError
+
+    notes = _collect_falsifying_notes(inner)
+    assert "# Cool thing" in notes, notes
+    # And the label annotates the right draw (appears before the value).
+    m = re.search(r"# Cool thing\s*\n\s*0", notes)
+    assert m is not None, notes

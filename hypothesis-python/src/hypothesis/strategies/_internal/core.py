@@ -49,8 +49,6 @@ from hypothesis.control import (
     cleanup,
     current_build_context,
     deprecate_random_in_strategy,
-    note,
-    should_note,
 )
 from hypothesis.errors import (
     HypothesisSideeffectWarning,
@@ -2315,11 +2313,6 @@ class DataObject:
     # Note that "only exists" here really means "is only exported to users",
     # but we want to treat it as "semi-stable", not document it as "public API".
 
-    # Class attribute: when non-None, each ``draw()`` call records a pretty
-    # snapshot of the drawn value onto this deferred printer. It is set by
-    # ``_repr_pretty_`` and cleared by the test runner after ``finalize()``.
-    printer: "RepresentationPrinter | None" = None
-
     def __init__(
         self,
         data: "ConjectureData | None" = None,
@@ -2331,11 +2324,15 @@ class DataObject:
                 "Exactly one of `data` or `draws` must be provided."
             )
         self.count = 0
-        # Counter for draws recorded to the currently-attached printer; reset
-        # each time ``_repr_pretty_`` opens a new deferred.
-        self._printer_count = 0
         self.conjecture_data = data
         self.draws = list(draws) if draws is not None else None
+        # When non-None, each ``draw()`` records the drawn value onto this
+        # deferred printer so it appears in the parent printer's output (e.g.
+        # the falsifying example). Set by ``_repr_pretty_``. ``_printer_count``
+        # is the number of draws already recorded to it, used to emit a
+        # leading newline for the very first recorded draw.
+        self.printer: "RepresentationPrinter | None" = None
+        self._printer_count = 0
 
     __signature__ = Signature()  # hide internals from Sphinx introspection
 
@@ -2344,7 +2341,7 @@ class DataObject:
 
     def _repr_pretty_(self, p, cycle):
         p.text("DataObject(draws=[")
-        type(self).printer = p.deferred()
+        self.printer = p.deferred()
         self._printer_count = 0
         p.text("])")
 
@@ -2355,7 +2352,6 @@ class DataObject:
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
 
         if self.draws is not None:
-            # Replay mode: pull the next pre-recorded value off the list.
             result = self.draws[self.count - 1]
         else:
             assert self.conjecture_data is not None
@@ -2364,37 +2360,23 @@ class DataObject:
                     strategy, observe_as=f"generate:{desc}"
                 )
 
-        # If a deferred printer has been attached, record this draw onto it so
-        # that the final output shows e.g. ``DataObject(draws=[1, 2, 3])``.
-        # Defensively drop the reference if it has been finalized (e.g. from
-        # a leftover pretty-print call outside a managed test run).
-        printer = type(self).printer
-        if printer is not None and printer._dead:
-            type(self).printer = None
-            printer = None
-        if printer is not None:
-            if self._printer_count > 0:
-                printer.text(", ")
-            printer.pretty(result)
+        if self.printer is not None:
+            # Use break_() so the replayed newlines respect the parent's
+            # current indentation, and text("    ") to add the fixed indent
+            # inside the brackets. The first draw needs a leading break; on
+            # subsequent draws the preceding draw's trailing break already
+            # placed us on a fresh line.
+            if self._printer_count == 0:
+                self.printer.break_()
+            self.printer.text("    ")
+            if label is not None:
+                self.printer.text(f"# {label}")
+                self.printer.break_()
+                self.printer.text("    ")
+            self.printer.pretty(result)
+            self.printer.text(",")
+            self.printer.break_()
             self._printer_count += 1
-
-        # optimization to avoid needless printer.pretty. should_note raises
-        # outside a live build context, which is possible in replay mode.
-        try:
-            note_drawn = should_note()
-        except InvalidArgument:
-            note_drawn = False
-        if note_drawn:
-            printer = RepresentationPrinter(context=current_build_context())
-            printer.text(f"{desc}: ")
-            if (
-                self.conjecture_data is not None
-                and self.conjecture_data.provider.avoid_realization
-            ):
-                printer.text("<symbolic>")
-            else:
-                printer.pretty(result)
-            note(printer.getvalue())
         return result
 
 
