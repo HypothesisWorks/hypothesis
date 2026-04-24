@@ -175,8 +175,7 @@ def test_failure_includes_notes():
                 False,
             ]),
         )
-    """
-    ).strip()
+    """).strip()
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     assert test_cases[-1].representation == expected
 
@@ -194,13 +193,11 @@ def test_normal_representation_includes_draws():
 
     crosshair = settings.get_current_profile_name() == "crosshair"
     if crosshair:
-        expected = textwrap.dedent(
-            """
+        expected = textwrap.dedent("""
             f(
                 data=<symbolic>,
             )
-        """
-        ).strip()
+        """).strip()
     else:
         expected = (
             "f(\n"

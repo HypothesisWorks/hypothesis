@@ -762,6 +762,7 @@ def _replay_calls(
         if name == "_splice":
             child = args[0]
             assert isinstance(child, _DeferredPrinter)
+            assert child._recording is not None
             _replay_calls(child._recording, target)
         elif name == "_shift_indent":
             target.indentation += args[0]
