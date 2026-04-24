@@ -2333,6 +2333,9 @@ class DataObject:
         # leading newline for the very first recorded draw.
         self.printer: "RepresentationPrinter | None" = None
         self._printer_count = 0
+        # Re-entrancy guard: set while ``draw()`` is pretty-printing the drawn
+        # value, so ``_repr_pretty_`` on this same object can bail out.
+        self._pretty_printing_draw = False
 
     __signature__ = Signature()  # hide internals from Sphinx introspection
 
@@ -2340,6 +2343,13 @@ class DataObject:
         return "data(...)"
 
     def _repr_pretty_(self, p, cycle):
+        # If the pretty-printer's own cycle detection fired, or we're being
+        # invoked re-entrantly because ``draw()`` is currently pretty-printing
+        # its result (e.g. ``data.draw(st.just(data))``), emit an opaque
+        # placeholder rather than recursing.
+        if cycle or self._pretty_printing_draw:
+            p.text("DataObject(...)")
+            return
         p.text("DataObject(draws=[")
         self.printer = p.deferred()
         self._printer_count = 0
@@ -2351,32 +2361,56 @@ class DataObject:
         self.count += 1
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
 
+        slice_range: tuple[int, int] | None = None
         if self.draws is not None:
             result = self.draws[self.count - 1]
         else:
             assert self.conjecture_data is not None
+            start = len(self.conjecture_data.nodes)
             with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
                 result = self.conjecture_data.draw(
                     strategy, observe_as=f"generate:{desc}"
                 )
+            end = len(self.conjecture_data.nodes)
+            if start != end:
+                slice_range = (start, end)
+                # Register with the engine so the explain phase considers
+                # this draw as an independently-varying slice.
+                self.conjecture_data.arg_slices.add(slice_range)
 
-        if self.printer is not None:
+        # Bind the printer to a local so that a recursive ``pretty(result)``
+        # that may re-enter ``_repr_pretty_`` can't cause subsequent primitive
+        # calls here to land on the wrong deferred.
+        printer = self.printer
+        if printer is not None and printer._dead:
+            self.printer = None
+            printer = None
+        if printer is not None:
             # Use break_() so the replayed newlines respect the parent's
             # current indentation, and text("    ") to add the fixed indent
             # inside the brackets. The first draw needs a leading break; on
             # subsequent draws the preceding draw's trailing break already
             # placed us on a fresh line.
             if self._printer_count == 0:
-                self.printer.break_()
-            self.printer.text("    ")
+                printer.break_()
+            printer.text("    ")
             if label is not None:
-                self.printer.text(f"# {label}")
-                self.printer.break_()
-                self.printer.text("    ")
-            self.printer.pretty(result)
-            self.printer.text(",")
-            self.printer.break_()
+                printer.text(f"# {label}")
+                printer.break_()
+                printer.text("    ")
             self._printer_count += 1
+            self._pretty_printing_draw = True
+            try:
+                printer.pretty(result)
+            finally:
+                self._pretty_printing_draw = False
+            printer.text(",")
+            # If the explain phase marked this draw as freely-varying, append
+            # its comment next to the value, matching the top-level repr_call
+            # annotation style.
+            if slice_range is not None and slice_range in printer.slice_comments:
+                printer.text(f"  # {printer.slice_comments[slice_range]}")
+            printer.break_()
         return result
 
 
