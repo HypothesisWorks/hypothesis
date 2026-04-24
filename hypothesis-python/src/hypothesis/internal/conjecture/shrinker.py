@@ -557,6 +557,12 @@ class Shrinker:
             ):
                 continue
 
+            # Skip slices with no non-forced nodes - there's nothing we can
+            # vary, so the "or any other generated value" note would be
+            # misleading (the value is in fact fully determined).
+            if all(nodes[i].was_forced for i in range(start, end)):
+                continue
+
             # Run our experiments
             n_same_failures = 0
             note = "or any other generated value"

@@ -1041,8 +1041,9 @@ class ConjectureData:
         shrinking widenings).
 
         For primitive values, the forced choice is of the corresponding type.
-        For non-primitive values it is a forced boolean ``True`` — a minimal
-        placeholder that guarantees the span contains at least one choice.
+        For non-primitive values it is a forced boolean ``False`` - the
+        simplest choice we can add, so the span doesn't look any more
+        complex than an empty one would.
         """
         if type(value) is bool:
             self.draw_boolean(forced=value)
@@ -1055,7 +1056,7 @@ class ConjectureData:
         elif type(value) is bytes:
             self.draw_bytes(max_size=len(value), forced=value)
         else:
-            self.draw_boolean(forced=True)
+            self.draw_boolean(forced=False)
 
     @overload
     def _pooled_constraints(

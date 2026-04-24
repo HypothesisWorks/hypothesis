@@ -1147,7 +1147,7 @@ def test_uses_seed(capsys):
 
 
 def test_reproduce_failure_works():
-    @reproduce_failure(__version__, encode_failure([False, 0, False, True]))
+    @reproduce_failure(__version__, encode_failure([False, 0, False, False]))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
@@ -1158,7 +1158,7 @@ def test_reproduce_failure_works():
 
 
 def test_reproduce_failure_fails_if_no_error():
-    @reproduce_failure(__version__, encode_failure([False, 0, False, True]))
+    @reproduce_failure(__version__, encode_failure([False, 0, False, False]))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def ok(self):
