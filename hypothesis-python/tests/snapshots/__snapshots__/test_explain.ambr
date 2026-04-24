@@ -112,3 +112,13 @@
   )
   '''
 # ---
+# name: test_explain_unstable_one_of_labels
+  '''
+  Falsifying example: inner(
+      w=W([(
+               0,  # or any other generated value
+               0,
+           )]),
+  )
+  '''
+# ---
