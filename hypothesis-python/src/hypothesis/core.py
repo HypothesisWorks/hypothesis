@@ -134,6 +134,7 @@ from hypothesis.reporting import (
     with_reporter,
 )
 from hypothesis.statistics import describe_statistics, describe_targets, note_statistics
+from hypothesis.strategies._internal.core import DataObject
 from hypothesis.strategies._internal.misc import NOTHING
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -1062,16 +1063,26 @@ class StateForActualGivenExecution:
                 nonlocal text_repr
                 text_repr = repr_call(test, args, kwargs)
 
+            # If `repr_call` opened any deferreds on DataObject args, keep the
+            # relevant printers alive across the test run so that draws made
+            # during the test can be recorded onto those deferreds; we then
+            # finalize and emit output in the `finally` block below. When no
+            # deferreds are created (e.g. stateful tests with
+            # `print_given_args=False`) we preserve the pre-existing ordering
+            # by reporting immediately.
+            report_printer: RepresentationPrinter | None = None
+            obs_printer: RepresentationPrinter | None = None
+
             if print_example or current_verbosity() >= Verbosity.verbose:
-                printer = RepresentationPrinter(context=context)
+                report_printer = RepresentationPrinter(context=context)
                 if print_example:
-                    printer.text("Falsifying example:")
+                    report_printer.text("Falsifying example:")
                 else:
-                    printer.text("Trying example:")
+                    report_printer.text("Trying example:")
 
                 if self.print_given_args:
-                    printer.text(" ")
-                    printer.repr_call(
+                    report_printer.text(" ")
+                    report_printer.repr_call(
                         test.__name__,
                         args,
                         kwargs,
@@ -1084,11 +1095,16 @@ class StateForActualGivenExecution:
                         ),
                         avoid_realization=data.provider.avoid_realization,
                     )
-                report(printer.getvalue())
+                if report_printer._recording is None:
+                    # No pending deferreds, so it's safe to report now and
+                    # avoid interleaving issues with output produced during
+                    # the test body (e.g. stateful machine step logging).
+                    report(report_printer.getvalue())
+                    report_printer = None
 
             if observability_enabled():
-                printer = RepresentationPrinter(context=context)
-                printer.repr_call(
+                obs_printer = RepresentationPrinter(context=context)
+                obs_printer.repr_call(
                     test.__name__,
                     args,
                     kwargs,
@@ -1101,7 +1117,9 @@ class StateForActualGivenExecution:
                     ),
                     avoid_realization=data.provider.avoid_realization,
                 )
-                self._string_repr = printer.getvalue()
+                if obs_printer._recording is None:
+                    self._string_repr = obs_printer.getvalue()
+                    obs_printer = None
 
             try:
                 return test(*args, **kwargs)
@@ -1116,6 +1134,18 @@ class StateForActualGivenExecution:
                     add_note(e, msg.format(format_arg))
                 raise
             finally:
+                # Finalize any outstanding deferreds (e.g. from DataObject args)
+                # so that their recorded draws get spliced in before emitting.
+                if report_printer is not None:
+                    report_printer.finalize()
+                    report(report_printer.getvalue())
+                if obs_printer is not None:
+                    obs_printer.finalize()
+                    self._string_repr = obs_printer.getvalue()
+                # Any deferred set on DataObject (class attribute) is now dead;
+                # clear it so the next test run starts from a clean slate.
+                DataObject.printer = None
+
                 if data._stateful_repr_parts is not None:
                     self._string_repr = "\n".join(data._stateful_repr_parts)
 

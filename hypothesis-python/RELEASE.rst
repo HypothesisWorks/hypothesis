@@ -1,10 +1,25 @@
 RELEASE_TYPE: minor
 
-The internal :class:`~hypothesis.vendor.pretty.RepresentationPrinter` gains
-``deferred()`` and ``finalize()`` methods.  Calling ``deferred()`` returns
-a new printer whose output will be spliced into the original at the point
-``deferred()`` was called once ``finalize()`` is called on the parent;
-this is useful for building up output whose contents are only known
-after surrounding output has been written.  Calls on deferred printers
-are recorded as concrete primitive operations so the snapshot is
-unaffected by later mutation of any pretty-printed objects.
+When a test using :func:`~hypothesis.strategies.data` fails, the printed
+falsifying example now shows the sequence of values that were drawn via
+``data.draw(...)``, rather than the opaque ``data(...)`` placeholder.
+For example:
+
+.. code-block:: python
+
+    @given(data=st.data())
+    def test(data):
+        x = data.draw(st.integers())
+        y = data.draw(st.lists(st.integers()))
+        ...
+
+may now report ``Falsifying example: test(data=DataObject(draws=[0, [0]]))``.
+
+Each draw is rendered using the value that was drawn (not the live object),
+so mutations made to drawn values after ``data.draw`` returns are not
+reflected in the output.
+
+Internally, :class:`~hypothesis.vendor.pretty.RepresentationPrinter` gains
+``deferred()`` and ``finalize()`` methods, which made this feature possible
+by allowing the ``draws=[...]`` list to be filled in as draws happen during
+the re-run used to produce the output.
