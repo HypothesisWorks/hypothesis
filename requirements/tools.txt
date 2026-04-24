@@ -333,14 +333,7 @@ tomli==2.4.1
 tomli-w==1.2.0
     # via tox
 tox==4.52.1
-    # via
-    #   -r requirements/tools.in
-    #   tox-uv
-    #   tox-uv-bare
-tox-uv==1.35.1
     # via -r requirements/tools.in
-tox-uv-bare==1.35.1
-    # via tox-uv
 traitlets==5.14.3
     # via
     #   ipython
@@ -373,8 +366,6 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uv==0.11.7
-    # via tox-uv
 uvicorn==0.44.0
     # via sphinx-autobuild
 virtualenv==21.2.1

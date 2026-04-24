@@ -22,7 +22,6 @@ sphinx-jsonschema
 furo
 sphinx-selective-exclude
 tox
-tox-uv
 twine
 types-click
 types-pytz
