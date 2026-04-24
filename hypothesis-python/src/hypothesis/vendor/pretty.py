@@ -292,6 +292,11 @@ class RepresentationPrinter:
         # Set to True for deferred printers that have already been finalized;
         # further use then raises.
         self._dead: bool = False
+        # A top-level printer is its own root; deferred printers override this
+        # to point at the root RepresentationPrinter of their session. Useful
+        # for detecting whether two printer references belong to the same
+        # print-and-finalize session.
+        self.root: RepresentationPrinter = self
 
     def pretty(self, obj: object, *, cycle: bool = False) -> None:
         """Pretty print the given object."""
@@ -737,6 +742,10 @@ class _DeferredPrinter(RepresentationPrinter):
         # DataObject itself), the pretty-printer's normal cycle detection
         # picks it up, even though pretty() has since unwound.
         self.stack = list(parent.stack)
+        # Inherit the root, so that callers can tell whether two printer
+        # refs (e.g. a stashed one and the current ``p``) belong to the same
+        # top-level printing session.
+        self.root = parent.root
         self._recording = []
 
     def finalize(self) -> None:

@@ -2342,10 +2342,21 @@ class DataObject:
     def _repr_pretty_(self, p, cycle):
         # Cycle is set by the pretty-printer framework when ``self`` already
         # appears on ``p.stack``; because deferred printers inherit the stack
-        # from the point they were created, this also detects cycles where the
-        # draw happens much later than the initial pretty-print (e.g.
-        # ``data.draw(st.just(data))``).
-        if cycle:
+        # from the point they were created, this also detects direct
+        # self-reference cases such as ``data.draw(st.just(data))``.
+        #
+        # We additionally bail if we've already been pretty-printed elsewhere
+        # in the current printing session - i.e. ``self.printer`` is still
+        # bound to a live deferred whose root is ``p``'s root. Without this,
+        # mutual recursion like ``d1.draw(st.just(d2))`` +
+        # ``d2.draw(st.just(d1))`` would end up nesting d2's top-level
+        # rendering inside d1's draws list (and vice versa), leaving the
+        # top-level deferred for d2 empty.
+        if cycle or (
+            self.printer is not None
+            and not self.printer._dead
+            and self.printer.root is p.root
+        ):
             p.text("DataObject(...)")
             return
         p.text("DataObject(draws=[")
