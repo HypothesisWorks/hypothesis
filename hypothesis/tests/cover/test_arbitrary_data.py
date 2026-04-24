@@ -32,8 +32,10 @@ def test_prints_on_failure():
 
     with raises(ValueError) as err:
         test()
-    assert "Draw 1: [0, 0]" in err.value.__notes__
-    assert "Draw 2: 0" in err.value.__notes__
+    notes = "\n".join(err.value.__notes__)
+    # Both drawn values appear in the falsifying example's draws=[...].
+    assert "[0, 0]" in notes
+    assert "DataObject(draws=[" in notes
 
 
 def test_prints_labels_if_given_on_failure():
@@ -47,8 +49,9 @@ def test_prints_labels_if_given_on_failure():
 
     with raises(AssertionError) as err:
         test()
-    assert "Draw 1 (Some numbers): [0, 0]" in err.value.__notes__
-    assert "Draw 2 (A number): 0" in err.value.__notes__
+    notes = "\n".join(err.value.__notes__)
+    assert "# Some numbers" in notes
+    assert "# A number" in notes
 
 
 def test_given_twice_is_same():
@@ -60,8 +63,10 @@ def test_given_twice_is_same():
 
     with raises(ValueError) as err:
         test()
-    assert "Draw 1: 0" in err.value.__notes__
-    assert "Draw 2: 0" in err.value.__notes__
+    # Each DataObject renders its own draws=[...] list in the falsifying
+    # example; we should see two of them.
+    notes = "\n".join(err.value.__notes__)
+    assert notes.count("DataObject(draws=[") == 2
 
 
 # `find` doesn't seem to be thread-safe, though I don't actually see why not

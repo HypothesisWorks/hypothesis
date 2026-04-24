@@ -171,10 +171,12 @@ def test_failure_includes_notes():
 
     expected = textwrap.dedent("""
         test_fails_with_note(
-            data=DataObject(draws=[False]),
+            data=DataObject(draws=[
+                False,
+            ]),
         )
-        Draw 1: False
-    """).strip()
+    """
+    ).strip()
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     assert test_cases[-1].representation == expected
 
@@ -191,13 +193,24 @@ def test_normal_representation_includes_draws():
         f()
 
     crosshair = settings.get_current_profile_name() == "crosshair"
-    expected = textwrap.dedent(f"""
-        f(
-            data={'<symbolic>' if crosshair else 'DataObject(draws=[True, True])'},
+    if crosshair:
+        expected = textwrap.dedent(
+            """
+            f(
+                data=<symbolic>,
+            )
+        """
+        ).strip()
+    else:
+        expected = (
+            "f(\n"
+            "    data=DataObject(draws=[\n"
+            "        True,\n"
+            "        # second\n"
+            "        True,\n"
+            "    ]),\n"
+            ")"
         )
-        Draw 1: True
-        Draw 2 (second): True
-    """).strip()
     test_cases = [
         tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
     ]
