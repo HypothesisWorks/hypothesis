@@ -215,3 +215,13 @@ def test_to_jsonable_handles_reference_cycles(obj, value):
 def test_deferred_strategy_draw():
     strategy = st.deferred(lambda: st.integers())
     assert strategy.do_draw(ConjectureData.for_choices([0])) == 0
+
+
+def test_lazy_strategy_draw():
+    # Directly exercise LazyStrategy.do_draw (normally data.draw unwraps
+    # lazy strategies, so this is the only path that reaches do_draw).
+    from hypothesis.strategies._internal.lazy import LazyStrategy
+
+    strategy = st.integers()  # integers() returns a LazyStrategy wrapper
+    assert isinstance(strategy, LazyStrategy)
+    assert strategy.do_draw(ConjectureData.for_choices([0])) == 0

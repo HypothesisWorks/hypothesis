@@ -486,3 +486,26 @@ def test_record_value_for_span_ignores_non_primitive():
     d.freeze()
     span = next(ex for ex in d.spans if ex.label == 1)
     assert span.generated_primitive_value is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [True, 42, 1.5, "hello", b"hello"],
+)
+def test_choice_node_for_value_round_trips_primitives(value):
+    # The shrinker's widening pass synthesises a ChoiceNode from a primitive
+    # value. Exercise each primitive type.
+    from hypothesis.internal.conjecture.choice import choice_permitted
+    from hypothesis.internal.conjecture.shrinker import _choice_node_for_value
+
+    node = _choice_node_for_value(value)
+    assert node.value == value
+    assert not node.was_forced
+    assert choice_permitted(node.value, node.constraints)
+
+
+def test_choice_node_for_value_rejects_non_primitive():
+    from hypothesis.internal.conjecture.shrinker import _choice_node_for_value
+
+    with pytest.raises(AssertionError, match="non-primitive"):
+        _choice_node_for_value([1, 2, 3])

@@ -561,7 +561,7 @@ class Shrinker:
             # vary, so the "or any other generated value" note would be
             # misleading (the value is in fact fully determined).
             if all(nodes[i].was_forced for i in range(start, end)):
-                continue
+                continue  # pragma: no cover  # only reachable via explain phase
 
             # Run our experiments
             n_same_failures = 0
