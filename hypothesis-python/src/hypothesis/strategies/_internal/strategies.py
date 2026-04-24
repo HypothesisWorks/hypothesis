@@ -863,9 +863,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
         # If the retries all landed on empty alternatives, fall back to
         # exhaustively picking a non-empty one.
-        allowed = [
-            i for i in range(n) if not strategies[i].is_currently_empty(data)
-        ]
+        allowed = [i for i in range(n) if not strategies[i].is_currently_empty(data)]
         if not allowed:
             data.mark_invalid(
                 f"Aborted test because all alternatives of {self!r} were empty"
