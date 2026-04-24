@@ -731,6 +731,12 @@ class _DeferredPrinter(RepresentationPrinter):
         self.known_object_printers = parent.known_object_printers
         self.slice_comments = parent.slice_comments
         self._commented_slices = parent._commented_slices
+        # Inherit the cycle-detection stack from the point we were created.
+        # That way, if a draw later pretty-prints an object that was being
+        # pretty-printed when this deferred was opened (most usefully the
+        # DataObject itself), the pretty-printer's normal cycle detection
+        # picks it up, even though pretty() has since unwound.
+        self.stack = list(parent.stack)
         self._recording = []
 
     def finalize(self) -> None:

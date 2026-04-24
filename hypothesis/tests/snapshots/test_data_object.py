@@ -18,18 +18,18 @@ from tests.common.utils import snapshot_given
 
 
 @snapshot_given(st.data())
-def test_snapshot_no_draws(data):
+def test_no_draws(data):
     raise AssertionError
 
 
 @snapshot_given(st.data())
-def test_snapshot_single_draw(data):
+def test_single_draw(data):
     data.draw(st.integers(min_value=0, max_value=10))
     raise AssertionError
 
 
 @snapshot_given(st.data())
-def test_snapshot_multiple_unlabeled_draws(data):
+def test_multiple_unlabeled_draws(data):
     data.draw(st.integers(min_value=0, max_value=10))
     data.draw(st.text(max_size=3))
     data.draw(st.booleans())
@@ -37,20 +37,20 @@ def test_snapshot_multiple_unlabeled_draws(data):
 
 
 @snapshot_given(st.data())
-def test_snapshot_single_labeled_draw(data):
+def test_single_labeled_draw(data):
     data.draw(st.integers(min_value=0, max_value=10), label="Cool thing")
     raise AssertionError
 
 
 @snapshot_given(st.data())
-def test_snapshot_all_labeled_draws(data):
+def test_all_labeled_draws(data):
     data.draw(st.integers(min_value=0, max_value=10), label="first number")
     data.draw(st.integers(min_value=0, max_value=10), label="second number")
     raise AssertionError
 
 
 @snapshot_given(st.data())
-def test_snapshot_mixed_labeled_and_unlabeled(data):
+def test_mixed_labeled_and_unlabeled(data):
     data.draw(st.integers(min_value=0, max_value=10))
     data.draw(st.text(max_size=3), label="middle")
     data.draw(st.booleans())
@@ -58,7 +58,7 @@ def test_snapshot_mixed_labeled_and_unlabeled(data):
 
 
 @snapshot_given(st.data())
-def test_snapshot_nested_value(data):
+def test_nested_value(data):
     data.draw(
         st.lists(st.integers(min_value=0, max_value=5), min_size=1),
         label="a list",
@@ -67,20 +67,20 @@ def test_snapshot_nested_value(data):
 
 
 @snapshot_given(st.integers(min_value=0, max_value=10), st.data())
-def test_snapshot_alongside_other_args(n, data):
+def test_alongside_other_args(n, data):
     data.draw(st.integers(min_value=0, max_value=10), label="inner draw")
     raise AssertionError
 
 
 @snapshot_given(st.data(), st.data())
-def test_snapshot_two_data_args(d1, d2):
+def test_two_data_args(d1, d2):
     d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
     d2.draw(st.integers(min_value=0, max_value=10))
     raise AssertionError
 
 
 @snapshot_given(st.data())
-def test_snapshot_data_from_data(d1):
+def test_data_from_data(d1):
     d2 = d1.draw(st.data())
     n2 = d2.draw(st.integers())
     n1 = d1.draw(st.integers())
@@ -90,6 +90,13 @@ def test_snapshot_data_from_data(d1):
 @snapshot_given(st.data())
 def test_recursive_reference_to_data(data):
     data.draw(st.just(data))
+    raise AssertionError
+
+
+@snapshot_given(st.data(), st.data())
+def test_mutually_recursive_reference_to_data(d1, d2):
+    d1.draw(st.just(d2))
+    d2.draw(st.just(d1))
     raise AssertionError
 
 
