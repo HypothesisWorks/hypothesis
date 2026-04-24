@@ -1,0 +1,95 @@
+# serializer version: 1
+# name: test_snapshot_all_labeled_draws
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          # first number
+          0,
+          # second number
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_alongside_other_args
+  '''
+  Falsifying example: inner(
+      n=0,  # or any other generated value
+      data=DataObject(draws=[
+          # inner draw
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_mixed_labeled_and_unlabeled
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          0,
+          # middle
+          '',
+          False,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_multiple_unlabeled_draws
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          0,
+          '',
+          False,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_nested_value
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          # a list
+          [0],
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_no_draws
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[]),
+  )
+  '''
+# ---
+# name: test_snapshot_single_draw
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_single_labeled_draw
+  '''
+  Falsifying example: inner(
+      data=DataObject(draws=[
+          # Cool thing
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_snapshot_two_data_args
+  '''
+  Falsifying example: inner(
+      d1=DataObject(draws=[]),
+      d2=DataObject(draws=[
+          # from d1
+          0,
+          0,
+      ]),
+  )
+  '''
+# ---

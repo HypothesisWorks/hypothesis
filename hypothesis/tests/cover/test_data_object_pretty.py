@@ -329,3 +329,115 @@ def test_falsifying_example_shows_label_as_comment():
     # And the label annotates the right draw (appears before the value).
     m = re.search(r"# Cool thing\s*\n\s*0", notes)
     assert m is not None, notes
+
+
+# --- Snapshot tests ---------------------------------------------------
+#
+# These pin the exact falsifying-example output for a variety of draw
+# scenarios, so that changes to the rendering (indentation, comma
+# placement, label formatting, etc.) have to be made deliberately by
+# regenerating the snapshot.
+
+
+def _falsifying_output(test_fn):
+    with pytest.raises(AssertionError) as err:
+        test_fn()
+    return "\n".join(err.value.__notes__).strip()
+
+
+def test_snapshot_no_draws(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_single_draw(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10))
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_multiple_unlabeled_draws(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10))
+        data.draw(st.text(max_size=3))
+        data.draw(st.booleans())
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_single_labeled_draw(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10), label="Cool thing")
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_all_labeled_draws(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10), label="first number")
+        data.draw(st.integers(min_value=0, max_value=10), label="second number")
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_mixed_labeled_and_unlabeled(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(st.integers(min_value=0, max_value=10))
+        data.draw(st.text(max_size=3), label="middle")
+        data.draw(st.booleans())
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_nested_value(snapshot):
+    @given(st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(data):
+        data.draw(
+            st.lists(st.integers(min_value=0, max_value=5), min_size=1),
+            label="a list",
+        )
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_alongside_other_args(snapshot):
+    @given(st.integers(min_value=0, max_value=10), st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(n, data):
+        data.draw(st.integers(min_value=0, max_value=10), label="inner draw")
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
+
+
+def test_snapshot_two_data_args(snapshot):
+    @given(st.data(), st.data())
+    @settings(print_blob=False, derandomize=True)
+    def inner(d1, d2):
+        d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
+        d2.draw(st.integers(min_value=0, max_value=10))
+        raise AssertionError
+
+    assert _falsifying_output(inner) == snapshot
