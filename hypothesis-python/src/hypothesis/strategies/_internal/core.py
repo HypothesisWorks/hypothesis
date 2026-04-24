@@ -2416,9 +2416,7 @@ class DataObject:
 
 class DataStrategy(SearchStrategy):
     def do_draw(self, data):
-        if data._shared_data_strategy is None:
-            data._shared_data_strategy = DataObject(data)
-        return data._shared_data_strategy
+        return DataObject(data)
 
     def __repr__(self) -> str:
         return "data()"

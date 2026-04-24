@@ -125,10 +125,11 @@
   '''
   Falsifying example: test_snapshot_two_data_args(
       # The test always failed when commented parts were varied together.
-      d1=DataObject(draws=[]),
-      d2=DataObject(draws=[
+      d1=DataObject(draws=[
           # from d1
           0,  # or any other generated value
+      ]),
+      d2=DataObject(draws=[
           0,  # or any other generated value
       ]),
   )
