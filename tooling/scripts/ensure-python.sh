@@ -11,86 +11,76 @@ HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # shellcheck source=tooling/scripts/common.sh
 source "$HERE/common.sh"
 
-# This is to guard against multiple builds in parallel. The various installers will tend
-# to stomp all over each other if you do this and they haven't previously successfully
-# succeeded. We use a lock file to block progress so only one install runs at a time.
-# This script should be pretty fast once files are cached, so the loss of concurrency
-# is not a major problem.
-# This should be using the lockfile command, but that's not available on the
-# containerized travis and we can't install it without sudo.
-# It is unclear if this is actually useful. I was seeing behaviour that suggested
-# concurrent runs of the installer, but I can't seem to find any evidence of this lock
-# ever not being acquired.
-
 VERSION="$1"
 TARGET=$(pythonloc "$VERSION")
 
-if [ ! -e "$TARGET/bin/python" ] ; then
-    mkdir -p "$BASE"
-
-    LOCKFILE="$BASE/.install-lockfile"
-    while true; do
-      if mkdir "$LOCKFILE" 2>/dev/null; then
-        echo "Successfully acquired installer."
-        break
-      else
-        echo "Failed to acquire lock. Is another installer running? Waiting a bit."
-      fi
-
-      sleep $(( ( RANDOM % 10 ) + 1 )).$(( RANDOM % 100 ))s
-
-      if (( $(date '+%s') > 300 + $(stat --format=%X "$LOCKFILE") )); then
-        echo "We've waited long enough"
-        rm -rf "$LOCKFILE"
-      fi
-    done
-    trap 'rm -rf $LOCKFILE' EXIT
-
-
-    if [ ! -d "$PYENV/.git" ]; then
-      rm -rf "$PYENV"
-      git clone https://github.com/pyenv/pyenv.git "$PYENV"
-    else
-      back=$PWD
-      cd "$PYENV"
-      git fetch || echo "Update failed to complete. Ignoring"
-      git reset --hard origin/master
-      cd "$back"
-    fi
-
-    # See if installing all of these will fix our build issues...
-    if (command -v apt-get >/dev/null 2>&1) && { [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; }; then
-      sudo apt-get update
-      sudo apt-get install -y \
-        build-essential \
-        libbz2-dev \
-        libffi-dev \
-        libgdbm-dev \
-        libgdbm-compat-dev \
-        liblzma-dev \
-        libncurses5-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        libssl-dev \
-        tk-dev \
-        uuid-dev \
-        zlib1g-dev
-    fi
-
-    for _ in $(seq 5); do
-        if OUTPUT=$("$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" 2>&1); then
-            exit 0
-        fi
-        if echo "$OUTPUT" | grep -q "definition not found"; then
-            echo "Python version $VERSION is no longer available."
-            echo "Please run 'make upgrade-requirements' to update to the latest version."
-            exit 1
-        fi
-        echo "Command failed. For a possible solution, visit"
-        echo "https://github.com/pyenv/pyenv/wiki#suggested-build-environment."
-        echo "Retrying..."
-        sleep $(( ( RANDOM % 10 )  + 1 )).$(( RANDOM % 100 ))s
-    done
+if [ -e "$TARGET/bin/python" ] ; then
+    if [ -n "${CI:-}" ] ; then echo "::endgroup::" ; fi
+    exit 0
 fi
+
+mkdir -p "$BASE"
+
+# Serialise installs so concurrent builds don't stomp on each other. `uv`
+# itself is pretty resilient, but translating a version into a uv request
+# and then linking things into SNAKEPIT isn't, and we've historically had
+# problems here. Keep the lockfile approach as a simple safety net.
+LOCKFILE="$BASE/.install-lockfile"
+while true; do
+  if mkdir "$LOCKFILE" 2>/dev/null; then
+    echo "Successfully acquired installer."
+    break
+  else
+    echo "Failed to acquire lock. Is another installer running? Waiting a bit."
+  fi
+
+  sleep $(( ( RANDOM % 10 ) + 1 )).$(( RANDOM % 100 ))s
+
+  if (( $(date '+%s') > 300 + $(stat --format=%X "$LOCKFILE") )); then
+    echo "We've waited long enough"
+    rm -rf "$LOCKFILE"
+  fi
+done
+trap 'rm -rf $LOCKFILE' EXIT
+
+"$HERE/ensure-uv.sh"
+if ! command -v uv >/dev/null 2>&1 ; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Translate our version strings into uv's request format.
+# - 3.14.4 stays as 3.14.4
+# - 3.13t / 3.13t-dev -> 3.13+freethreaded
+# - 3.13.5t -> 3.13.5+freethreaded
+# - pypy3.10-7.3.19 -> pypy@3.10 (uv tracks pypy by python version)
+translate_version() {
+    local v="$1"
+    if [[ "$v" =~ ^pypy([0-9]+)\.([0-9]+) ]]; then
+        echo "pypy@${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+    elif [[ "$v" =~ ^([0-9]+\.[0-9]+(\.[0-9]+)?)t(-dev)?$ ]]; then
+        echo "${BASH_REMATCH[1]}+freethreaded"
+    else
+        echo "$v"
+    fi
+}
+
+REQUEST=$(translate_version "$VERSION")
+
+mkdir -p "$SNAKEPIT" "$UV_PYTHON_INSTALL_DIR"
+
+uv python install "$REQUEST"
+PYTHON_BIN=$(uv python find --managed-python "$REQUEST")
+INSTALL_ROOT=$(dirname "$(dirname "$PYTHON_BIN")")
+
+# uv installs the interpreter as e.g. python3.14; our callers expect a plain
+# `python` alongside it, so create one in the managed directory if absent.
+if [ ! -e "$INSTALL_ROOT/bin/python" ] ; then
+    ln -s "$(basename "$PYTHON_BIN")" "$INSTALL_ROOT/bin/python"
+fi
+
+# Present the install at its legacy path ($SNAKEPIT/$VERSION) so the rest of
+# the build system can keep using pythonloc() unchanged.
+rm -rf "$TARGET"
+ln -s "$INSTALL_ROOT" "$TARGET"
 
 if [ -n "${CI:-}" ] ; then echo "::endgroup::" ; fi
