@@ -153,6 +153,24 @@ def test_label_comment_uses_label_text_verbatim():
     assert "# some label: with : colons" in rendered
 
 
+def test_draw_ignores_dead_printer_from_earlier_session():
+    # If a DataObject was pretty-printed in a printer that has since been
+    # finalized, the stashed deferred is dead. A subsequent draw() must
+    # ignore it rather than trying (and failing) to record onto it.
+    obj = DataObject(draws=[1, 2])
+
+    p = pretty.RepresentationPrinter()
+    p.pretty(obj)
+    p.finalize()  # deferred is now dead
+
+    assert obj.printer is not None
+    assert obj.printer._dead
+
+    # Subsequent draw should not raise, and should clear the stale printer.
+    assert obj.draw(st.integers()) == 1
+    assert obj.printer is None
+
+
 # --- Falsifying-example integration -----------------------------------
 
 
