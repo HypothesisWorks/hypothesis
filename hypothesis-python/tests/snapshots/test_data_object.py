@@ -14,7 +14,7 @@ tests."""
 
 from hypothesis import strategies as st
 
-from tests.snapshots.conftest import snapshot_given
+from tests.common.utils import snapshot_given
 
 
 @snapshot_given(st.data())

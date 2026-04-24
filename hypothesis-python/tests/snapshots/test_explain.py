@@ -10,8 +10,11 @@
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
-from tests.snapshots.conftest import EXPLAIN_SETTINGS
+from tests.common.utils import (
+    EXPLAIN_SETTINGS,
+    run_test_for_falsifying_example,
+    snapshot_given,
+)
 
 
 def test_explain_comments_basic_fail_if_either(snapshot):
@@ -143,3 +146,18 @@ def test_explain_multi_level_nesting(snapshot):
         assert not outer.value
 
     assert run_test_for_falsifying_example(inner) == snapshot
+
+
+@snapshot_given(st.integers(), st.integers())
+def test_integers_equal(n1, n2):
+    assert n1 == n2
+
+
+@snapshot_given(st.integers(), st.integers())
+def test_integers_less(n1, n2):
+    assert n1 < n2
+
+
+@snapshot_given(st.integers(), st.integers())
+def test_integers_greater(n1, n2):
+    assert n1 < n2
