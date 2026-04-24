@@ -1,12 +1,49 @@
 # serializer version: 1
+# name: test_only_some_values_are_allowed_to_vary
+  '''
+  Falsifying example: test_only_some_values_are_allowed_to_vary(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          0,  # or any other generated value
+          100,
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_only_some_values_are_allowed_to_vary_with_labels
+  '''
+  Falsifying example: test_only_some_values_are_allowed_to_vary_with_labels(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          # a
+          0,  # or any other generated value
+          # b
+          100,
+          # c
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_recursive_reference_to_data
+  '''
+  Falsifying example: test_recursive_reference_to_data(
+      data=DataObject(draws=[
+          DataObject(...),
+      ]),
+  )
+  '''
+# ---
 # name: test_snapshot_all_labeled_draws
   '''
   Falsifying example: test_snapshot_all_labeled_draws(
+      # The test always failed when commented parts were varied together.
       data=DataObject(draws=[
           # first number
-          0,
+          0,  # or any other generated value
           # second number
-          0,
+          0,  # or any other generated value
       ]),
   )
   '''
@@ -14,10 +51,11 @@
 # name: test_snapshot_alongside_other_args
   '''
   Falsifying example: test_snapshot_alongside_other_args(
-      n=0,
+      # The test always failed when commented parts were varied together.
+      n=0,  # or any other generated value
       data=DataObject(draws=[
           # inner draw
-          0,
+          0,  # or any other generated value
       ]),
   )
   '''
@@ -25,11 +63,12 @@
 # name: test_snapshot_mixed_labeled_and_unlabeled
   '''
   Falsifying example: test_snapshot_mixed_labeled_and_unlabeled(
+      # The test always failed when commented parts were varied together.
       data=DataObject(draws=[
-          0,
+          0,  # or any other generated value
           # middle
-          '',
-          False,
+          '',  # or any other generated value
+          False,  # or any other generated value
       ]),
   )
   '''
@@ -37,10 +76,11 @@
 # name: test_snapshot_multiple_unlabeled_draws
   '''
   Falsifying example: test_snapshot_multiple_unlabeled_draws(
+      # The test always failed when commented parts were varied together.
       data=DataObject(draws=[
-          0,
-          '',
-          False,
+          0,  # or any other generated value
+          '',  # or any other generated value
+          False,  # or any other generated value
       ]),
   )
   '''
@@ -50,7 +90,7 @@
   Falsifying example: test_snapshot_nested_value(
       data=DataObject(draws=[
           # a list
-          [0],
+          [0],  # or any other generated value
       ]),
   )
   '''
@@ -84,11 +124,12 @@
 # name: test_snapshot_two_data_args
   '''
   Falsifying example: test_snapshot_two_data_args(
+      # The test always failed when commented parts were varied together.
       d1=DataObject(draws=[]),
       d2=DataObject(draws=[
           # from d1
-          0,
-          0,
+          0,  # or any other generated value
+          0,  # or any other generated value
       ]),
   )
   '''

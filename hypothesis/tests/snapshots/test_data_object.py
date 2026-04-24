@@ -18,7 +18,7 @@ import inspect
 from hypothesis import given, strategies as st
 
 from tests.common.utils import run_test_for_falsifying_example
-from tests.snapshots.conftest import SNAPSHOT_SETTINGS
+from tests.snapshots.conftest import EXPLAIN_SETTINGS
 
 
 def snapshot_given(*strategies, **kwarg_strategies):
@@ -31,31 +31,29 @@ def snapshot_given(*strategies, **kwarg_strategies):
         @functools.wraps(body)
         def prop_body(*args, **kwargs):
             body(*args, **kwargs)
-            raise AssertionError
 
         prop_body.__signature__ = inspect.signature(body)
-        prop_test = given(*strategies, **kwarg_strategies)(SNAPSHOT_SETTINGS(prop_body))
+        prop_test = given(*strategies, **kwarg_strategies)(EXPLAIN_SETTINGS(prop_body))
 
-        @functools.wraps(body)
-        def test_fn(snapshot):
+        def test_function(snapshot):
             assert run_test_for_falsifying_example(prop_test) == snapshot
 
-        test_fn.__signature__ = inspect.Signature(
-            [inspect.Parameter("snapshot", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
-        )
-        return test_fn
+        test_function.__name__ = body.__name__
+        test_function.__qualname__ = body.__qualname__
+        return test_function
 
     return decorator
 
 
 @snapshot_given(st.data())
 def test_snapshot_no_draws(data):
-    pass
+    raise AssertionError
 
 
 @snapshot_given(st.data())
 def test_snapshot_single_draw(data):
     data.draw(st.integers(min_value=0, max_value=10))
+    raise AssertionError
 
 
 @snapshot_given(st.data())
@@ -63,17 +61,20 @@ def test_snapshot_multiple_unlabeled_draws(data):
     data.draw(st.integers(min_value=0, max_value=10))
     data.draw(st.text(max_size=3))
     data.draw(st.booleans())
+    raise AssertionError
 
 
 @snapshot_given(st.data())
 def test_snapshot_single_labeled_draw(data):
     data.draw(st.integers(min_value=0, max_value=10), label="Cool thing")
+    raise AssertionError
 
 
 @snapshot_given(st.data())
 def test_snapshot_all_labeled_draws(data):
     data.draw(st.integers(min_value=0, max_value=10), label="first number")
     data.draw(st.integers(min_value=0, max_value=10), label="second number")
+    raise AssertionError
 
 
 @snapshot_given(st.data())
@@ -81,6 +82,7 @@ def test_snapshot_mixed_labeled_and_unlabeled(data):
     data.draw(st.integers(min_value=0, max_value=10))
     data.draw(st.text(max_size=3), label="middle")
     data.draw(st.booleans())
+    raise AssertionError
 
 
 @snapshot_given(st.data())
@@ -89,14 +91,41 @@ def test_snapshot_nested_value(data):
         st.lists(st.integers(min_value=0, max_value=5), min_size=1),
         label="a list",
     )
+    raise AssertionError
 
 
 @snapshot_given(st.integers(min_value=0, max_value=10), st.data())
 def test_snapshot_alongside_other_args(n, data):
     data.draw(st.integers(min_value=0, max_value=10), label="inner draw")
+    raise AssertionError
 
 
 @snapshot_given(st.data(), st.data())
 def test_snapshot_two_data_args(d1, d2):
     d1.draw(st.integers(min_value=0, max_value=10), label="from d1")
     d2.draw(st.integers(min_value=0, max_value=10))
+    raise AssertionError
+
+
+@snapshot_given(st.data())
+def test_recursive_reference_to_data(data):
+    data.draw(st.just(data))
+    raise AssertionError
+
+
+@snapshot_given(st.data())
+def test_only_some_values_are_allowed_to_vary(data):
+    data.draw(st.integers())
+    n = data.draw(st.integers())
+    data.draw(st.integers())
+
+    assert n < 100
+
+
+@snapshot_given(st.data())
+def test_only_some_values_are_allowed_to_vary_with_labels(data):
+    data.draw(st.integers(), label="a")
+    n = data.draw(st.integers(), label="b")
+    data.draw(st.integers(), label="c")
+
+    assert n < 100
