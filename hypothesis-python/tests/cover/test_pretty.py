@@ -907,16 +907,16 @@ def test_deferred_basic():
     x.pretty(1)
     x.text(", ")
     x.pretty((2, 3))
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "[1, (2, 3)]"
 
 
 def test_deferred_empty():
     p = pretty.RepresentationPrinter()
     p.text("[")
-    x = p.deferred()
+    p.deferred()
     p.text("]")
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "[]"
 
 
@@ -924,7 +924,7 @@ def test_deferred_before_any_output():
     p = pretty.RepresentationPrinter()
     x = p.deferred()
     x.text("hello")
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "hello"
 
 
@@ -936,7 +936,7 @@ def test_deferred_captures_mutable_state_at_call_time():
     x = p.deferred()
     x.pretty(obj)
     obj.append(4)  # mutate after deferred call but before finalize
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "[1, 2, 3]"
 
 
@@ -949,23 +949,7 @@ def test_deferred_sequential():
     p.text(">")
     x1.text("one")
     x2.text("two")
-    x1.finalize()
-    x2.finalize()
-    assert p.getvalue() == "<one|two>"
-
-
-def test_deferred_finalize_order_independent():
-    # Output order depends on creation order, not finalize order.
-    p = pretty.RepresentationPrinter()
-    p.text("<")
-    x1 = p.deferred()
-    p.text("|")
-    x2 = p.deferred()
-    p.text(">")
-    x1.text("one")
-    x2.text("two")
-    x2.finalize()  # finalize x2 first
-    x1.finalize()
+    p.finalize()
     assert p.getvalue() == "<one|two>"
 
 
@@ -978,8 +962,7 @@ def test_deferred_nested():
     inner = outer.deferred()
     outer.text(")")
     inner.text("inside")
-    inner.finalize()
-    outer.finalize()
+    p.finalize()
     assert p.getvalue() == "[(inside)]"
 
 
@@ -988,25 +971,53 @@ def test_deferred_resumes_normal_printing_after_finalize():
     p.text("start ")
     x = p.deferred()
     x.text("middle")
-    x.finalize()
+    p.finalize()
     p.text(" end")
     assert p.getvalue() == "start middle end"
 
 
-def test_deferred_finalize_raises_on_double_finalize():
+def test_finalize_raises_without_outstanding_deferreds():
+    p = pretty.RepresentationPrinter()
+    with pytest.raises(RuntimeError):
+        p.finalize()
+
+
+def test_finalize_raises_on_deferred_printer():
     p = pretty.RepresentationPrinter()
     x = p.deferred()
-    x.finalize()
     with pytest.raises(RuntimeError):
         x.finalize()
 
 
-def test_deferred_finalize_raises_with_outstanding_children():
+def test_deferred_errors_after_parent_finalize():
     p = pretty.RepresentationPrinter()
-    outer = p.deferred()
-    outer.deferred()  # child not finalized
+    x = p.deferred()
+    p.finalize()
     with pytest.raises(RuntimeError):
-        outer.finalize()
+        x.text("too late")
+
+
+def test_nested_deferreds_error_after_parent_finalize():
+    p = pretty.RepresentationPrinter()
+    x = p.deferred()
+    y = x.deferred()
+    p.finalize()
+    with pytest.raises(RuntimeError):
+        y.text("too late")
+
+
+def test_new_deferred_can_be_created_after_finalize():
+    p = pretty.RepresentationPrinter()
+    p.text("[")
+    x = p.deferred()
+    x.text("one")
+    p.finalize()
+    p.text("|")
+    y = p.deferred()
+    y.text("two")
+    p.finalize()
+    p.text("]")
+    assert p.getvalue() == "[one|two]"
 
 
 def test_deferred_preserves_group_structure():
@@ -1021,7 +1032,7 @@ def test_deferred_preserves_group_structure():
         x.text(",")
         x.breakable()
         x.text("b")
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "wrap[(a, b)]"
 
 
@@ -1034,7 +1045,7 @@ def test_deferred_indent_applied_at_replay_site():
     with x.indent(4):
         x.break_()
         x.text("Y")
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "X\n    Y"
 
 
@@ -1053,7 +1064,7 @@ def test_deferred_nested_pretty_is_concrete():
     x = p.deferred()
     x.pretty(b)
     b.v = 999
-    x.finalize()
+    p.finalize()
     assert p.getvalue() == "Box(1)"
 
 
@@ -1066,7 +1077,28 @@ def test_deferred_multiple_levels_of_nesting():
     b.text("C ")
     c = b.deferred()
     c.text("D")
-    c.finalize()
-    b.finalize()
-    a.finalize()
+    p.finalize()
     assert p.getvalue() == "A B C D"
+
+
+def test_deferred_does_not_force_premature_line_break():
+    # Content added via a deferred should not cause the parent's pending
+    # buffer to commit to a line-wrap decision that it wouldn't have made
+    # had the deferred content been applied directly.
+    model = pretty.RepresentationPrinter()
+    model.begin_group(0, "")
+    model.text("a" * 70)
+    model.breakable(" ")
+    model.text("b" * 20)
+    model.end_group(0, "")
+
+    test = pretty.RepresentationPrinter()
+    test.begin_group(0, "")
+    test.text("a" * 70)
+    test.breakable(" ")
+    x = test.deferred()
+    x.text("b" * 20)
+    test.finalize()
+    test.end_group(0, "")
+
+    assert model.getvalue() == test.getvalue()
