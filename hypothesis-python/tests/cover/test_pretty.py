@@ -897,3 +897,176 @@ def test_get_slice_comment_skips_already_commented():
     # Should return None because slice is already in _commented_slices
     result = _get_slice_comment(p, arg_labels, "arg[0]")
     assert result is None
+
+
+def test_deferred_basic():
+    p = pretty.RepresentationPrinter()
+    p.text("[")
+    x = p.deferred()
+    p.text("]")
+    x.pretty(1)
+    x.text(", ")
+    x.pretty((2, 3))
+    x.finalize()
+    assert p.getvalue() == "[1, (2, 3)]"
+
+
+def test_deferred_empty():
+    p = pretty.RepresentationPrinter()
+    p.text("[")
+    x = p.deferred()
+    p.text("]")
+    x.finalize()
+    assert p.getvalue() == "[]"
+
+
+def test_deferred_before_any_output():
+    p = pretty.RepresentationPrinter()
+    x = p.deferred()
+    x.text("hello")
+    x.finalize()
+    assert p.getvalue() == "hello"
+
+
+def test_deferred_captures_mutable_state_at_call_time():
+    # The recording should store concrete values, not references to mutable
+    # objects - so mutations between call and finalize shouldn't affect output.
+    p = pretty.RepresentationPrinter()
+    obj = [1, 2, 3]
+    x = p.deferred()
+    x.pretty(obj)
+    obj.append(4)  # mutate after deferred call but before finalize
+    x.finalize()
+    assert p.getvalue() == "[1, 2, 3]"
+
+
+def test_deferred_sequential():
+    p = pretty.RepresentationPrinter()
+    p.text("<")
+    x1 = p.deferred()
+    p.text("|")
+    x2 = p.deferred()
+    p.text(">")
+    x1.text("one")
+    x2.text("two")
+    x1.finalize()
+    x2.finalize()
+    assert p.getvalue() == "<one|two>"
+
+
+def test_deferred_finalize_order_independent():
+    # Output order depends on creation order, not finalize order.
+    p = pretty.RepresentationPrinter()
+    p.text("<")
+    x1 = p.deferred()
+    p.text("|")
+    x2 = p.deferred()
+    p.text(">")
+    x1.text("one")
+    x2.text("two")
+    x2.finalize()  # finalize x2 first
+    x1.finalize()
+    assert p.getvalue() == "<one|two>"
+
+
+def test_deferred_nested():
+    p = pretty.RepresentationPrinter()
+    p.text("[")
+    outer = p.deferred()
+    p.text("]")
+    outer.text("(")
+    inner = outer.deferred()
+    outer.text(")")
+    inner.text("inside")
+    inner.finalize()
+    outer.finalize()
+    assert p.getvalue() == "[(inside)]"
+
+
+def test_deferred_resumes_normal_printing_after_finalize():
+    p = pretty.RepresentationPrinter()
+    p.text("start ")
+    x = p.deferred()
+    x.text("middle")
+    x.finalize()
+    p.text(" end")
+    assert p.getvalue() == "start middle end"
+
+
+def test_deferred_finalize_raises_on_double_finalize():
+    p = pretty.RepresentationPrinter()
+    x = p.deferred()
+    x.finalize()
+    with pytest.raises(RuntimeError):
+        x.finalize()
+
+
+def test_deferred_finalize_raises_with_outstanding_children():
+    p = pretty.RepresentationPrinter()
+    outer = p.deferred()
+    outer.deferred()  # child not finalized
+    with pytest.raises(RuntimeError):
+        outer.finalize()
+
+
+def test_deferred_preserves_group_structure():
+    # A group created inside a deferred should produce well-formed output
+    # when replayed.
+    p = pretty.RepresentationPrinter()
+    p.text("wrap[")
+    x = p.deferred()
+    p.text("]")
+    with x.group(1, "(", ")"):
+        x.text("a")
+        x.text(",")
+        x.breakable()
+        x.text("b")
+    x.finalize()
+    assert p.getvalue() == "wrap[(a, b)]"
+
+
+def test_deferred_indent_applied_at_replay_site():
+    # indent() shifts should be captured so that break_() in the deferred
+    # uses the correct indentation.
+    p = pretty.RepresentationPrinter()
+    p.text("X")
+    x = p.deferred()
+    with x.indent(4):
+        x.break_()
+        x.text("Y")
+    x.finalize()
+    assert p.getvalue() == "X\n    Y"
+
+
+def test_deferred_nested_pretty_is_concrete():
+    # When a custom _repr_pretty_ mutates its argument after the deferred
+    # call, we should see the snapshot at record time.
+    class Box:
+        def __init__(self, v):
+            self.v = v
+
+        def _repr_pretty_(self, pp, cycle):
+            pp.text(f"Box({self.v})")
+
+    p = pretty.RepresentationPrinter()
+    b = Box(1)
+    x = p.deferred()
+    x.pretty(b)
+    b.v = 999
+    x.finalize()
+    assert p.getvalue() == "Box(1)"
+
+
+def test_deferred_multiple_levels_of_nesting():
+    p = pretty.RepresentationPrinter()
+    p.text("A ")
+    a = p.deferred()
+    a.text("B ")
+    b = a.deferred()
+    b.text("C ")
+    c = b.deferred()
+    c.text("D")
+    c.finalize()
+    b.finalize()
+    a.finalize()
+    assert p.getvalue() == "A B C D"
