@@ -719,12 +719,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         if result is filter_not_satisfied:
             data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
         assert not isinstance(result, UniqueIdentifier)
-        # one_of drives the choice of alternative through this class with
-        # strategy objects as the elements; maybe_add_choice_node_for will
-        # no-op on those. For primitive-valued sampled_from / just calls it
-        # records a forced marker choice so that the span is non-empty and
-        # annotated for the shrinker's widening pass.
-        data.maybe_add_choice_node_for(result)
+        # Record the generated value as a forced choice so the span is
+        # non-empty and (for primitive values) annotated with the generated
+        # value for the shrinker's widening pass.
+        data.add_choice_node_for(result)
         return result
 
     def get_element(self, i: int) -> Ex | UniqueIdentifier:
@@ -849,12 +847,32 @@ class OneOfStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        strategy = data.draw(
-            SampledFromStrategy(self.element_strategies).filter(
-                lambda s: not s.is_currently_empty(data)
+        strategies = self.element_strategies
+        n = len(strategies)
+        # Draw an index to pick an alternative, retrying a few times if the
+        # chosen strategy is currently empty (e.g. an empty Bundle in stateful
+        # testing).
+        for attempt in range(3):
+            i = data.draw_integer(0, n - 1)
+            if not strategies[i].is_currently_empty(data):
+                return data.draw(strategies[i])
+            if attempt == 0:
+                data.events[
+                    f"Retried draw from {self!r} to avoid empty alternative"
+                ] = ""
+
+        # If the retries all landed on empty alternatives, fall back to
+        # exhaustively picking a non-empty one.
+        allowed = [
+            i for i in range(n) if not strategies[i].is_currently_empty(data)
+        ]
+        if not allowed:
+            data.mark_invalid(
+                f"Aborted test because all alternatives of {self!r} were empty"
             )
-        )
-        return data.draw(strategy)
+        i = data.choice(allowed)
+        data.draw_integer(0, n - 1, forced=i)
+        return data.draw(strategies[i])
 
     def __repr__(self) -> str:
         return "one_of({})".format(", ".join(map(repr, self.original_strategies)))

@@ -1031,15 +1031,18 @@ class ConjectureData:
         constraints: BooleanConstraints = self._pooled_constraints("boolean", {"p": p})
         return self._draw("boolean", constraints, observe=observe, forced=forced)
 
-    def maybe_add_choice_node_for(self, value: Any) -> None:
-        """Record ``value`` in the choice sequence if it is a primitive.
+    def add_choice_node_for(self, value: Any) -> None:
+        """Record ``value`` in the choice sequence as a forced choice.
 
         Strategies like :func:`just` and :func:`sampled_from` produce a value
-        without consulting the choice sequence. For primitive values, this
-        method places a forced choice of the corresponding type so that the
-        value is visible to span-level machinery (the recorded generated
-        primitive value on the span, shrinking widenings). For non-primitive
-        values it is a no-op.
+        without consulting the choice sequence. This method places a forced
+        choice so that the span is non-empty and visible to span-level
+        machinery (the recorded generated primitive value on the span,
+        shrinking widenings).
+
+        For primitive values, the forced choice is of the corresponding type.
+        For non-primitive values it is a forced boolean ``True`` — a minimal
+        placeholder that guarantees the span contains at least one choice.
         """
         if type(value) is bool:
             self.draw_boolean(forced=value)
@@ -1051,6 +1054,8 @@ class ConjectureData:
             self.draw_string(IntervalSet.from_string(value), forced=value)
         elif type(value) is bytes:
             self.draw_bytes(max_size=len(value), forced=value)
+        else:
+            self.draw_boolean(forced=True)
 
     @overload
     def _pooled_constraints(

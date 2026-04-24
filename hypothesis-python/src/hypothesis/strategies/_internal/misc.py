@@ -55,7 +55,7 @@ class JustStrategy(SampledFromStrategy[Ex]):
         # The parent class's `do_draw` implementation delegates directly to
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. The parent's ``do_draw`` will record the
-        # resulting value with ``data.maybe_add_choice_node_for``.
+        # resulting value with ``data.add_choice_node_for``.
         return self._transform(self.value)
 
 

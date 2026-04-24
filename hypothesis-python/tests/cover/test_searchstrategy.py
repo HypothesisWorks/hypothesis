@@ -52,18 +52,6 @@ def test_just_strategy_uses_repr():
     assert repr(st.just(WeirdRepr())) == f"just({WeirdRepr()!r})"
 
 
-def test_just_strategy_does_not_draw_for_non_primitive_values():
-    data = ConjectureData.for_choices([])
-    s = st.just([1, 2, 3])
-    assert s.do_draw(data) == [1, 2, 3]
-
-
-def test_none_strategy_does_not_draw():
-    data = ConjectureData.for_choices([])
-    s = st.none()
-    assert s.do_draw(data) is None
-
-
 def test_can_map():
     s = st.integers().map(pack=lambda t: "foo")
     assert_simple_property(s, lambda v: v == "foo")
