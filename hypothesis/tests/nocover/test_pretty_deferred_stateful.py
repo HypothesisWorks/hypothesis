@@ -21,7 +21,7 @@ from hypothesis.vendor import pretty
 # --- AST for printing programs ----------------------------------------
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PText:
     s: str
 
@@ -29,7 +29,7 @@ class PText:
         p.text(self.s)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PBreakable:
     sep: str
 
@@ -37,13 +37,13 @@ class PBreakable:
         p.breakable(self.sep)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PBreak:
     def apply(self, p):
         p.break_()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PGroup:
     indent: int
     open: str
@@ -56,7 +56,7 @@ class PGroup:
                 c.apply(p)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PIndent:
     amount: int
     children: tuple
@@ -67,7 +67,7 @@ class PIndent:
                 c.apply(p)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PProgram:
     """A sequence of printing operations forming a single program."""
 
