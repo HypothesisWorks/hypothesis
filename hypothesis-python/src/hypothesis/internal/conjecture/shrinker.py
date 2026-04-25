@@ -624,62 +624,27 @@ class Shrinker:
     ) -> "Iterator[tuple[ChoiceT, ...]]":
         """Yield deterministic candidate replacements for ``nodes[start:end]``.
 
-        Pure random sampling can miss simple cases like ``assert n1 == n2``,
-        where the only passing value of ``n1`` happens to equal ``n2``. We try
-        the minimal and smallest non-minimal values, plus values borrowed from
-        each other arg slice with matching length and types.
+        Random sampling alone misses cases like ``assert n1 == n2``, where the
+        only passing value of ``n1`` is exactly ``n2``'s value. We try
+        substituting values from each other arg slice with matching length and
+        types, which catches such comparisons. Invalid borrowed values just
+        produce an irrelevant test result the outer loop discards.
         """
         nodes = self.nodes
-        current = tuple(nodes[i].value for i in range(start, end))
-        seen: set[tuple[Any, ...]] = {tuple(choice_key(v) for v in current)}
-
-        def emit(replacement: list[ChoiceT]) -> "Iterator[tuple[ChoiceT, ...]]":
-            candidate = tuple(replacement)
-            key = tuple(choice_key(v) for v in candidate)
-            if key not in seen:
-                seen.add(key)
-                yield candidate
-
-        # Try the minimal value of each constraint, and the smallest non-minimal
-        # value (e.g. 0 and 1 for unbounded integers, False and True for booleans).
-        for idx in (0, 1):
-            replacement: list[ChoiceT] = []
-            for i in range(start, end):
-                node = nodes[i]
-                if node.was_forced:
-                    replacement.append(node.value)
-                    continue
-                try:
-                    value = choice_from_index(idx, node.type, node.constraints)
-                except (NotImplementedError, AssertionError, IndexError):
-                    break
-                if not choice_permitted(value, node.constraints):
-                    break
-                replacement.append(value)
-            else:
-                yield from emit(replacement)
-
-        # Try substituting values from each other arg slice with the same length
-        # and types. This catches comparisons like ``assert n1 == n2``: replacing
-        # n1 with n2's value (or vice versa) will make the test pass.
         target_types = tuple(nodes[i].type for i in range(start, end))
+        current_keys = tuple(choice_key(nodes[i].value) for i in range(start, end))
+        seen: set[tuple[Any, ...]] = {current_keys}
         for s2, e2 in sorted(self.shrink_target.arg_slices):
             if (s2, e2) == (start, end) or (e2 - s2) != (end - start):
                 continue
             if tuple(nodes[s2 + j].type for j in range(end - start)) != target_types:
                 continue
-            replacement = []
-            for j in range(end - start):
-                node = nodes[start + j]
-                if node.was_forced:
-                    replacement.append(node.value)
-                    continue
-                other = nodes[s2 + j].value
-                if not choice_permitted(other, node.constraints):
-                    break
-                replacement.append(other)
-            else:
-                yield from emit(replacement)
+            borrowed = tuple(nodes[s2 + j].value for j in range(end - start))
+            key = tuple(choice_key(v) for v in borrowed)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield borrowed
 
     def greedy_shrink(self) -> None:
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1435,13 +1400,15 @@ class Shrinker:
         )
         node2 = chooser.choose(
             self.nodes,
-            lambda node: can_choose_node(node)
-            # Note that it's fine for node2 to be trivial, because we're going to
-            # explicitly make it *not* trivial by adding to its value.
-            and not node.was_forced
-            # to avoid quadratic behavior, scan ahead only a small amount for
-            # the related node.
-            and node1.index < node.index <= node1.index + 4,
+            lambda node: (
+                can_choose_node(node)
+                # Note that it's fine for node2 to be trivial, because we're going to
+                # explicitly make it *not* trivial by adding to its value.
+                and not node.was_forced
+                # to avoid quadratic behavior, scan ahead only a small amount for
+                # the related node.
+                and node1.index < node.index <= node1.index + 4
+            ),
         )
 
         m: int | float = node1.value
@@ -1493,8 +1460,9 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 3 + 1)),
-                lambda i: self.nodes[i].type == "integer"
-                and not self.nodes[i].was_forced,
+                lambda i: (
+                    self.nodes[i].type == "integer" and not self.nodes[i].was_forced
+                ),
             )
         ]
 
@@ -1547,9 +1515,12 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 1 + 4)),
-                lambda i: self.nodes[i].type == "string" and not self.nodes[i].trivial
-                # select nodes which have at least one of the same character present
-                and set(node1.value) & set(self.nodes[i].value),
+                lambda i: (
+                    self.nodes[i].type == "string"
+                    and not self.nodes[i].trivial
+                    # select nodes which have at least one of the same character present
+                    and set(node1.value) & set(self.nodes[i].value)
+                ),
             )
         ]
 
