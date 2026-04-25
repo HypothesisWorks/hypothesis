@@ -12,6 +12,7 @@
 .hypothesis
 .vscode/
 .claude/settings.local.json
+CLAUDE.local.md
 
 # generic build components
 
