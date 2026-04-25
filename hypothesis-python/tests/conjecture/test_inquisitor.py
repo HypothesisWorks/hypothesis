@@ -110,14 +110,12 @@ def test_issue_3755_regression(start_date, data):
     raise ZeroDivisionError
 
 
-@fails_with_output(
-    """
+@fails_with_output("""
 Falsifying example: test_inquisitor_no_misleading_comment_for_eq_args(
     n1=0,
     n2=1,
 )
-"""
-)
+""")
 @settings(print_blob=False, derandomize=True)
 @given(st.integers(), st.integers())
 def test_inquisitor_no_misleading_comment_for_eq_args(n1, n2):
