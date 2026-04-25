@@ -1193,7 +1193,12 @@ class URandom(Random):
 
     @staticmethod
     def _urandom(size: int) -> bytes:
-        with open("/dev/urandom", "rb") as f:
+        # By default, we buffer more data from /dev/urandom than the actual `size` number
+        # of bytes we requested. This trips up anyone (and particularly Antithesis)
+        # hooking /dev/urandom reads to control randomness.
+        #
+        # buffering=0 disables this behavior.
+        with open("/dev/urandom", "rb", buffering=0) as f:
             return f.read(size)
 
     def getrandbits(self, k: int) -> int:
