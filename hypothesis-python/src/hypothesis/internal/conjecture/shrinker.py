@@ -10,7 +10,7 @@
 
 import math
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -501,27 +501,36 @@ class Shrinker:
             ):
                 continue
 
+            # Try a few targeted candidates before falling back to random sampling,
+            # so that simple cases like ``assert n1 == n2`` -- where the only
+            # passing value of ``n1`` is exactly ``n2``'s value -- aren't reported
+            # as freely-variable just because random sampling missed it.
+            candidates = list(self._explain_candidates(start, end))
+
             # Run our experiments
             n_same_failures = 0
             note = "or any other generated value"
             # TODO: is 100 same-failures out of 500 attempts a good heuristic?
-            for n_attempt in range(500):  # pragma: no branch
+            for n_attempt in range(500 + len(candidates)):  # pragma: no branch
                 # no-branch here because we don't coverage-test the abort-at-500 logic.
 
-                if n_attempt - 10 > n_same_failures * 5:
+                if n_attempt - 10 - len(candidates) > n_same_failures * 5:
                     # stop early if we're seeing mostly invalid examples
                     break  # pragma: no cover
 
-                # replace start:end with random values
-                replacement = []
-                for i in range(start, end):
-                    node = nodes[i]
-                    if not node.was_forced:
-                        value = draw_choice(
-                            node.type, node.constraints, random=self.random
-                        )
-                        node = node.copy(with_value=value)
-                    replacement.append(node.value)
+                if n_attempt < len(candidates):
+                    replacement = list(candidates[n_attempt])
+                else:
+                    # replace start:end with random values
+                    replacement = []
+                    for i in range(start, end):
+                        node = nodes[i]
+                        if not node.was_forced:
+                            value = draw_choice(
+                                node.type, node.constraints, random=self.random
+                            )
+                            node = node.copy(with_value=value)
+                        replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
                 result = self.engine.cached_test_function(attempt, extend="full")
@@ -609,6 +618,68 @@ class Shrinker:
                         "The test always failed when commented parts were varied together."
                     )
                     break
+
+    def _explain_candidates(
+        self, start: int, end: int
+    ) -> "Iterator[tuple[ChoiceT, ...]]":
+        """Yield deterministic candidate replacements for ``nodes[start:end]``.
+
+        Pure random sampling can miss simple cases like ``assert n1 == n2``,
+        where the only passing value of ``n1`` happens to equal ``n2``. We try
+        the minimal and smallest non-minimal values, plus values borrowed from
+        each other arg slice with matching length and types.
+        """
+        nodes = self.nodes
+        current = tuple(nodes[i].value for i in range(start, end))
+        seen: set[tuple[Any, ...]] = {tuple(choice_key(v) for v in current)}
+
+        def emit(replacement: list[ChoiceT]) -> "Iterator[tuple[ChoiceT, ...]]":
+            candidate = tuple(replacement)
+            key = tuple(choice_key(v) for v in candidate)
+            if key not in seen:
+                seen.add(key)
+                yield candidate
+
+        # Try the minimal value of each constraint, and the smallest non-minimal
+        # value (e.g. 0 and 1 for unbounded integers, False and True for booleans).
+        for idx in (0, 1):
+            replacement: list[ChoiceT] = []
+            for i in range(start, end):
+                node = nodes[i]
+                if node.was_forced:
+                    replacement.append(node.value)
+                    continue
+                try:
+                    value = choice_from_index(idx, node.type, node.constraints)
+                except (NotImplementedError, AssertionError, IndexError):
+                    break
+                if not choice_permitted(value, node.constraints):
+                    break
+                replacement.append(value)
+            else:
+                yield from emit(replacement)
+
+        # Try substituting values from each other arg slice with the same length
+        # and types. This catches comparisons like ``assert n1 == n2``: replacing
+        # n1 with n2's value (or vice versa) will make the test pass.
+        target_types = tuple(nodes[i].type for i in range(start, end))
+        for s2, e2 in sorted(self.shrink_target.arg_slices):
+            if (s2, e2) == (start, end) or (e2 - s2) != (end - start):
+                continue
+            if tuple(nodes[s2 + j].type for j in range(end - start)) != target_types:
+                continue
+            replacement = []
+            for j in range(end - start):
+                node = nodes[start + j]
+                if node.was_forced:
+                    replacement.append(node.value)
+                    continue
+                other = nodes[s2 + j].value
+                if not choice_permitted(other, node.constraints):
+                    break
+                replacement.append(other)
+            else:
+                yield from emit(replacement)
 
     def greedy_shrink(self) -> None:
         """Run a full set of greedy shrinks (that is, ones that will only ever
