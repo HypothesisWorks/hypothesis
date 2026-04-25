@@ -351,37 +351,50 @@ def compile_requirements(*, upgrade=False):
 
 def update_python_versions():
     install.ensure_python(PYTHONS[ci_version])
-    where = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv/")
-    subprocess.run(
-        "git fetch && git reset --hard origin/master",
-        cwd=where,
-        shell=True,
-        capture_output=True,
-    )
-    cmd = "bin/pyenv install --list"
+    # `uv python list` prints one candidate per line; it reports only the
+    # interpreters uv knows how to install, so we don't need to translate
+    # from pyenv's naming scheme any more.
     result = subprocess.run(
-        cmd, shell=True, stdout=subprocess.PIPE, cwd=where
+        ["uv", "python", "list", "--all-versions", "--output-format", "text"],
+        stdout=subprocess.PIPE,
+        check=True,
     ).stdout.decode()
-    # pyenv reports available versions in chronological order, so we keep the newest
-    # *unless* our current ends with a digit (is stable) and the candidate does not.
-    # (plus some special cases for the `t` suffix for free-threading builds)
-    stable = re.compile(r".*3\.\d+.\d+t?$")
-    min_minor_version = re.search(
-        r'requires-python = ">= ?3.(\d+)"',
-        Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
-    ).group(1)
+    # Each line starts with something like `cpython-3.14.4-linux-aarch64-gnu`
+    # or `cpython-3.14.4+freethreaded-linux-aarch64-gnu` or `pypy-3.10.16-…`.
+    # We pull out the `(impl, version)` bit at the head.
+    versions = []
+    for line in result.splitlines():
+        token = line.strip().split()[0] if line.strip() else ""
+        if m := re.match(
+            r"(cpython|pypy)-(\d+\.\d+\.\d+(?:[a-z]\d+)?)(\+freethreaded)?", token
+        ):
+            impl, ver, ft = m.groups()
+            versions.append((impl, ver, bool(ft)))
+
+    min_minor_version = int(
+        re.search(
+            r'requires-python = ">= ?3.(\d+)"',
+            Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
+        ).group(1)
+    )
+    # For cpython we key by `3.NN` (or `3.NNt` for free-threaded) and pick the
+    # newest available version. pypy we key by `pypyX.Y` and format as
+    # `pypyX.Y-dev` → the existing PYTHONS dict keeps the upstream pypy
+    # version string for informational purposes, so we reconstruct those.
     best = {}
-    for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:9|\d\dt?)", line):
-            key = m.group()
-            curr = best.get(key, line)
-            if (
-                (stable.match(line) or not stable.match(curr))
-                and not (line.endswith("-dev") and not curr.endswith("-dev"))
-                and int(key.split(".")[-1].rstrip("t")) >= int(min_minor_version)
-                and key.endswith("t") == line.endswith(("t", "t-dev"))
-            ):
-                best[key] = line
+    for impl, ver, ft in versions:
+        major_minor = ".".join(ver.split(".")[:2])
+        if int(major_minor.split(".")[-1]) < min_minor_version:
+            continue
+        if impl == "cpython":
+            key = f"{major_minor}{'t' if ft else ''}"
+            candidate = f"{ver}{'+freethreaded' if ft else ''}"
+        else:
+            assert impl == "pypy"
+            key = f"pypy{major_minor}"
+            candidate = f"pypy{major_minor}-{ver}"
+        # `uv python list` sorts newest-first, so first hit wins.
+        best.setdefault(key, candidate)
 
     if best == PYTHONS:
         return

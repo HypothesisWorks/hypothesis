@@ -10,9 +10,8 @@
 
 """Module for obtaining various versions of Python.
 
-Currently this is a thin shim around pyenv, but it would be nice to have
-this work on Windows as well by using Anaconda (as our build already
-does).
+This is a thin shim around ``uv python install`` via the
+``ensure-python.sh`` helper script.
 """
 
 import os

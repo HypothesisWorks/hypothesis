@@ -12,8 +12,8 @@ ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
 export ROOT
 export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
-export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
+export UV_PYTHON_INSTALL_DIR="$SNAKEPIT/.uv-managed"
 
 export XDG_CACHE_HOME="$BUILD_RUNTIMES/.cache"
 
