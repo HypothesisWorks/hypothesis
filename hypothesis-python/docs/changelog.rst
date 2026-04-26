@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.3:
+
+--------------------
+6.152.3 - 2026-04-26
+--------------------
+
+The ``hypothesis-urandom`` :ref:`backend <alternative-backends>` now reads from ``/dev/urandom`` with buffering disabled, which improves the control of those hooking ``/dev/urandom`` to change or read Hypothesis's random decisions.
+
 .. _v6.152.2:
 
 --------------------
