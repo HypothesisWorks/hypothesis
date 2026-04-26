@@ -351,6 +351,10 @@ pre code {
   margin-bottom: 1rem;
 }
 
+.article-card__content {
+  overflow-wrap: break-word;
+}
+
 .article-card__content a:hover {
   text-decoration: underline;
 }
@@ -443,6 +447,7 @@ pre code {
   line-height: 1.6;
   font-size: 1.125rem;
   color: var(--text-color);
+  overflow-wrap: break-word;
 }
 
 .article-content h1,
@@ -565,6 +570,7 @@ pre code {
 .page-body {
   line-height: 1.7;
   color: var(--text-color);
+  overflow-wrap: break-word;
 }
 
 .page-body h1,
