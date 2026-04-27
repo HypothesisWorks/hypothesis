@@ -10,7 +10,7 @@
 
 import math
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -501,27 +501,36 @@ class Shrinker:
             ):
                 continue
 
+            # Try a few targeted candidates before falling back to random sampling,
+            # so that simple cases like ``assert n1 == n2`` -- where the only
+            # passing value of ``n1`` is exactly ``n2``'s value -- aren't reported
+            # as freely-variable just because random sampling missed it.
+            candidates = list(self._explain_candidates(start, end))
+
             # Run our experiments
             n_same_failures = 0
             note = "or any other generated value"
             # TODO: is 100 same-failures out of 500 attempts a good heuristic?
-            for n_attempt in range(500):  # pragma: no branch
+            for n_attempt in range(500 + len(candidates)):  # pragma: no branch
                 # no-branch here because we don't coverage-test the abort-at-500 logic.
 
-                if n_attempt - 10 > n_same_failures * 5:
+                if n_attempt - 10 - len(candidates) > n_same_failures * 5:
                     # stop early if we're seeing mostly invalid examples
                     break  # pragma: no cover
 
-                # replace start:end with random values
-                replacement = []
-                for i in range(start, end):
-                    node = nodes[i]
-                    if not node.was_forced:
-                        value = draw_choice(
-                            node.type, node.constraints, random=self.random
-                        )
-                        node = node.copy(with_value=value)
-                    replacement.append(node.value)
+                if n_attempt < len(candidates):
+                    replacement = list(candidates[n_attempt])
+                else:
+                    # replace start:end with random values
+                    replacement = []
+                    for i in range(start, end):
+                        node = nodes[i]
+                        if not node.was_forced:
+                            value = draw_choice(
+                                node.type, node.constraints, random=self.random
+                            )
+                            node = node.copy(with_value=value)
+                        replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
                 result = self.engine.cached_test_function(attempt, extend="full")
@@ -609,6 +618,33 @@ class Shrinker:
                         "The test always failed when commented parts were varied together."
                     )
                     break
+
+    def _explain_candidates(
+        self, start: int, end: int
+    ) -> "Iterator[tuple[ChoiceT, ...]]":
+        """Yield deterministic candidate replacements for ``nodes[start:end]``.
+
+        Random sampling alone misses cases like ``assert n1 == n2``, where the
+        only passing value of ``n1`` is exactly ``n2``'s value. We try
+        substituting values from each other arg slice with matching length and
+        types, which catches such comparisons. Invalid borrowed values just
+        produce an irrelevant test result the outer loop discards.
+        """
+        nodes = self.nodes
+        target_types = tuple(nodes[i].type for i in range(start, end))
+        current_keys = tuple(choice_key(nodes[i].value) for i in range(start, end))
+        seen: set[tuple[Any, ...]] = {current_keys}
+        for s2, e2 in sorted(self.shrink_target.arg_slices):
+            if (s2, e2) == (start, end) or (e2 - s2) != (end - start):
+                continue
+            if tuple(nodes[s2 + j].type for j in range(end - start)) != target_types:
+                continue
+            borrowed = tuple(nodes[s2 + j].value for j in range(end - start))
+            key = tuple(choice_key(v) for v in borrowed)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield borrowed
 
     def greedy_shrink(self) -> None:
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1364,13 +1400,15 @@ class Shrinker:
         )
         node2 = chooser.choose(
             self.nodes,
-            lambda node: can_choose_node(node)
-            # Note that it's fine for node2 to be trivial, because we're going to
-            # explicitly make it *not* trivial by adding to its value.
-            and not node.was_forced
-            # to avoid quadratic behavior, scan ahead only a small amount for
-            # the related node.
-            and node1.index < node.index <= node1.index + 4,
+            lambda node: (
+                can_choose_node(node)
+                # Note that it's fine for node2 to be trivial, because we're going to
+                # explicitly make it *not* trivial by adding to its value.
+                and not node.was_forced
+                # to avoid quadratic behavior, scan ahead only a small amount for
+                # the related node.
+                and node1.index < node.index <= node1.index + 4
+            ),
         )
 
         m: int | float = node1.value
@@ -1422,8 +1460,9 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 3 + 1)),
-                lambda i: self.nodes[i].type == "integer"
-                and not self.nodes[i].was_forced,
+                lambda i: (
+                    self.nodes[i].type == "integer" and not self.nodes[i].was_forced
+                ),
             )
         ]
 
@@ -1476,9 +1515,12 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 1 + 4)),
-                lambda i: self.nodes[i].type == "string" and not self.nodes[i].trivial
-                # select nodes which have at least one of the same character present
-                and set(node1.value) & set(self.nodes[i].value),
+                lambda i: (
+                    self.nodes[i].type == "string"
+                    and not self.nodes[i].trivial
+                    # select nodes which have at least one of the same character present
+                    and set(node1.value) & set(self.nodes[i].value)
+                ),
             )
         ]
 
