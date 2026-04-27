@@ -43,3 +43,7 @@ When creating a PR that changes `hypothesis-python/src/`:
    - **Minimally commented** - code should be self-documenting; only add comments where truly needed
 2. **Run `./build.sh format; ./build.sh lint`** immediately before committing to auto-format and lint code
 3. **Do not reference issues or PRs in commit messages** (e.g., avoid `Fixes #1234` or `See #5678`) - this clutters the issue timeline with unnecessary links
+
+## Before Pushing to a PR
+
+**Always run `./build.sh format` before `git push`.** The CI `check-format` job runs `shed` against every file your branch touches and asserts no diff — so if any tool other than the pinned `shed` (e.g. `ruff format`) has been used on those files, or if pre-existing lines in a touched file aren't already shed-formatted, the job fails. Running `./build.sh format` uses the pinned tool versions and is the only way to be sure the check will pass.
