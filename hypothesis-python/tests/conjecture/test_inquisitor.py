@@ -12,8 +12,9 @@ import traceback
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import Phase, given, settings, strategies as st
 
+from tests.common.debug import minimal
 from tests.common.utils import fails_with
 
 
@@ -263,14 +264,12 @@ def test_inquisitor_multi_level_nesting(bare, outer):
 
 
 def test_explain_does_not_crash_with_per_run_labels():
-    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4708
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4708.
     # If a strategy constructed inside a composite draws from st.just() of a
     # fresh instance of a user-defined class, the resulting OneOfStrategy has
     # a different label on each test invocation. The explain phase would
     # previously assert equal labels between the shrink target and a replayed
     # result, which is not guaranteed to hold.
-    from hypothesis import find, settings
-
     class W:
         def __init__(self, a):
             self.a = a
@@ -283,4 +282,8 @@ def test_explain_does_not_crash_with_per_run_labels():
     def wrapped(draw):
         return draw(st.one_of(st.just(W(None)), structured.map(W)))
 
-    find(wrapped(), lambda x: isinstance(x.a, list), settings=settings(database=None))
+    minimal(
+        wrapped(),
+        lambda x: isinstance(x.a, list),
+        settings=settings(phases=(Phase.generate, Phase.shrink, Phase.explain)),
+    )
