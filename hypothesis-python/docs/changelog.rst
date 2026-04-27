@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.4:
+
+--------------------
+6.152.4 - 2026-04-27
+--------------------
+
+This patch fixes a rare internal error during |Phase.explain| introduced in :version:`6.149.0` for certain strategies (:issue:`4708`).
+
 .. _v6.152.3:
 
 --------------------
