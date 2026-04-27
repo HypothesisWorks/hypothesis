@@ -52,18 +52,6 @@ def test_just_strategy_uses_repr():
     assert repr(st.just(WeirdRepr())) == f"just({WeirdRepr()!r})"
 
 
-def test_just_strategy_does_not_draw():
-    data = ConjectureData.for_choices([])
-    s = st.just("hello")
-    assert s.do_draw(data) == "hello"
-
-
-def test_none_strategy_does_not_draw():
-    data = ConjectureData.for_choices([])
-    s = st.none()
-    assert s.do_draw(data) is None
-
-
 def test_can_map():
     s = st.integers().map(pack=lambda t: "foo")
     assert_simple_property(s, lambda v: v == "foo")
@@ -226,4 +214,14 @@ def test_to_jsonable_handles_reference_cycles(obj, value):
 
 def test_deferred_strategy_draw():
     strategy = st.deferred(lambda: st.integers())
+    assert strategy.do_draw(ConjectureData.for_choices([0])) == 0
+
+
+def test_lazy_strategy_draw():
+    # Directly exercise LazyStrategy.do_draw (normally data.draw unwraps
+    # lazy strategies, so this is the only path that reaches do_draw).
+    from hypothesis.strategies._internal.lazy import LazyStrategy
+
+    strategy = st.integers()  # integers() returns a LazyStrategy wrapper
+    assert isinstance(strategy, LazyStrategy)
     assert strategy.do_draw(ConjectureData.for_choices([0])) == 0

@@ -138,6 +138,13 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 # performance. We lose scan resistance, but that's probably fine here.
 POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCache(4096)
 
+# The Python types corresponding to our choice-node primitive types. A strategy
+# whose generated value has one of these exact types gets recorded on its span
+# as the generated primitive value. We use a tuple rather than a set because
+# ``in`` on a tuple relies only on equality, so it still works if the generated
+# value's class has an unhashable metaclass.
+_PRIMITIVE_CHOICE_TYPES: tuple[type, ...] = (int, bool, str, bytes, float)
+
 
 class Span:
     """A span tracks the hierarchical structure of choices within a single test run.
@@ -239,6 +246,15 @@ class Span:
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
 
+    @property
+    def generated_primitive_value(self) -> Any:
+        """The primitive value the corresponding strategy produced, or
+        ``None`` if there is none. Spans produced by a strategy generating a
+        primitive value (one of the types we have a choice node for -
+        ``int``, ``bool``, ``str``, ``bytes``, or ``float``) record the
+        generated value here."""
+        return self.owner.generated_primitive_values.get(self.index)
+
 
 class SpanProperty:
     """There are many properties of spans that we calculate by
@@ -321,6 +337,9 @@ class SpanRecord:
         self.__index_of_labels: dict[int, int] | None = {}
         self.trail = IntList()
         self.nodes: list[ChoiceNode] = []
+        self.generated_primitive_values: dict[int, Any] = {}
+        self.__open_spans: list[int] = []
+        self.__span_count = 0
 
     def freeze(self) -> None:
         self.__index_of_labels = None
@@ -336,12 +355,24 @@ class SpanRecord:
             i = self.__index_of_labels.setdefault(label, len(self.labels))
             self.labels.append(label)
         self.trail.append(TrailType.CHOICE + 1 + i)
+        self.__open_spans.append(self.__span_count)
+        self.__span_count += 1
 
     def stop_span(self, *, discard: bool) -> None:
         if discard:
             self.trail.append(TrailType.STOP_SPAN_DISCARD)
         else:
             self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
+        self.__open_spans.pop()
+
+    def record_value_for_span(self, value: Any) -> None:
+        # Record ``value`` against the most recently started span, but only if
+        # it is one of the primitive choice-node types. Called by
+        # ConjectureData.draw to capture the value a strategy produced.
+        if type(value) not in _PRIMITIVE_CHOICE_TYPES:
+            return
+        assert self.__open_spans, "Cannot record a value without an open span"
+        self.generated_primitive_values[self.__open_spans[-1]] = value
 
 
 class _starts_and_ends(SpanProperty):
@@ -442,6 +473,9 @@ class Spans:
     def __init__(self, record: SpanRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
+        self.generated_primitive_values: dict[int, Any] = (
+            record.generated_primitive_values
+        )
         self.__length = self.trail.count(
             TrailType.STOP_SPAN_DISCARD
         ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
@@ -997,6 +1031,33 @@ class ConjectureData:
         constraints: BooleanConstraints = self._pooled_constraints("boolean", {"p": p})
         return self._draw("boolean", constraints, observe=observe, forced=forced)
 
+    def add_choice_node_for(self, value: Any) -> None:
+        """Record ``value`` in the choice sequence as a forced choice.
+
+        Strategies like :func:`just` and :func:`sampled_from` produce a value
+        without consulting the choice sequence. This method places a forced
+        choice so that the span is non-empty and visible to span-level
+        machinery (the recorded generated primitive value on the span,
+        shrinking widenings).
+
+        For primitive values, the forced choice is of the corresponding type.
+        For non-primitive values it is a forced boolean ``False`` - the
+        simplest choice we can add, so the span doesn't look any more
+        complex than an empty one would.
+        """
+        if type(value) is bool:
+            self.draw_boolean(forced=value)
+        elif type(value) is int:
+            self.draw_integer(forced=value)
+        elif type(value) is float:
+            self.draw_float(forced=value)
+        elif type(value) is str:
+            self.draw_string(IntervalSet.from_string(value), forced=value)
+        elif type(value) is bytes:
+            self.draw_bytes(max_size=len(value), forced=value)
+        else:
+            self.draw_boolean(forced=False)
+
     @overload
     def _pooled_constraints(
         self, choice_type: Literal["integer"], constraints: IntegerConstraints
@@ -1202,26 +1263,32 @@ class ConjectureData:
         self.start_span(label=label)
         try:
             if not at_top_level:
-                return unwrapped.do_draw(self)
-            assert start_time is not None
-            key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
-            try:
+                v = unwrapped.do_draw(self)
+            else:
+                assert start_time is not None
+                key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
                 try:
-                    v = unwrapped.do_draw(self)
-                finally:
-                    # Subtract the time spent in GC to avoid overcounting, as it is
-                    # accounted for at the overall example level.
-                    in_gctime = gc_cumulative_time() - gc_start_time
-                    self.draw_times[key] = time.perf_counter() - start_time - in_gctime
-            except Exception as err:
-                add_note(
-                    err,
-                    f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
-                )
-                raise
-            if observability_enabled():
-                avoid = self.provider.avoid_realization
-                self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
+                    try:
+                        v = unwrapped.do_draw(self)
+                    finally:
+                        # Subtract the time spent in GC to avoid overcounting, as
+                        # it is accounted for at the overall example level.
+                        in_gctime = gc_cumulative_time() - gc_start_time
+                        self.draw_times[key] = (
+                            time.perf_counter() - start_time - in_gctime
+                        )
+                except Exception as err:
+                    add_note(
+                        err,
+                        f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
+                    )
+                    raise
+                if observability_enabled():
+                    avoid = self.provider.avoid_realization
+                    self._observability_args[key] = to_jsonable(
+                        v, avoid_realization=avoid
+                    )
+            self.__span_record.record_value_for_span(v)
             return v
         finally:
             self.stop_span()

@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import itertools
+from random import Random
 
 import pytest
 
@@ -162,7 +163,7 @@ def test_example_depth_marking():
 
 
 def test_has_examples_even_when_empty():
-    d = ConjectureData.for_choices([])
+    d = ConjectureData.for_choices([False])
     d.draw(st.just(False))
     d.freeze()
     assert d.spans
@@ -413,3 +414,98 @@ def test_overruns_at_exactly_max_length():
         except StopTest:
             pass
         assert data.status is Status.OVERRUN
+
+
+@pytest.mark.parametrize(
+    "strategy, expected",
+    [
+        (st.just(0), 0),
+        (st.just(True), True),
+        (st.just("hello"), "hello"),
+        (st.just(b"abc"), b"abc"),
+        (st.just(1.5), 1.5),
+    ],
+)
+def test_primitive_strategy_spans_record_generated_primitive_value(strategy, expected):
+    d = ConjectureData(random=Random(0))
+    value = d.draw(strategy)
+    d.freeze()
+    assert value == expected
+    strategy_span = next(ex for ex in d.spans if ex.depth == 1)
+    assert strategy_span.generated_primitive_value == expected
+
+
+def test_non_primitive_strategy_spans_do_not_record_a_value():
+    d = ConjectureData(random=Random(0))
+    d.draw(st.just((1, "x")))
+    d.freeze()
+    # A just() returning a tuple is not a primitive value - no value recorded.
+    outer = next(ex for ex in d.spans if ex.depth == 1)
+    assert outer.generated_primitive_value is None
+
+
+def test_top_level_span_does_not_record_a_value():
+    d = ConjectureData(random=Random(0))
+    d.draw(st.just(0))
+    d.freeze()
+    # The top-level span wraps the whole test run, not a single strategy.
+    assert d.spans[0].generated_primitive_value is None
+
+
+def test_manual_record_value_for_span():
+    # Test the low-level record_value_for_span API directly.
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d._ConjectureData__span_record.record_value_for_span("outer")
+    d.start_span(2)
+    d._ConjectureData__span_record.record_value_for_span(42)
+    d.stop_span()
+    d.stop_span()
+    d.freeze()
+    values = {
+        ex.label: ex.generated_primitive_value for ex in d.spans if ex.label in (1, 2)
+    }
+    assert values == {1: "outer", 2: 42}
+
+
+def test_span_without_value_returns_none():
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d.stop_span()
+    d.freeze()
+    span = next(ex for ex in d.spans if ex.label == 1)
+    assert span.generated_primitive_value is None
+
+
+def test_record_value_for_span_ignores_non_primitive():
+    # record_value_for_span only records primitive choice-node types.
+    d = ConjectureData(random=Random(0))
+    d.start_span(1)
+    d._ConjectureData__span_record.record_value_for_span([1, 2, 3])
+    d.stop_span()
+    d.freeze()
+    span = next(ex for ex in d.spans if ex.label == 1)
+    assert span.generated_primitive_value is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [True, 42, 1.5, "hello", b"hello"],
+)
+def test_choice_node_for_value_round_trips_primitives(value):
+    # The shrinker's widening pass synthesises a ChoiceNode from a primitive
+    # value. Exercise each primitive type.
+    from hypothesis.internal.conjecture.choice import choice_permitted
+    from hypothesis.internal.conjecture.shrinker import _choice_node_for_value
+
+    node = _choice_node_for_value(value)
+    assert node.value == value
+    assert not node.was_forced
+    assert choice_permitted(node.value, node.constraints)
+
+
+def test_choice_node_for_value_rejects_non_primitive():
+    from hypothesis.internal.conjecture.shrinker import _choice_node_for_value
+
+    with pytest.raises(AssertionError, match="non-primitive"):
+        _choice_node_for_value([1, 2, 3])

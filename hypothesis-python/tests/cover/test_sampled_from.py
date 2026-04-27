@@ -160,7 +160,7 @@ def test_unsatisfiable_explicit_filteredstrategy_just(x):
 
 
 def test_transformed_just_strategy():
-    data = ConjectureData.for_choices([])
+    data = ConjectureData.for_choices([2])
     s = JustStrategy([1]).map(lambda x: x * 2)
     assert s.do_draw(data) == 2
     sf = s.filter(lambda x: False)
