@@ -285,9 +285,22 @@ class RepresentationPrinter:
         # duplicating comments when nested objects share the same slice range.
         self._commented_slices: set[tuple[int, int]] = set()
 
+        # Deferred printing state. When self._recording is not None, primitive
+        # output methods append to that list instead of writing; all such
+        # calls are replayed when finalize() is called.
+        self._recording: list[tuple[str, tuple, dict]] | None = None
+        # Set to True for deferred printers that have already been finalized;
+        # further use then raises.
+        self._dead: bool = False
+        # A top-level printer is its own root; deferred printers override this
+        # to point at the root RepresentationPrinter of their session. Useful
+        # for detecting whether two printer references belong to the same
+        # print-and-finalize session.
+        self.root: RepresentationPrinter = self
+
     def pretty(self, obj: object, *, cycle: bool = False) -> None:
         """Pretty print the given object."""
-
+        self._check_live()
         obj_id = id(obj)
         cycle = cycle or obj_id in self.stack
         self.stack.append(obj_id)
@@ -388,8 +401,18 @@ class RepresentationPrinter:
                 self.output_width = x.output(self.output, self.output_width)
                 self.buffer_width -= x.width
 
+    def _check_live(self) -> None:
+        if self._dead:
+            raise RuntimeError(
+                "cannot use a deferred printer after its parent has been finalized"
+            )
+
     def text(self, obj: str) -> None:
         """Add literal text to the output."""
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("text", (obj,), {}))
+            return
         width = len(obj)
         if self.buffer:
             text = self.buffer[-1]
@@ -411,6 +434,10 @@ class RepresentationPrinter:
         which default to one space.
 
         """
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("breakable", (sep,), {}))
+            return
         width = len(sep)
         group = self.group_stack[-1]
         if group.want_break:
@@ -426,6 +453,10 @@ class RepresentationPrinter:
     def break_(self) -> None:
         """Explicitly insert a newline into the output, maintaining correct
         indentation."""
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("break_", (), {}))
+            return
         self.flush()
         self.output.write("\n" + " " * self.indentation)
         self.output_width = self.indentation
@@ -434,11 +465,16 @@ class RepresentationPrinter:
     @contextmanager
     def indent(self, indent: int) -> Generator[None, None, None]:
         """`with`-statement support for indenting/dedenting."""
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("_shift_indent", (indent,), {}))
         self.indentation += indent
         try:
             yield
         finally:
             self.indentation -= indent
+            if self._recording is not None:
+                self._recording.append(("_shift_indent", (-indent,), {}))
 
     @contextmanager
     def group(
@@ -464,6 +500,10 @@ class RepresentationPrinter:
         The begin_group() and end_group() methods are for IPython compatibility only;
         see https://github.com/HypothesisWorks/hypothesis/issues/3721 for details.
         """
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("begin_group", (indent, open), {}))
+            return
         if open:
             self.text(open)
         group = Group(self.group_stack[-1].depth + 1)
@@ -473,6 +513,10 @@ class RepresentationPrinter:
 
     def end_group(self, dedent: int = 0, close: str = "") -> None:
         """See begin_group()."""
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("end_group", (dedent, close), {}))
+            return
         self.indentation -= dedent
         group = self.group_stack.pop()
         if not group.breakables:
@@ -492,6 +536,10 @@ class RepresentationPrinter:
 
     def flush(self) -> None:
         """Flush data that is left in the buffer."""
+        self._check_live()
+        if self._recording is not None:
+            self._recording.append(("flush", (), {}))
+            return
         for data in self.buffer:
             self.output_width += data.output(self.output, self.output_width)
         self.buffer.clear()
@@ -501,6 +549,42 @@ class RepresentationPrinter:
         assert isinstance(self.output, StringIO)
         self.flush()
         return self.output.getvalue()
+
+    def deferred(self) -> "_DeferredPrinter":
+        """Return a new printer whose output will be inserted at this position
+        when :meth:`finalize` is called on this parent printer.
+
+        While any deferred printers are outstanding, calls on this printer
+        and on its deferreds are recorded rather than written. Each
+        recording stores concrete primitive calls (so the recording is
+        unaffected by later mutation of pretty-printed objects) that are
+        replayed in original order when ``finalize()`` is called.
+        """
+        self._check_live()
+        if self._recording is None:
+            self._recording = []
+        child = _DeferredPrinter(parent=self)
+        self._recording.append(("_splice", (child,), {}))
+        return child
+
+    def finalize(self) -> None:
+        """Replay all outstanding deferreds created on this printer and
+        resume normal (non-recording) output.
+
+        Every deferred printer that was created (transitively) within this
+        recording session becomes unusable after ``finalize()``; further
+        calls on them raise. New deferreds can still be created on this
+        printer after finalization.
+        """
+        self._check_live()
+        if self._recording is None:
+            raise RuntimeError(
+                "finalize() called but no deferred printers are outstanding"
+            )
+        recording = self._recording
+        self._recording = None
+        _replay_calls(recording, self)
+        _mark_deferreds_dead(recording)
 
     def maybe_repr_known_object_as_call(
         self,
@@ -630,6 +714,68 @@ class RepresentationPrinter:
         if all_args and force_split:
             self.break_()
         self.text(")")  # after dedent
+
+
+class _DeferredPrinter(RepresentationPrinter):
+    """A printer returned by :meth:`RepresentationPrinter.deferred`.
+
+    Recording starts immediately; output is spliced into the parent printer
+    at the position ``deferred()`` was called when ``finalize()`` is called
+    on the parent. Use of this printer raises after that point.
+    """
+
+    def __init__(self, parent: RepresentationPrinter) -> None:
+        super().__init__()
+        # Share configuration state with the parent so that nested
+        # ``pretty()`` calls dispatch to the same registered printers.
+        self.max_width = parent.max_width
+        self.max_seq_length = parent.max_seq_length
+        self.singleton_pprinters = parent.singleton_pprinters
+        self.type_pprinters = parent.type_pprinters
+        self.deferred_pprinters = parent.deferred_pprinters
+        self.known_object_printers = parent.known_object_printers
+        self.slice_comments = parent.slice_comments
+        self._commented_slices = parent._commented_slices
+        # Inherit the cycle-detection stack from the point we were created.
+        # That way, if a draw later pretty-prints an object that was being
+        # pretty-printed when this deferred was opened (most usefully the
+        # DataObject itself), the pretty-printer's normal cycle detection
+        # picks it up, even though pretty() has since unwound.
+        self.stack = list(parent.stack)
+        # Inherit the root, so that callers can tell whether two printer
+        # refs (e.g. a stashed one and the current ``p``) belong to the same
+        # top-level printing session.
+        self.root = parent.root
+        self._recording = []
+
+    def finalize(self) -> None:
+        raise RuntimeError(
+            "finalize() must be called on the parent printer, not on a "
+            "printer returned by deferred()"
+        )
+
+
+def _replay_calls(
+    calls: list[tuple[str, tuple, dict]], target: RepresentationPrinter
+) -> None:
+    for name, args, kwargs in calls:
+        if name == "_splice":
+            child = args[0]
+            assert isinstance(child, _DeferredPrinter)
+            assert child._recording is not None
+            _replay_calls(child._recording, target)
+        elif name == "_shift_indent":
+            target.indentation += args[0]
+        else:
+            getattr(target, name)(*args, **kwargs)
+
+
+def _mark_deferreds_dead(calls: list[tuple[str, tuple, dict]]) -> None:
+    for name, args, _ in calls:
+        if name == "_splice":
+            child = args[0]
+            child._dead = True
+            _mark_deferreds_dead(child._recording)
 
 
 class Printable:

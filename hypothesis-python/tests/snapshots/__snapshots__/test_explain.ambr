@@ -112,3 +112,27 @@
   )
   '''
 # ---
+# name: test_integers_equal
+  '''
+  Falsifying example: test_integers_equal(
+      n1=0,  # or any other generated value
+      n2=1,
+  )
+  '''
+# ---
+# name: test_integers_greater
+  '''
+  Falsifying example: test_integers_greater(
+      n1=0,
+      n2=0,
+  )
+  '''
+# ---
+# name: test_integers_less
+  '''
+  Falsifying example: test_integers_less(
+      n1=0,
+      n2=0,
+  )
+  '''
+# ---

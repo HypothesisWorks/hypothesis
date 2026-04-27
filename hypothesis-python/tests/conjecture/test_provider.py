@@ -478,7 +478,9 @@ def test_realization_with_verbosity_draw(verbosity):
 
         with capture_out() as out:
             test_function()
-        assert "Draw 1: <symbolic>" in out.getvalue()
+        # Symbolic draws are rendered as ``<symbolic>`` inside the
+        # ``DataObject(draws=[...])`` rendering on the Trying/Falsifying line.
+        assert "<symbolic>" in out.getvalue()
 
 
 def test_realization_with_observability():
@@ -495,10 +497,10 @@ def test_realization_with_observability():
     test_cases = [tc for tc in observations if tc.type == "test_case"]
     assert {tc.representation for tc in test_cases} == {
         # from the first ChoiceTemplate(type="simplest") example
-        "test_function(\n    data=data(...),\n)\nDraw 1: 0",
+        "test_function(\n    data=DataObject(draws=[\n        0,\n    ]),\n)",
         # from all other examples. data=<symbolic> isn't ideal; we should special
         # case this as data=data(...).
-        f"test_function(\n    data=<symbolic>,\n)\nDraw 1: {RealizeProvider.REALIZED}",
+        "test_function(\n    data=<symbolic>,\n)",
     }
 
 

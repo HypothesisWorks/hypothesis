@@ -1,0 +1,162 @@
+# serializer version: 1
+# name: test_all_labeled_draws
+  '''
+  Falsifying example: test_all_labeled_draws(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          # first number
+          0,  # or any other generated value
+          # second number
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_alongside_other_args
+  '''
+  Falsifying example: test_alongside_other_args(
+      # The test always failed when commented parts were varied together.
+      n=0,  # or any other generated value
+      data=DataObject(draws=[
+          # inner draw
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_data_from_data
+  '''
+  Falsifying example: test_data_from_data(
+      d1=DataObject(draws=[
+          DataObject(draws=[
+              0,  # or any other generated value
+          ]),
+          1,
+      ]),
+  )
+  '''
+# ---
+# name: test_mixed_labeled_and_unlabeled
+  '''
+  Falsifying example: test_mixed_labeled_and_unlabeled(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          0,  # or any other generated value
+          # middle
+          '',  # or any other generated value
+          False,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_multiple_unlabeled_draws
+  '''
+  Falsifying example: test_multiple_unlabeled_draws(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          0,  # or any other generated value
+          '',  # or any other generated value
+          False,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_mutually_recursive_reference_to_data
+  '''
+  Falsifying example: test_mutually_recursive_reference_to_data(
+      d1=DataObject(draws=[
+          DataObject(...),
+      ]),
+      d2=DataObject(draws=[
+          DataObject(...),
+      ]),
+  )
+  '''
+# ---
+# name: test_nested_value
+  '''
+  Falsifying example: test_nested_value(
+      data=DataObject(draws=[
+          # a list
+          [0],  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_no_draws
+  '''
+  Falsifying example: test_no_draws(
+      data=DataObject(draws=[
+      ]),
+  )
+  '''
+# ---
+# name: test_only_some_values_are_allowed_to_vary
+  '''
+  Falsifying example: test_only_some_values_are_allowed_to_vary(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          0,  # or any other generated value
+          100,
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_only_some_values_are_allowed_to_vary_with_labels
+  '''
+  Falsifying example: test_only_some_values_are_allowed_to_vary_with_labels(
+      # The test always failed when commented parts were varied together.
+      data=DataObject(draws=[
+          # a
+          0,  # or any other generated value
+          # b
+          100,
+          # c
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
+# name: test_recursive_reference_to_data
+  '''
+  Falsifying example: test_recursive_reference_to_data(
+      data=DataObject(draws=[
+          DataObject(...),
+      ]),
+  )
+  '''
+# ---
+# name: test_single_draw
+  '''
+  Falsifying example: test_single_draw(
+      data=DataObject(draws=[
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_single_labeled_draw
+  '''
+  Falsifying example: test_single_labeled_draw(
+      data=DataObject(draws=[
+          # Cool thing
+          0,
+      ]),
+  )
+  '''
+# ---
+# name: test_two_data_args
+  '''
+  Falsifying example: test_two_data_args(
+      # The test always failed when commented parts were varied together.
+      d1=DataObject(draws=[
+          # from d1
+          0,  # or any other generated value
+      ]),
+      d2=DataObject(draws=[
+          0,  # or any other generated value
+      ]),
+  )
+  '''
+# ---
