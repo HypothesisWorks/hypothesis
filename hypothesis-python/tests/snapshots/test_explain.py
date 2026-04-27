@@ -143,3 +143,29 @@ def test_explain_multi_level_nesting(snapshot):
         assert not outer.value
 
     assert run_test_for_falsifying_example(inner) == snapshot
+
+
+# Regression for https://github.com/HypothesisWorks/hypothesis/issues/4708.
+# The composite reconstructs ``st.one_of(st.just(W(None)), ...)`` per call,
+# so the OneOfStrategy's label is unstable across runs. Previously this
+# tripped an assertion in the explain phase.
+class W:
+    def __init__(self, a):
+        self.a = a
+
+
+@st.composite
+def _wrapped_4708(draw):
+    inner = st.one_of(st.integers(), st.tuples(st.integers(), st.integers()))
+    elements = st.tuples(inner, st.just(0))
+    structured = st.lists(elements, min_size=1, max_size=3)
+    return draw(st.one_of(st.just(W(None)), structured.map(W)))
+
+
+def test_explain_unstable_one_of_labels(snapshot):
+    @EXPLAIN_SETTINGS
+    @given(_wrapped_4708())
+    def inner(w):
+        assert not isinstance(w.a, list)
+
+    assert run_test_for_falsifying_example(inner) == snapshot

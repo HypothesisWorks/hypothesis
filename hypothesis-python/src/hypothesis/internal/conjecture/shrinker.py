@@ -539,7 +539,6 @@ class Shrinker:
                     ):
                         assert span1.start == span2.start
                         assert span1.start <= start
-                        assert span1.label == span2.label
                         if span1.start == start and span1.end == end:
                             result_end = span2.end
                             break
