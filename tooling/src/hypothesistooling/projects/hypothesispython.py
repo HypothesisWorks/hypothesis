@@ -206,6 +206,16 @@ def build_distribution():
 def upload_distribution():
     tools.assert_can_release()
 
+    if "TWINE_PASSWORD" in os.environ:
+        auth_args = ["--username=__token__"]
+    elif "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ:
+        # OIDC token will be used in GitHub Actions
+        auth_args = []
+    else:
+        raise RuntimeError(
+            "No publishing credentials found: TWINE_PASSWORD unset and OIDC unavailable"
+        )
+
     subprocess.check_call(
         [
             sys.executable,
@@ -213,7 +223,7 @@ def upload_distribution():
             "twine",
             "upload",
             "--skip-existing",
-            "--username=__token__",
+            *auth_args,
             os.path.join(DIST, "*"),
         ]
     )
