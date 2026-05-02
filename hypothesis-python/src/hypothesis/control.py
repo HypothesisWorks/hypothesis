@@ -14,7 +14,8 @@ import random
 from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
-from typing import Any, Literal, NoReturn, Optional, overload
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, Optional, overload
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -28,6 +29,9 @@ from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.vendor.pretty import ArgLabelsT, IDKey, PrettyPrintFunction, pretty
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 def _calling_function_location(what: str, frame: Any) -> str:
@@ -100,7 +104,7 @@ def current_build_context() -> "BuildContext":
 
 
 @contextmanager
-def deprecate_random_in_strategy(fmt, *args):
+def deprecate_random_in_strategy(fmt: str, *args: Any) -> Generator[None, None, None]:
     from hypothesis.internal import entropy
 
     state_before = random.getstate()
@@ -221,12 +225,17 @@ class BuildContext:
 
         return kwargs, arg_labels
 
-    def __enter__(self):
+    def __enter__(self) -> "Self":
         self.assign_variable = _current_build_context.with_value(self)
         self.assign_variable.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         self.assign_variable.__exit__(exc_type, exc_value, tb)
         errors = []
         for task in self.tasks:
@@ -240,7 +249,7 @@ class BuildContext:
             raise BaseExceptionGroup("Cleanup failed", errors) from exc_value
 
 
-def cleanup(teardown):
+def cleanup(teardown: Callable[[], Any]) -> None:
     """Register a function to be called when the current test has finished
     executing. Any exceptions thrown in teardown will be printed but not
     rethrown.
@@ -255,10 +264,11 @@ def cleanup(teardown):
     context.tasks.append(teardown)
 
 
-def should_note():
+def should_note() -> bool:
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("Cannot make notes outside of a test")
+    assert settings.default is not None
     return context.is_final or settings.default.verbosity >= Verbosity.verbose
 
 
@@ -270,7 +280,7 @@ def note(value: object) -> None:
         report(value)
 
 
-def event(value: str, payload: str | int | float = "") -> None:
+def event(value: str, payload: Any = "") -> None:
     """Record an event that occurred during this test. Statistics on the number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
@@ -283,17 +293,19 @@ def event(value: str, payload: str | int | float = "") -> None:
         raise InvalidArgument("Cannot record events outside of a test")
 
     avoid_realization = context.data.provider.avoid_realization
-    payload = _event_to_string(
+    payload = _serialize_event(
         payload, allowed_types=(str, int, float), avoid_realization=avoid_realization
     )
-    value = _event_to_string(value, avoid_realization=avoid_realization)
+    value = _serialize_event(value, avoid_realization=avoid_realization)
     context.data.events[value] = payload
 
 
-_events_to_strings: WeakKeyDictionary = WeakKeyDictionary()
+_events_to_strings: WeakKeyDictionary[Any, str] = WeakKeyDictionary()
 
 
-def _event_to_string(event, *, allowed_types=str, avoid_realization):
+def _serialize_event(
+    event: Any, *, allowed_types: tuple[type, ...] = (str,), avoid_realization: bool
+) -> Any:
     if isinstance(event, allowed_types):
         return event
 

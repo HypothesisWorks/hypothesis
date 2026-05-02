@@ -34,7 +34,7 @@ Func = TypeVar("Func", bound=Callable)
 pretty_file_name_cache: dict[str, str] = {}
 
 
-def pretty_file_name(f):
+def pretty_file_name(f: str) -> str:
     try:
         return pretty_file_name_cache[f]
     except KeyError:
