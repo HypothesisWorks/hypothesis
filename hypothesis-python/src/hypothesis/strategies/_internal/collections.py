@@ -11,7 +11,7 @@
 import copy
 import math
 from collections.abc import Callable, Iterable
-from typing import Any, overload
+from typing import Any, TypeGuard, overload
 
 from hypothesis import strategies as st
 from hypothesis.control import current_build_context
@@ -232,7 +232,17 @@ class ListStrategy(SearchStrategy[list[Ex]]):
             f"min_size={self.min_size:_}, max_size={self.max_size:_})"
         )
 
-    def filter(self, condition: Callable[[list[Ex]], Any]) -> SearchStrategy[list[Ex]]:
+    @overload
+    def filter(
+        self, condition: Callable[[list[Ex]], TypeGuard[T]]
+    ) -> "SearchStrategy[T]": ...
+    @overload
+    def filter(
+        self, condition: Callable[[list[Ex]], Any]
+    ) -> "SearchStrategy[list[Ex]]": ...
+    def filter(
+        self, condition: Callable[[list[Ex]], Any | TypeGuard[T]]
+    ) -> "SearchStrategy[list[Ex] | T]":
         if condition in self._nonempty_filters or is_identity_function(condition):
             assert self.max_size >= 1, "Always-empty is special cased in st.lists()"
             if self.min_size >= 1:
