@@ -1,0 +1,227 @@
+# serializer version: 1
+# name: test_deep_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_deep_traceback.py F                                                 [100%]
+  
+  =================================== FAILURES ===================================
+  _____________________________ test_deep_traceback ______________________________
+  
+  x = 0
+  
+      @settings(database=None, derandomize=True)
+      @given(st.integers())
+      def test_deep_traceback(x):
+  >       helper(x)
+  
+  test_deep_traceback.py: # helper(x) 
+  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+  
+  x = 0
+  
+      def helper(x):
+  >       raise ValueError("boom")
+  E       ValueError: boom
+  E       Falsifying example: test_deep_traceback(
+  E           x=0,  # or any other generated value
+  E       )
+  
+  test_deep_traceback.py: # raise ValueError("boom") ValueError
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_healthcheck_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_healthcheck_traceback.py F                                          [100%]
+  
+  =================================== FAILURES ===================================
+  _____________________ test_healthcheck_traceback_is_hidden _____________________
+  
+  E   hypothesis.errors.FailedHealthCheck: Input generation is slow: Hypothesis only generated N valid inputs after T seconds.
+      
+            count | fraction |    slowest draws (seconds)
+    x | <timing data>
+      
+      This could be for a few reasons:
+      1. This strategy could be generating too much data per input. Try decreasing the amount of data generated, for example by decreasing the minimum size of collection strategies like st.lists().
+      2. Some other expensive computation could be running during input generation. For example, if @st.composite or st.data() is interspersed with an expensive computation, HealthCheck.too_slow is likely to trigger. If this computation is unrelated to input generation, move it elsewhere. Otherwise, try making it more efficient, or disable this health check if that is not possible.
+      
+      If you expect input generation to take this long, you can disable this health check with @settings(suppress_health_check=[HealthCheck.too_slow]). See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck for details.
+  All traceback entries are hidden. Pass `--full-trace` to see hidden and internal frames.
+  ---------------------------------- Hypothesis ----------------------------------
+  You can reproduce this failure by adding @seed(0) to this test, or by running pytest with --hypothesis-seed=0.
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_issue_basic_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_issue_basic_traceback.py F                                          [100%]
+  
+  =================================== FAILURES ===================================
+  _____________________________ test_basic_traceback _____________________________
+  
+  _ = None
+  
+      @settings(database=None, derandomize=True)
+      @given(st.none())
+      def test_basic_traceback(_):
+  >       1/0
+  E       ZeroDivisionError: division by zero
+  E       Falsifying example: test_basic_traceback(
+  E           _=None,
+  E       )
+  
+  test_issue_basic_traceback.py: # 1/0 ZeroDivisionError
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_issue_lambda_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_issue_lambda_traceback.py F                                         [100%]
+  
+  =================================== FAILURES ===================================
+  ____________________________ test_lambda_traceback _____________________________
+  
+  _ = None
+  
+      @settings(database=None, derandomize=True)
+      @given(st.none())
+      def test_lambda_traceback(_):
+          f = lambda: """Hi!"""
+  >       1/0
+  E       ZeroDivisionError: division by zero
+  E       Falsifying example: test_lambda_traceback(
+  E           _=None,
+  E       )
+  
+  test_issue_lambda_traceback.py: # 1/0 ZeroDivisionError
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_issue_wrong_function_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_issue_wrong_function_traceback.py F                                 [100%]
+  
+  =================================== FAILURES ===================================
+  _____________________________ test_wrong_function ______________________________
+  
+  arguments = (), kwargs = {}
+  
+      @impersonate(test)
+      def wrapped_test(*arguments, **kwargs):  # pragma: no cover  # coverage limitation
+  >       raise exc(message)
+  E       hypothesis.errors.InvalidArgument: Too many positional arguments for test_wrong_function() were passed to @given - expected at most 0 arguments, but got 1 (none(),)
+  
+  .../hypothesis/core.py:NN: InvalidArgument
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_map_failure_traceback
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_map_failure_traceback.py F                                          [100%]
+  
+  =================================== FAILURES ===================================
+  _______________________________ test_map_failure _______________________________
+  
+  x = 0
+  
+  >   @given(st.integers().map(lambda x: 1/0))
+                                         ^^^
+  E   ZeroDivisionError: division by zero
+  E   while generating 'x' from integers().map(lambda x: 1 / 0)
+  
+  test_map_failure_traceback.py: # @given(st.integers().map(lambda x: 1/0)) ZeroDivisionError
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_pr1582_multiple_failures
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_pr1582_multiple_failures.py F                                       [100%]
+  
+  =================================== FAILURES ===================================
+  ____________________________ test_multiple_failures ____________________________
+    + Exception Group Traceback (most recent call last):
+  .../hypothesis/core.py", line NN, in _reraise_exception_group
+    |     raise the_error_hypothesis_found
+    | ExceptionGroup: Hypothesis found 2 distinct failures. (2 sub-exceptions)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "test_pr1582_multiple_failures.py", line NN, in test_multiple_failures
+      |     raise RuntimeError("This number is too small!")
+      | RuntimeError: This number is too small!
+      | Falsifying example: test_multiple_failures(
+      |     x=-101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing examples:
+      |         test_pr1582_multiple_failures.py:10
+      +---------------- 2 ----------------
+      | Traceback (most recent call last):
+      |   File "test_pr1582_multiple_failures.py", line NN, in test_multiple_failures
+      |     raise ValueError("This number is too big!")
+      | ValueError: This number is too big!
+      | Falsifying example: test_multiple_failures(
+      |     x=101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing examples:
+      |         test_pr1582_multiple_failures.py:8
+      +------------------------------------
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_pr1582_simple
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_pr1582_simple.py F                                                  [100%]
+  
+  =================================== FAILURES ===================================
+  _________________________________ test_simple __________________________________
+  
+  x = 0
+  
+      @settings(database=None, derandomize=True)
+      @given(st.integers())
+      def test_simple(x):
+  >       assert x
+  E       assert 0
+  E       Falsifying example: test_simple(
+  E           x=0,
+  E       )
+  
+  test_pr1582_simple.py: # assert x AssertionError
+  ============================== 1 failed in T ===============================
+  '''
+# ---
+# name: test_simple_passing
+  '''
+  ============================= test session starts ==============================
+  collected 1 item
+  
+  test_simple_passing.py .                                                 [100%]
+  
+  ============================== 1 passed in T ===============================
+  '''
+# ---

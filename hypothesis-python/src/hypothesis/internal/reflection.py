@@ -357,6 +357,7 @@ from hypothesis.utils.conventions import not_set
 
 def accept({funcname}):
     def {name}{signature}:
+        __tracebackhide__ = True
         return {funcname}({invocation})
     return {name}
 """.lstrip()
@@ -468,18 +469,11 @@ def impersonate(target):
     """
 
     def accept(f):
-        # Lie shamelessly about where this code comes from, to hide the hypothesis
-        # internals from pytest, ipython, and other runtime introspection.
-        f.__code__ = f.__code__.replace(
-            co_filename=target.__code__.co_filename,
-            co_firstlineno=target.__code__.co_firstlineno,
-        )
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
         f.__globals__["__hypothesistracebackhide__"] = True
-        # But leave an breadcrumb for _describe_lambda to follow, it's
-        # just confused by the lies above
+        # Leave a breadcrumb for _describe_lambda and _get_patch_for to follow
         f.__wrapped_target = target
         return f
 

@@ -80,14 +80,27 @@ def get_trimmed_traceback(
         )
     ):
         return tb
-    while tb.tb_next is not None and (
-        # If the frame is from one of our files, it's been added by Hypothesis.
-        is_hypothesis_file(getsourcefile(tb.tb_frame) or getfile(tb.tb_frame))
-        # But our `@proxies` decorator overrides the source location,
-        # so we check for an attribute it injects into the frame too.
-        or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
-    ):
+
+    def _is_hypothesis_frame(frame):
+        return (
+            is_hypothesis_file(getsourcefile(frame) or getfile(frame))
+            or frame.f_globals.get("__hypothesistracebackhide__") is True
+        )
+
+    # Strip leading hypothesis frames
+    while tb.tb_next is not None and _is_hypothesis_frame(tb.tb_frame):
         tb = tb.tb_next
+
+    # Strip any remaining hypothesis frames from the middle of the traceback
+    prev = tb
+    current = tb.tb_next
+    while current is not None:
+        if current.tb_next is not None and _is_hypothesis_frame(current.tb_frame):
+            prev.tb_next = current.tb_next
+        else:
+            prev = current
+        current = prev.tb_next
+
     return tb
 
 

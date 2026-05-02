@@ -196,8 +196,11 @@ def _get_patch_for(
     strip_via: tuple[str, ...] = (),
     namespace: dict[str, Any],
 ) -> tuple[str, str] | None:
+    # Follow __wrapped_target to the original function, since the wrapper's
+    # co_filename may not point to the real source file (see #4681).
+    source_func = getattr(func, "__wrapped_target", func)
     try:
-        before = inspect.getsource(func)
+        before = inspect.getsource(source_func)
     except Exception:  # pragma: no cover
         return None
 

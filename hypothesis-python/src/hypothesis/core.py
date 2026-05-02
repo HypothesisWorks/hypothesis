@@ -1619,6 +1619,12 @@ def _simplify_explicit_errors(errors: list[ReportableError]) -> list[ReportableE
     return result
 
 
+# Exists solely to insert a line in the traceback where we need to.
+def _reraise_exception_group(the_error_hypothesis_found):
+    __tracebackhide__ = False
+    raise the_error_hypothesis_found
+
+
 def _raise_to_user(
     errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
@@ -2248,19 +2254,16 @@ def given(
                                     f"{pytest_extra_msg}."
                                 )
                             report(msg)
-                        # The dance here is to avoid showing users long tracebacks
-                        # full of Hypothesis internals they don't care about.
-                        # We have to do this inline, to avoid adding another
-                        # internal stack frame just when we've removed the rest.
-                        #
-                        # Using a variable for our trimmed error ensures that the line
-                        # which will actually appear in tracebacks is as clear as
-                        # possible - "raise the_error_hypothesis_found".
+                        # Trim the traceback to remove hypothesis internals
                         the_error_hypothesis_found = e.with_traceback(
                             None
                             if isinstance(e, BaseExceptionGroup)
                             else get_trimmed_traceback()
                         )
+                        if isinstance(e, BaseExceptionGroup):
+                            # Insert a frame here as otherwise all base frames are
+                            # trimmed which causes pytest problems
+                            _reraise_exception_group(the_error_hypothesis_found)
                         raise the_error_hypothesis_found
 
                 if not (ran_explicit_examples or state.ever_executed):
