@@ -150,8 +150,12 @@ def deploy():
         print("Not deploying due to not being on master")
         sys.exit(0)
 
-    if "TWINE_PASSWORD" not in os.environ:
-        print("Running without access to secure variables, so no deployment")
+    if not (
+        "TWINE_PASSWORD" in os.environ or "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ
+    ):
+        print(
+            "No PyPI publishing credentials available (OIDC or token), skipping deployment"
+        )
         sys.exit(0)
 
     tools.configure_git()

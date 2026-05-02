@@ -312,6 +312,11 @@ jobs:
         task:
           - deploy
       fail-fast: false
+    permissions:
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/project/hypothesis
     steps:
     - uses: actions/checkout@v3
       with:
@@ -323,6 +328,5 @@ jobs:
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       run: |
         TASK=${{ matrix.task }} ./build.sh
