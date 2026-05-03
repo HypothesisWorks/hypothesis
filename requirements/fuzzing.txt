@@ -17,7 +17,7 @@ black==26.3.1
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.3.2
+click==8.3.3
     # via
     #   -r requirements/coverage.in
     #   black
@@ -30,7 +30,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.35.0
+fakeredis==2.35.1
     # via -r requirements/coverage.in
 h11==0.16.0
     # via
@@ -46,9 +46,9 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.151.12
+hypothesis[cli,watchdog]==6.152.4
     # via hypofuzz
-idna==3.11
+idna==3.13
     # via
     #   anyio
     #   trio
@@ -72,13 +72,13 @@ numpy==2.4.4
     #   pandas
 outcome==1.3.0.post0
     # via trio
-packaging==26.0
+packaging==26.2
     # via
     #   black
     #   pytest
 pandas==3.0.2
     # via -r requirements/coverage.in
-pathspec==1.0.4
+pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -94,7 +94,7 @@ psutil==7.2.2
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==23.0.1
+pyarrow==24.0.0
     # via -r requirements/coverage.in
 pygments==2.20.0
     # via
@@ -123,7 +123,7 @@ pyyaml==6.0.3
     # via libcst
 redis==7.4.0
     # via fakeredis
-rich==14.3.4
+rich==15.0.0
     # via hypothesis
 six==1.17.0
     # via python-dateutil
