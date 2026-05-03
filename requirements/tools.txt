@@ -30,19 +30,19 @@ black==26.3.1
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.4.3
+build==1.5.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==7.0.5
+cachetools==7.1.0
     # via tox
-certifi==2026.2.25
+certifi==2026.4.22
     # via requests
 cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.7
     # via requests
-click==8.3.2
+click==8.3.3
     # via
     #   black
     #   pip-tools
@@ -57,7 +57,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.13.5
     # via -r requirements/tools.in
-cryptography==46.0.7
+cryptography==47.0.0
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -83,7 +83,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.25.2
+filelock==3.29.0
     # via
     #   python-discovery
     #   tox
@@ -94,7 +94,7 @@ h11==0.16.0
     # via uvicorn
 id==1.6.1
     # via twine
-idna==3.11
+idna==3.13
     # via
     #   anyio
     #   requests
@@ -102,7 +102,7 @@ imagesize==2.0.0
     # via sphinx
 iniconfig==2.3.0
     # via pytest
-ipython==9.12.0
+ipython==9.13.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -114,7 +114,7 @@ jaraco-context==6.1.2
     # via keyring
 jaraco-functools==4.4.0
     # via keyring
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 jeepney==0.9.0
     # via
@@ -150,13 +150,13 @@ more-itertools==11.0.2
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.20.0
+mypy==1.20.2
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nh3==0.3.4
+nh3==0.3.5
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
@@ -164,7 +164,7 @@ numpy==2.4.4
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
-packaging==26.0
+packaging==26.2
     # via
     #   black
     #   build
@@ -174,13 +174,13 @@ packaging==26.0
     #   tox
     #   twine
     #   wheel
-parso==0.8.6
+parso==0.8.7
     # via jedi
-pathspec==1.0.4
+pathspec==1.1.1
     # via
     #   black
     #   mypy
-pelican[markdown]==4.11.0.post0
+pelican[markdown]==4.12.0
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via
@@ -200,6 +200,8 @@ pluggy==1.6.0
     #   tox
 prompt-toolkit==3.0.52
     # via ipython
+psutil==7.2.2
+    # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
@@ -208,7 +210,7 @@ pycparser==3.0
     # via cffi
 pyflakes==3.4.0
     # via autoflake
-pygments==2.18.0
+pygments==2.19.2
     # via
     #   accessible-pygments
     #   furo
@@ -225,7 +227,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.408
+pyright==1.1.409
     # via -r requirements/tools.in
 pytest==9.0.3
     # via
@@ -265,13 +267,13 @@ restructuredtext-lint==2.0.2
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==14.3.4
+rich==15.0.0
     # via
     #   pelican
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.10
+ruff==0.15.12
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -300,7 +302,7 @@ sphinx-autobuild==2025.8.25
     # via -r requirements/tools.in
 sphinx-basic-ng==1.0.0b2
     # via furo
-sphinx-codeautolink==0.17.5
+sphinx-codeautolink==0.18.1
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.2
     # via -r requirements/tools.in
@@ -332,7 +334,7 @@ tomli==2.4.1
     # via -r requirements/tools.in
 tomli-w==1.2.0
     # via tox
-tox==4.52.1
+tox==4.53.1
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -340,7 +342,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.2.0
     # via -r requirements/tools.in
-types-cffi==2.0.0.20260408
+types-cffi==2.0.0.20260429
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
@@ -366,9 +368,9 @@ urllib3==2.6.3
     #   id
     #   requests
     #   twine
-uvicorn==0.44.0
+uvicorn==0.46.0
     # via sphinx-autobuild
-virtualenv==21.2.1
+virtualenv==21.3.0
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -376,15 +378,15 @@ watchfiles==1.1.1
     # via
     #   pelican
     #   sphinx-autobuild
-wcwidth==0.6.0
+wcwidth==0.7.0
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
-wheel==0.46.3
+wheel==0.47.0
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==26.0.1
+pip==26.1
     # via pip-tools
 setuptools==82.0.1
     # via pip-tools

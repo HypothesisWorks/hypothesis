@@ -417,7 +417,6 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.30",
     "5.2": "5.2.13",
     "6.0": "6.0.4",
 }
@@ -647,17 +646,17 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.10": "3.10.20",
-    "3.11": "3.11.15",
-    "3.12": "3.12.13",
-    "3.13": "3.13.13",
-    "3.13t": "3.13t-dev",
-    "3.14": "3.14.4",
-    "3.14t": "3.14t-dev",
     "3.15": "3.15.0a8",
-    "3.15t": "3.15t-dev",
-    "pypy3.10": "pypy3.10-7.3.19",
-    "pypy3.11": "pypy3.11-7.3.20",
+    "3.15t": "3.15.0a8+freethreaded",
+    "3.14": "3.14.4",
+    "3.14t": "3.14.4+freethreaded",
+    "3.13": "3.13.13",
+    "3.13t": "3.13.13+freethreaded",
+    "3.12": "3.12.13",
+    "3.11": "3.11.15",
+    "3.10": "3.10.20",
+    "pypy3.11": "pypy3.11-3.11.15",
+    "pypy3.10": "pypy3.10-3.10.16",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
