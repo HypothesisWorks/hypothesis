@@ -559,6 +559,12 @@ def is_hashable(value: object) -> bool:
     return _is_hashable(value)[0]
 
 
+SampledFromTransformationsT: "TypeAlias" = tuple[
+    tuple[Literal["filter", "map"], Callable[[Ex], Any]],
+    ...,
+]
+
+
 class SampledFromStrategy(SearchStrategy[Ex]):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
@@ -573,10 +579,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         *,
         force_repr: str | None = None,
         force_repr_braces: tuple[str, str] | None = None,
-        transformations: tuple[
-            tuple[Literal["filter", "map"], Callable[[Ex], Any]],
-            ...,
-        ] = (),
+        transformations: SampledFromTransformationsT = (),
     ):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
@@ -693,7 +696,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # conservative than necessary
         element: Ex,  # type: ignore
     ) -> Ex | UniqueIdentifier:
-        # Used in UniqueSampledListStrategy
+        # Used in UniqueSampledListStrategy and BundleStrategy
         for name, f in self._transformations:
             if name == "map":
                 result = f(element)
