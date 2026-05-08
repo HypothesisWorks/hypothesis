@@ -97,37 +97,21 @@ def _natural_simpler_chars(c, intervals):
 
     Only candidates which are in ``intervals`` and which have a strictly
     smaller index in shrink order than ``c`` are returned, sorted by that
-    shrink-order index.
+    shrink-order index. Callers must pass a single character that is itself
+    in ``intervals``.
     """
-    if len(c) != 1:
-        return []
-    candidates = set()
+    candidates = {unicodedata.normalize(form, c)[0] for form in ("NFKD", "NFD")}
     for transformed in (c.upper(), c.lower(), c.casefold()):
         if len(transformed) == 1:
             candidates.add(transformed)
-    for form in ("NFKD", "NFD"):
-        decomp = unicodedata.normalize(form, c)
-        if decomp:
-            candidates.add(decomp[0])
     candidates.discard(c)
-    if not candidates:
-        return []
-    try:
-        original_idx = intervals.index_from_char_in_shrink_order(c)
-    except ValueError:
-        return []
-    result = []
-    for cand in candidates:
-        if cand not in intervals:
-            continue
-        try:
-            cand_idx = intervals.index_from_char_in_shrink_order(cand)
-        except ValueError:
-            continue
-        if cand_idx < original_idx:
-            result.append((cand_idx, cand))
-    result.sort()
-    return [c for _, c in result]
+    original_idx = intervals.index_from_char_in_shrink_order(c)
+    result = sorted(
+        (intervals.index_from_char_in_shrink_order(cand), cand)
+        for cand in candidates
+        if cand in intervals
+    )
+    return [cand for idx, cand in result if idx < original_idx]
 
 
 @dataclass(slots=True, frozen=False)
