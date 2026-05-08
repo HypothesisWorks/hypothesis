@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import unicodedata
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -87,6 +88,46 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
         len(nodes),
         tuple(choice_to_index(node.value, node.constraints) for node in nodes),
     )
+
+
+def _natural_simpler_chars(c, intervals):
+    """Return single-char replacements for ``c`` derived from natural text
+    transformations - case mapping (upper, lower, casefold) and unicode
+    decomposition (NFD, NFKD - taking just the base character).
+
+    Only candidates which are in ``intervals`` and which have a strictly
+    smaller index in shrink order than ``c`` are returned, sorted by that
+    shrink-order index.
+    """
+    if len(c) != 1:
+        return []
+    candidates = set()
+    for transformed in (c.upper(), c.lower(), c.casefold()):
+        if len(transformed) == 1:
+            candidates.add(transformed)
+    for form in ("NFKD", "NFD"):
+        decomp = unicodedata.normalize(form, c)
+        if decomp:
+            candidates.add(decomp[0])
+    candidates.discard(c)
+    if not candidates:
+        return []
+    try:
+        original_idx = intervals.index_from_char_in_shrink_order(c)
+    except ValueError:
+        return []
+    result = []
+    for cand in candidates:
+        if cand not in intervals:
+            continue
+        try:
+            cand_idx = intervals.index_from_char_in_shrink_order(cand)
+        except ValueError:
+            continue
+        if cand_idx < original_idx:
+            result.append((cand_idx, cand))
+    result.sort()
+    return [c for _, c in result]
 
 
 @dataclass(slots=True, frozen=False)
@@ -321,6 +362,7 @@ class Shrinker:
             ShrinkPass(self.redistribute_numeric_pairs),
             ShrinkPass(self.lower_integers_together),
             ShrinkPass(self.lower_duplicated_characters),
+            ShrinkPass(self.normalize_unicode_chars),
         ]
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
@@ -1506,6 +1548,42 @@ class Shrinker:
                 + self.nodes[node2.index + 1 :]
             ),
         )
+
+    def normalize_unicode_chars(self, chooser):
+        """For string nodes, try replacing characters with simpler equivalents
+        from natural text transformations: unicode decomposition (NFD, NFKD)
+        and case mapping. For example, an accented latin letter is reduced
+        to its base form, a ligature is reduced to its first base character,
+        a mathematical alphanumeric symbol is reduced to its plain ascii
+        counterpart, and a lowercase letter is replaced with its uppercase
+        form (which has a smaller shrink-order index in the default
+        alphabet).
+
+        The codepoint shrinker is binary-search based, so it can get stuck on
+        a high codepoint whose simpler equivalents aren't reached by halving
+        / shifting / masking. This pass directly tries the natural simpler
+        forms one character at a time.
+        """
+        node = chooser.choose(
+            self.nodes,
+            lambda n: n.type == "string"
+            and any(
+                _natural_simpler_chars(c, n.constraints["intervals"]) for c in n.value
+            ),
+        )
+        intervals = node.constraints["intervals"]
+        i = chooser.choose(
+            range(len(node.value)),
+            lambda j: bool(_natural_simpler_chars(node.value[j], intervals)),
+        )
+        for replacement in _natural_simpler_chars(node.value[i], intervals):
+            new_value = node.value[:i] + replacement + node.value[i + 1 :]
+            if self.consider_new_nodes(
+                self.nodes[: node.index]
+                + (node.copy(with_value=new_value),)
+                + self.nodes[node.index + 1 :]
+            ):
+                return
 
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type

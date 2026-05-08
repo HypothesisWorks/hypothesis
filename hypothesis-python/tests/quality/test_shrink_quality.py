@@ -539,6 +539,40 @@ def test_nasty_string_shrinks():
     )
 
 
+def test_shrink_text_differs_from_lower_to_ascii():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4725
+    # Text shrinking would previously sometimes get stuck on a high-codepoint
+    # accented letter such as 'À' instead of converging to 'A'.
+    assert minimal(st.text(min_size=1), lambda s: s != s.lower()) == "A"
+
+
+def test_shrink_text_differs_from_upper_to_ascii():
+    assert minimal(st.text(min_size=1), lambda s: s != s.upper()) == "a"
+
+
+def test_shrink_strips_accent_to_ascii_letter():
+    # Removing the accent from any accented latin letter should shrink that
+    # letter to its base ascii form.
+    assert minimal(st.text(min_size=1), lambda s: "e" in s.lower() or "E" in s) == "E"
+
+
+def test_shrink_decomposes_compatibility_form_to_ascii():
+    # A character that NFKD-decomposes to an ascii letter (eg a Mathematical
+    # Bold Capital T, or a ligature) should reduce to that base letter when
+    # the predicate also matches the base letter.
+    assert (
+        minimal(st.text(min_size=1), lambda s: any(c.lower() == "t" for c in s)) == "T"
+    )
+
+
+def test_shrink_ligature_to_base_character():
+    # The ligature ﬁ NFKD-decomposes to "fi"; when the predicate accepts any
+    # 'f' character, we should reduce to plain "F".
+    assert (
+        minimal(st.text(min_size=1), lambda s: any(c.lower() == "f" for c in s)) == "F"
+    )
+
+
 def test_bound5():
     # redistribute_numeric_pairs should work for negative integers too
     bounded_ints = st.lists(st.integers(-100, 0), max_size=1)
