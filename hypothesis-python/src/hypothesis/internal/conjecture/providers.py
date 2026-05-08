@@ -845,7 +845,7 @@ class HypothesisProvider(PrimitiveProvider):
             assert isinstance(constant, int)
             return constant
 
-        center = 0
+        center = shrink_towards
         if min_value is not None:
             center = max(min_value, center)
         if max_value is not None:
@@ -871,12 +871,12 @@ class HypothesisProvider(PrimitiveProvider):
             idx = sampler.sample(self._cd)
 
             if idx == 0:
-                return self._draw_bounded_integer(min_value, max_value)
+                return self._draw_bounded_integer(min_value, max_value, center=center)
             # implicit reliance on dicts being sorted for determinism
             return list(weights)[idx - 1]
 
         if min_value is None and max_value is None:
-            return self._draw_unbounded_integer()
+            return center + self._draw_unbounded_integer()
 
         if min_value is None:
             assert max_value is not None
@@ -892,7 +892,7 @@ class HypothesisProvider(PrimitiveProvider):
                 probe = center + self._draw_unbounded_integer()
             return probe
 
-        return self._draw_bounded_integer(min_value, max_value)
+        return self._draw_bounded_integer(min_value, max_value, center=center)
 
     def draw_float(
         self,
@@ -1067,6 +1067,7 @@ class HypothesisProvider(PrimitiveProvider):
         upper: int,
         *,
         vary_size: bool = True,
+        center: int = 0,
     ) -> int:
         assert lower <= upper
         assert self._cd is not None
@@ -1075,15 +1076,25 @@ class HypothesisProvider(PrimitiveProvider):
         if lower == upper:
             return lower
 
+        center = max(lower, min(upper, center))
         bits = (upper - lower).bit_length()
         if bits > 24 and vary_size and self._random.random() < 7 / 8:
-            # For large ranges, we combine the uniform random distribution
-            # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
-            # choice of unicode characters is uniform but the 32bit distribution is not.
+            # For large ranges, we combine the uniform random distribution with
+            # a weighting scheme with moderate chance.  Cutoff at 2**24 so that
+            # our choice of unicode characters is uniform but the 32bit
+            # distribution is not.  The window is placed around ``center``
+            # rather than at ``lower``, so we don't bias toward the lower bound.
             idx = INT_SIZES_SAMPLER.sample(self._cd)
             cap_bits = min(bits, INT_SIZES[idx])
-            upper = min(upper, lower + 2**cap_bits - 1)
-            return self._random.randint(lower, upper)
+            window = 1 << cap_bits
+            half = window >> 1
+            new_lower = max(lower, center - half)
+            new_upper = min(upper, center + half - 1)
+            if new_lower == lower:
+                new_upper = min(upper, new_lower + window - 1)
+            elif new_upper == upper:
+                new_lower = max(lower, new_upper - window + 1)
+            return self._random.randint(new_lower, new_upper)
 
         return self._random.randint(lower, upper)
 
