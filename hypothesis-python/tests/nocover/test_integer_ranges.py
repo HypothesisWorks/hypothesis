@@ -56,7 +56,6 @@ def test_large_symmetric_bounded_integers_are_symmetric_issue_4624_regression():
     ), f"Expected roughly symmetric distribution, got {negatives}/{len(values)} negative"
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_can_find_small_magnitude_in_large_bounded_range_issue_4722_regression():
     # See https://github.com/HypothesisWorks/hypothesis/issues/4722 - small
     # magnitude values should be reachable in large bounded ranges, just as
@@ -64,7 +63,6 @@ def test_can_find_small_magnitude_in_large_bounded_range_issue_4722_regression()
     find(st.integers(-(2**63), 2**63), lambda x: 10 < abs(x) < 10000)
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_large_bounded_range_can_generate_small_values_issue_4722_regression():
     # We should be able to generate values with small absolute magnitude in a
     # very large bounded range.
