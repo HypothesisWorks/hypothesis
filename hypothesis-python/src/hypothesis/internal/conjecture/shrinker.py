@@ -55,7 +55,8 @@ from hypothesis.internal.conjecture.shrinking.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
-from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER, SMALLEST_SUBNORMAL
+from hypothesis.internal.intervalsets import IntervalSet
 
 if TYPE_CHECKING:
     from random import Random
@@ -87,6 +88,60 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
         len(nodes),
         tuple(choice_to_index(node.value, node.constraints) for node in nodes),
     )
+
+
+def _choice_node_for_value(value: ChoiceT) -> ChoiceNode:
+    """Return a ``ChoiceNode`` wrapping a primitive value, with permissive
+    constraints that accept the value. Used by
+    ``widen_to_span_with_generated_primitive_value`` to synthesise a single
+    choice from a span's recorded generated primitive value."""
+    if type(value) is bool:
+        return ChoiceNode(
+            type="boolean", value=value, constraints={"p": 0.5}, was_forced=False
+        )
+    if type(value) is int:
+        return ChoiceNode(
+            type="integer",
+            value=value,
+            constraints={
+                "min_value": None,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        )
+    if type(value) is float:
+        return ChoiceNode(
+            type="float",
+            value=value,
+            constraints={
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        )
+    if type(value) is str:
+        return ChoiceNode(
+            type="string",
+            value=value,
+            constraints={
+                "intervals": IntervalSet.from_string(value),
+                "min_size": 0,
+                "max_size": len(value),
+            },
+            was_forced=False,
+        )
+    if type(value) is bytes:
+        return ChoiceNode(
+            type="bytes",
+            value=value,
+            constraints={"min_size": 0, "max_size": len(value)},
+            was_forced=False,
+        )
+    raise AssertionError(f"non-primitive value {value!r} of type {type(value)}")
 
 
 @dataclass(slots=True, frozen=False)
@@ -321,6 +376,7 @@ class Shrinker:
             ShrinkPass(self.redistribute_numeric_pairs),
             ShrinkPass(self.lower_integers_together),
             ShrinkPass(self.lower_duplicated_characters),
+            ShrinkPass(self.widen_to_span_with_generated_primitive_value),
         ]
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
@@ -500,6 +556,12 @@ class Shrinker:
                 if (s, e) != (0, 0)
             ):
                 continue
+
+            # Skip slices with no non-forced nodes - there's nothing we can
+            # vary, so the "or any other generated value" note would be
+            # misleading (the value is in fact fully determined).
+            if all(nodes[i].was_forced for i in range(start, end)):
+                continue  # pragma: no cover  # only reachable via explain phase
 
             # Run our experiments
             n_same_failures = 0
@@ -1505,6 +1567,51 @@ class Shrinker:
                 + (copy_node(node2, n),)
                 + self.nodes[node2.index + 1 :]
             ),
+        )
+
+    def widen_to_span_with_generated_primitive_value(self, chooser):
+        """Try to navigate away from a specific ``one_of`` alternative into
+        an earlier one by using the span's recorded generated primitive value.
+
+        If we have an integer choice with ``min_value == 0`` currently set to
+        a non-zero value, and it is immediately followed by a span whose
+        corresponding strategy produced a primitive value, we replace the
+        integer with ``0`` and the span's choices with a single choice
+        holding that primitive value. The engine then re-runs the test
+        against the earlier alternative with that value.
+
+        This is useful for ``basic_strategy | specific_strategy``, where
+        the specific branch produced a primitive that the basic branch could
+        also have produced: we slip the primitive across into the basic
+        branch so that normal shrinking can take it the rest of the way.
+        """
+        node = chooser.choose(
+            self.nodes,
+            lambda n: (
+                n.type == "integer"
+                and not n.was_forced
+                and n.constraints["min_value"] == 0
+                and n.value != 0
+            ),
+        )
+
+        following = node.index + 1
+        if following >= len(self.spans_starting_at):
+            return
+
+        candidate_spans = self.spans_starting_at[following]
+        span_idx = chooser.choose(
+            candidate_spans,
+            lambda i: self.spans[i].generated_primitive_value is not None,
+        )
+        span = self.spans[span_idx]
+        replacement = _choice_node_for_value(span.generated_primitive_value)
+
+        self.consider_new_nodes(
+            self.nodes[: node.index]
+            + (node.copy(with_value=0),)
+            + (replacement,)
+            + self.nodes[span.end :]
         )
 
     def minimize_nodes(self, nodes):
