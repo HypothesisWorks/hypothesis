@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.5:
+
+--------------------
+6.152.5 - 2026-05-10
+--------------------
+
+This patch improves the |Phase.explain| phase so that simple cases like
+``assert n1 == n2`` no longer get a misleading ``# or any other generated value``
+comment (:issue:`4715`). Before falling back to random sampling, we now also
+try borrowing values from each other arg slice with matching shape.
+
 .. _v6.152.4:
 
 --------------------
