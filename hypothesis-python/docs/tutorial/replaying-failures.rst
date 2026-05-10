@@ -12,7 +12,7 @@ When a test fails, Hypothesis automatically saves the failure so it can be repla
 
     import time
 
-    from hypothesis import strategies as st
+    from hypothesis import given, strategies as st
 
     @given(st.integers())
     def f(n):
