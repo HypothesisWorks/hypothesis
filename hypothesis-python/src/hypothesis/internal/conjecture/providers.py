@@ -945,8 +945,7 @@ class HypothesisProvider(PrimitiveProvider):
             # As an extra measure of safety, clamp our generated value to the requested
             # range. It would of course be nice if we provably satisfied this by
             # construction - I'm just not 100% confident that we do.
-            n = clamp(min_value, n, max_value)
-            return n
+            return clamp(min_value, n, max_value)
 
         # We have determined the bounds [min_value, max_value] are not numerically safe
         # to use. Fall back to a simpler and safer distribution: a uniform distribution
