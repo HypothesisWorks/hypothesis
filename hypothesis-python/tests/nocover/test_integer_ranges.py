@@ -57,6 +57,8 @@ def test_integer_bounds(bounds):
     f()
 
 
+# this test depends on internal HypothesisProvider distribution behavior
+@xfail_on_crosshair(Why.other)
 @pytest.mark.parametrize(
     "min_value, max_value, lower, upper",
     [
