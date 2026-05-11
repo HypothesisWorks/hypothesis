@@ -55,6 +55,7 @@ from hypothesis.internal.constants_ast import (
 )
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
+    clamp,
     float_to_int,
     make_float_clamper,
     next_down,
@@ -885,44 +886,56 @@ class HypothesisProvider(PrimitiveProvider):
         self, min_value: int | None, max_value: int | None
     ) -> int:
         assert self._random is not None
-
         dist = INTEGERS_DISTRIBUTION
+
+        # Our integers distribution is defined over the full float64 range. If the user
+        # has not placed a lower and/or upper bound, we don't actually want to sample
+        # from this full range, because we might otherwise generate integers
+        # that are so large as to cause problems. For example python errors when passing
+        # a too-large integer to c APIs (common and implicit in some python stdlib APIs).
+        #
+        # * If the user asks for an unbounded range, we bound at [-2**128, 2**128].
+        # * If the user asks for a half-bounded range starting at n, we bound at
+        #   [n, 2**128] for n < 2**127, and [n, 2n] otherwise, so we always support
+        #   generating large integers if a user explicitly asks for integers around that
+        #   magnitude. The choice of a factor of two here is arbitrary.
+        if min_value is None and max_value is None:
+            min_value = -(2**128)
+            max_value = 2**128
+        elif min_value is None:
+            assert max_value is not None
+            min_value = -max(2**128, 2 * abs(max_value))
+        elif max_value is None:
+            max_value = max(2**128, 2 * abs(min_value))
+
         lo = 0.0
         hi = 1.0
         safe_bounds = True
+        try:
+            cdf_min = min_value - 0.5
+            cdf_max = max_value + 0.5
+        except OverflowError:
+            safe_bounds = False
 
-        if min_value is not None:
-            try:
-                cdf_min = min_value - 0.5
-            except OverflowError:
-                safe_bounds = False
-
-        if max_value is not None:
-            try:
-                cdf_max = max_value + 0.5
-            except OverflowError:
-                safe_bounds = False
-
-        if safe_bounds and min_value is not None:
+        if safe_bounds:
             lo = dist.cdf(cdf_min)
-        if safe_bounds and max_value is not None:
             hi = dist.cdf(cdf_max)
 
-        # if the bounds in CDF-space are too close together, there isn't enough room to
-        # stably sample between hi and lo. For example, in the extreme case of hi = lo
-        # (which can happen even if min_value != max_value due to either float imprecision
-        # or numerical instability), our sampling algorithm would collapse to always return
-        # the sample value.
-        #
-        # The choice of 1e-13 here is somewhat arbitrary. At 1.0, epsilon in float64 is
-        # 2^-53 ~= 1e-16. We want some breathing room from epsilon, because we need some
-        # variation to actually sample in. I haven't put much thought into where the
-        # correct tradeoff lies. The downside risk to choosing a too-aggressive bound is
-        # some integers may literally not be representable in the `hi - lo` sampling space.
-        # The downside risk to a too-conservative bound is switching off our good distribution
-        # too early.
-        if safe_bounds and hi - lo < 1e-13:
-            safe_bounds = False
+            # if the bounds in CDF-space are too close together, there isn't enough room
+            # to stably sample between hi and lo. For example, in the extreme case of
+            # hi = lo (which can happen even if min_value != max_value due to either float
+            # imprecision or numerical instability), our sampling algorithm would collapse
+            # to always return the sample value.
+            #
+            # The choice of 1e-13 here is somewhat arbitrary. At 1.0, epsilon in float64
+            # is 2^-53 ~= 1e-16. We want some breathing room from epsilon, because we need
+            # some variation to actually sample in. I haven't put much thought into where
+            # the correct tradeoff lies. The downside risk to choosing a too-aggressive
+            # bound is some integers may literally not be representable in the `hi - lo`
+            # sampling space. The downside risk to a too-conservative bound is switching
+            # off our good distribution too early.
+            if hi - lo < 1e-13:
+                safe_bounds = False
 
         if safe_bounds:
             # inverse_cdf requires strictly 0 < p < 1. Resample until we get it.
@@ -932,31 +945,13 @@ class HypothesisProvider(PrimitiveProvider):
             # As an extra measure of safety, clamp our generated value to the requested
             # range. It would of course be nice if we provably satisfied this by
             # construction - I'm just not 100% confident that we do.
-            if min_value is not None and n < min_value:
-                n = min_value
-            if max_value is not None and n > max_value:
-                n = max_value
+            n = clamp(min_value, n, max_value)
             return n
 
         # We have determined the bounds [min_value, max_value] are not numerically safe
-        # to use. Fall back to a simpler and safer distribution.
-        #
-        # * For bounded ranges: sample from the uniform distribution on [min_value, max_value].
-        # * For half-bounded ranges: sample from our unbounded integer distribution,
-        #   treating the drawn value as an offset from the bound.
-        if min_value is not None and max_value is not None:
-            return self._random.randint(min_value, max_value)
-        else:
-            # note that `dist` is guaranteed to be symmetric around 0. Since this implies
-            # dist.inverse_cdf(0.5) = 0, we can sample from the appropriate half and then
-            # apply the right sign.
-            offset = round(dist.inverse_cdf(0.5 + 0.5 * self._random.random()))
-            # written slightly weirdly so we can add an assert to help mypy
-            if min_value is not None:
-                return min_value + offset
-            else:
-                assert max_value is not None
-                return max_value - offset
+        # to use. Fall back to a simpler and safer distribution: a uniform distribution
+        # on [min_value, max_value].
+        return self._random.randint(min_value, max_value)
 
     def draw_float(
         self,
