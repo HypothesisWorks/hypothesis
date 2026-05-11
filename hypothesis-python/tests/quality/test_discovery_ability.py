@@ -142,6 +142,15 @@ test_can_produce_very_large_integers_bounded_2 = define_test(
 test_can_produce_very_large_integers_bounded_3 = define_test(
     integers(2**500, 2**500 + 10), lambda n: True
 )
+test_can_produce_integers_min_beyond_float_max = define_test(
+    integers(min_value=2**2000), lambda n: n >= 2**2000
+)
+test_can_produce_integers_max_beyond_float_min = define_test(
+    integers(max_value=-(2**2000)), lambda n: n <= -(2**2000)
+)
+test_can_produce_integers_bounded_beyond_float_max = define_test(
+    integers(2**2000, 2**2000 + 100), lambda n: True
+)
 
 
 _factorials = {math.factorial(n) for n in range(9, 21)}

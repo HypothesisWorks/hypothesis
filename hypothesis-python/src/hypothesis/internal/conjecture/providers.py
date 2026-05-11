@@ -903,10 +903,11 @@ class HypothesisProvider(PrimitiveProvider):
             except OverflowError:
                 safe_bounds = False
 
-        if min_value is not None:
+        if safe_bounds and min_value is not None:
             lo = dist.cdf(cdf_min)
-        if max_value is not None:
+        if safe_bounds and max_value is not None:
             hi = dist.cdf(cdf_max)
+
         # if the bounds in CDF-space are too close together, there isn't enough room to
         # stably sample between hi and lo. For example, in the extreme case of hi = lo
         # (which can happen even if min_value != max_value due to either float imprecision
@@ -914,13 +915,14 @@ class HypothesisProvider(PrimitiveProvider):
         # the sample value.
         #
         # The choice of 1e-13 here is somewhat arbitrary. At 1.0, epsilon in float64 is
-        # 2^53 ~= 1e16. We want some breathing room from epsilon, because we need some
+        # 2^-53 ~= 1e-16. We want some breathing room from epsilon, because we need some
         # variation to actually sample in. I haven't put much thought into where the
         # correct tradeoff lies. The downside risk to choosing a too-aggressive bound is
         # some integers may literally not be representable in the `hi - lo` sampling space.
         # The downside risk to a too-conservative bound is switching off our good distribution
         # too early.
-        safe_bounds = hi - lo >= 1e-13
+        if safe_bounds and hi - lo < 1e-13:
+            safe_bounds = False
 
         if safe_bounds:
             n = round(dist.inverse_cdf(lo + self._random.random() * (hi - lo)))
@@ -943,7 +945,12 @@ class HypothesisProvider(PrimitiveProvider):
             # dist.inverse_cdf(0.5) = 0, we can sample from the appropriate half and then
             # apply the right sign.
             offset = round(dist.inverse_cdf(0.5 + 0.5 * self._random.random()))
-            return min_value + offset if min_value is not None else max_value - offset
+            # written slightly weirdly so we can add an assert to help mypy
+            if min_value is not None:
+                return min_value + offset
+            else:
+                assert max_value is not None
+                return max_value - offset
 
     def draw_float(
         self,
