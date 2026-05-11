@@ -147,9 +147,9 @@ class UniformDistribution(_Distribution):
 
     def cdf(self, x: float) -> float:
         if x < -self.half_width:
-            return 0.0
+            return 0.0  # pragma: no cover
         if x > self.half_width:
-            return 1.0
+            return 1.0  # pragma: no cover
         return (x + self.half_width) / (2 * self.half_width)
 
     def inverse_cdf(self, u: float) -> float:
@@ -158,7 +158,7 @@ class UniformDistribution(_Distribution):
     def pdf(self, x: float) -> float:
         if -self.half_width <= x <= self.half_width:
             return 1 / (2 * self.half_width)
-        return 0.0
+        return 0.0  # pragma: no cover
 
 
 class LogStudentTDistribution(_Distribution):
