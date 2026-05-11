@@ -9,10 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
+import scipy
 import scipy.special
 
 from hypothesis import given, strategies as st
 from hypothesis.internal.statistics import stdtr, stdtrit
+
+# Older scipy had a less accurate stdrit path. Our CI uses older scipy in some of our
+# older python jobs like python3.10. Just skip them and only test against newer scipy.
+SCIPY_VERSION = tuple(int(x) for x in scipy.__version__.split("."))
 
 
 @given(st.integers(1, 100), st.floats(-1e150, 1e150))
@@ -39,6 +44,9 @@ def test_stdtr_explicit(df, t):
 #
 # If we ever change our df use in production, we should revisit these tests and tolerances
 # accordingly.
+@pytest.mark.skipif(
+    SCIPY_VERSION < (1, 17), reason="older scipy has inaccurate stdtrit"
+)
 @given(st.sampled_from([1, 2]), st.floats(1e-300, 1 - 1e-15))
 def test_stdtrit_matches_scipy_strict(df, p):
     # df ∈ {1, 2} use the same closed-form formulas Boost/scipy use, so we
