@@ -804,6 +804,10 @@ def test_redistribute_numeric_pairs_shrink_towards_integer(
         ("Ｂ", "B"),
         # Ligatures decompose to their first base char under NFKD.
         ("ﬁ", "f"),
+        # Case mapping that produces multiple chars: ``ß.casefold() == "ss"``,
+        # and we accept any of the individual characters of the case-mapped
+        # form as a single-char replacement.
+        ("ß", "s"),
         # Case mapping: uppercase has a smaller shrink-order index than
         # lowercase, so we can swap a→A.
         ("a", "A"),

@@ -13,6 +13,7 @@ import unicodedata
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -90,20 +91,24 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
     )
 
 
+@lru_cache(maxsize=4096)
 def _natural_simpler_chars(c, intervals):
     """Return single-char replacements for ``c`` derived from natural text
     transformations - case mapping (upper, lower, casefold) and unicode
-    decomposition (NFD, NFKD - taking just the base character).
+    decomposition (NFD, NFKD). We take each individual character of the
+    transformed form so that e.g. ``ß`` can shrink to ``s`` via casefold
+    even though the full case-folded form is two characters.
 
     Only candidates which are in ``intervals`` and which have a strictly
     smaller index in shrink order than ``c`` are returned, sorted by that
     shrink-order index. Callers must pass a single character that is itself
     in ``intervals``.
     """
-    candidates = {unicodedata.normalize(form, c)[0] for form in ("NFKD", "NFD")}
+    candidates: set[str] = set()
+    for form in ("NFKD", "NFD"):
+        candidates.update(unicodedata.normalize(form, c))
     for transformed in (c.upper(), c.lower(), c.casefold()):
-        if len(transformed) == 1:
-            candidates.add(transformed)
+        candidates.update(transformed)
     candidates.discard(c)
     original_idx = intervals.index_from_char_in_shrink_order(c)
     result = sorted(
