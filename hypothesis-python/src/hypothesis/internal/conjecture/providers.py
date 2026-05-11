@@ -925,7 +925,13 @@ class HypothesisProvider(PrimitiveProvider):
             safe_bounds = False
 
         if safe_bounds:
-            n = round(dist.inverse_cdf(lo + self._random.random() * (hi - lo)))
+            # inverse_cdf requires strictly 0 < p < 1. Resample until we get it.
+            while (p := lo + self._random.random() * (hi - lo)) in {0, 1}:
+                pass
+            n = round(dist.inverse_cdf(p))
+            # As an extra measure of safety, clamp our generated value to the requested
+            # range. It would of course be nice if we provably satisfied this by
+            # construction - I'm just not 100% confident that we do.
             if min_value is not None and n < min_value:
                 n = min_value
             if max_value is not None and n > max_value:
