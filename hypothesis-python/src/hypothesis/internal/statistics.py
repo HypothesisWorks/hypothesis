@@ -21,7 +21,7 @@ from hypothesis.internal.floats import clamp
 # accept this code without deeply understanding it.
 
 
-def stdtr(df: int, t: float) -> float:
+def stdtr(df: int, t: float) -> float:  # pragma: no cover  # covered by tests/scipy
     """Student's t CDF for integer df >= 1, evaluated at t.
 
     Closed-form finite sum from Abramowitz & Stegun 26.7.7-8.
@@ -60,7 +60,9 @@ def stdtr(df: int, t: float) -> float:
     return 0.5 - 0.5 * p if t < 0 else 0.5 + 0.5 * p
 
 
-def stdtrit(df: int, p: float, *, eps: float = 1e-10, max_iter: int = 50) -> float:
+def stdtrit(
+    df: int, p: float, *, eps: float = 1e-10, max_iter: int = 50
+) -> float:  # pragma: no cover  # covered by tests/scipy
     """Inverse Student's t CDF (quantile) for integer df >= 1.
 
     df ∈ {1, 2}: closed-form analytic quantile (Shaw 2006, eq 35-36).
@@ -225,11 +227,10 @@ class PiecewiseDistribution:
         # plus total mass 1; solve for (alpha, beta).
         inner_pdf = inner.pdf(switchover)
         outer_pdf = outer.pdf(switchover)
-        if inner_pdf == 0:
-            raise ValueError(
-                f"inner.pdf(switchover={switchover}) == 0; cannot density-match. inner "
-                "must have support at the boundary."
-            )
+        assert inner_pdf != 0, (
+            f"inner.pdf(switchover={switchover}) == 0; cannot density-match. inner "
+            "must have support at the boundary."
+        )
         self._alpha = 1 / (outer_pdf * inner_inner_mass / inner_pdf + outer_outer_mass)
         self._beta = self._alpha * outer_pdf / inner_pdf
         self._inner_mass = self._beta * inner_inner_mass

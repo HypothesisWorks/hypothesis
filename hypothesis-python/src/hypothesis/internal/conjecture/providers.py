@@ -940,7 +940,7 @@ class HypothesisProvider(PrimitiveProvider):
         if safe_bounds:
             # inverse_cdf requires strictly 0 < p < 1. Resample until we get it.
             while (p := lo + self._random.random() * (hi - lo)) in {0, 1}:
-                pass
+                pass  # pragma: no cover
             n = round(dist.inverse_cdf(p))
             # As an extra measure of safety, clamp our generated value to the requested
             # range. It would of course be nice if we provably satisfied this by

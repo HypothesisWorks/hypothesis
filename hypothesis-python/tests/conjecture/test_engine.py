@@ -1819,3 +1819,14 @@ def test_discards_invalid_db_entries_pareto():
     assert not set(db.fetch(runner.database_key))
     assert not set(db.fetch(runner.pareto_key))
     assert runner.call_count == 0
+
+
+# coverage tests for a few rare code paths in draw_integer
+@given(st.integers(min_value=2**2000))
+def test_integer_overflow_fallback(n):
+    assert n >= 2**2000
+
+
+@given(st.integers(2**500, 2**500 + 10))
+def test_integer_narrow_tail_fallback(n):
+    assert 2**500 <= n <= 2**500 + 10
