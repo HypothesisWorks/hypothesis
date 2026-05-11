@@ -29,6 +29,10 @@ pip install attrs
 $PYTEST tests/attrs/
 pip uninstall -y attrs
 
+pip install scipy
+$PYTEST tests/scipy/
+pip uninstall -y scipy
+
 # use pinned redis version instead of inheriting from fakeredis
 pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"

@@ -122,6 +122,26 @@ test_can_produce_large_magnitude_integers = define_test(
 )
 test_can_produce_large_positive_integers = define_test(integers(), lambda x: x > 1000)
 test_can_produce_large_negative_integers = define_test(integers(), lambda x: x < -1000)
+test_can_produce_65_bit_integer = define_test(
+    integers(), lambda x: x.bit_length() == 65, p=0.01
+)
+test_can_produce_very_large_integers = define_test(
+    integers(min_value=2**500), lambda x: x >= 2**501
+)
+test_can_produce_very_large_negative_integers = define_test(
+    integers(max_value=-(2**500)), lambda x: x <= 2**501
+)
+# These tests don't really belong in this file. They check that extreme ranges to `integers`
+# don't error, not anything about findability.
+test_can_produce_very_large_integers_bounded_1 = define_test(
+    integers(-(2**300), 2**500), lambda n: True
+)
+test_can_produce_very_large_integers_bounded_2 = define_test(
+    integers(2**500, 2**501), lambda n: True
+)
+test_can_produce_very_large_integers_bounded_3 = define_test(
+    integers(2**500, 2**500 + 10), lambda n: True
+)
 
 
 _factorials = {math.factorial(n) for n in range(9, 21)}
