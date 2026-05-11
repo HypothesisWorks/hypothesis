@@ -787,3 +787,74 @@ def test_redistribute_numeric_pairs_shrink_towards_integer(
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@pytest.mark.parametrize(
+    "start, expected",
+    [
+        # NFKD decomposition + drop combining: latin letters with diacritics.
+        ("À", "A"),
+        ("é", "e"),
+        ("Ñ", "N"),
+        # Compatibility decomposition: superscripts, mathematical alphabets,
+        # circled forms, fullwidth.
+        ("²", "2"),
+        ("𝕿", "T"),
+        ("Ⓐ", "A"),
+        ("Ｂ", "B"),
+        # Ligatures decompose to their first base char under NFKD.
+        ("ﬁ", "f"),
+        # Case mapping that produces multiple chars: ``ß.casefold() == "ss"``,
+        # and we accept any of the individual characters of the case-mapped
+        # form as a single-char replacement.
+        ("ß", "s"),
+        # Case mapping: uppercase has a smaller shrink-order index than
+        # lowercase, so we can swap a→A.
+        ("a", "A"),
+        # Multi-character: the pass operates one character at a time, so a
+        # mixed string should reduce each accented char independently.
+        ("Àé", "Ae"),
+    ],
+)
+def test_normalize_unicode_chars_pass(start, expected):
+    @shrinking_from([start])
+    def shrinker(data: ConjectureData):
+        s = data.draw(st.text(min_size=1))
+        # Accept any string where each character is either the original or the
+        # natural-simpler replacement at that position. The pass replaces
+        # characters one at a time, so it must be able to reach `expected` via
+        # a sequence of single-character substitutions.
+        if len(s) == len(start) and all(
+            c in (sc, ec) for c, sc, ec in zip(s, start, expected, strict=True)
+        ):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == (expected,)
+
+
+def test_normalize_unicode_chars_respects_intervals():
+    # When the strategy's allowed alphabet excludes the simpler ascii form,
+    # the pass must not produce out-of-alphabet replacements. A range that
+    # contains 'À' but not 'A' should leave 'À' alone.
+    alphabet = st.characters(min_codepoint=0xC0, max_codepoint=0xFF)
+
+    @shrinking_from(["À"])
+    def shrinker(data: ConjectureData):
+        data.draw(st.text(min_size=1, alphabet=alphabet))
+        data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == ("À",)
+
+
+def test_normalize_unicode_chars_skips_when_no_simplification():
+    # Plain ascii 'A' has no natural simplification (it is already a base
+    # uppercase letter), so the pass should leave it untouched.
+    @shrinking_from(["A"])
+    def shrinker(data: ConjectureData):
+        data.draw(st.text(min_size=1))
+        data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == ("A",)
