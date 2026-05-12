@@ -421,9 +421,7 @@ class SearchStrategy(Generic[Ex]):
     ) -> "SearchStrategy[T]": ...
     @overload
     def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
-    def filter(
-        self, condition: Callable[[Ex], Any | TypeGuard[T]]
-    ) -> "SearchStrategy[Ex | T]":
+    def filter(self, condition):
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition.
 
@@ -612,9 +610,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     ) -> "SearchStrategy[T]": ...
     @overload
     def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
-    def filter(
-        self, condition: Callable[[Ex], Any | TypeGuard[T]]
-    ) -> "SearchStrategy[Ex | T]":
+    def filter(self, condition):
         return type(self)(
             self.elements,
             force_repr=self.force_repr,
@@ -896,9 +892,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
     ) -> "SearchStrategy[T]": ...
     @overload
     def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]": ...
-    def filter(
-        self, condition: Callable[[Ex], Any | TypeGuard[T]]
-    ) -> SearchStrategy[Ex | T]:
+    def filter(self, condition):
         return FilteredStrategy(
             OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
             conditions=(),
@@ -1072,9 +1066,7 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
     def filter(
         self, condition: Callable[[MappedTo], Any]
     ) -> "SearchStrategy[MappedTo]": ...
-    def filter(
-        self, condition: Callable[[MappedTo], Any | TypeGuard[T]]
-    ) -> "SearchStrategy[MappedTo | T]":
+    def filter(self, condition):
         # Includes a special case so that we can rewrite filters on collection
         # lengths, when most collections are `st.lists(...).map(the_type)`.
         ListStrategy = _list_strategy_type()
@@ -1200,9 +1192,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
     ) -> "FilteredStrategy[T]": ...
     @overload
     def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]": ...
-    def filter(
-        self, condition: Callable[[Ex], Any | TypeGuard[T]]
-    ) -> "FilteredStrategy[Ex | T]":
+    def filter(self, condition):
         # If we can, it's more efficient to rewrite our strategy to satisfy the
         # condition.  We therefore exploit the fact that the order of predicates
         # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply

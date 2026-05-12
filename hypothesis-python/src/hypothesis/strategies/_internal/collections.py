@@ -240,9 +240,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
     def filter(
         self, condition: Callable[[list[Ex]], Any]
     ) -> "SearchStrategy[list[Ex]]": ...
-    def filter(
-        self, condition: Callable[[list[Ex]], Any | TypeGuard[T]]
-    ) -> "SearchStrategy[list[Ex] | T]":
+    def filter(self, condition):
         if condition in self._nonempty_filters or is_identity_function(condition):
             assert self.max_size >= 1, "Always-empty is special cased in st.lists()"
             if self.min_size >= 1:
