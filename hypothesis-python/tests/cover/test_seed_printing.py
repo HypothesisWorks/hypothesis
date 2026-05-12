@@ -125,7 +125,7 @@ def test_prints_seed_on_very_slow_shrinking(monkeypatch, in_pytest):
     @settings(database=None, deadline=None, suppress_health_check=list(HealthCheck))
     @given(st.integers(min_value=0, max_value=2**64 - 1))
     def test(n):
-        time.sleep(10)
+        time.sleep(50)
         assert n <= 2**33
 
     with capture_out() as o, pytest.raises(AssertionError):
