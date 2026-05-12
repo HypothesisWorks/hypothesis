@@ -47,11 +47,14 @@ BAD_ARGS.extend([e(st.lists, st.nothing(), unique=True, min_size=1)])
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
 
 
-@pytest.mark.parametrize("name", sorted(_all_strategies))
+ALL_STRATEGIES_COPY = dict(_all_strategies)  # avoid rare weakref issues
+
+
+@pytest.mark.parametrize("name", sorted(ALL_STRATEGIES_COPY))
 def test_consistent_with_api_guide_on_kwonly_args(name):
     # Enforce our style-guide: if it has a default value, it should be
     # keyword-only, with a few exceptions.
-    strategy = _all_strategies[name]
+    strategy = ALL_STRATEGIES_COPY[name]
     for arg in inspect.signature(strategy).parameters.values():
         assert (
             arg.default == Parameter.empty

@@ -7,7 +7,7 @@ The Hypothesis community is full of excellent people who can answer your questio
 * You can post a question on Stack Overflow using the `python-hypothesis <https://stackoverflow.com/questions/tagged/python-hypothesis>`__ tag.
 * We also have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_. Feel free to use it to ask for help, provide feedback, or discuss anything remotely Hypothesis related at all.
 
-Note that the :gh-file:`Hypothesis code of conduct <CODE_OF_CONDUCT.rst>` applies in all Hypothesis community spaces!
+Note that the :gh-file:`Hypothesis code of conduct <.github/CODE_OF_CONDUCT.rst>` applies in all Hypothesis community spaces!
 
 If you would like to cite Hypothesis, please consider :gh-file:`our suggested citation <CITATION.cff>`.
 

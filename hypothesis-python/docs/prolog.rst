@@ -104,6 +104,7 @@
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
 .. |st.just| replace:: :func:`~hypothesis.strategies.just`
+.. |st.from_regex| replace:: :func:`~hypothesis.strategies.from_regex`
 .. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
 .. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 .. |register_random| replace:: :func:`~hypothesis.register_random`

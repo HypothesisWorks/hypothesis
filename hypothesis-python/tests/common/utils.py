@@ -333,3 +333,9 @@ def wait_for(condition, *, timeout=1, interval=0.01):
         f"timing out after waiting {timeout}s for condition "
         f"{get_pretty_function_description(condition)}"
     )
+
+
+def run_test_for_falsifying_example(test_fn):
+    with pytest.raises(AssertionError) as err:
+        test_fn()
+    return "\n".join(err.value.__notes__).strip()

@@ -62,6 +62,7 @@ REVEALED_TYPES = [
         "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
         "Any",
     ),
+    ("from_regex(r'.', alphabet=None)", "str"),
 ]
 
 

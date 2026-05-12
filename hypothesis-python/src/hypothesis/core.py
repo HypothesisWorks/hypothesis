@@ -2217,19 +2217,37 @@ def given(
                     generated_seed = (
                         wrapped_test._hypothesis_internal_use_generated_seed
                     )
+                    assert state._runner is not None
+                    stopped_because_slow_shrinking = (
+                        state._runner.statistics.get("stopped-because")
+                        == "shrinking was very slow"
+                    )
                     with local_settings(settings):
-                        if not (state.failed_normally or generated_seed is None):
-                            if running_under_pytest:
-                                report(
-                                    f"You can add @seed({generated_seed}) to this test or "
-                                    f"run pytest with --hypothesis-seed={generated_seed} "
-                                    "to reproduce this failure."
+                        if generated_seed is not None and (
+                            not state.failed_normally or stopped_because_slow_shrinking
+                        ):
+                            pytest_extra_msg = (
+                                (
+                                    ", or by running pytest with "
+                                    f"--hypothesis-seed={generated_seed}"
+                                )
+                                if running_under_pytest
+                                else ""
+                            )
+                            if stopped_because_slow_shrinking:
+                                msg = (
+                                    "\nThis test function exited early because"
+                                    " it took too long to shrink. If desired for debugging, "
+                                    f"you can reproduce this by adding @seed({generated_seed}) "
+                                    f"to this test{pytest_extra_msg}."
                                 )
                             else:
-                                report(
-                                    f"You can add @seed({generated_seed}) to this test to "
-                                    "reproduce this failure."
+                                msg = (
+                                    "You can reproduce this failure by adding "
+                                    f"@seed({generated_seed}) to this test"
+                                    f"{pytest_extra_msg}."
                                 )
+                            report(msg)
                         # The dance here is to avoid showing users long tracebacks
                         # full of Hypothesis internals they don't care about.
                         # We have to do this inline, to avoid adding another

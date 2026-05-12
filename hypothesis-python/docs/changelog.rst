@@ -18,6 +18,128 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.6:
+
+--------------------
+6.152.6 - 2026-05-11
+--------------------
+
+This patch adds a shrinking pass that tries natural text transformations -
+unicode decomposition (NFD/NFKD) and case mapping - on individual
+characters in string choices.  Failures involving e.g. ``"À" != "À".lower()``
+will now reliably shrink to ``"A"`` rather than sometimes getting stuck on
+the high-codepoint accented form (:issue:`4725`).
+
+.. _v6.152.5:
+
+--------------------
+6.152.5 - 2026-05-10
+--------------------
+
+This patch improves the |Phase.explain| phase so that simple cases like
+``assert n1 == n2`` no longer get a misleading ``# or any other generated value``
+comment (:issue:`4715`). Before falling back to random sampling, we now also
+try borrowing values from each other arg slice with matching shape.
+
+.. _v6.152.4:
+
+--------------------
+6.152.4 - 2026-04-27
+--------------------
+
+This patch fixes a rare internal error during |Phase.explain| introduced in :version:`6.149.0` for certain strategies (:issue:`4708`).
+
+.. _v6.152.3:
+
+--------------------
+6.152.3 - 2026-04-26
+--------------------
+
+The ``hypothesis-urandom`` :ref:`backend <alternative-backends>` now reads from ``/dev/urandom`` with buffering disabled, which improves the control of those hooking ``/dev/urandom`` to change or read Hypothesis's random decisions.
+
+.. _v6.152.2:
+
+--------------------
+6.152.2 - 2026-04-24
+--------------------
+
+This release further improves printing of generated values, building on the changes
+in  :version:`6.151.11`.
+
+Principle changes:
+
+* In many cases where we would have printed a complex expression
+  producing a value, we now print the repr (or a pretty-printed version of it).
+* Additionally, in some cases where we would print a complex expression that involved
+  a lambda, we are now able to simplify that expression into a more readable one.
+
+.. _v6.152.1:
+
+--------------------
+6.152.1 - 2026-04-14
+--------------------
+
+Improve some internal type hints.
+
+.. _v6.152.0:
+
+--------------------
+6.152.0 - 2026-04-14
+--------------------
+
+Hypothesis generally recommends that the ``.hypothesis`` directory not be checked into version control. As a result, Hypothesis now automatically creates a ``.gitignore`` with ``*`` in the ``.hypothesis`` directory, which excludes it from being tracked by git.
+
+If you do want to check ``.hypothesis`` into git, you can remove the ``.gitignore`` file. Hypothesis will not re-create it unless the entire ``.hypothesis`` directory is removed.
+
+.. _v6.151.14:
+
+---------------------
+6.151.14 - 2026-04-13
+---------------------
+
+This patch fixes our |st.from_regex| type annotations so that ``from_regex(..., alphabet=None)`` is accepted.
+
+This patch also adds unicode line breaks and thai combining vowels to our list of constant strings to upweight at runtime.
+
+.. _v6.151.13:
+
+---------------------
+6.151.13 - 2026-04-13
+---------------------
+
+This patch removes some newly unnecessary ``# type: ignore`` comments.
+
+.. _v6.151.12:
+
+---------------------
+6.151.12 - 2026-04-08
+---------------------
+
+This release improves |Phase.explain| output by excluding pytest-related :pypi:`syrupy` files as a possible source of variation.
+
+.. _v6.151.11:
+
+---------------------
+6.151.11 - 2026-04-05
+---------------------
+
+This patch improves printing of primitive values generated from complex
+strategies, particularly for :func:`~hypothesis.strategies.from_regex`.
+Previously, these would often be printed as function calls desctribing
+how to construct them. Now they will always be printed as a literal value.
+
+.. _v6.151.10:
+
+---------------------
+6.151.10 - 2026-03-29
+---------------------
+
+When shrinking takes more than five minutes, Hypothesis now prints the
+``@seed`` decorator alongside the slow-shrinking warning so you can
+reproduce the failure.
+
+Thanks to Ian Hunt-Isaak for this contribution!
+
 .. _v6.151.9:
 
 --------------------

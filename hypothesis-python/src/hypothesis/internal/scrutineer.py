@@ -167,6 +167,9 @@ UNHELPFUL_LOCATIONS = (
     "/typing.py",
     "/conftest.py",
     "/pprint.py",
+    # syrupy registers a pytest_assertrepr_compare hook, which only runs when
+    # assertions fail — making it appear as always-failing-never-passing.
+    "/syrupy/__init__.py",
 )
 
 

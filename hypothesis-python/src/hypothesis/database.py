@@ -37,7 +37,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
-from hypothesis.configuration import storage_directory
+from hypothesis.configuration import StorageDirectory, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -93,16 +93,17 @@ def _db_for_path(
                 "https://hypothesis.readthedocs.io/en/latest/settings.html#settings-profiles"
             )
 
-        path = storage_directory("examples", intent_to_write=False)
-        if not _usable_dir(path):  # pragma: no cover
+        storage_dir = storage_directory("examples", intent_to_write=False)
+        if not _usable_dir(storage_dir.path):  # pragma: no cover
             warnings.warn(
                 "The database setting is not configured, and the default "
                 "location is unusable - falling back to an in-memory "
-                f"database for this session.  {path=}",
+                f"database for this session.  path={storage_dir.path!r}",
                 HypothesisWarning,
                 stacklevel=3,
             )
             return InMemoryExampleDatabase()
+        return _StorageDirectoryDatabase(storage_dir)
     if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
     path = cast(StrPathT, path)
@@ -446,6 +447,15 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self.path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
         self._observer: BaseObserver | None = None
+        self._ensure_directory_exists_called = False
+
+    def _ensure_directory_exists(self) -> None:
+        # disk hits are expensive: early-return for performance
+        if self._ensure_directory_exists_called:
+            return
+
+        self.path.mkdir(exist_ok=True, parents=True)
+        self._ensure_directory_exists_called = True
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
@@ -492,6 +502,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         # already checked for permissions, but there can still be other issues,
         # e.g. the disk is full, or permissions might have been changed.
         try:
+            self._ensure_directory_exists()
             key_path.mkdir(exist_ok=True, parents=True)
             path = self._value_path(key, value)
             if not path.exists():
@@ -654,7 +665,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         # events, even after the directory gets created.
         #
         # Ensure the directory exists before starting the observer.
-        self.path.mkdir(exist_ok=True, parents=True)
+        self._ensure_directory_exists()
         self._observer = Observer()
         self._observer.schedule(
             Handler(),
@@ -671,6 +682,28 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self._observer.stop()
         self._observer.join()
         self._observer = None
+
+
+class _StorageDirectoryDatabase(DirectoryBasedExampleDatabase):
+    # A DirectoryBasedExampleDatabase which is located at the same directory as the storage
+    # directory. This lets our database logic interact with our logic for writing .gitignore
+    # files to the storage directory.
+    #
+    # The reason why we need this class is because the first interaction we have
+    # with .hypothesis might be writing a file to .hypothesis/examples, and
+    # DirectoryBasedExampleDatabase.save would otherwise create .hypothesis without
+    # performing our .gitignore logic.
+
+    def __init__(self, storage_dir: StorageDirectory) -> None:
+        super().__init__(storage_dir.path)
+        self._storage_dir = storage_dir
+
+    def _ensure_directory_exists(self) -> None:
+        if self._ensure_directory_exists_called:
+            return
+
+        self._storage_dir.create_if_missing()
+        self._ensure_directory_exists_called = True
 
 
 class ReadOnlyDatabase(ExampleDatabase):
@@ -868,10 +901,12 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # It's unnecessary to use a token if the repo is public
         self.token: str | None = getenv("GITHUB_TOKEN")
 
+        self._storage_dir: StorageDirectory | None = None
         if path is None:
-            self.path: Path = Path(
-                storage_directory(f"github-artifacts/{self.artifact_name}/")
+            self._storage_dir = storage_directory(
+                f"github-artifacts/{self.artifact_name}/"
             )
+            self.path = self._storage_dir.path
         else:
             self.path = Path(path)
 
@@ -953,7 +988,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # Trigger warning that we suppressed earlier by intent_to_write=False
         storage_directory(self.path.name)
         # Create the cache directory if it doesn't exist
-        self.path.mkdir(exist_ok=True, parents=True)
+        if self._storage_dir is not None:  # pragma: no cover
+            self._storage_dir.create_if_missing()
+        else:
+            self.path.mkdir(exist_ok=True, parents=True)
 
         # Get all artifacts
         cached_artifacts = sorted(

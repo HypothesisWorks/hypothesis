@@ -455,6 +455,14 @@ class PrettyIter:
     def __repr__(self) -> str:
         return f"iter({self._values!r})"
 
+    def _repr_pretty_(self, printer, cycle):
+        if cycle:
+            printer.text("iter(...)")
+        else:
+            printer.text("iter(")
+            printer.pretty(self._values)
+            printer.text(")")
+
 
 @defines_strategy()
 def iterables(
@@ -877,7 +885,7 @@ def from_regex(
     regex: str | Pattern[str],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] = characters(codec="utf-8"),
+    alphabet: str | SearchStrategy[str] | None = characters(codec="utf-8"),
 ) -> SearchStrategy[str]:  # pragma: no cover
     ...
 

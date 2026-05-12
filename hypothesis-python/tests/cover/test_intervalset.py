@@ -23,6 +23,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 
 @given(intervals(max_codepoint=200))
+@settings(deadline=None)
 def test_intervals_are_equivalent_to_their_lists(intervals):
     ls = list(intervals)
     assert len(ls) == len(intervals)

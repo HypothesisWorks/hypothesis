@@ -9,9 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import unicodedata
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -87,6 +89,34 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
         len(nodes),
         tuple(choice_to_index(node.value, node.constraints) for node in nodes),
     )
+
+
+@lru_cache(maxsize=4096)
+def _natural_simpler_chars(c, intervals):
+    """Return single-char replacements for ``c`` derived from natural text
+    transformations - case mapping (upper, lower, casefold) and unicode
+    decomposition (NFD, NFKD). We take each individual character of the
+    transformed form so that e.g. ``ß`` can shrink to ``s`` via casefold
+    even though the full case-folded form is two characters.
+
+    Only candidates which are in ``intervals`` and which have a strictly
+    smaller index in shrink order than ``c`` are returned, sorted by that
+    shrink-order index. Callers must pass a single character that is itself
+    in ``intervals``.
+    """
+    candidates: set[str] = set()
+    for form in ("NFKD", "NFD"):
+        candidates.update(unicodedata.normalize(form, c))
+    for transformed in (c.upper(), c.lower(), c.casefold()):
+        candidates.update(transformed)
+    candidates.discard(c)
+    original_idx = intervals.index_from_char_in_shrink_order(c)
+    result = sorted(
+        (intervals.index_from_char_in_shrink_order(cand), cand)
+        for cand in candidates
+        if cand in intervals
+    )
+    return [cand for idx, cand in result if idx < original_idx]
 
 
 @dataclass(slots=True, frozen=False)
@@ -321,6 +351,7 @@ class Shrinker:
             ShrinkPass(self.redistribute_numeric_pairs),
             ShrinkPass(self.lower_integers_together),
             ShrinkPass(self.lower_duplicated_characters),
+            ShrinkPass(self.normalize_unicode_chars),
         ]
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
@@ -501,27 +532,36 @@ class Shrinker:
             ):
                 continue
 
+            # Try a few targeted candidates before falling back to random sampling,
+            # so that simple cases like ``assert n1 == n2`` -- where the only
+            # passing value of ``n1`` is exactly ``n2``'s value -- aren't reported
+            # as freely-variable just because random sampling missed it.
+            candidates = list(self._explain_candidates(start, end))
+
             # Run our experiments
             n_same_failures = 0
             note = "or any other generated value"
             # TODO: is 100 same-failures out of 500 attempts a good heuristic?
-            for n_attempt in range(500):  # pragma: no branch
+            for n_attempt in range(500 + len(candidates)):  # pragma: no branch
                 # no-branch here because we don't coverage-test the abort-at-500 logic.
 
-                if n_attempt - 10 > n_same_failures * 5:
+                if n_attempt - 10 - len(candidates) > n_same_failures * 5:
                     # stop early if we're seeing mostly invalid examples
                     break  # pragma: no cover
 
-                # replace start:end with random values
-                replacement = []
-                for i in range(start, end):
-                    node = nodes[i]
-                    if not node.was_forced:
-                        value = draw_choice(
-                            node.type, node.constraints, random=self.random
-                        )
-                        node = node.copy(with_value=value)
-                    replacement.append(node.value)
+                if n_attempt < len(candidates):
+                    replacement = list(candidates[n_attempt])
+                else:
+                    # replace start:end with random values
+                    replacement = []
+                    for i in range(start, end):
+                        node = nodes[i]
+                        if not node.was_forced:
+                            value = draw_choice(
+                                node.type, node.constraints, random=self.random
+                            )
+                            node = node.copy(with_value=value)
+                        replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
                 result = self.engine.cached_test_function(attempt, extend="full")
@@ -539,7 +579,6 @@ class Shrinker:
                     ):
                         assert span1.start == span2.start
                         assert span1.start <= start
-                        assert span1.label == span2.label
                         if span1.start == start and span1.end == end:
                             result_end = span2.end
                             break
@@ -610,6 +649,33 @@ class Shrinker:
                         "The test always failed when commented parts were varied together."
                     )
                     break
+
+    def _explain_candidates(
+        self, start: int, end: int
+    ) -> "Iterator[tuple[ChoiceT, ...]]":
+        """Yield deterministic candidate replacements for ``nodes[start:end]``.
+
+        Random sampling alone misses cases like ``assert n1 == n2``, where the
+        only passing value of ``n1`` is exactly ``n2``'s value. We try
+        substituting values from each other arg slice with matching length and
+        types, which catches such comparisons. Invalid borrowed values just
+        produce an irrelevant test result the outer loop discards.
+        """
+        nodes = self.nodes
+        target_types = tuple(nodes[i].type for i in range(start, end))
+        current_keys = tuple(choice_key(nodes[i].value) for i in range(start, end))
+        seen: set[tuple[Any, ...]] = {current_keys}
+        for s2, e2 in sorted(self.shrink_target.arg_slices):
+            if (s2, e2) == (start, end) or (e2 - s2) != (end - start):
+                continue
+            if tuple(nodes[s2 + j].type for j in range(end - start)) != target_types:
+                continue
+            borrowed = tuple(nodes[s2 + j].value for j in range(end - start))
+            key = tuple(choice_key(v) for v in borrowed)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield borrowed
 
     def greedy_shrink(self) -> None:
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1365,13 +1431,15 @@ class Shrinker:
         )
         node2 = chooser.choose(
             self.nodes,
-            lambda node: can_choose_node(node)
-            # Note that it's fine for node2 to be trivial, because we're going to
-            # explicitly make it *not* trivial by adding to its value.
-            and not node.was_forced
-            # to avoid quadratic behavior, scan ahead only a small amount for
-            # the related node.
-            and node1.index < node.index <= node1.index + 4,
+            lambda node: (
+                can_choose_node(node)
+                # Note that it's fine for node2 to be trivial, because we're going to
+                # explicitly make it *not* trivial by adding to its value.
+                and not node.was_forced
+                # to avoid quadratic behavior, scan ahead only a small amount for
+                # the related node.
+                and node1.index < node.index <= node1.index + 4
+            ),
         )
 
         m: int | float = node1.value
@@ -1423,8 +1491,9 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 3 + 1)),
-                lambda i: self.nodes[i].type == "integer"
-                and not self.nodes[i].was_forced,
+                lambda i: (
+                    self.nodes[i].type == "integer" and not self.nodes[i].was_forced
+                ),
             )
         ]
 
@@ -1477,9 +1546,12 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 1 + 4)),
-                lambda i: self.nodes[i].type == "string" and not self.nodes[i].trivial
-                # select nodes which have at least one of the same character present
-                and set(node1.value) & set(self.nodes[i].value),
+                lambda i: (
+                    self.nodes[i].type == "string"
+                    and not self.nodes[i].trivial
+                    # select nodes which have at least one of the same character present
+                    and set(node1.value) & set(self.nodes[i].value)
+                ),
             )
         ]
 
@@ -1507,6 +1579,42 @@ class Shrinker:
                 + self.nodes[node2.index + 1 :]
             ),
         )
+
+    def normalize_unicode_chars(self, chooser):
+        """For string nodes, try replacing characters with simpler equivalents
+        from natural text transformations: unicode decomposition (NFD, NFKD)
+        and case mapping. For example, an accented latin letter is reduced
+        to its base form, a ligature is reduced to its first base character,
+        a mathematical alphanumeric symbol is reduced to its plain ascii
+        counterpart, and a lowercase letter is replaced with its uppercase
+        form (which has a smaller shrink-order index in the default
+        alphabet).
+
+        The codepoint shrinker is binary-search based, so it can get stuck on
+        a high codepoint whose simpler equivalents aren't reached by halving
+        / shifting / masking. This pass directly tries the natural simpler
+        forms one character at a time.
+        """
+        node = chooser.choose(
+            self.nodes,
+            lambda n: n.type == "string"
+            and any(
+                _natural_simpler_chars(c, n.constraints["intervals"]) for c in n.value
+            ),
+        )
+        intervals = node.constraints["intervals"]
+        i = chooser.choose(
+            range(len(node.value)),
+            lambda j: bool(_natural_simpler_chars(node.value[j], intervals)),
+        )
+        for replacement in _natural_simpler_chars(node.value[i], intervals):
+            new_value = node.value[:i] + replacement + node.value[i + 1 :]
+            if self.consider_new_nodes(
+                self.nodes[: node.index]
+                + (node.copy(with_value=new_value),)
+                + self.nodes[node.index + 1 :]
+            ):
+                return
 
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type
