@@ -44,6 +44,7 @@ their individual contributions.
 * `Chris Down  <https://chrisdown.name>`_
 * `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
 * `Chris Wesseling <https://github.com/CharString>`_
+* `Christian Hettlage <https://github.com/hettlage>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
