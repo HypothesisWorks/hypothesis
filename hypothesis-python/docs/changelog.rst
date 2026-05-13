@@ -18,6 +18,29 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.7:
+
+--------------------
+6.152.7 - 2026-05-13
+--------------------
+
+This patch improves our type hints for |.filter| to work with |TypeGuard|. For example:
+
+.. code-block:: python
+
+    from typing import TypeGuard
+
+    from hypothesis import strategies as st
+
+    def is_str(x: object) -> TypeGuard[str]:
+        return isinstance(x, str)
+
+    s = st.from_type(object).filter(is_str)
+
+    # previously: SearchStrategy[object]
+    # now: SearchStrategy[str]
+    reveal_type(s)
+
 .. _v6.152.6:
 
 --------------------
