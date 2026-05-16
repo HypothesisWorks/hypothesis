@@ -165,6 +165,16 @@ def test_issue_739_regression(x):
     pass
 
 
+_min_4651 = decimal.Decimal("0." + "0" * 63 + "1")
+_max_4651 = decimal.Decimal("9" * 64 + "." + "9" * 64)
+
+
+@settings(max_examples=200)
+@given(decimals(min_value=_min_4651, max_value=_max_4651, places=2))
+def test_decimals_places_with_high_precision_bounds(x):
+    assert _min_4651 <= x <= _max_4651
+
+
 def test_consistent_decimal_error():
     bad = "invalid argument to Decimal"
     with pytest.raises(InvalidArgument) as excinfo:
