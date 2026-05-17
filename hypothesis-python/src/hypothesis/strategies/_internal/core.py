@@ -18,7 +18,14 @@ import string
 import sys
 import typing
 import warnings
-from collections.abc import Callable, Collection, Hashable, Iterable, Sequence
+from collections.abc import (
+    Callable,
+    Collection,
+    Hashable,
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
@@ -364,7 +371,7 @@ def lists(
             and (elements.end - elements.start) <= 255
         ):
             elements = SampledFromStrategy(
-                sorted(range(elements.start, elements.end + 1), key=abs)  # type: ignore
+                sorted(range(elements.start, elements.end + 1), key=abs)
                 if elements.end < 0 or elements.start > 0
                 else (
                     list(range(elements.end + 1))
@@ -1580,9 +1587,9 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             )
         try:
             hints = get_type_hints(thing)
-            params = get_signature(thing).parameters
+            params: Mapping[str, Parameter] = get_signature(thing).parameters
         except Exception:
-            params = {}  # type: ignore
+            params = {}
 
         posonly_args = []
         kwargs = {}

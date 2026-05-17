@@ -1220,9 +1220,9 @@ class FilteredStrategy(SearchStrategy[Ex]):
             condition = self.flat_conditions[0]
         elif len(self.flat_conditions) == 0:
             # Possible, if unlikely, due to filter predicate rewriting
-            condition = lambda _: True  # type: ignore # covariant type param
+            condition = lambda _: True
         else:
-            condition = lambda x: all(  # type: ignore # covariant type param
+            condition = lambda x: all(
                 cond(x) for cond in self.flat_conditions
             )
         self.__condition = condition

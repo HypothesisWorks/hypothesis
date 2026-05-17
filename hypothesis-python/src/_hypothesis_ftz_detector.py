@@ -83,8 +83,8 @@ def modules_imported_by(mod: str) -> FTZCulprits:
 
 # We don't want to redo all the expensive process-spawning checks when we've already
 # done them, so we cache known-good packages and a known-FTZ result if we have one.
-KNOWN_FTZ = None
-CHECKED_CACHE = set()
+KNOWN_FTZ: str | None = None
+CHECKED_CACHE: set[str] = set()
 
 
 def identify_ftz_culprits() -> str:

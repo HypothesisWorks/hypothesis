@@ -368,6 +368,7 @@ def from_field(field: F) -> st.SearchStrategy[F | None]:
     """
     check_type((dm.Field, df.Field), field, "field")
 
+    strategy: st.SearchStrategy[Any]
     # The following isinstance check must occur *before* the getattr
     # check. In the case of ModelChoicesField, evaluating
     # field.choices causes database access, which we want to avoid if

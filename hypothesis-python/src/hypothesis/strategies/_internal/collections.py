@@ -329,7 +329,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 for key, seen in zip(self.keys, seen_sets, strict=True):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
-                    value = (value, *data.draw(self.tuple_suffixes))  # type: ignore
+                    value = (value, *data.draw(self.tuple_suffixes))
                 result.append(value)
         assert self.max_size >= len(result) >= self.min_size
         return result
