@@ -16,6 +16,16 @@ Just tell me how to make a pull request
 
 For more detail, read on; for even more, continue to the ``guides/`` directory!
 
+---------
+AI Policy
+---------
+
+We support the use of AI as a tool for coding. However, we enjoy open source because of the connections between humans, not between robots.
+
+We expect any communication with maintainers, including comments, issues, and pull request descriptions, to be written by a human. If it would be helpful to include content produced by an AI, you may do so inside the collapsible `<details>` element.
+
+A human must be responsible for and understand every contribution. Any pull requests made by fully autonomous agents will be closed.
+
 ------------------
 Ways to Contribute
 ------------------
