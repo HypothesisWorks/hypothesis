@@ -8,7 +8,7 @@ execnet==2.1.2
     # via pytest-xdist
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.2
     # via pytest
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -27,5 +27,5 @@ pytest-xdist==3.8.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/pyproject.toml)
-syrupy==5.1.0
+syrupy==5.2.0
     # via -r requirements/test.in
