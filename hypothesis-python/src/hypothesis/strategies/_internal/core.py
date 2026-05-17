@@ -1383,7 +1383,13 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         return _from_type(types.evaluate_type_alias_type(thing))
     if types.is_a_union(thing):
         args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
-        return one_of([_from_type(t) for t in args])
+        strategies = []
+        for t in args:
+            strategy = from_type_guarded(t)
+            if strategy is ...:
+                strategy = _from_type_deferred(t)
+            strategies.append(strategy)
+        return one_of(strategies)
     if thing in types.LiteralStringTypes:  # pragma: no cover
         # We can't really cover this because it needs either
         # typing-extensions or python3.11+ typing.
@@ -1633,11 +1639,23 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         )
 
     subclass_strategies: SearchStrategy = nothing()
-    for sc in subclasses:
-        try:
-            subclass_strategies |= _from_type(sc)
-        except Exception:
-            pass
+    try:
+        recurse_guard = _recurse_guard.get()
+    except LookupError:
+        _recurse_guard.set(recurse_guard := [])
+    added_to_recurse_guard = thing not in recurse_guard
+    if added_to_recurse_guard:
+        recurse_guard.append(thing)
+    try:
+        for sc in subclasses:
+            try:
+                subclass_strategies |= _from_type(sc)
+            except Exception:
+                pass
+    finally:
+        if added_to_recurse_guard:
+            recurse_guard.pop()
+
     if subclass_strategies.is_empty:
         # We're unable to resolve subclasses now, but we might be able to later -
         # so we'll just go back to the mixed distribution.

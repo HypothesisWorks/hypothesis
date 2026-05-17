@@ -12,6 +12,7 @@ import abc
 import enum
 import typing
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from inspect import Parameter as P, Signature
 from typing import Generic, List as _List, TypeVar, Union
 
@@ -24,7 +25,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.types import _global_type_lookup
-from hypothesis.strategies._internal.utils import _all_strategies
+from hypothesis.strategies._internal.utils import _all_strategies, clear_strategy_cache
 
 from tests.common.debug import (
     assert_all_examples,
@@ -428,6 +429,47 @@ def test_gen_abstract(foo):
     # This requires that we correctly checked which of the subclasses
     # could be resolved, rather than unconditionally using all of them.
     assert isinstance(foo, ConcreteFoo2)
+
+
+def test_recursive_abstract_union_from_type_avoids_repeated_expansion(monkeypatch):
+    clear_strategy_cache()
+
+    class Stmt(abc.ABC):
+        @abc.abstractmethod
+        def f(self) -> str: ...
+
+    @dataclass
+    class Block(Stmt):
+        stmts: list[Stmt]
+
+        def f(self) -> str:
+            return ""
+
+    namespace = {"Stmt": Stmt, "dataclass": dataclass}
+    for i in range(10):
+        exec(
+            f"@dataclass\n"
+            f"class S{i}(Stmt):\n"
+            f"    a: Stmt\n"
+            f"    b: Stmt | None\n"
+            f"    def f(self) -> str: return ''\n",
+            namespace,
+        )
+
+    from hypothesis.strategies._internal import core
+
+    original_from_type = core._from_type
+    calls = 0
+
+    def counted_from_type(thing):
+        nonlocal calls
+        calls += 1
+        return original_from_type(thing)
+
+    monkeypatch.setattr(core, "_from_type", counted_from_type)
+    assert st.from_type(Block).is_empty is False
+
+    assert calls < 50
 
 
 class AbstractBar(abc.ABC):
