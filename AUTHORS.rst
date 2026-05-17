@@ -175,6 +175,7 @@ their individual contributions.
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Sean Kenneth Doherty <https://github.com/Sean-Kenneth-Doherty>`_
 * `Sebastiaan Zeeff <https://github.com/SebastiaanZ>`_ (sebastiaan.zeeff@ordina.nl)
 * `Sharyar Memon <https://github.com/sharyar>`_ (smemon.cal@gmail.com)
 * `Shaun Read <https://github.com/philastrophist>`_
