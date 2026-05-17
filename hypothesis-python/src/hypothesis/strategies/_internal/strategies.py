@@ -1222,9 +1222,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             # Possible, if unlikely, due to filter predicate rewriting
             condition = lambda _: True
         else:
-            condition = lambda x: all(
-                cond(x) for cond in self.flat_conditions
-            )
+            condition = lambda x: all(cond(x) for cond in self.flat_conditions)
         self.__condition = condition
         return condition
 
