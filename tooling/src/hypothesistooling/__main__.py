@@ -396,6 +396,8 @@ def update_python_versions():
         # `uv python list` sorts newest-first, so first hit wins.
         best.setdefault(key, candidate)
 
+    best = dict(sorted(best.items()))
+
     if best == PYTHONS:
         return
 
@@ -646,17 +648,17 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.15": "3.15.0b1",
-    "3.15t": "3.15.0b1+freethreaded",
-    "3.14": "3.14.5",
-    "3.14t": "3.14.5+freethreaded",
+    "3.10": "3.10.20",
+    "3.11": "3.11.15",
+    "3.12": "3.12.13",
     "3.13": "3.13.13",
     "3.13t": "3.13.13+freethreaded",
-    "3.12": "3.12.13",
-    "3.11": "3.11.15",
-    "3.10": "3.10.20",
-    "pypy3.11": "pypy3.11-3.11.15",
+    "3.14": "3.14.5",
+    "3.14t": "3.14.5+freethreaded",
+    "3.15": "3.15.0b1",
+    "3.15t": "3.15.0b1+freethreaded",
     "pypy3.10": "pypy3.10-3.10.16",
+    "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
