@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.152.8:
+
+--------------------
+6.152.8 - 2026-05-18
+--------------------
+
+This release drops support for end-of-life :pypi:`Django` 4.2.
+
 .. _v6.152.7:
 
 --------------------
