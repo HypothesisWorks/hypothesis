@@ -19,7 +19,7 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-PYTHON_VERSION="3.14.4"
+PYTHON_VERSION="3.14.5"
 
 "$SCRIPTS/ensure-uv.sh"
 if ! command -v uv >/dev/null 2>&1 ; then

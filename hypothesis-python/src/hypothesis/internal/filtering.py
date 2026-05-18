@@ -272,7 +272,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     # parsing it to an abstract syntax tree; if this fails for any reason we bail out
     # and fall back to standard rejection sampling (a running theme).
     try:
-        if predicate.__name__ == "<lambda>":
+        if predicate.__name__ == "<lambda>":  # type: ignore
             source = lambda_description(predicate)
         else:
             source = inspect.getsource(predicate)

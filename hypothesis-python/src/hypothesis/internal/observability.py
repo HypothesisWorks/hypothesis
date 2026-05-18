@@ -24,6 +24,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
+from pathlib import Path
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
@@ -477,7 +478,7 @@ def make_testcase(
     )
 
 
-_WROTE_TO = set()
+_WROTE_TO: set[Path] = set()
 _deliver_to_file_lock = Lock()
 
 

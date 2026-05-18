@@ -129,20 +129,20 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
                 else node.args
             ),
         )
-        via: cst.BaseExpression = cst.Call(
+        expr: cst.BaseExpression = cst.Call(
             func=cst.Attribute(node, cst.Name("via")),
             args=[cst.Arg(cst.SimpleString(repr(via)))],
         )
         if black:  # pragma: no branch
             try:
                 pretty = black.format_str(
-                    cst.Module([]).code_for_node(via),
+                    cst.Module([]).code_for_node(expr),
                     mode=black.Mode(line_length=self.line_length),
                 )
             except (ImportError, AttributeError):  # pragma: no cover
                 return None  # See https://github.com/psf/black/pull/4224
-            via = cst.parse_expression(pretty.strip())
-        return cst.Decorator(via)
+            expr = cst.parse_expression(pretty.strip())
+        return cst.Decorator(expr)
 
     def leave_FunctionDef(
         self, _original_node: cst.FunctionDef, updated_node: cst.FunctionDef

@@ -164,7 +164,7 @@ try:
     extended_get_origin = typing_extensions.get_origin
 except AttributeError:  # pragma: no cover
     # `typing_extensions` might not be installed, in this case - fallback:
-    extended_get_origin = get_origin  # type: ignore
+    extended_get_origin = get_origin
 
 
 # Used on `TypeVar` objects with no default:

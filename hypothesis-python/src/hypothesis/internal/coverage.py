@@ -49,7 +49,7 @@ def pretty_file_name(f):
 
 
 IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
-description_stack = []
+description_stack: list[str] = []
 
 
 if IN_COVERAGE_TESTS:

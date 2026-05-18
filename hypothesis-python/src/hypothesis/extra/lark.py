@@ -69,17 +69,17 @@ class LarkStrategy(st.SearchStrategy):
     ) -> None:
         super().__init__()
         assert isinstance(grammar, lark.lark.Lark)
-        start: list[str] = grammar.options.start if start is None else [start]
+        starts = grammar.options.start if start is None else [start]
 
         # This is a total hack, but working around the changes is a nicer user
         # experience than breaking for anyone who doesn't instantly update their
         # installation of Lark alongside Hypothesis.
         compile_args = signature(grammar.grammar.compile).parameters
         if "terminals_to_keep" in compile_args:
-            terminals, rules, ignore_names = grammar.grammar.compile(start, ())
+            terminals, rules, ignore_names = grammar.grammar.compile(starts, ())
         elif "start" in compile_args:  # pragma: no cover
             # Support lark <= 0.10.0, without the terminals_to_keep argument.
-            terminals, rules, ignore_names = grammar.grammar.compile(start)  # type: ignore
+            terminals, rules, ignore_names = grammar.grammar.compile(starts)  # type: ignore
         else:  # pragma: no cover
             # This branch is to support lark <= 0.7.1, without the start argument.
             terminals, rules, ignore_names = grammar.grammar.compile()  # type: ignore
@@ -140,12 +140,12 @@ class LarkStrategy(st.SearchStrategy):
         ):
             allowed_rules = {*self.terminal_strategies, *nonterminals}
 
-        if set(start).isdisjoint(allowed_rules):
+        if set(starts).isdisjoint(allowed_rules):
             raise InvalidArgument(
-                f"No start rule {tuple(start)} is allowed by {alphabet=}"
+                f"No start rule {tuple(starts)} is allowed by {alphabet=}"
             )
         self.start = st.sampled_from(
-            [self.names_to_symbols[s] for s in start if s in allowed_rules]
+            [self.names_to_symbols[s] for s in starts if s in allowed_rules]
         )
 
         self.nonterminal_strategies = {

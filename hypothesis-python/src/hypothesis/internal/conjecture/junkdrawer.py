@@ -287,7 +287,7 @@ def stack_depth_of_caller() -> int:
     frame = sys._getframe(2)
     size = 1
     while frame:
-        frame = frame.f_back  # type: ignore[assignment]
+        frame = frame.f_back
         size += 1
     return size
 
