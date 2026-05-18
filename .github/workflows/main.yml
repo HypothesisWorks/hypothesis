@@ -93,7 +93,6 @@ jobs:
           - check-pytest74
           - check-py311-pytest62
           - check-django60
-          - check-django42
           - check-py313-pandas22
           - check-py312-pandas21
           - check-py311-pandas20
