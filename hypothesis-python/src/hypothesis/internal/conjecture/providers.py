@@ -45,8 +45,6 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.floats import lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes
 from hypothesis.internal.conjecture.utils import (
-    INT_SIZES,
-    INT_SIZES_SAMPLER,
     Sampler,
     many,
 )
@@ -57,6 +55,7 @@ from hypothesis.internal.constants_ast import (
 )
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
+    clamp,
     float_to_int,
     make_float_clamper,
     next_down,
@@ -64,6 +63,11 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import InfoObservationType, TestCaseObservation
+from hypothesis.internal.statistics import (
+    LogStudentTDistribution,
+    PiecewiseDistribution,
+    UniformDistribution,
+)
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
@@ -72,6 +76,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 LifetimeT: TypeAlias = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
+
+# see https://github.com/HypothesisWorks/hypothesis/pull/4728 for details
+INTEGERS_DISTRIBUTION = PiecewiseDistribution(
+    inner=UniformDistribution(half_width=256),
+    outer=LogStudentTDistribution(scale_bits=13, df=2),
+    switchover=256,
+)
 
 
 #: Registered Hypothesis backends. This is a dictionary where keys are the name
@@ -845,12 +856,6 @@ class HypothesisProvider(PrimitiveProvider):
             assert isinstance(constant, int)
             return constant
 
-        center = 0
-        if min_value is not None:
-            center = max(min_value, center)
-        if max_value is not None:
-            center = min(max_value, center)
-
         if weights is not None:
             assert min_value is not None
             assert max_value is not None
@@ -871,28 +876,81 @@ class HypothesisProvider(PrimitiveProvider):
             idx = sampler.sample(self._cd)
 
             if idx == 0:
-                return self._draw_bounded_integer(min_value, max_value)
+                return self._draw_integer_from_distribution(min_value, max_value)
             # implicit reliance on dicts being sorted for determinism
             return list(weights)[idx - 1]
 
+        return self._draw_integer_from_distribution(min_value, max_value)
+
+    def _draw_integer_from_distribution(
+        self, min_value: int | None, max_value: int | None
+    ) -> int:
+        assert self._random is not None
+        dist = INTEGERS_DISTRIBUTION
+
+        # Our integers distribution is defined over the full float64 range. If the user
+        # has not placed a lower and/or upper bound, we don't actually want to sample
+        # from this full range, because we might otherwise generate integers
+        # that are so large as to cause problems. For example python errors when passing
+        # a too-large integer to c APIs (common and implicit in some python stdlib APIs).
+        #
+        # * If the user asks for an unbounded range, we bound at [-2**128, 2**128].
+        # * If the user asks for a half-bounded range starting at n, we bound at
+        #   [n, 2**128] for n < 2**127, and [n, 2n] otherwise, so we always support
+        #   generating large integers if a user explicitly asks for integers around that
+        #   magnitude. The choice of a factor of two here is arbitrary.
         if min_value is None and max_value is None:
-            return self._draw_unbounded_integer()
-
-        if min_value is None:
+            min_value = -(2**128)
+            max_value = 2**128
+        elif min_value is None:
             assert max_value is not None
-            probe = max_value + 1
-            while max_value < probe:
-                probe = center + self._draw_unbounded_integer()
-            return probe
+            min_value = -max(2**128, 2 * abs(max_value))
+        elif max_value is None:
+            max_value = max(2**128, 2 * abs(min_value))
 
-        if max_value is None:
-            assert min_value is not None
-            probe = min_value - 1
-            while probe < min_value:
-                probe = center + self._draw_unbounded_integer()
-            return probe
+        lo = 0.0
+        hi = 1.0
+        safe_bounds = True
+        try:
+            cdf_min = min_value - 0.5
+            cdf_max = max_value + 0.5
+        except OverflowError:
+            safe_bounds = False
 
-        return self._draw_bounded_integer(min_value, max_value)
+        if safe_bounds:
+            lo = dist.cdf(cdf_min)
+            hi = dist.cdf(cdf_max)
+
+            # if the bounds in CDF-space are too close together, there isn't enough room
+            # to stably sample between hi and lo. For example, in the extreme case of
+            # hi = lo (which can happen even if min_value != max_value due to either float
+            # imprecision or numerical instability), our sampling algorithm would collapse
+            # to always return the sample value.
+            #
+            # The choice of 1e-13 here is somewhat arbitrary. At 1.0, epsilon in float64
+            # is 2^-53 ~= 1e-16. We want some breathing room from epsilon, because we need
+            # some variation to actually sample in. I haven't put much thought into where
+            # the correct tradeoff lies. The downside risk to choosing a too-aggressive
+            # bound is some integers may literally not be representable in the `hi - lo`
+            # sampling space. The downside risk to a too-conservative bound is switching
+            # off our good distribution too early.
+            if hi - lo < 1e-13:
+                safe_bounds = False
+
+        if safe_bounds:
+            # inverse_cdf requires strictly 0 < p < 1. Resample until we get it.
+            while (p := lo + self._random.random() * (hi - lo)) in {0, 1}:
+                pass  # pragma: no cover
+            n = round(dist.inverse_cdf(p))
+            # As an extra measure of safety, clamp our generated value to the requested
+            # range. It would of course be nice if we provably satisfied this by
+            # construction - I'm just not 100% confident that we do.
+            return clamp(min_value, n, max_value)
+
+        # We have determined the bounds [min_value, max_value] are not numerically safe
+        # to use. Fall back to a simpler and safer distribution: a uniform distribution
+        # on [min_value, max_value].
+        return self._random.randint(min_value, max_value)
 
     def draw_float(
         self,
@@ -1047,45 +1105,6 @@ class HypothesisProvider(PrimitiveProvider):
         f = lex_to_float(self._random.getrandbits(64))
         sign = 1 if self._random.getrandbits(1) else -1
         return sign * f
-
-    def _draw_unbounded_integer(self) -> int:
-        assert self._cd is not None
-        assert self._random is not None
-
-        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
-
-        r = self._random.getrandbits(size)
-        sign = r & 1
-        r >>= 1
-        if sign:
-            r = -r
-        return r
-
-    def _draw_bounded_integer(
-        self,
-        lower: int,
-        upper: int,
-        *,
-        vary_size: bool = True,
-    ) -> int:
-        assert lower <= upper
-        assert self._cd is not None
-        assert self._random is not None
-
-        if lower == upper:
-            return lower
-
-        bits = (upper - lower).bit_length()
-        if bits > 24 and vary_size and self._random.random() < 7 / 8:
-            # For large ranges, we combine the uniform random distribution
-            # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
-            # choice of unicode characters is uniform but the 32bit distribution is not.
-            idx = INT_SIZES_SAMPLER.sample(self._cd)
-            cap_bits = min(bits, INT_SIZES[idx])
-            upper = min(upper, lower + 2**cap_bits - 1)
-            return self._random.randint(lower, upper)
-
-        return self._random.randint(lower, upper)
 
 
 # Masks for masking off the first byte of an n-bit buffer.

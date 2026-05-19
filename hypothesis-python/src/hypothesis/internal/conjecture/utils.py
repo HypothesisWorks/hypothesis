@@ -245,10 +245,6 @@ class Sampler:
             return base
 
 
-INT_SIZES = (8, 16, 32, 64, 128)
-INT_SIZES_SAMPLER = Sampler((4.0, 8.0, 1.0, 1.0, 0.5), observe=False)
-
-
 class many:
     """Utility class for collections. Bundles up the logic we use for "should I
     keep drawing more values?" and handles starting and stopping examples in

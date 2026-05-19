@@ -12,7 +12,7 @@ import math
 import struct
 from collections.abc import Callable
 from sys import float_info
-from typing import Literal, SupportsFloat, TypeAlias
+from typing import Literal, SupportsFloat, TypeAlias, overload
 
 SignedIntFormat: TypeAlias = Literal["!h", "!i", "!q"]
 UnsignedIntFormat: TypeAlias = Literal["!H", "!I", "!Q"]
@@ -191,6 +191,10 @@ def sign_aware_lte(x: float | int, y: float | int) -> bool:
         return x <= y
 
 
+@overload
+def clamp(lower: int, value: int, upper: int) -> int: ...
+@overload
+def clamp(lower: float, value: float, upper: float) -> float: ...
 def clamp(lower: float | int, value: float | int, upper: float | int) -> float | int:
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper.  NaN is mapped to lower."""

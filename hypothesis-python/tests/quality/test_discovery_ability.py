@@ -122,6 +122,15 @@ test_can_produce_large_magnitude_integers = define_test(
 )
 test_can_produce_large_positive_integers = define_test(integers(), lambda x: x > 1000)
 test_can_produce_large_negative_integers = define_test(integers(), lambda x: x < -1000)
+test_can_produce_65_bit_integer = define_test(
+    integers(), lambda x: x.bit_length() == 65, p=0.01
+)
+test_can_produce_very_large_integers = define_test(
+    integers(min_value=2**500), lambda x: x >= 2**500 + 2**499
+)
+test_can_produce_very_large_negative_integers = define_test(
+    integers(max_value=-(2**500)), lambda x: x <= -(2**500) - 2**499
+)
 
 
 _factorials = {math.factorial(n) for n in range(9, 21)}
