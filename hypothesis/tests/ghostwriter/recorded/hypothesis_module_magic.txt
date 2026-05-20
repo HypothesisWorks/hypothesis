@@ -11,6 +11,11 @@ from hypothesis import given, settings, strategies as st
 from typing import Any
 
 
+@given(draws=st.builds(list))
+def test_fuzz_DataObject(draws: list) -> None:
+    hypothesis.DataObject(draws=draws)
+
+
 @given(condition=st.from_type(object))
 def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)

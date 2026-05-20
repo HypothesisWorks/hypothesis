@@ -1,7 +1,7 @@
 RELEASE_TYPE: minor
 
 This release allows you to use :func:`~hypothesis.strategies.data` in |@example|,
-exposing a `DataObject` type which provides the drawn values in order.
+exposing a :class:`~hypothesis.strategies.DataObject` type which provides the drawn values in order.
 
 Additionally, when a test using :func:`~hypothesis.strategies.data` fails,
 the printed falsifying example now shows the sequence of values that were drawn via
