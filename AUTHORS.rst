@@ -138,6 +138,7 @@ their individual contributions.
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
 * `Mel Seto <https://github.com/mel-seto>`_
 * `Michel Alexandre Salim <https://github.com/michel-slm>`_ (michel@michel-slm.name)
+* `Mirochill <https://github.com/Mirochill>`_
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
 * `Nathan Goldbaum <https://www/github.com/ngoldbaum>`_
