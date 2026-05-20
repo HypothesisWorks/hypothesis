@@ -2367,107 +2367,44 @@ def runner(*, default: Any = not_set) -> SearchStrategy[Any]:
 
 
 class DataObject:
-    """This type only exists so that you can write type hints for tests using
-    the :func:`~hypothesis.strategies.data` strategy.  Do not use it directly!
+    """Represents a sequence of interactively drawn values for use with
+    :func:`@example <hypothesis.example>` and the
+    :func:`~hypothesis.strategies.data` strategy.
+
+    Construct with ``DataObject(draws=[v1, v2, ...])`` to supply concrete
+    values that will be returned by successive ``data.draw()`` calls.
     """
 
-    # Note that "only exists" here really means "is only exported to users",
-    # but we want to treat it as "semi-stable", not document it as "public API".
-
-    def __init__(
-        self,
-        data: "ConjectureData | None" = None,
-        *,
-        draws: list | None = None,
-    ) -> None:
-        if (data is None) == (draws is None):
-            raise InvalidArgument("Exactly one of `data` or `draws` must be provided.")
-        self.count = 0
-        self.conjecture_data = data
-        self.draws = list(draws) if draws is not None else None
-        # When non-None, each ``draw()`` records the drawn value onto this
-        # deferred printer so it appears in the parent printer's output (e.g.
-        # the falsifying example). Set by ``_repr_pretty_``. ``_printer_count``
-        # is the number of draws already recorded to it, used to emit a
-        # leading newline for the very first recorded draw.
-        self.printer: "RepresentationPrinter | None" = None
+    def __init__(self, *, draws: list) -> None:
+        self._draws = list(draws)
+        self._count = 0
+        self._printer: "RepresentationPrinter | None" = None
         self._printer_count = 0
-
-    __signature__ = Signature()  # hide internals from Sphinx introspection
 
     def __repr__(self) -> str:
         return "data(...)"
 
     def _repr_pretty_(self, p, cycle):
-        # Cycle is set by the pretty-printer framework when ``self`` already
-        # appears on ``p.stack``; because deferred printers inherit the stack
-        # from the point they were created, this also detects direct
-        # self-reference cases such as ``data.draw(st.just(data))``.
-        #
-        # We additionally bail if we've already been pretty-printed elsewhere
-        # in the current printing session - i.e. ``self.printer`` is still
-        # bound to a live deferred whose root is ``p``'s root. Without this,
-        # mutual recursion like ``d1.draw(st.just(d2))`` +
-        # ``d2.draw(st.just(d1))`` would end up nesting d2's top-level
-        # rendering inside d1's draws list (and vice versa), leaving the
-        # top-level deferred for d2 empty.
         if cycle or (
-            self.printer is not None
-            and not self.printer._dead
-            and self.printer.root is p.root
+            self._printer is not None
+            and not self._printer._dead
+            and self._printer.root is p.root
         ):
             p.text("DataObject(...)")
             return
         p.text("DataObject(draws=[")
-        # Wrap the deferred in a group that shifts indentation by 4. The
-        # ``break_()`` calls that ``draw()`` records inside this deferred
-        # will then emit newlines at ``parent_indent + 4``, so a DataObject
-        # drawn as a value inside another DataObject's draws list gets
-        # properly nested indentation. The closing ``])`` is emitted after
-        # the group exits, so it sits at the parent indent.
         with p.group(4):
-            self.printer = p.deferred()
+            self._printer = p.deferred()
             self._printer_count = 0
         p.break_()
         p.text("])")
 
-    def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
-        """Like :obj:`~hypothesis.strategies.DrawFn`."""
-        check_strategy(strategy, "strategy")
-        self.count += 1
-        desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
-
-        slice_range: tuple[int, int] | None = None
-        if self.draws is not None:
-            result = self.draws[self.count - 1]
-        else:
-            assert self.conjecture_data is not None
-            start = len(self.conjecture_data.nodes)
-            with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
-                result = self.conjecture_data.draw(
-                    strategy, observe_as=f"generate:{desc}"
-                )
-            end = len(self.conjecture_data.nodes)
-            if start != end:
-                slice_range = (start, end)
-                # Register with the engine so the explain phase considers
-                # this draw as an independently-varying slice.
-                self.conjecture_data.arg_slices.add(slice_range)
-
-        # Bind the printer to a local so that a recursive ``pretty(result)``
-        # that may re-enter ``_repr_pretty_`` can't cause subsequent primitive
-        # calls here to land on the wrong deferred.
-        printer = self.printer
+    def _record_draw(self, result, label, slice_range):
+        printer = self._printer
         if printer is not None and printer._dead:
-            self.printer = None
+            self._printer = None
             printer = None
         if printer is not None:
-            # Each draw is prefixed with a ``break_()`` so that it lands on a
-            # fresh line at the current indent (set by the enclosing
-            # ``p.group(4)`` in ``_repr_pretty_``). The closing ``])`` is
-            # emitted with its own ``break_()`` at the dedented level, so no
-            # per-draw trailing break is needed - that would just produce
-            # double newlines between draws and before the close.
             printer.break_()
             if label is not None:
                 printer.text(f"# {label}")
@@ -2475,17 +2412,47 @@ class DataObject:
             self._printer_count += 1
             printer.pretty(result)
             printer.text(",")
-            # If the explain phase marked this draw as freely-varying, append
-            # its comment next to the value, matching the top-level repr_call
-            # annotation style.
             if slice_range is not None and slice_range in printer.slice_comments:
                 printer.text(f"  # {printer.slice_comments[slice_range]}")
+
+    def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+        """Like :obj:`~hypothesis.strategies.DrawFn`."""
+        check_strategy(strategy, "strategy")
+        self._count += 1
+        result = self._draws[self._count - 1]
+        self._record_draw(result, label, None)
+        return result
+
+
+class _DataObject(DataObject):
+    def __init__(self, data: "ConjectureData") -> None:
+        self._draws = None
+        self._count = 0
+        self.conjecture_data = data
+        self._printer: "RepresentationPrinter | None" = None
+        self._printer_count = 0
+
+    def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+        """Like :obj:`~hypothesis.strategies.DrawFn`."""
+        check_strategy(strategy, "strategy")
+        self._count += 1
+        desc = f"Draw {self._count}{'' if label is None else f' ({label})'}"
+
+        start = len(self.conjecture_data.nodes)
+        with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
+            result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
+        end = len(self.conjecture_data.nodes)
+        slice_range = (start, end) if start != end else None
+        if slice_range is not None:
+            self.conjecture_data.arg_slices.add(slice_range)
+
+        self._record_draw(result, label, slice_range)
         return result
 
 
 class DataStrategy(SearchStrategy):
     def do_draw(self, data):
-        return DataObject(data)
+        return _DataObject(data)
 
     def __repr__(self) -> str:
         return "data()"

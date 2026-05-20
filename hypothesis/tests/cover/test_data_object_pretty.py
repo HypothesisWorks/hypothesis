@@ -15,9 +15,8 @@ import re
 
 import pytest
 
-from hypothesis import Phase, example, given, settings, strategies as st
+from hypothesis import DataObject, Phase, example, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies._internal.core import DataObject
 from hypothesis.vendor import pretty
 
 # --- Basic DataObject(draws=...) semantics ----------------------------
@@ -37,19 +36,9 @@ def test_data_object_with_draws_ignores_strategy_choice():
     assert obj.draw(st.lists(st.integers())) == "y"
 
 
-def test_data_object_requires_exactly_one_of_data_or_draws():
-    with pytest.raises((InvalidArgument, ValueError, TypeError)):
+def test_data_object_requires_draws():
+    with pytest.raises(TypeError):
         DataObject()
-    with pytest.raises((InvalidArgument, ValueError, TypeError)):
-        DataObject(data=None, draws=None)
-
-
-def test_data_object_rejects_both_data_and_draws():
-    # A fake data-like sentinel - we only want to check the XOR guard, not
-    # exercise the ConjectureData path here.
-    fake_data = object()
-    with pytest.raises((InvalidArgument, ValueError, TypeError)):
-        DataObject(data=fake_data, draws=[1, 2])
 
 
 def test_data_object_with_draws_validates_strategy_argument():
@@ -61,9 +50,9 @@ def test_data_object_with_draws_validates_strategy_argument():
 # --- _repr_pretty_ / deferred-printer attribute integration -----------
 
 
-def _finalize_and_render(p):
+def _resolve_and_render(p):
     if p._recording is not None:
-        p.finalize()
+        p.resolve()
     return p.getvalue()
 
 
@@ -71,7 +60,7 @@ def test_repr_pretty_empty_when_no_draws():
     obj = DataObject(draws=[1, 2, 3])
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
-    assert _finalize_and_render(p) == "DataObject(draws=[\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n])"
 
 
 def test_repr_pretty_records_subsequent_draws():
@@ -81,7 +70,7 @@ def test_repr_pretty_records_subsequent_draws():
     obj.draw(st.integers())
     obj.draw(st.integers())
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == "DataObject(draws=[\n    1,\n    2,\n    3,\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    1,\n    2,\n    3,\n])"
 
 
 def test_repr_pretty_single_draw():
@@ -89,7 +78,7 @@ def test_repr_pretty_single_draw():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.text())
-    assert _finalize_and_render(p) == "DataObject(draws=[\n    'hello',\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    'hello',\n])"
 
 
 def test_repr_pretty_does_not_record_draws_made_before_pretty():
@@ -98,16 +87,16 @@ def test_repr_pretty_does_not_record_draws_made_before_pretty():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == "DataObject(draws=[\n    2,\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    2,\n])"
 
 
-def test_repr_pretty_captures_value_at_draw_time_not_finalize_time():
+def test_repr_pretty_captures_value_at_draw_time_not_resolve_time():
     obj = DataObject(draws=[[1, 2]])
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     drawn = obj.draw(st.lists(st.integers()))
     drawn.append(999)  # mutate after the draw
-    assert _finalize_and_render(p) == "DataObject(draws=[\n    [1, 2],\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    [1, 2],\n])"
 
 
 def test_repr_pretty_uses_pretty_representation_of_draws():
@@ -115,7 +104,7 @@ def test_repr_pretty_uses_pretty_representation_of_draws():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.dictionaries(st.text(), st.integers()))
-    assert _finalize_and_render(p) == "DataObject(draws=[\n    {'b': 1, 'a': 2},\n])"
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    {'b': 1, 'a': 2},\n])"
 
 
 # --- Label handling ---------------------------------------------------
@@ -126,9 +115,7 @@ def test_labeled_draw_renders_comment_on_preceding_line():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.integers(), label="Cool thing")
-    assert (
-        _finalize_and_render(p) == "DataObject(draws=[\n    # Cool thing\n    42,\n])"
-    )
+    assert _resolve_and_render(p) == "DataObject(draws=[\n    # Cool thing\n    42,\n])"
 
 
 def test_labeled_and_unlabeled_draws_mix_correctly():
@@ -138,7 +125,7 @@ def test_labeled_and_unlabeled_draws_mix_correctly():
     obj.draw(st.integers())
     obj.draw(st.integers(), label="second")
     obj.draw(st.integers())
-    assert _finalize_and_render(p) == (
+    assert _resolve_and_render(p) == (
         "DataObject(draws=[\n    1,\n    # second\n    2,\n    3,\n])"
     )
 
@@ -149,26 +136,26 @@ def test_label_comment_uses_label_text_verbatim():
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
     obj.draw(st.integers(), label="some label: with : colons")
-    rendered = _finalize_and_render(p)
+    rendered = _resolve_and_render(p)
     assert "# some label: with : colons" in rendered
 
 
 def test_draw_ignores_dead_printer_from_earlier_session():
     # If a DataObject was pretty-printed in a printer that has since been
-    # finalized, the stashed deferred is dead. A subsequent draw() must
+    # resolved, the stashed deferred is dead. A subsequent draw() must
     # ignore it rather than trying (and failing) to record onto it.
     obj = DataObject(draws=[1, 2])
 
     p = pretty.RepresentationPrinter()
     p.pretty(obj)
-    p.finalize()  # deferred is now dead
+    p.resolve()  # deferred is now dead
 
-    assert obj.printer is not None
-    assert obj.printer._dead
+    assert obj._printer is not None
+    assert obj._printer._dead
 
     # Subsequent draw should not raise, and should clear the stale printer.
     assert obj.draw(st.integers()) == 1
-    assert obj.printer is None
+    assert obj._printer is None
 
 
 # --- Falsifying-example integration -----------------------------------

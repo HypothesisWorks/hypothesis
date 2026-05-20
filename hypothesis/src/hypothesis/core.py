@@ -1065,7 +1065,7 @@ class StateForActualGivenExecution:
             # If `repr_call` opened any deferreds on DataObject args, keep the
             # relevant printers alive across the test run so that draws made
             # during the test can be recorded onto those deferreds; we then
-            # finalize and emit output in the `finally` block below. When no
+            # resolve and emit output in the `finally` block below. When no
             # deferreds are created (e.g. stateful tests with
             # `print_given_args=False`) we preserve the pre-existing ordering
             # by reporting immediately.
@@ -1133,13 +1133,13 @@ class StateForActualGivenExecution:
                     add_note(e, msg.format(format_arg))
                 raise
             finally:
-                # Finalize any outstanding deferreds (e.g. from DataObject args)
+                # Resolve any outstanding deferreds (e.g. from DataObject args)
                 # so that their recorded draws get spliced in before emitting.
                 if report_printer is not None:
-                    report_printer.finalize()
+                    report_printer.resolve()
                     report(report_printer.getvalue())
                 if obs_printer is not None:
-                    obs_printer.finalize()
+                    obs_printer.resolve()
                     self._string_repr = obs_printer.getvalue()
 
                 if data._stateful_repr_parts is not None:

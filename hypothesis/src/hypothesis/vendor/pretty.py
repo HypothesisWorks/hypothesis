@@ -287,15 +287,15 @@ class RepresentationPrinter:
 
         # Deferred printing state. When self._recording is not None, primitive
         # output methods append to that list instead of writing; all such
-        # calls are replayed when finalize() is called.
+        # calls are replayed when resolve() is called.
         self._recording: list[tuple[str, tuple, dict]] | None = None
-        # Set to True for deferred printers that have already been finalized;
+        # Set to True for deferred printers that have already been resolved;
         # further use then raises.
         self._dead: bool = False
         # A top-level printer is its own root; deferred printers override this
         # to point at the root RepresentationPrinter of their session. Useful
         # for detecting whether two printer references belong to the same
-        # print-and-finalize session.
+        # print-and-resolve session.
         self.root: RepresentationPrinter = self
 
     def pretty(self, obj: object, *, cycle: bool = False) -> None:
@@ -404,7 +404,7 @@ class RepresentationPrinter:
     def _check_live(self) -> None:
         if self._dead:
             raise RuntimeError(
-                "cannot use a deferred printer after its parent has been finalized"
+                "cannot use a deferred printer after its parent has been resolved"
             )
 
     def text(self, obj: str) -> None:
@@ -552,13 +552,13 @@ class RepresentationPrinter:
 
     def deferred(self) -> "_DeferredPrinter":
         """Return a new printer whose output will be inserted at this position
-        when :meth:`finalize` is called on this parent printer.
+        when :meth:`resolve` is called on this parent printer.
 
         While any deferred printers are outstanding, calls on this printer
         and on its deferreds are recorded rather than written. Each
         recording stores concrete primitive calls (so the recording is
         unaffected by later mutation of pretty-printed objects) that are
-        replayed in original order when ``finalize()`` is called.
+        replayed in original order when ``resolve()`` is called.
         """
         self._check_live()
         if self._recording is None:
@@ -567,19 +567,19 @@ class RepresentationPrinter:
         self._recording.append(("_splice", (child,), {}))
         return child
 
-    def finalize(self) -> None:
+    def resolve(self) -> None:
         """Replay all outstanding deferreds created on this printer and
         resume normal (non-recording) output.
 
         Every deferred printer that was created (transitively) within this
-        recording session becomes unusable after ``finalize()``; further
+        recording session becomes unusable after ``resolve()``; further
         calls on them raise. New deferreds can still be created on this
-        printer after finalization.
+        printer after resolution.
         """
         self._check_live()
         if self._recording is None:
             raise RuntimeError(
-                "finalize() called but no deferred printers are outstanding"
+                "resolve() called but no deferred printers are outstanding"
             )
         recording = self._recording
         self._recording = None
@@ -720,7 +720,7 @@ class _DeferredPrinter(RepresentationPrinter):
     """A printer returned by :meth:`RepresentationPrinter.deferred`.
 
     Recording starts immediately; output is spliced into the parent printer
-    at the position ``deferred()`` was called when ``finalize()`` is called
+    at the position ``deferred()`` was called when ``resolve()`` is called
     on the parent. Use of this printer raises after that point.
     """
 
@@ -748,9 +748,9 @@ class _DeferredPrinter(RepresentationPrinter):
         self.root = parent.root
         self._recording = []
 
-    def finalize(self) -> None:
+    def resolve(self) -> None:
         raise RuntimeError(
-            "finalize() must be called on the parent printer, not on a "
+            "resolve() must be called on the parent printer, not on a "
             "printer returned by deferred()"
         )
 

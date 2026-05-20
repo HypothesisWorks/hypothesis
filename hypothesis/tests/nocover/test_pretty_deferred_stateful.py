@@ -133,7 +133,7 @@ class _DeferredEntry:
 
 class DeferredPrinterAgreement(RuleBasedStateMachine):
     """Asserts that applying a sequence of printing programs directly to
-    one printer produces the same output as using deferred()/finalize()
+    one printer produces the same output as using deferred()/resolve()
     on another, where the programs are applied through the deferred."""
 
     def __init__(self):
@@ -179,7 +179,7 @@ class DeferredPrinterAgreement(RuleBasedStateMachine):
                 prog = entry.remaining.pop(0)
                 prog.apply(entry.deferred)
         if self.entries:
-            self.test_printer.finalize()
+            self.test_printer.resolve()
         assert self.model_printer.getvalue() == self.test_printer.getvalue()
 
 

@@ -10,6 +10,8 @@
 
 import contextlib
 import enum
+import functools
+import inspect
 import math
 import sys
 import time
@@ -20,7 +22,7 @@ from threading import Barrier, Lock, RLock, Thread
 import pytest
 from pytest import mark
 
-from hypothesis import Phase, settings
+from hypothesis import Phase, given, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
 from hypothesis.internal.floats import next_down
@@ -371,10 +373,6 @@ def snapshot_given(*strategies, **kwarg_strategies):
     ``# or any other generated value``-style annotations participate in
     the snapshot.
     """
-    import functools
-    import inspect
-
-    from hypothesis import given
 
     def decorator(body):
         @functools.wraps(body)

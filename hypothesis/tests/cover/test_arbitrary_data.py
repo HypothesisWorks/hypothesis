@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
+
 import pytest
 from pytest import raises
 
@@ -50,8 +52,8 @@ def test_prints_labels_if_given_on_failure():
     with raises(AssertionError) as err:
         test()
     notes = "\n".join(err.value.__notes__)
-    assert "# Some numbers" in notes
-    assert "# A number" in notes
+    assert re.search(r"# Some numbers\s*\n\s*\[0, 0\]", notes), notes
+    assert re.search(r"# A number\s*\n\s*0", notes), notes
 
 
 def test_given_twice_is_same():
