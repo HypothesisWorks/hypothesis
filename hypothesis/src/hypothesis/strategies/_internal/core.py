@@ -2426,7 +2426,6 @@ class DataObject:
 
 class _DataObject(DataObject):
     def __init__(self, data: "ConjectureData") -> None:
-        self._draws = None
         self._count = 0
         self.conjecture_data = data
         self._printer: "RepresentationPrinter | None" = None
