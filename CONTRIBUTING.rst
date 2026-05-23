@@ -20,11 +20,11 @@ For more detail, read on; for even more, continue to the ``guides/`` directory!
 AI Policy
 ---------
 
-We support the use of AI as a tool for coding. However, we enjoy open source because of the connections between humans, not between robots.
+The Hypothesis maintainers are enthusiastic AI users, and we encourage you to try out a variety of tools and workflows to find out what works in this fast-changing area.
 
-We expect any communication with maintainers, including comments, issues, and pull request descriptions, to be written by a human. If it would be helpful to include content produced by an AI, you may do so inside the collapsible `<details>` element.
+That said, we are still volunteers with limited time and attention, and so we have a practical guideline: every issue, pull request, comment, etc. must come from a human who takes responsibility for that contribution. It's okay to produce them with AI, _if_ you have carefully read all the way through, put your reputation behind it, and clearly mark such content as AI-written.
 
-A human must be responsible for and understand every contribution. Any pull requests made by fully autonomous agents will be closed.
+We do not allow unreviewed or fully-autonomous contributions from anyone outside the maintainers team; if we want something automated we are quite capable of doing that ourselves!
 
 ------------------
 Ways to Contribute
