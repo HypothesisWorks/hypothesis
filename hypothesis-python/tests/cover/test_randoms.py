@@ -52,7 +52,9 @@ def define_method_strategy(name, **kwargs):
 
 
 define_method_strategy("betavariate", alpha=beta_param, beta=beta_param)
-define_method_strategy("binomialvariate", n=st.integers(min_value=1), p=st.floats(0, 1))
+# bound n so that float(n) doesn't overflow inside random.binomialvariate's
+# `if n * p < 10.0` check (int * float forces n through float()).
+define_method_strategy("binomialvariate", n=st.integers(1, 2**1023), p=st.floats(0, 1))
 define_method_strategy("gammavariate", alpha=beta_param, beta=beta_param)
 define_method_strategy("weibullvariate", alpha=beta_param, beta=beta_param)
 define_method_strategy("choice", seq=seq_param)
