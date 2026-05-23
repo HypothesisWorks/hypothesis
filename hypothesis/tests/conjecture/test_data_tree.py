@@ -545,10 +545,7 @@ def test_datatree_repr(bool_constraints, int_constraints):
     observer.draw_boolean(False, was_forced=False, constraints=bool_constraints)
     observer.draw_integer(5, was_forced=False, constraints=int_constraints)
 
-    assert (
-        pretty.pretty(tree)
-        == textwrap.dedent(
-            f"""
+    assert pretty.pretty(tree) == textwrap.dedent(f"""
         boolean True {bool_constraints}
           Conclusion (Status.INVALID)
         boolean False {bool_constraints}
@@ -559,9 +556,7 @@ def test_datatree_repr(bool_constraints, int_constraints):
               Conclusion (Status.INTERESTING, {origin})
           integer 5 {int_constraints}
             unknown
-        """
-        ).strip()
-    )
+        """).strip()
 
 
 def _draw(data, node, *, forced=None):

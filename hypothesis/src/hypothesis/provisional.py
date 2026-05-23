@@ -16,6 +16,7 @@ Point releases may move or break the contents at any time!
 Internet strategies should conform to :rfc:`3986` or the authoritative
 definitions it links to.  If not, report the bug!
 """
+
 # https://tools.ietf.org/html/rfc3696
 
 import string

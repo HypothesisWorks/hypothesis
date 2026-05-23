@@ -10,7 +10,6 @@
 
 """Checks that @given, @mock.patch, and pytest fixtures work as expected."""
 
-
 import math
 from unittest import mock
 

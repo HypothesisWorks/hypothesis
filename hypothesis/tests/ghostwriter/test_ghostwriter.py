@@ -475,12 +475,10 @@ def temp_script_file():
     if p.exists():
         raise FileExistsError(f"Did not expect {p} to exist during testing")
     p.write_text(
-        dedent(
-            """
+        dedent("""
             def say_hello():
                 print("Hello world!")
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     yield p
@@ -496,12 +494,10 @@ def temp_script_file_with_py_function():
     if p.exists():
         raise FileExistsError(f"Did not expect {p} to exist during testing")
     p.write_text(
-        dedent(
-            """
+        dedent("""
             def py():
                 print('A function named "py" has been called')
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     yield p

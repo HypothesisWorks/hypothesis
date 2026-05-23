@@ -38,7 +38,6 @@ through sloppy shrinks, and then precise shrinks guarantee properties of the fin
 result.
 """
 
-
 import itertools
 from collections.abc import Callable
 from functools import lru_cache
