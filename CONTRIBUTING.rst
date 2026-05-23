@@ -16,6 +16,16 @@ Just tell me how to make a pull request
 
 For more detail, read on; for even more, continue to the ``guides/`` directory!
 
+---------
+AI Policy
+---------
+
+The Hypothesis maintainers are enthusiastic AI users, and we encourage you to try out a variety of tools and workflows to find out what works in this fast-changing area.
+
+That said, we are still volunteers with limited time and attention, and so we have a practical guideline: every issue, pull request, comment, etc. must come from a human who takes responsibility for that contribution. It's okay to produce them with AI, _if_ you have carefully read all the way through, put your reputation behind it, and clearly mark such content as AI-written.
+
+We do not allow unreviewed or fully-autonomous contributions from anyone outside the maintainers team; if we want something automated we are quite capable of doing that ourselves!
+
 ------------------
 Ways to Contribute
 ------------------
