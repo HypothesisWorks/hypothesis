@@ -25,7 +25,7 @@ CLAUDE.local.md
 # generic build components
 
 .runtimes
-/hypothesis-python/branch-check*
+/hypothesis/branch-check*
 /pythonpython3.*
 /pythonpypy3.*
 .pyodide-xbuildenv

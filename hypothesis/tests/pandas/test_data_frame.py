@@ -174,7 +174,7 @@ def test_arbitrary_data_frames(data):
         df = data.conjecture_data.draw(pdst.data_frames(columns))
     except Exception as e:
         if type(e).__name__ == "OutOfBoundsDatetime":
-            # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
+            # See https://github.com/HypothesisWorks/hypothesis/pull/826
             reject()
         else:
             raise

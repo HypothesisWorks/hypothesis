@@ -21,20 +21,19 @@ import tomli
 import hypothesistooling as tools
 from hypothesistooling import releasemanagement as rm
 
-PACKAGE_NAME = "hypothesis-python"
+PACKAGE_NAME = "hypothesis"
 
-HYPOTHESIS_PYTHON = tools.ROOT / PACKAGE_NAME
-PYTHON_TAG_PREFIX = "hypothesis-python-"
+HYPOTHESIS = tools.ROOT / PACKAGE_NAME
 
 
-BASE_DIR = HYPOTHESIS_PYTHON
+BASE_DIR = HYPOTHESIS
 
-PYTHON_SRC = HYPOTHESIS_PYTHON / "src"
-PYTHON_TESTS = HYPOTHESIS_PYTHON / "tests"
+PYTHON_SRC = HYPOTHESIS / "src"
+PYTHON_TESTS = HYPOTHESIS / "tests"
 DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
 
-RELEASE_FILE = HYPOTHESIS_PYTHON / "RELEASE.rst"
-RELEASE_SAMPLE_FILE = HYPOTHESIS_PYTHON / "RELEASE-sample.rst"
+RELEASE_FILE = HYPOTHESIS / "RELEASE.rst"
+RELEASE_SAMPLE_FILE = HYPOTHESIS / "RELEASE-sample.rst"
 
 assert PYTHON_SRC.exists()
 
@@ -79,7 +78,7 @@ def build_docs(*, builder="html", only=(), to=None):
         "docs",
         "docs/_build/" + (builder if to is None else to),
         *only,
-        cwd=HYPOTHESIS_PYTHON,
+        cwd=HYPOTHESIS,
     )
 
 
@@ -165,7 +164,7 @@ def update_pyproject_toml():
     # manually write back these changes using regex instead of pulling in a
     # toml dependency for writing. tomli doesn't support writing, and
     # tomli-w doesn't support writing with comments.
-    toml_p = HYPOTHESIS_PYTHON / "pyproject.toml"
+    toml_p = HYPOTHESIS / "pyproject.toml"
     toml_data = tomli.loads(toml_p.read_text())
     extras = toml_data["project"]["optional-dependencies"]
     extras.pop("all")
@@ -189,8 +188,8 @@ def update_pyproject_toml():
     toml_p.write_text(content)
 
 
-CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
-DIST = HYPOTHESIS_PYTHON / "dist"
+CHANGELOG_FILE = HYPOTHESIS / "docs" / "changelog.rst"
+DIST = HYPOTHESIS / "dist"
 
 
 def changelog():
@@ -221,9 +220,7 @@ def upload_distribution():
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])
-    textfile = os.path.join(
-        HYPOTHESIS_PYTHON, "docs", "_build", "text", "changelog.txt"
-    )
+    textfile = os.path.join(HYPOTHESIS, "docs", "_build", "text", "changelog.txt")
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
@@ -245,7 +242,7 @@ def upload_distribution():
         },
         json={
             "tag_name": tag_name(),
-            "name": "Hypothesis for Python - version " + current_version(),
+            "name": tag_name(),
             "body": changelog_body,
         },
         timeout=120,  # seconds
@@ -264,27 +261,8 @@ def current_version():
     return __version__
 
 
-def latest_version():
-    versions = []
-
-    for t in tools.tags():
-        if t.startswith(PYTHON_TAG_PREFIX):
-            t = t.removeprefix(PYTHON_TAG_PREFIX)
-        else:
-            continue
-        assert t == t.strip()
-        parts = t.split(".")
-        assert len(parts) == 3
-        v = tuple(map(int, parts))
-        versions.append((v, t))
-
-    _, latest = max(versions)
-
-    return latest
-
-
 def tag_name():
-    return PYTHON_TAG_PREFIX + __version__
+    return f"v{__version__}"
 
 
 def get_autoupdate_message(domainlist_changed):

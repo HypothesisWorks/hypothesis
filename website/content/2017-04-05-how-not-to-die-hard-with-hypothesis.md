@@ -57,7 +57,7 @@ and make sure they match.
 ## How not to Die Hard with Hypothesis
 
 Hypothesis has an excellent implementation of property-based testing
-[for Python](https://github.com/HypothesisWorks/hypothesis-python).
+[for Python](https://github.com/HypothesisWorks/hypothesis).
 I thought to myself: I wonder if you can write that
 Die Hard specification using Hypothesis? As it turns out, Hypothesis
 supports [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html),

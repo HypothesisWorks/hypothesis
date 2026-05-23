@@ -57,7 +57,7 @@ pytest-xdist==3.8.0
 sortedcontainers==2.4.0
     # via
     #   hypothesis
-    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   hypothesis (hypothesis/pyproject.toml)
 syrupy==5.2.0
     # via -r requirements/test.in
 typeshed-client==2.11.0

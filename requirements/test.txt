@@ -26,6 +26,6 @@ pytest==9.0.3
 pytest-xdist==3.8.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
-    # via hypothesis (hypothesis-python/pyproject.toml)
+    # via hypothesis (hypothesis/pyproject.toml)
 syrupy==5.2.0
     # via -r requirements/test.in

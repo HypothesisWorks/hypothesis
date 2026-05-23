@@ -125,7 +125,7 @@ def test_generate_arbitrary_indices(data):
 
     except Exception as e:
         if type(e).__name__ == "OutOfBoundsDatetime":
-            # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
+            # See https://github.com/HypothesisWorks/hypothesis/pull/826
             reject()
         else:
             raise
