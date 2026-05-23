@@ -242,7 +242,7 @@ def upload_distribution():
         },
         json={
             "tag_name": tag_name(),
-            "name": tag_name(),
+            "name": f"Hypothesis version {current_version()}",
             "body": changelog_body,
         },
         timeout=120,  # seconds
