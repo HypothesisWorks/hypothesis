@@ -60,9 +60,17 @@ def get_reports(file_contents, *, testdir):
     test_file = str(testdir.makepyfile(file_contents))
     pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
 
-    crash = "AttributeError: module 'blib2to3.pygram' has no attribute 'python_symbols'"
-    if crash in pytest_stdout:
-        pytest.xfail(reason="upstream error in Black")
+    # mypyc-compiled black/blib2to3 caches module references at the C level,
+    # which can desync from sys.modules after pytester's
+    # SysModulesSnapshot.restore() evicts blib2to3.pygram. The next
+    # `from . import pygram` then raises KeyError (newer mypyc) or
+    # AttributeError (older mypyc).
+    upstream_crashes = (
+        "AttributeError: module 'blib2to3.pygram' has no attribute 'python_symbols'",
+        "KeyError: 'blib2to3.pygram'",
+    )
+    if any(c in pytest_stdout for c in upstream_crashes):
+        pytest.xfail(reason="upstream error in Black/mypyc")
 
     explanations = {
         i: {(test_file, i)}
