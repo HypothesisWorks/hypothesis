@@ -205,6 +205,9 @@ def build_distribution():
 def upload_distribution():
     tools.assert_can_release()
 
+    # used for trusted publishing
+    assert "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ
+
     subprocess.check_call(
         [
             sys.executable,
@@ -212,7 +215,6 @@ def upload_distribution():
             "twine",
             "upload",
             "--skip-existing",
-            "--username=__token__",
             os.path.join(DIST, "*"),
         ]
     )
