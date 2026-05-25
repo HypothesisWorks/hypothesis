@@ -150,7 +150,7 @@ def deploy():
         print("Not deploying due to not being on master")
         sys.exit(0)
 
-    if "TWINE_PASSWORD" not in os.environ:
+    if "ACTIONS_ID_TOKEN_REQUEST_TOKEN" not in os.environ:
         print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
