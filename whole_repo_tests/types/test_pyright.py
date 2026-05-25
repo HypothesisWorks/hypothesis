@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
+from hypothesistooling.projects.hypothesis import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
@@ -40,7 +40,7 @@ from .revealed_types import (
     "but strict checks for our internals would be a net drag on productivity."
 )
 def test_pyright_passes_on_hypothesis():
-    pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
+    pip_tool("pyright", "--project", HYPOTHESIS)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)

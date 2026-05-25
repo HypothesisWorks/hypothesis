@@ -21,14 +21,14 @@ import requests
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.projects.hypothesispython as hp
+import hypothesistooling.projects.hypothesis as hp
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
 BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
-    for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
+    for f in ["tooling", "requirements", ".github", "hypothesis/tox.ini"]
 )
 TODAY = date.today().isoformat()
 
@@ -331,7 +331,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/pyproject.toml",
+            "hypothesis/pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -374,7 +374,7 @@ def update_python_versions():
     min_minor_version = int(
         re.search(
             r'requires-python = ">= ?3.(\d+)"',
-            Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
+            Path("hypothesis/pyproject.toml").read_text(encoding="utf-8"),
         ).group(1)
     )
     # For cpython we key by `3.NN` (or `3.NNt` for free-threaded) and pick the
@@ -578,7 +578,7 @@ def check_requirements():
     compile_requirements(upgrade=False)
 
 
-@task(if_changed=hp.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS)
 def documentation():
     try:
         if hp.has_release():
@@ -587,7 +587,7 @@ def documentation():
     finally:
         subprocess.check_call(
             ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
-            cwd=hp.HYPOTHESIS_PYTHON,
+            cwd=hp.HYPOTHESIS,
         )
 
 
@@ -613,7 +613,7 @@ def live_docs():
         "--watch",
         "src",
         "--open-browser",
-        cwd=hp.HYPOTHESIS_PYTHON,
+        cwd=hp.HYPOTHESIS,
     )
 
 
@@ -641,7 +641,7 @@ def run_tox(task, version, *args):
         env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
+    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS)
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
@@ -666,9 +666,9 @@ python_tests = task(
     if_changed=(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
-        hp.HYPOTHESIS_PYTHON / "pyproject.toml",
+        hp.HYPOTHESIS / "pyproject.toml",
         tools.ROOT / "tooling",
-        hp.HYPOTHESIS_PYTHON / "scripts",
+        hp.HYPOTHESIS / "scripts",
     )
 )
 
@@ -761,7 +761,7 @@ def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
 
 
-@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
+@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS, "examples")))
 def check_examples3(*args):
     run_tox("examples3", PYTHONS[ci_version], *args)
 
@@ -770,7 +770,7 @@ def check_examples3(*args):
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -782,7 +782,7 @@ def check_whole_repo_tests(*args):
 def check_documentation(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -794,7 +794,7 @@ def check_documentation(*args):
 def check_types(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -806,7 +806,7 @@ def check_types(*args):
 def check_types_api(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -819,7 +819,7 @@ def check_types_api(*args):
 def check_types_hypothesis(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:

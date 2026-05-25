@@ -287,7 +287,7 @@ snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via
-    #   hypothesis (hypothesis-python/pyproject.toml)
+    #   hypothesis (hypothesis/pyproject.toml)
     #   sortedcontainers-stubs
 sortedcontainers-stubs==2.4.3
     # via -r requirements/tools.in
