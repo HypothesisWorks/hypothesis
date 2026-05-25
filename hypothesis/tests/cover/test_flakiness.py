@@ -9,18 +9,27 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+from random import Random
 
 import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import Flaky, FlakyFailure, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import (
+    Flaky,
+    FlakyFailure,
+    FlakyStrategyDefinition,
+    Unsatisfiable,
+    UnsatisfiedAssumption,
+)
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
+from tests.conjecture.common import fresh_data
 
 
 class Nope(Exception):
@@ -210,3 +219,28 @@ def test_failure_sequence_inducing(building, testing, rnd):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None
+
+
+class _RaisesFlaky(SearchStrategy):
+    def do_draw(self, data):
+        raise FlakyStrategyDefinition.with_detail("inner detail")
+
+
+class _DrawsFrom(SearchStrategy):
+    def __init__(self, inner):
+        super().__init__()
+        self.inner = inner
+
+    def do_draw(self, data):
+        return data.draw(self.inner)
+
+
+def test_flaky_strategy_definition_records_strategy_stack():
+    # A FlakyStrategyDefinition raised inside a nested strategy draw accumulates
+    # "while drawing from ..." notes as it unwinds, so that the failure is
+    # explained in terms of the strategies drawn from, not just the choices.
+    data = fresh_data(random=Random(0))
+    with pytest.raises(FlakyStrategyDefinition) as excinfo:
+        data.draw(_DrawsFrom(_RaisesFlaky()))
+    notes = getattr(excinfo.value, "__notes__", [])
+    assert any("while drawing from" in note for note in notes)
