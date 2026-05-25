@@ -99,6 +99,39 @@ class FlakyStrategyDefinition(Flaky):
         See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
+    _BASE_MESSAGE = (
+        "Inconsistent data generation! Data generation behaved differently "
+        "between different runs. Is your data generation depending on external "
+        "state?"
+    )
+
+    @classmethod
+    def with_detail(cls, detail: str) -> "FlakyStrategyDefinition":
+        return cls(f"{cls._BASE_MESSAGE}\n\n{detail}")
+
+    @classmethod
+    def from_mismatch(
+        cls,
+        expected_type: str,
+        expected_constraints: object,
+        actual_type: str,
+        actual_constraints: object,
+    ) -> "FlakyStrategyDefinition":
+        if actual_type != expected_type:
+            detail = (
+                "The second run drew a different type of value than the first run.\n"
+                f"  first run:  {expected_type}\n"
+                f"  second run: {actual_type}\n"
+            )
+        else:
+            detail = (
+                f"The second run drew {actual_type} with different constraints "
+                "than the first run.\n"
+                f"  first run:  {expected_constraints}\n"
+                f"  second run: {actual_constraints}\n"
+            )
+        return cls.with_detail(detail)
+
 
 class _WrappedBaseException(Exception):
     """Used internally for wrapping BaseExceptions as components of FlakyFailure."""
