@@ -676,7 +676,7 @@ def from_typing_type(thing):
                 pass
         # Try to resolve non-builtin forward references by walking up the call stack.
         # This handles recursive forward references like A = list[Union["A", str]].
-        if resolved is None:
+        if resolved is None:  # pragma: no branch
             resolved = _resolve_forward_ref_in_caller(thing.__forward_arg__)
         if resolved is not None and is_a_type(resolved):
             return st.from_type(resolved)
@@ -1013,13 +1013,17 @@ def resolve_Type(thing):
     args = list(args)
     for i, a in enumerate(args):
         if type(a) in (typing.ForwardRef, str):
+            name = getattr(a, "__forward_arg__", a)
             try:
-                args[i] = getattr(builtins, getattr(a, "__forward_arg__", a))
+                args[i] = getattr(builtins, name)
             except AttributeError:
-                raise ResolutionFailed(
-                    f"Cannot find the type referenced by {thing} - try using "
-                    f"st.register_type_strategy({thing}, st.from_type(...))"
-                ) from None
+                resolved = _resolve_forward_ref_in_caller(name)
+                if resolved is None or not is_a_type(resolved):
+                    raise ResolutionFailed(
+                        f"Cannot find the type referenced by {thing} - try using "
+                        f"st.register_type_strategy({thing}, ...)"
+                    ) from None
+                args[i] = resolved
     return st.sampled_from(sorted(args, key=type_sorting_key))
 
 

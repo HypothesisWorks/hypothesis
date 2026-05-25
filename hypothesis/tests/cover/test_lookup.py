@@ -623,11 +623,10 @@ def test_can_resolve_forward_reference_to_class(thing):
 
 
 @pytest.mark.parametrize("thing", [type, _Type])
-def test_cannot_resolve_type_forward_reference(thing):
-    # Type[ForwardRef] still fails because it needs special handling
+def test_can_resolve_type_forward_reference(thing):
+    # type["ConcreteFoo"] resolves the forward reference to the class in scope
     t = thing["ConcreteFoo"]
-    with pytest.raises(ResolutionFailed):
-        check_can_generate_examples(st.from_type(t))
+    assert_simple_property(st.from_type(t), lambda x: x is ConcreteFoo)
 
 
 def test_forward_ref_resolved_from_local_scope():
@@ -655,6 +654,19 @@ def test_ambiguous_forward_ref_is_not_resolved():
             pytest.raises(ResolutionFailed),
         ):
             check_can_generate_examples(st.from_type(AmbiguousType))
+
+    helper()
+
+
+RecursiveModuleAlias = list[typing.Union["RecursiveModuleAlias", int]]
+
+
+def test_forward_ref_found_in_multiple_frames_is_resolved():
+    # The alias is a module global, so the same name and value is found in the
+    # globals of more than one stack frame (this test and the nested helper),
+    # exercising the "found again with the same value" path.
+    def helper():
+        find_any(st.from_type(RecursiveModuleAlias))
 
     helper()
 
@@ -873,16 +885,10 @@ def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
     raise AssertionError("test body unreachable as strategy cannot resolve")
 
 
-@fails_with(ResolutionFailed)
-@given(st.from_type(type["ConcreteFoo"]))
-def test_cannot_resolve_type_with_forwardref(instance):
-    raise AssertionError("test body unreachable as strategy cannot resolve")
-
-
-@fails_with(ResolutionFailed)
-@given(st.from_type(_Type["ConcreteFoo"]))
-def test_cannot_resolve_type_with_forwardref_old(instance):
-    raise AssertionError("test body unreachable as strategy cannot resolve")
+def test_type_with_unresolvable_forward_reference_fails():
+    t = type["UnknownForwardRef"]  # noqa: F821
+    with pytest.raises(ResolutionFailed):
+        check_can_generate_examples(st.from_type(t))
 
 
 @pytest.mark.parametrize("typ", [typing.Hashable, typing.Sized])

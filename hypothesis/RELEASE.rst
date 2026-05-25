@@ -5,4 +5,5 @@ This patch adds support for recursive forward references in
 ``A = list[Union["A", str]]`` (:issue:`4542`).
 Previously, such recursive type aliases would raise a ``ResolutionFailed``
 error. Now, Hypothesis can automatically resolve the forward reference
-by looking it up in the caller's namespace.
+by looking it up in the caller's namespace. This also resolves forward
+references inside ``type[...]``, such as ``type["MyClass"]``.
