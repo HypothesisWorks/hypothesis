@@ -501,7 +501,9 @@ def _strategy(
                         if isinstance(c, int):
                             c = int_to_byte(c)
                         if c not in invalid:
-                            builder.add_char(c)
+                            # add_char is typed as str, but BytesBuilder shares it
+                            # and add_char's body works for bytes too.
+                            builder.add_char(c)  # type: ignore[arg-type]
                 elif charset_code == sre.CATEGORY:
                     # Regex '[\w]' (char category)
                     builder.add_category(charset_value)
