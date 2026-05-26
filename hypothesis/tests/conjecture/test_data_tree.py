@@ -226,7 +226,7 @@ def test_concluding_at_prefix_is_flaky():
         data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_choices([], observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="stopped drawing earlier"):
         data.conclude_test(Status.INVALID)
 
 
@@ -250,7 +250,7 @@ def test_changing_n_bits_is_flaky_in_prefix():
         data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_choices((1,), observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="different constraints"):
         data.draw_integer(0, 3)
 
 
@@ -264,7 +264,7 @@ def test_changing_n_bits_is_flaky_in_branch():
             data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_choices((1,), observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="different constraints"):
         data.draw_integer(0, 3)
 
 
@@ -278,7 +278,7 @@ def test_extending_past_conclusion_is_flaky():
     data = ConjectureData.for_choices((True, False), observer=tree.new_observer())
     data.draw_boolean()
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="more data"):
         data.draw_boolean()
 
 
@@ -291,7 +291,7 @@ def test_changing_to_forced_is_flaky():
 
     data = ConjectureData.for_choices((True, False), observer=tree.new_observer())
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="was not forced on the first run"):
         data.draw_boolean(forced=True)
 
 
@@ -304,8 +304,20 @@ def test_changing_value_of_forced_is_flaky():
 
     data = ConjectureData.for_choices((True, False), observer=tree.new_observer())
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match=r"forced to True.*drew False"):
         data.draw_boolean(forced=False)
+
+
+def test_drawing_different_type_is_flaky():
+    tree = DataTree()
+    data = ConjectureData.for_choices((1,), observer=tree.new_observer())
+    data.draw_integer(0, 1)
+    with pytest.raises(StopTest):
+        data.conclude_test(Status.INTERESTING)
+
+    data = ConjectureData.for_choices((True,), observer=tree.new_observer())
+    with pytest.raises(Flaky, match="different type"):
+        data.draw_boolean()
 
 
 def test_does_not_truncate_if_unseen():

@@ -16,7 +16,7 @@ from hypothesis import Verbosity, assume, given, reject, reporting, settings
 from hypothesis.control import (
     BuildContext,
     _current_build_context,
-    _event_to_string,
+    _serialize_event,
     cleanup,
     current_build_context,
     currently_in_test_context,
@@ -217,5 +217,5 @@ test_currently_in_stateful_test = ContextMachine.TestCase
 
 
 def test_can_convert_non_weakref_types_to_event_strings():
-    _event_to_string((), avoid_realization=True)
-    _event_to_string((), avoid_realization=False)
+    _serialize_event((), avoid_realization=True)
+    _serialize_event((), avoid_realization=False)

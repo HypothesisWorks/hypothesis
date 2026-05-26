@@ -203,10 +203,10 @@ def remove_consecutive_newlines_in_rst(path: Path):
 
 
 @task()
-def format():
+def format(*, format_all=False):
     changed = tools.modified_files()
 
-    format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
+    format_all = format_all or os.environ.get("FORMAT_ALL", "").lower() == "true"
     if "requirements/tools.txt" in changed:
         # We've changed the tools, which includes a lot of our formatting
         # logic, so we need to rerun formatters.
@@ -273,7 +273,10 @@ VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
 
 @task()
 def check_format():
-    format()
+    # In CI, where latency matters less, reformat every file rather than only
+    # the changed ones, so that formatter upgrades can't leave stale formatting
+    # lurking in untouched files until they're next edited.
+    format(format_all=bool(os.environ.get("CI")))
     n = max(map(len, VALID_STARTS))
     bad = False
     for p in tools.all_files():
@@ -562,7 +565,14 @@ def has_diff(file_or_directory):
 def upgrade_requirements():
     update_vendored_files()
     compile_requirements(upgrade=True)
-    subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
+    # Reformat every file, not just changed ones: upgrading the formatters in
+    # tools.txt can change how they format files we didn't otherwise touch, and
+    # we want those changes in this PR rather than leaking into a later one.
+    subprocess.call(
+        ["./build.sh", "format"],
+        cwd=tools.ROOT,
+        env={**os.environ, "FORMAT_ALL": "true"},
+    )  # exits 1 if changed
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
         msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
         with open(hp.RELEASE_FILE, mode="w", encoding="utf-8") as f:

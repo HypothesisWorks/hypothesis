@@ -18,6 +18,56 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.0:
+
+--------------------
+6.153.0 - 2026-05-26
+--------------------
+
+|event|'s ``payload`` is now typed as accepting |Any|, matching its runtime behavior of accepting any string-coercible object.
+
+.. _v6.152.12:
+
+---------------------
+6.152.12 - 2026-05-26
+---------------------
+
+When Hypothesis detects that your data generation is flaky and raises
+|FlakyStrategyDefinition|, the error message now describes *what* differed
+between the two runs - such as a different choice type, different constraints,
+or drawing more or less data - as well as the stack of strategies being drawn
+from, instead of only reporting that generation was inconsistent. In stateful
+tests, it also reports the steps leading up to the error.
+
+Thanks to Ian Hunt-Isaak for this improvement!
+
+.. _v6.152.11:
+
+---------------------
+6.152.11 - 2026-05-26
+---------------------
+
+This patch adds support for resolving forward references in |st.from_type|
+(:issue:`4542`):
+
+.. code-block:: python
+
+    # this now works
+    A = list[Union["A", str]]
+    st.from_type(A).example()
+
+    # this also now works
+    s = st.from_type(list["B"])
+
+    @dataclass
+    class B:
+        v: int
+
+    s.example()
+
+Previously, these would raise an error. Now, Hypothesis automatically resolves
+the forward reference by looking it up in the caller's namespace.
+
 .. _v6.152.10:
 
 ---------------------

@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import typing
 from collections.abc import Callable
 from typing import get_args, get_origin
 
@@ -139,6 +140,11 @@ def test_can_register_parameterized_typealias_with_unused_params():
     assert_simple_property(
         st.from_type(MyList[int, float]), lambda x: all(isinstance(i, int) for i in x)
     )
+
+
+def test_pep695_self_referential_alias():
+    type RecAlias = list[typing.Union["RecAlias", int]]  # noqa: UP007
+    find_any(st.from_type(RecAlias))
 
 
 def test_typealias_evaluation():

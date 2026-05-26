@@ -511,7 +511,7 @@ def iterables(
 #         {"a": st.integers(), "b": st.booleans()}
 #     )
 # * the arguments may be of any dict-compatible type, in which case the return
-#  value will be of that type instead of dit
+#   value will be of that type instead of dict
 #
 # Overloads may help here, but I doubt we'll be able to satisfy all these
 # constraints.
@@ -1432,6 +1432,11 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
+            # String forward references like "LinkedList" can be converted to
+            # ForwardRef objects if they are valid Python identifiers.
+            # See https://github.com/HypothesisWorks/hypothesis/issues/4542
+            if thing.isidentifier():
+                return deferred(lambda thing=thing: from_type(typing.ForwardRef(thing)))
             raise InvalidArgument(
                 f"Got {thing!r} as a type annotation, but the forward-reference "
                 "could not be resolved from a string to a type.  Consider using "
