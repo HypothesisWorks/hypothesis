@@ -20,7 +20,15 @@ from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import float_to_int
-from tests.common.utils import Why, xfail_on_crosshair
+
+# `_invert` operates on concrete values; under crosshair, values drawn via
+# `data.draw(strategy)` are symbolic, and calling `_invert` on them outside
+# the provider context triggers "Numeric operation on symbolic while not
+# tracing" errors.
+skip_on_crosshair = pytest.mark.skipif(
+    settings().backend == "crosshair",
+    reason="_invert requires concrete values; crosshair produces symbolic ones",
+)
 
 
 def values_equal(a, b):
@@ -65,6 +73,7 @@ def check_strategy_roundtrip(strategy):
     inner()
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_integers(data):
     min_value = data.draw(st.none() | st.integers())
@@ -78,6 +87,7 @@ def test_booleans():
     check_strategy_roundtrip(st.booleans())
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_floats(data):
     min_value = data.draw(st.none() | st.floats(allow_nan=False))
@@ -90,6 +100,7 @@ def test_floats(data):
     check_roundtrip_many(data, strategy)
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_binary(data):
     min_size = data.draw(st.integers(0, 20))
@@ -97,6 +108,7 @@ def test_binary(data):
     check_roundtrip_many(data, st.binary(min_size=min_size, max_size=max_size))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_just(data):
     value = data.draw(st.integers())
@@ -107,24 +119,28 @@ def test_none():
     check_strategy_roundtrip(st.none())
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_sampled_from(data):
     elements = data.draw(st.lists(st.integers(), min_size=1))
     check_roundtrip_many(data, st.sampled_from(elements))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_tuples(data):
     n = data.draw(st.integers(0, 5))
     check_roundtrip_many(data, st.tuples(*[st.integers()] * n))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_one_of(data):
     n = data.draw(st.integers(1, 5))
     check_roundtrip_many(data, st.one_of(*[st.integers()] * n))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_lists(data):
     min_size = data.draw(st.integers(0, 5))
@@ -133,6 +149,7 @@ def test_lists(data):
     check_roundtrip_many(data, strategy)
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_text(data):
     alphabet = data.draw(st.none() | st.text(min_size=1))
@@ -153,12 +170,14 @@ def test_floats_nan_via_filter():
     check_strategy_roundtrip(st.floats(allow_nan=True).filter(math.isnan))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_permutations(data):
     values = data.draw(st.lists(st.integers(), unique=True))
     check_roundtrip_many(data, st.permutations(values))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_dates(data):
     min_value = data.draw(st.dates())
@@ -168,6 +187,7 @@ def test_dates(data):
     check_roundtrip_many(data, st.dates(min_value=min_value, max_value=max_value))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_times(data):
     min_value = data.draw(st.times())
@@ -175,6 +195,7 @@ def test_times(data):
     check_roundtrip_many(data, st.times(min_value=min_value, max_value=max_value))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_datetimes(data):
     min_value = data.draw(st.datetimes())
@@ -182,6 +203,7 @@ def test_datetimes(data):
     check_roundtrip_many(data, st.datetimes(min_value=min_value, max_value=max_value))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_timedeltas(data):
     min_value = data.draw(st.timedeltas())
@@ -189,6 +211,7 @@ def test_timedeltas(data):
     check_roundtrip_many(data, st.timedeltas(min_value=min_value, max_value=max_value))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_filter(data):
     # Bound threshold to the lower half of the range so at least half of all
@@ -210,6 +233,7 @@ def test_builds_zero_arg(target):
     check_strategy_roundtrip(st.builds(target))
 
 
+@skip_on_crosshair
 @given(st.data())
 def test_builds_dataclass(data):
     # For each field, randomly choose positional or kwarg. Once we've gone
@@ -244,7 +268,7 @@ def test_recursive():
         pytest.param(
             st.sampled_from([1, 2, 3, 4]).filter(lambda x: x > 2),
             3,
-            marks=xfail_on_crosshair(Why.symbolic_outside_context, as_marks=True),
+            marks=skip_on_crosshair,
         ),
     ],
 )
