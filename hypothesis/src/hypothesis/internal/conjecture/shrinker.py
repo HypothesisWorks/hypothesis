@@ -30,6 +30,7 @@ from hypothesis.internal.conjecture.choice import (
     choice_key,
     choice_permitted,
     choice_to_index,
+    choices_key,
 )
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
@@ -663,15 +664,18 @@ class Shrinker:
         """
         nodes = self.nodes
         target_types = tuple(nodes[i].type for i in range(start, end))
-        current_keys = tuple(choice_key(nodes[i].value) for i in range(start, end))
-        seen: set[tuple[Any, ...]] = {current_keys}
-        for s2, e2 in sorted(self.shrink_target.arg_slices):
-            if (s2, e2) == (start, end) or (e2 - s2) != (end - start):
+        current_key = choices_key(tuple(nodes[i].value for i in range(start, end)))
+        seen: set[tuple[Any, ...]] = {current_key}
+        for start2, end2 in sorted(self.shrink_target.arg_slices):
+            if (start2, end2) == (start, end) or (end2 - start2) != (end - start):
                 continue
-            if tuple(nodes[s2 + j].type for j in range(end - start)) != target_types:
+            if (
+                tuple(nodes[start2 + j].type for j in range(end - start))
+                != target_types
+            ):
                 continue
-            borrowed = tuple(nodes[s2 + j].value for j in range(end - start))
-            key = tuple(choice_key(v) for v in borrowed)
+            borrowed = tuple(nodes[start2 + j].value for j in range(end - start))
+            key = choices_key(borrowed)
             if key in seen:
                 continue
             seen.add(key)
