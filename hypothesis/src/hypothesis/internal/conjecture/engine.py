@@ -27,6 +27,7 @@ from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_
 from hypothesis.errors import (
     BackendCannotProceed,
     FlakyBackendFailure,
+    FlakyStrategyDefinition,
     HypothesisException,
     InvalidArgument,
     StopTest,
@@ -562,8 +563,15 @@ class ConjectureRunner:
             interrupted = True
             data.freeze()
             return
-        except BaseException:
+        except BaseException as err:
             data.freeze()
+            if isinstance(err, FlakyStrategyDefinition) and data._stateful_repr_parts:
+                # In a stateful test, surface the steps leading up to the
+                # inconsistency.
+                report(
+                    "Steps leading up to this error:\n"
+                    + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
+                )
             if self.settings.backend != "hypothesis":
                 try:
                     realize_choices(data, for_failure=True)

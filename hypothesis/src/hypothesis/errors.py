@@ -8,10 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis.internal.compat import ExceptionGroup
+
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.choice import ChoiceConstraintsT
+else:
+    ChoiceConstraintsT = Mapping
 
 
 class HypothesisException(Exception):
@@ -85,6 +91,13 @@ class FlakyReplay(Flaky):
         self._interesting_origins = interesting_origins
 
 
+def _render_constraints(show: Mapping[str, object], other: Mapping[str, object]) -> str:
+    assert show.keys() == other.keys()
+    return ", ".join(
+        f"{k}={'...' if v == other[k] else repr(v)}" for k, v in show.items()
+    )
+
+
 class FlakyStrategyDefinition(Flaky):
     """
     This function appears to cause inconsistent data generation.
@@ -98,6 +111,39 @@ class FlakyStrategyDefinition(Flaky):
 
         See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
+
+    _BASE_MESSAGE = (
+        "Inconsistent data generation! Data generation behaved differently "
+        "between test cases. Is your data generation depending on external "
+        "state?"
+    )
+
+    @classmethod
+    def with_detail(cls, detail: str) -> "FlakyStrategyDefinition":
+        return cls(f"{cls._BASE_MESSAGE}\n\n{detail}")
+
+    @classmethod
+    def from_mismatch(
+        cls,
+        expected_type: str,
+        expected_constraints: ChoiceConstraintsT,
+        actual_type: str,
+        actual_constraints: ChoiceConstraintsT,
+    ) -> "FlakyStrategyDefinition":
+        if actual_type != expected_type:
+            detail = (
+                "The second test case drew a different type of value than the first.\n"
+                f"  first:  {expected_type}\n"
+                f"  second: {actual_type}\n"
+            )
+        else:
+            detail = (
+                f"The second test case drew type {actual_type} with different constraints "
+                "than the first.\n"
+                f"  first:  {_render_constraints(expected_constraints, actual_constraints)}\n"
+                f"  second: {_render_constraints(actual_constraints, expected_constraints)}\n"
+            )
+        return cls.with_detail(detail)
 
 
 class _WrappedBaseException(Exception):

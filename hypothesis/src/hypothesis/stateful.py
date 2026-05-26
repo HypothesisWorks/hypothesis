@@ -132,8 +132,7 @@ def get_state_machine_test(
         def output(s):
             if print_steps:
                 report(s)
-            if observability_enabled():
-                cd._stateful_repr_parts.append(s)
+            cd._stateful_repr_parts.append(s)
 
         try:
             output(f"state = {machine.__class__.__name__}()")
