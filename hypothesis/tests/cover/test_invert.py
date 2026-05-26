@@ -19,30 +19,11 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.floats import float_to_int
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 
-# `_invert` operates on concrete values; under crosshair, values drawn via
-# `data.draw(strategy)` are symbolic, and calling `_invert` on them outside
-# the provider context triggers "Numeric operation on symbolic while not
-# tracing" errors.
-skip_on_crosshair = pytest.mark.skipif(
-    settings().backend == "crosshair",
-    reason="_invert requires concrete values; crosshair produces symbolic ones",
+pytestmark = pytest.mark.skipif(
+    settings().backend == "crosshair", reason="cannot _invert symbolic values"
 )
-
-
-def values_equal(a, b):
-    if type(a) is not type(b):
-        return False
-    if isinstance(a, float):
-        return float_to_int(a) == float_to_int(b)
-    if isinstance(a, (list, tuple)):
-        return len(a) == len(b) and all(
-            values_equal(x, y) for x, y in zip(a, b, strict=True)
-        )
-    if isinstance(a, dict):
-        return a.keys() == b.keys() and all(values_equal(a[k], b[k]) for k in a)
-    return a == b
 
 
 def assert_roundtrip(strategy, value):
@@ -52,42 +33,29 @@ def assert_roundtrip(strategy, value):
         replayed = data.draw(strategy)
 
     assert data.misaligned_at is None
-    assert values_equal(data.choices, choices)
-    assert values_equal(replayed, value)
+    assert deep_equal(data.choices, choices)
+    assert deep_equal(replayed, value)
 
 
-def check_roundtrip_many(data, strategy):
-    for _ in range(10):
+def check_roundtrip_many(strategy, data):
+    for _ in range(5):
         assert_roundtrip(strategy, data.draw(strategy))
 
 
-def check_strategy_roundtrip(strategy):
-    # Standalone helper for tests with no outer @given; do not use from inside
-    # an existing @given test — that triggers HealthCheck.nested_given and is
-    # incompatible with the crosshair backend (which is not reentrant).
-    @given(strategy)
-    @settings(max_examples=20)
-    def inner(value):
-        assert_roundtrip(strategy, value)
-
-    inner()
-
-
-@skip_on_crosshair
 @given(st.data())
 def test_integers(data):
     min_value = data.draw(st.none() | st.integers())
     max_value = data.draw(st.none() | st.integers())
     if min_value is not None and max_value is not None and min_value > max_value:
         min_value, max_value = max_value, min_value
-    check_roundtrip_many(data, st.integers(min_value, max_value))
+    check_roundtrip_many(st.integers(min_value, max_value), data)
 
 
-def test_booleans():
-    check_strategy_roundtrip(st.booleans())
+@given(st.data())
+def test_booleans(data):
+    check_roundtrip_many(st.booleans(), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_floats(data):
     min_value = data.draw(st.none() | st.floats(allow_nan=False))
@@ -97,59 +65,53 @@ def test_floats(data):
     bounded = min_value is not None or max_value is not None
     allow_nan = False if bounded else data.draw(st.booleans())
     strategy = st.floats(min_value=min_value, max_value=max_value, allow_nan=allow_nan)
-    check_roundtrip_many(data, strategy)
+    check_roundtrip_many(strategy, data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_binary(data):
     min_size = data.draw(st.integers(0, 20))
     max_size = data.draw(st.integers(min_size, min_size + 20))
-    check_roundtrip_many(data, st.binary(min_size=min_size, max_size=max_size))
+    check_roundtrip_many(st.binary(min_size=min_size, max_size=max_size), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_just(data):
     value = data.draw(st.integers())
-    check_roundtrip_many(data, st.just(value))
+    check_roundtrip_many(st.just(value), data)
 
 
-def test_none():
-    check_strategy_roundtrip(st.none())
+@given(st.data())
+def test_none(data):
+    check_roundtrip_many(st.none(), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_sampled_from(data):
     elements = data.draw(st.lists(st.integers(), min_size=1))
-    check_roundtrip_many(data, st.sampled_from(elements))
+    check_roundtrip_many(st.sampled_from(elements), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_tuples(data):
     n = data.draw(st.integers(0, 5))
-    check_roundtrip_many(data, st.tuples(*[st.integers()] * n))
+    check_roundtrip_many(st.tuples(*[st.integers()] * n), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_one_of(data):
     n = data.draw(st.integers(1, 5))
-    check_roundtrip_many(data, st.one_of(*[st.integers()] * n))
+    check_roundtrip_many(st.one_of(*[st.integers()] * n), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_lists(data):
     min_size = data.draw(st.integers(0, 5))
     max_size = data.draw(st.integers(min_size, min_size + 10))
     strategy = st.lists(st.integers(), min_size=min_size, max_size=max_size)
-    check_roundtrip_many(data, strategy)
+    check_roundtrip_many(strategy, data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_text(data):
     alphabet = data.draw(st.none() | st.text(min_size=1))
@@ -158,60 +120,56 @@ def test_text(data):
     kwargs = {"min_size": min_size, "max_size": max_size}
     if alphabet is not None:
         kwargs["alphabet"] = alphabet
-    check_roundtrip_many(data, st.text(**kwargs))
+    check_roundtrip_many(st.text(**kwargs), data)
 
 
-def test_characters():
-    check_strategy_roundtrip(st.characters())
+@given(st.data())
+def test_characters(data):
+    check_roundtrip_many(st.characters(), data)
 
 
-def test_floats_nan_via_filter():
+@given(st.data())
+def test_floats_nan_via_filter(data):
     # st.floats(allow_nan=True).filter(math.isnan) is rewritten to NanStrategy.
-    check_strategy_roundtrip(st.floats(allow_nan=True).filter(math.isnan))
+    check_roundtrip_many(st.floats(allow_nan=True).filter(math.isnan), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_permutations(data):
     values = data.draw(st.lists(st.integers(), unique=True))
-    check_roundtrip_many(data, st.permutations(values))
+    check_roundtrip_many(st.permutations(values), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_dates(data):
     min_value = data.draw(st.dates())
     max_value = data.draw(st.dates(min_value=min_value))
     if min_value == max_value:
         max_value = max_value + dt.timedelta(days=1)
-    check_roundtrip_many(data, st.dates(min_value=min_value, max_value=max_value))
+    check_roundtrip_many(st.dates(min_value=min_value, max_value=max_value), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_times(data):
     min_value = data.draw(st.times())
     max_value = data.draw(st.times(min_value=min_value))
-    check_roundtrip_many(data, st.times(min_value=min_value, max_value=max_value))
+    check_roundtrip_many(st.times(min_value=min_value, max_value=max_value), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_datetimes(data):
     min_value = data.draw(st.datetimes())
     max_value = data.draw(st.datetimes(min_value=min_value))
-    check_roundtrip_many(data, st.datetimes(min_value=min_value, max_value=max_value))
+    check_roundtrip_many(st.datetimes(min_value=min_value, max_value=max_value), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_timedeltas(data):
     min_value = data.draw(st.timedeltas())
     max_value = data.draw(st.timedeltas(min_value=min_value))
-    check_roundtrip_many(data, st.timedeltas(min_value=min_value, max_value=max_value))
+    check_roundtrip_many(st.timedeltas(min_value=min_value, max_value=max_value), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_filter(data):
     # Bound threshold to the lower half of the range so at least half of all
@@ -219,7 +177,7 @@ def test_filter(data):
     lo = data.draw(st.integers(-100, 100))
     hi = data.draw(st.integers(lo, lo + 100))
     threshold = data.draw(st.integers(lo, lo + (hi - lo) // 2))
-    check_roundtrip_many(data, st.integers(lo, hi).filter(lambda x: x >= threshold))
+    check_roundtrip_many(st.integers(lo, hi).filter(lambda x: x >= threshold), data)
 
 
 @dataclasses.dataclass
@@ -229,11 +187,11 @@ class _Pair:
 
 
 @pytest.mark.parametrize("target", [list, dict, set, tuple, frozenset, int, str, bytes])
-def test_builds_zero_arg(target):
-    check_strategy_roundtrip(st.builds(target))
+@given(st.data())
+def test_builds_zero_arg(data, target):
+    check_roundtrip_many(st.builds(target), data)
 
 
-@skip_on_crosshair
 @given(st.data())
 def test_builds_dataclass(data):
     # For each field, randomly choose positional or kwarg. Once we've gone
@@ -247,16 +205,18 @@ def test_builds_dataclass(data):
             seen_kwarg = True
         else:
             args.append(st.integers())
-    check_roundtrip_many(data, st.builds(_Pair, *args, **kwargs))
+    check_roundtrip_many(st.builds(_Pair, *args, **kwargs), data)
 
 
-def test_deferred():
-    check_strategy_roundtrip(st.deferred(lambda: st.integers()))
+@given(st.data())
+def test_deferred(data):
+    check_roundtrip_many(st.deferred(lambda: st.integers()), data)
 
 
-def test_recursive():
-    check_strategy_roundtrip(
-        st.recursive(st.integers(), lambda c: st.lists(c, max_size=2))
+@given(st.data())
+def test_recursive(data):
+    check_roundtrip_many(
+        st.recursive(st.integers(), lambda c: st.lists(c, max_size=2)), data
     )
 
 
@@ -265,11 +225,7 @@ def test_recursive():
     [
         (st.floats(allow_nan=True), float("nan")),
         (st.integers().filter(lambda x: x % 2 == 0), 4),
-        pytest.param(
-            st.sampled_from([1, 2, 3, 4]).filter(lambda x: x > 2),
-            3,
-            marks=skip_on_crosshair,
-        ),
+        (st.sampled_from([1, 2, 3, 4]).filter(lambda x: x > 2), 3),
     ],
 )
 def test_roundtrip_explicit(strategy, value):

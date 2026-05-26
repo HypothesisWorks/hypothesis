@@ -14,7 +14,7 @@ from fractions import Fraction
 from typing import Any, Literal, cast
 
 from hypothesis.control import reject
-from hypothesis.errors import CannotInvert, InvalidArgument
+from hypothesis.errors import DefinitelyCannotInvert, InvalidArgument
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.filtering import (
@@ -89,11 +89,11 @@ class IntegersStrategy(SearchStrategy[int]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, int) or isinstance(value, bool):
-            raise CannotInvert(f"{value!r} is not an integer")
+            raise DefinitelyCannotInvert(f"{value!r} is not an integer")
         if self.start is not None and value < self.start:
-            raise CannotInvert(f"{value!r} is below min_value={self.start!r}")
+            raise DefinitelyCannotInvert(f"{value!r} is below min_value={self.start!r}")
         if self.end is not None and value > self.end:
-            raise CannotInvert(f"{value!r} is above max_value={self.end!r}")
+            raise DefinitelyCannotInvert(f"{value!r} is above max_value={self.end!r}")
         return (value,)
 
     def filter(self, condition):
@@ -202,20 +202,20 @@ class FloatStrategy(SearchStrategy[float]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if type(value) is not float:
-            raise CannotInvert(f"{value!r} is not a float")
+            raise DefinitelyCannotInvert(f"{value!r} is not a float")
         if math.isnan(value):
             if not self.allow_nan:
-                raise CannotInvert(f"NaN not permitted by {self!r}")
+                raise DefinitelyCannotInvert(f"NaN not permitted by {self!r}")
             return (value,)
         if 0 < abs(value) < self.smallest_nonzero_magnitude:
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} below smallest_nonzero_magnitude="
                 f"{self.smallest_nonzero_magnitude!r}"
             )
         if not sign_aware_lte(self.min_value, value) or not sign_aware_lte(
             value, self.max_value
         ):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         return (value,)
@@ -560,7 +560,7 @@ class NanStrategy(SearchStrategy[float]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, float) or not math.isnan(value):
-            raise CannotInvert(f"{value!r} is not NaN")
+            raise DefinitelyCannotInvert(f"{value!r} is not NaN")
         bits = float_to_int(value)
         sign = bool(bits >> 63)
         mantissa = bits & ((1 << 52) - 1)

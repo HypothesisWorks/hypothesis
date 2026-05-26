@@ -15,7 +15,7 @@ from typing import Any, TypeGuard, overload
 
 from hypothesis import strategies as st
 from hypothesis.control import current_build_context
-from hypothesis.errors import CannotInvert, InvalidArgument
+from hypothesis.errors import CannotInvertYet, DefinitelyCannotInvert, InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -89,7 +89,9 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, tuple) or len(value) != len(self.element_strategies):
-            raise CannotInvert(f"{value!r} is not a tuple of the expected length")
+            raise DefinitelyCannotInvert(
+                f"{value!r} is not a tuple of the expected length"
+            )
         return tuple(
             c
             for s, element in zip(self.element_strategies, value, strict=True)
@@ -238,18 +240,19 @@ class ListStrategy(SearchStrategy[list[Ex]]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, list):
-            raise CannotInvert(f"{value!r} is not a list")
+            raise DefinitelyCannotInvert(f"{value!r} is not a list")
         if not (self.min_size <= len(value) <= self.max_size):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
             )
         elements = cu.invert_many(self.min_size, self.max_size)
-        seq: tuple[ChoiceT, ...] = ()
+        seq: list[ChoiceT] = []
         for v in value:
-            seq += elements.more() + self.element_strategy._invert(v)
-        seq += elements.done()
-        return seq
+            seq.extend(elements.more())
+            seq.extend(self.element_strategy._invert(v))
+        seq.extend(elements.done())
+        return tuple(seq)
 
     def __repr__(self) -> str:
         return (
@@ -317,7 +320,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # very annoying to invert
-        raise CannotInvert(f"cannot invert {self!r}")
+        raise CannotInvertYet(f"cannot invert {self!r} (value={value!r})")
 
     def do_draw(self, data: ConjectureData) -> list[Ex]:
         if self.element_strategy.is_empty:

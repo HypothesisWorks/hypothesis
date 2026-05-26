@@ -12,7 +12,7 @@ import warnings
 from collections.abc import Hashable
 from typing import Any
 
-from hypothesis.errors import CannotInvert, HypothesisWarning
+from hypothesis.errors import CannotInvertYet, HypothesisWarning
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
@@ -63,4 +63,4 @@ class SharedStrategy(SearchStrategy[Ex]):
         # know whether this was the first draw or not.
         #
         # Leave uninvertible for now.
-        raise CannotInvert
+        raise CannotInvertYet(f"st.shared cannot be inverted locally (value={value!r})")

@@ -61,7 +61,8 @@ from hypothesis.control import (
     should_note,
 )
 from hypothesis.errors import (
-    CannotInvert,
+    CannotInvertYet,
+    DefinitelyCannotInvert,
     HypothesisSideeffectWarning,
     HypothesisWarning,
     InvalidArgument,
@@ -85,6 +86,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_callable,
     calc_label_from_name,
@@ -1077,7 +1079,9 @@ class BuildsStrategy(SearchStrategy[Ex]):
             # builds(MyDataclass, ...) is inspectable: positional args map to
             # fields in declaration order, kwargs map to fields by name.
             if not isinstance(value, self.target):
-                raise CannotInvert(f"{value!r} is not an instance of {self.target!r}")
+                raise DefinitelyCannotInvert(
+                    f"{value!r} is not an instance of {self.target!r}"
+                )
             field_names = [f.name for f in dataclasses.fields(self.target)]
             pairs = [
                 *zip(field_names, self.args, strict=False),
@@ -1088,7 +1092,7 @@ class BuildsStrategy(SearchStrategy[Ex]):
             )
         # there are a number of other special cases we could add here. we'll get to them
         # in time.
-        raise CannotInvert(f"cannot invert {self!r}")
+        raise CannotInvertYet(f"cannot invert {self!r} (value={value!r})")
 
     def do_draw(self, data: ConjectureData) -> Ex:
         context = current_build_context()
@@ -1945,7 +1949,9 @@ class PermutationStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, list) or len(value) != len(self.values):
-            raise CannotInvert(f"{value!r} is not a list of the expected length")
+            raise DefinitelyCannotInvert(
+                f"{value!r} is not a list of the expected length"
+            )
         # Reverse the Fisher-Yates shuffle: walk the current intermediate
         # array forward, and at each step pick j such that current[j] equals
         # the target value at this index.
@@ -1953,16 +1959,20 @@ class PermutationStrategy(SearchStrategy):
         seq: list[ChoiceT] = []
         for i, target in enumerate(value[:-1]):
             for j in range(i, len(current)):
-                if current[j] == target:
+                if deep_equal(current[j], target):
                     seq.append(j)
                     current[i], current[j] = current[j], current[i]
                     break
             else:
-                raise CannotInvert(f"{value!r} is not a permutation of {self.values!r}")
+                raise DefinitelyCannotInvert(
+                    f"{value!r} is not a permutation of {self.values!r}"
+                )
         # The last position is fixed by the previous swaps - verify the
         # input is a valid permutation.
-        if current and current[-1] != value[-1]:
-            raise CannotInvert(f"{value!r} is not a permutation of {self.values!r}")
+        if current and not deep_equal(current[-1], value[-1]):
+            raise DefinitelyCannotInvert(
+                f"{value!r} is not a permutation of {self.values!r}"
+            )
         return tuple(seq)
 
 

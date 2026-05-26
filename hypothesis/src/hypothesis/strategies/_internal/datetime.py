@@ -18,7 +18,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from hypothesis.errors import CannotInvert, InvalidArgument
+from hypothesis.errors import DefinitelyCannotInvert, InvalidArgument
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import sampled_from
@@ -163,14 +163,14 @@ class DatetimeStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if type(value) is not dt.datetime:
-            raise CannotInvert(f"{value!r} is not a datetime")
+            raise DefinitelyCannotInvert(f"{value!r} is not a datetime")
         naive = value.replace(tzinfo=None)
         if not (self.min_value <= naive <= self.max_value):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         if not self.allow_imaginary and datetime_does_not_exist(value):
-            raise CannotInvert(f"{value!r} is an imaginary datetime")
+            raise DefinitelyCannotInvert(f"{value!r} is an imaginary datetime")
         tz_inv = self.tz_strat._invert(value.tzinfo)
         return (
             *tz_inv,
@@ -257,10 +257,10 @@ class TimeStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if type(value) is not dt.time:
-            raise CannotInvert(f"{value!r} is not a time")
+            raise DefinitelyCannotInvert(f"{value!r} is not a time")
         naive = value.replace(tzinfo=None)
         if not (self.min_value <= naive <= self.max_value):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         # draw_capped_multipart emits fold *before* tz_strat draws (because
@@ -318,9 +318,9 @@ class DateStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if type(value) is not dt.date:
-            raise CannotInvert(f"{value!r} is not a date")
+            raise DefinitelyCannotInvert(f"{value!r} is not a date")
         if not (self.min_value <= value <= self.max_value):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         return (value.year, value.month, value.day)
@@ -399,9 +399,9 @@ class TimedeltaStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if type(value) is not dt.timedelta:
-            raise CannotInvert(f"{value!r} is not a timedelta")
+            raise DefinitelyCannotInvert(f"{value!r} is not a timedelta")
         if not (self.min_value <= value <= self.max_value):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         return (value.days, value.seconds, value.microseconds)

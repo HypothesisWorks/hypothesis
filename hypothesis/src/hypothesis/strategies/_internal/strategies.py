@@ -34,6 +34,8 @@ from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
     CannotInvert,
+    CannotInvertYet,
+    DefinitelyCannotInvert,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -43,6 +45,7 @@ from hypothesis.errors import (
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     calc_label_from_hash,
@@ -556,16 +559,19 @@ class SearchStrategy(Generic[Ex]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         """
-        Return a choice sequence `choices`, such that
+        Return a choice sequence `choices`, such that we expect
 
             data = ConjectureData.for_choices(choices)
             drawn_value = data.draw(strategy)
 
-        would produce value == drawn_value.
+        would produce value == drawn_value. Note that _invert is not required to
+        satisfy this property, and the caller the case where _invert returns a choice
+        sequence which does not invert to `value`. _invert should still try to satisfy
+        this property with high probability.
 
         Raises CannotInvert if we cannot construct such a choice sequence.
         """
-        raise CannotInvert(f"{type(self).__name__} does not support inversion")
+        raise CannotInvertYet(f"{type(self).__name__} does not support inversion")
 
 
 def _is_hashable(value: object) -> tuple[bool, int | None]:
@@ -753,16 +759,15 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         return self._transform(self.elements[i])
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
-        # Find an index whose (possibly transformed) element equals `value`.
-        # We pick the smallest such index to match the shrinker's preference
-        # for small choices.
+        # find the smallest index whose (possibly transformed) element equals `value`.
         for i, element in enumerate(self.elements):
+            # _transform might depend on external state, and give us the wrong answer
+            # for our inversion here. This is fine - _invert is allowed to be fallible -
+            # but worth keeping in mind.
             transformed = self._transform(element)
-            if transformed is filter_not_satisfied:
-                continue
-            if transformed == value:
+            if deep_equal(transformed, value):
                 return (i,)
-        raise CannotInvert(f"{value!r} is not produced by {self!r}")
+        raise DefinitelyCannotInvert(f"{value!r} is not produced by {self!r}")
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # Set of indices that have been tried so far, so that we never test
@@ -898,7 +903,9 @@ class OneOfStrategy(SearchStrategy[Ex]):
             except CannotInvert:
                 continue
             return (i, *inner)
-        raise CannotInvert(f"{value!r} is not produced by any branch of {self!r}")
+        raise DefinitelyCannotInvert(
+            f"{value!r} is not produced by any branch of {self!r}"
+        )
 
     def __repr__(self) -> str:
         return "one_of({})".format(", ".join(map(repr, self.original_strategies)))
@@ -1069,7 +1076,10 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
         self.mapped_strategy.validate()
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
-        raise CannotInvert(f"cannot invert {self!r} (map() is not invertible)")
+        # todo: handle common special cases like .map("".join)
+        raise CannotInvertYet(
+            f"cannot invert {self!r} for {value!r} (map() is not invertible)"
+        )
 
     def do_draw(self, data: ConjectureData) -> MappedTo:
         with warnings.catch_warnings():
@@ -1292,7 +1302,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         # on the first try - so the inverse is just the inner strategy's
         # inverse.
         if not self.condition(value):
-            raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
+            raise DefinitelyCannotInvert(f"{value!r} does not satisfy filter {self!r}")
         return self.filtered_strategy._invert(value)
 
     @property

@@ -15,7 +15,7 @@ from collections.abc import Collection
 from functools import cache, lru_cache, partial
 from typing import Any, cast
 
-from hypothesis.errors import CannotInvert, HypothesisWarning, InvalidArgument
+from hypothesis.errors import DefinitelyCannotInvert, HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.charmap import Categories
 from hypothesis.internal.conjecture.choice import ChoiceT
@@ -137,9 +137,9 @@ class OneCharStringStrategy(SearchStrategy[str]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, str) or len(value) != 1:
-            raise CannotInvert(f"{value!r} is not a single character")
+            raise DefinitelyCannotInvert(f"{value!r} is not a single character")
         if ord(value) not in self.intervals:
-            raise CannotInvert(f"{value!r} is not in {self.intervals!r}")
+            raise DefinitelyCannotInvert(f"{value!r} is not in {self.intervals!r}")
         return (value,)
 
 
@@ -191,7 +191,7 @@ class TextStrategy(ListStrategy[str]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, str):
-            raise CannotInvert(f"{value!r} is not a string")
+            raise DefinitelyCannotInvert(f"{value!r} is not a string")
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             effective_max = (
@@ -200,12 +200,14 @@ class TextStrategy(ListStrategy[str]):
                 else self.max_size
             )
             if not (self.min_size <= len(value) <= effective_max):
-                raise CannotInvert(
+                raise DefinitelyCannotInvert(
                     f"len({value!r})={len(value)} outside "
                     f"[{self.min_size}, {effective_max}]"
                 )
             if any(ord(c) not in elems.intervals for c in value):
-                raise CannotInvert(f"{value!r} contains chars outside {elems!r}")
+                raise DefinitelyCannotInvert(
+                    f"{value!r} contains chars outside {elems!r}"
+                )
             return (value,)
         return ListStrategy._invert(self, list(value))
 
@@ -395,9 +397,9 @@ class BytesStrategy(SearchStrategy):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, bytes):
-            raise CannotInvert(f"{value!r} is not bytes")
+            raise DefinitelyCannotInvert(f"{value!r} is not bytes")
         if not (self.min_size <= len(value) <= self.max_size):
-            raise CannotInvert(
+            raise DefinitelyCannotInvert(
                 f"len({value!r})={len(value)} outside "
                 f"[{self.min_size}, {self.max_size}]"
             )

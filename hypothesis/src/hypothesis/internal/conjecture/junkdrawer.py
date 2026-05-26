@@ -34,8 +34,51 @@ from typing import (
 from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.floats import float_to_int
 
 T = TypeVar("T")
+
+
+def deep_equal(a: Any, b: Any) -> bool:
+    """
+    Equivalent to == but, handles float comparisons correctly.
+    """
+
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, float):
+        return float_to_int(a) == float_to_int(b)
+    if isinstance(a, (list, tuple)):
+        return len(a) == len(b) and all(
+            deep_equal(x, y) for x, y in zip(a, b, strict=True)
+        )
+    if isinstance(a, dict):
+        # note that because we need custom equality, dict and set comparisons
+        #  turn from O(n) to O(n^2). This is unfortunate and maybe not worth the cost.
+        if len(a) != len(b):
+            return False
+        remaining = list(b.items())
+        for ka, va in a.items():
+            for i, (kb, vb) in enumerate(remaining):
+                if deep_equal(ka, kb) and deep_equal(va, vb):
+                    del remaining[i]
+                    break
+            else:
+                return False
+        return True
+    if isinstance(a, (set, frozenset)):
+        if len(a) != len(b):
+            return False
+        remaining = list(b)
+        for x in a:
+            for i, y in enumerate(remaining):
+                if deep_equal(x, y):
+                    del remaining[i]
+                    break
+            else:
+                return False
+        return True
+    return a == b
 
 
 def replace_all(
