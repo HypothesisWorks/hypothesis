@@ -251,7 +251,9 @@ def test_deferred():
 
 
 def test_recursive():
-    check_strategy_roundtrip(st.recursive(st.integers(), lambda c: st.lists(c, max_size=2)))
+    check_strategy_roundtrip(
+        st.recursive(st.integers(), lambda c: st.lists(c, max_size=2))
+    )
 
 
 @pytest.mark.parametrize(
@@ -264,7 +266,6 @@ def test_recursive():
 )
 def test_roundtrip_explicit(strategy, value):
     assert_roundtrip(strategy, value)
-
 
 
 @pytest.mark.parametrize(
@@ -314,7 +315,9 @@ def test_roundtrip_explicit(strategy, value):
                 allow_imaginary=False,
                 timezones=st.just(zoneinfo.ZoneInfo("America/New_York")),
             ),
-            dt.datetime(2024, 3, 10, 2, 30, tzinfo=zoneinfo.ZoneInfo("America/New_York")),
+            dt.datetime(
+                2024, 3, 10, 2, 30, tzinfo=zoneinfo.ZoneInfo("America/New_York")
+            ),
         ),
         (st.timedeltas(), "not a timedelta"),
         (st.timedeltas(max_value=dt.timedelta(days=1)), dt.timedelta(days=10)),
