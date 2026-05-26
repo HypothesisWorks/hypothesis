@@ -62,6 +62,8 @@ def test_deep_equal_matches_eq_without_floats(a, b):
         ({"a": math.nan}, {"a": math.nan}, True),
         ({0.0: 1}, {-0.0: 1}, False),
         ({math.nan}, {math.nan}, True),
+        ({1, 2}, {1, 3}, False),
+        ({"a": 1}, {"a": 2}, False),
     ],
 )
 def test_deep_equal_explicit(a, b, expected):
