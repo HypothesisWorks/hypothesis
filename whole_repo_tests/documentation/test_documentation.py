@@ -17,7 +17,7 @@ from sphinx.util.inventory import InventoryFile
 import hypothesis.provisional
 from hypothesis.strategies import __all__ as STRATEGY_EXPORTS
 from hypothesistooling.__main__ import documentation
-from hypothesistooling.projects import hypothesispython as hp
+from hypothesistooling.projects import hypothesis as hp
 
 
 def test_documentation():
@@ -81,9 +81,7 @@ def test_documents_all_exported_strategies():
     #       },
     #       ...
     #   }
-    inventory_path = (
-        Path(hp.HYPOTHESIS_PYTHON) / "docs" / "_build" / out_dir / "objects.inv"
-    )
+    inventory_path = Path(hp.HYPOTHESIS) / "docs" / "_build" / out_dir / "objects.inv"
     with open(inventory_path, "rb") as f:
         inventory = InventoryFile.load(f, "", posixpath.join)
 

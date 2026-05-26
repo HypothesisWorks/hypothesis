@@ -1,0 +1,341 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
+import contextlib
+import enum
+import math
+import sys
+import time
+import warnings
+from io import StringIO
+from threading import Barrier, Lock, RLock, Thread
+
+import pytest
+from pytest import mark
+
+from hypothesis import Phase, settings
+from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.internal import observability
+from hypothesis.internal.floats import next_down
+from hypothesis.internal.observability import (
+    Observation,
+    add_observability_callback,
+    remove_observability_callback,
+)
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
+from hypothesis.reporting import default, with_reporter
+from hypothesis.strategies._internal.core import from_type, register_type_strategy
+from hypothesis.strategies._internal.types import _global_type_lookup
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
+
+skipif_emscripten = mark.skipif(
+    sys.platform == "emscripten",
+    reason="threads, processes, etc. are not available in the browser",
+)
+
+no_shrink = tuple(set(settings.default.phases) - {Phase.shrink, Phase.explain})
+
+
+def flaky(max_runs, min_passes):
+    assert isinstance(max_runs, int)
+    assert isinstance(min_passes, int)
+    assert 0 < min_passes <= max_runs <= 50  # arbitrary cap
+
+    def accept(func):
+        @proxies(func)
+        def inner(*args, **kwargs):
+            runs = passes = 0
+            while passes < min_passes:
+                runs += 1
+                try:
+                    func(*args, **kwargs)
+                    passes += 1
+                except BaseException:
+                    if runs >= max_runs:
+                        raise
+
+        return inner
+
+    return accept
+
+
+capture_out_lock = Lock()
+
+
+@contextlib.contextmanager
+def capture_out():
+    # replacing the singleton sys.stdout can't be made thread safe. Disallow
+    # concurrency by wrapping a lock around the entire block
+    with capture_out_lock:
+        old_out = sys.stdout
+        try:
+            new_out = StringIO()
+            sys.stdout = new_out
+            with with_reporter(default):
+                yield new_out
+        finally:
+            sys.stdout = old_out
+
+
+class ExcInfo:
+    pass
+
+
+def fails_with(e, *, match=None):
+    def accepts(f):
+        @proxies(f)
+        def inverted_test(*arguments, **kwargs):
+            with pytest.raises(e, match=match):
+                f(*arguments, **kwargs)
+
+        return inverted_test
+
+    return accepts
+
+
+fails = fails_with(AssertionError)
+
+
+class NotDeprecated(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def validate_deprecation():
+
+    if settings.get_current_profile_name() == "threading":
+        import pytest
+
+        if sys.version_info[:2] < (3, 14):
+            pytest.skip("warnings module is not thread-safe before 3.14")
+
+    import warnings
+
+    try:
+        warnings.simplefilter("always", HypothesisDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            yield
+    finally:
+        warnings.simplefilter("error", HypothesisDeprecationWarning)
+        if not any(e.category == HypothesisDeprecationWarning for e in w):
+            raise NotDeprecated(
+                f"Expected a deprecation warning but got {[e.category for e in w]!r}"
+            )
+
+
+def checks_deprecated_behaviour(func):
+    """A decorator for testing deprecated behaviour."""
+
+    @proxies(func)
+    def _inner(*args, **kwargs):
+        with validate_deprecation():
+            return func(*args, **kwargs)
+
+    return _inner
+
+
+def all_values(db):
+    return {v for vs in db.data.values() for v in vs}
+
+
+def non_covering_examples(database):
+    return {
+        v for k, vs in database.data.items() if not k.endswith(b".pareto") for v in vs
+    }
+
+
+def counts_calls(func):
+    """A decorator that counts how many times a function was called, and
+    stores that value in a ``.calls`` attribute.
+    """
+    assert not hasattr(func, "calls")
+
+    @proxies(func)
+    def _inner(*args, **kwargs):
+        _inner.calls += 1
+        return func(*args, **kwargs)
+
+    _inner.calls = 0
+    return _inner
+
+
+def assert_output_contains_failure(output, test, **kwargs):
+    assert test.__name__ + "(" in output
+    for k, v in kwargs.items():
+        assert f"{k}={v!r}" in output, (f"{k}={v!r}", output)
+
+
+def assert_falsifying_output(
+    test, example_type="Falsifying", expected_exception=AssertionError, **kwargs
+):
+    with capture_out() as out:
+        if expected_exception is None:
+            # Some tests want to check the output of non-failing runs.
+            test()
+            msg = ""
+        else:
+            with pytest.raises(expected_exception) as exc_info:
+                test()
+            notes = "\n".join(getattr(exc_info.value, "__notes__", []))
+            msg = str(exc_info.value) + "\n" + notes
+
+    output = out.getvalue() + msg
+    assert f"{example_type} example:" in output
+    assert_output_contains_failure(output, test, **kwargs)
+
+
+temp_registered_lock = RLock()
+
+
+@contextlib.contextmanager
+def temp_registered(type_, strat_or_factory):
+    """Register and un-register a type for st.from_type().
+
+    This is not too hard, but there's a subtlety in restoring the
+    previously-registered strategy which we got wrong in a few places.
+    """
+    with temp_registered_lock:
+        prev = _global_type_lookup.get(type_)
+        register_type_strategy(type_, strat_or_factory)
+        try:
+            yield
+        finally:
+            del _global_type_lookup[type_]
+            from_type.__clear_cache()
+            if prev is not None:
+                register_type_strategy(type_, prev)
+
+
+@contextlib.contextmanager
+def raises_warning(expected_warning, match=None):
+    """Use instead of pytest.warns to check that the raised warning is handled properly"""
+    with pytest.raises(expected_warning, match=match) as r, warnings.catch_warnings():
+        warnings.simplefilter("error", category=expected_warning)
+        yield r
+
+
+@contextlib.contextmanager
+def capture_observations(*, choices=None):
+    ls: list[Observation] = []
+    add_observability_callback(ls.append)
+    if choices is not None:
+        old_choices = observability.OBSERVABILITY_CHOICES
+        observability.OBSERVABILITY_CHOICES = choices
+
+    try:
+        yield ls
+    finally:
+        remove_observability_callback(ls.append)
+        if choices is not None:
+            observability.OBSERVABILITY_CHOICES = old_choices
+
+
+# Specifies whether we can represent subnormal floating point numbers.
+# IEE-754 requires subnormal support, but it's often disabled anyway by unsafe
+# compiler options like `-ffast-math`.  On most hardware that's even a global
+# config option, so *linking against* something built this way can break us.
+# Everything is terrible
+PYTHON_FTZ = next_down(sys.float_info.min) == 0.0
+
+
+class Why(enum.Enum):
+    # Categorizing known failures, to ease later follow-up investigation.
+    # Some are crosshair issues, some hypothesis issues, others truly ok-to-xfail tests.
+    symbolic_outside_context = "CrosshairInternal error (using value outside context)"
+    nested_given = "nested @given decorators don't work with crosshair"
+    undiscovered = "crosshair may not find the failing input"
+    other = "reasons not elsewhere categorized"
+
+
+def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
+    # run `pytest -m xf_crosshair` to select these tests!
+    mark = pytest.mark.xfail(
+        strict=strict and why != Why.undiscovered,
+        reason=f"Expected failure due to: {why.value}",
+        condition=settings().backend == "crosshair",
+    )
+    if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
+        return (pytest.mark.xf_crosshair, mark)
+    return lambda fn: pytest.mark.xf_crosshair(mark(fn))
+
+
+def skipif_threading(f):
+    return pytest.mark.skipif(
+        settings.get_current_profile_name() == "threading", reason="not thread safe"
+    )(f)
+
+
+def xfail_if_gil_disabled(f):
+    try:
+        if not sys._is_gil_enabled():  # 3.13+
+            return pytest.mark.xfail(
+                reason="fails on free-threading build", strict=False
+            )(f)
+    except Exception:
+        pass
+    return f
+
+
+# we don't monkeypatch _consistently_increment_time under threading
+skipif_time_unpatched = skipif_threading
+
+
+_restore_recursion_limit_lock = RLock()
+
+
+@contextlib.contextmanager
+def restore_recursion_limit():
+    with _restore_recursion_limit_lock:
+        original_limit = sys.getrecursionlimit()
+        try:
+            yield
+        finally:
+            sys.setrecursionlimit(original_limit)
+
+
+def run_concurrently(function, *, n: int) -> None:
+    import pytest
+
+    if settings.get_current_profile_name() == "crosshair":
+        pytest.skip("crosshair is not thread safe")
+    if sys.platform == "emscripten":
+        pytest.skip("no threads on emscripten")
+
+    def run():
+        barrier.wait()
+        function()
+
+    threads = [Thread(target=run) for _ in range(n)]
+    barrier = Barrier(n)
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join(timeout=10)
+
+
+def wait_for(condition, *, timeout=1, interval=0.01):
+    for _ in range(math.ceil(timeout / interval)):
+        if condition():
+            return
+        time_sleep(interval)
+    raise Exception(
+        f"timing out after waiting {timeout}s for condition "
+        f"{get_pretty_function_description(condition)}"
+    )
+
+
+def run_test_for_falsifying_example(test_fn):
+    with pytest.raises(AssertionError) as err:
+        test_fn()
+    return "\n".join(err.value.__notes__).strip()

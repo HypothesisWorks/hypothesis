@@ -12,7 +12,7 @@ Run tests using the build system:
 - **Quick test run**: `./build.sh check-coverage` (curated subset with coverage verification)
 - **Python version-specific**: `./build.sh check-py311` (replace with target version)
 - **Fine-grained control**: `./build.sh tox py311-custom 3.11.3 -- [pytest args]`
-- **Direct pytest** (after setup): `pytest hypothesis-python/tests/cover/`
+- **Direct pytest** (after setup): `pytest hypothesis/tests/cover/`
 
 ### Writing Tests
 
@@ -27,8 +27,8 @@ Run tests using the build system:
 
 ## Changelog & Pull Requests
 
-When creating a PR that changes `hypothesis-python/src/`:
-1. Create `hypothesis-python/RELEASE.rst` with `RELEASE_TYPE: patch` (bugfixes) or `minor` (features)
+When creating a PR that changes `hypothesis/src/`:
+1. Create `hypothesis/RELEASE.rst` with `RELEASE_TYPE: patch` (bugfixes) or `minor` (features)
 2. See `RELEASE-sample.rst` for examples
 3. **Imitate the style in `changelog.rst`** for consistency
 4. Follow all changelog instructions in `CONTRIBUTING.rst`
@@ -43,3 +43,7 @@ When creating a PR that changes `hypothesis-python/src/`:
    - **Minimally commented** - code should be self-documenting; only add comments where truly needed
 2. **Run `./build.sh format; ./build.sh lint`** immediately before committing to auto-format and lint code
 3. **Do not reference issues or PRs in commit messages** (e.g., avoid `Fixes #1234` or `See #5678`) - this clutters the issue timeline with unnecessary links
+
+## Before Pushing to a PR
+
+**Always run `./build.sh format` before `git push`.** The CI `check-format` job runs `shed` against every file your branch touches and asserts no diff — so if any tool other than the pinned `shed` (e.g. `ruff format`) has been used on those files, or if pre-existing lines in a touched file aren't already shed-formatted, the job fails. Running `./build.sh format` uses the pinned tool versions and is the only way to be sure the check will pass.

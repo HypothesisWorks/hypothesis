@@ -20,12 +20,14 @@ from typing import Any
 
 import pytest
 
-from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
+from hypothesistooling.projects.hypothesis import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
     ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    FILTER_TYPEGUARD_PREAMBLE,
+    FILTER_TYPEGUARD_REVEALED_TYPES,
     NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
@@ -38,7 +40,7 @@ from .revealed_types import (
     "but strict checks for our internals would be a net drag on productivity."
 )
 def test_pyright_passes_on_hypothesis():
-    pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
+    pip_tool("pyright", "--project", HYPOTHESIS)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
@@ -186,6 +188,14 @@ def test_revealed_types(tmp_path, val, expect):
     _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
     typ = get_pyright_analysed_type(f)
     assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", FILTER_TYPEGUARD_REVEALED_TYPES)
+def test_filter_typeguard_revealed_types(tmp_path, val, expect):
+    f = tmp_path / "check.py"
+    f.write_text(FILTER_TYPEGUARD_PREAMBLE + f"reveal_type({val})\n", encoding="utf-8")
+    _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
+    assert get_pyright_analysed_type(f) == f"SearchStrategy[{expect}]"
 
 
 @pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)

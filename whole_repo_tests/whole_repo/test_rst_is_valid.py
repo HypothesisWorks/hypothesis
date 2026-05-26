@@ -13,13 +13,13 @@ import re
 from pathlib import Path
 
 import hypothesistooling as tools
-from hypothesistooling.projects import hypothesispython as hp
+from hypothesistooling.projects import hypothesis as hp
 from hypothesistooling.scripts import pip_tool
 
 
 def is_sphinx(f):
     f = os.path.abspath(f)
-    return f.startswith(os.path.join(hp.HYPOTHESIS_PYTHON, "docs"))
+    return f.startswith(os.path.join(hp.HYPOTHESIS, "docs"))
 
 
 ALL_RST = [

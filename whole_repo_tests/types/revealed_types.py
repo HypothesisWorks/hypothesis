@@ -62,6 +62,20 @@ REVEALED_TYPES = [
         "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
         "Any",
     ),
+    ("from_regex(r'.', alphabet=None)", "str"),
+]
+
+
+FILTER_TYPEGUARD_PREAMBLE = """\
+from typing import TypeGuard
+from hypothesis.strategies import *
+def is_str(x: object) -> TypeGuard[str]:
+    return isinstance(x, str)
+"""
+
+FILTER_TYPEGUARD_REVEALED_TYPES = [
+    ("from_type(object).filter(is_str)", "str"),
+    ("one_of(integers(), text()).filter(is_str)", "str"),
 ]
 
 

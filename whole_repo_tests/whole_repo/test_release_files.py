@@ -12,7 +12,7 @@ import pytest
 
 import hypothesistooling as tools
 from hypothesistooling import releasemanagement as rm
-from hypothesistooling.projects import hypothesispython as hp
+from hypothesistooling.projects import hypothesis as hp
 
 
 @pytest.mark.parametrize("project", tools.all_projects())
