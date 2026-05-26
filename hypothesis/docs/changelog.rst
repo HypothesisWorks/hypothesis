@@ -24,13 +24,26 @@ Hypothesis 6.x
 6.152.11 - 2026-05-26
 ---------------------
 
-This patch adds support for recursive forward references in
-:func:`~hypothesis.strategies.from_type`, such as
-``A = list[Union["A", str]]`` (:issue:`4542`).
-Previously, such recursive type aliases would raise a ``ResolutionFailed``
-error. Now, Hypothesis can automatically resolve the forward reference
-by looking it up in the caller's namespace. This also resolves forward
-references inside ``type[...]``, such as ``type["MyClass"]``.
+This patch adds support for resolving forward references in |st.from_type|
+(:issue:`4542`):
+
+.. code-block:: python
+
+    # this now works
+    A = list[Union["A", str]]
+    st.from_type(A).example()
+
+    # this also now works
+    s = st.from_type(list["B"])
+
+    @dataclass
+    class B:
+        v: int
+
+    s.example()
+
+Previously, these would raise an error. Now, Hypothesis automatically resolves
+the forward reference by looking it up in the caller's namespace.
 
 .. _v6.152.10:
 

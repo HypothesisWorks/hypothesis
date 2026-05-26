@@ -45,5 +45,6 @@ The test case distribution remains an active area of research and development, a
 * some are statically designed into strategies - for example, |st.integers| upweights range endpoints, and samples from a mixed distribution over integer bit-widths.
 * some are dynamic features of the engine - like replaying prior examples with subsections of the input 'cloned' or otherwise altered, for bugs which trigger only when different fields have the same value (which is otherwise exponentially unlikely).
 * some vary depending on the code under test - we collect interesting-looking constants from imported source files as seeds for test cases.
+* `swarm testing <https://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`__ adds further randomization when choosing which rules to execute in stateful testing.
 
 And as if that wasn't enough, :ref:`alternative backends <alternative-backends>` can radically change the distribution again - for example :pypi:`hypofuzz` uses runtime feedback to modify the distribution of inputs as the test runs, to maximize the rate at which we trigger new behaviors in that particular test and code.  If Hypothesis' defaults aren't strong enough, we recommend trying Hypofuzz!

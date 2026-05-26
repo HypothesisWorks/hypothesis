@@ -9,18 +9,48 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import time
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    core,
+    example,
+    given,
+    reject,
+    settings,
+)
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import Flaky, FlakyFailure, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import (
+    Flaky,
+    FlakyFailure,
+    FlakyStrategyDefinition,
+    Unsatisfiable,
+    UnsatisfiedAssumption,
+)
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
-from hypothesis.strategies import booleans, composite, integers, lists, random_module
+from hypothesis.stateful import RuleBasedStateMachine, rule
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    data,
+    integers,
+    lists,
+    random_module,
+)
 
-from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_out,
+    no_shrink,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 
 
 class Nope(Exception):
@@ -210,3 +240,24 @@ def test_failure_sequence_inducing(building, testing, rnd):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None
+
+
+class FlakyTimeStateMachine(RuleBasedStateMachine):
+    @rule(data=data())
+    def step(self, data):
+        # time advances between runs, so the integers() constraints differ when
+        # the same choice sequence is replayed - an inconsistent-generation flake.
+        data.draw(integers(time.time_ns(), time.time_ns() + 2))
+
+
+def test_flaky_stateful_reports_steps(monkeypatch):
+    # Steps are recorded regardless of observability, so a flaky stateful test
+    # always reports the steps leading up to the error.
+    # ensure report() prints to stdout (rather than via the pytest plugin)
+    monkeypatch.setattr(core, "running_under_pytest", False)
+    FlakyTimeStateMachine.TestCase.settings = settings(
+        max_examples=200, database=None, stateful_step_count=5
+    )
+    with capture_out() as out, pytest.raises(FlakyStrategyDefinition):
+        FlakyTimeStateMachine.TestCase().runTest()
+    assert "Steps leading up to this error" in out.getvalue()
