@@ -187,7 +187,7 @@ class _Pair:
 
 
 @pytest.mark.parametrize("target", [list, dict, set, tuple, frozenset, int, str, bytes])
-@given(st.data())
+@given(data=st.data())
 def test_builds_zero_arg(data, target):
     check_roundtrip_many(st.builds(target), data)
 
