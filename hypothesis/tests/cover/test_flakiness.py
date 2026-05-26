@@ -10,7 +10,6 @@
 
 import sys
 import time
-from random import Random
 
 import pytest
 
@@ -44,7 +43,6 @@ from hypothesis.strategies import (
     lists,
     random_module,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.common.utils import (
     Why,
@@ -53,7 +51,6 @@ from tests.common.utils import (
     skipif_threading,
     xfail_on_crosshair,
 )
-from tests.conjecture.common import fresh_data
 
 
 class Nope(Exception):
@@ -243,31 +240,6 @@ def test_failure_sequence_inducing(building, testing, rnd):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None
-
-
-class _RaisesFlaky(SearchStrategy):
-    def do_draw(self, data):
-        raise FlakyStrategyDefinition.with_detail("inner detail")
-
-
-class _DrawsFrom(SearchStrategy):
-    def __init__(self, inner):
-        super().__init__()
-        self.inner = inner
-
-    def do_draw(self, data):
-        return data.draw(self.inner)
-
-
-def test_flaky_strategy_definition_records_strategy_stack():
-    # A FlakyStrategyDefinition raised inside a nested strategy draw accumulates
-    # "while drawing from ..." notes as it unwinds, so that the failure is
-    # explained in terms of the strategies drawn from, not just the choices.
-    data = fresh_data(random=Random(0))
-    with pytest.raises(FlakyStrategyDefinition) as excinfo:
-        data.draw(_DrawsFrom(_RaisesFlaky()))
-    notes = getattr(excinfo.value, "__notes__", [])
-    assert any("while drawing from" in note for note in notes)
 
 
 class FlakyTimeStateMachine(RuleBasedStateMachine):

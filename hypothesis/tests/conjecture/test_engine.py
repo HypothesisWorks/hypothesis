@@ -48,10 +48,11 @@ from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import no_shrink, skipif_time_unpatched
+from tests.common.utils import capture_out, no_shrink, skipif_time_unpatched
 from tests.conjecture.common import (
     SOME_LABEL,
     buffer_size_limit,
@@ -1830,3 +1831,45 @@ def test_integer_overflow_fallback(n):
 @given(st.integers(2**500, 2**500 + 10))
 def test_integer_narrow_tail_fallback(n):
     assert 2**500 <= n <= 2**500 + 10
+
+
+class _RaisesFlaky(SearchStrategy):
+    def do_draw(self, data):
+        raise FlakyStrategyDefinition.with_detail("inner detail")
+
+
+class _DrawsFrom(SearchStrategy):
+    def __init__(self, inner):
+        super().__init__()
+        self.inner = inner
+
+    def do_draw(self, data):
+        return data.draw(self.inner)
+
+
+def test_flaky_strategy_definition_records_strategy_stack():
+    # A FlakyStrategyDefinition raised inside a nested strategy draw accumulates
+    # "while drawing from ..." notes as it unwinds, naming the strategies drawn
+    # from rather than just the low-level choice sequence.
+    def test(data):
+        data.draw(_DrawsFrom(_RaisesFlaky()))
+
+    with pytest.raises(FlakyStrategyDefinition) as excinfo:
+        ConjectureRunner(test, settings=settings(database=None)).run()
+    notes = getattr(excinfo.value, "__notes__", [])
+    assert any("while drawing from" in note for note in notes)
+
+
+def test_flaky_strategy_definition_reports_stateful_steps(monkeypatch):
+    # In a stateful test the engine reports the recorded steps leading up to the
+    # inconsistency. We set _stateful_repr_parts directly to avoid pulling in the
+    # stateful machinery here.
+    monkeypatch.setattr("hypothesis.core.running_under_pytest", False)
+
+    def test(data):
+        data._stateful_repr_parts = ["state = Machine()", "state.step()"]
+        raise FlakyStrategyDefinition.with_detail("inconsistent")
+
+    with capture_out() as out, pytest.raises(FlakyStrategyDefinition):
+        ConjectureRunner(test, settings=settings(database=None)).run()
+    assert "Steps leading up to this error" in out.getvalue()
