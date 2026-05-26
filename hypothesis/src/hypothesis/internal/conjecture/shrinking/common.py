@@ -161,7 +161,7 @@ class Shrinker:
         Does nothing by default.
         """
 
-    def short_circuit(self):
+    def short_circuit(self) -> bool:
         """Possibly attempt to do some shrinking.
 
         If this returns True, the ``run`` method will terminate early

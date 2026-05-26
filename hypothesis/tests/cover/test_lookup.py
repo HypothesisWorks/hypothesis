@@ -671,6 +671,40 @@ def test_forward_ref_found_in_multiple_frames_is_resolved():
     helper()
 
 
+class NamedTupleNode(typing.NamedTuple):
+    val: int
+    children: list["NamedTupleNode"]
+
+
+def test_namedtuple_self_referential_forward_ref():
+    find_any(st.from_type(NamedTupleNode))
+
+
+def test_forward_ref_to_non_type_in_caller_frame_fails():
+    _hyp_test_not_a_type_marker = 42
+    with pytest.raises(ResolutionFailed):
+        check_can_generate_examples(
+            st.from_type(typing.ForwardRef("_hyp_test_not_a_type_marker"))
+        )
+
+
+def test_unresolved_forward_ref_fails_without_ambiguity_warning():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", HypothesisWarning)
+        with pytest.raises(ResolutionFailed):
+            check_can_generate_examples(
+                st.from_type(typing.ForwardRef("DefinitelyNotDefinedAnywhere"))
+            )
+
+
+def test_from_type_builtin_generic_with_string_forward_ref():
+    class _LateBoundForListString:
+        pass
+
+    s = st.from_type(list["_LateBoundForListString"])
+    find_any(s, lambda lst: all(isinstance(x, _LateBoundForListString) for x in lst))
+
+
 class Tree:
     def __init__(self, left: typing.Optional["Tree"], right: typing.Optional["Tree"]):
         self.left = left

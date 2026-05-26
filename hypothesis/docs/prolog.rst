@@ -209,6 +209,7 @@
 .. |TypeAlias| replace:: :obj:`python:typing.TypeAlias`
 .. |TypeAliasType| replace:: :class:`python:typing.TypeAliasType`
 .. |NewType| replace:: :class:`python:typing.NewType`
+.. |Any| replace:: :obj:`~python:typing.Any`
 .. |TypeGuard| replace:: :data:`python:typing.TypeGuard`
 
 .. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
