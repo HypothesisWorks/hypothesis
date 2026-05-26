@@ -15,11 +15,12 @@ import zoneinfo
 
 import pytest
 
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import float_to_int
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def values_equal(a, b):
@@ -47,9 +48,17 @@ def assert_roundtrip(strategy, value):
     assert values_equal(replayed, value)
 
 
+def check_roundtrip_many(data, strategy):
+    for _ in range(10):
+        assert_roundtrip(strategy, data.draw(strategy))
+
+
 def check_strategy_roundtrip(strategy):
+    # Standalone helper for tests with no outer @given; do not use from inside
+    # an existing @given test — that triggers HealthCheck.nested_given and is
+    # incompatible with the crosshair backend (which is not reentrant).
     @given(strategy)
-    @settings(max_examples=5)
+    @settings(max_examples=20)
     def inner(value):
         assert_roundtrip(strategy, value)
 
@@ -57,14 +66,12 @@ def check_strategy_roundtrip(strategy):
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_integers(data):
     min_value = data.draw(st.none() | st.integers())
     max_value = data.draw(st.none() | st.integers())
     if min_value is not None and max_value is not None and min_value > max_value:
         min_value, max_value = max_value, min_value
-    strategy = st.integers(min_value, max_value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.integers(min_value, max_value))
 
 
 def test_booleans():
@@ -72,7 +79,6 @@ def test_booleans():
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_floats(data):
     min_value = data.draw(st.none() | st.floats(allow_nan=False))
     max_value = data.draw(st.none() | st.floats(allow_nan=False))
@@ -81,24 +87,20 @@ def test_floats(data):
     bounded = min_value is not None or max_value is not None
     allow_nan = False if bounded else data.draw(st.booleans())
     strategy = st.floats(min_value=min_value, max_value=max_value, allow_nan=allow_nan)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, strategy)
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_binary(data):
     min_size = data.draw(st.integers(0, 20))
     max_size = data.draw(st.integers(min_size, min_size + 20))
-    strategy = st.binary(min_size=min_size, max_size=max_size)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.binary(min_size=min_size, max_size=max_size))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_just(data):
     value = data.draw(st.integers())
-    strategy = st.just(value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.just(value))
 
 
 def test_none():
@@ -106,40 +108,32 @@ def test_none():
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_sampled_from(data):
     elements = data.draw(st.lists(st.integers(), min_size=1))
-    strategy = st.sampled_from(elements)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.sampled_from(elements))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_tuples(data):
     n = data.draw(st.integers(0, 5))
-    strategy = st.tuples(*[st.integers()] * n)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.tuples(*[st.integers()] * n))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_one_of(data):
     n = data.draw(st.integers(1, 5))
-    strategy = st.one_of(*[st.integers()] * n)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.one_of(*[st.integers()] * n))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_lists(data):
     min_size = data.draw(st.integers(0, 5))
     max_size = data.draw(st.integers(min_size, min_size + 10))
     strategy = st.lists(st.integers(), min_size=min_size, max_size=max_size)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, strategy)
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_text(data):
     alphabet = data.draw(st.none() | st.text(min_size=1))
     min_size = data.draw(st.integers(0, 5))
@@ -147,8 +141,7 @@ def test_text(data):
     kwargs = {"min_size": min_size, "max_size": max_size}
     if alphabet is not None:
         kwargs["alphabet"] = alphabet
-    strategy = st.text(**kwargs)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.text(**kwargs))
 
 
 def test_characters():
@@ -161,61 +154,49 @@ def test_floats_nan_via_filter():
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_permutations(data):
     values = data.draw(st.lists(st.integers(), unique=True))
-    strategy = st.permutations(values)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.permutations(values))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_dates(data):
     min_value = data.draw(st.dates())
     max_value = data.draw(st.dates(min_value=min_value))
     if min_value == max_value:
         max_value = max_value + dt.timedelta(days=1)
-    strategy = st.dates(min_value=min_value, max_value=max_value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.dates(min_value=min_value, max_value=max_value))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_times(data):
     min_value = data.draw(st.times())
     max_value = data.draw(st.times(min_value=min_value))
-    strategy = st.times(min_value=min_value, max_value=max_value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.times(min_value=min_value, max_value=max_value))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_datetimes(data):
     min_value = data.draw(st.datetimes())
     max_value = data.draw(st.datetimes(min_value=min_value))
-    strategy = st.datetimes(min_value=min_value, max_value=max_value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.datetimes(min_value=min_value, max_value=max_value))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_timedeltas(data):
     min_value = data.draw(st.timedeltas())
     max_value = data.draw(st.timedeltas(min_value=min_value))
-    strategy = st.timedeltas(min_value=min_value, max_value=max_value)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.timedeltas(min_value=min_value, max_value=max_value))
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_filter(data):
     # Bound threshold to the lower half of the range so at least half of all
     # values pass the filter (otherwise filter_too_much fires).
     lo = data.draw(st.integers(-100, 100))
     hi = data.draw(st.integers(lo, lo + 100))
     threshold = data.draw(st.integers(lo, lo + (hi - lo) // 2))
-    strategy = st.integers(lo, hi).filter(lambda x: x >= threshold)
-    check_strategy_roundtrip(strategy)
+    check_roundtrip_many(data, st.integers(lo, hi).filter(lambda x: x >= threshold))
 
 
 @dataclasses.dataclass
@@ -230,7 +211,6 @@ def test_builds_zero_arg(target):
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_builds_dataclass(data):
     # For each field, randomly choose positional or kwarg. Once we've gone
     # kwarg we can't go back to positional, so seen_kwarg latches.
@@ -243,7 +223,7 @@ def test_builds_dataclass(data):
             seen_kwarg = True
         else:
             args.append(st.integers())
-    check_strategy_roundtrip(st.builds(_Pair, *args, **kwargs))
+    check_roundtrip_many(data, st.builds(_Pair, *args, **kwargs))
 
 
 def test_deferred():
@@ -261,7 +241,11 @@ def test_recursive():
     [
         (st.floats(allow_nan=True), float("nan")),
         (st.integers().filter(lambda x: x % 2 == 0), 4),
-        (st.sampled_from([1, 2, 3, 4]).filter(lambda x: x > 2), 3),
+        pytest.param(
+            st.sampled_from([1, 2, 3, 4]).filter(lambda x: x > 2),
+            3,
+            marks=xfail_on_crosshair(Why.symbolic_outside_context, as_marks=True),
+        ),
     ],
 )
 def test_roundtrip_explicit(strategy, value):
