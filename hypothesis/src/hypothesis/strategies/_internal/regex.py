@@ -115,7 +115,7 @@ def chars_not_in_alphabet(alphabet: SearchStrategy | None, string: str) -> set[s
 
 @dataclass(slots=True, frozen=False)
 class Context:
-    flags: int
+    flags: re.RegexFlag
 
 
 class CharactersBuilder:
@@ -129,7 +129,11 @@ class CharactersBuilder:
     """
 
     def __init__(
-        self, *, negate: bool = False, flags: int = 0, alphabet: SearchStrategy
+        self,
+        *,
+        negate: bool = False,
+        flags: re.RegexFlag = re.RegexFlag(0),
+        alphabet: SearchStrategy,
     ):
         self._categories: set[CategoryName] = set()
         self._whitelist_chars: set[str] = set()
@@ -196,7 +200,7 @@ class CharactersBuilder:
 
 
 class BytesBuilder(CharactersBuilder):
-    def __init__(self, *, negate: bool = False, flags: int = 0):
+    def __init__(self, *, negate: bool = False, flags: re.RegexFlag = re.RegexFlag(0)):
         self._whitelist_chars = set()
         self._blacklist_chars = set()
         self._negate = negate
@@ -242,7 +246,7 @@ def base_regex_strategy(
     try:
         s = _strategy(
             parsed,
-            context=Context(flags=regex.flags),
+            context=Context(flags=re.RegexFlag(regex.flags)),
             is_unicode=isinstance(regex.pattern, str),
             alphabet=alphabet,
         )
