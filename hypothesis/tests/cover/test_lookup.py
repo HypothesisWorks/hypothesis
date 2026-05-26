@@ -37,7 +37,12 @@ from typing import (
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
+from hypothesis.errors import (
+    HypothesisWarning,
+    InvalidArgument,
+    ResolutionFailed,
+    SmallSearchSpaceWarning,
+)
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -609,11 +614,61 @@ def test_override_args_for_namedtuple(thing):
     assert thing.a is None
 
 
-@pytest.mark.parametrize("thing", [typing.Optional, list, type, _List, _Type])
-def test_cannot_resolve_bare_forward_reference(thing):
+@pytest.mark.parametrize("thing", [typing.Optional, list, _List])
+def test_can_resolve_forward_reference_to_class(thing):
+    # Forward references to classes in scope should now be resolved
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4542
     t = thing["ConcreteFoo"]
-    with pytest.raises(InvalidArgument):
-        check_can_generate_examples(st.from_type(t))
+    check_can_generate_examples(st.from_type(t))
+
+
+@pytest.mark.parametrize("thing", [type, _Type])
+def test_can_resolve_type_forward_reference(thing):
+    # type["ConcreteFoo"] resolves the forward reference to the class in scope
+    t = thing["ConcreteFoo"]
+    assert_simple_property(st.from_type(t), lambda x: x is ConcreteFoo)
+
+
+def test_forward_ref_resolved_from_local_scope():
+    # Test that forward refs can be resolved from local variables (f_locals)
+    # This explicitly tests the f_locals lookup path in _resolve_forward_ref_in_caller
+    class LocalClass:
+        pass
+
+    LocalType = list[typing.Union["LocalClass", str]]
+    check_can_generate_examples(st.from_type(LocalType))
+
+
+def test_ambiguous_forward_ref_is_not_resolved():
+    # If different frames define the same name with different values,
+    # we should not resolve it (ambiguous) to avoid false positives.
+    class Ambiguous:
+        pass
+
+    def helper():
+        Ambiguous = int  # shadows outer class
+        # "Ambiguous" now refers to different things in different frames
+        AmbiguousType = list[typing.Union["Ambiguous", str]]
+        with (
+            pytest.warns(HypothesisWarning, match="ambiguous"),
+            pytest.raises(ResolutionFailed),
+        ):
+            check_can_generate_examples(st.from_type(AmbiguousType))
+
+    helper()
+
+
+RecursiveModuleAlias = list[typing.Union["RecursiveModuleAlias", int]]
+
+
+def test_forward_ref_found_in_multiple_frames_is_resolved():
+    # The alias is a module global, so the same name and value is found in the
+    # globals of more than one stack frame (this test and the nested helper),
+    # exercising the "found again with the same value" path.
+    def helper():
+        find_any(st.from_type(RecursiveModuleAlias))
+
+    helper()
 
 
 class Tree:
@@ -830,16 +885,10 @@ def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
     raise AssertionError("test body unreachable as strategy cannot resolve")
 
 
-@fails_with(ResolutionFailed)
-@given(st.from_type(type["ConcreteFoo"]))
-def test_cannot_resolve_type_with_forwardref(instance):
-    raise AssertionError("test body unreachable as strategy cannot resolve")
-
-
-@fails_with(ResolutionFailed)
-@given(st.from_type(_Type["ConcreteFoo"]))
-def test_cannot_resolve_type_with_forwardref_old(instance):
-    raise AssertionError("test body unreachable as strategy cannot resolve")
+def test_type_with_unresolvable_forward_reference_fails():
+    t = type["UnknownForwardRef"]  # noqa: F821
+    with pytest.raises(ResolutionFailed):
+        check_can_generate_examples(st.from_type(t))
 
 
 @pytest.mark.parametrize("typ", [typing.Hashable, typing.Sized])
