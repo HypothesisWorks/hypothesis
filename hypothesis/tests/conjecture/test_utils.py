@@ -201,6 +201,18 @@ def test_many_with_max_size():
     assert not many.more()
 
 
+def test_invert_many_variable_size():
+    many = cu.invert_many(min_size=0, max_size=5)
+    assert many.more() == (True,)
+    assert many.done() == (False,)
+
+
+def test_invert_many_fixed_size():
+    many = cu.invert_many(min_size=3, max_size=3)
+    assert many.more() == ()
+    assert many.done() == ()
+
+
 def test_samples_from_a_range_directly():
     s = cu.check_sample(range(10**1000), "")
     assert isinstance(s, range)
