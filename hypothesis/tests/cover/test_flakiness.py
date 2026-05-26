@@ -9,11 +9,21 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import time
 from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    core,
+    example,
+    given,
+    reject,
+    settings,
+)
 from hypothesis.core import StateForActualGivenExecution
 from hypothesis.errors import (
     Flaky,
@@ -25,10 +35,25 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
-from hypothesis.strategies import booleans, composite, integers, lists, random_module
+from hypothesis.stateful import RuleBasedStateMachine, rule
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    data,
+    integers,
+    lists,
+    random_module,
+)
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    capture_observations,
+    capture_out,
+    no_shrink,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 from tests.conjecture.common import fresh_data
 
 
@@ -244,3 +269,33 @@ def test_flaky_strategy_definition_records_strategy_stack():
         data.draw(_DrawsFrom(_RaisesFlaky()))
     notes = getattr(excinfo.value, "__notes__", [])
     assert any("while drawing from" in note for note in notes)
+
+
+class FlakyTimeStateMachine(RuleBasedStateMachine):
+    @rule(data=data())
+    def step(self, data):
+        # time advances between runs, so the integers() constraints differ when
+        # the same choice sequence is replayed - an inconsistent-generation flake.
+        data.draw(integers(time.time_ns(), time.time_ns() + 2))
+
+
+@pytest.mark.parametrize("observability", [False, True])
+def test_flaky_stateful_reports_steps_or_tip(monkeypatch, observability):
+    # ensure report() prints to stdout (rather than via the pytest plugin)
+    monkeypatch.setattr(core, "running_under_pytest", False)
+    FlakyTimeStateMachine.TestCase.settings = settings(
+        max_examples=200, database=None, stateful_step_count=5
+    )
+
+    def run():
+        with capture_out() as out, pytest.raises(FlakyStrategyDefinition):
+            FlakyTimeStateMachine.TestCase().runTest()
+        return out.getvalue()
+
+    if observability:
+        with capture_observations():
+            output = run()
+        assert "Steps leading up to this error" in output
+    else:
+        output = run()
+        assert "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1" in output

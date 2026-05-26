@@ -27,6 +27,7 @@ from hypothesis.database import ExampleDatabase, choices_from_bytes, choices_to_
 from hypothesis.errors import (
     BackendCannotProceed,
     FlakyBackendFailure,
+    FlakyStrategyDefinition,
     HypothesisException,
     InvalidArgument,
     StopTest,
@@ -562,8 +563,25 @@ class ConjectureRunner:
             interrupted = True
             data.freeze()
             return
-        except BaseException:
+        except BaseException as err:
             data.freeze()
+            if (
+                isinstance(err, FlakyStrategyDefinition)
+                and data._stateful_repr_parts is not None
+            ):
+                # In a stateful test, surface the steps leading up to the
+                # inconsistency - recorded only when observability is enabled -
+                # or otherwise point at how to capture them.
+                if data._stateful_repr_parts:
+                    report(
+                        "Steps leading up to this error:\n"
+                        + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
+                    )
+                else:
+                    report(
+                        "Tip: to see which steps led to this error, re-run with "
+                        "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
+                    )
             if self.settings.backend != "hypothesis":
                 try:
                     realize_choices(data, for_failure=True)
