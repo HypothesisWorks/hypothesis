@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.0:
+
+--------------------
+6.153.0 - 2026-05-26
+--------------------
+
+|event|'s ``payload`` is now typed as accepting |Any|, matching its runtime behavior of accepting any string-coercible object.
+
 .. _v6.152.12:
 
 ---------------------
