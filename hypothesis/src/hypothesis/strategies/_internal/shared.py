@@ -12,7 +12,8 @@ import warnings
 from collections.abc import Hashable
 from typing import Any
 
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import CannotInvert, HypothesisWarning
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.strategies import Ex
@@ -54,3 +55,12 @@ class SharedStrategy(SearchStrategy[Ex]):
                     stacklevel=1,
                 )
         return drawn
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # _invert only has local knowledge. To correctly invert st.shared, _invert needs
+        # global knowledge of the entire test function, because st.shared adds to the
+        # choice sequence only the first time it draws, and _invert therefore needs to
+        # know whether this was the first draw or not.
+        #
+        # Leave uninvertible for now.
+        raise CannotInvert

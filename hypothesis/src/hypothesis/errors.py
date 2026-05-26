@@ -60,6 +60,10 @@ class ChoiceTooLarge(HypothesisException):
     """An internal error raised by choice_from_index."""
 
 
+class CannotInvert(HypothesisException):
+    """Internal error raised by SearchStrategy._invert."""
+
+
 class Flaky(_Trimmable):
     """
     Base class for indeterministic failures. Usually one of the more

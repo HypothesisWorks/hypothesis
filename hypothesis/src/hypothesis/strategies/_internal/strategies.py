@@ -33,6 +33,7 @@ from typing import (
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
+    CannotInvert,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -40,6 +41,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
 )
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
@@ -552,6 +554,19 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        """
+        Return a choice sequence `choices`, such that
+
+            data = ConjectureData.for_choices(choices)
+            drawn_value = data.draw(strategy)
+
+        would produce value == drawn_value.
+
+        Raises CannotInvert if we cannot construct such a choice sequence.
+        """
+        raise CannotInvert(f"{type(self).__name__} does not support inversion")
+
 
 def _is_hashable(value: object) -> tuple[bool, int | None]:
     # hashing can be expensive; return the hash value if we compute it, so that
@@ -737,6 +752,18 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def get_element(self, i: int) -> Ex | UniqueIdentifier:
         return self._transform(self.elements[i])
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # Find an index whose (possibly transformed) element equals `value`.
+        # We pick the smallest such index to match the shrinker's preference
+        # for small choices.
+        for i, element in enumerate(self.elements):
+            transformed = self._transform(element)
+            if transformed is filter_not_satisfied:
+                continue
+            if transformed == value:
+                return (i,)
+        raise CannotInvert(f"{value!r} is not produced by {self!r}")
+
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # Set of indices that have been tried so far, so that we never test
         # the same element twice during a draw.
@@ -862,6 +889,16 @@ class OneOfStrategy(SearchStrategy[Ex]):
             )
         )
         return data.draw(strategy)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # do_draw first samples a branch index, then draws from that branch.
+        for i, branch in enumerate(self.element_strategies):
+            try:
+                inner = branch._invert(value)
+            except CannotInvert:
+                continue
+            return (i, *inner)
+        raise CannotInvert(f"{value!r} is not produced by any branch of {self!r}")
 
     def __repr__(self) -> str:
         return "one_of({})".format(", ".join(map(repr, self.original_strategies)))
@@ -1030,6 +1067,9 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
 
     def do_validate(self) -> None:
         self.mapped_strategy.validate()
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        raise CannotInvert(f"cannot invert {self!r} (map() is not invertible)")
 
     def do_draw(self, data: ConjectureData) -> MappedTo:
         with warnings.catch_warnings():
@@ -1246,6 +1286,14 @@ class FilteredStrategy(SearchStrategy[Ex]):
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 
         return filter_not_satisfied
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # If the predicate accepts `value`, the runtime would have succeeded
+        # on the first try - so the inverse is just the inner strategy's
+        # inverse.
+        if not self.condition(value):
+            raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
+        return self.filtered_strategy._invert(value)
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
