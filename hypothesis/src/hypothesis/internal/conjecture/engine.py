@@ -565,23 +565,13 @@ class ConjectureRunner:
             return
         except BaseException as err:
             data.freeze()
-            if (
-                isinstance(err, FlakyStrategyDefinition)
-                and data._stateful_repr_parts is not None
-            ):
+            if isinstance(err, FlakyStrategyDefinition) and data._stateful_repr_parts:
                 # In a stateful test, surface the steps leading up to the
-                # inconsistency - recorded only when observability is enabled -
-                # or otherwise point at how to capture them.
-                if data._stateful_repr_parts:
-                    report(
-                        "Steps leading up to this error:\n"
-                        + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
-                    )
-                else:
-                    report(
-                        "Tip: to see which steps led to this error, re-run with "
-                        "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1"
-                    )
+                # inconsistency.
+                report(
+                    "Steps leading up to this error:\n"
+                    + "\n".join(f"  {s}" for s in data._stateful_repr_parts)
+                )
             if self.settings.backend != "hypothesis":
                 try:
                     realize_choices(data, for_failure=True)

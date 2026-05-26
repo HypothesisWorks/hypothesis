@@ -48,7 +48,6 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.common.utils import (
     Why,
-    capture_observations,
     capture_out,
     no_shrink,
     skipif_threading,
@@ -279,23 +278,14 @@ class FlakyTimeStateMachine(RuleBasedStateMachine):
         data.draw(integers(time.time_ns(), time.time_ns() + 2))
 
 
-@pytest.mark.parametrize("observability", [False, True])
-def test_flaky_stateful_reports_steps_or_tip(monkeypatch, observability):
+def test_flaky_stateful_reports_steps(monkeypatch):
+    # Steps are recorded regardless of observability, so a flaky stateful test
+    # always reports the steps leading up to the error.
     # ensure report() prints to stdout (rather than via the pytest plugin)
     monkeypatch.setattr(core, "running_under_pytest", False)
     FlakyTimeStateMachine.TestCase.settings = settings(
         max_examples=200, database=None, stateful_step_count=5
     )
-
-    def run():
-        with capture_out() as out, pytest.raises(FlakyStrategyDefinition):
-            FlakyTimeStateMachine.TestCase().runTest()
-        return out.getvalue()
-
-    if observability:
-        with capture_observations():
-            output = run()
-        assert "Steps leading up to this error" in output
-    else:
-        output = run()
-        assert "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY=1" in output
+    with capture_out() as out, pytest.raises(FlakyStrategyDefinition):
+        FlakyTimeStateMachine.TestCase().runTest()
+    assert "Steps leading up to this error" in out.getvalue()
