@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.1:
+
+--------------------
+6.153.1 - 2026-05-27
+--------------------
+
+This patch fixes a bug where we emitted incorrect git patch files when one file did not have a trailing newline (:issue:`4744`).
+
 .. _v6.153.0:
 
 --------------------
