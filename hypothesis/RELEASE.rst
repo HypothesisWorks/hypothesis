@@ -1,6 +1,6 @@
 RELEASE_TYPE: patch
 
-This patch speeds up shrinking of collections such as :func:`~hypothesis.strategies.lists`,
-by deleting contiguous runs of elements adaptively.  Removing a run of ``n``
-deletable elements now takes ``O(log(n))`` internal test calls rather than
-``O(n)``.
+This patch updates internal documentation of the shrinker - the ``internals``
+contributor guide and a stale code comment - to describe the typed choice
+sequence, replacing outdated references to the older byte-buffer
+representation.  There is no user-visible change.

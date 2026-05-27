@@ -1294,17 +1294,18 @@ class Shrinker:
         return False
 
     def remove_discarded(self):
-        """Try removing all bytes marked as discarded.
+        """Try removing all nodes marked as discarded.
 
         This is primarily to deal with data that has been ignored while
         doing rejection sampling - e.g. as a result of an integer range, or a
         filtered strategy.
 
-        Such data will also be handled by the adaptive_example_deletion pass,
-        but that pass is necessarily more conservative and will try deleting
-        each interval individually. The common case is that all data drawn and
-        rejected can just be thrown away immediately in one block, so this pass
-        will be much faster than trying each one individually when it works.
+        Such data will also be handled by the ``node_program("X")`` deletion
+        passes, but those are necessarily more conservative and will try
+        deleting each contiguous run of nodes individually. The common case is
+        that all data drawn and rejected can just be thrown away immediately in
+        one block, so this pass will be much faster than trying each one
+        individually when it works.
 
         returns False if there is discarded data and removing it does not work,
         otherwise returns True.

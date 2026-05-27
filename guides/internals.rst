@@ -16,52 +16,57 @@ Bird's Eye View Concepts
 The core engine of Hypothesis is called Conjecture.
 
 The "fundamental idea" of Conjecture is that you can represent an arbitrary
-randomized test case as the sequence of bytes read from the pseudo-random
-number generator (PRNG) that produced it.
-Whenever the test did something "random" it actually read the next bytes and
-did what they told it to do.
-But those bytes didn't *have* to come from a PRNG, and we can run the test
-given any byte sequence we like. By manipulating the choice of bytes, we can achieve
-more interesting effects than pure randomness would allow us to do, while
-retaining the power and ease of use of random testing.
+randomized test case as the sequence of *choices* made while producing it.
+Whenever the test does something "random" it instead draws the next choice from
+the sequence and does what it says. Each choice is one of a small number of
+typed primitives - an integer, float, boolean, string, or bytestring - and
+corresponds to one of the ``draw_*`` methods on ``ConjectureData``. We call this
+typed sequence the *choice sequence* (older parts of the codebase and history
+may refer to it as the "IR", for intermediate representation).
+
+These choices don't *have* to come from a PRNG, and we can run the test given
+any choice sequence we like. By manipulating the choices, we can achieve more
+interesting effects than pure randomness would allow us to do, while retaining
+the power and ease of use of random testing. (Historically Conjecture worked
+directly on the underlying byte sequence read from the PRNG; it now works on the
+typed choice sequence instead, which shrinks far better because we no longer
+have to reason about the encoding of each value into bytes.)
 
 The greatest strength of this idea is that we have a single source of truth
-for what an example should look like: Every byte sequence is one that *could*
-have come from a PRNG, and thus is a valid thing to try for our test.
-The only ways it can fail to be a valid test input are for it to be too short
-or for it to not satisfy one of the test's preconditions, and both are easily
-detectable.
+for what an example should look like: Every choice sequence is one that *could*
+have been produced by drawing from strategies, and thus is a valid thing to try
+for our test. The only ways it can fail to be a valid test input are for it to
+be too short or for it to not satisfy one of the test's preconditions, and both
+are easily detectable.
 
 The idea of shrinking in particular is that once we have this representation,
-we can shrink arbitrary test cases based on it. We try to produce a string that
-is *shortlex minimal*. What this means is that it has the shortest possible
-length and among those strings of minimal length is lexicographically (i.e. the
-normal order on strings - find the first byte at which they differ and use that
-to decide) smallest.
+we can shrink arbitrary test cases based on it. We try to produce a choice
+sequence that is *shortlex minimal*. What this means is that it has the shortest
+possible length and among those sequences of minimal length is the smallest by
+comparing choices one at a time from the left (see ``sort_key`` in
+``shrinker.py``, which orders each choice by ``choice_to_index``).
 
 Ideally we could think of the shrinker as a generic function that takes a
-string satisfying some predicate and returns the shortlex minimal string that
-also satisfies it.
+choice sequence satisfying some predicate and returns the shortlex minimal
+sequence that also satisfies it.
 
 We depart from this ideal in two ways:
 
-* we can only *approximate* such a minimal string. Finding the actual minimum is
-  intractable in general.
+* we can only *approximate* such a minimal sequence. Finding the actual minimum
+  is intractable in general.
 * we are only interested in minimizing things where the predicate goes through
   the Hypothesis API, which lets us track how the data is used and use that to
   guide the process.
 
-We then use a number of different transformations of the string to try and
-reduce our input. These vary from principled general transformations to shameless
-hacks that special case something we need to work well.
+We then use a number of different transformations of the choice sequence to try
+and reduce our input. These vary from principled general transformations to
+shameless hacks that special case something we need to work well.
 
-One such example of a hack is the handling of floating point numbers. There are
-a couple of lexicographic shrinks that are always valid but only really make
-sense for our particular encoding of floats. We check if we're working
-on something that is of the right size to be a float and apply those
-transformations regardless of whether it is actually meant to be a float.
-Worst case scenario it's not a float and they don't work, and we've run a few
-extra test cases.
+One such example is the handling of floating point numbers. Floats are drawn as
+a single choice, but have their own dedicated shrinker (in
+``shrinking/floats.py``) which knows about our lexicographic encoding of floats
+and tries shrinks - such as dropping fractional digits or moving to a nearby
+integer - that only make sense for that encoding.
 
 --------------------------
 Useful Files to Know About
@@ -73,15 +78,17 @@ There are a number of files in there,
 but the most important ones are ``engine.py`` and ``data.py``.
 ``data.py`` defines the core type that is used to represent test cases,
 and ``engine.py`` contains the main driver for deciding what test cases to run.
+``shrinker.py`` contains the shrinker proper, described below.
 
-There is also ``minimizer.py``, which contains a general purpose lexicographic
-minimizer. This is responsible for taking some byte string and a predicate over
-byte strings and producing a string of the same length which is lexicographically
-smaller. Unlike the shrinker in general, this *is* supposed to work on arbitrary
-predicates and doesn't know anything about the testing API. We typically apply
-this to subsets of the bytes for a test input with a predicate that knows how
-to integrate those subsets into a larger test. This is the part of the code
-that means we can do things like replacing an integer with a smaller one.
+There is also the ``shrinking/`` package, which contains a collection of
+small, general purpose shrinkers for individual values - ``Integer``,
+``Float``, ``String``, ``Bytes``, ``Collection``, and ``Ordering``. Each takes
+a single value and a predicate over values and tries to produce a simpler value
+satisfying it. Unlike the shrinker in general these don't know anything about
+the testing API; the shrinker drives them with a predicate that knows how to
+substitute a candidate value back into the full choice sequence and rerun the
+test. This is the part of the code that means we can do things like replacing an
+integer with a smaller one.
 
 -------
 Testing
@@ -155,10 +162,9 @@ example:
 .. code-block:: python
 
         i = 0
-        while i < len(self.intervals):
-            u, v = self.intervals[i]
-            if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
+        while i < len(self.shrink_target.nodes):
+            if not self.consider_new_nodes(
+                self.shrink_target.nodes[:i] + self.shrink_target.nodes[i + 1 :]
             ):
                 i += 1
 
@@ -166,18 +172,18 @@ The more natural way to write this in Python would be:
 
 .. code-block:: python
 
-        for u, v in self.intervals:
-            self.incorporate_new_buffer(
-                self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
+        for i in range(len(self.shrink_target.nodes)):
+            self.consider_new_nodes(
+                self.shrink_target.nodes[:i] + self.shrink_target.nodes[i + 1 :]
             )
 
 This is not equivalent in this case, and would exhibit the wrong behaviour.
 
-Every time ``incorporate_new_buffer`` succeeds, it changes the shape of the
-current shrink target. This consequently changes the shape of intervals, both
-its particular values and its current length - on each loop iteration the loop
-might stop either because ``i`` increases or because ``len(self.intervals)``
-decreases.
+Every time ``consider_new_nodes`` succeeds, it changes the shape of the
+current shrink target. This consequently changes the shape of the choice
+sequence, both its particular values and its current length - on each loop
+iteration the loop might stop either because ``i`` increases or because
+``len(self.shrink_target.nodes)`` decreases.
 
 We do not reset ``i`` to zero on success, as this would cause us to retry deleting
 things that we have already tried. This *might* work, but is less likely to.
@@ -186,14 +192,14 @@ retry the entire prefix uselessly, which can result in a pass taking O(n^2) time
 to do O(n) deletions.
 
 An additional quirk is that we only increment ``i`` on failure. The reason for
-this is that if we successfully deleted the current interval then the interval
-in position ``i`` has been replaced with something else, which is probably the
+this is that if we successfully deleted the choice at position ``i`` then the
+node now in position ``i`` is whatever used to follow it, which is probably the
 next thing we would have tried deleting if we hadn't succeeded (or something
 like it), so we don't want to advance past it.
 This is specific to deletion: If we are just replacing the contents of
 something then we expect it to still be in the same place, so there we increment
 unconditionally.
-Examples of this include ``zero_draws`` and ``minimize_individual_blocks``.
+Examples of this include ``try_trivial_spans`` and ``minimize_individual_choices``.
 
 ------------
 The Shrinker
@@ -273,20 +279,19 @@ A useful trick that some of the shrink passes use is to try a thing and if it
 doesn't work take a look at what the test function did to guess *why* it didn't
 work and try to repair that.
 
-Two example such passes are ``zero_examples`` and the various passes that try to
-minimize individual blocks lexicographically.
+The main example is ``try_shrinking_nodes``, which is used by the passes that
+minimize individual choices. When it lowers one or more choices and the result
+doesn't satisfy the predicate, it inspects what the test function did:
 
-What happens in ``zero_examples`` is that we try replacing the region corresponding
-to a draw with all zero bytes. If that doesn't work, we check if that was because
-of changing the size of the example (e.g. doing that with a list will make the
-list much shorter) and messing up the byte stream after that point. If this
-was what happened then we try again with a sequence of zeroes that corresponds
-to the size of the draw call in the version we tried that didn't work.
-
-The logic for what we do with block minimization is in ``try_shrinking_blocks``.
-When it tries shrinking a block and it doesn't work, it checks if the sized
-changed. If it does then it tries deleting the number of bytes that were lost
-immediately after the shrunk block to see if it helps.
+* If the attempt was *misaligned* - the test tried to draw a choice of a
+  different type or size than the one we substituted, which commonly happens
+  when an earlier choice controls the size of a later collection - it tries to
+  realign the tree, for example by truncating a string to the size the test
+  actually asked for.
+* Otherwise, if the attempt lost some nodes (e.g. lowering a value made a
+  following list shorter), it tries deleting the corresponding region of the
+  choice sequence immediately after the lowered choice to see if that repairs
+  the shape.
 
 
 --------------
@@ -300,7 +305,7 @@ of your data is, and how the shrink process transforms it.
 In particular, it is often useful to run a test with the flag ``-s`` to tell it
 not to hide output and the environment variable ``HYPOTHESIS_VERBOSITY_LEVEL=debug``.
 This will give you a very detailed log of what the testing process is running,
-along with information about what passes in the shrinker rare running and how
+along with information about what passes in the shrinker are running and how
 they transform it.
 
 ---------------
