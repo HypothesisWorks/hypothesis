@@ -491,10 +491,12 @@ class Shrinker:
         self.explain()
 
     def explain(self) -> None:
-
         if not self.should_explain or not self.shrink_target.arg_slices:
             return
+        with self.engine._log_phase_statistics("explain"):
+            self._explain()
 
+    def _explain(self) -> None:
         self.max_stall = 2**100
         shrink_target = self.shrink_target
         nodes = self.nodes

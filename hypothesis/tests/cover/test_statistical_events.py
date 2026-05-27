@@ -16,6 +16,7 @@ import pytest
 
 from hypothesis import (
     HealthCheck,
+    Phase,
     assume,
     event,
     example,
@@ -183,6 +184,21 @@ def test_has_lambdas_in_output():
 
     stats = call_for_statistics(test)
     assert any("lambda x: x % 2 == 0" in e for e in unique_events(stats))
+
+
+def test_explain_phase_is_separate_from_shrink_phase():
+    @settings(phases=[Phase.generate, Phase.shrink, Phase.explain], derandomize=True)
+    @given(st.integers(min_value=0), st.integers(min_value=0))
+    def test(a, b):
+        assert a < 100
+
+    stats = call_for_statistics(test)
+    # The explain phase varies the freely-changeable ``b`` argument, so its
+    # test cases land in their own bucket rather than inflating the shrink phase.
+    assert stats["explain-phase"]["test-cases"]
+    described = describe_statistics(stats)
+    assert "during shrink phase" in described
+    assert "during explain phase" in described
 
 
 def test_stops_after_x_shrinks(monkeypatch):
