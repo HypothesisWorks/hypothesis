@@ -130,6 +130,9 @@ def test_can_access_strategy_for_wrapped_test():
         ([b"dd", b"cc", b"bb", b"aa"], 4),  # descending -> saves all
         ([b"cc", b"dd", b"aa", b"bb"], 2),  # sawtooth -> saves cc then aa
         ([b"aa", b"bb", b"cc", b"XX"], 2),  # two distinct errors -> saves both
+        # distinct errors are tracked per interesting_origin, so the second is
+        # saved even though it's larger than the first (see #4420).
+        ([b"XX", b"yy"], 2),
     ],
 )
 def test_fuzz_one_input_does_not_add_redundant_entries_to_database(buffers, db_size):

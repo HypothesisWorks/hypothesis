@@ -2328,7 +2328,11 @@ def given(
                 except UnsatisfiedAssumption:
                     status = Status.INVALID
                     return None
-                except BaseException:
+                except BaseException as e:
+                    # The engine sets data.interesting_origin in
+                    # _execute_once_for_engine, but fuzz_one_input calls
+                    # execute_once directly, so we replicate it here.
+                    data.interesting_origin = InterestingOrigin.from_exception(e)
                     known = minimal_failures.get(data.interesting_origin)
                     if settings.database is not None and (
                         known is None or sort_key(data.nodes) <= sort_key(known)

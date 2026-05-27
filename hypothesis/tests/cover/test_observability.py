@@ -370,6 +370,24 @@ def test_fuzz_one_input_status(buffer, expected_status):
     assert ls[0].how_generated == "fuzz_one_input"
 
 
+def test_fuzz_one_input_sets_interesting_origin():
+    # fuzz_one_input calls execute_once directly, bypassing the engine code
+    # which sets data.interesting_origin, so it must do so itself (see #4420).
+    @given(st.booleans())
+    def test_fails(b):
+        raise AssertionError
+
+    with capture_observations() as ls, pytest.raises(AssertionError):
+        test_fails.hypothesis.fuzz_one_input(bytes([255]))
+
+    (observation,) = ls
+    assert observation.status == "failed"
+    origin = observation.metadata.interesting_origin
+    assert origin is not None
+    assert origin.exc_type is AssertionError
+    assert observation.status_reason == str(origin)
+
+
 def _decode_choice(value):
     if isinstance(value, list):
         if value[0] == "integer":
