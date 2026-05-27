@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.3:
+
+--------------------
+6.153.3 - 2026-05-27
+--------------------
+
+This patch fixes a bug where :func:`~hypothesis.strategies.decimals` with the
+``places`` argument could generate values outside the ``min_value`` and
+``max_value`` bounds, when those bounds had more fractional digits than
+``places`` (:issue:`4651`).
+
 .. _v6.153.2:
 
 --------------------
