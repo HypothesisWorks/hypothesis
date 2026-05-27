@@ -12,9 +12,10 @@ import math
 import sys
 
 from hypothesis.internal.conjecture.floats import float_to_lex
+from hypothesis.internal.conjecture.junkdrawer import find_integer
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
-from hypothesis.internal.floats import MAX_PRECISE_INTEGER, float_to_int
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER, float_to_int, int_to_float
 
 
 class Float(Shrinker):
@@ -51,14 +52,29 @@ class Float(Shrinker):
             return True
 
     def run_step(self):
-        # above MAX_PRECISE_INTEGER, all floats are integers. Shrink like one.
-        # TODO_BETTER_SHRINK: at 2 * MAX_PRECISE_INTEGER, n - 1 == n - 2, and
-        # Integer.shrink will likely perform badly. We should have a specialized
-        # big-float shrinker, which mostly follows Integer.shrink but replaces
-        # n - 1 with next_down(n).
+        # Above MAX_PRECISE_INTEGER all floats are integers, but the gap between
+        # adjacent floats is > 1, so consecutive integers are not all
+        # representable. Integer.shrink would step by n - 1, which rounds straight
+        # back to n and stalls; we instead shrink on the float grid directly,
+        # halving for coarse progress and stepping by next_down for fine progress.
         if self.current > MAX_PRECISE_INTEGER:
-            self.delegate(Integer, convert_to=int, convert_from=float)
-            return
+            # Slash the magnitude fast by keeping only the top byte, mirroring
+            # Integer's short-circuit. This lands cross-boundary targets quickly.
+            i = int(self.current)
+            self.consider(float(i >> max(i.bit_length() - 8, 0)))
+            # Coarse: halve repeatedly (exact for floats; ldexp avoids overflow).
+            base = self.current
+            find_integer(lambda k: self.consider(math.ldexp(base, -k)))
+            if self.current > MAX_PRECISE_INTEGER:
+                # Fine: next_down(x) is a unit decrement of the integer
+                # bit-pattern, so we can step down the float grid by shrinking
+                # that offset, which find_integer does in O(log n) rather than
+                # the O(n) stall Integer.shrink hits when n - 1 rounds to n.
+                bits = float_to_int(self.current)
+                find_integer(
+                    lambda k: k <= bits and self.consider(int_to_float(bits - k))
+                )
+                return
 
         # Finally we get to the important bit: Each of these is a small change
         # to the floating point number that corresponds to a large change in

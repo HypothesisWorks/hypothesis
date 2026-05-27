@@ -15,10 +15,12 @@ import pytest
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
     Collection,
+    Float,
     Integer,
     Ordering,
     String,
 )
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 from hypothesis.internal.intervalsets import IntervalSet
 
 
@@ -95,3 +97,21 @@ def test_collection_left_is_better():
         [1, 2, 3], lambda v: True, ElementShrinker=Integer, min_size=3
     )
     assert not shrinker.left_is_better([1, 2, 3], [1, 2, 3])
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        2.0**54,
+        2.0**60,
+        1.5 * 2**58,  # not a power of two: the float grid is coarser than 1 here
+        2.0**53 + 2,  # just above the precise-integer boundary
+        1e300,
+    ],
+)
+def test_shrink_floats_above_max_precise_integer(target):
+    # Floats larger than MAX_PRECISE_INTEGER have a gap between adjacent values
+    # of more than 1, so shrinking must step on the float grid rather than the
+    # integers. We should still reach the minimal satisfying value.
+    assert target > MAX_PRECISE_INTEGER
+    assert Float.shrink(target * 4, lambda f: f >= target) == target
