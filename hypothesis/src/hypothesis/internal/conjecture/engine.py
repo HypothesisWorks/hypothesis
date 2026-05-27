@@ -401,8 +401,9 @@ class ConjectureRunner:
             elapsed = time.perf_counter() - start_time
             # A phase can be entered more than once (the explain phase runs once
             # per shrinking target), so accumulate into any existing bucket.
-            stats = self.statistics.setdefault(  # type: ignore
-                phase + "-phase", {"duration-seconds": 0.0, "test-cases": []}
+            stats = self.statistics.setdefault(
+                phase + "-phase",  # type: ignore
+                {"duration-seconds": 0.0, "test-cases": []},
             )
             stats["duration-seconds"] += elapsed - self._nested_phase_seconds
             stats["test-cases"] += self.stats_per_test_case
