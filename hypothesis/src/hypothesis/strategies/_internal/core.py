@@ -87,6 +87,7 @@ from hypothesis.internal.conjecture.utils import (
     calc_label_from_name,
     check_sample,
     combine_labels,
+    fisher_yates_shuffle,
     identity,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
@@ -1942,13 +1943,8 @@ class PermutationStrategy(SearchStrategy):
         self.values = values
 
     def do_draw(self, data):
-        # Reversed Fisher-Yates shuffle: swap each element with itself or with
-        # a later element.  This shrinks i==j for each element, i.e. to no
-        # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
-        for i in range(len(result) - 1):
-            j = data.draw_integer(i, len(result) - 1)
-            result[i], result[j] = result[j], result[i]
+        fisher_yates_shuffle(data, result)
         return result
 
 

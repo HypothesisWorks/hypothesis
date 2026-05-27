@@ -975,8 +975,8 @@ def _fixeddict_pprinter(
             return p.text("{...}")
 
         get = lambda k: _get_slice_comment(p, arg_labels, k)
-        # Preserve mapping key order, then any optional keys (deduped)
-        keys = list(dict.fromkeys(k for k in [*mapping, *obj] if k in obj))
+        # Print in the dict's actual (possibly permuted) iteration order.
+        keys = list(obj)
         has_comments = any(get(k) for k in keys)
 
         with p.group(indent=4, open="{", close=""):
