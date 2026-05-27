@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.6:
+
+--------------------
+6.153.6 - 2026-05-27
+--------------------
+
+The ``--hypothesis-show-statistics`` report now accounts for the
+|Phase.explain| phase separately, rather than including its runtime and test
+cases in the |Phase.shrink| phase (:issue:`4179`).
+
 .. _v6.153.5:
 
 --------------------
