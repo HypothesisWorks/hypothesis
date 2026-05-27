@@ -12,6 +12,7 @@ import abc
 import builtins
 import collections
 import contextlib
+import dataclasses
 import datetime
 import enum
 import inspect
@@ -47,7 +48,7 @@ from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
-from hypothesis.strategies._internal import types
+from hypothesis.strategies._internal import core, types
 
 from tests.common.debug import (
     assert_all_examples,
@@ -917,6 +918,48 @@ class AbstractBar(abc.ABC):
 @given(st.from_type(AbstractBar))
 def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
     raise AssertionError("test body unreachable as strategy cannot resolve")
+
+
+def test_resolving_mutually_recursive_abstract_subclasses_is_efficient(monkeypatch):
+    # regression test for #4729
+
+    class Stmt(abc.ABC):
+        @abc.abstractmethod
+        def f(self) -> str: ...
+
+    # A leaf subclass gives the recursion a base case so generation can terminate.
+    Leaf = dataclasses.make_dataclass(
+        "Leaf", [("v", int)], bases=(Stmt,), namespace={"f": lambda self: ""}
+    )
+    n = 15
+    # Keep a reference to the subclasses so they aren't garbage-collected (which
+    # would remove them from Stmt.__subclasses__()) before we resolve the type.
+    subclasses = [Leaf] + [
+        dataclasses.make_dataclass(
+            f"S{i}",
+            [("a", Stmt), ("b", typing.Optional[Stmt])],
+            bases=(Stmt,),
+            namespace={"f": lambda self: ""},
+        )
+        for i in range(n)
+    ]
+    assert set(Stmt.__subclasses__()) == set(subclasses)
+
+    calls = 0
+    real_get_type_hints = core.get_type_hints
+
+    def counting_get_type_hints(thing):
+        nonlocal calls
+        calls += 1
+        return real_get_type_hints(thing)
+
+    monkeypatch.setattr(core, "get_type_hints", counting_get_type_hints)
+    st.from_type(Stmt).validate()
+    assert n <= calls < 50 * n
+
+    # ...while still resolving to every subclass, including recursive ones.
+    find_any(st.from_type(Stmt), lambda x: isinstance(x, Leaf))
+    find_any(st.from_type(Stmt), lambda x: not isinstance(x, Leaf))
 
 
 def test_type_with_unresolvable_forward_reference_fails():
