@@ -50,7 +50,7 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
-from hypothesis.strategies._internal.featureflags import FeatureStrategy
+from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
     OneOfStrategy,
@@ -1098,13 +1098,30 @@ class RuleStrategy(SearchStrategy):
     def __init__(self, machine: RuleBasedStateMachine) -> None:
         super().__init__()
         self.machine = machine
-        self.rules = machine.rules.copy()
+        self.rules, rule_names, self.rules_strategy = self._setup_for(type(machine))
 
         self.enabled_rules_strategy = st.shared(
-            FeatureStrategy(at_least_one_of={r.function.__name__ for r in self.rules}),
+            FeatureStrategy(at_least_one_of=rule_names),
             key=("enabled rules", machine),
         )
 
+        # Reuse a single filtered strategy across steps instead of rebuilding it
+        # each time. Rebuilding forced a recompute of the (uncached) sampled_from
+        # label, which is O(number of rules) per step. The filter predicate reads
+        # the feature flags set by do_draw on each step.
+        self._feature_flags: FeatureFlags | None = None
+        self._enabled_rules_strategy = self.rules_strategy.filter(self._rule_is_enabled)
+
+    @classmethod
+    @lru_cache
+    def _setup_for(
+        cls, machine_type: type[RuleBasedStateMachine]
+    ) -> tuple[list["Rule"], frozenset[str], SearchStrategy]:
+        # Cache (per machine class) the work of sorting the rules and building
+        # the sampled_from strategy, which is O(number of rules) and would
+        # otherwise be repeated every time the machine is instantiated; see
+        # https://github.com/HypothesisWorks/hypothesis/issues/4465.
+        rules = machine_type.setup_state().rules.copy()
         # The order is a bit arbitrary. Primarily we're trying to group rules
         # that write to the same location together, and to put rules with no
         # target first as they have less effect on the structure. We order from
@@ -1112,17 +1129,28 @@ class RuleStrategy(SearchStrategy):
         # data. This probably won't work especially well and we could be
         # smarter about it, but it's better than just doing it in definition
         # order.
-        self.rules.sort(
+        rules.sort(
             key=lambda rule: (
                 sorted(rule.targets),
                 len(rule.arguments),
                 rule.function.__name__,
             )
         )
-        self.rules_strategy = st.sampled_from(self.rules)
+        rule_names = frozenset(r.function.__name__ for r in rules)
+        return (rules, rule_names, st.sampled_from(rules))
 
     def __repr__(self):
         return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
+
+    def _rule_is_enabled(self, r):
+        # Note: The order of the filters here is actually quite important,
+        # because checking is_enabled makes choices, so increases the size of
+        # the choice sequence. This means that if we are in a case where many
+        # rules are invalid we would make a lot more choices if we ask if they
+        # are enabled before we ask if they are valid, so our test cases would
+        # be artificially large.
+        assert self._feature_flags is not None
+        return self.is_valid(r) and self._feature_flags.is_enabled(r.function.__name__)
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
@@ -1133,18 +1161,8 @@ class RuleStrategy(SearchStrategy):
             )
             raise InvalidDefinition(msg) from None
 
-        feature_flags = data.draw(self.enabled_rules_strategy)
-
-        def rule_is_enabled(r):
-            # Note: The order of the filters here is actually quite important,
-            # because checking is_enabled makes choices, so increases the size of
-            # the choice sequence. This means that if we are in a case where many
-            # rules are invalid we would make a lot more choices if we ask if they
-            # are enabled before we ask if they are valid, so our test cases would
-            # be artificially large.
-            return self.is_valid(r) and feature_flags.is_enabled(r.function.__name__)
-
-        rule = data.draw(self.rules_strategy.filter(rule_is_enabled))
+        self._feature_flags = data.draw(self.enabled_rules_strategy)
+        rule = data.draw(self._enabled_rules_strategy)
 
         arguments = {}
         for k, strat in rule.arguments_strategies.items():
