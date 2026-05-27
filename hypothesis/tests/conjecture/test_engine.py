@@ -536,19 +536,17 @@ def test_can_shrink_variable_string_draws():
 
     s = minimal(strategy(), lambda s: len(s) >= 10 and "a" in s)
 
-    # TODO_BETTER_SHRINK: this should be
-    # assert s == "0" * 9 + "a"
-    # but we first shrink to having a single a at the end of the string and then
-    # fail to apply our special case invalid logic when shrinking the min_size n,
-    # because that logic removes from the end of the string (which fails our
-    # precondition).
-    assert re.match("0+a", s)
+    # Lowering n misaligns the over-long recorded string; try_shrinking_nodes
+    # repairs this by truncating, preserving content from the right so the
+    # trailing "a" survives.
+    assert s == "0" * 9 + "a"
 
 
 def test_variable_size_string_increasing():
-    # coverage test for min_size increasing during shrinking (because the test
-    # function inverts n).
-    # ...except this currently overruns instead and misses that check.
+    # Here the test function inverts n, so lowering the integer choice *increases*
+    # the string's min_size. We don't try to repair that (it would require both
+    # raising the controlling choice and guessing what to pad with), so this stays
+    # suboptimal.
     @st.composite
     def strategy(draw):
         n = 10 - draw(st.integers(0, 10))
@@ -557,8 +555,24 @@ def test_variable_size_string_increasing():
     s = minimal(strategy(), lambda s: len(s) >= 5 and "a" in s)
     # TODO_BETTER_SHRINK: this should be
     # assert s == "0000a"
-    # but instead shrinks to 00000000a.
+    # but instead shrinks to a longer string of zeros plus a trailing "a".
     assert re.match("0+a", s)
+
+
+def test_can_shrink_variable_string_draws_with_dependent_overrun():
+    # As above, but a boring (realigned-away) string causes the test function to
+    # draw much more, overrunning before we see the realignment. We re-run without
+    # the length limit to recover it and still shrink to the minimal example.
+    @st.composite
+    def strategy(draw):
+        n = draw(st.integers(min_value=0, max_value=20))
+        s = draw(st.text(st.characters(codec="ascii"), min_size=n, max_size=n))
+        if "a" not in s:
+            draw(st.lists(st.integers(), min_size=30, max_size=30))
+        return s
+
+    s = minimal(strategy(), lambda s: len(s) >= 8 and "a" in s)
+    assert s == "0" * 7 + "a"
 
 
 def test_run_nothing():
