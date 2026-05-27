@@ -2,9 +2,6 @@
 The Hypothesis Documentation Handbook
 =====================================
 
-Note: Currently this guide is very specific to the *Python* version of Hypothesis.
-It needs updating for the Ruby version (and, in future, other versions).
-
 Good documentation can make the difference between good code and useful code -
 and Hypothesis is written to be used, as widely as possible.
 
@@ -56,11 +53,7 @@ where every pull request that touches ``./src`` results in a new release.
 That means every contributor gets to write their changelog!
 
 A changelog entry should be written in a new ``RELEASE.rst`` file in
-the `hypothesis-python` directory, or ``RELEASE.md`` for the Ruby and Rust
-versions.  Note that any change to ``conjecture-rust`` is automatically also
-a change for our Ruby package, and therefore requires *two* release files!
-
-The first line of the file specifies the component
+the `hypothesis-python` directory. The first line of the file specifies the component
 of the version number that will be updated, according to our
 `semantic versioning <https://semver.org/>`_ policy.
 

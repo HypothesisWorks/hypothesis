@@ -15,9 +15,14 @@ import time
 import unicodedata
 from typing import get_args
 
+import pytest
+
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
+
+from tests.common.utils import skipif_threading
 
 
 def test_charmap_contains_all_unicode():
@@ -67,6 +72,8 @@ def test_query_matches_categories_codepoints(cats, m1, m2):
         assert v <= m2
 
 
+# any test which sets `_charmap = None` is thread-unsafe.
+@skipif_threading
 def test_reload_charmap():
     x = cm.charmap()
     assert x is cm.charmap()
@@ -76,6 +83,7 @@ def test_reload_charmap():
     assert x == y
 
 
+@skipif_threading
 def test_recreate_charmap():
     x = cm.charmap()
     assert x is cm.charmap()
@@ -86,6 +94,24 @@ def test_recreate_charmap():
     assert x == y
 
 
+# This test fails flakily (every 1 in ~10 full CI runs), but only on the test-pyodide
+# ci job:
+#
+#      os.utime(cm.charmap_file(), (mtime, mtime))
+#      ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#   FileNotFoundError: [Errno 44] No such file or directory:
+#   '/home/runner/work/hypothesis/hypothesis/.hypothesis/unicode_data/15.1.0/charmap.json.gz'
+#
+# I suspect this is from a race condition due to how we parallelize the pyodide
+# tests in CI, (splitting test files across 20 processes). It's also possible
+# it's from some pyodide-specific weirdness, but since the test only fails sometimes,
+# I find this less likely.
+#
+# I'm xfailing this on emscripten for now, to get a consistent green CI.
+@pytest.mark.xfail(
+    condition=sys.platform == "emscripten", strict=False, reason="see comment"
+)
+@skipif_threading
 def test_uses_cached_charmap():
     cm.charmap()
 
@@ -133,6 +159,7 @@ def test_successive_union():
     assert x == ((0, sys.maxunicode),)
 
 
+@skipif_threading
 def test_can_handle_race_between_exist_and_create(monkeypatch):
     x = cm.charmap()
     cm._charmap = None
@@ -142,6 +169,7 @@ def test_can_handle_race_between_exist_and_create(monkeypatch):
     assert x == y
 
 
+@skipif_threading
 def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     def broken(*args, **kwargs):
         raise ValueError
@@ -154,6 +182,7 @@ def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     cm.charmap()
 
 
+@skipif_threading
 def test_regenerate_broken_charmap_file():
     cm.charmap()
 
@@ -163,10 +192,16 @@ def test_regenerate_broken_charmap_file():
     cm.charmap()
 
 
+def test_query_rejects_min_codepoint_greater_than_max():
+    with pytest.raises(InvalidArgument):
+        cm.query(min_codepoint=1, max_codepoint=0)
+
+
 def test_exclude_characters_are_included_in_key():
     assert cm.query().intervals != cm.query(exclude_characters="0").intervals
 
 
+@skipif_threading
 def test_error_writing_charmap_file_is_suppressed(monkeypatch):
     def broken_mkstemp(dir):
         raise RuntimeError

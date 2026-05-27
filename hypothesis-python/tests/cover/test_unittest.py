@@ -26,9 +26,8 @@ class Thing_with_a_subThing(unittest.TestCase):
     @given(st.tuples(st.booleans(), st.booleans()))
     def thing(self, lst):
         for i, b in enumerate(lst):
-            with pytest.warns(HypothesisWarning):
-                with self.subTest((i, b)):
-                    self.assertTrue(b)
+            with pytest.warns(HypothesisWarning), self.subTest((i, b)):
+                self.assertTrue(b)
 
 
 def test_subTest():

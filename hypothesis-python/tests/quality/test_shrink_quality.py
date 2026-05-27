@@ -177,27 +177,26 @@ def test_dictionary(dict_class):
 
 
 def test_minimize_single_element_in_silly_large_int_range():
-    ir = integers(-(2**256), 2**256)
-    assert minimal(ir, lambda x: x >= -(2**255)) == 0
+    assert minimal(integers(-(2**256), 2**256), lambda x: x >= -(2**255)) == 0
 
 
 def test_minimize_multiple_elements_in_silly_large_int_range():
-    desired_result = [0] * 20
-
-    ir = integers(-(2**256), 2**256)
-    x = minimal(lists(ir), lambda x: len(x) >= 20, settings(max_examples=10_000))
-    assert x == desired_result
+    actual = minimal(
+        lists(integers(-(2**256), 2**256)),
+        lambda x: len(x) >= 20,
+        settings(max_examples=10_000),
+    )
+    assert actual == [0] * 20
 
 
 def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
-    ir = integers(0, 2**256)
     target = list(range(20))
 
-    x = minimal(
-        lists(ir),
+    actual = minimal(
+        lists(integers(0, 2**256)),
         lambda x: (assume(len(x) >= 20) and all(x[i] >= target[i] for i in target)),
     )
-    assert x == target
+    assert actual == target
 
 
 def test_find_large_union_list():
@@ -537,4 +536,58 @@ def test_nasty_string_shrinks():
     assert (
         minimal(st.text(), lambda s: "𝕿𝖍𝖊" in s, settings=settings(max_examples=10000))
         == "𝕿𝖍𝖊"
+    )
+
+
+def test_shrink_text_differs_from_lower_to_ascii():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4725
+    # Text shrinking would previously sometimes get stuck on a high-codepoint
+    # accented letter such as 'À' instead of converging to 'A'.
+    assert minimal(st.text(min_size=1), lambda s: s != s.lower()) == "A"
+
+
+def test_shrink_text_differs_from_upper_to_ascii():
+    assert minimal(st.text(min_size=1), lambda s: s != s.upper()) == "a"
+
+
+def test_shrink_strips_accent_to_ascii_letter():
+    # Removing the accent from any accented latin letter should shrink that
+    # letter to its base ascii form.
+    assert minimal(st.text(min_size=1), lambda s: "e" in s.lower() or "E" in s) == "E"
+
+
+def test_shrink_decomposes_compatibility_form_to_ascii():
+    # A character that NFKD-decomposes to an ascii letter (eg a Mathematical
+    # Bold Capital T, or a ligature) should reduce to that base letter when
+    # the predicate also matches the base letter.
+    assert (
+        minimal(st.text(min_size=1), lambda s: any(c.lower() == "t" for c in s)) == "T"
+    )
+
+
+def test_shrink_ligature_to_base_character():
+    # The ligature ﬁ NFKD-decomposes to "fi"; when the predicate accepts any
+    # 'f' character, we should reduce to plain "F".
+    assert (
+        minimal(st.text(min_size=1), lambda s: any(c.lower() == "f" for c in s)) == "F"
+    )
+
+
+def test_bound5():
+    # redistribute_numeric_pairs should work for negative integers too
+    bounded_ints = st.lists(st.integers(-100, 0), max_size=1)
+
+    s = st.tuples(
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+        bounded_ints,
+    )
+    assert minimal(s, lambda v: sum(sum(v, []), 0) < -150) == (
+        [],
+        [],
+        [],
+        [-51],
+        [-100],
     )

@@ -167,7 +167,7 @@ All of it will be checked on CI so you don't *have* to run anything locally, but
 find it useful to do so: A full CI run can take up to twenty minutes,
 so running a smaller set of tests locally can be helpful.
 
-The build system should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
+The build system should be "fairly" portable, but is currently only known to work on Linux or macOS. It *might* work
 on a BSD or on Windows with cygwin installed, but it hasn't been tried.  Windows with WSL does work,
 as for Linux, and since OS-specific issues are rare for Hypothesis that's pretty useful.
 If you try it and find it doesn't work, please do submit patches to fix that.
@@ -240,5 +240,3 @@ Some useful arguments to pytest include:
   e.g. ``-k'foo and not bar'`` will run anything containing foo that doesn't
   also contain bar.  `More information on how to select tests to run can be found
   in the pytest documentation <https://docs.pytest.org/en/latest/usage.html#specifying-tests-selecting-tests>`__.
-
-

@@ -24,9 +24,9 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy
 
-from tests.common.utils import Why, no_shrink, xfail_on_crosshair
+from tests.common.utils import Why, no_shrink, skipif_time_unpatched, xfail_on_crosshair
 
 HEALTH_CHECK_SETTINGS = settings(
     max_examples=11, database=None, suppress_health_check=()
@@ -64,7 +64,9 @@ def test_default_health_check_can_weaken_specific():
     test()
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="nondeterministic")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="nondeterministic"
+)
 def test_suppressing_filtering_health_check():
     forbidden = set()
 
@@ -106,7 +108,6 @@ class fails_regularly(SearchStrategy):
     def do_draw(self, data):
         b = int_from_bytes(data.draw_bytes(2, 2))
         assume(b == 3)
-        print("ohai")
 
 
 def test_filtering_most_things_fails_a_health_check():
@@ -129,6 +130,7 @@ def test_returning_non_none_is_forbidden():
         a()
 
 
+@skipif_time_unpatched  # takes forever
 def test_the_slow_test_health_check_can_be_disabled():
     @given(st.integers())
     @settings(deadline=None)
@@ -138,6 +140,7 @@ def test_the_slow_test_health_check_can_be_disabled():
     a()
 
 
+@skipif_time_unpatched  # takes forever
 def test_the_slow_test_health_only_runs_if_health_checks_are_on():
     @given(st.integers())
     @settings(suppress_health_check=list(HealthCheck), deadline=None)
@@ -167,7 +170,7 @@ def test_it_is_an_error_to_suppress_non_iterables():
 
 def test_it_is_an_error_to_suppress_non_healthchecks():
     with pytest.raises(InvalidArgument):
-        settings(suppress_health_check=[1])
+        settings(suppress_health_check=["notahealthcheck"])
 
 
 class ReturningRuleMachine(RuleBasedStateMachine):

@@ -12,27 +12,32 @@ import codecs
 import copy
 import dataclasses
 import inspect
+import itertools
 import platform
 import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ForwardRef,
+    Optional,
+    TypedDict as TypedDict,
+    get_args,
+)
 
-try:
-    BaseExceptionGroup = BaseExceptionGroup
-    ExceptionGroup = ExceptionGroup  # pragma: no cover
-except NameError:
+if sys.version_info >= (3, 11):
+    BaseExceptionGroup = BaseExceptionGroup  # noqa: F821
+    ExceptionGroup = ExceptionGroup  # noqa: F821
+else:  # pragma: no cover
     from exceptiongroup import (
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing_extensions import (
-        Concatenate as Concatenate,
         NotRequired as NotRequired,
-        ParamSpec as ParamSpec,
-        TypeAlias as TypeAlias,
         TypedDict as TypedDict,
         override as override,
     )
@@ -42,7 +47,7 @@ else:
     # In order to use NotRequired, we need the version of TypedDict included in Python 3.11+.
     if sys.version_info[:2] >= (3, 11):
         from typing import NotRequired as NotRequired, TypedDict as TypedDict
-    else:
+    else:  # pragma: no cover
         try:
             from typing_extensions import (
                 NotRequired as NotRequired,
@@ -58,24 +63,15 @@ else:
 
     try:
         from typing import (
-            Concatenate as Concatenate,
-            ParamSpec as ParamSpec,
-            TypeAlias as TypeAlias,
             override as override,
         )
-    except ImportError:
+    except ImportError:  # pragma: no cover
         try:
             from typing_extensions import (
-                Concatenate as Concatenate,
-                ParamSpec as ParamSpec,
-                TypeAlias as TypeAlias,
                 override as override,
             )
         except ImportError:
-            Concatenate, ParamSpec = None, None
-            TypeAlias = None
             override = lambda f: f
-
 
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
@@ -87,7 +83,7 @@ FREE_THREADED_CPYTHON = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 def add_note(exc, note):
     try:
         exc.add_note(note)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         if not hasattr(exc, "__notes__"):
             try:
                 exc.__notes__ = []
@@ -100,7 +96,7 @@ def escape_unicode_characters(s: str) -> str:
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
 
-def int_from_bytes(data: typing.Union[bytes, bytearray]) -> int:
+def int_from_bytes(data: bytes | bytearray) -> int:
     return int.from_bytes(data, "big")
 
 
@@ -187,11 +183,12 @@ def get_type_hints(thing: object) -> dict[str, Any]:
                         for sig_hint, hint in zip(
                             _hint_and_args(p.annotation),
                             _hint_and_args(hints.get(p.name, Any)),
+                            strict=False,
                         )
                     ):
                         p_hint = hints[p.name]
                     if p.default is None:
-                        hints[p.name] = typing.Optional[p_hint]
+                        hints[p.name] = p_hint | None
                     else:
                         hints[p.name] = p_hint
     except (AttributeError, TypeError, NameError):  # pragma: no cover
@@ -220,7 +217,7 @@ def ceil(x):
     return y
 
 
-def extract_bits(x: int, /, width: Optional[int] = None) -> list[int]:
+def extract_bits(x: int, /, width: int | None = None) -> list[int]:
     assert x >= 0
     result = []
     while x:
@@ -254,6 +251,31 @@ def bad_django_TestCase(runner: Optional["ConjectureRunner"]) -> bool:
 # see issue #3812
 if sys.version_info[:2] < (3, 12):
 
+    def _asdict_inner(obj, dict_factory):
+        if dataclasses._is_dataclass_instance(obj):
+            return dict_factory(
+                (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
+                for f in dataclasses.fields(obj)
+            )
+        elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
+            return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
+        elif isinstance(obj, (list, tuple)):
+            return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+        elif isinstance(obj, dict):
+            if hasattr(type(obj), "default_factory"):
+                result = type(obj)(obj.default_factory)
+                for k, v in obj.items():
+                    result[_asdict_inner(k, dict_factory)] = _asdict_inner(
+                        v, dict_factory
+                    )
+                return result
+            return type(obj)(
+                (_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
+                for k, v in obj.items()
+            )
+        else:
+            return copy.deepcopy(obj)
+
     def dataclass_asdict(obj, *, dict_factory=dict):
         """
         A vendored variant of dataclasses.asdict. Includes the bugfix for
@@ -270,25 +292,18 @@ else:  # pragma: no cover
     dataclass_asdict = dataclasses.asdict
 
 
-def _asdict_inner(obj, dict_factory):
-    if dataclasses._is_dataclass_instance(obj):
-        return dict_factory(
-            (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
-            for f in dataclasses.fields(obj)
-        )
-    elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
-        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
-    elif isinstance(obj, (list, tuple)):
-        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif isinstance(obj, dict):
-        if hasattr(type(obj), "default_factory"):
-            result = type(obj)(obj.default_factory)
-            for k, v in obj.items():
-                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
-            return result
-        return type(obj)(
-            (_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
-            for k, v in obj.items()
-        )
-    else:
-        return copy.deepcopy(obj)
+if sys.version_info[:2] < (3, 13):
+    # batched was added in 3.12, strict flag in 3.13
+    # copied from 3.13 docs reference implementation
+
+    def batched(iterable, n, *, strict=False):
+        if n < 1:
+            raise ValueError("n must be at least one")
+        iterator = iter(iterable)
+        while batch := tuple(itertools.islice(iterator, n)):
+            if strict and len(batch) != n:  # pragma: no cover
+                raise ValueError("batched(): incomplete batch")
+            yield batch
+
+else:  # pragma: no cover
+    batched = itertools.batched

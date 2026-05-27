@@ -152,7 +152,7 @@ you could go:
   [Anatomy of a test](../anatomy-of-a-test/)
   article which will walk you through the steps in more detail.
 * If you'd like more examples of how to use it, check out the rest of the
-  [articles](/category/articles/).
+  [articles](/articles).
 
 But really the best way to learn more is to try to use it!
 As you've hopefully seen in this article, it's quite approachable to

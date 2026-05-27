@@ -4,3 +4,15 @@
 *.png binary
 *.jpg binary
 *.gif binary
+
+# track website/ media under LFS to avoid blowing up repo size
+website/**/*.png filter=lfs diff=lfs merge=lfs -text
+website/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+website/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+website/**/*.gif filter=lfs diff=lfs merge=lfs -text
+website/**/*.webp filter=lfs diff=lfs merge=lfs -text
+website/**/*.svg filter=lfs diff=lfs merge=lfs -text
+website/**/*.ico filter=lfs diff=lfs merge=lfs -text
+website/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+website/**/*.webm filter=lfs diff=lfs merge=lfs -text
+website/**/*.pdf filter=lfs diff=lfs merge=lfs -text

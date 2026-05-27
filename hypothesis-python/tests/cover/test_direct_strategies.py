@@ -13,13 +13,14 @@ import decimal
 import enum
 import fractions
 import math
+import warnings
 from datetime import date, datetime, time, timedelta
 from ipaddress import IPv4Network, IPv6Network
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import Phase, given, settings, strategies as st
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.vendor.pretty import pretty
 
 from tests.common.debug import check_can_generate_examples, minimal
@@ -86,6 +87,8 @@ def fn_ktest(*fnkwargs):
     (st.decimals, {"max_value": "inf", "allow_infinity": False}),
     (st.decimals, {"min_value": complex(1, 2)}),
     (st.decimals, {"min_value": "0.1", "max_value": "0.9", "places": 0}),
+    (st.decimals, {"min_value": fractions.Fraction(1, 3)}),
+    (st.decimals, {"max_value": fractions.Fraction(2, 3), "places": 1}),
     (
         st.dictionaries,
         {"keys": st.booleans(), "values": st.booleans(), "min_size": 10, "max_size": 1},
@@ -240,6 +243,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (st.decimals, {"max_value": 1.0, "min_value": -1.0, "allow_nan": False}),
     (st.decimals, {"min_value": "-inf"}),
     (st.decimals, {"max_value": "inf"}),
+    (st.decimals, {"min_value": fractions.Fraction(3, 20)}),
+    (st.decimals, {"max_value": fractions.Fraction(1, 8), "places": 10}),
     (st.fractions, {"min_value": -1, "max_value": 1, "max_denominator": 1000}),
     (st.fractions, {"min_value": 1, "max_value": 1}),
     (st.fractions, {"min_value": 1, "max_value": 1, "max_denominator": 2}),
@@ -438,7 +443,9 @@ def test_decimals():
     assert minimal(st.decimals(), lambda f: f.is_finite() and f >= 1) == 1
 
 
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(
+    Why.undiscovered
+)  # (SampledFromStrategy.calc_label() hashes a symbolic int)
 def test_non_float_decimal():
     minimal(st.decimals(), lambda d: d.is_finite() and decimal.Decimal(float(d)) != d)
 
@@ -581,3 +588,98 @@ def test_builds_error_messages(data):
         data.draw(st.builds(AnEnum))
     # and sampled_from() does in fact work
     data.draw(st.sampled_from(AnEnum))
+
+
+@pytest.mark.parametrize(
+    "strat_a,strat_b",
+    [
+        pytest.param(
+            st.integers(),
+            st.integers(0),
+            marks=pytest.mark.xfail(
+                # this is the exception raised by failed pytest.warns(),
+                # ref https://github.com/pytest-dev/pytest/issues/8928
+                raises=pytest.fail.Exception,
+                strict=True,
+                reason="constraints not checked",
+            ),
+        ),
+        (st.builds(int), st.builds(float)),
+        (st.none(), st.integers()),
+        (
+            st.composite(lambda draw: draw(st.none()))(),
+            st.composite(lambda draw: draw(st.integers()))(),
+        ),
+    ],
+)
+def test_incompatible_shared_strategies_warns(strat_a, strat_b):
+    shared_a = st.shared(strat_a, key="share")
+    shared_b = st.shared(strat_b, key="share")
+
+    @given(shared_a, shared_b)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b):
+        assert a == b
+
+    with pytest.warns(HypothesisWarning, match="Different strategies"):
+        test_it()
+
+
+@st.composite
+def _composite1(draw):
+    return draw(st.integers())
+
+
+@st.composite
+def _composite2(draw):
+    return draw(st.integers())
+
+
+@pytest.mark.parametrize(
+    "strat_a,strat_b",
+    [
+        (st.floats(allow_nan=False), st.floats(allow_nan=False)),
+        (st.builds(float), st.builds(float)),
+        (_composite1(), _composite1()),
+        (
+            st.floats(allow_nan=False, allow_infinity=False),
+            st.floats(allow_nan=False, allow_infinity=0),
+        ),
+        (_composite1(), _composite2()),
+        pytest.param(
+            st.integers().flatmap(st.just),
+            st.integers(),
+            marks=pytest.mark.xfail(
+                raises=HypothesisWarning,
+                strict=True,
+                reason="really different (but compatible)",
+            ),
+        ),
+    ],
+)
+def test_compatible_shared_strategies_do_not_warn(strat_a, strat_b):
+    shared_a = st.shared(strat_a, key="share")
+    shared_b = st.shared(strat_b, key="share")
+
+    @given(shared_a, shared_b)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b):
+        assert a == b
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", HypothesisWarning)
+        test_it()
+
+
+def test_compatible_nested_shared_strategies_do_not_warn():
+    shared_a = st.shared(st.integers(), key="share")
+    shared_b = st.shared(st.integers(), key="share")
+    shared_c = st.shared(shared_a, key="nested_share")
+    shared_d = st.shared(shared_b, key="nested_share")
+
+    @given(shared_a, shared_b, shared_c, shared_d)
+    @settings(max_examples=10, phases=[Phase.generate])
+    def test_it(a, b, c, d):
+        assert a == b == c == d
+
+    test_it()

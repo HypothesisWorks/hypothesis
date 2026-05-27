@@ -1,0 +1,46 @@
+name: "Install"
+description: "Install python, then cache"
+inputs:
+  python-version:
+    description: "Python version"
+    required: true
+  python-architecture:
+    description: "Python architecture, if not default for platform"
+  task:
+    description: "Task name"
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - name: Set up Python ${{ inputs.python-version }} ${{ inputs.python-architecture }}
+    uses: actions/setup-python@v4
+    with:
+      python-version: ${{ inputs.python-version }}
+      architecture: ${{ inputs.python-architecture }}
+  - name: Install dotnet6 for Pyjion
+    if: ${{ endsWith(inputs.task, '-pyjion') }}
+    shell: bash
+    run: |
+      wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+      sudo dpkg -i packages-microsoft-prod.deb
+      rm packages-microsoft-prod.deb
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https && \
+        sudo apt-get update && \
+        sudo apt-get install -y dotnet-sdk-6.0
+  - name: Restore cache
+    uses: actions/cache@v3
+    with:
+      path: |
+        .tox/
+        vendor/bundle
+        ~/.cache
+        ~/.local
+        ~/appdata/local/pip/cache
+        ~/Library/Caches/pip
+        ~/wheelhouse
+      key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ inputs.python-version }}-${{ inputs.python-architecture }}-${{ inputs.task }}
+      restore-keys: |
+        deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ inputs.python-version }}-${{ inputs.python-architecture }}
+        deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
+        deps-${{ runner.os }}

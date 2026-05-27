@@ -12,11 +12,19 @@ import time
 
 import pytest
 
-from hypothesis import Verbosity, assume, core, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    core,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
 
-from tests.common.utils import Why, all_values, capture_out, xfail_on_crosshair
+from tests.common.utils import all_values, capture_out
 
 
 @pytest.mark.parametrize("in_pytest", [False, True])
@@ -44,9 +52,8 @@ def test_prints_seed_only_on_healthcheck(
     def test(i):
         assert fail_healthcheck
 
-    with capture_out() as o:
-        with pytest.raises(expected_exc):
-            test()
+    with capture_out() as o, pytest.raises(expected_exc):
+        test()
 
     output = o.getvalue()
 
@@ -71,16 +78,14 @@ def test_uses_global_force(monkeypatch):
     output = []
 
     for _ in range(2):
-        with capture_out() as o:
-            with pytest.raises(ValueError):
-                test()
+        with capture_out() as o, pytest.raises(ValueError):
+            test()
         output.append(o.getvalue())
 
     assert output[0] == output[1]
     assert "@seed" not in output[0]
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_does_print_on_reuse_from_database():
     passes_healthcheck = False
 
@@ -92,25 +97,45 @@ def test_does_print_on_reuse_from_database():
         assume(passes_healthcheck)
         raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(FailedHealthCheck):
-            test()
+    with capture_out() as o, pytest.raises(FailedHealthCheck):
+        test()
 
     assert "@seed" in o.getvalue()
 
     passes_healthcheck = True
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
 
     assert all_values(database)
     assert "@seed" not in o.getvalue()
 
     passes_healthcheck = False
 
-    with capture_out() as o:
-        with pytest.raises(FailedHealthCheck):
-            test()
+    with capture_out() as o, pytest.raises(FailedHealthCheck):
+        test()
 
     assert "@seed" in o.getvalue()
+
+
+@pytest.mark.parametrize("in_pytest", [True, False])
+def test_prints_seed_on_very_slow_shrinking(monkeypatch, in_pytest):
+    monkeypatch.setattr(core, "running_under_pytest", in_pytest)
+
+    @settings(database=None, deadline=None, suppress_health_check=list(HealthCheck))
+    @given(st.integers(min_value=0, max_value=2**64 - 1))
+    def test(n):
+        time.sleep(10)
+        assert n <= 2**33
+
+    with capture_out() as o, pytest.raises(AssertionError):
+        test()
+
+    output = o.getvalue()
+    assert "Hypothesis has spent more than five minutes" in output
+    assert (
+        "This test function exited early because it took too long to shrink" in output
+    )
+    seed = test._hypothesis_internal_use_generated_seed
+    assert output.count(f"@seed({seed})") == 1
+    assert (f"--hypothesis-seed={seed}" in output) == in_pytest

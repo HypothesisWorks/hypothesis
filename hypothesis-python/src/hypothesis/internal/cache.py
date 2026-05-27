@@ -10,9 +10,8 @@
 
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
-
-import attr
 
 from hypothesis.errors import InvalidArgument
 
@@ -20,12 +19,12 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class Entry(Generic[K, V]):
-    key: K = attr.ib()
-    value: V = attr.ib()
-    score: int = attr.ib()
-    pins: int = attr.ib(default=0)
+    key: K
+    value: V
+    score: int
+    pins: int = 0
 
     @property
     def sort_key(self) -> tuple[int, ...]:
@@ -289,7 +288,7 @@ class LRUReusedCache(GenericCache[K, V]):
         return (2, self.tick())
 
 
-class LRUCache:
+class LRUCache(Generic[K, V]):
     """
     This is a drop-in replacement for a GenericCache (despite the lack of inheritance)
     in performance critical environments. It turns out that GenericCache's heap
@@ -306,7 +305,7 @@ class LRUCache:
     # https://discuss.python.org/t/simplify-lru-cache/18192/6
     #
     # We use OrderedDict here because it is unclear to me we can provide the same
-    # api as GenericCache without messing with @lru_cache internals.
+    # api as GenericCache using @lru_cache without messing with lru_cache internals.
     #
     # Anecdotally, OrderedDict seems quite competitive with lru_cache, but perhaps
     # that is localized to our access patterns.
@@ -317,21 +316,21 @@ class LRUCache:
         self._threadlocal = threading.local()
 
     @property
-    def cache(self) -> dict[Any, Any]:
+    def cache(self) -> OrderedDict[K, V]:
         try:
             return self._threadlocal.cache
         except AttributeError:
             self._threadlocal.cache = OrderedDict()
             return self._threadlocal.cache
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: K, value: V) -> None:
         self.cache[key] = value
         self.cache.move_to_end(key)
 
         while len(self.cache) > self.max_size:
             self.cache.popitem(last=False)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: K) -> V:
         val = self.cache[key]
         self.cache.move_to_end(key)
         return val
@@ -339,12 +338,12 @@ class LRUCache:
     def __iter__(self):
         return iter(self.cache)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.cache)
 
-    def __contains__(self, key):
+    def __contains__(self, key: K) -> bool:
         return key in self.cache
 
     # implement GenericCache interface, for tests
-    def check_valid(self):
+    def check_valid(self) -> None:
         pass

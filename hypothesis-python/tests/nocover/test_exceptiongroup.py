@@ -10,7 +10,7 @@
 
 import asyncio
 import sys
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 
@@ -51,10 +51,9 @@ def test_exceptiongroup_nested() -> None:
             data.draw(st.booleans().filter(pred))
 
         async def _main() -> None:
-            async with asyncio.TaskGroup():
-                async with asyncio.TaskGroup() as tg2:
-                    tg2.create_task(task(bool))
-                    tg2.create_task(task(lambda _: False))
+            async with asyncio.TaskGroup(), asyncio.TaskGroup() as tg2:
+                tg2.create_task(task(bool))
+                tg2.create_task(task(lambda _: False))
 
         asyncio.run(_main())
 

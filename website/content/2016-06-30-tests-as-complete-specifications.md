@@ -15,7 +15,7 @@ It does mean that they're easy to *test* though. Lets see how.
 
 <!--more-->
 
-Lets look at the problem of doing a binary search. Specifically we'll
+Let's look at the problem of doing a binary search. Specifically we'll
 look at a left biased binary search: Given a sorted list and some value,
 we want to find the smallest index that we can insert that value at and
 still have the result be sorted.

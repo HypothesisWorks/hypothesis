@@ -9,14 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Union, cast, final
+from typing import TYPE_CHECKING, TypeAlias, cast, final
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     from typing_extensions import Self
 
-IntervalsT: "TypeAlias" = tuple[tuple[int, int], ...]
+IntervalsT: TypeAlias = tuple[tuple[int, int], ...]
 
 
 # @final makes mypy happy with the Self return annotations. We otherwise run
@@ -28,6 +26,13 @@ IntervalsT: "TypeAlias" = tuple[tuple[int, int], ...]
 
 @final
 class IntervalSet:
+    """
+    A compact and efficient representation of a set of ``(a, b)`` intervals. Can
+    be treated like a set of integers, in that ``n in intervals`` will return
+    ``True`` if ``n`` is contained in any of the ``(a, b)`` intervals, and
+    ``False`` otherwise.
+    """
+
     @classmethod
     def from_string(cls, s: str) -> "Self":
         """Return a tuple of intervals, covering the codepoints of characters in `s`.
@@ -85,7 +90,7 @@ class IntervalSet:
         assert r <= v
         return r
 
-    def __contains__(self, elem: Union[str, int]) -> bool:
+    def __contains__(self, elem: str | int) -> bool:
         if isinstance(elem, str):
             elem = ord(elem)
         assert 0 <= elem <= 0x10FFFF
@@ -95,7 +100,7 @@ class IntervalSet:
         return f"IntervalSet({self.intervals!r})"
 
     def index(self, value: int) -> int:
-        for offset, (u, v) in zip(self.offsets, self.intervals):
+        for offset, (u, v) in zip(self.offsets, self.intervals, strict=True):
             if u == value:
                 return offset
             elif u > value:
@@ -105,7 +110,7 @@ class IntervalSet:
         raise ValueError(f"{value} is not in list")
 
     def index_above(self, value: int) -> int:
-        for offset, (u, v) in zip(self.offsets, self.intervals):
+        for offset, (u, v) in zip(self.offsets, self.intervals, strict=True):
             if u >= value:
                 return offset
             if value <= v:

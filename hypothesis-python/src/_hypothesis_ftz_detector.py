@@ -18,13 +18,13 @@ import of Hypothesis itself from each subprocess which must import the worker fu
 
 import importlib
 import sys
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     from multiprocessing import Queue
-    from typing import TypeAlias
 
-FTZCulprits: "TypeAlias" = tuple[Optional[bool], set[str]]
+FTZCulprits: TypeAlias = tuple[bool | None, set[str]]
 
 
 KNOWN_EVER_CULPRITS = (
@@ -52,7 +52,7 @@ def run_in_process(fn: Callable[..., FTZCulprits], *args: object) -> FTZCulprits
     import multiprocessing as mp
 
     mp.set_start_method("spawn", force=True)
-    q: "Queue[FTZCulprits]" = mp.Queue()
+    q: Queue[FTZCulprits] = mp.Queue()
     p = mp.Process(target=target, args=(q, fn, *args))
     p.start()
     retval = q.get()

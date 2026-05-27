@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import importlib
+
 import pytest
 from _hypothesis_pytestplugin import LOAD_PROFILE_OPTION
-
-from hypothesis.version import __version__
 
 pytest_plugins = "pytester"
 
@@ -38,7 +38,10 @@ def test_does_not_run_reporting_hook_by_default(testdir):
     out = "\n".join(result.stdout.lines)
     assert "1 passed" in out
     assert "hypothesis profile" not in out
-    assert __version__ in out
+    # importlib.metadata.version respects e.g. local -e installs of hypothesis,
+    # and matches what `pytest` uses more closely than `hypothesis.__version__`
+    # (which is the actually-latest version).
+    assert importlib.metadata.version("hypothesis") in out
 
 
 @pytest.mark.parametrize("option", ["-v", "--hypothesis-verbosity=verbose"])
@@ -50,4 +53,4 @@ def test_runs_reporting_hook_in_any_verbose_mode(testdir, option):
     assert "1 passed" in out
     assert "max_examples=1" in out
     assert "hypothesis profile" in out
-    assert __version__ in out
+    assert importlib.metadata.version("hypothesis") in out

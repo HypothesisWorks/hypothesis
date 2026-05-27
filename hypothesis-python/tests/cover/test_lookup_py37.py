@@ -218,7 +218,12 @@ def test_resolving_standard_valuesview_as_generic(x: collections.abc.ValuesView[
     check(collections.abc.ValuesView, x)
 
 
-@pytest.mark.xfail  # Weird interaction with fixes in PR #2952
+# Weird interaction with fixes in PR #2952
+#
+# 2025-08-11: this gets even weirder with 3.14, where memoryview is in fact a
+# context manager, and so gets resolved for AbstractContextManager[Elem] here.
+# (But then errors during generation, because Elem does not implement __buffer__).
+@pytest.mark.xfail
 @given(...)
 def test_resolving_standard_contextmanager_as_generic(
     x: contextlib.AbstractContextManager[Elem],

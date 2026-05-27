@@ -26,7 +26,10 @@ from hypothesis import (
     strategies as st,
     target,
 )
+from hypothesis.control import current_build_context
 from hypothesis.statistics import collector, describe_statistics
+
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def call_for_statistics(test_function):
@@ -90,6 +93,8 @@ def test_formats_are_evaluated_only_once():
 
     @given(st.integers())
     def test(i):
+        if current_build_context().data.provider.avoid_realization:
+            pytest.skip("event() cache is disabled under avoid_realization = True")
         event(Foo())
 
     stats = call_for_statistics(test)
@@ -129,6 +134,7 @@ def test_apparently_instantaneous_tests():
     assert "< 1ms" in stats
 
 
+@xfail_on_crosshair(Why.other)  # crosshair re-executes for flakiness itself
 def test_flaky_exit():
     first = True
 
@@ -139,7 +145,6 @@ def test_flaky_exit():
         if i > 1001:
             if first:
                 first = False
-                print("Hi")
                 raise AssertionError
 
     stats = call_for_statistics(test)

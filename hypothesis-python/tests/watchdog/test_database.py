@@ -8,10 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import math
 import sys
 import time
 from collections import Counter
+
+import pytest
 
 from hypothesis import Phase, settings
 from hypothesis.database import (
@@ -19,28 +20,47 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
-from hypothesis.internal.reflection import get_pretty_function_description
 
+from tests.common.utils import flaky, skipif_threading, wait_for
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
+
+# Our database listener tests are tantalizingly close to being useful, but are
+# still subtly flaky. I have spent two afternoons trying to isolate the problem
+# and have concluded it would require sitting down at a deep level with not only
+# the watchdog implementation but also platform-specific filesystem watcher details.
+#
+# I've seen issues like duplicate events being emitted, stopping/starting a listener
+# in quick succession repeating the previous batch of events, and other weirdness.
+#
+# These tests are still useful as a manual check when changing database listener
+# code, and as an encoding of our desired semantics.
+pytestmark = pytest.mark.skip(reason="see comment")
+
 
 # we need real time here, not monkeypatched for CI
 time_sleep = time.sleep
 
 
 def test_database_listener_directory():
-    # this test is very expensive because we wait between every rule for the
-    # filesystem observer to fire. Limit examples/step count as much as possible.
     _database_conforms_to_listener_api(
         lambda path: DirectoryBasedExampleDatabase(path),
-        flush=lambda _db: time_sleep(0.2),
         supports_value_delete=False,
-        # expensive flush makes shrinking take forever
         parent_settings=settings(
-            max_examples=5, stateful_step_count=10, phases=set(Phase) - {Phase.shrink}
+            # this test is very expensive because we wait between every rule for
+            # the filesystem observer to fire.
+            max_examples=5,
+            stateful_step_count=10,
+            # expensive runtime makes shrinking take forever
+            phases=set(Phase) - {Phase.shrink},
+            deadline=None,
         ),
     )
 
 
+# seen flaky on test-win; we get *three* of the same save events in the first
+# assertion, which...is baffling, and possibly a genuine bug (most likely in
+# watchdog).
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_multiplexed(tmp_path):
     db = MultiplexedDatabase(
         InMemoryExampleDatabase(), DirectoryBasedExampleDatabase(tmp_path)
@@ -51,45 +71,39 @@ def test_database_listener_multiplexed(tmp_path):
         events.append(event)
 
     db.add_listener(listener)
+    time_sleep(0.1)
 
     db.save(b"a", b"a")
-    time_sleep(0.2)
-    assert events == [("save", (b"a", b"a"))] * 2
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=30)
 
     db.remove_listener(listener)
     db.delete(b"a", b"a")
     db.save(b"a", b"b")
-    time_sleep(0.2)
-    assert events == [("save", (b"a", b"a"))] * 2
+    wait_for(lambda: events == [("save", (b"a", b"a"))] * 2, timeout=30)
 
     db.add_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"a", b"b")
     db.save(b"a", b"c")
-    time_sleep(0.2)
     # InMemory database fires immediately, while DirectoryBased has to
     # wait for filesystem listeners. Therefore the events can arrive out of
     # order. Test a weaker multiset property, disregarding ordering.
-    assert Counter(events[2:]) == {
-        # InMemory
-        ("delete", (b"a", b"b")): 1,
-        # DirectoryBased
-        ("delete", (b"a", None)): 1,
-        # both
-        ("save", (b"a", b"c")): 2,
-    }
-
-
-def wait_for(condition, *, timeout=1, interval=0.01):
-    for _ in range(math.ceil(timeout / interval)):
-        if condition():
-            return
-        time_sleep(interval)
-    raise Exception(
-        f"timing out after waiting {timeout}s for condition "
-        f"{get_pretty_function_description(condition)}"
+    wait_for(
+        lambda: Counter(events[2:])
+        == {
+            # InMemory
+            ("delete", (b"a", b"b")): 1,
+            # DirectoryBased
+            ("delete", (b"a", None)): 1,
+            # both
+            ("save", (b"a", b"c")): 2,
+        },
+        timeout=30,
     )
 
 
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -97,18 +111,25 @@ def test_database_listener_directory_explicit(tmp_path):
     def listener(event):
         events.append(event)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
 
     db.save(b"k1", b"v1")
-    wait_for(lambda: events == [("save", (b"k1", b"v1"))])
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.remove_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v1")
     db.save(b"k1", b"v2")
-    time_sleep(0.2)
-    assert events == [("save", (b"k1", b"v1"))]
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))], timeout=30)
 
+    time_sleep(0.1)
     db.add_listener(listener)
+    time_sleep(0.1)
+
     db.delete(b"k1", b"v2")
     db.save(b"k1", b"v3")
     wait_for(
@@ -116,7 +137,8 @@ def test_database_listener_directory_explicit(tmp_path):
         == [
             ("delete", (b"k1", None)),
             ("save", (b"k1", b"v3")),
-        ]
+        ],
+        timeout=30,
     )
 
     # moving into a nonexistent key
@@ -159,6 +181,8 @@ def test_database_listener_directory_explicit(tmp_path):
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
 
+@flaky(max_runs=5, min_passes=1)  # time_sleep(0.1) probably isn't enough here
+@skipif_threading  # add_listener is not thread safe because watchdog is not
 def test_database_listener_directory_move(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -182,5 +206,27 @@ def test_database_listener_directory_move(tmp_path):
             ("save", (b"k2", b"v1")),
             # windows doesn't fire move events, so value is None
             ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
-        }
+        },
+        timeout=30,
     )
+
+
+@skipif_threading  # add_listener is not thread safe because watchdog is not
+def test_still_listens_if_directory_did_not_exist(tmp_path):
+    # if we start listening on a nonexistent path, we will create that path and
+    # still listen for events
+    events = []
+
+    def listener(event):
+        events.append(event)
+
+    p = tmp_path / "does_not_exist_yet"
+    db = DirectoryBasedExampleDatabase(p)
+    assert not p.exists()
+
+    db.add_listener(listener)
+    assert p.exists()
+
+    assert not events
+    db.save(b"k1", b"v1")
+    wait_for(lambda: len(events) == 1, timeout=30)

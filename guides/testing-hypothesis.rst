@@ -6,7 +6,7 @@ Note: This guide is currently entirely specific to the Python version of
 Hypothesis.
 
 This is a guide to the process of testing Hypothesis itself, both how to
-run its tests and how to to write new ones.
+run its tests and how to write new ones.
 
 --------------------------
 General Testing Philosophy

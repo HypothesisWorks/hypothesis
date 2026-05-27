@@ -10,12 +10,12 @@
 
 import datetime as dt
 import operator as op
+import warnings
 import zoneinfo
 from calendar import monthrange
-from functools import lru_cache, partial
+from functools import cache, partial
 from importlib import resources
 from pathlib import Path
-from typing import Optional
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -120,6 +120,7 @@ def draw_capped_multipart(
 
 class DatetimeStrategy(SearchStrategy):
     def __init__(self, min_value, max_value, timezones_strat, allow_imaginary):
+        super().__init__()
         assert isinstance(min_value, dt.datetime)
         assert isinstance(max_value, dt.datetime)
         assert min_value.tzinfo is None
@@ -164,7 +165,7 @@ def datetimes(
     min_value: dt.datetime = dt.datetime.min,
     max_value: dt.datetime = dt.datetime.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    timezones: SearchStrategy[dt.tzinfo | None] = none(),
     allow_imaginary: bool = True,
 ) -> SearchStrategy[dt.datetime]:
     """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none(), allow_imaginary=True)
@@ -219,6 +220,7 @@ def datetimes(
 
 class TimeStrategy(SearchStrategy):
     def __init__(self, min_value, max_value, timezones_strat):
+        super().__init__()
         self.min_value = min_value
         self.max_value = max_value
         self.tz_strat = timezones_strat
@@ -234,7 +236,7 @@ def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    timezones: SearchStrategy[dt.tzinfo | None] = none(),
 ) -> SearchStrategy[dt.time]:
     """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
 
@@ -257,6 +259,7 @@ def times(
 
 class DateStrategy(SearchStrategy):
     def __init__(self, min_value, max_value):
+        super().__init__()
         assert isinstance(min_value, dt.date)
         assert isinstance(max_value, dt.date)
         assert min_value < max_value
@@ -320,6 +323,7 @@ def dates(
 
 class TimedeltaStrategy(SearchStrategy):
     def __init__(self, min_value, max_value):
+        super().__init__()
         assert isinstance(min_value, dt.timedelta)
         assert isinstance(max_value, dt.timedelta)
         assert min_value < max_value
@@ -359,7 +363,7 @@ def timedeltas(
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _valid_key_cacheable(tzpath, key):
     assert isinstance(tzpath, tuple)  # zoneinfo changed, better update this function!
     for root in tzpath:
@@ -417,7 +421,14 @@ def timezone_keys(
     # check_type(bool, allow_deprecated, "allow_deprecated")
     check_type(bool, allow_prefix, "allow_prefix")
 
-    available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
+    with warnings.catch_warnings():
+        try:
+            warnings.simplefilter("ignore", EncodingWarning)
+        except NameError:  # pragma: no cover
+            pass
+        # On Python 3.12 (and others?), `available_timezones()` opens files
+        # without specifying an encoding - which our selftests make an error.
+        available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
 
     # TODO: filter out alias and deprecated names if disallowed
 

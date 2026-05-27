@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from typing import TypedDict, Union
+from typing import TypedDict
 
 import pytest
 
@@ -19,7 +19,7 @@ from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import check_can_generate_examples
 
-alias = Union[int, str]
+alias = int | str
 
 
 class A(TypedDict):
@@ -39,7 +39,7 @@ def test_complex_forward_ref_in_typed_dict(d):
 
 
 def test_complex_forward_ref_in_typed_dict_local():
-    local_alias = Union[int, str]
+    local_alias = int | str
 
     class C(TypedDict):
         a: A

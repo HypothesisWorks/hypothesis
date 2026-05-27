@@ -8,9 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import random
+from dataclasses import dataclass, field
+from random import Random
+from typing import Any
 
-import attr
 import pytest
 
 from hypothesis import (
@@ -30,37 +31,33 @@ from tests.common.utils import Why, xfail_on_crosshair
 from tests.conjecture.common import interesting_origin
 
 
-@attr.s()
+@dataclass
 class Write:
-    value = attr.ib()
-    child = attr.ib()
+    value: Any
+    child: Any
 
 
-@attr.s()
+@dataclass
 class Branch:
-    bits = attr.ib()
-    children = attr.ib(factory=dict)
+    bits: Any
+    children: Any = field(default_factory=dict)
 
 
-@attr.s()
+@dataclass
 class Terminal:
-    status = attr.ib()
-    payload = attr.ib(default=None)
+    status: Any
+    payload: Any = field(default=None)
 
 
 nodes = st.deferred(lambda: terminals | writes | branches)
-
-
-# Does not include Status.OVERFLOW by design: That happens because of the size
+# Does not include Status.OVERRUN by design: That happens because of the size
 # of the string, not the input language.
 terminals = st.one_of(
     st.just(Terminal(Status.VALID)),
     st.just(Terminal(Status.INVALID)),
     st.builds(Terminal, status=st.just(Status.INTERESTING), payload=st.integers(0, 10)),
 )
-
 branches = st.builds(Branch, bits=st.integers(1, 64))
-
 writes = st.builds(Write, value=st.binary(min_size=1), child=nodes)
 
 
@@ -71,8 +68,6 @@ _default_phases = settings.default.phases
 
 
 def run_language_test_for(root, data, seed):
-    random.seed(seed)
-
     def test(local_data):
         node = root
         while not isinstance(node, Terminal):
@@ -107,6 +102,7 @@ def run_language_test_for(root, data, seed):
             # phases setting from the outer test.
             phases=_default_phases,
         ),
+        random=Random(seed),
     )
     try:
         runner.run()
@@ -116,7 +112,8 @@ def run_language_test_for(root, data, seed):
     assume(runner.interesting_examples)
 
 
-@xfail_on_crosshair(Why.nested_given)  # technically nested-engine, but same problem
+# technically nested-engine, but same problem
+@xfail_on_crosshair(Why.nested_given, strict=False)
 @settings(
     suppress_health_check=list(HealthCheck),
     deadline=None,

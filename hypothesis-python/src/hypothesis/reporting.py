@@ -8,15 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Callable
+from typing import TypeAlias
 
 from hypothesis._settings import Verbosity, settings
 from hypothesis.internal.compat import escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
-
-if TYPE_CHECKING:
-    from typing import TypeAlias
 
 
 def default(value: object) -> None:
@@ -26,7 +24,7 @@ def default(value: object) -> None:
         print(escape_unicode_characters(str(value)))
 
 
-ReporterT: "TypeAlias" = Callable[[object], None]
+ReporterT: TypeAlias = Callable[[object], None]
 reporter = DynamicVariable[ReporterT](default)
 
 

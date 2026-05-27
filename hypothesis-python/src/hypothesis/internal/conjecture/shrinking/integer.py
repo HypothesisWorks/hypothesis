@@ -61,7 +61,7 @@ class Integer(Shrinker):
             return self.consider(mask & base)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.current.bit_length()
 
     def shrink_by_multiples(self, k):

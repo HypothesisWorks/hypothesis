@@ -20,7 +20,7 @@ from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.types import _get_constraints
 
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import assert_simple_property, check_can_generate_examples
 
 try:
     import annotated_types as at
@@ -118,6 +118,11 @@ def test_collection_size_from_slice(data):
     assert 1 <= len(value) <= 10
 
 
+def test_unhashable_annotated_metadata():
+    t = Annotated[int, {"key": "value"}]
+    assert_simple_property(st.from_type(t), lambda x: isinstance(x, int))
+
+
 class GroupedStuff:
     __is_annotated_types_grouped_metadata__ = True
 
@@ -135,3 +140,22 @@ def test_flattens_grouped_metadata():
     grp = GroupedStuff(GroupedStuff(GroupedStuff(at.Len(min_length=1, max_length=5))))
     constraints = list(_get_constraints(grp))
     assert constraints == [at.MinLen(1), at.MaxLen(5)]
+
+
+try:
+    # we can drop this ugly code when Python 3.10 reaches EOL
+    from typing import NotRequired, TypedDict
+except ImportError:
+    pass
+else:
+
+    class TypedDictWithAnnotations(TypedDict):
+        x: Annotated[int, at.Ge(0)]
+        y: Annotated[NotRequired[int], at.Ge(0)]
+        z: NotRequired[Annotated[int, at.Ge(0)]]
+
+    @given(st.from_type(TypedDictWithAnnotations))
+    def test_typeddict_with_annotated_constraints(value):
+        assert value["x"] >= 0
+        assert value.get("y", 0) >= 0
+        assert value.get("z", 0) >= 0

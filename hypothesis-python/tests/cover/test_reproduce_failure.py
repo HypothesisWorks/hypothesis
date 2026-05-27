@@ -29,16 +29,16 @@ from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssum
 from hypothesis.internal.conjecture.choice import choice_equal
 
 from tests.common.utils import Why, capture_out, no_shrink, xfail_on_crosshair
-from tests.conjecture.common import ir, nodes
+from tests.conjecture.common import nodes, nodes_inline
 
 
-@example(ir("0" * 100))  # shorter compressed than not
+@example(nodes_inline("0" * 100))  # shorter compressed than not
 @given(st.lists(nodes()))
 def test_encoding_loop(nodes):
     choices = [n.value for n in nodes]
     looped = decode_failure(encode_failure(choices))
     assert len(choices) == len(looped)
-    for pre, post in zip(choices, looped):
+    for pre, post in zip(choices, looped, strict=True):
         assert choice_equal(pre, post)
 
 
@@ -156,9 +156,8 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
     def test(i):
         raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test()
+    with capture_out() as o, pytest.raises(AssertionError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
@@ -169,13 +168,11 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
         data.draw(st.integers())
         raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test()
+    with capture_out() as o, pytest.raises(AssertionError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
     @settings(phases=no_shrink, print_blob=False)
     @given(st.data())
@@ -184,9 +181,8 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
         if len(zlib.compress(b)) > 1000:
             raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
     assert "@reproduce_failure" not in o.getvalue()
 
 
@@ -201,9 +197,8 @@ def test_does_not_print_reproduction_if_told_not_to():
     def test(i):
         raise ValueError
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with capture_out() as o, pytest.raises(ValueError):
+        test()
 
     assert "@reproduce_failure" not in o.getvalue()
 
@@ -227,8 +222,7 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
     def test_always_fails(data):
         assert data.draw(st.just(False))
 
-    with capture_out() as out:
-        with pytest.raises(AssertionError):
-            test_always_fails()
+    with capture_out() as out, pytest.raises(AssertionError):
+        test_always_fails()
 
     assert "@reproduce_failure" not in out.getvalue()

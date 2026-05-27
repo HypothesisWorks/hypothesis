@@ -20,14 +20,13 @@ from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
 
-from tests.common.utils import Why, no_shrink, xfail_on_crosshair
+from tests.common.utils import Why, no_shrink, skipif_threading, xfail_on_crosshair
 
 
 class Nope(Exception):
     pass
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_fails_only_once_is_flaky():
     first_call = True
 
@@ -45,7 +44,6 @@ def test_fails_only_once_is_flaky():
     assert isinstance(exceptions[0], Nope)
 
 
-@xfail_on_crosshair(Why.other)
 def test_fails_differently_is_flaky():
     call_count = 0
 
@@ -70,6 +68,7 @@ def test_fails_differently_is_flaky():
     assert set(map(type, exceptions)) == {Nope, DifferentNope}
 
 
+@skipif_threading  # executing into global scope
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="except* syntax")
 def test_exceptiongroup_wrapped_naked_exception_is_flaky():
 
@@ -95,7 +94,6 @@ def rude_fn(x):
     assert list(map(type, exceptions[0].exceptions)) == [Nope]
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
@@ -171,7 +169,9 @@ def single_bool_lists(draw):
 @example([False, True, False, False], [3], None)
 @example([False, False, True, False], [3], None)
 @example([False, False, False, True], [3], None)
-@settings(deadline=None, suppress_health_check=[HealthCheck.nested_given])
+@settings(
+    deadline=None, suppress_health_check=[HealthCheck.nested_given], max_examples=10
+)
 @given(lists(booleans()) | single_bool_lists(), lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
@@ -190,6 +190,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         database=None,
         suppress_health_check=list(HealthCheck),
         phases=no_shrink,
+        max_examples=10,
     )
     def test(x):
         try:

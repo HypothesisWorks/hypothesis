@@ -11,6 +11,8 @@
 import pytest
 from _hypothesis_pytestplugin import PRINT_STATISTICS_OPTION
 
+from tests.common.utils import skipif_threading
+
 pytest_plugins = "pytester"
 
 
@@ -51,23 +53,24 @@ def test_prints_statistics_given_option(testdir):
     out = get_output(testdir, TESTSUITE, PRINT_STATISTICS_OPTION)
     assert "Hypothesis Statistics" in out
     assert "max_examples=100" in out
-    assert "< 10% of examples satisfied assumptions" in out
+    assert "< 1% of examples satisfied assumptions" in out
 
 
 def test_prints_statistics_given_option_under_xdist(testdir):
     out = get_output(testdir, TESTSUITE, PRINT_STATISTICS_OPTION, "-n", "2")
     assert "Hypothesis Statistics" in out
     assert "max_examples=100" in out
-    assert "< 10% of examples satisfied assumptions" in out
+    assert "< 1% of examples satisfied assumptions" in out
 
 
 def test_prints_statistics_given_option_with_junitxml(testdir):
     out = get_output(testdir, TESTSUITE, PRINT_STATISTICS_OPTION, "--junit-xml=out.xml")
     assert "Hypothesis Statistics" in out
     assert "max_examples=100" in out
-    assert "< 10% of examples satisfied assumptions" in out
+    assert "< 1% of examples satisfied assumptions" in out
 
 
+@skipif_threading
 @pytest.mark.skipif(
     tuple(map(int, pytest.__version__.split(".")[:2])) < (5, 4), reason="too old"
 )
@@ -77,7 +80,7 @@ def test_prints_statistics_given_option_under_xdist_with_junitxml(testdir):
     )
     assert "Hypothesis Statistics" in out
     assert "max_examples=100" in out
-    assert "< 10% of examples satisfied assumptions" in out
+    assert "< 1% of examples satisfied assumptions" in out
 
 
 UNITTEST_TESTSUITE = """

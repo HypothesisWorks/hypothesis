@@ -26,9 +26,8 @@ def test_reports_passes():
     def test(i):
         assert i < 10
 
-    with capture_out() as out:
-        with pytest.raises(AssertionError):
-            test()
+    with capture_out() as out, pytest.raises(AssertionError):
+        test()
 
     value = out.getvalue()
 

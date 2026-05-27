@@ -12,6 +12,8 @@ import functools
 import threading
 from collections import namedtuple
 
+import pytest
+
 from hypothesis import (
     HealthCheck,
     Verbosity,
@@ -23,6 +25,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import Unsatisfiable
+from hypothesis.internal.conjecture.engine import INVALID_THRESHOLD_BASE
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -46,14 +49,10 @@ from tests.common.utils import (
     fails,
     fails_with,
     no_shrink,
-    raises,
     skipif_emscripten,
     xfail_on_crosshair,
 )
-
-# This particular test file is run under both pytest and nose, so it can't
-# rely on pytest-specific helpers like `pytest.raises` unless we define a
-# fallback in tests.common.utils.
+from tests.conjecture.common import buffer_size_limit
 
 
 @given(integers(), integers())
@@ -100,7 +99,7 @@ def test_still_minimizes_on_non_assertion_failures():
         if x >= 10:
             raise ValueError(f"No, {x} is just too large. Sorry")
 
-    with raises(ValueError, match=" 10 "):
+    with pytest.raises(ValueError, match=" 10 "):
         is_not_too_large()
 
 
@@ -149,7 +148,6 @@ def test_can_be_given_keyword_args(x, name):
     assert len(name) < x
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(one_of(floats(), booleans()), one_of(floats(), booleans()))
 def test_one_of_produces_different_values(x, y):
@@ -181,7 +179,7 @@ def test_does_not_catch_interrupt_during_falsify():
             called = True
             raise KeyboardInterrupt
 
-    with raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):
         flaky_base_exception()
 
 
@@ -197,7 +195,6 @@ def test_removing_an_element_from_a_unique_list(xs, y):
     assert y not in xs
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(lists(integers(), min_size=2), data())
 def test_removing_an_element_from_a_non_unique_list(xs, data):
@@ -221,7 +218,6 @@ def test_can_mix_sampling_with_generating(x, y):
     assert type(x) == type(y)
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(frozensets(integers()))
 def test_can_find_large_sum_frozenset(xs):
@@ -230,7 +226,7 @@ def test_can_find_large_sum_frozenset(xs):
 
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
-    @settings(max_examples=100)
+    @settings(max_examples=1000)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -265,7 +261,7 @@ def test_list_is_sorted(xs):
 @fails
 @given(floats(1.0, 2.0))
 def test_is_an_endpoint(x):
-    assert x == 1.0 or x == 2.0
+    assert x in {1.0, 2.0}
 
 
 def test_breaks_bounds():
@@ -345,7 +341,7 @@ def test_can_run_without_database():
     def test_blah(x):
         raise AssertionError
 
-    with raises(AssertionError):
+    with pytest.raises(AssertionError):
         test_blah()
 
 
@@ -427,7 +423,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
             failing.append(x)
             raise AssertionError
 
-    with raises(AssertionError) as err:
+    with pytest.raises(AssertionError) as err:
         foo()
     assert len(failing) == 2
     assert len(set(failing)) == 1
@@ -472,9 +468,8 @@ def test_does_not_print_notes_if_all_succeed():
     def test(i):
         note("Hi there")
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            test()
+    with capture_out() as out, reporting.with_reporter(reporting.default):
+        test()
     assert not out.getvalue()
 
 
@@ -486,7 +481,7 @@ def test_prints_notes_once_on_failure():
         if sum(xs) <= 100:
             raise ValueError
 
-    with raises(ValueError) as err:
+    with pytest.raises(ValueError) as err:
         test()
     assert err.value.__notes__.count("Hi there") == 1
 
@@ -510,18 +505,23 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
     def f(v):
         assume(False)
 
-    with raises(
+    with pytest.raises(
         Unsatisfiable,
         match=(
-            r"Unable to satisfy assumptions of f\. 1000 of 1000 examples "
-            r"failed a \.filter\(\) or assume\(\)"
+            rf"Unable to satisfy assumptions of f\. {INVALID_THRESHOLD_BASE+1} of "
+            rf"{INVALID_THRESHOLD_BASE+1} examples failed a \.filter\(\) or assume\(\)"
         ),
     ):
         f()
 
 
+# crosshair generates one valid input before verifying the test function,
+# so the Unsatisfiable check never occurs.
+# (not strict due to slowness causing crosshair to bail out on the first input,
+# maybe?)
+@xfail_on_crosshair(Why.other, strict=False)
 def test_notes_high_overrun_rates_in_unsatisfiable_error():
-    @given(st.binary(min_size=9000))
+    @given(st.binary(min_size=100))
     @settings(
         suppress_health_check=[
             HealthCheck.data_too_large,
@@ -532,11 +532,12 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
     def f(v):
         pass
 
-    with raises(
-        Unsatisfiable,
-        match=(
-            r"1000 of 1000 examples were too large to finish generating; "
-            r"try reducing the typical size of your inputs\?"
-        ),
+    match = (
+        rf"{INVALID_THRESHOLD_BASE+1} of {INVALID_THRESHOLD_BASE+1} examples were too large to"
+        rf" finish generating; try reducing the typical size of your inputs\?"
+    )
+    with (
+        pytest.raises(Unsatisfiable, match=match),
+        buffer_size_limit(10),
     ):
         f()

@@ -16,7 +16,6 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import dates, datetimes, timedeltas, times
 
 from tests.common.debug import assert_simple_property, find_any, minimal
-from tests.common.utils import Why, xfail_on_crosshair
 
 
 def test_can_find_positive_delta():
@@ -74,7 +73,7 @@ def test_bordering_on_a_leap_year():
             dt.datetime.min.replace(year=2003), dt.datetime.max.replace(year=2005)
         ),
         lambda x: x.month == 2 and x.day == 29,
-        settings=settings(max_examples=1200),
+        settings=settings(max_examples=2500),
     )
     assert x.year == 2004
 
@@ -105,7 +104,6 @@ def test_single_date(val):
     assert find_any(dates(val, val)) is val
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_can_find_midnight():
     find_any(times(), lambda x: x.hour == x.minute == x.second == 0)
 

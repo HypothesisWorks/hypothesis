@@ -12,22 +12,80 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hypothesis import assume, given, strategies as st
-from hypothesis.extra import numpy as npst, pandas as pdst
+from hypothesis import given, settings, strategies as st
+from hypothesis.errors import InvalidArgument
+from hypothesis.extra import numpy as nps, pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
-from tests.common.debug import assert_all_examples, assert_no_examples, find_any
+from tests.common.debug import (
+    assert_all_examples,
+    assert_no_examples,
+    check_can_generate_examples,
+    find_any,
+)
 from tests.pandas.helpers import supported_by_pandas
 
 
 @given(st.data())
 def test_can_create_a_series_of_any_dtype(data):
-    dtype = np.dtype(data.draw(npst.scalar_dtypes()))
-    assume(supported_by_pandas(dtype))
+    dtype = data.draw(nps.scalar_dtypes().filter(supported_by_pandas))
     # Use raw data to work around pandas bug in repr. See
     # https://github.com/pandas-dev/pandas/issues/27484
     series = data.conjecture_data.draw(pdst.series(dtype=dtype))
-    assert series.dtype == pd.Series([], dtype=dtype).dtype
+    assert series.dtype == dtype
+
+
+@given(pdst.series(dtype=object))
+def test_can_create_a_series_of_object_python_type(series):
+    assert series.dtype == np.dtype("O")
+
+
+@given(
+    pdst.series(
+        elements=nps.arrays(
+            nps.array_dtypes() | nps.scalar_dtypes(),
+            nps.array_shapes(),
+        ),
+        dtype=object,
+    )
+)
+@settings(max_examples=5)
+def test_object_series_are_of_type_object(series):
+    assert series.dtype == np.dtype("O")
+
+
+def test_class_instances_not_allowed_in_scalar_series():
+    class A:
+        pass
+
+    with pytest.raises(InvalidArgument):
+        check_can_generate_examples(
+            pdst.series(elements=st.just(A()), dtype=np.dtype("int"))
+        )
+
+
+def test_object_series_with_mixed_elements_still_has_object_dtype():
+    class A:
+        pass
+
+    s = nps.arrays(
+        np.dtype("O"),
+        shape=nps.array_shapes(),
+        elements=st.just(A()) | st.integers(),
+    )
+
+    assert_all_examples(s, lambda arr: arr.dtype == np.dtype("O"))
+    find_any(s, lambda arr: len({type(x) for x in arr.ravel()}) > 1)
+
+
+@given(st.data())
+@settings(max_examples=10)
+def test_series_can_hold_arbitrary_class_instances(data):
+    instance = data.draw(st.from_type(type).flatmap(st.from_type))
+    s = pdst.series(elements=st.just(instance), dtype=object)
+    series = data.draw(s)
+
+    assert all(v is instance for v in series.values)
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))

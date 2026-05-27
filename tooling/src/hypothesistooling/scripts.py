@@ -64,6 +64,7 @@ def tool_path(name):
 
 
 def pip_tool(name, *args, **kwargs):
+    args = [str(arg) for arg in args]
     print_command(name, args)
     r = subprocess.call([tool_path(name), *args], **kwargs)
 

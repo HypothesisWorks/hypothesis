@@ -42,15 +42,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.utils import no_shrink
-
-RUNS = 100
-
-
-INITIAL_LAMBDA = re.compile("^lambda[^:]*:\\s*")
-
-
-def strip_lambda(s):
-    return INITIAL_LAMBDA.sub("", s)
+from tests.conjecture.common import interesting_origin
 
 
 class HypothesisFalsified(AssertionError):
@@ -58,7 +50,8 @@ class HypothesisFalsified(AssertionError):
 
 
 def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_check=()):
-    required_runs = int(RUNS * p)
+    runs = 100
+    required_runs = int(runs * p)
 
     def run_test():
         if condition is None:
@@ -69,12 +62,11 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             condition_string = ""
         else:
             _condition = condition
-            condition_string = strip_lambda(
-                reflection.get_pretty_function_description(condition)
-            )
+            condition_string = reflection.get_pretty_function_description(condition)
+            condition_string = re.compile("^lambda[^:]*:\\s*").sub("", condition_string)
 
         def test_function(data):
-            with BuildContext(data):
+            with BuildContext(data, wrapped_test=None):
                 try:
                     value = data.draw(specifier)
                 except UnsatisfiedAssumption:
@@ -82,11 +74,11 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 if not _condition(value):
                     data.mark_invalid()
                 if predicate(value):
-                    data.mark_interesting()
+                    data.mark_interesting(interesting_origin())
 
         successes = 0
         actual_runs = 0
-        for actual_runs in range(1, RUNS + 1):
+        for actual_runs in range(1, runs + 1):
             # We choose the max_examples a bit larger than default so that we
             # run at least 100 examples outside of the small example generation
             # part of the generation phase.
@@ -107,7 +99,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             # If we reach a point where it's impossible to hit our target even
             # if every remaining attempt were to succeed, give up early and
             # report failure.
-            if (required_runs - successes) > (RUNS - actual_runs):
+            if (required_runs - successes) > (runs - actual_runs):
                 break
 
         event = reflection.get_pretty_function_description(predicate)
@@ -117,7 +109,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
 
         raise HypothesisFalsified(
             f"P({event}) ~ {successes} / {actual_runs} = "
-            f"{successes / actual_runs:.2f} < {required_runs / RUNS:.2f}; "
+            f"{successes / actual_runs:.2f} < {required_runs / runs:.2f}; "
             "rejected"
         )
 
@@ -132,52 +124,62 @@ test_can_produce_large_positive_integers = define_test(integers(), lambda x: x >
 test_can_produce_large_negative_integers = define_test(integers(), lambda x: x < -1000)
 
 
-def long_list(xs):
-    return len(xs) >= 10
+_factorials = {math.factorial(n) for n in range(9, 21)}
+
+
+def is_factorial(n):
+    return abs(n) in _factorials
+
+
+test_can_produce_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n), p=0.01
+)
+test_can_produce_above_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n - 1), p=0.01
+)
+test_can_produce_below_large_factorial = define_test(
+    integers(), lambda n: n >= 50_000 and is_factorial(n + 1), p=0.01
+)
+test_can_produce_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n), p=0.01
+)
+test_can_produce_above_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n - 1), p=0.01
+)
+test_can_produce_below_large_factorial_negative = define_test(
+    integers(), lambda n: n <= -50_000 and is_factorial(n + 1), p=0.01
+)
 
 
 test_can_produce_unstripped_strings = define_test(text(), lambda x: x != x.strip())
-
 test_can_produce_stripped_strings = define_test(text(), lambda x: x == x.strip())
-
 # The pass probability here was previously 0.5, but some intermediate changes
 # while working on the ir tweaked the distribution and made it flaky. We can
 # reevaluate this once things have settled down, and likely bump the pass
 # probability back up.
 test_can_produce_multi_line_strings = define_test(text(), lambda x: "\n" in x, p=0.35)
-
 test_can_produce_ascii_strings = define_test(
     text(), lambda x: all(ord(c) <= 127 for c in x)
 )
-
 test_can_produce_long_strings_with_no_ascii = define_test(
     text(min_size=5), lambda x: all(ord(c) > 127 for c in x), p=0.1
 )
-
 test_can_produce_short_strings_with_some_non_ascii = define_test(
     text(), lambda x: any(ord(c) > 127 for c in x), condition=lambda x: len(x) <= 3
 )
-
 test_can_produce_large_binary_strings = define_test(
     binary(), lambda x: len(x) > 10, p=0.3
 )
-
 test_can_produce_positive_infinity = define_test(floats(), lambda x: x == math.inf)
-
 test_can_produce_negative_infinity = define_test(floats(), lambda x: x == -math.inf)
-
 test_can_produce_nan = define_test(floats(), math.isnan)
-
 test_can_produce_floats_near_left = define_test(floats(0, 1), lambda t: t < 0.2)
-
 test_can_produce_floats_near_right = define_test(floats(0, 1), lambda t: t > 0.8)
-
 test_can_produce_floats_in_middle = define_test(floats(0, 1), lambda t: 0.2 <= t <= 0.8)
-
-test_can_produce_long_lists = define_test(lists(integers()), long_list, p=0.3)
-
+test_can_produce_long_lists = define_test(
+    lists(integers()), lambda x: len(x) >= 10, p=0.3
+)
 test_can_produce_short_lists = define_test(lists(integers()), lambda x: len(x) <= 10)
-
 test_can_produce_the_same_int_twice = define_test(
     lists(integers()), lambda t: len(set(t)) < len(t)
 )
@@ -188,41 +190,30 @@ def distorted_value(x):
     return min(c.values()) * 3 <= max(c.values())
 
 
-def distorted(x):
-    return distorted_value(map(type, x))
-
-
 test_sampled_from_large_number_can_mix = define_test(
     lists(sampled_from(range(50)), min_size=50), lambda x: len(set(x)) >= 25
 )
-
-
 test_sampled_from_often_distorted = define_test(
     lists(sampled_from(range(5))), distorted_value, condition=lambda x: len(x) >= 3
 )
-
-
 test_non_empty_subset_of_two_is_usually_large = define_test(
     sets(sampled_from((1, 2))), lambda t: len(t) == 2
 )
-
 test_subset_of_ten_is_sometimes_empty = define_test(
     sets(integers(1, 10)), lambda t: len(t) == 0
 )
 
 test_mostly_sensible_floats = define_test(floats(), lambda t: t + 1 > t)
-
 test_mostly_largish_floats = define_test(
     floats(), lambda t: t + 1 > 1, condition=lambda x: x > 0
 )
-
 test_ints_can_occasionally_be_really_large = define_test(
     integers(), lambda t: t >= 2**63
 )
 
 test_mixing_is_sometimes_distorted = define_test(
     lists(booleans() | tuples()),
-    distorted,
+    lambda x: distorted_value(map(type, x)),
     condition=lambda x: len(set(map(type, x))) == 2,
     suppress_health_check=[HealthCheck.filter_too_much],
 )
@@ -242,12 +233,8 @@ test_mixes_not_too_often = define_test(
 )
 
 test_integers_are_usually_non_zero = define_test(integers(), lambda x: x != 0)
-
 test_integers_are_sometimes_zero = define_test(integers(), lambda x: x == 0)
-
 test_integers_are_often_small = define_test(integers(), lambda x: abs(x) <= 100)
-
-
 test_integers_are_often_small_but_not_that_small = define_test(
     integers(), lambda x: 50 <= abs(x) <= 255
 )
@@ -267,11 +254,9 @@ one_of_nested_strategy = one_of(
 )
 
 for i in range(8):
-    exec(
-        f"""test_one_of_flattens_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_branches_{i} = define_test(
         one_of_nested_strategy, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 xor_nested_strategy = just(0) | (
@@ -279,11 +264,9 @@ xor_nested_strategy = just(0) | (
 )
 
 for i in range(8):
-    exec(
-        f"""test_xor_flattens_branches_{i} = define_test(
+    exec(f"""test_xor_flattens_branches_{i} = define_test(
         xor_nested_strategy, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `map()`.  They generate integers
@@ -304,11 +287,9 @@ one_of_nested_strategy_with_map = one_of(
 )
 
 for i in (1, 4, 6, 16, 20, 24, 28, 32):
-    exec(
-        f"""test_one_of_flattens_map_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_map_branches_{i} = define_test(
         one_of_nested_strategy_with_map, lambda x: x == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `flatmap()`.  It generates lists
@@ -326,11 +307,9 @@ one_of_nested_strategy_with_flatmap = just(None).flatmap(
 )
 
 for i in range(8):
-    exec(
-        f"""test_one_of_flattens_flatmap_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_flatmap_branches_{i} = define_test(
         one_of_nested_strategy_with_flatmap, lambda x: len(x) == {i}
-    )"""
-    )
+    )""")
 
 
 xor_nested_strategy_with_flatmap = just(None).flatmap(
@@ -346,11 +325,9 @@ xor_nested_strategy_with_flatmap = just(None).flatmap(
 )
 
 for i in range(8):
-    exec(
-        f"""test_xor_flattens_flatmap_branches_{i} = define_test(
+    exec(f"""test_xor_flattens_flatmap_branches_{i} = define_test(
         xor_nested_strategy_with_flatmap, lambda x: len(x) == {i}
-    )"""
-    )
+    )""")
 
 
 # This strategy tests interactions with `filter()`.  It generates the even
@@ -362,17 +339,14 @@ one_of_nested_strategy_with_filter = one_of(
 ).filter(lambda x: x % 2 == 0)
 
 for i in range(4):
-    exec(
-        f"""test_one_of_flattens_filter_branches_{i} = define_test(
+    exec(f"""test_one_of_flattens_filter_branches_{i} = define_test(
         one_of_nested_strategy_with_filter, lambda x: x == 2 * {i}
-    )"""
-    )
+    )""")
 
 
 test_long_duplicates_strings = define_test(
     tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1]
 )
-
 test_can_produce_nasty_strings = define_test(
     text(), lambda s: s in {"NaN", "Inf", "undefined"}, p=0.01
 )

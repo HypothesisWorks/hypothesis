@@ -8,13 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
+import subprocess
 import sys
 import warnings
 from decimal import Decimal
 
 import pytest
 
-from hypothesis import example, find, given, strategies as st
+from hypothesis import example, find, given, settings, strategies as st
 from hypothesis.errors import (
     HypothesisException,
     InvalidArgument,
@@ -24,9 +26,24 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS
 
 from tests.common.debug import find_any
-from tests.common.utils import Why, fails_with, skipif_emscripten, xfail_on_crosshair
+from tests.common.utils import (
+    Why,
+    fails_with,
+    skipif_emscripten,
+    skipif_threading,
+    xfail_on_crosshair,
+)
 
 pytest_plugins = "pytester"
+# .example() uses random.shuffle, which changes the global random state and
+# produces "do not use the `random` module inside strategies" deprecation warnings.
+#
+# Since we recommend against using .example() interactively, fixing this is
+# an enhancement, not a bug.
+pytestmark = pytest.mark.skipif(
+    settings.get_current_profile_name() == "threading",
+    reason=".example() is not thread-safe",
+)
 
 
 # Allow calling .example() without warnings for all tests in this module
@@ -94,6 +111,7 @@ def test_interactive_example():
 """
 
 
+@skipif_threading  # pytester not thread safe
 def test_selftests_exception_contains_note(pytester):
     # The note is added by a pytest hook, so we need to run it under pytest in a
     # subenvironment with (effectively) the same toplevel conftest.
@@ -105,6 +123,20 @@ def test_selftests_exception_contains_note(pytester):
             pytester.makepyfile(EXAMPLE_GENERATING_TEST), "-p", "no:cacheprovider"
         )
         assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
+
+
+@skipif_emscripten
+def test_script_example_does_not_emit_warning(tmp_path):
+    script = tmp_path / "script.py"
+    script.write_text(
+        "from hypothesis.strategies import integers\nintegers().example()\n",
+        encoding="utf-8",
+    )
+    # get rid of PYTEST_CURRENT_TEST, which we special-case as forcing this
+    # warning to still appear
+    env = os.environ.copy()
+    env.pop("PYTEST_CURRENT_TEST")
+    subprocess.check_call([sys.executable, "-Werror", str(script)], env=env)
 
 
 @skipif_emscripten

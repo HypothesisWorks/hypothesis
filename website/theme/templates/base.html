@@ -1,61 +1,103 @@
 <!DOCTYPE html>
-<html lang="{{ DEFAULT_LANG }}">
+<html lang="en">
 
-  <head>
-    {% block head %}
-      <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
-      <link rel="stylesheet" type="text/css" href="{{ SITEURL }}/theme/style.css"/>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      {% if FEED_ATOM %}
-        <link href="/{{ FEED_ATOM }}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Atom Feed" />
-      {% endif %}
-      {% if FEED_RSS %}
-        <link href="/{{ FEED_RSS }}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} RSS Feed" />
-      {% endif %}
-    {% endblock head %}
-  </head>
+<head>
+  <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <body id="index">
-    <!-- header -->
-    <!-- <header class="siteheader"> -->
-      <!-- site image -->
-      {% if PROFILE_IMAGE_URL %}
-        <div class= "siteimage">
-          <a class="nodec" href={{ PROFILE_IMAGE_URL }}>
-            <img width="200" height="200" style="float: right;" src={{ PROFILE_IMAGE_URL }}>
-          </a>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="{{ SITEURL }}/theme/style.css"/>
+  <link rel="stylesheet" type="text/css" href="{{ SITEURL }}/theme/prism.css"/>
+
+  {% if FEED_ATOM %}
+    <link href="/{{ FEED_ATOM }}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Atom Feed" />
+  {% endif %}
+  {% if FEED_RSS %}
+    <link href="/{{ FEED_RSS }}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} RSS Feed" />
+  {% endif %}
+
+  {% block head %}
+  {% endblock head %}
+</head>
+
+<body class="page">
+  <div class="page__container">
+
+    <div class="header">
+      <div class="header__container">
+
+        <div class="header__brand">
+          <div class="brand">
+            <a href="{{ SITEURL }}/" class="brand__link">
+              <div class="brand__logo">
+                <img src="{{ PROFILE_IMAGE_URL }}" alt="{{ SITENAME }} Logo" class="brand__image">
+              </div>
+              <div class="brand__text">
+                <div class="brand__title">{{ SITENAME }}</div>
+                <div class="brand__subtitle">{{ SITESUBTITLE }}</div>
+              </div>
+            </a>
+          </div>
         </div>
-      {% endif %}
 
-      <div class="sitebanner">
-	      <h1><span class="bold-initial">Hypothesis</span></h1>
-        <h1 class ="sitesubtitle">{{ SITESUBTITLE }}</h1>
-        <!-- nav -->
-      </div> <!-- sitebanner -->
-      <div class="navmenuitems">
-        <nav class="menu">
-          <ul>
-            <!-- menu items-->
+        <nav class="nav">
+          <ul class="nav__list">
             {% for title, link in MENUITEMS %}
-              <li><a class="nodec" href="{{ link }}">{{ title }}</a></li>
+              <li class="nav__item">
+                <a href="{{ link }}" class="nav__link">{{ title }}</a>
+              </li>
             {% endfor %}
-            <!--pages-->
             {% if DISPLAY_PAGES_ON_MENU %}
               {% for p in PAGES %}
-                <li{% if p == page %} class="active"{% endif %}><a class="nodec" href="{{ SITEURL }}/{{ p.url }}">{{ p.title }}</a></li>
+                <li class="nav__item{% if p == page %} nav__item--active{% endif %}">
+                  <a href="{{ SITEURL }}/{{ p.url }}" class="nav__link">{{ p.title }}</a>
+                </li>
               {% endfor %}
             {% endif %}
           </ul>
         </nav>
+
       </div>
-    <!-- </header> -->
-    <hr>
+    </div>
 
-    <!-- content -->
-    {% block content %}
-    {% endblock %}
+    <div class="main">
+      <div class="main__container">
+        {% block content %}
+        {% endblock %}
+      </div>
+    </div>
 
-    <hr>
-  </body>
+    <div class="footer">
+      <div class="footer__container">
+        <div class="footer__content">
+          <span class="footer__text"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Make article cards clickable
+    document.addEventListener('DOMContentLoaded', function() {
+      const articleCards = document.querySelectorAll('.article-card[data-url]');
+
+      articleCards.forEach(function(card) {
+        card.style.cursor = 'pointer';
+
+        card.addEventListener('click', function(event) {
+          const url = this.getAttribute('data-url');
+          if (event.metaKey) {
+            window.open(url, '_blank');
+          } else {
+            window.location.href = url;
+          }
+        });
+      });
+    });
+  </script>
+
+  <script src="{{ SITEURL }}/theme/prism.js"></script>
+</body>
 </html>

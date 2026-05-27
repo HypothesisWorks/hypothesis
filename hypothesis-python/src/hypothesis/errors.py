@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from hypothesis.internal.compat import ExceptionGroup
 
@@ -28,7 +28,7 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, reason: Optional[str] = None) -> None:
+    def __init__(self, reason: str | None = None) -> None:
         self.reason = reason
 
 
@@ -61,8 +61,14 @@ class ChoiceTooLarge(HypothesisException):
 
 
 class Flaky(_Trimmable):
-    """Base class for indeterministic failures. Usually one of the more
-    specific subclasses (FlakyFailure or FlakyStrategyDefinition) is raised."""
+    """
+    Base class for indeterministic failures. Usually one of the more
+    specific subclasses (|FlakyFailure| or |FlakyStrategyDefinition|) is raised.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
+    """
 
 
 class FlakyReplay(Flaky):
@@ -80,12 +86,17 @@ class FlakyReplay(Flaky):
 
 
 class FlakyStrategyDefinition(Flaky):
-    """This function appears to cause inconsistent data generation.
+    """
+    This function appears to cause inconsistent data generation.
 
     Common causes for this problem are:
         1. The strategy depends on external state. e.g. it uses an external
            random number generator. Try to make a version that passes all the
            relevant state in from Hypothesis.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
 
@@ -94,7 +105,8 @@ class _WrappedBaseException(Exception):
 
 
 class FlakyFailure(ExceptionGroup, Flaky):
-    """This function appears to fail non-deterministically: We have seen it
+    """
+    This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
     did not fail, or caused a distinct error.
 
@@ -107,6 +119,10 @@ class FlakyFailure(ExceptionGroup, Flaky):
         3. The function is timing sensitive and can fail or pass depending on
            how long it takes. Try breaking it up into smaller functions which
            don't do that and testing those instead.
+
+    .. seealso::
+
+        See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
     def __new__(cls, msg, group):
@@ -121,6 +137,23 @@ class FlakyFailure(ExceptionGroup, Flaky):
                 err.__cause__ = err.__context__ = exc
                 group[i] = err
         return ExceptionGroup.__new__(cls, msg, group)
+
+    # defining `derive` is required for `split` to return an instance of FlakyFailure
+    # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
+    # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
+    def derive(self, excs):
+        return type(self)(self.message, excs)
+
+
+class FlakyBackendFailure(FlakyFailure):
+    """
+    A failure was reported by an |alternative backend|,
+    but this failure did not reproduce when replayed under the Hypothesis backend.
+
+    When an alternative backend reports a failure, Hypothesis first replays it
+    under the standard Hypothesis backend to check for flakiness. If the failure
+    does not reproduce, Hypothesis raises this exception.
+    """
 
 
 class InvalidArgument(_Trimmable, TypeError):
@@ -151,12 +184,15 @@ class HypothesisWarning(HypothesisException, Warning):
 
 
 class FailedHealthCheck(_Trimmable):
-    """Raised when a test fails a healthcheck."""
+    """Raised when a test fails a health check. See |HealthCheck|."""
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
-    """SearchStrategy.example() is designed for interactive use,
-    but should never be used in the body of a test.
+    """
+    Emitted when |.example| is used outside of interactive use.
+
+    |.example| is intended for exploratory and interactive work, not to be run as
+    part of a test suite.
     """
 
 
@@ -166,7 +202,7 @@ class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
     Actually inherits from FutureWarning, because DeprecationWarning is
     hidden by the default warnings filter.
 
-    You can configure the Python :mod:`python:warnings` to handle these
+    You can configure the :mod:`python:warnings` module to handle these
     warnings differently to others, either turning them into errors or
     suppressing them entirely.  Obviously we would prefer the former!
     """
@@ -186,8 +222,8 @@ class Frozen(HypothesisException):
 
 def __getattr__(name: str) -> Any:
     if name == "MultipleFailures":
-        from hypothesis._settings import note_deprecation
         from hypothesis.internal.compat import BaseExceptionGroup
+        from hypothesis.utils.deprecation import note_deprecation
 
         note_deprecation(
             "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
@@ -202,12 +238,17 @@ def __getattr__(name: str) -> Any:
 
 
 class DeadlineExceeded(_Trimmable):
-    """Raised when an individual test body has taken too long to run."""
+    """
+    Raised when an input takes too long to run, relative to the |settings.deadline|
+    setting.
+    """
 
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
-            "Test took %.2fms, which exceeds the deadline of %.2fms"
-            % (runtime.total_seconds() * 1000, deadline.total_seconds() * 1000)
+            f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
+            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms. If you "
+            "expect test cases to take this long, you can use @settings(deadline=...) "
+            "to either set a higher deadline, or to disable it with deadline=None."
         )
         self.runtime = runtime
         self.deadline = deadline
@@ -249,19 +290,19 @@ class SmallSearchSpaceWarning(HypothesisWarning):
 
 
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
+_valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 
 
 class BackendCannotProceed(HypothesisException):
-    """UNSTABLE API
+    """
+    Raised by alternative backends when a |PrimitiveProvider| cannot proceed.
+    This is expected to occur inside one of the ``.draw_*()`` methods, or for
+    symbolic execution perhaps in |PrimitiveProvider.realize|.
 
-    Raised by alternative backends when the PrimitiveProvider cannot proceed.
-    This is expected to occur inside one of the `.draw_*()` methods, or for
-    symbolic execution perhaps in `.realize(...)`.
-
-    The optional `scope` argument can enable smarter integration:
+    The optional ``scope`` argument can enable smarter integration:
 
         verified:
-            Do not request further test cases from this backend.  We _may_
+            Do not request further test cases from this backend.  We *may*
             generate more test cases with other backends; if one fails then
             Hypothesis will report unsound verification in the backend too.
 
@@ -277,4 +318,9 @@ class BackendCannotProceed(HypothesisException):
     """
 
     def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
+        if scope not in _valid_cannot_proceed_scopes:
+            raise InvalidArgument(
+                f"Got scope={scope}, but expected one of "
+                f"{_valid_cannot_proceed_scopes!r}"
+            )
         self.scope = scope

@@ -27,6 +27,8 @@ from hypothesis import (
 from hypothesis.internal import compat
 from hypothesis.internal.escalation import InterestingOrigin
 
+from tests.common.utils import skipif_threading
+
 
 def strat():
     return st.builds(dict, one=strat_one())
@@ -110,6 +112,7 @@ def random_func(x):
     random.random()
 
 
+@skipif_threading
 def test_prng_state_unpolluted_by_given_issue_1266():
     # Checks that @given doesn't leave the global PRNG in a particular
     # modified state; there may be no effect or random effect but not

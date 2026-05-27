@@ -27,6 +27,8 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+# use pinned redis version instead of inheriting from fakeredis
+pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
@@ -36,7 +38,7 @@ $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
 
 pip install ".[lark]"
-pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
 pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
@@ -47,9 +49,9 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/codemods/
   pip uninstall -y libcst click
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 9))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.9
-    pip install numpy==2.0.2
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.10
+    pip install numpy==2.2.6
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi

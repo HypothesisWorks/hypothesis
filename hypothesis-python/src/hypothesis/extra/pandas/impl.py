@@ -11,21 +11,19 @@
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from copy import copy
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Union
 
-import attr
 import numpy as np
 import pandas
 
 from hypothesis import strategies as st
-from hypothesis._settings import note_deprecation
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -34,6 +32,7 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal.strategies import Ex, check_strategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
+from hypothesis.utils.deprecation import note_deprecation
 
 try:
     from pandas.core.arrays.integer import IntegerDtype
@@ -107,31 +106,32 @@ def elements_and_dtype(elements, dtype, source=None):
     _get_subclasses = getattr(IntegerDtype, "__subclasses__", list)
     dtype = {t.name: t() for t in _get_subclasses()}.get(dtype, dtype)
 
+    is_na_dtype = False
     if isinstance(dtype, IntegerDtype):
         is_na_dtype = True
         dtype = np.dtype(dtype.name.lower())
     elif dtype is not None:
-        is_na_dtype = False
         dtype = try_convert(np.dtype, dtype, "dtype")
-    else:
-        is_na_dtype = False
 
     if elements is None:
         elements = npst.from_dtype(dtype)
         if is_na_dtype:
             elements = st.none() | elements
-    elif dtype is not None:
+    # as an optimization, avoid converting object dtypes, which will always
+    # remain unchanged.
+    elif dtype is not None and dtype.kind != "O":
 
         def convert_element(value):
             if is_na_dtype and value is None:
                 return None
-            name = f"draw({prefix}elements)"
+
             try:
                 return np.array([value], dtype=dtype)[0]
             except (TypeError, ValueError, OverflowError):
+                name = f"draw({prefix}elements)"
                 raise InvalidArgument(
-                    "Cannot convert %s=%r of type %s to dtype %s"
-                    % (name, value, type(value).__name__, dtype.str)
+                    f"Cannot convert {name}={value!r} of type "
+                    f"{type(value).__name__} to dtype {dtype.str}"
                 ) from None
 
         elements = elements.map(convert_element)
@@ -186,8 +186,8 @@ DEFAULT_MAX_SIZE = 10
 @defines_strategy()
 def range_indexes(
     min_size: int = 0,
-    max_size: Optional[int] = None,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    max_size: int | None = None,
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -213,12 +213,12 @@ def range_indexes(
 @defines_strategy()
 def indexes(
     *,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
     min_size: int = 0,
-    max_size: Optional[int] = None,
+    max_size: int | None = None,
     unique: bool = True,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -256,12 +256,17 @@ def indexes(
 @defines_strategy()
 def series(
     *,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
     dtype: Any = None,
-    index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
-    fill: Optional[st.SearchStrategy[Ex]] = None,
+    # new-style unions hit https://github.com/sphinx-doc/sphinx/issues/11211 during
+    # doc builds. See related comment in django/_fields.py. Quote to prevent
+    # shed/pyupgrade from changing it.
+    index: (
+        st.SearchStrategy["Union[Sequence, pandas.Index]"] | None  # noqa: UP007
+    ) = None,
+    fill: st.SearchStrategy[Ex] | None = None,
     unique: bool = False,
-    name: st.SearchStrategy[Optional[str]] = st.none(),
+    name: st.SearchStrategy[str | None] = st.none(),
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -358,7 +363,7 @@ def series(
     return result()
 
 
-@attr.s(slots=True)
+@dataclass(slots=True, frozen=False)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 
@@ -376,19 +381,19 @@ class column(Generic[Ex]):
     * unique: If all values in this column should be distinct.
     """
 
-    name: Optional[Union[str, int]] = attr.ib(default=None)
-    elements: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
-    dtype: Any = attr.ib(default=None, repr=get_pretty_function_description)
-    fill: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
-    unique: bool = attr.ib(default=False)
+    name: str | int | None = None
+    elements: st.SearchStrategy[Ex] | None = None
+    dtype: Any = None
+    fill: st.SearchStrategy[Ex] | None = None
+    unique: bool = False
 
 
 def columns(
-    names_or_number: Union[int, Sequence[str]],
+    names_or_number: int | Sequence[str],
     *,
     dtype: Any = None,
-    elements: Optional[st.SearchStrategy[Ex]] = None,
-    fill: Optional[st.SearchStrategy[Ex]] = None,
+    elements: st.SearchStrategy[Ex] | None = None,
+    fill: st.SearchStrategy[Ex] | None = None,
     unique: bool = False,
 ) -> list[column[Ex]]:
     """A convenience function for producing a list of :class:`column` objects
@@ -401,7 +406,7 @@ def columns(
     create the columns.
     """
     if isinstance(names_or_number, (int, float)):
-        names: list[Union[int, str, None]] = [None] * names_or_number
+        names: list[int | str | None] = [None] * names_or_number
     else:
         names = list(names_or_number)
     return [
@@ -412,10 +417,10 @@ def columns(
 
 @defines_strategy()
 def data_frames(
-    columns: Optional[Sequence[column]] = None,
+    columns: Sequence[column] | None = None,
     *,
-    rows: Optional[st.SearchStrategy[Union[dict, Sequence[Any]]]] = None,
-    index: Optional[st.SearchStrategy[Ex]] = None,
+    rows: st.SearchStrategy[dict | Sequence[Any]] | None = None,
+    index: st.SearchStrategy[Ex] | None = None,
 ) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
@@ -578,7 +583,6 @@ def data_frames(
             raise InvalidArgument(f"duplicate definition of column name {c.name!r}")
 
         column_names.add(c.name)
-
         c.elements, _ = elements_and_dtype(c.elements, c.dtype, label)
 
         if c.dtype is None and rows is not None:
@@ -589,7 +593,6 @@ def data_frames(
         c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique, name=label
         )
-
         rewritten_columns.append(c)
 
     if rows is None:
@@ -609,13 +612,12 @@ def data_frames(
 
             # For columns with no filling the problem is harder, and drawing
             # them like that would result in rows being very far apart from
-            # each other in the underlying data stream, which gets in the way
+            # each other in the choice sequence, which gets in the way
             # of shrinking. So what we do is reorder and draw those columns
             # row wise, so that the values of each row are next to each other.
-            # This makes life easier for the shrinker when deleting blocks of
-            # data.
-            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
+            # This makes life easier for the shrinker when deleting choices.
 
+            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
             if columns_without_fill:
                 for c in columns_without_fill:
                     data[c.name] = pandas.Series(
@@ -637,8 +639,9 @@ def data_frames(
                                 reject()
                         else:
                             value = draw(c.elements)
+
                         try:
-                            data[c.name][i] = value
+                            data[c.name].iloc[i] = value
                         except ValueError as err:  # pragma: no cover
                             # This just works in Pandas 1.4 and later, but gives
                             # a confusing error on previous versions.
@@ -719,13 +722,13 @@ def data_frames(
                         for k in row:
                             if k not in column_names:
                                 raise InvalidArgument(
-                                    "Row %r contains column %r not in columns %r)"
-                                    % (row, k, [c.name for c in rewritten_columns])
+                                    f"Row {row!r} contains column {k!r} not in "
+                                    f"columns {[c.name for c in rewritten_columns]!r})"
                                 )
                         row = as_list
                     if any_unique:
                         has_duplicate = False
-                        for seen, value in zip(all_seen, row):
+                        for seen, value in zip(all_seen, row, strict=False):
                             if seen is None:
                                 continue
                             if value in seen:

@@ -1,0 +1,24 @@
+# serializer version: 1
+# name: test_data_draw
+  '''
+  Falsifying example: inner(
+      data=data(...),
+  )
+  Draw 1: 0
+  Draw 2: ''
+  '''
+# ---
+# name: test_sampled_from_enum_flag
+  '''
+  Falsifying example: inner(
+      c=test_sampled_from_enum_flag.<locals>.Color.RED,
+  )
+  '''
+# ---
+# name: test_sampled_from_module_level_enum_flag
+  '''
+  Falsifying example: inner(
+      d=Direction.NORTH,
+  )
+  '''
+# ---

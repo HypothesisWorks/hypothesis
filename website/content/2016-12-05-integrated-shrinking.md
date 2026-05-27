@@ -139,7 +139,7 @@ quickly become a nightmare.
 
 I don't think it's an accident that the main systems to get this right are
 in dynamic languages. It's certainly not *essential* - [the original proposal that
-lead to the implementation for test.check was for
+led to the implementation for test.check was for
 Haskell](https://mail.haskell.org/pipermail/libraries/2013-November/021674.html),
 and [Jack](https://github.com/ambiata/disorder.hs/tree/master/disorder-jack) is
 an alternative property based system for Haskell that does this - but you

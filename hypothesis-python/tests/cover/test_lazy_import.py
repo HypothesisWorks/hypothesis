@@ -29,6 +29,7 @@ class TestDoesNotImportRunners(unittest.TestCase):
     @given(strat)
     def test_does_not_import_nose(self, x):
         assert "nose" not in sys.modules
+        assert "nose2" not in sys.modules
 
     @given(strat)
     def test_does_not_import_pytest(self, x):

@@ -112,7 +112,7 @@ def test_specific_error_for_coroutine_functions():
         foo()
 
 
-@pytest.mark.parametrize("setting_name", all_settings.keys())
+@pytest.mark.parametrize("setting_name", all_settings)
 def test_suggests_at_settings_if_extra_kwarg_matches_setting_name(setting_name):
     val = 1
 

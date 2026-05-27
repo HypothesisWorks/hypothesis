@@ -14,7 +14,7 @@ import unicodedata
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, Phase, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
@@ -78,8 +78,8 @@ def _test_matching_pattern(pattern, *, isvalidchar, is_unicode=False):
             assert r.search(c), msg % (pattern, c, c, unicodedata.category(c))
         else:
             assert not r.search(c), (
-                '"%s" supposed not to match "%s" (%r, category "%s"), '
-                "but it does" % (pattern, c, c, unicodedata.category(c))
+                f'"{pattern}" supposed not to match {c!r} (category '
+                f"{unicodedata.category(c)!r}), but it does"
             )
 
 
@@ -104,7 +104,10 @@ def test_matching(category, predicate, invert, is_unicode):
     _test_matching_pattern(category, isvalidchar=pred, is_unicode=is_unicode)
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~30s each")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~30s each; CrossHair strings just aren't fast enough",
+)
 @pytest.mark.parametrize(
     "pattern",
     [
@@ -191,7 +194,10 @@ def test_any_with_dotall_generate_newline_binary(pattern):
     find_any(st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10**6))
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~30s each")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~30s each; CrossHair strings just aren't fast enough",
+)
 @pytest.mark.parametrize(
     "pattern",
     ["\\d", "[\\d]", "[^\\D]", "\\w", "[\\w]", "[^\\W]", "\\s", "[\\s]", "[^\\S]"],
@@ -491,3 +497,28 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
 @given(st.from_regex(r"[^.].*", alphabet=st.sampled_from("abc") | st.just(".")))
 def test_can_pass_union_for_alphabet(_):
     pass
+
+
+@pytest.mark.parametrize("explain", [False, True])
+def test_regex_output_should_print_as_string(explain):
+    phases = [Phase.generate, Phase.shrink]
+    if explain:
+        phases.append(Phase.explain)
+
+    @settings(phases=phases)
+    @given(s=st.from_regex(r"..", fullmatch=True))
+    def test(s):
+        raise AssertionError
+
+    with pytest.raises(AssertionError) as err:
+        test()
+
+    explain_line = "  # or any other generated value" if explain else ""
+
+    expected = f"""
+Falsifying example: test(
+    s='00',{explain_line}
+)
+"""
+
+    assert "\n".join(err.value.__notes__).strip() == expected.strip()

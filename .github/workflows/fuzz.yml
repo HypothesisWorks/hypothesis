@@ -17,16 +17,17 @@ on:
 
 jobs:
   fuzz:
+    if: github.repository == 'HypothesisWorks/hypothesis' || github.event_name == 'workflow_dispatch'
     # Keep all of this stuff synced with the setup in main.yml for CI
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.10
+    - name: Set up Python 3.14
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10.9"
+        python-version: "3.14.2"
     - name: Restore cache
       uses: actions/cache@v3
       with:
@@ -73,7 +74,7 @@ jobs:
             --ignore=hypothesis-python/tests/ghostwriter/
 
     - name: Upload patch files with covering and failing `@example()`s
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: explicit-example-patches
@@ -83,7 +84,7 @@ jobs:
     # Note that we can also pull it down to use locally via
     # https://hypothesis.readthedocs.io/en/latest/database.html#hypothesis.database.GitHubArtifactDatabase
     - name: Upload example database
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: hypothesis-example-db

@@ -13,7 +13,7 @@ import uuid
 import pytest
 from fakeredis import FakeRedis
 
-from hypothesis import strategies as st
+from hypothesis import settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.redis import RedisExampleDatabase
@@ -109,6 +109,10 @@ def test_redis_listener():
     _database_conforms_to_listener_api(
         lambda _path: RedisExampleDatabase(FakeRedis()),
         flush=flush_messages,
+        parent_settings=settings(
+            max_examples=5,
+            stateful_step_count=10,
+        ),
     )
 
 
@@ -142,3 +146,39 @@ def test_redis_listener_explicit():
     db.save(b"a", b"c")
     flush_messages(db)
     assert calls == 3
+
+
+def test_redis_move_from_key_without_value():
+    # explicit covering test for:
+    # * moving a value from a key without that value
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.save(b"a", b"x")
+    db.save(b"b", b"x")
+    db.move(b"a", b"b", b"y")
+
+
+def test_redis_move_into_key_with_value():
+    # explicit covering test for:
+    # * moving a value into a key with that value
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.save(b"a", b"y")
+    db.save(b"b", b"x")
+    db.move(b"a", b"b", b"x")
+
+
+def test_redis_move_to_same_key():
+    # explicit covering test for:
+    # * moving a value where src == dest
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.move(b"a", b"a", b"x")
+    assert list(db.fetch(b"a")) == [b"x"]
+
+
+def test_redis_equality():
+    redis = FakeRedis()
+    assert RedisExampleDatabase(redis) == RedisExampleDatabase(redis)
+    # FakeRedis() != FakeRedis(), not much we can do here
+    assert RedisExampleDatabase(FakeRedis()) != RedisExampleDatabase(FakeRedis())

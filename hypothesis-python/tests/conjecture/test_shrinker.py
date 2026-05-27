@@ -16,22 +16,18 @@ from hypothesis import HealthCheck, assume, example, given, settings, strategies
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import (
-    Shrinker,
-    ShrinkPass,
-    StopShrinking,
-    node_program,
-)
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, StopShrinking
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
+from tests.common.utils import skipif_time_unpatched
 from tests.conjecture.common import (
     SOME_LABEL,
-    float_kw,
+    float_constr,
     interesting_origin,
-    ir,
     nodes,
+    nodes_inline,
     run_to_nodes,
     shrinking_from,
 )
@@ -44,9 +40,9 @@ def test_can_shrink_variable_draws_with_just_deletion(n):
         n = data.draw_integer(0, 2**4 - 1)
         b = [data.draw_integer(0, 2**8 - 1) for _ in range(n)]
         if any(b):
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (1, 1)
 
 
@@ -54,7 +50,9 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.fixate_shrink_passes(["minimize_individual_choices"]),
+        lambda self: self.fixate_shrink_passes(
+            [ShrinkPass(self.minimize_individual_choices)]
+        ),
     )
     monkeypatch.setattr(
         ConjectureRunner,
@@ -66,7 +64,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     def nodes(data):
         for _ in range(10):
             data.draw_bytes(1, 1)
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (b"\0",) * 10
 
@@ -80,9 +78,9 @@ def test_duplicate_nodes_that_go_away():
             data.mark_invalid()
         b = [data.draw_bytes(1, 1) for _ in range(x & 255)]
         if len(set(b)) <= 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_duplicated_choices)])
     assert shrinker.shrink_target.choices == (0, 0)
 
 
@@ -97,9 +95,9 @@ def test_accidental_duplication():
             data.mark_invalid()
         b = [data.draw_bytes(1, 1) for _ in range(x)]
         if len(set(b)) == 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_duplicated_choices)])
     print(shrinker.choices)
     assert shrinker.choices == (5, 5, *([b"\x00"] * 5))
 
@@ -115,7 +113,7 @@ def test_can_zero_subintervals():
             data.stop_span()
             if data.draw_integer(0, 2**8 - 1) != 1:
                 return
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (0, 1) * 10
@@ -139,9 +137,9 @@ def test_can_pass_to_an_indirect_descendant():
     def shrinker(data: ConjectureData):
         tree(data)
         if data.choices in good:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["pass_to_descendant"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.pass_to_descendant)])
     assert shrinker.choices == target
 
 
@@ -151,7 +149,7 @@ def test_shrinking_blocks_from_common_offset():
         m = data.draw_integer(0, 2**8 - 1)
         n = data.draw_integer(0, 2**8 - 1)
         if abs(m - n) <= 1 and max(m, n) > 0:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.mark_changed(0)
     shrinker.mark_changed(1)
@@ -170,7 +168,7 @@ def test_handle_empty_draws():
             data.stop_span(discard=n > 0)
             if not n:
                 break
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (0,)
 
@@ -186,9 +184,9 @@ def test_can_reorder_spans():
                 total += data.draw_integer(0, 2**9 - 1)
             data.stop_span()
         if total == 2:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["reorder_spans"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.reorder_spans)])
     assert shrinker.choices == (0, 0, 0, 1, 1, 1, 1)
 
 
@@ -199,17 +197,19 @@ def test_permits_but_ignores_raising_order(monkeypatch):
         lambda runner: runner.cached_test_function((1,)),
     )
 
-    monkeypatch.setattr(Shrinker, "shrink", lambda self: self.consider_new_nodes(ir(2)))
+    monkeypatch.setattr(
+        Shrinker, "shrink", lambda self: self.consider_new_nodes(nodes_inline(2))
+    )
 
     @run_to_nodes
     def nodes(data):
         data.draw_integer(0, 3)
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (1,)
 
 
-def test_block_deletion_can_delete_short_ranges():
+def test_node_deletion_can_delete_short_ranges():
     @shrinking_from([v for i in range(5) for _ in range(i + 1) for v in [i]])
     def shrinker(data: ConjectureData):
         while True:
@@ -218,9 +218,10 @@ def test_block_deletion_can_delete_short_ranges():
                 if data.draw_integer(0, 2**16 - 1) != n:
                     data.mark_invalid()
             if n == 4:
-                data.mark_interesting()
+                data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes([node_program("X" * i) for i in range(1, 5)])
+    passes = [shrinker.node_program("X" * i) for i in range(1, 5)]
+    shrinker.fixate_shrink_passes(passes)
     assert shrinker.choices == (4,) * 5
 
 
@@ -238,9 +239,9 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         cap = data.draw_integer(0, 2**8 - 1)
 
         if result >= 32768 and cap == 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (1, True, 65536, 1)
 
 
@@ -266,7 +267,7 @@ def test_finding_a_minimal_balanced_binary_tree():
     def shrinker(data: ConjectureData):
         _, b = tree(data)
         if not b:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (True, False, True, False, True, False, False)
@@ -277,10 +278,9 @@ def test_node_programs_are_adaptive():
     def shrinker(data: ConjectureData):
         while not data.draw_boolean():
             pass
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
-    p = shrinker.add_new_pass(node_program("X"))
-    shrinker.fixate_shrink_passes([p.name])
+    shrinker.fixate_shrink_passes([shrinker.node_program("X")])
 
     assert len(shrinker.choices) == 1
     assert shrinker.calls <= 60
@@ -294,7 +294,7 @@ def test_zero_examples_with_variable_min_size():
             any_nonzero |= data.draw_integer(0, 2**i - 1) > 0
         if not any_nonzero:
             data.mark_invalid()
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (0,) * 8 + (1,)
@@ -311,7 +311,7 @@ def test_zero_contained_examples():
             data.draw_integer(0, 2**8 - 1)
             data.stop_span()
             data.stop_span()
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (1, 0) * 4
@@ -331,7 +331,7 @@ def test_zig_zags_quickly():
         if abs(m - n) <= 10:
             data.mark_interesting(interesting_origin(1))
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.engine.valid_examples <= 100
     assert shrinker.choices == (1, 1)
 
@@ -362,9 +362,9 @@ def test_zig_zags_quickly_with_shrink_towards(
         if abs(m - shrink_towards) < 10 or abs(n - shrink_towards) < 10:
             data.mark_invalid()
         if abs(m - n) <= 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.engine.valid_examples <= 40
     assert shrinker.choices == expected
 
@@ -382,7 +382,7 @@ def test_zero_irregular_examples():
         )
         data.stop_span()
         if interesting:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (0,) * 2 + (1, 1)
@@ -399,7 +399,7 @@ def test_retain_end_of_buffer():
             if n == 0:
                 break
         if interesting:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (6, 0)
@@ -415,7 +415,7 @@ def test_can_expand_zeroed_region():
                     data.mark_invalid()
             else:
                 seen_non_zero = True
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (0,) * 5
@@ -443,23 +443,13 @@ def test_can_expand_deleted_region():
             if t() != (3, 4):
                 data.mark_invalid()
         if v1 == (0, 0) or t() == (0, 0):
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.choices == (0, 0)
 
 
-def test_shrink_pass_method_is_idempotent():
-    @shrinking_from((255,))
-    def shrinker(data: ConjectureData):
-        data.draw_integer(0, 2**8 - 1)
-        data.mark_interesting()
-
-    sp = shrinker.shrink_pass(node_program("X"))
-    assert isinstance(sp, ShrinkPass)
-    assert shrinker.shrink_pass(sp) is sp
-
-
+@skipif_time_unpatched
 def test_will_terminate_stalled_shrinks():
     # Suppress the time based slow shrinking check - we only want
     # the one that checks if we're in a stall where we've shrunk
@@ -475,7 +465,7 @@ def test_will_terminate_stalled_shrinks():
                 count += 1
                 if count >= 10:
                     return
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.shrink()
     assert shrinker.calls <= 1 + 2 * shrinker.max_stall
@@ -487,14 +477,14 @@ def test_will_let_fixate_shrink_passes_do_a_full_run_through():
         for i in range(50):
             if data.draw_integer(0, 2**8 - 1) != i:
                 data.mark_invalid()
-        data.mark_interesting()
+        data.mark_interesting(interesting_origin())
 
     shrinker.max_stall = 5
-    passes = [node_program("X" * i) for i in range(1, 11)]
+    passes = [shrinker.node_program("X" * i) for i in range(1, 11)]
     with pytest.raises(StopShrinking):
         shrinker.fixate_shrink_passes(passes)
 
-    assert shrinker.shrink_pass(passes[-1]).calls > 0
+    assert passes[-1].calls > 0
 
 
 @pytest.mark.parametrize("n_gap", [0, 1, 2])
@@ -510,9 +500,9 @@ def test_can_simultaneously_lower_non_duplicated_nearby_integers(n_gap):
         n = data.draw_integer(0, 2**16 - 1)
 
         if n == m + 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["lower_integers_together"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.lower_integers_together)])
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
@@ -522,9 +512,9 @@ def test_redistribute_with_forced_node_integer():
         n1 = data.draw_integer(0, 100)
         n2 = data.draw_integer(0, 100, forced=10)
         if n1 + n2 > 20:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     # redistribute_numeric_pairs shouldn't try modifying forced nodes while
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
@@ -537,9 +527,9 @@ def test_can_quickly_shrink_to_trivial_collection(n):
     def shrinker(data: ConjectureData):
         b = data.draw_bytes()
         if len(b) >= n:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
     assert shrinker.choices == (b"\x00" * n,)
     assert shrinker.calls < 10
 
@@ -557,7 +547,7 @@ def test_alternative_shrinking_will_lower_to_alternate_value():
         i = data.draw_integer(min_value=0, max_value=1)
         if i == 1:
             if data.draw_bytes():
-                data.mark_interesting()
+                data.mark_interesting(interesting_origin())
         else:
             n = data.draw_integer(0, 100)
             if n == 0:
@@ -565,7 +555,7 @@ def test_alternative_shrinking_will_lower_to_alternate_value():
             if seen_int is None:
                 seen_int = n
             elif n != seen_int:
-                data.mark_interesting()
+                data.mark_interesting(interesting_origin())
 
     shrinker.initial_coarse_reduction()
     assert shrinker.choices[0] == 0
@@ -593,13 +583,13 @@ numeric_nodes = nodes(choice_types=["integer", "float"])
     ChoiceNode(
         type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
-        kwargs=float_kw(),
+        constraints=float_constr(),
         was_forced=False,
     ),
     ChoiceNode(
         type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
-        kwargs=float_kw(),
+        constraints=float_constr(),
         was_forced=False,
     ),
     0,
@@ -607,27 +597,41 @@ numeric_nodes = nodes(choice_types=["integer", "float"])
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_redistribute_numeric_pairs(node1, node2, stop):
     assume(node1.value + node2.value > stop)
+    # don't test extreme shrink_towards values, which lead to this test flaking
+    # from floating point errors
+    assume(abs(node1.constraints.get("shrink_towards", 0)) <= 1e10)
+    assume(abs(node2.constraints.get("shrink_towards", 0)) <= 1e10)
     # avoid exhausting the tree while generating, which causes @shrinking_from's
     # runner to raise
     assume(
-        compute_max_children(node1.type, node1.kwargs)
-        + compute_max_children(node2.type, node2.kwargs)
+        compute_max_children(node1.type, node1.constraints)
+        + compute_max_children(node2.type, node2.constraints)
         > 2
     )
 
     @shrinking_from([node1.value, node2.value])
     def shrinker(data: ConjectureData):
-        v1 = getattr(data, f"draw_{node1.type}")(**node1.kwargs)
-        v2 = getattr(data, f"draw_{node2.type}")(**node2.kwargs)
+        v1 = getattr(data, f"draw_{node1.type}")(**node1.constraints)
+        v2 = getattr(data, f"draw_{node2.type}")(**node2.constraints)
         if v1 + v2 > stop:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
     assert len(shrinker.choices) == 2
-    # we should always have lowered the first choice and raised the second choice
-    # - or left the choices the same.
-    assert shrinker.choices[0] <= node1.value
-    assert shrinker.choices[1] >= node2.value
+
+    shrink_towards = (
+        node1.constraints["shrink_towards"] if node1.type == "integer" else 0
+    )
+    # we should always have brought the first choice closer to shrink_towards,
+    # or left the choices the same. And the values should sum to where they started.
+    assert abs(shrinker.choices[0] - shrink_towards) <= abs(
+        node1.value - shrink_towards
+    )
+    assert (
+        # pytest.approx for differences in floating-point summations
+        pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001)
+        == node1.value + node2.value
+    )
 
 
 @pytest.mark.parametrize(
@@ -651,9 +655,9 @@ def test_lower_duplicated_characters_across_choices(start, expected, gap):
 
         s2 = data.draw(st.text())
         if s1 == s2:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
-    shrinker.fixate_shrink_passes(["lower_duplicated_characters"])
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.lower_duplicated_characters)])
     assert shrinker.choices == (expected[0],) + (0,) * gap + (expected[1],)
 
 
@@ -665,7 +669,192 @@ def test_shrinking_one_of_with_same_shape():
         n = data.draw_integer(0, 1)
         data.draw_integer()
         if n == 1:
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     shrinker.initial_coarse_reduction()
     assert shrinker.choices == (1, 0)
+
+
+@pytest.mark.parametrize("invert", [False, True])  # cover the negative case
+@pytest.mark.parametrize(
+    "min_value, max_value", [(None, None), (None, 15), (-15, None), (-15, 15)]
+)
+@pytest.mark.parametrize(
+    "shrink_towards, start",
+    [
+        # straddles shrink_towards
+        (5, (2, 10)),
+        # both below shrink_towards
+        (5, (2, 4)),
+        # both above shrink_towards
+        (5, (8, 10)),
+        # exactly shrink_towards
+        (5, (5, 5)),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_integer(
+    min_value, max_value, shrink_towards, start, invert
+):
+    if invert:
+        shrink_towards = -shrink_towards
+        start = (-start[1], -start[0])
+
+    # redistributing should redistribute towards shrink_towards, not 0
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(
+            shrink_towards=shrink_towards, min_value=min_value, max_value=max_value
+        )
+        v2 = data.draw_integer(
+            shrink_towards=shrink_towards, min_value=min_value, max_value=max_value
+        )
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@pytest.mark.parametrize("invert", [False, True])
+@pytest.mark.parametrize(
+    "start",
+    [
+        (2.0, 10.0),
+        (2.0, 4.0),
+        (8.0, 10.0),
+        (5.0, 5.0),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_float(start, invert):
+    if invert:
+        start = (-start[1], -start[0])
+
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_float()
+        v2 = data.draw_float()
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (0, target)
+
+
+@pytest.mark.parametrize(
+    "shrink_towards, start",
+    [
+        (5, (2, 10.0)),
+        (5, (2, 4.0)),
+        (5, (8, 10.0)),
+        (5, (5, 5.0)),
+    ],
+)
+def test_redistribute_numeric_pairs_shrink_towards_explicit_combined(
+    shrink_towards, start
+):
+    # test case for one integer and one float draw. No `invert` parametrization
+    # because it moderately complicates things
+    target = start[0] + start[1]
+
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(shrink_towards=shrink_towards)
+        v2 = data.draw_float()
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@given(st.data(), st.integers(), st.integers())
+def test_redistribute_numeric_pairs_shrink_towards_integer(
+    data, target, shrink_towards
+):
+    start = data.draw(st.integers(max_value=target))
+    end = target - start
+
+    @shrinking_from([start, end])
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_integer(shrink_towards=shrink_towards)
+        v2 = data.draw_integer(shrink_towards=shrink_towards)
+        if v1 + v2 == target:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (shrink_towards, target - shrink_towards)
+
+
+@pytest.mark.parametrize(
+    "start, expected",
+    [
+        # NFKD decomposition + drop combining: latin letters with diacritics.
+        ("À", "A"),
+        ("é", "e"),
+        ("Ñ", "N"),
+        # Compatibility decomposition: superscripts, mathematical alphabets,
+        # circled forms, fullwidth.
+        ("²", "2"),
+        ("𝕿", "T"),
+        ("Ⓐ", "A"),
+        ("Ｂ", "B"),
+        # Ligatures decompose to their first base char under NFKD.
+        ("ﬁ", "f"),
+        # Case mapping that produces multiple chars: ``ß.casefold() == "ss"``,
+        # and we accept any of the individual characters of the case-mapped
+        # form as a single-char replacement.
+        ("ß", "s"),
+        # Case mapping: uppercase has a smaller shrink-order index than
+        # lowercase, so we can swap a→A.
+        ("a", "A"),
+        # Multi-character: the pass operates one character at a time, so a
+        # mixed string should reduce each accented char independently.
+        ("Àé", "Ae"),
+    ],
+)
+def test_normalize_unicode_chars_pass(start, expected):
+    @shrinking_from([start])
+    def shrinker(data: ConjectureData):
+        s = data.draw(st.text(min_size=1))
+        # Accept any string where each character is either the original or the
+        # natural-simpler replacement at that position. The pass replaces
+        # characters one at a time, so it must be able to reach `expected` via
+        # a sequence of single-character substitutions.
+        if len(s) == len(start) and all(
+            c in (sc, ec) for c, sc, ec in zip(s, start, expected, strict=True)
+        ):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == (expected,)
+
+
+def test_normalize_unicode_chars_respects_intervals():
+    # When the strategy's allowed alphabet excludes the simpler ascii form,
+    # the pass must not produce out-of-alphabet replacements. A range that
+    # contains 'À' but not 'A' should leave 'À' alone.
+    alphabet = st.characters(min_codepoint=0xC0, max_codepoint=0xFF)
+
+    @shrinking_from(["À"])
+    def shrinker(data: ConjectureData):
+        data.draw(st.text(min_size=1, alphabet=alphabet))
+        data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == ("À",)
+
+
+def test_normalize_unicode_chars_skips_when_no_simplification():
+    # Plain ascii 'A' has no natural simplification (it is already a base
+    # uppercase letter), so the pass should leave it untouched.
+    @shrinking_from(["A"])
+    def shrinker(data: ConjectureData):
+        data.draw(st.text(min_size=1))
+        data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
+    assert shrinker.choices == ("A",)

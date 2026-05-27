@@ -10,7 +10,6 @@
 
 import re
 from collections.abc import Sequence
-from typing import Union
 
 import pytest
 
@@ -58,7 +57,7 @@ def test_one_of_without_strategies_suggests_sampled_from():
         ((st.integers() | st.integers()) | st.integers(), 1),
         (st.integers() | (st.integers() | st.integers()), 1),
         (st.integers() | st.text() | st.booleans(), 1),
-        (st.from_type(Union[int, Sequence[int]]), 2),
+        (st.from_type(int | Sequence[int]), 2),
     ],
 )
 def test_one_of_unwrapping(strategy, count):

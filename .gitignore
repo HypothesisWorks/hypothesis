@@ -1,3 +1,7 @@
+# mypyc
+
+*.so
+
 # misc (editors, file systems, etc)
 
 *.swo
@@ -7,6 +11,8 @@
 .DS_Store
 .hypothesis
 .vscode/
+.claude/settings.local.json
+CLAUDE.local.md
 
 # generic build components
 
@@ -29,6 +35,7 @@ docs/_build
 _build
 .tox
 .coverage
+.coverage.*
 .pypirc
 htmlcov
 build
@@ -40,8 +47,6 @@ dist
 secrets.tar
 secrets
 
-# Rust build targets
-target
 
 _site/
 .sass-cache/

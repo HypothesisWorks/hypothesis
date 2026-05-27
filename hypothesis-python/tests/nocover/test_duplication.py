@@ -20,12 +20,14 @@ from tests.common.utils import Why, xfail_on_crosshair
 
 class Blocks(SearchStrategy):
     def __init__(self, n):
+        super().__init__()
         self.n = n
 
     def do_draw(self, data):
         return data.draw_bytes(self.n, self.n)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 @pytest.mark.parametrize("n", range(1, 5))
 def test_does_not_duplicate_blocks(n):
     counts = Counter()

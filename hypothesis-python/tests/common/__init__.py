@@ -37,21 +37,9 @@ from hypothesis.strategies import (
 
 from tests.common.debug import TIME_INCREMENT
 
-__all__ = ["TIME_INCREMENT", "OrderedPair", "standard_types"]
+__all__ = ["TIME_INCREMENT", "standard_types"]
 
 OrderedPair = namedtuple("OrderedPair", ("left", "right"))
-
-ordered_pair = integers().flatmap(
-    lambda right: integers(min_value=0).map(
-        lambda length: OrderedPair(right - length, right)
-    )
-)
-
-
-def constant_list(strat):
-    return strat.flatmap(lambda v: lists(just(v)))
-
-
 ABC = namedtuple("ABC", ("a", "b", "c"))
 
 
@@ -97,8 +85,12 @@ standard_types = [
     decimals(),
     lists(lists(booleans())),
     lists(floats(0.0, 0.0)),
-    ordered_pair,
-    constant_list(integers()),
+    integers().flatmap(
+        lambda right: integers(min_value=0).map(
+            lambda length: OrderedPair(right - length, right)
+        )
+    ),
+    integers().flatmap(lambda v: lists(just(v))),
     integers().filter(lambda x: abs(x) > 100),
     floats(min_value=-sys.float_info.max, max_value=sys.float_info.max),
     none(),

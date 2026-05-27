@@ -10,19 +10,15 @@
 
 import math
 import struct
+from collections.abc import Callable
 from sys import float_info
-from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
+from typing import Literal, SupportsFloat, TypeAlias
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-else:
-    TypeAlias = object
-
-SignedIntFormat: "TypeAlias" = Literal["!h", "!i", "!q"]
-UnsignedIntFormat: "TypeAlias" = Literal["!H", "!I", "!Q"]
-IntFormat: "TypeAlias" = Union[SignedIntFormat, UnsignedIntFormat]
-FloatFormat: "TypeAlias" = Literal["!e", "!f", "!d"]
-Width: "TypeAlias" = Literal[16, 32, 64]
+SignedIntFormat: TypeAlias = Literal["!h", "!i", "!q"]
+UnsignedIntFormat: TypeAlias = Literal["!H", "!I", "!Q"]
+IntFormat: TypeAlias = SignedIntFormat | UnsignedIntFormat
+FloatFormat: TypeAlias = Literal["!e", "!f", "!d"]
+Width: TypeAlias = Literal[16, 32, 64]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -39,7 +35,7 @@ TO_SIGNED_FORMAT: dict[UnsignedIntFormat, SignedIntFormat] = {
 }
 
 
-def reinterpret_bits(x: float, from_: str, to: str) -> float:
+def reinterpret_bits(x: float | int, from_: str, to: str) -> float | int:
     x = struct.unpack(to, struct.pack(from_, x))[0]
     assert isinstance(x, (float, int))
     return x
@@ -139,41 +135,30 @@ assert width_smallest_normals[64] == float_info.min
 mantissa_mask = (1 << 52) - 1
 
 
-def float_permitted(
-    f: float,
-    *,
-    min_value: float,
-    max_value: float,
-    allow_nan: bool,
-    smallest_nonzero_magnitude: float,
-) -> bool:
-    if math.isnan(f):
-        return allow_nan
-    if 0 < abs(f) < smallest_nonzero_magnitude:
-        return False
-    return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
-
-
 def make_float_clamper(
     min_value: float,
     max_value: float,
     *,
-    smallest_nonzero_magnitude: float,
     allow_nan: bool,
+    smallest_nonzero_magnitude: float,
 ) -> Callable[[float], float]:
     """
     Return a function that clamps positive floats into the given bounds.
     """
+    from hypothesis.internal.conjecture.choice import choice_permitted
+
     assert sign_aware_lte(min_value, max_value)
     range_size = min(max_value - min_value, float_info.max)
 
     def float_clamper(f: float) -> float:
-        if float_permitted(
+        if choice_permitted(
             f,
-            min_value=min_value,
-            max_value=max_value,
-            allow_nan=allow_nan,
-            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+            {
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+            },
         ):
             return f
         # Outside bounds; pick a new value, sampled from the allowed range,
@@ -198,7 +183,7 @@ def make_float_clamper(
     return float_clamper
 
 
-def sign_aware_lte(x: float, y: float) -> bool:
+def sign_aware_lte(x: float | int, y: float | int) -> bool:
     """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
     if x == 0.0 == y:
         return math.copysign(1.0, x) <= math.copysign(1.0, y)
@@ -206,7 +191,7 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return x <= y
 
 
-def clamp(lower: float, value: float, upper: float) -> float:
+def clamp(lower: float | int, value: float | int, upper: float | int) -> float | int:
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper.  NaN is mapped to lower."""
     # this seems pointless (and is for integers), but handles the -0.0/0.0 case.

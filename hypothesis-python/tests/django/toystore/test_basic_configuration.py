@@ -16,7 +16,7 @@ from django.test import TestCase as DjangoTestCase
 
 from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.django import TestCase, TransactionTestCase
+from hypothesis.extra.django import SimpleTestCase, TestCase, TransactionTestCase
 from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.strategies import integers
 
@@ -82,3 +82,10 @@ class TestWorkflow(VanillaTestCase):
 
         with pytest.raises(InvalidArgument):
             LocalTest("tst").tst()
+
+
+class TestSimple(SimpleTestCase):
+    @given(integers())
+    def test_that_doesnt_need_db(self, z: int):
+        company = Company(name="Company-" + str(z))
+        assert company.name.endswith(str(z))

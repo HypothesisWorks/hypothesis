@@ -11,7 +11,31 @@
 from types import MethodType
 
 
-def is_hypothesis_test(test: object) -> bool:
-    if isinstance(test, MethodType):
-        return is_hypothesis_test(test.__func__)
-    return getattr(test, "is_hypothesis_test", False)
+def is_hypothesis_test(f: object) -> bool:
+    """
+    Returns ``True`` if ``f`` represents a test function that has been defined
+    with Hypothesis. This is true for:
+
+    * Functions decorated with |@given|
+    * The ``runTest`` method of stateful tests
+
+    For example:
+
+    .. code-block:: python
+
+        @given(st.integers())
+        def f(n): ...
+
+        class MyStateMachine(RuleBasedStateMachine): ...
+
+        assert is_hypothesis_test(f)
+        assert is_hypothesis_test(MyStateMachine.TestCase().runTest)
+
+    .. seealso::
+
+        See also the :doc:`Detect Hypothesis tests
+        </how-to/detect-hypothesis-tests>` how-to.
+    """
+    if isinstance(f, MethodType):
+        return is_hypothesis_test(f.__func__)
+    return getattr(f, "is_hypothesis_test", False)

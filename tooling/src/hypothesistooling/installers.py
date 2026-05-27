@@ -10,9 +10,8 @@
 
 """Module for obtaining various versions of Python.
 
-Currently this is a thin shim around pyenv, but it would be nice to have
-this work on Windows as well by using Anaconda (as our build already
-does).
+This is a thin shim around ``uv python install`` via the
+``ensure-python.sh`` helper script.
 """
 
 import os
@@ -47,7 +46,6 @@ def ensure_python(version):
 
 
 STACK = os.path.join(HOME, ".local", "bin", "stack")
-GHC = os.path.join(HOME, ".local", "bin", "ghc")
 SHELLCHECK = shutil.which("shellcheck") or os.path.join(
     HOME, ".local", "bin", "shellcheck"
 )
@@ -57,6 +55,9 @@ def ensure_stack():
     if os.path.exists(STACK):
         return
     subprocess.check_call("mkdir -p ~/.local/bin", shell=True)
+    # if you're on macos, this will error with "--wildcards is not supported"
+    # or similar. You should put shellcheck on your PATH with your package
+    # manager of choice; eg `brew install shellcheck`.
     subprocess.check_call(
         "curl -L https://www.stackage.org/stack/linux-x86_64 "
         "| tar xz --wildcards --strip-components=1 -C $HOME"
@@ -72,56 +73,8 @@ def update_stack():
 
 
 @once
-def ensure_ghc():
-    if os.path.exists(GHC):
-        return
-    update_stack()
-    subprocess.check_call([STACK, "setup"])
-
-
-@once
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
     update_stack()
-    ensure_ghc()
     subprocess.check_call([STACK, "install", "ShellCheck"])
-
-
-@once
-def ensure_rustup():
-    scripts.run_script("ensure-rustup.sh")
-
-
-# RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, "plugins", "ruby-build")
-
-# RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, "bin")
-
-# BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "bundle")
-# GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "gem")
-
-# RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, "bin", "rbenv")
-
-
-# @once
-# def ensure_ruby():
-#     if not os.path.exists(scripts.RBENV_ROOT):
-#         git("clone", "https://github.com/rbenv/rbenv.git", scripts.RBENV_ROOT)
-#
-#     if not os.path.exists(RUBY_BUILD):
-#         git("clone", "https://github.com/rbenv/ruby-build.git", RUBY_BUILD)
-#
-#     if not os.path.exists(
-#         os.path.join(scripts.RBENV_ROOT, "versions", scripts.RBENV_VERSION)
-#     ):
-#         subprocess.check_call([RBENV_COMMAND, "install", scripts.RBENV_VERSION])
-#
-#     subprocess.check_call([GEM_EXECUTABLE, "update", "--system"])
-#
-#     if not (
-#         os.path.exists(BUNDLER_EXECUTABLE)
-#         and subprocess.call([BUNDLER_EXECUTABLE, "version"]) == 0
-#     ):
-#         subprocess.check_call([GEM_EXECUTABLE, "install", "bundler"])
-#
-#     assert os.path.exists(BUNDLER_EXECUTABLE)

@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import zipfile
 from collections import Counter
 from collections.abc import Iterable, Iterator
@@ -19,7 +20,6 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
-from typing import Optional
 
 import pytest
 
@@ -39,12 +39,13 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
+    _db_for_path,
     _pack_uleb128,
     _unpack_uleb128,
     choices_from_bytes,
     choices_to_bytes,
 )
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import HypothesisDeprecationWarning, HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.stateful import (
@@ -58,8 +59,16 @@ from hypothesis.stateful import (
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import skipif_emscripten
-from tests.conjecture.common import ir, nodes
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    skipif_emscripten,
+    skipif_threading,
+    wait_for,
+)
+from tests.conjecture.common import nodes, nodes_inline
+
+# we need real time here, not monkeypatched for CI
+time_sleep = time.sleep
 
 
 @given(lists(tuples(binary(), binary())))
@@ -86,13 +95,15 @@ def test_can_delete_keys():
 
 
 def test_default_database_is_in_memory():
-    assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
 
 
 def test_default_on_disk_database_is_dir(tmp_path):
-    assert isinstance(
-        ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
-    )
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert isinstance(
+            ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
+        )
 
 
 def test_does_not_error_when_fetching_when_not_exist(tmp_path):
@@ -103,7 +114,7 @@ def test_does_not_error_when_fetching_when_not_exist(tmp_path):
 @pytest.fixture(scope="function", params=["memory", "directory"])
 def exampledatabase(request, tmp_path):
     if request.param == "memory":
-        return ExampleDatabase()
+        return InMemoryExampleDatabase()
     assert request.param == "directory"
     return DirectoryBasedExampleDatabase(tmp_path / "examples")
 
@@ -140,6 +151,7 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
+@skipif_threading
 def test_two_directory_databases_can_interact(tmp_path):
     db1 = DirectoryBasedExampleDatabase(tmp_path)
     db2 = DirectoryBasedExampleDatabase(tmp_path)
@@ -211,7 +223,7 @@ def test_ga_require_readonly_wrapping():
 
 @contextmanager
 def ga_empty_artifact(
-    date: Optional[datetime] = None, path: Optional[Path] = None
+    date: datetime | None = None, path: Path | None = None
 ) -> Iterator[tuple[Path, Path]]:
     """Creates an empty GitHub artifact."""
     if date:
@@ -292,23 +304,26 @@ def test_ga_corrupted_artifact():
 def test_ga_deletes_old_artifacts():
     """Tests that old artifacts are automatically deleted."""
     now = datetime.now(timezone.utc)
-    with ga_empty_artifact(date=now) as (path, file_now):
-        with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
+    with (
+        ga_empty_artifact(date=now) as (path, file_now),
+        ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
             _,
             file_old,
-        ):
-            database = GitHubArtifactDatabase("test", "test", path=path)
-            # Trigger initialization
-            list(database.fetch(b""))
-            assert file_now.exists()
-            assert not file_old.exists()
+        ),
+    ):
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        # Trigger initialization
+        list(database.fetch(b""))
+        assert file_now.exists()
+        assert not file_old.exists()
 
 
+@skipif_threading
 def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
         # We patch the _fetch_artifact method to return our artifact
-        def fake_fetch_artifact(self) -> Optional[Path]:
+        def fake_fetch_artifact(self) -> Path | None:
             return artifact
 
         monkeypatch.setattr(
@@ -359,7 +374,7 @@ def test_ga_fallback_expired(monkeypatch):
         )
 
         # This should trigger the fallback
-        def fake_fetch_artifact(self) -> Optional[Path]:
+        def fake_fetch_artifact(self) -> Path | None:
             return None
 
         monkeypatch.setattr(
@@ -462,14 +477,19 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(
         configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
     )
-    tmp_path.chmod(0o000)
-    with (
-        nullcontext()
-        if WINDOWS
-        else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
-    ):
-        database = ExampleDatabase(not_set)
-    database.save(b"fizz", b"buzz")
+    try:
+        tmp_path.chmod(0o000)
+        with (
+            nullcontext()
+            if WINDOWS
+            else pytest.warns(
+                HypothesisWarning, match=".*the default location is unusable"
+            )
+        ):
+            database = _db_for_path(not_set)
+        database.save(b"fizz", b"buzz")
+    finally:
+        tmp_path.chmod(0o600)  # So that pytest can clean up tmp_path later
 
 
 @skipif_emscripten
@@ -490,21 +510,21 @@ def test_background_write_database():
 
 @given(lists(nodes()))
 # covering examples
-@example(ir(True))
-@example(ir(1))
-@example(ir(0.0))
-@example(ir(-0.0))
-@example(ir("a"))
-@example(ir(b"a"))
-@example(ir(b"a" * 50))
-@example(ir(b"1" * 100_000))  # really long bytes
+@example(nodes_inline(True))
+@example(nodes_inline(1))
+@example(nodes_inline(0.0))
+@example(nodes_inline(-0.0))
+@example(nodes_inline("a"))
+@example(nodes_inline(b"a"))
+@example(nodes_inline(b"a" * 50))
+@example(nodes_inline(b"1" * 100_000))  # really long bytes
 def test_nodes_roundtrips(nodes1):
     s1 = choices_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
     ir2 = choices_from_bytes(s1)
     assert len(nodes1) == len(ir2)
 
-    for n1, v2 in zip(nodes1, ir2):
+    for n1, v2 in zip(nodes1, ir2, strict=True):
         assert choice_equal(n1.value, v2)
 
     s2 = choices_to_bytes(ir2)
@@ -539,7 +559,7 @@ def _database_conforms_to_listener_api(
     #   the exact value of a deleted key in "delete" events. The directory database
     #   notably does not support this, and passes None instead.
 
-    @settings(parent_settings)
+    @settings(parent_settings, suppress_health_check=[HealthCheck.too_slow])
     class TestDatabaseListener(RuleBasedStateMachine):
         # this tests that if we call .delete, .save, or .move in a database, and
         # that operation changes the state of the database, any registered listeners
@@ -586,6 +606,8 @@ def _database_conforms_to_listener_api(
         @rule()
         def add_listener(self):
             self.db.add_listener(self.listener)
+            # wait for watchdog to initialize the listener asynchronously
+            time_sleep(0.1)
             self.active_listeners.append(self.listener)
 
         @precondition(lambda self: self.listener in self.active_listeners)
@@ -643,6 +665,10 @@ def _database_conforms_to_listener_api(
         def events_agree(self):
             if flush is not None:
                 flush(self.db)
+
+            wait_for(
+                lambda: len(self.expected_events) == len(self.actual_events), timeout=60
+            )
             # events *generally* don't arrive out of order, but we've had
             # flakes reported here, especially on weirder / older machines.
             # see https://github.com/HypothesisWorks/hypothesis/issues/4274
@@ -655,16 +681,21 @@ def _database_conforms_to_listener_api(
 
 
 def test_database_listener_memory():
-    _database_conforms_to_listener_api(lambda path: InMemoryExampleDatabase())
+    _database_conforms_to_listener_api(
+        lambda path: InMemoryExampleDatabase(),
+        parent_settings=settings(max_examples=5, stateful_step_count=10),
+    )
 
 
 @skipif_emscripten
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ages")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="takes ages"
+)
 def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
         flush=lambda db: db._join(),
-        parent_settings=settings(suppress_health_check=[HealthCheck.too_slow]),
+        parent_settings=settings(max_examples=5, stateful_step_count=10),
     )
 
 
@@ -707,6 +738,7 @@ def test_readonly_listener():
     db.save(b"b", b"b")
 
 
+@skipif_threading
 def test_metakeys_move_into_existing_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -718,6 +750,7 @@ def test_metakeys_move_into_existing_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys_move_into_nonexistent_key(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"k1", b"v1")
@@ -727,6 +760,7 @@ def test_metakeys_move_into_nonexistent_key(tmp_path):
     assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
 
 
+@skipif_threading
 def test_metakeys(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
 
@@ -736,13 +770,13 @@ def test_metakeys(tmp_path):
     db.save(b"k1", b"v2")
     assert set(db.fetch(db._metakeys_name)) == {b"k1"}
 
-    # deleting all the values from a key doesn't (currently?) clean up that key
+    # deleting all the values from a key removes that metakey
     db.delete(b"k1", b"v1")
     db.delete(b"k1", b"v2")
-    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+    assert set(db.fetch(db._metakeys_name)) == set()
 
     db.save(b"k2", b"v1")
-    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+    assert set(db.fetch(db._metakeys_name)) == {b"k2"}
 
 
 class TracksListens(ExampleDatabase):
@@ -785,3 +819,82 @@ def test_start_end_listening():
 
     db.clear_listeners()
     assert db.ends == 1
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_path(tmp_path):
+    ExampleDatabase(tmp_path)
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_memory():
+    ExampleDatabase(":memory:")
+
+
+@checks_deprecated_behaviour
+def test_deprecated_example_database_no_args():
+    ExampleDatabase()
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("a")),
+        (
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+            MultiplexedDatabase(
+                DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")
+            ),
+        ),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner1", "repo1"),
+        ),
+    ],
+)
+def test_database_equal(db1, db2):
+    assert db1 == db2
+
+
+@pytest.mark.parametrize(
+    "db1, db2",
+    [
+        (InMemoryExampleDatabase(), InMemoryExampleDatabase()),
+        (InMemoryExampleDatabase(), DirectoryBasedExampleDatabase("a")),
+        (BackgroundWriteDatabase(InMemoryExampleDatabase()), InMemoryExampleDatabase()),
+        (DirectoryBasedExampleDatabase("a"), DirectoryBasedExampleDatabase("b")),
+        (
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("a")),
+            ReadOnlyDatabase(DirectoryBasedExampleDatabase("b")),
+        ),
+        (
+            GitHubArtifactDatabase("owner1", "repo1"),
+            GitHubArtifactDatabase("owner2", "repo2"),
+        ),
+    ],
+)
+def test_database_not_equal(db1, db2):
+    assert db1 != db2
+
+
+@skipif_threading  # race in tmp_path
+def test_directory_db_removes_empty_dirs(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    db.save(b"k1", b"v2")
+    assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.delete(b"k1", b"v1")
+    assert db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.delete(b"k1", b"v2")
+    assert not db._key_path(b"k1").exists()
+    assert set(db.fetch(db._metakeys_name)) == set()

@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import warnings
 
 import numpy as np
 import pytest
@@ -33,22 +32,16 @@ from hypothesis.internal.compat import ceil, floor
     ],
 )
 def test_our_floor_and_ceil_avoid_numpy_rounding(value):
-    a = np.array([eval(value)])
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        # See https://numpy.org/doc/stable/release/1.25.0-notes.html#deprecations
-        f = floor(a)
-        c = ceil(a)
+    a = np.array(eval(value))
+    f = floor(a)
+    c = ceil(a)
 
     # Check *exact* type - we don't want to allow a subclass of int here
     assert type(f) == int
     assert type(c) == int
 
     # Using math.floor or math.ceil for these values would give an incorrect result.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        assert (math.floor(a) > a) or (math.ceil(a) < a)
+    assert (math.floor(a) > a) or (math.ceil(a) < a)
 
     assert f <= a <= c
     assert f + 1 > a > c - 1

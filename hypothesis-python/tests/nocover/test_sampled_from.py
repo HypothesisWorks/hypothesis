@@ -21,7 +21,7 @@ from hypothesis.internal.compat import bit_count
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import Why, fails_with, xfail_on_crosshair
+from tests.common.utils import fails_with
 
 
 @pytest.mark.parametrize("size", [100, 10**5, 10**6, 2**25])
@@ -81,6 +81,12 @@ def test_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
 
 
+def test_repr_truncates_with_many_elements():
+    s = st.sampled_from(list(range(10_000)))
+    repr_limit = 512
+    assert repr(s) == f"sampled_from([{', '.join(map(str, range(repr_limit)))}, ...])"
+
+
 class AFlag(enum.Flag):
     a = enum.auto()
     b = enum.auto()
@@ -101,7 +107,6 @@ def test_flag_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AFlag)"
 
 
-@xfail_on_crosshair(Why.undiscovered)
 def test_exhaustive_flags():
     # Generate powerset of flag combinations. There are only 2^3 of them, so
     # we can reasonably expect that they are all are found.
@@ -131,7 +136,10 @@ def test_flags_minimizes_bit_count():
     )
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~10 mins")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~10 mins; path tree is too large",
+)
 def test_flags_finds_all_bits_set():
     assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))
 

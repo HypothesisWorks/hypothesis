@@ -15,21 +15,18 @@ import os
 import sys
 import tempfile
 import unicodedata
-from collections.abc import Iterable
-from functools import lru_cache
+from collections.abc import Collection, Iterable
+from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, TypeAlias
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet, IntervalsT
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
 # See https://en.wikipedia.org/wiki/Unicode_character_property#General_Category
-CategoryName: "TypeAlias" = Literal[
+CategoryName: TypeAlias = Literal[
     "L",  #  Letter
     "Lu",  # Letter, uppercase
     "Ll",  # Letter, lowercase
@@ -68,17 +65,17 @@ CategoryName: "TypeAlias" = Literal[
     "Co",  # Other, private use
     "Cn",  # Other, not assigned
 ]
-Categories: "TypeAlias" = Iterable[CategoryName]
-CategoriesTuple: "TypeAlias" = tuple[CategoryName, ...]
+Categories: TypeAlias = Iterable[CategoryName]
+CategoriesTuple: TypeAlias = tuple[CategoryName, ...]
 
 
 def charmap_file(fname: str = "charmap") -> Path:
     return storage_directory(
         "unicode_data", unicodedata.unidata_version, f"{fname}.json.gz"
-    )
+    ).path
 
 
-_charmap = None
+_charmap: dict[CategoryName, IntervalsT] | None = None
 
 
 def charmap() -> dict[CategoryName, IntervalsT]:
@@ -115,14 +112,14 @@ def charmap() -> dict[CategoryName, IntervalsT]:
 
             try:
                 # Write the Unicode table atomically
-                tmpdir = storage_directory("tmp")
-                tmpdir.mkdir(exist_ok=True, parents=True)
-                fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
+                storage_dir = storage_directory("tmp")
+                storage_dir.create_if_missing()
+                fd, tmpfile = tempfile.mkstemp(dir=storage_dir.path)
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
-                with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
+                with gzip.GzipFile(tmpfile, "wb", mtime=1) as fp:
                     result = json.dumps(sorted(tmp_charmap.items()))
-                    o.write(result.encode())
+                    fp.write(result.encode())
 
                 os.renames(tmpfile, f)
             except Exception:
@@ -133,7 +130,7 @@ def charmap() -> dict[CategoryName, IntervalsT]:
             k: tuple(tuple(pair) for pair in pairs) for k, pairs in tmp_charmap.items()
         }
         # each value is a tuple of 2-tuples (that is, tuples of length 2)
-        # and that both elements of that tuple are integers.
+        # and both elements of that tuple are integers.
         for vs in _charmap.values():
             ints = list(sum(vs, ()))
             assert all(isinstance(x, int) for x in ints)
@@ -144,7 +141,7 @@ def charmap() -> dict[CategoryName, IntervalsT]:
     return _charmap
 
 
-@lru_cache(maxsize=None)
+@cache
 def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
     """Return an IntervalSet of characters which are part of this codec."""
     assert codec_name == codecs.lookup(codec_name).name
@@ -168,20 +165,20 @@ def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
     res = res.union(res)
     try:
         # Write the Unicode table atomically
-        tmpdir = storage_directory("tmp")
-        tmpdir.mkdir(exist_ok=True, parents=True)
-        fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
+        storage_dir = storage_directory("tmp")
+        storage_dir.create_if_missing()
+        fd, tmpfile = tempfile.mkstemp(dir=storage_dir.path)
         os.close(fd)
         # Explicitly set the mtime to get reproducible output
-        with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
-            o.write(json.dumps(res.intervals).encode())
+        with gzip.GzipFile(tmpfile, "wb", mtime=1) as f:
+            f.write(json.dumps(res.intervals).encode())
         os.renames(tmpfile, fname)
     except Exception:
         pass
     return res
 
 
-_categories: Optional[Categories] = None
+_categories: Categories | None = None
 
 
 def categories() -> Categories:
@@ -234,7 +231,7 @@ def as_general_categories(cats: Categories, name: str = "cats") -> CategoriesTup
 category_index_cache: dict[frozenset[CategoryName], IntervalsT] = {frozenset(): ()}
 
 
-def _category_key(cats: Optional[Iterable[str]]) -> CategoriesTuple:
+def _category_key(cats: Iterable[str] | None) -> CategoriesTuple:
     """Return a normalised tuple of all Unicode categories that are in
     `include`, but not in `exclude`.
 
@@ -290,11 +287,11 @@ limited_category_index_cache: dict[
 
 def query(
     *,
-    categories: Optional[Categories] = None,
-    min_codepoint: Optional[int] = None,
-    max_codepoint: Optional[int] = None,
-    include_characters: str = "",
-    exclude_characters: str = "",
+    categories: Categories | None = None,
+    min_codepoint: int | None = None,
+    max_codepoint: int | None = None,
+    include_characters: Collection[str] = "",
+    exclude_characters: Collection[str] = "",
 ) -> IntervalSet:
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the criteria.
@@ -313,9 +310,15 @@ def query(
         min_codepoint = 0
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
+
+    if min_codepoint > max_codepoint:
+        raise InvalidArgument(
+            f"min_codepoint={min_codepoint} is greater than max_codepoint={max_codepoint}"
+        )
+
     catkey = _category_key(categories)
-    character_intervals = IntervalSet.from_string(include_characters or "")
-    exclude_intervals = IntervalSet.from_string(exclude_characters or "")
+    character_intervals = IntervalSet.from_string("".join(include_characters))
+    exclude_intervals = IntervalSet.from_string("".join(exclude_characters))
     qkey = (
         catkey,
         min_codepoint,
@@ -329,12 +332,14 @@ def query(
             return limited_category_index_cache[qkey]
         except KeyError:
             pass
-    base = _query_for_key(catkey)
+
     result = []
-    for u, v in base:
+    for u, v in _query_for_key(catkey):
         if v >= min_codepoint and u <= max_codepoint:
             result.append((max(u, min_codepoint), min(v, max_codepoint)))
+
     result = (IntervalSet(result) | character_intervals) - exclude_intervals
     if context is None or not context.data.provider.avoid_realization:
         limited_category_index_cache[qkey] = result
+
     return result

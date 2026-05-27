@@ -2,28 +2,52 @@
 
 {% block content %}
 
-<section class="content">
-
-  <h1 class="posttitle">
-    {{ article.title }}
-  </h1>
-
-  <div class="postinfo">
-    <p class="published" title="{{ article.date.isoformat() }}">
-      published {{ article.date.strftime('%Y-%m-%d') }}
-    </p>
-
-    {% if article.author and SHOW_ARTICLE_AUTHOR %}
-    <address class="vcard author">
-      By <a class="nodec" href="{{ SITEURL }}/{{ article.author.url }}">{{ article.author }}</a>
-    </address>
-    {% endif  %}
-  </div><!-- .postinfo -->
+<div class="article-page">
 
   <div class="article">
-    {{ article.content }}
-  </div><!-- .content -->
+    <div class="article__header">
+      <div class="article__title">{{ article.title }}</div>
 
-</section>
+      <div class="article__meta">
+        <div class="article-meta">
+
+          <div class="article-meta__item">
+            <span class="article-meta__value" title="{{ article.date.isoformat() }}">
+              {{ article.date.strftime('%B %d, %Y') }}
+            </span>
+          </div>
+
+          {% if article.authors or article.author %}
+          <span class="article-meta__separator">•</span>
+          <div class="article-meta__item">
+            <span class="article-meta__value">
+              {% if article.authors %}
+                {% for author in article.authors %}
+                  {% set author_name = AUTHOR_NAMES.get(author|string|trim, author|string|trim) %}
+                  {% set author_url = AUTHOR_URLS.get(author|string|trim) %}
+                  {% if author_url %}<a href="{{ author_url }}">{{ author_name }}</a>{% else %}{{ author_name }}{% endif %}{% if not loop.last %}{% if loop.revindex == 2 %}{% if loop.length > 2 %}, and {% else %} and {% endif %}{% else %}, {% endif %}{% endif %}
+                {% endfor %}
+              {% else %}
+                {% set author_name = AUTHOR_NAMES.get(article.author, article.author) %}
+                {% set author_url = AUTHOR_URLS.get(article.author) %}
+                {% if author_url %}
+                <a href="{{ author_url }}">{{ author_name }}</a>
+                {% else %}
+                {{ author_name }}
+                {% endif %}
+              {% endif %}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="article-content">
+      {{ article.content }}
+    </div>
+  </div>
+
+</div>
 
 {% endblock %}

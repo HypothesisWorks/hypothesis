@@ -10,14 +10,13 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
 
 from tests.common.utils import Why, xfail_on_crosshair
 
 
-@xfail_on_crosshair(Why.other)
 def test_note_deprecation_blames_right_code_issue_652():
     msg = "this is an arbitrary deprecation warning message"
 
@@ -66,3 +65,20 @@ def test_unique_floats_with_nan_is_not_flaky_3926(ls):
 @given(st.integers(min_value=0, max_value=1 << 25_000))
 def test_overrun_during_datatree_simulation_3874(n):
     pass
+
+
+def test_explain_phase_label_assertion_4339():
+    # st.composite causes a re-creation of the SampledFromStrategy each time
+    # (one_of is implemented using sampled_from internally), which previously
+    # had different labels which triggered an assertion in the explain code.
+    @st.composite
+    def g(draw):
+        draw(st.none() | st.booleans())
+
+    @given(g(), st.none() | st.booleans())
+    @settings(database=None)
+    def f(a, b):
+        raise ValueError("marker")
+
+    with pytest.raises(ValueError, match="marker"):
+        f()

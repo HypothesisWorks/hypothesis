@@ -9,13 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """This module provides the core primitives of Hypothesis, such as given."""
+
 import base64
 import contextlib
+import dataclasses
 import datetime
 import inspect
 import io
 import math
+import os
 import sys
+import threading
 import time
 import traceback
 import types
@@ -23,23 +27,20 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
+from collections.abc import Callable, Coroutine, Generator, Hashable, Iterable, Sequence
+from dataclasses import dataclass, field
 from functools import partial
 from inspect import Parameter
 from random import Random
+from threading import Lock
+from types import EllipsisType
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 from unittest import TestCase
-
-import attr
 
 from hypothesis import strategies as st
 from hypothesis._settings import (
@@ -69,6 +70,7 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
+from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -99,11 +101,11 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
-    OBSERVABILITY_COLLECT_COVERAGE,
-    TESTCASE_CALLBACKS,
-    _system_metadata,
-    deliver_json_blob,
+    InfoObservation,
+    InfoObservationType,
+    deliver_observation,
     make_testcase,
+    observability_enabled,
 )
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -138,17 +140,10 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
     check_strategy,
 )
-from hypothesis.strategies._internal.utils import to_jsonable
+from hypothesis.utils.conventions import not_set
+from hypothesis.utils.threading import ThreadLocal
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
-
-if sys.version_info >= (3, 10):
-    from types import EllipsisType as EllipsisType
-elif TYPE_CHECKING:
-    from builtins import ellipsis as EllipsisType
-else:  # pragma: no cover
-    EllipsisType = type(Ellipsis)
-
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
@@ -156,20 +151,82 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 running_under_pytest = False
 pytest_shows_exceptiongroups = True
 global_force_seed = None
-_hypothesis_global_random = None
+# this variable stores "engine-global" constants, which are global relative to a
+# ConjectureRunner instance (roughly speaking). Since only one conjecture runner
+# instance can be active per thread, making engine constants thread-local prevents
+# the ConjectureRunner instances of concurrent threads from treading on each other.
+threadlocal = ThreadLocal(_hypothesis_global_random=lambda: None)
 
 
-@attr.s()
+@dataclass(slots=True, frozen=False)
 class Example:
-    args = attr.ib()
-    kwargs = attr.ib()
+    args: Any
+    kwargs: Any
     # Plus two optional arguments for .xfail()
-    raises = attr.ib(default=None)
-    reason = attr.ib(default=None)
+    raises: Any = field(default=None)
+    reason: Any = field(default=None)
+
+
+@dataclass(slots=True, frozen=True)
+class ReportableError:
+    fragments: list[str]
+    exception: BaseException
+
+
+# TODO_DOCS link to not-yet-existent patch-dumping docs
 
 
 class example:
-    """A decorator which ensures a specific example is always tested."""
+    """
+    Add an explicit input to a Hypothesis test, which Hypothesis will always
+    try before generating random inputs. This combines the randomized nature of
+    Hypothesis generation with a traditional parametrized test.
+
+    For example:
+
+    .. code-block:: python
+
+        @example("Hello world")
+        @example("some string with special significance")
+        @given(st.text())
+        def test_strings(s):
+            pass
+
+    will call ``test_strings("Hello World")`` and
+    ``test_strings("some string with special significance")`` before generating
+    any random inputs. |@example| may be placed in any order relative to |@given|
+    and |@settings|.
+
+    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
+    Explicit inputs do not count towards |settings.max_examples|. Note that
+    explicit inputs added by |@example| do not shrink. If an explicit input
+    fails, Hypothesis will stop and report the failure without generating any
+    random inputs.
+
+    |@example| can also be used to easily reproduce a failure. For instance, if
+    Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
+    ``@example(n=[0, math.nan])`` to your test to quickly reproduce that failure.
+
+    Arguments to ``@example``
+    -------------------------
+
+    Arguments to |@example| have the same behavior and restrictions as arguments
+    to |@given|. This means they may be either positional or keyword arguments
+    (but not both in the same |@example|):
+
+    .. code-block:: python
+
+        @example(1, 2)
+        @example(x=1, y=2)
+        @given(st.integers(), st.integers())
+        def test(x, y):
+            pass
+
+    Noting that while arguments to |@given| are strategies (like |st.integers|),
+    arguments to |@example| are values instead (like ``1``).
+
+    See the :ref:`given-arguments` section for full details.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if args and kwargs:
@@ -193,9 +250,7 @@ class example:
         condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
-        raises: Union[
-            type[BaseException], tuple[type[BaseException], ...]
-        ] = BaseException,
+        raises: type[BaseException] | tuple[type[BaseException], ...] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
         :obj:`pytest.mark.xfail(strict=True) <pytest.mark.xfail>`.
@@ -245,30 +300,34 @@ class example:
                 f"{raises=} must be an exception type or tuple of exception types"
             )
         if condition:
-            self._this_example = attr.evolve(
+            self._this_example = dataclasses.replace(
                 self._this_example, raises=raises, reason=reason
             )
         return self
 
     def via(self, whence: str, /) -> "example":
-        """Attach a machine-readable label noting whence this example came.
+        """Attach a machine-readable label noting what the origin of this example
+        was. |example.via| is completely optional and does not change runtime
+        behavior.
 
-        The idea is that tools will be able to add ``@example()`` cases for you, e.g.
-        to maintain a high-coverage set of explicit examples, but also *remove* them
-        if they become redundant - without ever deleting manually-added examples:
+        |example.via| is intended to support self-documenting behavior, as well as
+        tooling which might add (or remove) |@example| decorators automatically.
+        For example:
 
         .. code-block:: python
 
-            # You can choose to annotate examples, or not, as you prefer
+            # Annotating examples is optional and does not change runtime behavior
             @example(...)
             @example(...).via("regression test for issue #42")
-
-            # The `hy-` prefix is reserved for automated tooling
-            @example(...).via("hy-failing")
-            @example(...).via("hy-coverage")
-            @example(...).via("hy-target-$label")
+            @example(...).via("discovered failure")
             def test(x):
                 pass
+
+        .. note::
+
+            `HypoFuzz <https://hypofuzz.com/>`_ uses |example.via| to tag examples
+            in the patch of its high-coverage set of explicit inputs, on
+            `the patches page <https://hypofuzz.com/example-dashboard/#/patches>`_.
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -277,16 +336,34 @@ class example:
 
 
 def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
-    """seed: Start the test execution from a specific seed.
+    """
+    Seed the randomness for this test.
 
-    May be any hashable object. No exact meaning for seed is provided
-    other than that for a fixed seed value Hypothesis will try the same
-    actions (insofar as it can given external sources of non-
-    determinism. e.g. timing and hash randomization).
+    ``seed`` may be any hashable object. No exact meaning for ``seed`` is provided
+    other than that for a fixed seed value Hypothesis will produce the same
+    examples (assuming that there are no other sources of nondeterminisim, such
+    as timing, hash randomization, or external state).
 
-    Overrides the derandomize setting, which is designed to enable
-    deterministic builds rather than reproducing observed failures.
+    For example, the following test function and |RuleBasedStateMachine| will
+    each generate the same series of examples each time they are executed:
 
+    .. code-block:: python
+
+        @seed(1234)
+        @given(st.integers())
+        def test(n): ...
+
+        @seed(6789)
+        class MyMachine(RuleBasedStateMachine): ...
+
+    If using pytest, you can alternatively pass ``--hypothesis-seed`` on the
+    command line.
+
+    Setting a seed overrides |settings.derandomize|, which is designed to enable
+    deterministic CI tests rather than reproducing observed failures.
+
+    Hypothesis will only print the seed which would reproduce a failure if a test
+    fails in an unexpected way, for instance inside Hypothesis internals.
     """
 
     def accept(test):
@@ -300,19 +377,31 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
     return accept
 
 
+# TODO_DOCS: link to /explanation/choice-sequence
+
+
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
-    """Run the example that corresponds to this data blob in order to reproduce
-    a failure.
+    """
+    Run the example corresponding to the binary ``blob`` in order to reproduce a
+    failure. ``blob`` is a serialized version of the internal input representation
+    of Hypothesis.
 
-    A test with this decorator *always* runs only one example and always fails.
-    If the provided example does not cause a failure, or is in some way invalid
-    for this test, then this will fail with a DidNotReproduce error.
+    A test decorated with |@reproduce_failure| always runs exactly one example,
+    which is expected to cause a failure. If the provided ``blob`` does not
+    cause a failure, Hypothesis will raise |DidNotReproduce|.
 
-    This decorator is not intended to be a permanent addition to your test
-    suite. It's simply some code you can add to ease reproduction of a problem
-    in the event that you don't have access to the test database. Because of
-    this, *no* compatibility guarantees are made between different versions of
-    Hypothesis - its API may change arbitrarily from version to version.
+    Hypothesis will print an |@reproduce_failure| decorator if
+    |settings.print_blob| is ``True`` (which is the default in CI).
+
+    |@reproduce_failure| is intended to be temporarily added to your test suite in
+    order to reproduce a failure. It is not intended to be a permanent addition to
+    your test suite. Because of this, no compatibility guarantees are made across
+    Hypothesis versions, and |@reproduce_failure| will error if used on a different
+    Hypothesis version than it was created for.
+
+    .. seealso::
+
+        See also the :doc:`/tutorial/replaying-failures` tutorial.
     """
 
     def accept(test):
@@ -320,6 +409,10 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
         return test
 
     return accept
+
+
+def reproduction_decorator(choices: Iterable[ChoiceT]) -> str:
+    return f"@reproduce_failure({__version__!r}, {encode_failure(choices)!r})"
 
 
 def encode_failure(choices: Iterable[ChoiceT]) -> bytes:
@@ -368,8 +461,8 @@ def _invalid(message, *, exc=InvalidArgument, test, given_kwargs):
     wrapped_test.is_hypothesis_test = True
     wrapped_test.hypothesis = HypothesisHandle(
         inner_test=test,
-        get_fuzz_target=wrapped_test,
-        given_kwargs=given_kwargs,
+        _get_fuzz_target=wrapped_test,
+        _given_kwargs=given_kwargs,
     )
     return wrapped_test
 
@@ -466,7 +559,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     "example has too many arguments for test. Expected at most "
                     f"{len(posargs)} but got {len(example.args)}"
                 )
-            example_kwargs = dict(zip(posargs[-len(example.args) :], example.args))
+            example_kwargs = dict(
+                zip(posargs[-len(example.args) :], example.args, strict=True)
+            )
         else:
             example_kwargs = dict(example.kwargs)
         given_kws = ", ".join(
@@ -568,14 +663,15 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     new = HypothesisWarning(
                         "The @example() decorator expects to be passed values, but "
                         "you passed strategies instead.  See https://hypothesis."
-                        "readthedocs.io/en/latest/reproducing.html for details."
+                        "readthedocs.io/en/latest/reference/api.html#hypothesis"
+                        ".example for details."
                     )
                     new.__cause__ = err
                     err = new
 
                 with contextlib.suppress(StopTest):
                     empty_data.conclude_test(Status.INVALID)
-                yield (fragments_reported, err)
+                yield ReportableError(fragments_reported, err)
                 if (
                     state.settings.report_multiple_bugs
                     and pytest_shows_exceptiongroups
@@ -591,15 +687,17 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         "Falsifying example", "Falsifying explicit example", 1
                     )
 
-                tc = make_testcase(
-                    start_timestamp=state._start_timestamp,
-                    test_name_or_nodeid=state.test_identifier,
-                    data=empty_data,
-                    how_generated="explicit example",
-                    string_repr=state._string_repr,
-                    timing=state._timing_features,
-                )
-                deliver_json_blob(tc)
+                empty_data.freeze()
+                if observability_enabled():
+                    tc = make_testcase(
+                        run_start=state._start_timestamp,
+                        property=state.test_identifier,
+                        data=empty_data,
+                        how_generated="explicit example",
+                        representation=state._string_repr,
+                        timing=state._timing_features,
+                    )
+                    deliver_observation(tc)
 
             if fragments_reported:
                 verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
@@ -613,25 +711,26 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
     if wrapped_test._hypothesis_internal_use_seed is not None:
         return Random(wrapped_test._hypothesis_internal_use_seed)
-    elif settings.derandomize:
+
+    if settings.derandomize:
         return Random(int_from_bytes(function_digest(test)))
-    elif global_force_seed is not None:
+
+    if global_force_seed is not None:
         return Random(global_force_seed)
-    else:
-        global _hypothesis_global_random
-        if _hypothesis_global_random is None:  # pragma: no cover
-            _hypothesis_global_random = Random()
-        seed = _hypothesis_global_random.getrandbits(128)
-        wrapped_test._hypothesis_internal_use_generated_seed = seed
-        return Random(seed)
+
+    if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+        threadlocal._hypothesis_global_random = Random()
+    seed = threadlocal._hypothesis_global_random.getrandbits(128)
+    wrapped_test._hypothesis_internal_use_generated_seed = seed
+    return Random(seed)
 
 
-@attr.s
+@dataclass(slots=True, frozen=False)
 class Stuff:
-    selfy: Any = attr.ib(default=None)
-    args: tuple = attr.ib(factory=tuple)
-    kwargs: dict = attr.ib(factory=dict)
-    given_kwargs: dict = attr.ib(factory=dict)
+    selfy: Any
+    args: tuple
+    kwargs: dict
+    given_kwargs: dict
 
 
 def process_arguments_to_given(
@@ -677,7 +776,7 @@ def skip_exceptions_to_reraise():
     like another to be added please open an issue or pull request adding
     it to this function and to tests/cover/test_lazy_import.py
     """
-    # This is a set because nose may simply re-export unittest.SkipTest
+    # This is a set in case any library simply re-exports another's Skip exception
     exceptions = set()
     # We use this sys.modules trick to avoid importing libraries -
     # you can't be an instance of a type from an unimported module!
@@ -685,12 +784,8 @@ def skip_exceptions_to_reraise():
     # and more importantly it avoids possible side-effects :-)
     if "unittest" in sys.modules:
         exceptions.add(sys.modules["unittest"].SkipTest)
-    if "unittest2" in sys.modules:
-        exceptions.add(sys.modules["unittest2"].SkipTest)
-    if "nose" in sys.modules:
-        exceptions.add(sys.modules["nose"].SkipTest)
-    if "_pytest" in sys.modules:
-        exceptions.add(sys.modules["_pytest"].outcomes.Skipped)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.add(sys.modules["_pytest.outcomes"].Skipped)
     return tuple(sorted(exceptions, key=str))
 
 
@@ -705,8 +800,8 @@ def failure_exceptions_to_catch() -> tuple[type[BaseException], ...]:
     # them as standard exceptions, check for flakiness, etc.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2223 for details.
     exceptions = [Exception, SystemExit, GeneratorExit]
-    if "_pytest" in sys.modules:
-        exceptions.append(sys.modules["_pytest"].outcomes.Failed)
+    if "_pytest.outcomes" in sys.modules:
+        exceptions.append(sys.modules["_pytest.outcomes"].Failed)
     return tuple(exceptions)
 
 
@@ -754,25 +849,27 @@ def get_executor(runner):
     return default_executor
 
 
+# This function is a crude solution, a better way of resolving it would probably
+# be to rewrite a bunch of exception handlers to use except*.
+T = TypeVar("T", bound=BaseException)
+
+
+def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
+    found_exceptions: list[T] = []
+    for exc in excgroup.exceptions:
+        if isinstance(exc, BaseExceptionGroup):
+            found_exceptions.extend(_flatten_group(exc))
+        else:
+            found_exceptions.append(exc)
+    return found_exceptions
+
+
 @contextlib.contextmanager
 def unwrap_markers_from_group() -> Generator[None, None, None]:
-    # This function is a crude solution, a better way of resolving it would probably
-    # be to rewrite a bunch of exception handlers to use except*.
-    T = TypeVar("T", bound=BaseException)
-
-    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
-        found_exceptions: list[T] = []
-        for exc in excgroup.exceptions:
-            if isinstance(exc, BaseExceptionGroup):
-                found_exceptions.extend(_flatten_group(exc))
-            else:
-                found_exceptions.append(exc)
-        return found_exceptions
-
     try:
         yield
     except BaseExceptionGroup as excgroup:
-        frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
+        _frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
 
         # group only contains Frozen, reraise the group
         # it doesn't matter what we raise, since any exceptions get disregarded
@@ -818,42 +915,56 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
 
 
 class StateForActualGivenExecution:
-    def __init__(self, stuff, test, settings, random, wrapped_test):
-        self.test_runner = get_executor(stuff.selfy)
+    def __init__(
+        self,
+        stuff: Stuff,
+        test: Callable[..., Any],
+        settings: Settings,
+        random: Random,
+        wrapped_test: Any,
+        *,
+        thread_overlap: dict[int, bool] | None = None,
+    ):
         self.stuff = stuff
-        self.settings = settings
-        self.last_exception = None
-        self.falsifying_examples = ()
-        self.random = random
-        self.ever_executed = False
-
-        self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
-        self.wrapped_test = wrapped_test
-        self.xfail_example_reprs = set()
-
         self.test = test
+        self.settings = settings
+        self.random = random
+        self.wrapped_test = wrapped_test
+        self.thread_overlap = {} if thread_overlap is None else thread_overlap
 
+        self.test_runner = get_executor(stuff.selfy)
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
 
-        self.files_to_propagate = set()
+        self.last_exception = None
+        self.falsifying_examples = ()
+        self.ever_executed = False
+        self.xfail_example_reprs: set[str] = set()
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces = defaultdict(set)
+        self.explain_traces: dict[None | InterestingOrigin, set[Trace]] = defaultdict(
+            set
+        )
         self._start_timestamp = time.time()
         self._string_repr = ""
-        self._timing_features = {}
+        self._timing_features: dict[str, float] = {}
+
+        self._runner: ConjectureRunner | None = None
 
     @property
-    def test_identifier(self):
+    def test_identifier(self) -> str:
         return getattr(
             current_pytest_item.value, "nodeid", None
         ) or get_pretty_function_description(self.wrapped_test)
 
     def _should_trace(self):
-        _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
+        # NOTE: we explicitly support monkeypatching this. Keep the namespace
+        # access intact.
+        _trace_obs = (
+            observability_enabled() and observability.OBSERVABILITY_COLLECT_COVERAGE
+        )
         _trace_failure = (
             self.failed_normally
             and not self.failed_due_to_deadline
@@ -882,11 +993,10 @@ class StateForActualGivenExecution:
         """
 
         self.ever_executed = True
-        data.is_find = self.is_find
 
         self._string_repr = ""
         text_repr = None
-        if self.settings.deadline is None and not TESTCASE_CALLBACKS:
+        if self.settings.deadline is None and not observability_enabled():
 
             @proxies(self.test)
             def test(*args, **kwargs):
@@ -900,26 +1010,31 @@ class StateForActualGivenExecution:
                 arg_drawtime = math.fsum(data.draw_times.values())
                 arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
-                start = time.perf_counter()
-                try:
-                    with unwrap_markers_from_group(), ensure_free_stackframes():
+                with unwrap_markers_from_group(), ensure_free_stackframes():
+                    start = time.perf_counter()
+                    try:
                         result = self.test(*args, **kwargs)
-                finally:
-                    finish = time.perf_counter()
-                    in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
-                    in_stateful = (
-                        math.fsum(data._stateful_run_times.values()) - arg_stateful
-                    )
-                    in_gctime = gc_cumulative_time() - arg_gctime
-                    runtime = finish - start - in_drawtime - in_stateful - in_gctime
-                    self._timing_features = {
-                        "execute:test": runtime,
-                        "overall:gc": in_gctime,
-                        **data.draw_times,
-                        **data._stateful_run_times,
-                    }
+                    finally:
+                        finish = time.perf_counter()
+                        in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
+                        in_stateful = (
+                            math.fsum(data._stateful_run_times.values()) - arg_stateful
+                        )
+                        in_gctime = gc_cumulative_time() - arg_gctime
+                        runtime = finish - start - in_drawtime - in_stateful - in_gctime
+                        self._timing_features = {
+                            "execute:test": runtime,
+                            "overall:gc": in_gctime,
+                            **data.draw_times,
+                            **data._stateful_run_times,
+                        }
 
-                if (current_deadline := self.settings.deadline) is not None:
+                if (
+                    (current_deadline := self.settings.deadline) is not None
+                    # we disable the deadline check under concurrent threads, since
+                    # cpython may switch away from a thread for arbitrarily long.
+                    and not self.thread_overlap.get(threading.get_ident(), False)
+                ):
                     if not is_final:
                         current_deadline = (current_deadline // 4) * 5
                     if runtime >= current_deadline.total_seconds():
@@ -928,7 +1043,7 @@ class StateForActualGivenExecution:
                         )
                 return result
 
-        def run(data):
+        def run(data: ConjectureData) -> None:
             # Set up dynamic context needed by a single test run.
             if self.stuff.selfy is not None:
                 data.hypothesis_runner = self.stuff.selfy
@@ -971,7 +1086,7 @@ class StateForActualGivenExecution:
                     )
                 report(printer.getvalue())
 
-            if TESTCASE_CALLBACKS:
+            if observability_enabled():
                 printer = RepresentationPrinter(context=context)
                 printer.repr_call(
                     test.__name__,
@@ -987,10 +1102,6 @@ class StateForActualGivenExecution:
                     avoid_realization=data.provider.avoid_realization,
                 )
                 self._string_repr = printer.getvalue()
-                data._observability_arguments = {
-                    k: to_jsonable(v, avoid_realization=data.provider.avoid_realization)
-                    for k, v in [*enumerate(args), *kwargs.items()]
-                }
 
             try:
                 return test(*args, **kwargs)
@@ -1005,21 +1116,38 @@ class StateForActualGivenExecution:
                     add_note(e, msg.format(format_arg))
                 raise
             finally:
-                if parts := getattr(data, "_stateful_repr_parts", None):
-                    self._string_repr = "\n".join(parts)
+                if data._stateful_repr_parts is not None:
+                    self._string_repr = "\n".join(data._stateful_repr_parts)
+
+                if observability_enabled():
+                    printer = RepresentationPrinter(context=context)
+                    for name, value in data._observability_args.items():
+                        if name.startswith("generate:Draw "):
+                            try:
+                                value = data.provider.realize(value)
+                            except BackendCannotProceed:  # pragma: no cover
+                                value = "<backend failed to realize symbolic>"
+                            printer.text(f"\n{name.removeprefix('generate:')}: ")
+                            printer.pretty(value)
+
+                    self._string_repr += printer.getvalue()
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
-        with local_settings(self.settings):
-            with deterministic_PRNG():
-                with BuildContext(data, is_final=is_final) as context:
-                    # providers may throw in per_case_context_fn, and we'd like
-                    # `result` to still be set in these cases.
-                    result = None
-                    with data.provider.per_test_case_context_manager():
-                        # Run the test function once, via the executor hook.
-                        # In most cases this will delegate straight to `run(data)`.
-                        result = self.test_runner(data, run)
+        with (
+            local_settings(self.settings),
+            deterministic_PRNG(),
+            BuildContext(
+                data, is_final=is_final, wrapped_test=self.wrapped_test
+            ) as context,
+        ):
+            # providers may throw in per_case_context_fn, and we'd like
+            # `result` to still be set in these cases.
+            result = None
+            with data.provider.per_test_case_context_manager():
+                # Run the test function once, via the executor hook.
+                # In most cases this will delegate straight to `run(data)`.
+                result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.
@@ -1034,16 +1162,13 @@ class StateForActualGivenExecution:
             ):
                 report(
                     "Unreliable test timings! On an initial run, this "
-                    "test took %.2fms, which exceeded the deadline of "
-                    "%.2fms, but on a subsequent run it took %.2f ms, "
+                    f"test took {exception.runtime.total_seconds() * 1000:.2f}ms, "
+                    "which exceeded the deadline of "
+                    f"{self.settings.deadline.total_seconds() * 1000:.2f}ms, but "
+                    f"on a subsequent run it took {runtime_secs * 1000:.2f} ms, "
                     "which did not. If you expect this sort of "
                     "variability in your test timings, consider turning "
                     "deadlines off for this test by setting deadline=None."
-                    % (
-                        exception.runtime.total_seconds() * 1000,
-                        self.settings.deadline.total_seconds() * 1000,
-                        runtime_secs * 1000,
-                    )
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
@@ -1057,16 +1182,17 @@ class StateForActualGivenExecution:
     def _flaky_replay_to_failure(
         self, err: FlakyReplay, context: BaseException
     ) -> FlakyFailure:
+        assert self._runner is not None
         # Note that in the mark_interesting case, _context_ itself
         # is part of err._interesting_examples - but it's not in
         # _runner.interesting_examples - this is fine, as the context
         # (i.e., immediate exception) is appended.
         interesting_examples = [
-            self._runner.interesting_examples[io]
-            for io in err._interesting_origins
-            if io in self._runner.interesting_examples
+            self._runner.interesting_examples[origin]
+            for origin in err._interesting_origins
+            if origin in self._runner.interesting_examples
         ]
-        exceptions = [ie.expected_exception for ie in interesting_examples]
+        exceptions = [result.expected_exception for result in interesting_examples]
         exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 
@@ -1078,7 +1204,7 @@ class StateForActualGivenExecution:
         This allows the engine to assume that any exception other than
         ``StopTest`` must be a fatal error, and should stop the entire engine.
         """
-        trace: Trace = set()
+        trace: Trace = frozenset()
         try:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
@@ -1088,7 +1214,7 @@ class StateForActualGivenExecution:
                     ):  # pragma: no cover
                         # This is in fact covered by our *non-coverage* tests, but due
                         # to the settrace() contention *not* by our coverage tests.
-                        self.explain_traces[None].add(frozenset(tracer.branches))
+                        self.explain_traces[None].add(tracer.branches)
                 finally:
                     trace = tracer.branches
             if result is not None:
@@ -1139,7 +1265,17 @@ class StateForActualGivenExecution:
             else:
                 tb = e.__traceback__
             filepath = traceback.extract_tb(tb)[-1][0]
-            if is_hypothesis_file(filepath) and not isinstance(e, HypothesisException):
+            if (
+                is_hypothesis_file(filepath)
+                and not isinstance(e, HypothesisException)
+                # We expect backend authors to use the provider_conformance test
+                # to test their backends. If an error occurs there, it is probably
+                # from their backend, and we would like to treat it as a standard
+                # error, not a hypothesis-internal error.
+                and not filepath.endswith(
+                    f"internal{os.sep}conjecture{os.sep}provider_conformance.py"
+                )
+            ):
                 raise
 
             if data.frozen:
@@ -1162,8 +1298,8 @@ class StateForActualGivenExecution:
                 interesting_origin = InterestingOrigin.from_exception(e)
                 if trace:  # pragma: no cover
                     # Trace collection is explicitly disabled under coverage.
-                    self.explain_traces[interesting_origin].add(frozenset(trace))
-                if interesting_origin[0] == DeadlineExceeded:
+                    self.explain_traces[interesting_origin].add(trace)
+                if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
                 try:
@@ -1174,7 +1310,17 @@ class StateForActualGivenExecution:
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.
-            if TESTCASE_CALLBACKS:
+            #
+            # Note that we have to unconditionally realize data.events, because
+            # the statistics reported by the pytest plugin use a different flow
+            # than observability, but still access symbolic events.
+
+            try:
+                data.events = data.provider.realize(data.events)
+            except BackendCannotProceed:
+                data.events = {}
+
+            if observability_enabled():
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals
@@ -1190,24 +1336,29 @@ class StateForActualGivenExecution:
                     data._observability_args = data.provider.realize(
                         data._observability_args
                     )
-                    self._string_repr = data.provider.realize(self._string_repr)
                 except BackendCannotProceed:
                     data._observability_args = {}
+
+                try:
+                    self._string_repr = data.provider.realize(self._string_repr)
+                except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                data.freeze()
                 tc = make_testcase(
-                    start_timestamp=self._start_timestamp,
-                    test_name_or_nodeid=self.test_identifier,
+                    run_start=self._start_timestamp,
+                    property=self.test_identifier,
                     data=data,
                     how_generated=f"during {phase} phase{backend_desc}",
-                    string_repr=self._string_repr,
+                    representation=self._string_repr,
                     arguments=data._observability_args,
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
                     backend_metadata=data.provider.observe_test_case(),
                 )
-                deliver_json_blob(tc)
+                deliver_observation(tc)
+
                 for msg in data.provider.observe_information_messages(
                     lifetime="test_case"
                 ):
@@ -1215,16 +1366,16 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: Union[str, dict]
+        self, *, type: InfoObservationType, title: str, content: str | dict
     ) -> None:
-        deliver_json_blob(
-            {
-                "type": type,
-                "run_start": self._start_timestamp,
-                "property": self.test_identifier,
-                "title": title,
-                "content": content,
-            }
+        deliver_observation(
+            InfoObservation(
+                type=type,
+                run_start=self._start_timestamp,
+                property=self.test_identifier,
+                title=title,
+                content=content,
+            )
         )
 
     def run_engine(self):
@@ -1241,17 +1392,19 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = self._runner = ConjectureRunner(
+        runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
             database_key=database_key,
+            thread_overlap=self.thread_overlap,
         )
+        self._runner = runner
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
         runner.run()
         note_statistics(runner.statistics)
-        if TESTCASE_CALLBACKS:
+        if observability_enabled():
             self._deliver_information_message(
                 type="info",
                 title="Hypothesis Statistics",
@@ -1303,7 +1456,7 @@ class StateForActualGivenExecution:
         # If we have not traced executions, warn about that now (but only when
         # we'd expect to do so reliably, i.e. on CPython>=3.12)
         if (
-            sys.version_info[:2] >= (3, 12)
+            hasattr(sys, "monitoring")
             and not PYPY
             and self._should_trace()
             and not Tracer.can_trace()
@@ -1348,7 +1501,7 @@ class StateForActualGivenExecution:
                 with with_reporter(fragments.append):
                     self.execute_once(
                         ran_example,
-                        print_example=not self.is_find,
+                        print_example=True,
                         is_final=True,
                         expected_failure=(
                             falsifying_example.expected_exception,
@@ -1371,103 +1524,134 @@ class StateForActualGivenExecution:
                     # (note: e is a BaseException)
                     [falsifying_example.expected_exception or e],
                 )
-                errors_to_report.append((fragments, err))
+                errors_to_report.append(ReportableError(fragments, err))
             except UnsatisfiedAssumption as e:  # pragma: no cover  # ironically flaky
                 err = FlakyFailure(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it.",
                     [e],
                 )
-                errors_to_report.append((fragments, err))
+                errors_to_report.append(ReportableError(fragments, err))
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
                 fragments.extend(explanations[falsifying_example.interesting_origin])
-                errors_to_report.append(
-                    (fragments, e.with_traceback(get_trimmed_traceback()))
-                )
+                error_with_tb = e.with_traceback(get_trimmed_traceback())
+                errors_to_report.append(ReportableError(fragments, error_with_tb))
                 tb = format_exception(e, get_trimmed_traceback(e))
                 origin = InterestingOrigin.from_exception(e)
             else:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
-                # log our observability line for the final failing example
-                tc = {
-                    "type": "test_case",
-                    "run_start": self._start_timestamp,
-                    "property": self.test_identifier,
-                    "status": "passed" if sys.exc_info()[0] else "failed",
-                    "status_reason": str(origin or "unexpected/flaky pass"),
-                    "representation": self._string_repr,
-                    "arguments": ran_example._observability_args,
-                    "how_generated": "minimal failing example",
-                    "features": {
-                        **{
-                            f"target:{k}".strip(":"): v
-                            for k, v in ran_example.target_observations.items()
-                        },
-                        **ran_example.events,
-                    },
-                    "timing": self._timing_features,
-                    "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {
-                        "traceback": tb,
-                        "predicates": dict(ran_example._observability_predicates),
-                        **_system_metadata(),
-                    },
-                }
-                deliver_json_blob(tc)
+                ran_example.freeze()
+                if observability_enabled():
+                    # log our observability line for the final failing example
+                    tc = make_testcase(
+                        run_start=self._start_timestamp,
+                        property=self.test_identifier,
+                        data=ran_example,
+                        how_generated="minimal failing example",
+                        representation=self._string_repr,
+                        arguments=ran_example._observability_args,
+                        timing=self._timing_features,
+                        coverage=None,  # Not recorded when we're replaying the MFE
+                        status="passed" if sys.exc_info()[0] else "failed",
+                        status_reason=str(origin or "unexpected/flaky pass"),
+                        metadata={"traceback": tb},
+                    )
+                    deliver_observation(tc)
+
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
                     fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
-                        "@reproduce_failure(%r, %r) as a decorator on your test case"
-                        % (__version__, encode_failure(falsifying_example.choices))
+                        f"{reproduction_decorator(falsifying_example.choices)} "
+                        "as a decorator on your test case"
                     )
-                # Mostly useful for ``find`` and ensuring that objects that
-                # hold on to a reference to ``data`` know that it's now been
-                # finished and they can't draw more data from it.
-                ran_example.freeze()  # pragma: no branch
-                # No branch is possible here because we never have an active exception.
+
         _raise_to_user(
             errors_to_report,
             self.settings,
             report_lines,
-            verified_by=runner._verified_by,
+            # A backend might report a failure and then report verified afterwards,
+            # which is to be interpreted as "there are no more failures *other
+            # than what we already reported*". Do not report this as unsound.
+            unsound_backend=(
+                runner._verified_by_backend
+                if runner._verified_by_backend and not runner._backend_found_failure
+                else None
+            ),
         )
 
 
+def _simplify_explicit_errors(errors: list[ReportableError]) -> list[ReportableError]:
+    """
+    Group explicit example errors by their InterestingOrigin, keeping only the
+    simplest one, and adding a note of how many other examples failed with the same
+    error.
+    """
+    by_origin: dict[InterestingOrigin, list[ReportableError]] = defaultdict(list)
+    for error in errors:
+        origin = InterestingOrigin.from_exception(error.exception)
+        by_origin[origin].append(error)
+
+    result = []
+    for group in by_origin.values():
+        if len(group) == 1:
+            result.append(group[0])
+        else:
+            # Sort by shortlex of representation (first fragment)
+            def shortlex_key(error):
+                repr_str = error.fragments[0] if error.fragments else ""
+                return (len(repr_str), repr_str)
+
+            sorted_group = sorted(group, key=shortlex_key)
+            simplest = sorted_group[0]
+            other_count = len(group) - 1
+            add_note(
+                simplest.exception,
+                f"(note: {other_count} other explicit example{'s' * (other_count > 1)} "
+                "also failed with this error; use Verbosity.verbose to view)",
+            )
+            result.append(simplest)
+
+    return result
+
+
 def _raise_to_user(
-    errors_to_report, settings, target_lines, trailer="", verified_by=None
+    errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
     """Helper function for attaching notes and grouping multiple errors."""
     failing_prefix = "Falsifying example: "
     ls = []
-    for fragments, err in errors_to_report:
-        for note in fragments:
-            add_note(err, note)
+    for error in errors_to_report:
+        for note in error.fragments:
+            add_note(error.exception, note)
             if note.startswith(failing_prefix):
                 ls.append(note.removeprefix(failing_prefix))
     if current_pytest_item.value:
         current_pytest_item.value._hypothesis_failing_examples = ls
 
     if len(errors_to_report) == 1:
-        _, the_error_hypothesis_found = errors_to_report[0]
+        the_error_hypothesis_found = errors_to_report[0].exception
     else:
         assert errors_to_report
         the_error_hypothesis_found = BaseExceptionGroup(
             f"Hypothesis found {len(errors_to_report)} distinct failures{trailer}.",
-            [e for _, e in errors_to_report],
+            [error.exception for error in errors_to_report],
         )
 
     if settings.verbosity >= Verbosity.normal:
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
 
-    if verified_by:
-        msg = f"backend={verified_by!r} claimed to verify this test passes - please send them a bug report!"
-        add_note(err, msg)
+    if unsound_backend:
+        add_note(
+            the_error_hypothesis_found,
+            f"backend={unsound_backend!r} claimed to verify this test passes - "
+            "please send them a bug report!",
+        )
 
     raise the_error_hypothesis_found
 
@@ -1491,7 +1675,7 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
-@attr.s()
+@dataclass(slots=False, frozen=False)
 class HypothesisHandle:
     """This object is provided as the .hypothesis attribute on @given tests.
 
@@ -1507,18 +1691,92 @@ class HypothesisHandle:
     information.
     """
 
-    inner_test = attr.ib()
-    _get_fuzz_target = attr.ib()
-    _given_kwargs = attr.ib()
+    inner_test: Any
+    _get_fuzz_target: Any
+    _given_kwargs: Any
 
     @property
     def fuzz_one_input(
         self,
-    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
-        """Run the test as a fuzz target, driven with the `buffer` of bytes.
+    ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
+        """
+        Run the test as a fuzz target, driven with the ``buffer`` of bytes.
 
-        Returns None if buffer invalid for the strategy, canonical pruned
-        bytes if the buffer was valid, and leaves raised exceptions alone.
+        Depending on the passed ``buffer`` one of three things will happen:
+
+        * If the bytestring was invalid, for example because it was too short or was
+          filtered out by |assume| or |.filter|, |fuzz_one_input| returns ``None``.
+        * If the bytestring was valid and the test passed, |fuzz_one_input| returns
+          a canonicalised and pruned bytestring which will replay that test case.
+          This is provided as an option to improve the performance of mutating
+          fuzzers, but can safely be ignored.
+        * If the test *failed*, i.e. raised an exception, |fuzz_one_input| will
+          add the pruned buffer to :ref:`the Hypothesis example database <database>`
+          and then re-raise that exception.  All you need to do to reproduce,
+          minimize, and de-duplicate all the failures found via fuzzing is run
+          your test suite!
+
+        To reduce the performance impact of database writes, |fuzz_one_input| only
+        records failing inputs which would be valid shrinks for a known failure -
+        meaning writes are somewhere between constant and log(N) rather than linear
+        in runtime.  However, this tracking only works within a persistent fuzzing
+        process; for forkserver fuzzers we recommend ``database=None`` for the main
+        run, and then replaying with a database enabled if you need to analyse
+        failures.
+
+        Note that the interpretation of both input and output bytestrings is
+        specific to the exact version of Hypothesis you are using and the strategies
+        given to the test, just like the :ref:`database <database>` and
+        |@reproduce_failure|.
+
+        Interaction with |@settings|
+        ----------------------------
+
+        |fuzz_one_input| uses just enough of Hypothesis' internals to drive your
+        test function with a bytestring, and most settings therefore have no effect
+        in this mode.  We recommend running your tests the usual way before fuzzing
+        to get the benefits of health checks, as well as afterwards to replay,
+        shrink, deduplicate, and report whatever errors were discovered.
+
+        * |settings.database| *is* used by |fuzz_one_input| - adding failures to
+          the database to be replayed when
+          you next run your tests is our preferred reporting mechanism and response
+          to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
+        * |settings.verbosity| and |settings.stateful_step_count| work as usual.
+        * The |~settings.deadline|, |~settings.derandomize|, |~settings.max_examples|,
+          |~settings.phases|, |~settings.print_blob|, |~settings.report_multiple_bugs|,
+          and |~settings.suppress_health_check| settings do not affect |fuzz_one_input|.
+
+        Example Usage
+        -------------
+
+        .. code-block:: python
+
+            @given(st.text())
+            def test_foo(s): ...
+
+            # This is a traditional fuzz target - call it with a bytestring,
+            # or a binary IO object, and it runs the test once.
+            fuzz_target = test_foo.hypothesis.fuzz_one_input
+
+            # For example:
+            fuzz_target(b"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00")
+            fuzz_target(io.BytesIO(b"\\x01"))
+
+        .. tip::
+
+            If you expect to discover many failures while using |fuzz_one_input|,
+            consider wrapping your database with |BackgroundWriteDatabase|, for
+            low-overhead writes of failures.
+
+        .. tip::
+
+            | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
+            | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs with the same tests!
+
+        .. seealso::
+
+            See also the :doc:`/how-to/external-fuzzers` how-to.
         """
         # Note: most users, if they care about fuzzer performance, will access the
         # property and assign it to a local variable to move the attribute lookup
@@ -1535,7 +1793,7 @@ class HypothesisHandle:
 def given(
     _: EllipsisType, /
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
 ]:  # pragma: no cover
     ...
 
@@ -1544,38 +1802,131 @@ def given(
 def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 @overload
 def given(
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
-) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
-]:
-    """A decorator for turning a test function that accepts arguments into a
-    randomized test.
+    *_given_arguments: SearchStrategy[Any] | EllipsisType,
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
+) -> Callable[[Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]]:
+    """
+    The |@given| decorator turns a function into a Hypothesis test. This is the
+    main entry point to Hypothesis.
 
-    This is the main entry point to Hypothesis.
+    .. seealso::
+
+        See also the :doc:`/tutorial/introduction` tutorial, which introduces
+        defining Hypothesis tests with |@given|.
+
+    .. _given-arguments:
+
+    Arguments to ``@given``
+    -----------------------
+
+    Arguments to |@given| may be either positional or keyword arguments:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test_one(x, y):
+            pass
+
+        @given(x=st.integers(), y=st.floats())
+        def test_two(x, y):
+            pass
+
+    If using keyword arguments, the arguments may appear in any order, as with
+    standard Python functions:
+
+    .. code-block:: python
+
+        # different order, but still equivalent to before
+        @given(y=st.floats(), x=st.integers())
+        def test(x, y):
+            assert isinstance(x, int)
+            assert isinstance(y, float)
+
+    If |@given| is provided fewer positional arguments than the decorated test,
+    the test arguments are filled in on the right side, leaving the leftmost
+    positional arguments unfilled:
+
+    .. code-block:: python
+
+        @given(st.integers(), st.floats())
+        def test(manual_string, y, z):
+            assert manual_string == "x"
+            assert isinstance(y, int)
+            assert isinstance(z, float)
+
+        # `test` is now a callable which takes one argument `manual_string`
+
+        test("x")
+        # or equivalently:
+        test(manual_string="x")
+
+    The reason for this "from the right" behavior is to support using |@given|
+    with instance methods, by automatically passing through ``self``:
+
+    .. code-block:: python
+
+        class MyTest(TestCase):
+            @given(st.integers())
+            def test(self, x):
+                assert isinstance(self, MyTest)
+                assert isinstance(x, int)
+
+    If (and only if) using keyword arguments, |@given| may be combined with
+    ``**kwargs`` or ``*args``:
+
+    .. code-block:: python
+
+        @given(x=integers(), y=integers())
+        def test(x, **kwargs):
+            assert "y" in kwargs
+
+        @given(x=integers(), y=integers())
+        def test(x, *args, **kwargs):
+            assert args == ()
+            assert "x" not in kwargs
+            assert "y" in kwargs
+
+    It is an error to:
+
+    * Mix positional and keyword arguments to |@given|.
+    * Use |@given| with a function that has a default value for an argument.
+    * Use |@given| with positional arguments with a function that uses ``*args``,
+      ``**kwargs``, or keyword-only arguments.
+
+    The function returned by given has all the same arguments as the original
+    test, minus those that are filled in by |@given|. See the :ref:`notes on
+    framework compatibility <framework-compatibility>` for how this interacts
+    with features of other testing libraries, such as :pypi:`pytest` fixtures.
     """
 
     if currently_in_test_context():
         fail_health_check(
             Settings(),
             "Nesting @given tests results in quadratic generation and shrinking "
-            "behavior and can usually be more cleanly expressed by replacing the "
-            "inner function with an st.data() parameter on the outer @given.",
+            "behavior, and can usually be more cleanly expressed by replacing the "
+            "inner function with an st.data() parameter on the outer @given."
+            "\n\n"
+            "If it is difficult or impossible to refactor this test to remove the "
+            "nested @given, you can disable this health check with "
+            "@settings(suppress_health_check=[HealthCheck.nested_given]) on the "
+            "outer @given. See "
+            "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+            "for details.",
             HealthCheck.nested_given,
         )
 
@@ -1583,7 +1934,21 @@ def given(
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
-            raise InvalidArgument("@given cannot be applied to a class.")
+            raise InvalidArgument("@given cannot be applied to a class")
+
+        if (
+            "_pytest" in sys.modules
+            and "_pytest.fixtures" in sys.modules
+            and (
+                tuple(map(int, sys.modules["_pytest"].__version__.split(".")[:2]))
+                >= (8, 4)
+            )
+            and isinstance(
+                test, sys.modules["_pytest.fixtures"].FixtureFunctionDefinition
+            )
+        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+            raise InvalidArgument("@given cannot be applied to a pytest fixture")
+
         given_arguments = tuple(_given_arguments)
         given_kwargs = dict(_given_kwargs)
 
@@ -1615,7 +1980,9 @@ def given(
                 for p in original_sig.parameters.values()
                 if p.kind is p.POSITIONAL_OR_KEYWORD
             ]
-            given_kwargs = dict(list(zip(posargs[::-1], given_arguments[::-1]))[::-1])
+            given_kwargs = dict(
+                list(zip(posargs[::-1], given_arguments[::-1], strict=False))[::-1]
+            )
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
@@ -1634,213 +2001,276 @@ def given(
                 )
             given_kwargs[name] = st.from_type(hints[name])
 
-        prev_self = Unset = object()
+        # only raise if the same thread uses two different executors, not if two
+        # different threads use different executors.
+        thread_local = ThreadLocal(prev_self=lambda: not_set)
+        # maps thread_id to whether that thread overlaps in execution with any
+        # other thread in this @given. We use this to detect whether an @given is
+        # being run from multiple different threads at once, which informs
+        # decisions like whether to raise DeadlineExceeded or HealthCheck.too_slow.
+        thread_overlap: dict[int, bool] = {}
+        thread_overlap_lock = Lock()
 
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, new_signature)
         def wrapped_test(*arguments, **kwargs):
             # Tell pytest to omit the body of this function from tracebacks
             __tracebackhide__ = True
+            with thread_overlap_lock:
+                for overlap_thread_id in thread_overlap:
+                    thread_overlap[overlap_thread_id] = True
 
-            test = wrapped_test.hypothesis.inner_test
-
-            if getattr(test, "is_hypothesis_test", False):
-                raise InvalidArgument(
-                    f"You have applied @given to the test {test.__name__} more than "
-                    "once, which wraps the test several times and is extremely slow. "
-                    "A similar effect can be gained by combining the arguments "
-                    "of the two calls to given. For example, instead of "
-                    "@given(booleans()) @given(integers()), you could write "
-                    "@given(booleans(), integers())"
-                )
-
-            settings = wrapped_test._hypothesis_internal_use_settings
-
-            random = get_random_for_wrapped_test(test, wrapped_test)
-
-            arguments, kwargs, stuff = process_arguments_to_given(
-                wrapped_test, arguments, kwargs, given_kwargs, new_signature.parameters
-            )
-
-            if (
-                inspect.iscoroutinefunction(test)
-                and get_executor(stuff.selfy) is default_executor
-            ):
-                # See https://github.com/HypothesisWorks/hypothesis/issues/3054
-                # If our custom executor doesn't handle coroutines, or we return an
-                # awaitable from a non-async-def function, we just rely on the
-                # return_value health check.  This catches most user errors though.
-                raise InvalidArgument(
-                    "Hypothesis doesn't know how to run async test functions like "
-                    f"{test.__name__}.  You'll need to write a custom executor, "
-                    "or use a library like pytest-asyncio or pytest-trio which can "
-                    "handle the translation for you.\n    See https://hypothesis."
-                    "readthedocs.io/en/latest/details.html#custom-function-execution"
-                )
-
-            runner = stuff.selfy
-            if isinstance(stuff.selfy, TestCase) and test.__name__ in dir(TestCase):
-                msg = (
-                    f"You have applied @given to the method {test.__name__}, which is "
-                    "used by the unittest runner but is not itself a test."
-                    "  This is not useful in any way."
-                )
-                fail_health_check(settings, msg, HealthCheck.not_a_test_method)
-            if bad_django_TestCase(runner):  # pragma: no cover
-                # Covered by the Django tests, but not the pytest coverage task
-                raise InvalidArgument(
-                    "You have applied @given to a method on "
-                    f"{type(runner).__qualname__}, but this "
-                    "class does not inherit from the supported versions in "
-                    "`hypothesis.extra.django`.  Use the Hypothesis variants "
-                    "to ensure that each example is run in a separate "
-                    "database transaction."
-                )
-
-            nonlocal prev_self
-            # Check selfy really is self (not e.g. a mock) before we health-check
-            cur_self = (
-                stuff.selfy
-                if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
-                else None
-            )
-            if prev_self is Unset:
-                prev_self = cur_self
-            elif cur_self is not prev_self:
-                msg = (
-                    f"The method {test.__qualname__} was called from multiple "
-                    "different executors. This may lead to flaky tests and "
-                    "nonreproducible errors when replaying from database."
-                )
-                fail_health_check(settings, msg, HealthCheck.differing_executors)
-
-            state = StateForActualGivenExecution(
-                stuff, test, settings, random, wrapped_test
-            )
-
-            reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
-
-            # If there was a @reproduce_failure decorator, use it to reproduce
-            # the error (or complain that we couldn't). Either way, this will
-            # always raise some kind of error.
-            if reproduce_failure is not None:
-                expected_version, failure = reproduce_failure
-                if expected_version != __version__:
-                    raise InvalidArgument(
-                        "Attempting to reproduce a failure from a different "
-                        "version of Hypothesis. This failure is from %s, but "
-                        "you are currently running %r. Please change your "
-                        "Hypothesis version to a matching one."
-                        % (expected_version, __version__)
-                    )
-                try:
-                    state.execute_once(
-                        ConjectureData.for_choices(decode_failure(failure)),
-                        print_example=True,
-                        is_final=True,
-                    )
-                    raise DidNotReproduce(
-                        "Expected the test to raise an error, but it "
-                        "completed successfully."
-                    )
-                except StopTest:
-                    raise DidNotReproduce(
-                        "The shape of the test data has changed in some way "
-                        "from where this blob was defined. Are you sure "
-                        "you're running the same test?"
-                    ) from None
-                except UnsatisfiedAssumption:
-                    raise DidNotReproduce(
-                        "The test data failed to satisfy an assumption in the "
-                        "test. Have you added it since this blob was generated?"
-                    ) from None
-
-            # There was no @reproduce_failure, so start by running any explicit
-            # examples from @example decorators.
-            errors = list(
-                execute_explicit_examples(
-                    state, wrapped_test, arguments, kwargs, original_sig
-                )
-            )
-            if errors:
-                # If we're not going to report multiple bugs, we would have
-                # stopped running explicit examples at the first failure.
-                assert len(errors) == 1 or state.settings.report_multiple_bugs
-
-                # If an explicit example raised a 'skip' exception, ensure it's never
-                # wrapped up in an exception group.  Because we break out of the loop
-                # immediately on finding a skip, if present it's always the last error.
-                if isinstance(errors[-1][1], skip_exceptions_to_reraise()):
-                    # Covered by `test_issue_3453_regression`, just in a subprocess.
-                    del errors[:-1]  # pragma: no cover
-
-                _raise_to_user(errors, state.settings, [], " in explicit examples")
-
-            # If there were any explicit examples, they all ran successfully.
-            # The next step is to use the Conjecture engine to run the test on
-            # many different inputs.
-
-            ran_explicit_examples = Phase.explicit in state.settings.phases and getattr(
-                wrapped_test, "hypothesis_explicit_examples", ()
-            )
-            SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
-                "Hypothesis has been told to run no examples for this test."
-            )
-            if not (
-                Phase.reuse in settings.phases or Phase.generate in settings.phases
-            ):
-                if not ran_explicit_examples:
-                    raise SKIP_BECAUSE_NO_EXAMPLES
-                return
+                threadid = threading.get_ident()
+                # if there are existing threads when this thread starts, then
+                # this thread starts at an overlapped state.
+                has_existing_threads = len(thread_overlap) > 0
+                thread_overlap[threadid] = has_existing_threads
 
             try:
-                if isinstance(runner, TestCase) and hasattr(runner, "subTest"):
-                    subTest = runner.subTest
-                    try:
-                        runner.subTest = types.MethodType(fake_subTest, runner)
-                        state.run_engine()
-                    finally:
-                        runner.subTest = subTest
-                else:
-                    state.run_engine()
-            except BaseException as e:
-                # The exception caught here should either be an actual test
-                # failure (or BaseExceptionGroup), or some kind of fatal error
-                # that caused the engine to stop.
-                generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
-                with local_settings(settings):
-                    if not (state.failed_normally or generated_seed is None):
-                        if running_under_pytest:
-                            report(
-                                f"You can add @seed({generated_seed}) to this test or "
-                                f"run pytest with --hypothesis-seed={generated_seed} "
-                                "to reproduce this failure."
-                            )
-                        else:
-                            report(
-                                f"You can add @seed({generated_seed}) to this test to "
-                                "reproduce this failure."
-                            )
-                    # The dance here is to avoid showing users long tracebacks
-                    # full of Hypothesis internals they don't care about.
-                    # We have to do this inline, to avoid adding another
-                    # internal stack frame just when we've removed the rest.
-                    #
-                    # Using a variable for our trimmed error ensures that the line
-                    # which will actually appear in tracebacks is as clear as
-                    # possible - "raise the_error_hypothesis_found".
-                    the_error_hypothesis_found = e.with_traceback(
-                        None
-                        if isinstance(e, BaseExceptionGroup)
-                        else get_trimmed_traceback()
+                test = wrapped_test.hypothesis.inner_test
+                if getattr(test, "is_hypothesis_test", False):
+                    raise InvalidArgument(
+                        f"You have applied @given to the test {test.__name__} more than "
+                        "once, which wraps the test several times and is extremely slow. "
+                        "A similar effect can be gained by combining the arguments "
+                        "of the two calls to given. For example, instead of "
+                        "@given(booleans()) @given(integers()), you could write "
+                        "@given(booleans(), integers())"
                     )
-                    raise the_error_hypothesis_found
 
-            if not (ran_explicit_examples or state.ever_executed):
-                raise SKIP_BECAUSE_NO_EXAMPLES
+                settings = wrapped_test._hypothesis_internal_use_settings
+                random = get_random_for_wrapped_test(test, wrapped_test)
+                arguments, kwargs, stuff = process_arguments_to_given(
+                    wrapped_test,
+                    arguments,
+                    kwargs,
+                    given_kwargs,
+                    new_signature.parameters,
+                )
+
+                if (
+                    inspect.iscoroutinefunction(test)
+                    and get_executor(stuff.selfy) is default_executor
+                ):
+                    # See https://github.com/HypothesisWorks/hypothesis/issues/3054
+                    # If our custom executor doesn't handle coroutines, or we return an
+                    # awaitable from a non-async-def function, we just rely on the
+                    # return_value health check.  This catches most user errors though.
+                    raise InvalidArgument(
+                        "Hypothesis doesn't know how to run async test functions like "
+                        f"{test.__name__}.  You'll need to write a custom executor, "
+                        "or use a library like pytest-asyncio or pytest-trio which can "
+                        "handle the translation for you.\n    See https://hypothesis."
+                        "readthedocs.io/en/latest/details.html#custom-function-execution"
+                    )
+
+                runner = stuff.selfy
+                if isinstance(stuff.selfy, TestCase) and test.__name__ in dir(TestCase):
+                    fail_health_check(
+                        settings,
+                        f"You have applied @given to the method {test.__name__}, which is "
+                        "used by the unittest runner but is not itself a test. "
+                        "This is not useful in any way.",
+                        HealthCheck.not_a_test_method,
+                    )
+                if bad_django_TestCase(runner):  # pragma: no cover
+                    # Covered by the Django tests, but not the pytest coverage task
+                    raise InvalidArgument(
+                        "You have applied @given to a method on "
+                        f"{type(runner).__qualname__}, but this "
+                        "class does not inherit from the supported versions in "
+                        "`hypothesis.extra.django`.  Use the Hypothesis variants "
+                        "to ensure that each example is run in a separate "
+                        "database transaction."
+                    )
+
+                nonlocal thread_local
+                # Check selfy really is self (not e.g. a mock) before we health-check
+                cur_self = (
+                    stuff.selfy
+                    if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
+                    else None
+                )
+                if thread_local.prev_self is not_set:
+                    thread_local.prev_self = cur_self
+                elif cur_self is not thread_local.prev_self:
+                    fail_health_check(
+                        settings,
+                        f"The method {test.__qualname__} was called from multiple "
+                        "different executors. This may lead to flaky tests and "
+                        "nonreproducible errors when replaying from database."
+                        "\n\n"
+                        "Unlike most health checks, HealthCheck.differing_executors "
+                        "warns about a correctness issue with your test. We "
+                        "therefore recommend fixing the underlying issue, rather "
+                        "than suppressing this health check. However, if you are "
+                        "confident this health check can be safely disabled, you can "
+                        "do so with "
+                        "@settings(suppress_health_check=[HealthCheck.differing_executors]). "
+                        "See "
+                        "https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck "
+                        "for details.",
+                        HealthCheck.differing_executors,
+                    )
+
+                state = StateForActualGivenExecution(
+                    stuff,
+                    test,
+                    settings,
+                    random,
+                    wrapped_test,
+                    thread_overlap=thread_overlap,
+                )
+
+                # If there was a @reproduce_failure decorator, use it to reproduce
+                # the error (or complain that we couldn't). Either way, this will
+                # always raise some kind of error.
+                if (
+                    reproduce_failure := wrapped_test._hypothesis_internal_use_reproduce_failure
+                ) is not None:
+                    expected_version, failure = reproduce_failure
+                    if expected_version != __version__:
+                        raise InvalidArgument(
+                            "Attempting to reproduce a failure from a different "
+                            f"version of Hypothesis. This failure is from {expected_version}, but "
+                            f"you are currently running {__version__!r}. Please change your "
+                            "Hypothesis version to a matching one."
+                        )
+                    try:
+                        state.execute_once(
+                            ConjectureData.for_choices(decode_failure(failure)),
+                            print_example=True,
+                            is_final=True,
+                        )
+                        raise DidNotReproduce(
+                            "Expected the test to raise an error, but it "
+                            "completed successfully."
+                        )
+                    except StopTest:
+                        raise DidNotReproduce(
+                            "The shape of the test data has changed in some way "
+                            "from where this blob was defined. Are you sure "
+                            "you're running the same test?"
+                        ) from None
+                    except UnsatisfiedAssumption:
+                        raise DidNotReproduce(
+                            "The test data failed to satisfy an assumption in the "
+                            "test. Have you added it since this blob was generated?"
+                        ) from None
+
+                # There was no @reproduce_failure, so start by running any explicit
+                # examples from @example decorators.
+                if errors := list(
+                    execute_explicit_examples(
+                        state, wrapped_test, arguments, kwargs, original_sig
+                    )
+                ):
+                    # If we're not going to report multiple bugs, we would have
+                    # stopped running explicit examples at the first failure.
+                    assert len(errors) == 1 or state.settings.report_multiple_bugs
+
+                    # If an explicit example raised a 'skip' exception, ensure it's never
+                    # wrapped up in an exception group.  Because we break out of the loop
+                    # immediately on finding a skip, if present it's always the last error.
+                    if isinstance(errors[-1].exception, skip_exceptions_to_reraise()):
+                        # Covered by `test_issue_3453_regression`, just in a subprocess.
+                        del errors[:-1]  # pragma: no cover
+
+                    if state.settings.verbosity < Verbosity.verbose:
+                        # keep only one error per interesting origin, unless
+                        # verbosity is high
+                        errors = _simplify_explicit_errors(errors)
+
+                    _raise_to_user(errors, state.settings, [], " in explicit examples")
+
+                # If there were any explicit examples, they all ran successfully.
+                # The next step is to use the Conjecture engine to run the test on
+                # many different inputs.
+                ran_explicit_examples = (
+                    Phase.explicit in state.settings.phases
+                    and getattr(wrapped_test, "hypothesis_explicit_examples", ())
+                )
+                SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
+                    "Hypothesis has been told to run no examples for this test."
+                )
+                if not (
+                    Phase.reuse in settings.phases or Phase.generate in settings.phases
+                ):
+                    if not ran_explicit_examples:
+                        raise SKIP_BECAUSE_NO_EXAMPLES
+                    return
+
+                try:
+                    if isinstance(runner, TestCase) and hasattr(runner, "subTest"):
+                        subTest = runner.subTest
+                        try:
+                            runner.subTest = types.MethodType(fake_subTest, runner)
+                            state.run_engine()
+                        finally:
+                            runner.subTest = subTest
+                    else:
+                        state.run_engine()
+                except BaseException as e:
+                    # The exception caught here should either be an actual test
+                    # failure (or BaseExceptionGroup), or some kind of fatal error
+                    # that caused the engine to stop.
+                    generated_seed = (
+                        wrapped_test._hypothesis_internal_use_generated_seed
+                    )
+                    assert state._runner is not None
+                    stopped_because_slow_shrinking = (
+                        state._runner.statistics.get("stopped-because")
+                        == "shrinking was very slow"
+                    )
+                    with local_settings(settings):
+                        if generated_seed is not None and (
+                            not state.failed_normally or stopped_because_slow_shrinking
+                        ):
+                            pytest_extra_msg = (
+                                (
+                                    ", or by running pytest with "
+                                    f"--hypothesis-seed={generated_seed}"
+                                )
+                                if running_under_pytest
+                                else ""
+                            )
+                            if stopped_because_slow_shrinking:
+                                msg = (
+                                    "\nThis test function exited early because"
+                                    " it took too long to shrink. If desired for debugging, "
+                                    f"you can reproduce this by adding @seed({generated_seed}) "
+                                    f"to this test{pytest_extra_msg}."
+                                )
+                            else:
+                                msg = (
+                                    "You can reproduce this failure by adding "
+                                    f"@seed({generated_seed}) to this test"
+                                    f"{pytest_extra_msg}."
+                                )
+                            report(msg)
+                        # The dance here is to avoid showing users long tracebacks
+                        # full of Hypothesis internals they don't care about.
+                        # We have to do this inline, to avoid adding another
+                        # internal stack frame just when we've removed the rest.
+                        #
+                        # Using a variable for our trimmed error ensures that the line
+                        # which will actually appear in tracebacks is as clear as
+                        # possible - "raise the_error_hypothesis_found".
+                        the_error_hypothesis_found = e.with_traceback(
+                            None
+                            if isinstance(e, BaseExceptionGroup)
+                            else get_trimmed_traceback()
+                        )
+                        raise the_error_hypothesis_found
+
+                if not (ran_explicit_examples or state.ever_executed):
+                    raise SKIP_BECAUSE_NO_EXAMPLES
+            finally:
+                with thread_overlap_lock:
+                    del thread_overlap[threadid]
 
         def _get_fuzz_target() -> (
-            Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]
+            Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]
         ):
             # Because fuzzing interfaces are very performance-sensitive, we use a
             # somewhat more complicated structure here.  `_get_fuzz_target()` is
@@ -1862,7 +2292,12 @@ def given(
             assert not _args
             assert not _kwargs
             state = StateForActualGivenExecution(
-                stuff, test, settings, random, wrapped_test
+                stuff,
+                test,
+                settings,
+                random,
+                wrapped_test,
+                thread_overlap=thread_overlap,
             )
             database_key = function_digest(test) + b".secondary"
             # We track the minimal-so-far example for each distinct origin, so
@@ -1872,8 +2307,8 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO],
-            ) -> Optional[bytes]:
+                buffer: bytes | bytearray | memoryview | BinaryIO,
+            ) -> bytes | None:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.
                 if isinstance(buffer, io.IOBase):
@@ -1886,7 +2321,12 @@ def given(
                 )
                 try:
                     state.execute_once(data)
-                except (StopTest, UnsatisfiedAssumption):
+                    status = Status.VALID
+                except StopTest:
+                    status = data.status
+                    return None
+                except UnsatisfiedAssumption:
+                    status = Status.INVALID
                     return None
                 except BaseException:
                     known = minimal_failures.get(data.interesting_origin)
@@ -1897,7 +2337,26 @@ def given(
                             database_key, choices_to_bytes(data.choices)
                         )
                         minimal_failures[data.interesting_origin] = data.nodes
+                    status = Status.INTERESTING
                     raise
+                finally:
+                    if observability_enabled():
+                        data.freeze()
+                        tc = make_testcase(
+                            run_start=state._start_timestamp,
+                            property=state.test_identifier,
+                            data=data,
+                            how_generated="fuzz_one_input",
+                            representation=state._string_repr,
+                            arguments=data._observability_args,
+                            timing=state._timing_features,
+                            coverage=None,
+                            status=status,
+                            backend_metadata=data.provider.observe_test_case(),
+                        )
+                        deliver_observation(tc)
+                        state._timing_features = {}
+
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)
 
@@ -1933,9 +2392,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Optional[Settings] = None,
-    random: Optional[Random] = None,
-    database_key: Optional[bytes] = None,
+    settings: Settings | None = None,
+    random: Random | None = None,
+    database_key: bytes | None = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
@@ -1970,11 +2429,7 @@ def find(
     if random is not None:
         test = seed(random.getrandbits(64))(test)
 
-    # Aliasing as Any avoids mypy errors (attr-defined) when accessing and
-    # setting custom attributes on the decorated function or class.
-    _test: Any = test
-    _test._hypothesis_internal_is_find = True
-    _test._hypothesis_internal_database_key = database_key
+    test._hypothesis_internal_database_key = database_key  # type: ignore
 
     try:
         test()

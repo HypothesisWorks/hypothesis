@@ -11,9 +11,11 @@
 import unittest
 
 import pytest
+from _pytest.outcomes import Skipped
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.core import skip_exceptions_to_reraise
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.strategies import integers
 
 from tests.common.utils import capture_out
@@ -38,3 +40,41 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         unittest.TextTestRunner().run(suite)
 
     assert "Falsifying example" not in o.getvalue()
+
+
+def test_skip_exceptions_save_database_entries():
+    """Skip exceptions should save database entries for immediate replay (issue #4484)."""
+    database = InMemoryExampleDatabase()
+    call_count = 0
+    skip_value = None
+    first_value = None
+
+    @settings(database=database, max_examples=100)
+    @given(integers())
+    def test_func(n):
+        nonlocal call_count, skip_value, first_value
+        call_count += 1
+        if first_value is None:
+            first_value = n
+
+        # Skip on the 5th value in the first run (the choice of 5 is arbitrary)
+        if call_count == 5 and skip_value is None:
+            skip_value = n
+
+        if n == skip_value:
+            pytest.skip()
+
+    # First run should raise a skip exception and save to database
+    with pytest.raises(Skipped):
+        test_func()
+    assert sum(len(v) for v in database.data.values()) == 1
+
+    # Second run should immediately replay the skip value
+    first_value = None
+    call_count = 0
+    with pytest.raises(Skipped):
+        test_func()
+
+    # first call should be the replayed skip value
+    assert first_value == skip_value
+    assert call_count == 1

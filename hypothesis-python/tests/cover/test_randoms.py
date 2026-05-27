@@ -10,15 +10,16 @@
 
 import inspect
 import math
-import sys
 from copy import copy
 
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
+    ArtificialRandom,
     HypothesisRandom,
     TrueRandom,
     convert_kwargs,
@@ -94,14 +95,7 @@ def any_call_of_method(draw, method):
         b = draw(INT64)
         assume(a != b)
         a, b = sorted((a, b))
-        if a == 0 and sys.version_info[:2] < (3, 10) and draw(st.booleans()):
-            start = b
-            stop = None
-        else:
-            start = a
-            stop = b
-
-        kwargs = {"start": start, "stop": stop, "step": draw(st.integers(1, 3))}
+        kwargs = {"start": a, "stop": b, "step": draw(st.integers(1, 3))}
     elif method == "triangular":
         a = normalize_zero(draw(st.floats(allow_infinity=False, allow_nan=False)))
         b = normalize_zero(draw(st.floats(allow_infinity=False, allow_nan=False)))
@@ -242,6 +236,12 @@ def test_handles_singleton_regions_of_triangular_correctly(rnd):
     assert rnd.triangular(0.0, -0.0) == 0.0
 
 
+@given(st.randoms(use_true_random=False))
+def test_triangular_with_mode(rnd):
+    x = rnd.triangular(0.0, 1.0, mode=0.5)
+    assert 0.0 <= x <= 1.0
+
+
 @pytest.mark.parametrize("use_true_random", [False, True])
 def test_outputs_random_calls(use_true_random):
     @given(st.randoms(use_true_random=use_true_random, note_method_calls=True))
@@ -328,7 +328,10 @@ def test_randbytes_have_right_length(rnd, n):
     assert len(rnd.randbytes(n)) == n
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes hours")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes hours; may get faster after https://github.com/pschanely/CrossHair/issues/332",
+)
 @given(any_random)
 def test_can_manage_very_long_ranges_with_step(rnd):
     i = rnd.randrange(0, 2**256, 3)
@@ -402,3 +405,11 @@ def test_betavariate_includes_zero_and_one():
     assert_all_examples(strat, lambda x: 0 <= x <= 1)
     find_any(strat, lambda x: x == 0)
     find_any(strat, lambda x: x == 1)
+
+
+def test_artificial_random_with_already_initialized_states_for_ids():
+    # covering test for calling .getstate when data.states_for_ids is not None.
+    data = ConjectureData.for_choices([])
+    data.states_for_ids = {}
+    r = ArtificialRandom(note_method_calls=False, data=data)
+    r.getstate()

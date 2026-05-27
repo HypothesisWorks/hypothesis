@@ -25,14 +25,20 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+pip install attrs
+$PYTEST tests/attrs/
+pip uninstall -y attrs
+
+# use pinned redis version instead of inheriting from fakeredis
+pip install "$(grep '^redis==' ../requirements/coverage.txt)"
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
 pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
 $PYTEST tests/typing_extensions/
-if [[ "$HYPOTHESIS_PROFILE" != "crosshair" ]]; then
-  pip uninstall -y typing_extensions
+if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c 'import sys; print(sys.version_info[:2] > (3, 10))')" = "True" ]; then
+  pip uninstall -y typing-extensions
 fi
 
 pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
@@ -40,7 +46,7 @@ $PYTEST tests/test_annotated_types.py
 pip uninstall -y annotated-types
 
 pip install ".[lark]"
-pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+pip install "$(grep -m 1 -oE 'lark>=([0-9.]+)' ../hypothesis-python/pyproject.toml | tr '>' =)"
 $PYTEST -Wignore tests/lark/
 pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
@@ -50,9 +56,9 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 9))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.9
-    pip install numpy==2.0.2
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.10
+    pip install numpy==2.2.6
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi
@@ -61,10 +67,26 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/patching/
   pip uninstall -y libcst
 
+  # One of the ghostwriter tests uses attrs (though hypothesis[ghostwriter] does not require attrs).
+  pip install attrs
   $PYTEST tests/ghostwriter/
+  pip uninstall -y attrs
   pip uninstall -y black
 
-  if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c "import platform; print(platform.python_implementation() not in {'PyPy', 'GraalVM'})")" = "True" ] ; then
-    $PYTEST tests/array_api tests/numpy
+  if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] ; then
+    # Crosshair tracer is not compatible with no-gil
+    if [ "$(python -c "import sys; print('free-threading' in sys.version)")" != "True" ] ; then
+      # Run twice, interleaved by other tests, to make it more probable to tickle any problems
+      # from accidentally caching/retaining crosshair proxy objects
+      pip install pytest-repeat
+      pip install -r ../requirements/crosshair.txt
+      # requirements/crosshair.txt pins hypothesis. Re-override it with our local changes
+      pip install .
+      $PYTEST --count=2 --repeat-scope=session tests/numpy tests/crosshair
+      # ...but running twice takes time, don't overdo it
+      $PYTEST tests/array_api
+    else
+      $PYTEST tests/array_api tests/numpy
+    fi
   fi
 fi

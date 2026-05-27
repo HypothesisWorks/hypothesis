@@ -9,15 +9,22 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+import subprocess
+import sys
+import textwrap
+
+import pytest
 
 from hypothesis import configuration as fs
+
+from tests.common.utils import skipif_emscripten
 
 previous_home_dir = None
 
 
 def setup_function(function):
     global previous_home_dir
-    previous_home_dir = fs.storage_directory()
+    previous_home_dir = fs.storage_directory().path
     fs.set_hypothesis_home_dir(None)
 
 
@@ -28,19 +35,80 @@ def teardown_function(function):
 
 
 def test_defaults_to_the_default():
-    assert fs.storage_directory() == fs.__hypothesis_home_directory_default
+    assert fs.storage_directory().path == fs.__hypothesis_home_directory_default
 
 
 def test_can_set_homedir(tmp_path):
     fs.set_hypothesis_home_dir(tmp_path)
-    assert fs.storage_directory("kittens") == tmp_path / "kittens"
+    assert fs.storage_directory("kittens").path == tmp_path / "kittens"
 
 
 def test_will_pick_up_location_from_env(monkeypatch, tmp_path):
     monkeypatch.setattr(os, "environ", {"HYPOTHESIS_STORAGE_DIRECTORY": str(tmp_path)})
-    assert fs.storage_directory() == tmp_path
+    assert fs.storage_directory().path == tmp_path
 
 
 def test_storage_directories_are_not_created_automatically(tmp_path):
     fs.set_hypothesis_home_dir(tmp_path)
-    assert not fs.storage_directory("badgers").exists()
+    assert not fs.storage_directory("badgers").path.exists()
+
+
+def _gitignore_storage_dir_script(*, home_dir=None):
+    return textwrap.dedent(f"""
+        from hypothesis import given, settings, strategies as st
+        from hypothesis.configuration import set_hypothesis_home_dir
+
+        home_dir = {repr(str(home_dir)) if home_dir is not None else None}
+        if home_dir:
+            set_hypothesis_home_dir(home_dir)
+
+        # in CI we use the "ci" profile which sets database=None. But we actually want
+        # disk writes to happen here so we can test the .hypothesis/.gitignore behavior.
+        settings.load_profile("default")
+
+        @given(st.integers())
+        def f(n):
+            # fail, in order to guarantee we write a file to .hypothesis/examples
+            raise ValueError()
+
+        try:
+            f()
+        except Exception:
+            pass
+        """)
+
+
+@skipif_emscripten
+@pytest.mark.parametrize("set_home_dir", [False, True])
+def test_writes_gitignore_to_new_storage_dir(tmp_path, set_home_dir):
+    subprocess.check_call(["git", "init", str(tmp_path)])
+
+    home_dir = tmp_path / ("custom_storage_dir" if set_home_dir else ".hypothesis")
+    (tmp_path / "test_a.py").write_text(
+        _gitignore_storage_dir_script(home_dir=home_dir if set_home_dir else None),
+        encoding="utf-8",
+    )
+
+    subprocess.check_call([sys.executable, "test_a.py"], cwd=tmp_path)
+    assert home_dir.is_dir()
+    assert (home_dir / ".gitignore").exists()
+
+    status = subprocess.check_output(
+        ["git", "status", "--porcelain"], cwd=tmp_path, encoding="utf-8"
+    )
+    assert home_dir.name not in status
+
+
+@skipif_emscripten
+@pytest.mark.parametrize("set_home_dir", [False, True])
+def test_skips_gitignore_for_existing_storage_dir(tmp_path, set_home_dir):
+    home_dir = tmp_path / ("custom_storage_dir" if set_home_dir else ".hypothesis")
+    home_dir.mkdir()
+
+    (tmp_path / "test_a.py").write_text(
+        _gitignore_storage_dir_script(home_dir=home_dir if set_home_dir else None),
+        encoding="utf-8",
+    )
+
+    subprocess.check_call([sys.executable, "test_a.py"], cwd=tmp_path)
+    assert not (home_dir / ".gitignore").exists()

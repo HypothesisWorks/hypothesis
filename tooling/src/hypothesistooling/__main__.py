@@ -15,14 +15,13 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from textwrap import indent
 
 import requests
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.projects.hypothesisruby as hr
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -67,7 +66,11 @@ def codespell(*files):
         "codespell",
         "--check-hidden",
         "--check-filenames",
-        "--ignore-words=./tooling/ignore-list.txt",
+        "--ignore-words=./tooling/codespell-ignore.txt",
+        # passing a custom --dictionary disables the default dictionary by default.
+        # Add it back in with --dictionary=-.
+        "--dictionary=-",
+        "--dictionary=./tooling/codespell-dict.txt",
         "--skip=__pycache__,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
         *files,
     )
@@ -76,7 +79,35 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
+    codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
+
+    failed = False
+
+    matches = subprocess.run(
+        r"git grep -En '@(dataclasses\.)?dataclass\(.*\)' "
+        "| grep -Ev 'frozen=.*slots=|slots=.*frozen='",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        print("\nAll dataclass decorators must pass slots= and frozen= arguments:")
+        print(indent(matches, "    "))
+        failed = True
+
+    matches = subprocess.run(
+        r"git grep -nP '\b(the|as|a|to|because|user|test|about|from|only)\s+\1\b'",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if matches:
+        print("\nFound duplicate words:")
+        print(indent(matches, "    "))
+        failed = True
+
+    if failed:
+        sys.exit(1)
 
 
 def do_release(package):
@@ -144,15 +175,35 @@ HEADER = """
 # obtain one at https://mozilla.org/MPL/2.0/.
 """.strip()
 
+# this pattern is copied from shed
+# https://github.com/Zac-HD/shed/blob/6471da71c5b5cc443443ef5ed072799db275e7c0/src/shed/__init__.py#L297
+rst_pattern = re.compile(
+    r"(?P<before>"
+    r"^(?P<indent> *)\.\. "
+    r"(?P<block>jupyter-execute::|"
+    r"invisible-code-block: python|"  # magic rst comment for Sybil doctests
+    r"(code|code-block|sourcecode|ipython):: (python|py|sage|python3|py3|numpy))\n"
+    r"((?P=indent) +:.*\n)*"
+    r"\n*"
+    r")"
+    r"(?P<code>(^((?P=indent) +.*)?\n)+)",
+    flags=re.MULTILINE,
+)
+
+
+def remove_consecutive_newlines_in_rst(path: Path):
+    # replace 2+ empty lines in `.. code-block:: python` blocks with just one empty
+    # line
+    content = path.read_text()
+    processed_content = rst_pattern.sub(
+        lambda m: m["before"] + re.sub(r"\n{3,}", "\n\n", m["code"]), content
+    )
+    if processed_content != content:
+        path.write_text(processed_content)
+
 
 @task()
 def format():
-    def should_format_file(path):
-        return path.endswith(".py")
-
-    def should_format_doc_file(path):
-        return path.endswith((".rst", ".md"))
-
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
@@ -161,12 +212,12 @@ def format():
         # logic, so we need to rerun formatters.
         format_all = True
 
-    files = tools.all_files() if format_all else changed
+    paths = tools.all_files() if format_all else changed
 
-    doc_files_to_format = [f for f in sorted(files) if should_format_doc_file(f)]
-    files_to_format = [f for f in sorted(files) if should_format_file(f)]
+    doc_paths_to_format = [p for p in sorted(paths) if p.suffix in {".rst", ".md"}]
+    paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
 
-    if not (files_to_format or doc_files_to_format):
+    if not (paths_to_format or doc_paths_to_format):
         return
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and
@@ -180,13 +231,13 @@ def format():
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
     last_header_line = HEADER.splitlines()[-1].rstrip()
 
-    for f in files_to_format:
+    for p in paths_to_format:
         lines = []
-        with open(f, encoding="utf-8") as o:
+        with open(p, encoding="utf-8") as fp:
             shebang = None
             first = True
             in_header = True
-            for l in o.readlines():
+            for l in fp:
                 if first:
                     first = False
                     if l[:2] == "#!":
@@ -197,20 +248,24 @@ def format():
                     lines = []
                 else:
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
-        source = "".join(lines).strip()
-        with open(f, "w", encoding="utf-8") as o:
-            if shebang is not None:
-                o.write(shebang)
-                o.write("\n")
-            o.write(HEADER)
-            if source:
-                o.write("\n\n")
-                o.write(source)
-            o.write("\n")
 
-    codespell("--write-changes", *files_to_format, *doc_files_to_format)
+        source = "".join(lines).strip()
+        with open(p, "w", encoding="utf-8") as fp:
+            if shebang is not None:
+                fp.write(shebang)
+                fp.write("\n")
+            fp.write(HEADER)
+            if source:
+                fp.write("\n\n")
+                fp.write(source)
+            fp.write("\n")
+
+    codespell("--write-changes", *paths_to_format, *doc_paths_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py310-plus", *paths_to_format, *doc_paths_to_format)
+
+    for p in doc_paths_to_format:
+        remove_consecutive_newlines_in_rst(p)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -221,16 +276,40 @@ def check_format():
     format()
     n = max(map(len, VALID_STARTS))
     bad = False
-    for f in tools.all_files():
-        if not f.endswith(".py"):
+    for p in tools.all_files():
+        if p.suffix != ".py":
             continue
-        with open(f, encoding="utf-8") as i:
-            start = i.read(n)
+        with open(p, encoding="utf-8") as fp:
+            start = fp.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
-                print(f"{f} has incorrect start {start!r}", file=sys.stderr)
+                print(f"{p} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
-    check_not_changed()
+    try:
+        check_not_changed()
+    except Exception:
+        box_width = 50
+        inner_width = box_width - 2
+        content_width = inner_width - 2
+        msg1 = "Note: code differed after formatting."
+        msg2 = "To fix this, run:"
+        msg3 = "    ./build.sh format"
+
+        lines = [
+            "",
+            "    " + "*" * box_width,
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg1 + " " * (content_width - len(msg1)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg2 + " " * (content_width - len(msg2)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    *  " + msg3 + " " * (content_width - len(msg3)) + "*",
+            "    *" + " " * inner_width + "*",
+            "    " + "*" * box_width,
+            "",
+        ]
+        print("\n".join(lines), file=sys.stderr)
+        raise
 
 
 def check_not_changed():
@@ -252,7 +331,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/setup.py",
+            "hypothesis-python/pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -272,37 +351,50 @@ def compile_requirements(*, upgrade=False):
 
 def update_python_versions():
     install.ensure_python(PYTHONS[ci_version])
-    where = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv/")
-    subprocess.run(
-        "git fetch && git reset --hard origin/master",
-        cwd=where,
-        shell=True,
-        capture_output=True,
-    )
-    cmd = "bin/pyenv install --list"
+    # `uv python list` prints one candidate per line; it reports only the
+    # interpreters uv knows how to install, so we don't need to translate
+    # from pyenv's naming scheme any more.
     result = subprocess.run(
-        cmd, shell=True, stdout=subprocess.PIPE, cwd=where
+        ["uv", "python", "list", "--all-versions", "--output-format", "text"],
+        stdout=subprocess.PIPE,
+        check=True,
     ).stdout.decode()
-    # pyenv reports available versions in chronological order, so we keep the newest
-    # *unless* our current ends with a digit (is stable) and the candidate does not.
-    # (plus some special cases for the `t` suffix for free-threading builds)
-    stable = re.compile(r".*3\.\d+.\d+t?$")
-    min_minor_version = re.search(
-        r'python_requires=">= ?3.(\d+)"',
-        Path("hypothesis-python/setup.py").read_text(encoding="utf-8"),
-    ).group(1)
+    # Each line starts with something like `cpython-3.14.4-linux-aarch64-gnu`
+    # or `cpython-3.14.4+freethreaded-linux-aarch64-gnu` or `pypy-3.10.16-…`.
+    # We pull out the `(impl, version)` bit at the head.
+    versions = []
+    for line in result.splitlines():
+        token = line.strip().split()[0] if line.strip() else ""
+        if m := re.match(
+            r"(cpython|pypy)-(\d+\.\d+\.\d+(?:[a-z]\d+)?)(\+freethreaded)?", token
+        ):
+            impl, ver, ft = m.groups()
+            versions.append((impl, ver, bool(ft)))
+
+    min_minor_version = int(
+        re.search(
+            r'requires-python = ">= ?3.(\d+)"',
+            Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
+        ).group(1)
+    )
+    # For cpython we key by `3.NN` (or `3.NNt` for free-threaded) and pick the
+    # newest available version. pypy we key by `pypyX.Y` and format as
+    # `pypyX.Y-dev` → the existing PYTHONS dict keeps the upstream pypy
+    # version string for informational purposes, so we reconstruct those.
     best = {}
-    for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:9|\d\dt?)", line):
-            key = m.group()
-            curr = best.get(key, line)
-            if (
-                (stable.match(line) or not stable.match(curr))
-                and not (line.endswith("-dev") and not curr.endswith("-dev"))
-                and int(key.split(".")[-1].rstrip("t")) >= int(min_minor_version)
-                and key.endswith("t") == line.endswith(("t", "t-dev"))
-            ):
-                best[key] = line
+    for impl, ver, ft in versions:
+        major_minor = ".".join(ver.split(".")[:2])
+        if int(major_minor.split(".")[-1]) < min_minor_version:
+            continue
+        if impl == "cpython":
+            key = f"{major_minor}{'t' if ft else ''}"
+            candidate = f"{ver}{'+freethreaded' if ft else ''}"
+        else:
+            assert impl == "pypy"
+            key = f"pypy{major_minor}"
+            candidate = f"pypy{major_minor}-{ver}"
+        # `uv python list` sorts newest-first, so first hit wins.
+        best.setdefault(key, candidate)
 
     if best == PYTHONS:
         return
@@ -325,9 +417,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.20",
-    "5.0": "5.0.13",
-    "5.1": "5.1.7",
+    "4.2": "4.2.30",
+    "5.2": "5.2.13",
+    "6.0": "6.0.4",
 }
 
 
@@ -350,14 +442,14 @@ def update_django_versions():
     thisfile.write_text(after, encoding="utf-8")
     pip_tool("shed", str(thisfile))
 
-    # Update the minimum version in setup.py
-    setup_py = hp.BASE_DIR / "setup.py"
+    # Update the minimum version in pyproject.toml
+    pyproject_toml = hp.BASE_DIR / "pyproject.toml"
     content = re.sub(
         r"django>=\d+\.\d+",
         f"django>={min(versions, key=float)}",
-        setup_py.read_text(encoding="utf-8"),
+        pyproject_toml.read_text(encoding="utf-8"),
     )
-    setup_py.write_text(content, encoding="utf-8")
+    pyproject_toml.write_text(content, encoding="utf-8")
 
     # Automatically sync ci_version with the version in build.sh
     tox_ini = hp.BASE_DIR / "tox.ini"
@@ -365,39 +457,73 @@ def update_django_versions():
     print(versions)
     for short, full in versions.items():
         content = re.sub(
-            rf"(pip install django==){short}\.\d+",
-            rf"\g<1>{full}",
+            rf"django=={short}(\.\d+)?",
+            rf"django=={full}",
             content,
         )
     tox_ini.write_text(content, encoding="utf-8")
 
 
 def update_pyodide_versions():
+
+    def version_tuple(v: str) -> tuple[int, int, int]:
+        return tuple(int(x) for x in v.split("."))  # type: ignore
+
     vers_re = r"(\d+\.\d+\.\d+)"
-    all_versions = re.findall(
+    all_pyodide_build_versions = re.findall(
         f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
         requests.get("https://pypi.org/simple/pyodide-build/").text,
     )
-    for pyodide_version in sorted(
+    pyodide_build_version = max(
         # Don't just pick the most recent version; find the highest stable version.
-        set(all_versions),
-        key=lambda version: tuple(int(x) for x in version.split(".")),
-        reverse=True,
-    ):
-        makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
-        match = re.search(
-            rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
-            requests.get(makefile_url).text,
+        set(all_pyodide_build_versions),
+        key=version_tuple,
+    )
+
+    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
+    cross_build_environments_data = requests.get(cross_build_environments_url).json()
+
+    # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
+    # with the pyodide-build version we found
+    stable_releases = [
+        release
+        for release in cross_build_environments_data["releases"].values()
+        if re.fullmatch(vers_re, release["version"])
+    ]
+
+    compatible_releases = []
+    for release in stable_releases:  # sufficiently large values
+        min_build_version = release.get("min_pyodide_build_version", "0.0.0")
+        max_build_version = release.get("max_pyodide_build_version", "999.999.999")
+
+        # Perform version comparisons to avoid getting an incompatible pyodide-build version
+        # with the Pyodide runtime
+        if (
+            version_tuple(min_build_version)
+            <= version_tuple(pyodide_build_version)
+            <= version_tuple(max_build_version)
+        ):
+            compatible_releases.append(release)
+
+    if not compatible_releases:
+        raise RuntimeError(
+            f"No compatible Pyodide release found for pyodide-build {pyodide_build_version}"
         )
-        if match is not None:
-            python_version, emscripten_version = match.groups()
-            break
+
+    pyodide_release = max(
+        compatible_releases,
+        key=lambda release: version_tuple(release["version"]),
+    )
+
+    pyodide_version = pyodide_release["version"]
+    python_version = pyodide_release["python_version"]
+
     ci_file = tools.ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
     for name, var in [
         ("PYODIDE", pyodide_version),
+        ("PYODIDE_BUILD", pyodide_build_version),
         ("PYTHON", python_version),
-        ("EMSCRIPTEN", emscripten_version),
     ]:
         config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
     ci_file.write_text(config, encoding="utf-8")
@@ -417,13 +543,13 @@ def update_vendored_files():
     # Always require the most recent version of tzdata - we don't need to worry about
     # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
     # Our crosshair extra is research-grade, so we require latest versions there too.
-    setup = pathlib.Path(hp.BASE_DIR, "setup.py")
-    new = setup.read_text(encoding="utf-8")
+    pyproject_toml = pathlib.Path(hp.BASE_DIR, "pyproject.toml")
+    new = pyproject_toml.read_text(encoding="utf-8")
     for pkgname in ("tzdata", "crosshair-tool", "hypothesis-crosshair"):
         pkg_url = f"https://pypi.org/pypi/{pkgname}/json"
         pkg_version = requests.get(pkg_url).json()["info"]["version"]
         new = re.sub(rf"{pkgname}>=([a-z0-9.]+)", f"{pkgname}>={pkg_version}", new)
-    setup.write_text(new, encoding="utf-8")
+    pyproject_toml.write_text(new, encoding="utf-8")
 
 
 def has_diff(file_or_directory):
@@ -459,19 +585,35 @@ def documentation():
         hp.build_docs()
     finally:
         subprocess.check_call(
-            ["git", "checkout", "docs/changes.rst", "src/hypothesis/version.py"],
+            ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
             cwd=hp.HYPOTHESIS_PYTHON,
         )
 
 
 @task()
 def website():
-    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+    subprocess.call([sys.executable, "-m", "pelican"], cwd=tools.ROOT / "website")
 
 
 @task()
 def live_website():
-    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+    subprocess.call(
+        [sys.executable, "-m", "pelican", "--autoreload", "--listen"],
+        cwd=tools.ROOT / "website",
+    )
+
+
+@task()
+def live_docs():
+    pip_tool(
+        "sphinx-autobuild",
+        "docs",
+        "docs/_build/html",
+        "--watch",
+        "src",
+        "--open-browser",
+        cwd=hp.HYPOTHESIS_PYTHON,
+    )
 
 
 def run_tox(task, version, *args):
@@ -489,6 +631,13 @@ def run_tox(task, version, *args):
     python = install.python_executable(version)
 
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
+    # Set environment variable for tox to use in basepython substitution
+    if version.startswith("pypy"):
+        # For PyPy, use the version name from e.g. "pypy3.11-7.3.20"
+        # to match tox's environment name inference.
+        env["TOX_PYTHON_VERSION"] = version.split("-")[0]  # "pypy3.11"
+    else:
+        env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
@@ -496,29 +645,29 @@ def run_tox(task, version, *args):
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
 # When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
+# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.9": "3.9.21",
-    "3.10": "3.10.16",
-    "3.11": "3.11.11",
-    "3.12": "3.12.9",
-    "3.13": "3.13.2",
+    "3.10": "3.10.20",
+    "3.11": "3.11.15",
+    "3.12": "3.12.13",
+    "3.13": "3.13.13",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0a6",
+    "3.14": "3.14.4",
     "3.14t": "3.14t-dev",
-    "pypy3.9": "pypy3.9-7.3.16",
+    "3.15": "3.15.0a8",
+    "3.15t": "3.15t-dev",
     "pypy3.10": "pypy3.10-7.3.19",
-    "pypy3.11": "pypy3.11-7.3.19",
+    "pypy3.11": "pypy3.11-7.3.20",
 }
-ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
+ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(
     if_changed=(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
-        os.path.join(tools.ROOT, "pytest.ini"),
-        os.path.join(tools.ROOT, "tooling"),
-        os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
+        hp.HYPOTHESIS_PYTHON / "pyproject.toml",
+        tools.ROOT / "tooling",
+        hp.HYPOTHESIS_PYTHON / "scripts",
     )
 )
 
@@ -535,7 +684,15 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
-    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+    for subtask in (
+        "brief",
+        "full",
+        "cover",
+        "rest",
+        "nocover",
+        "niche",
+        "custom",
+    ):
         TASKS[f"check-{name}-{subtask}"] = python_tests(
             lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
         )
@@ -560,27 +717,42 @@ def standard_tox_task(name, py=ci_version):
     )
 
 
-standard_tox_task("py39-nose", py="3.9")
-standard_tox_task("py39-pytest46", py="3.9")
-standard_tox_task("py39-pytest54", py="3.9")
-standard_tox_task("pytest62")
+standard_tox_task("py311-pytest62", py="3.11")  # hits "ast.Str is deprecated" in 3.12+
+standard_tox_task("pytest74")
+standard_tox_task("pytest84")
+standard_tox_task("pytest9")
 
+dj_version = max(ci_version, "3.12")
 for n in DJANGO_VERSIONS:
-    standard_tox_task(f"django{n.replace('.', '')}")
+    standard_tox_task(f"django{n.replace('.', '')}", py=dj_version)
+# we also test no-contrib on the latest django version
+standard_tox_task("django-nocontrib", py=dj_version)
 
-for n in [13, 14, 15, 20, 21, 22]:
-    standard_tox_task(f"pandas{n}")
-standard_tox_task("py39-pandas11", py="3.9")
-standard_tox_task("py39-pandas12", py="3.9")
+# test each pandas version with the latest python version they support
+standard_tox_task("py310-pandas11", py="3.10")
+standard_tox_task("py310-pandas12", py="3.10")
+standard_tox_task("py310-pandas13", py="3.10")
+standard_tox_task("py310-pandas14", py="3.10")
+standard_tox_task("py311-pandas15", py="3.11")
+standard_tox_task("py311-pandas20", py="3.11")
+standard_tox_task("py312-pandas21", py="3.12")
+standard_tox_task("py313-pandas22", py="3.13")
 
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
-standard_tox_task("py39-oldestnumpy", py="3.9")
+for kind in ("rest", "nocover"):
+    # Note, in CI these are executed on alternative platforms (e.g., windows)
+    # directly in tox (and not via build.sh)
+    standard_tox_task(f"alt-{kind}")
+
+standard_tox_task("threading")
+standard_tox_task("py310-oldestnumpy", py="3.10")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")
+standard_tox_task("snapshots")
 
 
 @task()
@@ -601,7 +773,57 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_documentation(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        args = ["-n", "auto", tools.REPO_TESTS / "types"]
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_api(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
+    subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_types_hypothesis(*args):
+    install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
+
+    if not args:
+        testcase = "types/test_hypothesis.py"
+        args = ["-n", "auto", tools.REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -612,79 +834,9 @@ def shell():
     IPython.start_ipython([])
 
 
-def ruby_task(fn):
-    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
-
-
-@ruby_task
-def lint_ruby():
-    hr.rake_task("checkformat")
-
-
-@ruby_task
-def check_ruby_tests():
-    hr.rake_task("rspec")
-    hr.rake_task("minitest")
-
-
-@ruby_task
-def format_rust_in_ruby():
-    hr.cargo("fmt")
-
-
-@ruby_task
-def check_rust_in_ruby_format():
-    hr.cargo("fmt", "--", "--check")
-
-
-@ruby_task
-def lint_rust_in_ruby():
-    hr.cargo("clippy")
-
-
-@ruby_task
-def audit_rust_in_ruby():
-    hr.cargo("install", "cargo-audit")
-    hr.cargo("audit")
-
-
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable, *args))
-
-
-@task()
-def bundle(*args):
-    hr.bundle(*args)
-
-
-rust_task = task(if_changed=(cr.BASE_DIR,))
-
-
-@rust_task
-def check_rust_tests():
-    cr.cargo("test")
-
-
-@rust_task
-def format_conjecture_rust_code():
-    cr.cargo("fmt")
-
-
-@rust_task
-def check_conjecture_rust_format():
-    cr.cargo("fmt", "--", "--check")
-
-
-@rust_task
-def lint_conjecture_rust():
-    cr.cargo("clippy")
-
-
-@rust_task
-def audit_conjecture_rust():
-    cr.cargo("install", "cargo-audit")
-    cr.cargo("audit")
 
 
 @task()

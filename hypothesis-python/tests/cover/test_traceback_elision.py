@@ -16,7 +16,10 @@ from hypothesis import Verbosity, given, settings, strategies as st
 
 
 @pytest.mark.parametrize("verbosity", [Verbosity.normal, Verbosity.debug])
-def test_tracebacks_omit_hypothesis_internals(verbosity):
+@pytest.mark.parametrize("env_value", ["", "1"])
+def test_tracebacks_omit_hypothesis_internals(monkeypatch, env_value, verbosity):
+    monkeypatch.setenv("HYPOTHESIS_NO_TRACEBACK_TRIM", env_value)
+
     @settings(verbosity=verbosity)
     @given(st.just(False))
     def simplest_failure(x):
@@ -28,7 +31,7 @@ def test_tracebacks_omit_hypothesis_internals(verbosity):
         tb = traceback.extract_tb(e.__traceback__)
         # Unless in debug mode, Hypothesis adds 1 frame - the least possible!
         # (4 frames: this one, simplest_failure, internal frame, assert False)
-        if verbosity < Verbosity.debug:
+        if verbosity < Verbosity.debug and not env_value:
             assert len(tb) == 4
         else:
             assert len(tb) >= 5

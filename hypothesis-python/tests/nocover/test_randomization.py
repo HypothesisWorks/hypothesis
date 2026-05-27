@@ -25,7 +25,7 @@ from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
+    settings.get_current_profile_name() == "crosshair",
     reason="we do not yet pass backends the global random seed, so they are not deterministic",
 )
 def test_seeds_off_internal_random():
@@ -40,11 +40,11 @@ def test_seeds_off_internal_random():
     def f2(n):
         choices2.append(n)
 
-    core._hypothesis_global_random = Random(0)
-    state = core._hypothesis_global_random.getstate()
+    core.threadlocal._hypothesis_global_random = Random(0)
+    state = core.threadlocal._hypothesis_global_random.getstate()
     f1()
 
-    core._hypothesis_global_random.setstate(state)
+    core.threadlocal._hypothesis_global_random.setstate(state)
     f2()
 
     assert choices1 == choices2

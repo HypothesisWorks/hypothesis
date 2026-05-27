@@ -19,6 +19,8 @@ from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int
 
+from tests.conjecture.common import interesting_origin
+
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
 
@@ -121,13 +123,13 @@ def test_reverse_bits_table_has_right_elements():
     assert sorted(flt.REVERSE_BITS_TABLE) == list(range(256))
 
 
-def float_runner(start, condition, *, kwargs=None):
-    kwargs = {} if kwargs is None else kwargs
+def float_runner(start, condition, *, constraints=None):
+    constraints = {} if constraints is None else constraints
 
     def test_function(data):
-        f = data.draw_float(**kwargs)
+        f = data.draw_float(**constraints)
         if condition(f):
-            data.mark_interesting()
+            data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function)
     runner.cached_test_function((float(start),))
@@ -135,8 +137,8 @@ def float_runner(start, condition, *, kwargs=None):
     return runner
 
 
-def minimal_from(start, condition, *, kwargs=None):
-    runner = float_runner(start, condition, kwargs=kwargs)
+def minimal_from(start, condition, *, constraints=None):
+    runner = float_runner(start, condition, constraints=constraints)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
     f = v.choices[0]
@@ -198,8 +200,8 @@ def test_does_not_shrink_across_one():
 
 def test_reject_out_of_bounds_floats_while_shrinking():
     # coverage test for rejecting out of bounds floats while shrinking
-    kwargs = {"min_value": 103.0}
-    g = minimal_from(103.1, lambda x: x >= 100, kwargs=kwargs)
+    constraints = {"min_value": 103.0}
+    g = minimal_from(103.1, lambda x: x >= 100, constraints=constraints)
     assert g == 103.0
 
 

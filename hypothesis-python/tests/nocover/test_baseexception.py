@@ -14,7 +14,7 @@ from hypothesis import given
 from hypothesis.errors import Flaky, FlakyFailure
 from hypothesis.strategies import composite, integers, none
 
-from tests.common.utils import Why, xfail_on_crosshair
+from tests.common.utils import Why, skipif_threading, xfail_on_crosshair
 
 
 @pytest.mark.parametrize(
@@ -123,6 +123,7 @@ def test(data, x):
 """
 
 
+@skipif_threading  # something in pytest here is not thread safe
 @pytest.mark.parametrize("exc_name", ["SystemExit", "GeneratorExit"])
 @pytest.mark.parametrize("use_composite", [True, False])
 def test_explanations(testdir, exc_name, use_composite):

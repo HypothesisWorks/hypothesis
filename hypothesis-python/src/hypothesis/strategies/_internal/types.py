@@ -32,10 +32,15 @@ from collections.abc import Iterator
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
 
 from hypothesis import strategies as st
-from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
+from hypothesis.errors import (
+    HypothesisException,
+    HypothesisWarning,
+    InvalidArgument,
+    ResolutionFailed,
+)
 from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
@@ -99,7 +104,7 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
-    TypeGuardTypes += (typing.TypeIs,)  # type: ignore
+    TypeGuardTypes += (typing.TypeIs,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -110,7 +115,7 @@ except AttributeError:  # pragma: no cover
 
 RequiredTypes: tuple = ()
 try:
-    RequiredTypes += (typing.Required,)  # type: ignore
+    RequiredTypes += (typing.Required,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -121,7 +126,7 @@ except AttributeError:  # pragma: no cover
 
 NotRequiredTypes: tuple = ()
 try:
-    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
+    NotRequiredTypes += (typing.NotRequired,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -132,7 +137,7 @@ except AttributeError:  # pragma: no cover
 
 ReadOnlyTypes: tuple = ()
 try:
-    ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
+    ReadOnlyTypes += (typing.ReadOnly,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
@@ -143,7 +148,7 @@ except AttributeError:  # pragma: no cover
 
 LiteralStringTypes: tuple = ()
 try:
-    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
+    LiteralStringTypes += (typing.LiteralString,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -197,7 +202,7 @@ for name in (
 ):
     try:
         NON_RUNTIME_TYPES += (getattr(typing, name),)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         pass
     try:
         NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)
@@ -210,11 +215,7 @@ def type_sorting_key(t):
     if t is None or t is type(None):
         return (-1, repr(t))
     t = get_origin(t) or t
-    try:
-        is_container = int(issubclass(t, collections.abc.Container))
-    except Exception:  # pragma: no cover
-        # e.g. `typing_extensions.Literal` is not a container
-        is_container = 0
+    is_container = int(try_issubclass(t, collections.abc.Container))
     return (is_container, repr(t))
 
 
@@ -228,7 +229,7 @@ def _compatible_args(args, superclass_args):
         # good enough for all the cases that I've seen so far and has the
         # substantial virtue of (relative) simplicity.
         a == b or isinstance(a, typing.TypeVar) or isinstance(b, typing.TypeVar)
-        for a, b in zip(args, superclass_args)
+        for a, b in zip(args, superclass_args, strict=True)
     )
 
 
@@ -246,8 +247,6 @@ def try_issubclass(thing, superclass):
             # generics, and so on.  If you need to change this code, read PEP-560
             # and Hypothesis issue #2951 closely first, and good luck.  The tests
             # will help you, I hope - good luck.
-            if getattr(thing, "__args__", None) is not None:
-                return True  # pragma: no cover  # only possible on Python <= 3.9
             for orig_base in getattr(thing, "__orig_bases__", None) or [None]:
                 args = getattr(orig_base, "__args__", None)
                 if _compatible_args(args, superclass_args):
@@ -258,18 +257,65 @@ def try_issubclass(thing, superclass):
         return False
 
 
-def is_a_new_type(thing):
-    if not isinstance(typing.NewType, type):
-        # At runtime, `typing.NewType` returns an identity function rather
-        # than an actual type, but we can check whether that thing matches.
-        return (  # pragma: no cover  # Python <= 3.9 only
-            hasattr(thing, "__supertype__")
-            and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
-            and inspect.isfunction(thing)
-        )
-    # In 3.10 and later, NewType is actually a class - which simplifies things.
-    # See https://bugs.python.org/issue44353 for links to the various patches.
-    return isinstance(thing, typing.NewType)
+def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
+    if isinstance(thing, typing.TypeVar):
+        if thing not in typevars:
+            raise ValueError(
+                f"Cannot look up value for unbound type var {thing}. "
+                f"Bound typevars: {typevars}"
+            )
+        return typevars[thing]
+
+    origin = get_origin(thing)
+    if origin is None:
+        # not a parametrized type, so nothing to substitute.
+        return thing
+
+    args = get_args(thing)
+    # we had an origin, so we must have an args
+    # note: I'm only mostly confident this is true and there may be a subtle
+    # violator.
+    assert args
+
+    concrete_args = tuple(
+        _evaluate_type_alias_type(arg, typevars=typevars) for arg in args
+    )
+    if isinstance(origin, typing.TypeAliasType):
+        for param in origin.__type_params__:
+            # there's no principled reason not to support these, they're just
+            # annoying to implement.
+            if isinstance(param, typing.TypeVarTuple):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for TypeVarTuple "
+                    f"{param} (in origin: {origin!r}). Please open an issue if "
+                    "you would like to see support for this."
+                )
+            if isinstance(param, typing.ParamSpec):
+                raise HypothesisException(
+                    f"Hypothesis does not yet support resolution for ParamSpec "
+                    f"{param} (in origin: {origin!r}). Please open an issue if you "
+                    "would like to see support for this."
+                )
+        # this zip is non-strict to allow for e.g.
+        # `type A[T1, T2] = list[T1]; st.from_type(A[int]).example()`,
+        # which leaves T2 free but is still acceptable as it never references
+        # it.
+        #
+        # We disallow referencing a free / unbound type var by erroring
+        # elsewhere in this function.
+        typevars |= dict(zip(origin.__type_params__, concrete_args, strict=False))
+        return _evaluate_type_alias_type(origin.__value__, typevars=typevars)
+
+    return origin[concrete_args]
+
+
+def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
+    # this function takes a GenericAlias whose origin is a TypeAliasType,
+    # which corresponds to `type A[T] = list[T]; thing = A[int]`, and returns
+    # the fully-instantiated underlying type.
+    assert isinstance(thing, GenericAlias)
+    assert is_a_type_alias_type(get_origin(thing))
+    return _evaluate_type_alias_type(thing, typevars={})
 
 
 def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
@@ -289,12 +335,18 @@ def is_a_union(thing: object) -> bool:
 
 
 def is_a_type(thing: object) -> bool:
-    """Return True if thing is a type or a generic type like thing."""
+    """
+    Return True if thing is a type or a typing-like thing (union, generic type, etc).
+    """
     return (
         isinstance(thing, type)
         or is_generic_type(thing)
-        or is_a_new_type(thing)
+        or isinstance(thing, NewType)
         or is_a_type_alias_type(thing)
+        # union and forwardref checks necessary from 3.14+. Before 3.14, they
+        # were covered by is_generic_type(thing).
+        or is_a_union(thing)
+        or isinstance(thing, typing.ForwardRef)
     )
 
 
@@ -452,7 +504,7 @@ def _try_import_forward_ref(thing, typ, *, type_params):  # pragma: no cover
 
 
 def from_typing_type(thing):
-    # We start with Final, Literal, and Annotated since they don't support `isinstance`.
+    # We start with Final, Literal, and Annotated, since they don't support `isinstance`.
     #
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
@@ -506,6 +558,7 @@ def from_typing_type(thing):
     if len(mapping) > 1:
         _Environ = getattr(os, "_Environ", None)
         mapping.pop(_Environ, None)
+
     tuple_types = [
         t
         for t in mapping
@@ -520,10 +573,40 @@ def from_typing_type(thing):
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if {collections.deque}.intersection(mapping) and len(mapping) > 1:
+    if collections.deque in mapping and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
-        mapping.pop(collections.deque, None)
+        mapping.pop(collections.deque)
+
+    if (
+        memoryview in mapping
+        and getattr(thing, "__args__", None)
+        and not hasattr(thing.__args__[0], "__buffer__")
+    ):  # pragma: no cover  # covered by 3.14+
+        # Both memoryview and list are direct subclasses of Sequence. If we ask for
+        # st.from_type(Sequence[A]), we will get both list[A] and memoryview[A].
+        # But unless A implements the buffer protocol with __buffer__, resolving
+        # memoryview[A] will error.
+        #
+        # Since the user didn't explicitly ask for memoryview, there's no reason
+        # to expect them to have implemented __buffer__. Remove memoryview in this
+        # case, before it can fail at resolution-time.
+        #
+        # Note: I intentionally did not add a `and len(mapping) > 1` condition here.
+        # If memoryview[A] is the only resolution for a strategy, but A is not a
+        # buffer protocol, our options are to (1) pop memoryview and raise
+        # ResolutionFailed, or (2) to keep memoryview in the mapping and error in
+        # resolve_memoryview. A failure in test_resolving_standard_contextmanager_as_generic
+        # (because memoryview is a context manager in 3.14) convinced me the former
+        # was less confusing to users.
+        mapping.pop(memoryview)
+
+    elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
+    union_elems = elem_type.__args__ if is_a_union(elem_type) else ()
+    allows_integer_elements = any(
+        isinstance(T, type) and try_issubclass(int, get_origin(T) or T)
+        for T in [*union_elems, elem_type]
+    )
 
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
@@ -535,17 +618,7 @@ def from_typing_type(thing):
         # This block drops bytes from the types that can be generated
         # if there is more than one allowed type, and the element type is
         # not either `int` or a Union with `int` as one of its elements.
-        elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
-        if is_a_union(elem_type):
-            union_elems = elem_type.__args__
-        else:
-            union_elems = ()
-        if not any(
-            # see https://github.com/HypothesisWorks/hypothesis/issues/4194 for
-            # try_issubclass.
-            isinstance(T, type) and try_issubclass(int, get_origin(T) or T)
-            for T in [*union_elems, elem_type]
-        ):
+        if not allows_integer_elements:
             mapping.pop(bytes, None)
             if sys.version_info[:2] <= (3, 13):
                 mapping.pop(collections.abc.ByteString, None)
@@ -555,16 +628,51 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+
+    def is_maximal(t):
+        # For each k in the mapping, we use it if it's the most general type
+        # available, and exclude any more specific types. So if both
+        # Sequence and Collection are available, we use the most general Collection
+        # type.
+        #
+        # k being "the most general" is equivalent to saying that k is maximal
+        # in the partial ordering of types. Note that since the ordering is
+        # partial there may be multiple maximal elements. (This distinguishes
+        # maximal from maximum).
+        return sum(try_issubclass(t, T) for T in mapping) == 1
+
+    strategies = [
+        (t, s if isinstance(s, st.SearchStrategy) else s(thing))
+        for t, s in mapping.items()
+        if is_maximal(t)
+    ]
+    strategies = [(t, s) for t, s in strategies if s != NotImplemented]
+
+    # 3.14+ removes typing.ByteString. typing.ByteString was the only reason we
+    # previously generated bytes for Sequence[int]. There is no equivalent
+    # for typing.ByteString in 3.14+, but we would still like to generate bytes
+    # for Sequence[int] and its supertypes. Special case that here.
+    if (
+        sys.version_info[:2] >= (3, 14)
+        and allows_integer_elements
+        # For the same reason as the is_maximal check above, we only include
+        # this ByteString special case if it is not overridden by a more general
+        # available type.
+        #
+        # collections.abc.ByteString was a direct subclass of Sequence, so we
+        # use that as the standin type when checking. Note we compare to a count
+        # of 0, instead of 1, since in is_maximal `k` is already in `mapping`,
+        # and we expect `try_issubclass(k, k) == True`.
+        and try_issubclass(collections.abc.Sequence, thing)
+        and sum(try_issubclass(collections.abc.Sequence, T) for T in mapping) == 0
+    ):  # pragma: no cover  # covered on 3.14+
+        strategies.append((collections.abc.Sequence, st.binary()))
+
     # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
-        s
-        for s in (
-            v if isinstance(v, st.SearchStrategy) else v(thing)
-            for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
-            if sum(try_issubclass(k, T) for T in mapping) == 1
-        )
-        if s != NotImplemented
+        s for _k, s in sorted(strategies, key=lambda kv: type_sorting_key(kv[0]))
     ]
+
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty or not strategies:
         raise ResolutionFailed(
@@ -609,8 +717,13 @@ utc_offsets = st.builds(
 # exposed for it, and NotImplemented itself is typed as Any so that it can be
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
+if sys.version_info < (3, 12):
+    _RegistryKeyT: typing.TypeAlias = type
+else:  # pragma: no cover
+    _RegistryKeyT: typing.TypeAlias = type | typing.TypeAliasType
+
 _global_type_lookup: dict[
-    type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
+    _RegistryKeyT, st.SearchStrategy | typing.Callable[[type], st.SearchStrategy]
 ] = {
     type(None): st.none(),
     bool: st.booleans(),
@@ -638,7 +751,6 @@ _global_type_lookup: dict[
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
-    memoryview: st.binary().map(memoryview),
     numbers.Real: st.floats(),
     numbers.Rational: st.fractions(),
     numbers.Number: st.complex_numbers(),
@@ -723,12 +835,14 @@ _fallback_type_strategy = st.sampled_from(
 # includes this... but we don't actually ever want to build one.
 _global_type_lookup[os._Environ] = st.just(os.environ)
 
-if sys.version_info[:2] <= (3, 13):
+if sys.version_info[:2] < (3, 14):
     # Note: while ByteString notionally also represents the bytearray and
     # memoryview types, it is a subclass of Hashable and those types are not.
     # We therefore only generate the bytes type. type-ignored due to deprecation.
     _global_type_lookup[typing.ByteString] = st.binary()  # type: ignore
     _global_type_lookup[collections.abc.ByteString] = st.binary()  # type: ignore
+
+    _global_type_lookup[memoryview] = st.binary().map(memoryview)
 
 
 _global_type_lookup.update(
@@ -793,16 +907,14 @@ _global_type_lookup.update(
 # installed. To avoid the performance hit of importing anything here, we defer
 # it until the method is called the first time, at which point we replace the
 # entry in the lookup table with the direct call.
-def _from_numpy_type(thing: type) -> typing.Optional[st.SearchStrategy]:
+def _from_numpy_type(thing: type) -> st.SearchStrategy | None:
     from hypothesis.extra.numpy import _from_type
 
     _global_extra_lookup["numpy"] = _from_type
     return _from_type(thing)
 
 
-_global_extra_lookup: dict[
-    str, typing.Callable[[type], typing.Optional[st.SearchStrategy]]
-] = {
+_global_extra_lookup: dict[str, typing.Callable[[type], st.SearchStrategy | None]] = {
     "numpy": _from_numpy_type,
 }
 
@@ -869,8 +981,11 @@ def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
         return st.lists(st.from_type(elem_types[0])).map(tuple)
-    elif len(elem_types) == 1 and elem_types[0] == ():
-        return st.tuples()  # Empty tuple; see issue #1583
+    elif len(elem_types) == 1 and elem_types[0] == ():  # pragma: no cover
+        # Empty tuple; see issue #1583.
+        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`
+        # is ((),) on 3.10, and () on 3.11+.
+        return st.tuples()
     return st.tuples(*map(st.from_type, elem_types))
 
 
@@ -949,7 +1064,7 @@ def resolve_Iterator(thing):
     return st.iterables(st.from_type(thing.__args__[0]))
 
 
-@register(typing.Counter, st.builds(collections.Counter))
+@register(collections.Counter, st.builds(collections.Counter))
 def resolve_Counter(thing):
     return st.dictionaries(
         keys=st.from_type(thing.__args__[0]),
@@ -957,17 +1072,17 @@ def resolve_Counter(thing):
     ).map(collections.Counter)
 
 
-@register(typing.Deque, st.builds(collections.deque))
+@register(collections.deque, st.builds(collections.deque))
 def resolve_deque(thing):
     return st.lists(st.from_type(thing.__args__[0])).map(collections.deque)
 
 
-@register(typing.ChainMap, st.builds(dict).map(collections.ChainMap))
+@register(collections.ChainMap, st.builds(dict).map(collections.ChainMap))
 def resolve_ChainMap(thing):
     return resolve_Dict(thing).map(collections.ChainMap)
 
 
-@register(typing.OrderedDict, st.builds(dict).map(collections.OrderedDict))
+@register(collections.OrderedDict, st.builds(dict).map(collections.OrderedDict))
 def resolve_OrderedDict(thing):
     return resolve_Dict(thing).map(collections.OrderedDict)
 
@@ -997,6 +1112,7 @@ def resolve_Match(thing):
 
 class GeneratorStrategy(st.SearchStrategy):
     def __init__(self, yields, returns):
+        super().__init__()
         assert isinstance(yields, st.SearchStrategy)
         assert isinstance(returns, st.SearchStrategy)
         self.yields = yields
@@ -1103,3 +1219,13 @@ def resolve_TypeVar(thing):
         ),
         key=type_var_key,
     ).flatmap(st.from_type)
+
+
+if sys.version_info[:2] >= (3, 14):
+    # memoryview is newly generic in 3.14. see
+    # https://github.com/python/cpython/issues/126012
+    # and https://docs.python.org/3/library/stdtypes.html#memoryview
+
+    @register(memoryview, st.binary().map(memoryview))
+    def resolve_memoryview(thing):
+        return st.from_type(thing.__args__[0]).map(memoryview)

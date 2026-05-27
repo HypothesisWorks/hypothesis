@@ -13,7 +13,7 @@ from collections import Counter
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -48,13 +48,14 @@ def test_in_order(x):
     assert x[0] < x[1]
 
 
-# crosshair just generates increasingly-long lists of [0.0]
-@xfail_on_crosshair(Why.undiscovered)
+@xfail_on_crosshair(
+    Why.undiscovered
+)  # (SampledFromStrategy.calc_label() hashes a symbolic float)
 def test_flatmap_retrieve_from_db():
     track = []
 
     @given(floats(0, 1).flatmap(lambda x: lists(just(x))))
-    @settings(database=ExampleDatabase())
+    @settings(database=InMemoryExampleDatabase())
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)
@@ -84,7 +85,10 @@ def test_flatmap_has_original_strategy_repr():
     assert repr(ints) in repr(ints_up)
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~6 mins")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~6 mins in CI, but ~7 sec in isolation. Unsure why",
+)
 def test_mixed_list_flatmap():
     s = lists(booleans().flatmap(lambda b: booleans() if b else text()))
 

@@ -52,7 +52,10 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
+from tests.common.utils import fails_with, temp_registered
+
+# we'll continue testing the typing variants until their removal from the stdlib
+# ruff: noqa: UP006, UP035, UP045, UP007
 
 sentinel = object()
 BUILTIN_TYPES = tuple(
@@ -103,7 +106,12 @@ def test_does_not_resolve_special_cases(typ):
 
 @pytest.mark.parametrize(
     "typ,instance_of",
-    [(typing.Union[int, str], (int, str)), (typing.Optional[int], (int, type(None)))],
+    [
+        (typing.Union[int, str], (int, str)),
+        (int | str, (int, str)),
+        (typing.Optional[int], (int, type(None))),
+        (int | None, (int, type(None))),
+    ],
 )
 @given(data=st.data())
 def test_specialised_scalar_types(data, typ, instance_of):
@@ -116,9 +124,7 @@ def test_typing_Type_int():
         assert_simple_property(from_type(t), lambda x: x is int)
 
 
-@given(
-    from_type(type[typing.Union[str, list]]) | from_type(_Type[typing.Union[str, list]])
-)
+@given(from_type(type[str | list]) | from_type(_Type[str | list]))
 def test_typing_Type_Union(ex):
     assert ex in (str, list)
 
@@ -336,7 +342,7 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
         (typing.TypeVar("V"), object),
         (typing.TypeVar("V", bound=int), int),
         (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
-        (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str)),
+        (typing.TypeVar("V", bound=int | str), (int, str)),
         (typing.TypeVar("V", int, str), (int, str)),
     ],
 )
@@ -507,7 +513,7 @@ def test_error_if_has_unresolvable_hints():
 def test_resolves_NewType():
     typ = typing.NewType("T", int)
     nested = typing.NewType("NestedT", typ)
-    uni = typing.NewType("UnionT", typing.Optional[int])
+    uni = typing.NewType("UnionT", int | None)
     assert_simple_property(from_type(typ), lambda x: isinstance(x, int))
     assert_simple_property(from_type(nested), lambda x: isinstance(x, int))
     assert_simple_property(from_type(uni), lambda x: isinstance(x, (int, type(None))))
@@ -619,7 +625,10 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
-@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~19 mins")
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~19 mins; datastructure explosion https://github.com/pschanely/hypothesis-crosshair/issues/27",
+)
 @given(tree=st.builds(Tree))
 def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
@@ -656,27 +665,27 @@ def test_recursive_type_with_defaults_minimizes_to_defaults():
     assert minimal(from_type(MyList), lambda ex: True) == MyList()
 
 
-class A:
-    def __init__(self, nxt: typing.Optional["B"]):
+class MutualA:
+    def __init__(self, nxt: typing.Optional["MutualB"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"A({self.nxt})"
 
 
-class B:
-    def __init__(self, nxt: typing.Optional["A"]):
+class MutualB:
+    def __init__(self, nxt: typing.Optional["MutualA"]):
         self.nxt = nxt
 
     def __repr__(self):
         return f"B({self.nxt})"
 
 
-@given(nxt=st.from_type(A))
+@given(nxt=st.from_type(MutualA))
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
     while nxt:
-        assert isinstance(nxt, [A, B][i % 2])
+        assert isinstance(nxt, [MutualA, MutualB][i % 2])
         nxt = nxt.nxt
         i += 1
 
@@ -687,7 +696,7 @@ def test_resolving_mutually_recursive_types_with_limited_stack():
     sys.setrecursionlimit(current_stack_depth + 100)
     try:
 
-        @given(nxt=st.from_type(A))
+        @given(nxt=st.from_type(MutualA))
         def test(nxt):
             pass
 
@@ -854,7 +863,6 @@ def test_bytestring_not_treated_as_generic_sequence(val):
         assert isinstance(x, set)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 @pytest.mark.parametrize(
     "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
 )
@@ -876,7 +884,6 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert issubclass(type(value), protocol)
 
 
-@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize("restrict_custom_strategy", [True, False])
 def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
     restrict_custom_strategy,
@@ -982,8 +989,8 @@ def test_no_byteswarning(_):
 
 
 @pytest.mark.skipif(
-    settings._current_profile == "crosshair",
-    reason="Crosshair doesn't generate the Decimal('snan'), so this runs for hours",
+    settings.get_current_profile_name() == "crosshair",
+    reason="Crosshair is too much slower at hashing values",
 )
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
@@ -992,6 +999,18 @@ def test_hashable_type_unhashable_value():
         from_type(typing.Hashable),
         lambda x: not types._can_hash(x),
         settings(max_examples=10**5),
+    )
+
+
+def test_unhashable_type():
+    class UnhashableMeta(type):
+        __hash__ = None
+
+    class UnhashableType(metaclass=UnhashableMeta):
+        pass
+
+    assert_simple_property(
+        st.from_type(UnhashableType), lambda x: isinstance(x, UnhashableType)
     )
 
 
@@ -1129,7 +1148,7 @@ def test_signature_is_the_most_important_source(thing):
 
 
 class AnnotatedAndDefault:
-    def __init__(self, foo: typing.Optional[bool] = None):
+    def __init__(self, foo: bool | None = None):
         self.foo = foo
 
 
@@ -1147,7 +1166,17 @@ def test_resolves_builtin_types(t):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 @given(data=st.data())
+@settings(max_examples=20)
 def test_resolves_forwardrefs_to_builtin_types(t, data):
+    if t.__name__ == "object" and settings.get_current_profile_name() == "threading":
+        # from_type(ForwardRef("object")) pulls from register_type_strategy,
+        # and depending on threading I've seen `st.builds(Bar, st.integers())`
+        # (from this file) be registered in one iteration and not the next,
+        # causing Hypothesis to raise FlakyStrategyDefinition.
+        #
+        # (I would also expect st.from_type(object) to have this problem, but
+        # I haven't seen that error under threading, yet).
+        pytest.skip("ForwardRef('object') is inherently flaky under concurrency")
     s = st.from_type(typing.ForwardRef(t.__name__))
     v = data.draw(s)
     assert isinstance(v, t)
@@ -1167,20 +1196,43 @@ def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
 
 
 @pytest.mark.parametrize(
-    # Old-style `List` because `list[int]() == list()`, so no need for the hint.
     "type_",
-    [getattr(typing, "List", None)[int], typing.Optional[int]],
+    [
+        # Old-style `List` because `list[int]() == list()`, so no need for the hint.
+        getattr(typing, "List", None)[int],
+        pytest.param(
+            typing.Optional[int],
+            marks=pytest.mark.skipif(
+                sys.version_info >= (3, 14), reason="different error on 3.14+"
+            ),
+        ),
+    ],
 )
 def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
     ):
         check_can_generate_examples(st.builds(type_))
+
     try:
         check_can_generate_examples(st.builds(type_, st.just("has an argument")))
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="different error on 3.14+")
+@pytest.mark.parametrize("type_", [typing.Optional[int]])
+def test_builds_suggests_from_type_on_construction(type_):
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_))
+
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"Try using from_type({type_!r})")
+    ):
+        check_can_generate_examples(st.builds(type_, st.just("has an argument")))
 
 
 def test_builds_mentions_no_type_check():

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="articles-page">
+  <div class="articles-page__header">
+    <div class="articles-page__title">{{ category.name|capitalize }}</div>
+  </div>
+
+  <div class="articles-grid">
+    {% for article in articles %}
+    {% include "article-card.html" %}
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock content %}

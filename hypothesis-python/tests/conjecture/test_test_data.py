@@ -13,7 +13,7 @@ import itertools
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis.errors import Frozen, InvalidArgument
+from hypothesis.errors import Frozen
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -23,7 +23,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
     structural_coverage,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy
 
 from tests.conjecture.common import buffer_size_limit, interesting_origin
 
@@ -65,7 +65,7 @@ def test_notes_repr():
 def test_can_mark_interesting():
     d = ConjectureData.for_choices([])
     with pytest.raises(StopTest):
-        d.mark_interesting()
+        d.mark_interesting(interesting_origin())
     assert d.frozen
     assert d.status == Status.INTERESTING
 
@@ -141,27 +141,23 @@ def test_triviality():
 def test_example_depth_marking():
     d = ConjectureData.for_choices((0,) * 6)
     d.draw(st.integers())  # v1
-    d.start_span("inner")
+    d.start_span(0)
     d.draw(st.integers())  # v2
     d.draw(st.integers())  # v3
     d.stop_span()
     d.draw(st.integers())  # v4
     d.freeze()
 
-    assert len(d.spans) == 10
+    assert len(d.spans) == 6
 
     depths = [(ex.choice_count, ex.depth) for ex in d.spans]
     assert depths == [
         (4, 0),  # top
         (1, 1),  # v1
-        (1, 2),  # v1
         (2, 1),  # inner
         (1, 2),  # v2
-        (1, 3),  # v2
         (1, 2),  # v3
-        (1, 3),  # v3
         (1, 1),  # v4
-        (1, 2),  # v4
     ]
 
 
@@ -191,10 +187,10 @@ def test_can_observe_draws():
         def __init__(self):
             self.log = []
 
-        def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict):
+        def draw_boolean(self, value: bool, *, was_forced: bool, constraints: dict):
             self.log.append(("draw_boolean", value, was_forced))
 
-        def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict):
+        def draw_integer(self, value: int, *, was_forced: bool, constraints: dict):
             self.log.append(("draw_integer", value, was_forced))
 
         def conclude_test(self, *args):
@@ -290,13 +286,6 @@ def test_empty_strategy_is_invalid():
     assert d.status == Status.INVALID
 
 
-def test_will_error_on_find():
-    d = ConjectureData.for_choices([])
-    d.is_find = True
-    with pytest.raises(InvalidArgument):
-        d.draw(st.data())
-
-
 def test_can_note_non_str():
     d = ConjectureData.for_choices([])
     x = object()
@@ -343,17 +332,17 @@ def test_child_indices():
 
     d.start_span(0)  # examples[1]
     d.start_span(1)  # examples[2]
-    d.draw(st.booleans())  # examples[3] (lazystrategy) + examples[4] (st.booleans)
-    d.draw(st.booleans())  # examples[4] (lazystrategy) + examples[5] (st.booleans)
+    d.draw(st.booleans())  # examples[3] (st.booleans)
+    d.draw(st.booleans())  # examples[4] (st.booleans)
     d.stop_span()
     d.stop_span()
-    d.draw(st.booleans())  # examples[7] (lazystrategy) + examples[8] (st.booleans)
-    d.draw(st.booleans())  # examples[9] (lazystrategy) + examples[10] (st.booleans)
+    d.draw(st.booleans())  # examples[5] (st.booleans)
+    d.draw(st.booleans())  # examples[6] (st.booleans)
     d.freeze()
 
-    assert list(d.spans.children[0]) == [1, 7, 9]
+    assert list(d.spans.children[0]) == [1, 5, 6]
     assert list(d.spans.children[1]) == [2]
-    assert list(d.spans.children[2]) == [3, 5]
+    assert list(d.spans.children[2]) == [3, 4]
 
     assert d.spans[0].parent is None
     for ex in list(d.spans)[1:]:
