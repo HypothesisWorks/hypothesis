@@ -399,22 +399,15 @@ class ConjectureRunner:
             yield
         finally:
             elapsed = time.perf_counter() - start_time
-            duration = elapsed - self._nested_phase_seconds
-            stats = cast(
-                "PhaseStatistics | None", self.statistics.get(phase + "-phase")
+            # A phase can be entered more than once (the explain phase runs once
+            # per shrinking target), so accumulate into any existing bucket.
+            stats = self.statistics.setdefault(  # type: ignore
+                phase + "-phase", {"duration-seconds": 0.0, "test-cases": []}
             )
-            if stats is None:
-                self.statistics[phase + "-phase"] = {  # type: ignore
-                    "duration-seconds": duration,
-                    "test-cases": self.stats_per_test_case,
-                    "distinct-failures": len(self.interesting_examples),
-                    "shrinks-successful": self.shrinks,
-                }
-            else:
-                stats["duration-seconds"] += duration
-                stats["test-cases"] += self.stats_per_test_case
-                stats["distinct-failures"] = len(self.interesting_examples)
-                stats["shrinks-successful"] = self.shrinks
+            stats["duration-seconds"] += elapsed - self._nested_phase_seconds
+            stats["test-cases"] += self.stats_per_test_case
+            stats["distinct-failures"] = len(self.interesting_examples)
+            stats["shrinks-successful"] = self.shrinks
             self.stats_per_test_case = saved_stats
             self._current_phase = saved_phase
             self._nested_phase_seconds = saved_nested_seconds + elapsed
