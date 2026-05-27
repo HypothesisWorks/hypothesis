@@ -14,12 +14,14 @@ import textwrap
 
 import pytest
 
-from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.projects.hypothesis import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
     ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    FILTER_TYPEGUARD_PREAMBLE,
+    FILTER_TYPEGUARD_REVEALED_TYPES,
     NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
@@ -141,6 +143,13 @@ def test_revealed_types(tmp_path, val, expect):
     )
     typ = get_mypy_analysed_type(f)
     assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", FILTER_TYPEGUARD_REVEALED_TYPES)
+def test_filter_typeguard_revealed_types(tmp_path, val, expect):
+    f = tmp_path / "check.py"
+    f.write_text(FILTER_TYPEGUARD_PREAMBLE + f"reveal_type({val})\n", encoding="utf-8")
+    assert get_mypy_analysed_type(f) == f"SearchStrategy[{expect}]"
 
 
 @pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)

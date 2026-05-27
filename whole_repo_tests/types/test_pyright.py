@@ -20,12 +20,14 @@ from typing import Any
 
 import pytest
 
-from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
+from hypothesistooling.projects.hypothesis import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
     ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    FILTER_TYPEGUARD_PREAMBLE,
+    FILTER_TYPEGUARD_REVEALED_TYPES,
     NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
@@ -38,15 +40,14 @@ from .revealed_types import (
     "but strict checks for our internals would be a net drag on productivity."
 )
 def test_pyright_passes_on_hypothesis():
-    pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
+    pip_tool("pyright", "--project", HYPOTHESIS)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
 def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis
             import hypothesis.strategies as st
 
@@ -60,8 +61,7 @@ def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
             @given(x=text())
             def test_bar(x: str):
                 assert x == x
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(
@@ -81,15 +81,13 @@ def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
 def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis import given
 
             @given(1)
             def f():
                 pass
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(
@@ -103,13 +101,11 @@ def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
 def test_pyright_issue_3296(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis.strategies import lists, integers
 
             lists(integers()).map(sorted)
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -119,16 +115,14 @@ def test_pyright_issue_3296(tmp_path: Path):
 def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis import given
             from hypothesis.strategies import text
 
             @given(text(), x=text())
             def test_bar(x: str):
                 pass
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -146,16 +140,14 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
 def test_pyright_issue_3348(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis.strategies as st
 
             st.tuples(st.integers(), st.integers())
             st.one_of(st.integers(), st.integers())
             st.one_of([st.integers(), st.floats()])  # sequence of strats should be OK
             st.sampled_from([1, 2])
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -165,14 +157,12 @@ def test_pyright_issue_3348(tmp_path: Path):
 def test_numpy_arrays_strategy(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import numpy as np
             from hypothesis.extra.numpy import arrays
 
             x = arrays(dtype=np.dtype("int32"), shape=1)
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -189,12 +179,10 @@ def test_revealed_types(tmp_path, val, expect):
     """Check that Pyright picks up the expected `X` in SearchStrategy[`X`]."""
     f = tmp_path / (expect + ".py")
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis.strategies import *
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
@@ -202,17 +190,23 @@ def test_revealed_types(tmp_path, val, expect):
     assert typ == f"SearchStrategy[{expect}]"
 
 
+@pytest.mark.parametrize("val,expect", FILTER_TYPEGUARD_REVEALED_TYPES)
+def test_filter_typeguard_revealed_types(tmp_path, val, expect):
+    f = tmp_path / "check.py"
+    f.write_text(FILTER_TYPEGUARD_PREAMBLE + f"reveal_type({val})\n", encoding="utf-8")
+    _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
+    assert get_pyright_analysed_type(f) == f"SearchStrategy[{expect}]"
+
+
 @pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)
 def test_assume_revealed_types(tmp_path, val, expect):
     """Check that Pyright infers the correct return type for assume()."""
     f = tmp_path / "check.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis import assume
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path)
@@ -228,13 +222,11 @@ def test_assume_revealed_types(tmp_path, val, expect):
 def test_numpy_revealed_types(tmp_path, val, expect):
     f = tmp_path / "check.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             import numpy as np
             from hypothesis.extra.numpy import *
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
@@ -255,15 +247,13 @@ def test_numpy_revealed_types(tmp_path, val, expect):
 def test_pandas_column(tmp_path, val, expect):
     f = tmp_path / "test.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis.extra.pandas import column
             from hypothesis.strategies import *
 
             x = column(name="test", unique=True, dtype=None, {val})
             reveal_type(x)
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(
@@ -277,14 +267,12 @@ def test_pandas_column(tmp_path, val, expect):
 def test_pyright_tuples_pos_args_only(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis.strategies as st
 
             st.tuples(a1=st.integers())
             st.tuples(a1=st.integers(), a2=st.integers())
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -302,14 +290,12 @@ def test_pyright_tuples_pos_args_only(tmp_path: Path):
 def test_pyright_one_of_pos_args_only(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis.strategies as st
 
             st.one_of(a1=st.integers())
             st.one_of(a1=st.integers(), a2=st.integers())
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
@@ -327,8 +313,7 @@ def test_pyright_one_of_pos_args_only(tmp_path: Path):
 def test_register_random_protocol(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from random import Random
             from hypothesis import register_random
 
@@ -341,8 +326,7 @@ def test_register_random_protocol(tmp_path: Path):
 
             register_random(MyRandom())
             register_random(None)  # type: ignore
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"reportUnnecessaryTypeIgnoreComment": True})

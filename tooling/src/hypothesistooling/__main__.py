@@ -21,14 +21,14 @@ import requests
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.projects.hypothesispython as hp
+import hypothesistooling.projects.hypothesis as hp
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
 BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
-    for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
+    for f in ["tooling", "requirements", ".github", "hypothesis/tox.ini"]
 )
 TODAY = date.today().isoformat()
 
@@ -150,7 +150,7 @@ def deploy():
         print("Not deploying due to not being on master")
         sys.exit(0)
 
-    if "TWINE_PASSWORD" not in os.environ:
+    if "ACTIONS_ID_TOKEN_REQUEST_TOKEN" not in os.environ:
         print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
@@ -203,10 +203,10 @@ def remove_consecutive_newlines_in_rst(path: Path):
 
 
 @task()
-def format():
+def format(*, format_all=False):
     changed = tools.modified_files()
 
-    format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
+    format_all = format_all or os.environ.get("FORMAT_ALL", "").lower() == "true"
     if "requirements/tools.txt" in changed:
         # We've changed the tools, which includes a lot of our formatting
         # logic, so we need to rerun formatters.
@@ -273,7 +273,10 @@ VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
 
 @task()
 def check_format():
-    format()
+    # In CI, where latency matters less, reformat every file rather than only
+    # the changed ones, so that formatter upgrades can't leave stale formatting
+    # lurking in untouched files until they're next edited.
+    format(format_all=bool(os.environ.get("CI")))
     n = max(map(len, VALID_STARTS))
     bad = False
     for p in tools.all_files():
@@ -331,7 +334,7 @@ def compile_requirements(*, upgrade=False):
             "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             str(f),
-            "hypothesis-python/pyproject.toml",
+            "hypothesis/pyproject.toml",
             "--output-file",
             str(out_file),
             cwd=tools.ROOT,
@@ -374,7 +377,7 @@ def update_python_versions():
     min_minor_version = int(
         re.search(
             r'requires-python = ">= ?3.(\d+)"',
-            Path("hypothesis-python/pyproject.toml").read_text(encoding="utf-8"),
+            Path("hypothesis/pyproject.toml").read_text(encoding="utf-8"),
         ).group(1)
     )
     # For cpython we key by `3.NN` (or `3.NNt` for free-threaded) and pick the
@@ -395,6 +398,8 @@ def update_python_versions():
             candidate = f"pypy{major_minor}-{ver}"
         # `uv python list` sorts newest-first, so first hit wins.
         best.setdefault(key, candidate)
+
+    best = dict(sorted(best.items()))
 
     if best == PYTHONS:
         return
@@ -417,9 +422,8 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.30",
-    "5.2": "5.2.13",
-    "6.0": "6.0.4",
+    "5.2": "5.2.14",
+    "6.0": "6.0.5",
 }
 
 
@@ -561,7 +565,14 @@ def has_diff(file_or_directory):
 def upgrade_requirements():
     update_vendored_files()
     compile_requirements(upgrade=True)
-    subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
+    # Reformat every file, not just changed ones: upgrading the formatters in
+    # tools.txt can change how they format files we didn't otherwise touch, and
+    # we want those changes in this PR rather than leaking into a later one.
+    subprocess.call(
+        ["./build.sh", "format"],
+        cwd=tools.ROOT,
+        env={**os.environ, "FORMAT_ALL": "true"},
+    )  # exits 1 if changed
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
         msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
         with open(hp.RELEASE_FILE, mode="w", encoding="utf-8") as f:
@@ -577,7 +588,7 @@ def check_requirements():
     compile_requirements(upgrade=False)
 
 
-@task(if_changed=hp.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS)
 def documentation():
     try:
         if hp.has_release():
@@ -586,7 +597,7 @@ def documentation():
     finally:
         subprocess.check_call(
             ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
-            cwd=hp.HYPOTHESIS_PYTHON,
+            cwd=hp.HYPOTHESIS,
         )
 
 
@@ -612,7 +623,7 @@ def live_docs():
         "--watch",
         "src",
         "--open-browser",
-        cwd=hp.HYPOTHESIS_PYTHON,
+        cwd=hp.HYPOTHESIS,
     )
 
 
@@ -640,7 +651,7 @@ def run_tox(task, version, *args):
         env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
+    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS)
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
@@ -651,13 +662,13 @@ PYTHONS = {
     "3.11": "3.11.15",
     "3.12": "3.12.13",
     "3.13": "3.13.13",
-    "3.13t": "3.13t-dev",
-    "3.14": "3.14.4",
-    "3.14t": "3.14t-dev",
-    "3.15": "3.15.0a8",
-    "3.15t": "3.15t-dev",
-    "pypy3.10": "pypy3.10-7.3.19",
-    "pypy3.11": "pypy3.11-7.3.20",
+    "3.13t": "3.13.13+freethreaded",
+    "3.14": "3.14.5",
+    "3.14t": "3.14.5+freethreaded",
+    "3.15": "3.15.0b1",
+    "3.15t": "3.15.0b1+freethreaded",
+    "pypy3.10": "pypy3.10-3.10.16",
+    "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
@@ -665,9 +676,9 @@ python_tests = task(
     if_changed=(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
-        hp.HYPOTHESIS_PYTHON / "pyproject.toml",
+        hp.HYPOTHESIS / "pyproject.toml",
         tools.ROOT / "tooling",
-        hp.HYPOTHESIS_PYTHON / "scripts",
+        hp.HYPOTHESIS / "scripts",
     )
 )
 
@@ -760,7 +771,7 @@ def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
 
 
-@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
+@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS, "examples")))
 def check_examples3(*args):
     run_tox("examples3", PYTHONS[ci_version], *args)
 
@@ -769,7 +780,7 @@ def check_examples3(*args):
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -781,7 +792,7 @@ def check_whole_repo_tests(*args):
 def check_documentation(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -793,7 +804,7 @@ def check_documentation(*args):
 def check_types(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -805,7 +816,7 @@ def check_types(*args):
 def check_types_api(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
@@ -818,7 +829,7 @@ def check_types_api(*args):
 def check_types_hypothesis(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
     )
 
     if not args:
