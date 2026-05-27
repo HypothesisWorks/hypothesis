@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.153.2:
+
+--------------------
+6.153.2 - 2026-05-27
+--------------------
+
+This patch improves the performance of :ref:`stateful testing <stateful>` for
+state machines with a large number of rules (:issue:`4465`).
+
 .. _v6.153.1:
 
 --------------------
