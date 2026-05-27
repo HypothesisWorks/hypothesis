@@ -99,6 +99,24 @@ def test_collection_left_is_better():
     assert not shrinker.left_is_better([1, 2, 3], [1, 2, 3])
 
 
+def test_collection_deletes_adaptively():
+    # A long run of deletable elements should be removed in O(log(n)) calls
+    # rather than O(n), thanks to adaptive chunk deletion.
+    n = 1000
+    calls = 0
+
+    def predicate(value):
+        nonlocal calls
+        calls += 1
+        return sum(value) >= 3
+
+    result = Collection.shrink(
+        tuple([1] * n), predicate, ElementShrinker=Integer, min_size=0, full=True
+    )
+    assert result == (1, 1, 1)
+    assert calls < 100
+
+
 @pytest.mark.parametrize(
     "target",
     [
