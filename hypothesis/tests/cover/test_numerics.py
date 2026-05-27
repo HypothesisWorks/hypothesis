@@ -89,9 +89,9 @@ def test_fuzz_fractions_bounds(data):
 @given(data())
 def test_fuzz_decimals_bounds(data):
     places = data.draw(none() | integers(0, 20), label="places")
-    finite_decs = (
-        decimals(allow_nan=False, allow_infinity=False, places=places) | none()
-    )
+    # Note that the bounds are *not* restricted to `places` digits, so they may
+    # have more fractional digits than the values we generate (see issue #4651).
+    finite_decs = decimals(allow_nan=False, allow_infinity=False) | none()
     low, high = data.draw(tuples(finite_decs, finite_decs), label="low, high")
     if low is not None and high is not None and low > high:
         low, high = high, low
@@ -158,6 +158,23 @@ def test_works_with_few_values(dec):
 @given(decimals(places=3, allow_nan=False, allow_infinity=False))
 def test_issue_725_regression(x):
     pass
+
+
+@given(
+    decimals(
+        min_value=decimal.Decimal(f"0.{'0' * 63}1"),
+        max_value=decimal.Decimal(f"{'9' * 64}.{'9' * 64}"),
+        places=2,
+    )
+)
+def test_issue_4651_regression(x):
+    # Bounds with more fractional digits than `places` must not push the
+    # integer bounds out of range via rounding in the conversion.
+    assert (
+        decimal.Decimal(f"0.{'0' * 63}1")
+        <= x
+        <= decimal.Decimal(f"{'9' * 64}.{'9' * 64}")
+    )
 
 
 @given(decimals(min_value="0.1", max_value="0.3"))
