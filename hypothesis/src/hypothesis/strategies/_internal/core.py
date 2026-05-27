@@ -1840,10 +1840,13 @@ def decimals(
 
         factor = Decimal(10) ** -places
         min_num, max_num = None, None
+        # Work out the integer bounds exactly: limited-precision division can
+        # round when the bounds have more than `places` fractional digits,
+        # which would make ceil/floor over- or undershoot the true bound.
         if min_value is not None:
-            min_num = ceil(ctx(min_value).divide(min_value, factor))
+            min_num = ceil(Fraction(min_value) / Fraction(factor))
         if max_value is not None:
-            max_num = floor(ctx(max_value).divide(max_value, factor))
+            max_num = floor(Fraction(max_value) / Fraction(factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
                 f"There are no decimals with {places} places between "
