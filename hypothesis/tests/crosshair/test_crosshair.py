@@ -27,8 +27,9 @@ from tests.conjecture.common import float_constr, integer_constr, string_constr
 def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
     # test effectiveness.
+    # deadline because of https://github.com/pschanely/CrossHair/issues/422
     @given(st.integers())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(backend="crosshair", verbosity=verbosity, database=None, deadline=60_000)
     def f(n):
         assert n != 123456
 
@@ -39,11 +40,9 @@ def test_crosshair_works_for_all_verbosities(verbosity):
 @pytest.mark.parametrize("verbosity", list(Verbosity))
 def test_crosshair_works_for_all_verbosities_data(verbosity):
     # data draws have their own print path
-    if verbosity == Verbosity.quiet:
-        pytest.skip("Flaky test, pending fix")
-
+    # deadline because of https://github.com/pschanely/CrossHair/issues/422
     @given(st.data())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(backend="crosshair", verbosity=verbosity, database=None, deadline=60_000)
     def f(data):
         n = data.draw(st.integers())
         assert n != 123456
