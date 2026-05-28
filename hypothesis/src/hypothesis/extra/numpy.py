@@ -110,6 +110,19 @@ TIME_RESOLUTIONS = ("Y", "M", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", 
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
+def _reject_dtype_class(dtype: object) -> None:
+    # A common mistake is to pass a dtype *class*, e.g. np.dtypes.StringDType,
+    # rather than an instance such as np.dtypes.StringDType().  numpy silently
+    # coerces such classes to the object dtype, so we reject them with a more
+    # helpful message than the resulting confusion further down the line.
+    if isinstance(dtype, type) and issubclass(dtype, np.dtype):
+        name = getattr(dtype, "__name__", repr(dtype))
+        raise InvalidArgument(
+            f"Cannot infer a strategy from the dtype class {name}; pass an "
+            f"instance instead, e.g. {name}() rather than {name}."
+        )
+
+
 @defines_strategy(force_reusable_values=True)
 def from_dtype(
     dtype: np.dtype,
@@ -137,6 +150,7 @@ def from_dtype(
     :func:`arrays` which allow a variety of numeric dtypes, as it seamlessly
     handles the ``width`` or representable bounds for you.
     """
+    _reject_dtype_class(dtype)
     check_type(np.dtype, dtype, "dtype")
     kwargs = {k: v for k, v in locals().items() if k != "dtype" and v is not None}
 
@@ -214,6 +228,14 @@ def from_dtype(
         result = st.text(**compat_kw("alphabet", "min_size", max_size=max_size)).filter(
             lambda b: b[-1:] != "\0"
         )
+    elif dtype.kind == "T":
+        # NumPy 2.0+ variable-width strings (StringDType).  Unlike the fixed-width
+        # "U"/"S" dtypes, these store arbitrary Python strings with no length
+        # limit and no null-termination, so we can use st.text() directly - but
+        # the UTF-8 backing storage means we must exclude lone surrogates.
+        if "alphabet" not in kwargs:
+            kwargs["alphabet"] = st.characters(codec="utf-8")
+        result = st.text(**compat_kw("alphabet", "min_size", "max_size"))
     elif dtype.kind in ("m", "M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
@@ -555,6 +577,7 @@ def arrays(
             lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
         )
     # From here on, we're only dealing with values and it's relatively simple.
+    _reject_dtype_class(dtype)
     dtype = np.dtype(dtype)  # type: ignore[arg-type]
     assert isinstance(dtype, np.dtype)  # help mypy out a bit...
     if elements is None or isinstance(elements, Mapping):

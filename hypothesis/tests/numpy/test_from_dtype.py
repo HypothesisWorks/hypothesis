@@ -23,6 +23,12 @@ from tests.common.debug import assert_no_examples, check_can_generate_examples, 
 
 np_version = tuple(int(x) for x in np.__version__.split(".")[:2])
 
+skipif_no_stringdtype = pytest.mark.skipif(
+    np_version < (2, 0),
+    reason="StringDType was added in NumPy 2.0",
+)
+
+
 STANDARD_TYPES = [
     np.dtype(t)
     for t in (
@@ -279,6 +285,42 @@ def test_float_subnormal_generation(allow_subnormal, width):
         find_any(strat, lambda n: -smallest_normal < n < smallest_normal)
     else:
         assert_no_examples(strat, lambda n: -smallest_normal < n < smallest_normal)
+
+
+@skipif_no_stringdtype
+@given(st.data())
+def test_stringdtype_generates_strings(data):
+    dt = np.dtypes.StringDType()
+    result = data.draw(nps.from_dtype(dt))
+    assert isinstance(result, str)
+
+
+@skipif_no_stringdtype
+@given(st.data())
+def test_stringdtype_respects_kwargs(data):
+    dt = np.dtypes.StringDType()
+    result = data.draw(nps.from_dtype(dt, min_size=2, max_size=4, alphabet="abc"))
+    assert 2 <= len(result) <= 4
+    assert set(result).issubset("abc")
+
+
+@skipif_no_stringdtype
+@given(st.data())
+def test_stringdtype_arrays_roundtrip(data):
+    # StringDType stores arbitrary strings, so anything we generate (including
+    # null bytes and arbitrarily-long strings) must read back unchanged.
+    dt = np.dtypes.StringDType()
+    ex = data.draw(nps.from_dtype(dt))
+    arr = np.array([""], dtype=dt)
+    arr[0] = ex
+    assert arr[0] == ex
+
+
+@skipif_no_stringdtype
+@pytest.mark.parametrize("func", [nps.from_dtype, lambda dt: nps.arrays(dt, 3)])
+def test_helpful_error_on_uninstantiated_dtype_class(func):
+    with pytest.raises(InvalidArgument, match="dtype class StringDType"):
+        check_can_generate_examples(func(np.dtypes.StringDType))
 
 
 @pytest.mark.parametrize("allow_subnormal", [False, True])
