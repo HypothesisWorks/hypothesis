@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import ResolutionFailed
+from hypothesis.strategies._internal import core, types
 
 from tests.common.debug import find_any
 from tests.common.utils import skipif_threading
@@ -47,6 +48,33 @@ def test_self_referential_forward_ref_nested():
     Tree = dict[str, Union["Tree", int]]
     result = find_any(st.from_type(Tree))
     assert isinstance(result, dict)
+
+
+def test_recursive_forward_ref_resolution_is_bounded(monkeypatch):
+    # Resolving a recursive forward reference must break the cycle by deferring,
+    # rather than recursing once per available stack frame until it hits the
+    # interpreter's recursion limit. The latter made resolution depend on the
+    # ambient stack depth, which was flaky. Here we assert that from_typing_type
+    # only recurses a small, bounded number of times (we measured 66 without the
+    # deferral, versus 2 with it).
+    real = types.from_typing_type
+    state = {"depth": 0, "max_depth": 0}
+
+    def counting(thing):
+        state["depth"] += 1
+        state["max_depth"] = max(state["max_depth"], state["depth"])
+        try:
+            return real(thing)
+        finally:
+            state["depth"] -= 1
+
+    monkeypatch.setattr(types, "from_typing_type", counting)
+    core.from_type.__clear_cache()
+
+    A = list[Union["A", str]]
+    st.from_type(A).validate()
+
+    assert 0 < state["max_depth"] <= 10
 
 
 @skipif_threading  # weird errors around b_strategy scope?

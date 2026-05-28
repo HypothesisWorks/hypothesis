@@ -30,6 +30,7 @@ import uuid
 import warnings
 import zoneinfo
 from collections.abc import Iterator
+from contextvars import ContextVar
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
@@ -218,6 +219,13 @@ def type_sorting_key(t):
     t = get_origin(t) or t
     is_container = int(try_issubclass(t, collections.abc.Container))
     return (is_container, repr(t))
+
+
+# Types whose forward references we are currently resolving, used to break the
+# recursion in self- or mutually-referential forward references such as
+# ``A = list[Union["A", str]]``.  Without this we would recurse until hitting a
+# RecursionError, which makes resolution depend on the ambient stack depth.
+_forward_ref_resolution: ContextVar[list] = ContextVar("forward_ref_resolution")
 
 
 def _resolve_forward_ref_in_caller(forward_arg: str) -> typing.Any:
@@ -679,7 +687,20 @@ def from_typing_type(thing):
         if resolved is None:  # pragma: no branch
             resolved = _resolve_forward_ref_in_caller(thing.__forward_arg__)
         if resolved is not None and is_a_type(resolved):
-            return st.from_type(resolved)
+            try:
+                in_progress = _forward_ref_resolution.get()
+            except LookupError:
+                _forward_ref_resolution.set(in_progress := [])
+            if resolved in in_progress:
+                # We're already resolving this type higher up the stack, so this
+                # is a recursive reference; defer to break the cycle and rely on
+                # st.from_type's cache to tie the recursive knot.
+                return st.deferred(lambda r=resolved: st.from_type(r))
+            in_progress.append(resolved)
+            try:
+                return st.from_type(resolved)
+            finally:
+                in_progress.pop()
 
     def is_maximal(t):
         # For each k in the mapping, we use it if it's the most general type
