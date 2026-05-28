@@ -41,6 +41,7 @@ When creating a PR that changes `hypothesis/src/`:
    - **Concise** - remove unnecessary verbosity
    - **Idiomatic** - follows Python and Hypothesis conventions
    - **Minimally commented** - code should be self-documenting; only add comments where truly needed
+   - **Module-scope imports** - put imports at the top of the module wherever possible; only use function-local imports when needed to break a real import cycle or to lazy-load an optional dependency
 2. **Run `./build.sh format; ./build.sh lint`** immediately before committing to auto-format and lint code
 3. **Do not reference issues or PRs in commit messages** (e.g., avoid `Fixes #1234` or `See #5678`) - this clutters the issue timeline with unnecessary links
 
