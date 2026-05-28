@@ -103,7 +103,6 @@ DAY_WITH_IMAGINARY_HOUR_KWARGS = {
 }
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # fromutc argument must be a datetime
 @given(datetimes(timezones=timezones()) | datetimes(**DAY_WITH_IMAGINARY_HOUR_KWARGS))
 def test_dateutil_exists_our_not_exists_are_inverse(value):
     assert datetime_does_not_exist(value) == (not tz.datetime_exists(value))
