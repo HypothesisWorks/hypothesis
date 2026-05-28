@@ -396,11 +396,11 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
     def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
         context = current_build_context()
         arg_labels: ArgLabelsT = {}
-        value = type(self.mapping)()
+        pairs: list[tuple[Any, Any]] = []
 
         for key, strategy in self.mapping.items():
             with context.track_arg_label(str(key)) as arg_label:
-                value[key] = data.draw(strategy)
+                pairs.append((key, data.draw(strategy)))
             arg_labels |= arg_label
 
         if self.optional is not None:
@@ -416,8 +416,13 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
                 remaining[-1], remaining[j] = remaining[j], remaining[-1]
                 key = remaining.pop()
                 with context.track_arg_label(str(key)) as arg_label:
-                    value[key] = data.draw(self.optional[key])
+                    pairs.append((key, data.draw(self.optional[key])))
                 arg_labels |= arg_label
+
+        # Vary the dict's iteration order (#3906).  We shuffle after choosing
+        # the optional keys, so only order varies, not the set of keys.
+        cu.fisher_yates_shuffle(data, pairs)
+        value = type(self.mapping)(pairs)
 
         if arg_labels:
             context.known_object_printers[IDKey(value)].append(
