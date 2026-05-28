@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.154.0:
+
+--------------------
+6.154.0 - 2026-05-28
+--------------------
+
+:func:`~hypothesis.strategies.fixed_dictionaries` now varies the iteration
+order of the dicts it generates, rather than always placing the required keys
+first, to help find bugs in code which is sensitive to key order
+(:issue:`3906`). If you need a stable order, we recommend using
+``fixed_dictionaries(...).map(stable_sort_function)`` or similar.
+
 .. _v6.153.6:
 
 --------------------
