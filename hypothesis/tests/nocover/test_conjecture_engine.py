@@ -23,7 +23,7 @@ from tests.common.utils import (
 from tests.conjecture.common import interesting_origin, run_to_nodes, shrinking_from
 
 
-@xfail_on_crosshair(Why.nested_given)
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_lot_of_dead_nodes():
     @run_to_nodes
     def nodes(data):

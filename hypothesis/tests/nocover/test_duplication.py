@@ -41,7 +41,7 @@ def test_does_not_duplicate_blocks(n):
     assert set(counts.values()) == {1}
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # CrosshairInternal for n>0
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("n", range(1, 5))
 def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
     counts = Counter()
