@@ -8,10 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 from collections import Counter
 
 import pytest
 
+from hypothesis import given, strategies as st
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
     Collection,
@@ -20,7 +22,11 @@ from hypothesis.internal.conjecture.shrinking import (
     Ordering,
     String,
 )
-from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.internal.conjecture.shrinking.floats import (
+    _float_to_position,
+    _position_to_float,
+)
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER, next_down
 from hypothesis.internal.intervalsets import IntervalSet
 
 
@@ -115,6 +121,47 @@ def test_collection_deletes_adaptively():
     )
     assert result == (1, 1, 1)
     assert calls < 100
+
+
+_MAX_FINITE_POSITION = _float_to_position(sys.float_info.max)
+
+
+@given(st.integers(min_value=0, max_value=_MAX_FINITE_POSITION))
+def test_position_to_float_round_trips(n):
+    # _position_to_float always lands on an integer-valued non-negative float,
+    # so the inverse is exact for every position in the finite-float range.
+    assert _float_to_position(_position_to_float(n)) == n
+
+
+@given(st.floats(min_value=0, allow_nan=False, allow_infinity=False))
+def test_float_to_position_round_trips(f):
+    # Round-trip lands on float(int(f)): exact for integer-valued f, and a
+    # deliberate truncation for fractional f below the boundary.
+    assert _position_to_float(_float_to_position(f)) == int(f)
+
+
+@given(
+    st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+    st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+)
+def test_float_to_position_is_monotonic(f, g):
+    lo, hi = sorted([f, g])
+    assert _float_to_position(lo) <= _float_to_position(hi)
+
+
+@given(
+    st.floats(
+        min_value=float(MAX_PRECISE_INTEGER),
+        exclude_min=True,
+        allow_infinity=False,
+        allow_nan=False,
+    )
+)
+def test_decrement_position_steps_to_next_down(f):
+    # The defining property: stepping the position by 1 corresponds to stepping
+    # to the next representable float, so Integer.shrink's n - 1 makes real
+    # progress past the boundary instead of rounding back to n.
+    assert _position_to_float(_float_to_position(f) - 1) == next_down(f)
 
 
 @pytest.mark.parametrize(
