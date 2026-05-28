@@ -870,9 +870,8 @@ def test_fixeddict_pprinter_cycle():
     from hypothesis.vendor.pretty import _fixeddict_pprinter
 
     d = {"a": 1, "b": 2}
-    mapping = {"a": None, "b": None}  # dummy mapping for key ordering
     arg_labels = {"a": (0, 1), "b": (1, 2)}
-    pprinter = _fixeddict_pprinter(arg_labels, mapping)
+    pprinter = _fixeddict_pprinter(arg_labels)
 
     out = io.StringIO()
     p = pretty.RepresentationPrinter(out)

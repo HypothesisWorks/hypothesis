@@ -154,6 +154,24 @@ def test_pyright_issue_3348(tmp_path: Path):
     assert _get_pyright_errors(file) == []
 
 
+def test_pyright_issue_4665(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent("""
+            from hypothesis.strategies import SearchStrategy, fixed_dictionaries, integers, text
+
+            mapping: dict[str, SearchStrategy[str] | SearchStrategy[int]] = {
+                "ant": text(),
+                "bat": integers(),
+            }
+            fixed_dictionaries(mapping)
+            """),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert _get_pyright_errors(file) == []
+
+
 def test_numpy_arrays_strategy(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(

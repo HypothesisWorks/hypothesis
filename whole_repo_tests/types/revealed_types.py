@@ -63,6 +63,17 @@ REVEALED_TYPES = [
         "Any",
     ),
     ("from_regex(r'.', alphabet=None)", "str"),
+    ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
+    ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, int]"),
+    ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
+    (
+        "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
+        "dict[str | int, bool]",
+    ),
+    (
+        "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
+        "dict[str | int, bool | int]",
+    ),
 ]
 
 
@@ -101,6 +112,12 @@ DIFF_REVEALED_TYPES = [
         "dictionaries(integers(), datetimes())",
         "dict[int, datetime.datetime]",
         "dict[int, datetime]",
+    ),
+    # mypy joins heterogeneous values to their common base, pyright keeps the union
+    DifferingRevealedTypes(
+        "fixed_dictionaries({'a': text(), 'b': integers()})",
+        "dict[str, object]",
+        "dict[str, int | str]",
     ),
 ]
 
