@@ -964,10 +964,7 @@ def _tuple_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
     return inner
 
 
-def _fixeddict_pprinter(
-    arg_labels: ArgLabelsT,
-    mapping: dict[Any, Any],
-) -> PrettyPrintFunction:
+def _fixeddict_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
     """Pretty printer for fixed_dictionaries that shows sub-argument comments."""
 
     def inner(obj: dict, p: RepresentationPrinter, cycle: bool) -> None:

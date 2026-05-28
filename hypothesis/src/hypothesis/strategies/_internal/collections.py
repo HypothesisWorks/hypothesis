@@ -10,7 +10,7 @@
 
 import copy
 import math
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, TypeGuard, overload
 
 from hypothesis import strategies as st
@@ -370,30 +370,30 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         return result
 
 
-class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
-    """A strategy which produces dicts with a fixed set of keys, given a
+class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
+    """A strategy which produces mappings with a fixed set of keys, given a
     strategy for each of their equivalent values.
 
-    e.g. {'foo' : some_int_strategy} would generate dicts with the single
+    e.g. {'foo' : some_int_strategy} would generate mappings with the single
     key 'foo' mapping to some integer.
     """
 
     def __init__(
         self,
-        mapping: dict[Any, SearchStrategy[Any]],
+        mapping: Mapping[Any, SearchStrategy[Any]],
         *,
-        optional: dict[Any, SearchStrategy[Any]] | None,
+        optional: Mapping[Any, SearchStrategy[Any]] | None,
     ):
         super().__init__()
         dict_type = type(mapping)
         self.mapping = mapping
         keys = tuple(mapping.keys())
         self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
-            lambda value: dict_type(zip(keys, value, strict=True))
+            lambda value: dict_type(zip(keys, value, strict=True))  # type: ignore
         )
         self.optional = optional
 
-    def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
+    def do_draw(self, data: ConjectureData) -> Mapping[Any, Any]:
         context = current_build_context()
         arg_labels: ArgLabelsT = {}
         pairs: list[tuple[Any, Any]] = []
@@ -422,11 +422,11 @@ class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
         # Vary the dict's iteration order (#3906).  We shuffle after choosing
         # the optional keys, so only order varies, not the set of keys.
         cu.fisher_yates_shuffle(data, pairs)
-        value = type(self.mapping)(pairs)
+        value = type(self.mapping)(pairs)  # type: ignore
 
         if arg_labels:
             context.known_object_printers[IDKey(value)].append(
-                _fixeddict_pprinter(arg_labels, self.mapping)
+                _fixeddict_pprinter(arg_labels)
             )
         return value
 

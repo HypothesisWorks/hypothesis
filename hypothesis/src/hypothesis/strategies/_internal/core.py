@@ -499,43 +499,59 @@ def iterables(
     ).map(PrettyIter)
 
 
-# this type definition is imprecise, in multiple ways:
-# * mapping and optional can be of different types:
-#      s: dict[str | int, int] = st.fixed_dictionaries(
-#         {"a": st.integers()}, optional={1: st.integers()}
-#     )
-# * the values in either mapping or optional need not all be of the same type:
-#      s: dict[str, int | bool] = st.fixed_dictionaries(
-#         {"a": st.integers(), "b": st.booleans()}
-#     )
-# * the arguments may be of any dict-compatible type, in which case the return
-#   value will be of that type instead of dict
+# fixed_dictionaries accepts Mapping rather than the invariant dict so that
+# type-checkers can infer the value type even when the per-key strategies are
+# heterogeneous: Mapping is covariant in its value type and SearchStrategy is
+# covariant in its own, so e.g. `SearchStrategy[int] | SearchStrategy[str]` is
+# accepted as `SearchStrategy[int | str]`.  The overloads let mapping and
+# optional contribute independent key and value types, which are unioned in the
+# result.  See revealed_types.py for the resulting types.
 #
-# Overloads may help here, but I doubt we'll be able to satisfy all these
-# constraints.
+# We use fresh typevars rather than the module-level Ex because Ex has a default
+# (PEP 696), and a defaulted typevar may not precede a bare one in a signature.
 #
-# Here's some platonic ideal test cases for revealed_types.py, with the understanding
-# that some may not be achievable:
-#
-#   ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
-#   ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, bool | int]"),
-#   ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
-#   (
-#       "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
-#       "dict[str | int, bool]",
-#   ),
-#   (
-#       "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
-#       "dict[str | int, bool | int]",
-#   ),
+# The remaining imprecision is that we always report a plain dict, even though
+# at runtime the result preserves the concrete (dict-subclass) type of mapping.
+K = TypeVar("K")
+V = TypeVar("V")
+K2 = TypeVar("K2")
+V2 = TypeVar("V2")
+
+
+@overload
+def fixed_dictionaries(
+    mapping: Mapping[K, SearchStrategy[V]],
+) -> SearchStrategy[dict[K, V]]:  # pragma: no cover
+    ...
+
+
+@overload
+def fixed_dictionaries(
+    # Matching an empty mapping against NoReturn lets the result come solely
+    # from optional, rather than picking up a spurious `Any` from the empty
+    # mapping (whose key and value types are otherwise uninferable).
+    mapping: Mapping[NoReturn, NoReturn],
+    *,
+    optional: Mapping[K2, SearchStrategy[V2]],
+) -> SearchStrategy[dict[K2, V2]]:  # pragma: no cover
+    ...
+
+
+@overload
+def fixed_dictionaries(
+    mapping: Mapping[K, SearchStrategy[V]],
+    *,
+    optional: Mapping[K2, SearchStrategy[V2]],
+) -> SearchStrategy[dict[K | K2, V | V2]]:  # pragma: no cover
+    ...
 
 
 @defines_strategy()
 def fixed_dictionaries(
-    mapping: dict[T, SearchStrategy[Ex]],
+    mapping: Mapping[Any, SearchStrategy[Any]],
     *,
-    optional: dict[T, SearchStrategy[Ex]] | None = None,
-) -> SearchStrategy[dict[T, Ex]]:
+    optional: Mapping[Any, SearchStrategy[Any]] | None = None,
+) -> SearchStrategy[dict[Any, Any]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. ``mapping`` must be a dict subclass.
 
@@ -549,12 +565,12 @@ def fixed_dictionaries(
     Examples from this strategy shrink by shrinking each individual value in
     the generated dictionary, and omitting optional key-value pairs.
     """
-    check_type(dict, mapping, "mapping")
+    check_type(Mapping, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, f"mapping[{k!r}]")
 
     if optional is not None:
-        check_type(dict, optional, "optional")
+        check_type(Mapping, optional, "optional")
         for k, v in optional.items():
             check_strategy(v, f"optional[{k!r}]")
         if type(mapping) != type(optional):
@@ -569,7 +585,13 @@ def fixed_dictionaries(
                 f"which is invalid: {set(mapping) & set(optional)!r}"
             )
 
-    return FixedDictStrategy(mapping, optional=optional)
+    # FixedDictStrategy honestly types itself as SearchStrategy[Mapping], since
+    # type(mapping)(pairs) may return any Mapping subclass.  We narrow to dict
+    # here because that's what callers almost always get and find convenient.
+    return cast(
+        "SearchStrategy[dict[Any, Any]]",
+        FixedDictStrategy(mapping, optional=optional),
+    )
 
 
 _get_first_item = operator.itemgetter(0)

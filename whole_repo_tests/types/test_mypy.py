@@ -563,6 +563,23 @@ def test_pos_only_args(tmp_path):
     )
 
 
+def test_mypy_issue_4665(tmp_path):
+    f = tmp_path / "check_mypy_on_fixed_dictionaries_union_values.py"
+    f.write_text(
+        textwrap.dedent("""
+            from hypothesis.strategies import SearchStrategy, fixed_dictionaries, integers, text
+
+            mapping: dict[str, SearchStrategy[str] | SearchStrategy[int]] = {
+                "ant": text(),
+                "bat": integers(),
+            }
+            fixed_dictionaries(mapping)
+            """),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [])
+
+
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
 def test_mypy_passes_on_basic_test(tmp_path, python_version):
     f = tmp_path / "check_mypy_on_basic_tests.py"
