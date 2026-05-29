@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.1:
+
+--------------------
+6.155.1 - 2026-05-29
+--------------------
+
+Shrinking large floats, strings, and bytestrings is now much faster in some
+cases (:issue:`4006`).
+
 .. _v6.155.0:
 
 --------------------
