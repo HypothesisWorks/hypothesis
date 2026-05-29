@@ -1184,20 +1184,12 @@ class Shrinker:
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
         if attempt.status is Status.OVERRUN:
-            # Lowering a size-controlling choice can make the realigned (and now
-            # boring) collection stop triggering the failure, so the test draws
-            # further and overruns before we get to see the realignment -- this
+            # Lowering a size-controlling choice can make the realigned (and
+            # now boring) collection stop triggering the failure, so the test
+            # draws further and overruns before we see the realignment -- this
             # is common in stateful tests, where a non-failing step is followed
-            # by more steps. When there's a later collection we might repair,
-            # re-run without the length limit to recover the realigned tree.
-            after = max(node.index for node in nodes) + 1
-            if not any(
-                node.type in {"string", "bytes"}
-                and not node.was_forced
-                and len(node.value) > 0
-                for node in initial_attempt[after:]
-            ):
-                return False
+            # by more steps. Re-run without the length limit to recover the
+            # realigned tree, which the repair logic below can then act on.
             attempt = self.engine.cached_test_function(
                 [n.value for n in initial_attempt], extend="full"
             )
