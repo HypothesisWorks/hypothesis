@@ -14,7 +14,33 @@ import sys
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
-from hypothesis.internal.floats import MAX_PRECISE_INTEGER, float_to_int
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER, float_to_int, int_to_float
+
+# Bit pattern of the boundary float, so we can compute float-grid indices
+# relative to it without recomputing the constant on every call.
+_BOUNDARY_BITS = float_to_int(float(MAX_PRECISE_INTEGER))
+
+
+def _float_to_position(f: float) -> int:
+    """Map a non-negative float to a linear integer position such that adjacent
+    representable floats correspond to adjacent integers.
+
+    For ``f <= MAX_PRECISE_INTEGER`` the position is just ``int(f)``. Above the
+    boundary, where the gap between adjacent floats exceeds 1, we extend by the
+    float's index in the bit-pattern sequence past ``MAX_PRECISE_INTEGER``, so
+    that decrementing the position by 1 corresponds to ``next_down(f)``.
+    """
+    if f <= MAX_PRECISE_INTEGER:
+        return int(f)
+    return MAX_PRECISE_INTEGER + (float_to_int(f) - _BOUNDARY_BITS)
+
+
+def _position_to_float(n: int) -> float:
+    """Inverse of :func:`_float_to_position` on the integer-valued range. Always
+    returns an integer-valued, non-negative float."""
+    if n <= MAX_PRECISE_INTEGER:
+        return float(n)
+    return int_to_float(_BOUNDARY_BITS + (n - MAX_PRECISE_INTEGER))
 
 
 class Float(Shrinker):
@@ -51,13 +77,18 @@ class Float(Shrinker):
             return True
 
     def run_step(self):
-        # above MAX_PRECISE_INTEGER, all floats are integers. Shrink like one.
-        # TODO_BETTER_SHRINK: at 2 * MAX_PRECISE_INTEGER, n - 1 == n - 2, and
-        # Integer.shrink will likely perform badly. We should have a specialized
-        # big-float shrinker, which mostly follows Integer.shrink but replaces
-        # n - 1 with next_down(n).
+        # Above MAX_PRECISE_INTEGER all floats are integers, but the gap between
+        # adjacent floats is > 1, so consecutive integers are not all
+        # representable. Integer.shrink would step by n - 1, which rounds straight
+        # back to n and stalls. We instead shrink on the float grid by delegating
+        # to Integer with a bijection that maps each representable float to an
+        # adjacent integer position, so n - 1 always corresponds to next_down(n).
         if self.current > MAX_PRECISE_INTEGER:
-            self.delegate(Integer, convert_to=int, convert_from=float)
+            self.delegate(
+                Integer,
+                convert_to=_float_to_position,
+                convert_from=_position_to_float,
+            )
             return
 
         # Finally we get to the important bit: Each of these is a small change
