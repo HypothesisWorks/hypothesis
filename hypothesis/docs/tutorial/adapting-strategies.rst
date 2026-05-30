@@ -56,7 +56,7 @@ Assuming away test cases
 
 |.filter| lets you filter test inputs from a single strategy. Hypothesis also provides an |assume| function for when you need to filter an entire test case, based on an arbitrary condition.
 
-The |assume| function skips test cases where some condition evaluates to ``True``. You can use it anywhere in your test. We could have expressed our |.filter| example above using |assume| as well:
+The |assume| function skips test cases where some condition evaluates to ``False``. You can use it anywhere in your test. We could have expressed our |.filter| example above using |assume| as well:
 
 .. code-block:: python
 
