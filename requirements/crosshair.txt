@@ -13,13 +13,13 @@ cattrs==26.1.0
     # via
     #   lsprotocol
     #   pygls
-crosshair-tool==0.0.104
+crosshair-tool==0.0.106
     # via
     #   -r requirements/crosshair.in
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.152.7
+hypothesis==6.155.1
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.28
     # via -r requirements/crosshair.in
@@ -58,9 +58,9 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==5.2.0
+syrupy==5.3.1
     # via -r requirements/test.in
-typeshed-client==2.11.0
+typeshed-client==2.12.0
     # via crosshair-tool
 typing-extensions==4.15.0
     # via
@@ -72,5 +72,5 @@ typing-inspect==0.9.0
     # via crosshair-tool
 z3-solver==4.16.0.0
     # via crosshair-tool
-zipp==3.23.1
+zipp==4.1.0
     # via importlib-metadata
