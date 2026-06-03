@@ -484,7 +484,7 @@ def update_pyodide_versions():
         key=version_tuple,
     )
 
-    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
+    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/metadata/pyodide-cross-build-environments-v2.json"
     cross_build_environments_data = requests.get(cross_build_environments_url).json()
 
     # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
