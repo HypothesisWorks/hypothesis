@@ -12,7 +12,6 @@ import datetime as dt
 import operator as op
 import warnings
 import zoneinfo
-from calendar import monthrange
 from functools import cache, partial
 from importlib import resources
 from pathlib import Path
@@ -88,6 +87,21 @@ def datetime_does_not_exist(value):
     return value != roundtrip
 
 
+def _num_days_in_month(year, month):
+    """Equivalent to ``monthrange(year, month)[1]`` for valid inputs.
+
+    Written using only arithmetic and (in)equality, with no branching, ``and``,
+    ``or``, or indexing on ``month``/``year``.  This keeps the result symbolic
+    under symbolic-execution backends (which would otherwise concretize the year
+    and month the moment they hit a branch or a list lookup), while remaining a
+    handful of cheap integer ops for the blackbox engine.
+    """
+    leap = (year % 4 == 0) * (1 - (year % 100 == 0) * (year % 400 != 0))
+    is_feb = month == 2
+    is_30_day = 1 - (month != 4) * (month != 6) * (month != 9) * (month != 11)
+    return 31 - is_30_day - is_feb * (3 - leap)
+
+
 def draw_capped_multipart(
     data, min_value, max_value, duration_names=DATENAMES + TIMENAMES
 ):
@@ -95,19 +109,33 @@ def draw_capped_multipart(
     assert type(min_value) == type(max_value)
     assert min_value <= max_value
     result = {}
-    cap_low, cap_high = True, True
+    # ``cap_low``/``cap_high`` are 0/1 integers (not booleans) recording whether
+    # every field drawn so far has equalled ``min_value``'s / ``max_value``'s,
+    # i.e. whether that bound is still "active" and constrains the next field.
+    # We combine them into the bounds with arithmetic rather than branching, so
+    # that the *same* code stays fully symbolic under symbolic-execution
+    # backends (important for cross-backend database replay) yet compiles down
+    # to a few integer ops for the blackbox engine.  The draws themselves --
+    # their count, order, bounds, and ``shrink_towards`` -- are byte-for-byte
+    # identical to the previous branchy implementation.
+    cap_low = cap_high = 1
     for name in duration_names:
-        low = getattr(min_value if cap_low else dt.datetime.min, name)
-        high = getattr(max_value if cap_high else dt.datetime.max, name)
-        if name == "day" and not cap_high:
-            _, high = monthrange(**result)
+        natural_low = getattr(dt.datetime.min, name)
+        if name == "day":
+            natural_high = _num_days_in_month(result["year"], result["month"])
+        else:
+            natural_high = getattr(dt.datetime.max, name)
+        # low  = min_value.<name> if cap_low  else natural_low
+        # high = max_value.<name> if cap_high else natural_high
+        low = natural_low + cap_low * (getattr(min_value, name) - natural_low)
+        high = natural_high + cap_high * (getattr(max_value, name) - natural_high)
         if name == "year":
             val = data.draw_integer(low, high, shrink_towards=2000)
         else:
             val = data.draw_integer(low, high)
         result[name] = val
-        cap_low = cap_low and val == low
-        cap_high = cap_high and val == high
+        cap_low = cap_low * (val == low)
+        cap_high = cap_high * (val == high)
     if hasattr(min_value, "fold"):
         # The `fold` attribute is ignored in comparison of naive datetimes.
         # In tz-aware datetimes it would require *very* invasive changes to

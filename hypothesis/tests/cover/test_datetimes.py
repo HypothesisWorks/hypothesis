@@ -9,13 +9,23 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+from calendar import monthrange
 
 import pytest
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import dates, datetimes, timedeltas, times
+from hypothesis.strategies._internal.datetime import _num_days_in_month
 
 from tests.common.debug import assert_simple_property, find_any, minimal
+
+
+@pytest.mark.parametrize("year", [1, 1900, 2000, 2004, 2023, 2024, 2100, 9999])
+def test_num_days_in_month_matches_monthrange(year):
+    # The branchless _num_days_in_month must agree with the stdlib for every
+    # month, including the century/400-year leap rules around February.
+    for month in range(1, 13):
+        assert _num_days_in_month(year, month) == monthrange(year, month)[1]
 
 
 def test_can_find_positive_delta():
