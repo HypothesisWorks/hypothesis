@@ -88,13 +88,10 @@ def datetime_does_not_exist(value):
 
 
 def _num_days_in_month(year, month):
-    """Equivalent to ``monthrange(year, month)[1]`` for valid inputs.
+    """Branchless equivalent of ``monthrange(year, month)[1]`` for valid inputs.
 
-    Written using only arithmetic and (in)equality, with no branching, ``and``,
-    ``or``, or indexing on ``month``/``year``.  This keeps the result symbolic
-    under symbolic-execution backends (which would otherwise concretize the year
-    and month the moment they hit a branch or a list lookup), while remaining a
-    handful of cheap integer ops for the blackbox engine.
+    Written using only arithmetic and (in)equality, with no branching or indexing.
+    This avoids concretizing the input or adding more path constraints than necessary.
     """
     leap = (year % 4 == 0) * (1 - (year % 100 == 0) * (year % 400 != 0))
     is_feb = month == 2
@@ -108,25 +105,27 @@ def draw_capped_multipart(
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
     assert type(min_value) == type(max_value)
     assert min_value <= max_value
+
+    # cap_{low, high} records whether every field drawn so far has equalled
+    # ``min_value``'s / ``max_value``'s, i.e. whether that bound is still "active" and
+    # constrains the next field.
+    #
+    # cap_{low, high} are conceptually booleans. We define them as integers and interpret
+    # boolean operations on them as multiplication, so that we don't concretize or
+    # branch under symbolic backends. See
+    # https://github.com/HypothesisWorks/hypothesis/issues/4759.
+    cap_low = 1
+    cap_high = 1
     result = {}
-    # ``cap_low``/``cap_high`` are 0/1 integers (not booleans) recording whether
-    # every field drawn so far has equalled ``min_value``'s / ``max_value``'s,
-    # i.e. whether that bound is still "active" and constrains the next field.
-    # We combine them into the bounds with arithmetic rather than branching, so
-    # that the *same* code stays fully symbolic under symbolic-execution
-    # backends (important for cross-backend database replay) yet compiles down
-    # to a few integer ops for the blackbox engine.  The draws themselves --
-    # their count, order, bounds, and ``shrink_towards`` -- are byte-for-byte
-    # identical to the previous branchy implementation.
-    cap_low = cap_high = 1
     for name in duration_names:
         natural_low = getattr(dt.datetime.min, name)
         if name == "day":
             natural_high = _num_days_in_month(result["year"], result["month"])
         else:
             natural_high = getattr(dt.datetime.max, name)
-        # low  = min_value.<name> if cap_low  else natural_low
-        # high = max_value.<name> if cap_high else natural_high
+        # equivalent to:
+        #   low  = min_value.<name> if cap_low  else natural_low
+        #   high = max_value.<name> if cap_high else natural_high
         low = natural_low + cap_low * (getattr(min_value, name) - natural_low)
         high = natural_high + cap_high * (getattr(max_value, name) - natural_high)
         if name == "year":
