@@ -47,6 +47,13 @@ list : "[" [NUMBER ("," NUMBER)*] "]"
 NUMBER: /[0-9]|[1-9][0-9]*/
 """
 
+ESCAPED_STRING_LARK = Lark(
+    r"""
+%import common.ESCAPED_STRING
+start: ESCAPED_STRING
+"""
+)
+
 
 @given(from_lark(Lark(EBNF_GRAMMAR, start="value")))
 def test_generates_valid_json(string):
@@ -87,6 +94,11 @@ def test_can_generate_ignored_tokens():
 
 def test_generation_without_whitespace():
     find_any(from_lark(Lark(LIST_GRAMMAR, start="list")), lambda g: " " not in g)
+
+
+@given(string=from_lark(ESCAPED_STRING_LARK))
+def test_generates_lark_escaped_strings(string):
+    ESCAPED_STRING_LARK.parse(string)
 
 
 def test_cannot_convert_EBNF_to_strategy_directly():

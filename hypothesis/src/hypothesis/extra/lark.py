@@ -20,6 +20,7 @@ from `nearley.js <https://nearley.js.org/>`_, so you may not have to write
 your own at all.
 """
 
+import re
 from inspect import signature
 
 import lark
@@ -52,6 +53,16 @@ def get_terminal_names(
     for rule in rules:
         names |= {t.name for t in rule.expansion if isinstance(t, Terminal)}
     return names
+
+
+def _matches_entire_token(regex: str):
+    compiled = re.compile(regex)
+
+    def inner(value: str) -> bool:
+        match = compiled.match(value)
+        return match is not None and match.end() == len(value)
+
+    return inner
 
 
 class LarkStrategy(st.SearchStrategy):
@@ -93,7 +104,10 @@ class LarkStrategy(st.SearchStrategy):
         self.terminal_strategies: dict[str, st.SearchStrategy[str]] = {}
         for t in terminals:
             self.names_to_symbols[t.name] = Terminal(t.name)
-            s = st.from_regex(t.pattern.to_regexp(), fullmatch=True, alphabet=alphabet)
+            regex = t.pattern.to_regexp()
+            s = st.from_regex(regex, fullmatch=True, alphabet=alphabet).filter(
+                _matches_entire_token(regex)
+            )
             try:
                 s.validate()
             except IncompatibleWithAlphabet:
