@@ -13,8 +13,7 @@ from calendar import monthrange
 
 import pytest
 
-from hypothesis import HealthCheck, example, given, settings
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.strategies import dates, datetimes, timedeltas, times
 from hypothesis.strategies._internal.datetime import _num_days_in_month
 
