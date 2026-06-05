@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime as dt
+
 import crosshair
 import pytest
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
@@ -224,3 +226,14 @@ def test_realizes_event():
 def test_event_with_realization(value):
     event(value)
     float(value)
+
+
+def test_crosshair_can_hit_a_specific_date():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4759.
+    @given(st.dates())
+    @settings(backend="crosshair", database=None)
+    def f(d):
+        assert d != dt.date(2030, 2, 14)
+
+    with pytest.raises(AssertionError):
+        f()

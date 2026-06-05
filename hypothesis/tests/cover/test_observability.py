@@ -84,7 +84,6 @@ def do_it_all(l, a, x, data):
     1 / ((x or 1) % 7)
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 @skipif_threading  # captures observations from other threads
 def test_observability():
     with capture_observations() as ls:
@@ -202,10 +201,7 @@ def test_normal_representation_includes_draws():
         tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
     ]
     assert test_cases
-    # TODO crosshair has a soundness bug with assume. remove branch when fixed
-    # https://github.com/pschanely/hypothesis-crosshair/issues/34
-    if not crosshair:
-        assert {tc.representation for tc in test_cases} == {expected}
+    assert {tc.representation for tc in test_cases} == {expected}
 
 
 @xfail_on_crosshair(Why.other)

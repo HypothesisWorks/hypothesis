@@ -12,7 +12,6 @@ import datetime as dt
 import operator as op
 import warnings
 import zoneinfo
-from calendar import monthrange
 from functools import cache, partial
 from importlib import resources
 from pathlib import Path
@@ -88,26 +87,54 @@ def datetime_does_not_exist(value):
     return value != roundtrip
 
 
+def _num_days_in_month(year, month):
+    """Branchless equivalent of ``monthrange(year, month)[1]`` for valid inputs.
+
+    Written using only arithmetic and (in)equality, with no branching or indexing.
+    This avoids concretizing the input or adding more path constraints than necessary.
+    """
+    leap = (year % 4 == 0) * (1 - (year % 100 == 0) * (year % 400 != 0))
+    is_feb = month == 2
+    is_30_day = 1 - (month != 4) * (month != 6) * (month != 9) * (month != 11)
+    return 31 - is_30_day - is_feb * (3 - leap)
+
+
 def draw_capped_multipart(
     data, min_value, max_value, duration_names=DATENAMES + TIMENAMES
 ):
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
     assert type(min_value) == type(max_value)
     assert min_value <= max_value
+
+    # cap_{low, high} records whether every field drawn so far has equalled
+    # ``min_value``'s / ``max_value``'s, i.e. whether that bound is still "active" and
+    # constrains the next field.
+    #
+    # cap_{low, high} are conceptually booleans. We define them as integers and interpret
+    # boolean operations on them as multiplication, so that we don't concretize or
+    # branch under symbolic backends. See
+    # https://github.com/HypothesisWorks/hypothesis/issues/4759.
+    cap_low = 1
+    cap_high = 1
     result = {}
-    cap_low, cap_high = True, True
     for name in duration_names:
-        low = getattr(min_value if cap_low else dt.datetime.min, name)
-        high = getattr(max_value if cap_high else dt.datetime.max, name)
-        if name == "day" and not cap_high:
-            _, high = monthrange(**result)
+        natural_low = getattr(dt.datetime.min, name)
+        if name == "day":
+            natural_high = _num_days_in_month(result["year"], result["month"])
+        else:
+            natural_high = getattr(dt.datetime.max, name)
+        # equivalent to:
+        #   low  = min_value.<name> if cap_low  else natural_low
+        #   high = max_value.<name> if cap_high else natural_high
+        low = natural_low + cap_low * (getattr(min_value, name) - natural_low)
+        high = natural_high + cap_high * (getattr(max_value, name) - natural_high)
         if name == "year":
             val = data.draw_integer(low, high, shrink_towards=2000)
         else:
             val = data.draw_integer(low, high)
         result[name] = val
-        cap_low = cap_low and val == low
-        cap_high = cap_high and val == high
+        cap_low = cap_low * (val == low)
+        cap_high = cap_high * (val == high)
     if hasattr(min_value, "fold"):
         # The `fold` attribute is ignored in comparison of naive datetimes.
         # In tz-aware datetimes it would require *very* invasive changes to
