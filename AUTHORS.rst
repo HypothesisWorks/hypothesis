@@ -130,6 +130,7 @@ their individual contributions.
 * `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
+* `marko1olo <https://github.com/marko1olo>`_
 * `Markus Unterwaditzer <https://github.com/untitaker>`_ (markus@unterwaditzer.net)
 * `Mateusz Sokół <https://github.com/mtsokol>`_
 * `Mathieu Paturel <https://github.com/math2001>`_ (mathieu.paturel@gmail.com)
