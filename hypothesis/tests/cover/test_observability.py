@@ -206,7 +206,7 @@ def test_normal_representation_includes_draws():
         # just require the symbolic one to be present.
         assert expected in representations
     else:
-        assert representations == {expected}
+        assert {tc.representation for tc in test_cases} == {expected}
 
 
 def test_capture_named_arguments():
