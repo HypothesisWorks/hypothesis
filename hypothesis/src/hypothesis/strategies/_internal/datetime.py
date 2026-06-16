@@ -320,7 +320,6 @@ class DateStrategy(SearchStrategy):
             }[condition.func]
             lo = max(lo, self.min_value)
             hi = min(hi, self.max_value)
-            print(lo, hi)
             if hi < lo:
                 return nothing()
             if lo <= self.min_value and self.max_value <= hi:

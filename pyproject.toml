@@ -28,6 +28,7 @@ select = [
     "RSE",    # flake8-raise
     "SIM",    # flake8-simplify
     "T10",    # flake8-debugger
+    "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
     "UP",     # pyupgrade
     "W",      # pycodestyle
@@ -82,6 +83,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"!hypothesis/src/**" = ["T20"]
+"hypothesis/src/hypothesis/extra/cli.py" = ["T20"]
+"hypothesis/src/hypothesis/reporting.py" = ["T20"]
 "hypothesis/src/hypothesis/core.py" = ["B030", "B904"]
 "hypothesis/src/hypothesis/internal/compat.py" = ["F401"]
 "hypothesis/tests/nocover/test_imports.py" = ["F403", "F405"]

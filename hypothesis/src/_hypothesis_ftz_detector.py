@@ -156,4 +156,4 @@ if __name__ == "__main__":
     # change the last element of key from `name` to `-len(name)` so that we check
     # grequests before gevent.
     # KNOWN_EVER_CULPRITS = [c for c in KNOWN_EVER_CULPRITS if c != "gevent"]
-    print(identify_ftz_culprits())
+    print(identify_ftz_culprits())  # noqa: T201
