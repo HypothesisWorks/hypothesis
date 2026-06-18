@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.4:
+
+--------------------
+6.155.4 - 2026-06-18
+--------------------
+
+This patch removes a stray ``print()`` which fired whenever a |st.dates| filter was rewritten.
+
 .. _v6.155.3:
 
 --------------------
