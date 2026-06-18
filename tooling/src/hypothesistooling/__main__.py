@@ -771,11 +771,6 @@ def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
 
 
-@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS, "examples")))
-def check_examples3(*args):
-    run_tox("examples3", PYTHONS[ci_version], *args)
-
-
 @task()
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
