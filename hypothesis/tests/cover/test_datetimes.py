@@ -9,13 +9,25 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+from calendar import monthrange
 
 import pytest
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.strategies import dates, datetimes, timedeltas, times
+from hypothesis.strategies._internal.datetime import _num_days_in_month
 
 from tests.common.debug import assert_simple_property, find_any, minimal
+
+
+@example(1900)
+@example(2000)
+@example(2004)
+@example(2100)
+@given(st.integers(dt.MINYEAR, dt.MAXYEAR))
+def test_num_days_in_month_matches_monthrange(year):
+    for month in range(1, 13):
+        assert _num_days_in_month(year, month) == monthrange(year, month)[1]
 
 
 def test_can_find_positive_delta():

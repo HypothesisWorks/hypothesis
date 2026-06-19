@@ -422,8 +422,8 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.14",
-    "6.0": "6.0.5",
+    "5.2": "5.2.15",
+    "6.0": "6.0.6",
 }
 
 
@@ -484,7 +484,7 @@ def update_pyodide_versions():
         key=version_tuple,
     )
 
-    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/pyodide-cross-build-environments.json"
+    cross_build_environments_url = "https://raw.githubusercontent.com/pyodide/pyodide/refs/heads/main/metadata/pyodide-cross-build-environments-v2.json"
     cross_build_environments_data = requests.get(cross_build_environments_url).json()
 
     # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
@@ -661,12 +661,12 @@ PYTHONS = {
     "3.10": "3.10.20",
     "3.11": "3.11.15",
     "3.12": "3.12.13",
-    "3.13": "3.13.13",
-    "3.13t": "3.13.13+freethreaded",
-    "3.14": "3.14.5",
-    "3.14t": "3.14.5+freethreaded",
-    "3.15": "3.15.0b1",
-    "3.15t": "3.15.0b1+freethreaded",
+    "3.13": "3.13.14",
+    "3.13t": "3.13.14+freethreaded",
+    "3.14": "3.14.6",
+    "3.14t": "3.14.6+freethreaded",
+    "3.15": "3.15.0b2",
+    "3.15t": "3.15.0b2+freethreaded",
     "pypy3.10": "pypy3.10-3.10.16",
     "pypy3.11": "pypy3.11-3.11.15",
 }
@@ -769,11 +769,6 @@ standard_tox_task("snapshots")
 @task()
 def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
-
-
-@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS, "examples")))
-def check_examples3(*args):
-    run_tox("examples3", PYTHONS[ci_version], *args)
 
 
 @task()

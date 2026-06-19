@@ -1218,6 +1218,7 @@ class StateForActualGivenExecution:
         ``StopTest`` must be a fatal error, and should stop the entire engine.
         """
         trace: Trace = frozenset()
+        backend_cannot_proceed = False
         try:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
@@ -1246,7 +1247,16 @@ class StateForActualGivenExecution:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
                 raise self._flaky_replay_to_failure(err, e) from None
-        except (StopTest, BackendCannotProceed):
+        except BackendCannotProceed:
+            # The engine discards this iteration entirely (see engine.py,
+            # "we're pretending this never happened"), so we shouldn't emit a
+            # test_case observation for it either -- otherwise an alternative
+            # backend that aborts before running the test (e.g. crosshair when
+            # it has exhausted its paths) surfaces a spurious, draw-less
+            # "passed" observation with an empty representation.
+            backend_cannot_proceed = True
+            raise
+        except StopTest:
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
             raise
@@ -1333,7 +1343,7 @@ class StateForActualGivenExecution:
             except BackendCannotProceed:
                 data.events = {}
 
-            if observability_enabled():
+            if observability_enabled() and not backend_cannot_proceed:
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals

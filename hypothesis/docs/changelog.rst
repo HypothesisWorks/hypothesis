@@ -18,6 +18,55 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.5:
+
+--------------------
+6.155.5 - 2026-06-18
+--------------------
+
+:func:`~hypothesis.strategies.dates` now raises ``InvalidArgument`` if a
+:class:`~python:datetime.datetime` is passed as ``min_value`` or ``max_value``.
+Because ``datetime`` is a subclass of :class:`~python:datetime.date`, such
+bounds were previously accepted and then failed with a confusing ``TypeError``
+while generating examples.
+
+.. _v6.155.4:
+
+--------------------
+6.155.4 - 2026-06-18
+--------------------
+
+This patch removes a stray ``print()`` which fired whenever a |st.dates| filter was rewritten.
+
+.. _v6.155.3:
+
+--------------------
+6.155.3 - 2026-06-16
+--------------------
+
+When using an alternative backend (such as :pypi:`hypothesis-crosshair`),
+Hypothesis no longer emits a ``test_case`` observation for an iteration that the
+backend aborts via ``BackendCannotProceed`` *before the test body runs*.
+Previously such an iteration -- for example when the crosshair backend has
+exhausted its search paths -- could surface as a spurious, draw-less ``passed``
+observation with an empty representation, even though the engine already
+discards the iteration entirely.
+
+.. _v6.155.2:
+
+--------------------
+6.155.2 - 2026-06-05
+--------------------
+
+This patch rewrites the internal date- and time-drawing helper to use plain
+arithmetic instead of branching on the values it draws.  The generated
+distribution is unchanged, but :func:`~hypothesis.strategies.dates`,
+:func:`~hypothesis.strategies.datetimes`, and
+:func:`~hypothesis.strategies.times` are now much more efficient under
+symbolic-execution backends such as :pypi:`crosshair-tool`, which can now
+solve for a specific date directly rather than enumerating candidates
+(:issue:`4759`).
+
 .. _v6.155.1:
 
 --------------------

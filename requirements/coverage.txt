@@ -6,19 +6,19 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-black==26.5.0
+black==26.5.1
     # via -r requirements/coverage.in
-click==8.3.3
+click==8.4.1
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.14.0
+coverage[toml]==7.14.1
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.35.1
+fakeredis==2.36.1
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -28,7 +28,7 @@ libcst==1.8.6
     # via -r requirements/coverage.in
 mypy-extensions==1.1.0
     # via black
-numpy==2.4.5
+numpy==2.4.6
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -42,7 +42,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via black
 pluggy==1.6.0
     # via
@@ -54,7 +54,7 @@ pyarrow==24.0.0
     # via -r requirements/coverage.in
 pygments==2.20.0
     # via pytest
-pytest==9.0.3
+pytest==9.1.0
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -74,7 +74,7 @@ pytz==2026.2
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
-redis==7.4.0
+redis==8.0.0
     # via fakeredis
 six==1.17.0
     # via python-dateutil
@@ -82,7 +82,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==5.2.0
+syrupy==5.3.2
     # via -r requirements/test.in
 typing-extensions==4.15.0
     # via -r requirements/coverage.in

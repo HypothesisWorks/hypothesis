@@ -64,6 +64,8 @@ def fn_ktest(*fnkwargs):
     (st.dates, {"min_value": "fish"}),
     (st.dates, {"max_value": "fish"}),
     (st.dates, {"min_value": date(2017, 8, 22), "max_value": date(2017, 8, 21)}),
+    (st.dates, {"min_value": datetime(2017, 8, 21)}),
+    (st.dates, {"max_value": datetime(2017, 8, 21)}),
     (st.datetimes, {"min_value": "fish"}),
     (st.datetimes, {"max_value": "fish"}),
     (st.datetimes, {"allow_imaginary": 0}),
