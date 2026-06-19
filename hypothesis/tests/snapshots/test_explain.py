@@ -182,8 +182,3 @@ def test_integers_equal(n1, n2):
 @snapshot_given(st.integers(), st.integers())
 def test_integers_less(n1, n2):
     assert n1 < n2
-
-
-@snapshot_given(st.integers(), st.integers())
-def test_integers_greater(n1, n2):
-    assert n1 < n2

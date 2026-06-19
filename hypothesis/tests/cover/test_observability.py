@@ -176,6 +176,28 @@ def test_failure_includes_notes():
     assert test_cases[-1].representation == expected
 
 
+def test_failure_includes_labels():
+    @given(st.data())
+    @settings(database=None)
+    def test_fails(data):
+        data.draw(st.integers(0, 10), label="a")
+        raise AssertionError
+
+    with capture_observations(), pytest.raises(AssertionError) as err:
+        test_fails()
+
+    notes = "\n".join(err.value.__notes__)
+    expected = textwrap.dedent("""
+        Falsifying example: test_fails(
+            data=DataObject(draws=[
+                # a
+                0,
+            ]),
+        )
+    """).strip()
+    assert notes == expected, notes
+
+
 def test_normal_representation_includes_draws():
     @given(st.data())
     def f(data):

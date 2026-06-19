@@ -343,11 +343,6 @@ def run_test_for_falsifying_example(test_fn):
     return "\n".join(err.value.__notes__).strip()
 
 
-# --- Snapshot-test helpers -------------------------------------------
-#
-# These support the syrupy-based snapshot tests under tests/snapshots/.
-
-
 SNAPSHOT_SETTINGS = settings(
     phases=[Phase.generate, Phase.shrink],
     print_blob=False,
@@ -368,10 +363,7 @@ def snapshot_given(*strategies, **kwarg_strategies):
     a Hypothesis property test and asserts that the captured
     falsifying-example output equals the ``snapshot`` fixture value.
 
-    The body is expected to ``raise`` (e.g. ``AssertionError``) so the test
-    has a falsifying example to report. ``EXPLAIN_SETTINGS`` is used so
-    ``# or any other generated value``-style annotations participate in
-    the snapshot.
+    The body is expected to fail so the test has a falsifying example to report.
     """
 
     def decorator(body):

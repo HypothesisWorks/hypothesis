@@ -35,7 +35,6 @@ def test_prints_on_failure():
     with raises(ValueError) as err:
         test()
     notes = "\n".join(err.value.__notes__)
-    # Both drawn values appear in the falsifying example's draws=[...].
     assert "[0, 0]" in notes
     assert "DataObject(draws=[" in notes
 

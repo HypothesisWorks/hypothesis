@@ -478,8 +478,6 @@ def test_realization_with_verbosity_draw(verbosity):
 
         with capture_out() as out:
             test_function()
-        # Symbolic draws are rendered as ``<symbolic>`` inside the
-        # ``DataObject(draws=[...])`` rendering on the Trying/Falsifying line.
         assert "<symbolic>" in out.getvalue()
 
 
