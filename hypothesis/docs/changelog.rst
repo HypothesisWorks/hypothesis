@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.6:
+
+--------------------
+6.155.6 - 2026-06-19
+--------------------
+
+This patch replaces some internal ``%``-style string formatting with f-strings. There is no user-visible change.
+
 .. _v6.155.5:
 
 --------------------
