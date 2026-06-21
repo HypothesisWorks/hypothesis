@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-anyio==4.13.0
+anyio==4.14.0
     # via starlette
 attrs==26.1.0
     # via
@@ -22,7 +22,7 @@ click==8.4.1
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.14.1
+coverage[toml]==7.14.2
     # via
     #   hypofuzz
     #   pytest-cov
@@ -30,7 +30,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.36.1
+fakeredis==2.36.2
     # via -r requirements/coverage.in
 h11==0.16.0
     # via
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.155.2
+hypothesis[cli,watchdog]==6.155.6
     # via hypofuzz
 idna==3.18
     # via
@@ -100,7 +100,7 @@ pygments==2.20.0
     # via
     #   pytest
     #   rich
-pytest==9.1.0
+pytest==9.1.1
     # via
     #   -r requirements/test.in
     #   hypofuzz

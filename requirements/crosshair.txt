@@ -13,13 +13,13 @@ cattrs==26.1.0
     # via
     #   lsprotocol
     #   pygls
-crosshair-tool==0.0.106
+crosshair-tool==0.0.107
     # via
     #   -r requirements/crosshair.in
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.155.2
+hypothesis==6.155.6
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.28
     # via -r requirements/crosshair.in
@@ -47,7 +47,7 @@ pygls==2.1.1
     # via crosshair-tool
 pygments==2.20.0
     # via pytest
-pytest==9.1.0
+pytest==9.1.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
