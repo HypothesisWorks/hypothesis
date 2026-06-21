@@ -219,7 +219,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     # This used to simply be `getattr(strategy, cache_key)`. That relied on the invariant
     # that our loop above has set `strategy.cached_* = v` on `strategy` if we've reached
     # here. However, under threading, this is not necessarily true. If a concurrent thread
-    # sets `strategy.force_* = v` inbetween the two places we check for `force_*`, we
+    # sets `strategy.force_* = v` in between the two places we check for `force_*`, we
     # will not set `strategy.cached_*`.
     #
     # There are several places where we might do this. unwrap_strategies sets
