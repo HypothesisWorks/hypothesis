@@ -8,7 +8,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.13.0
+anyio==4.14.0
     # via
     #   starlette
     #   watchfiles
@@ -38,7 +38,7 @@ build==1.5.0
     #   pip-tools
 cachetools==7.1.4
     # via tox
-certifi==2026.5.20
+certifi==2026.6.17
     # via requests
 cffi==2.0.0
     # via cryptography
@@ -57,7 +57,7 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.14.1
+coverage==7.14.2
     # via -r requirements/tools.in
 cryptography==49.0.0
     # via
@@ -231,7 +231,7 @@ pyproject-hooks==1.2.0
     #   pip-tools
 pyright==1.1.410
     # via -r requirements/tools.in
-pytest==9.1.0
+pytest==9.1.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
@@ -275,7 +275,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.17
+ruff==0.15.18
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -372,7 +372,7 @@ urllib3==2.7.0
     #   twine
 uvicorn==0.49.0
     # via sphinx-autobuild
-virtualenv==21.5.0
+virtualenv==21.5.1
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
