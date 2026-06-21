@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.7:
+
+--------------------
+6.155.7 - 2026-06-21
+--------------------
+
+This patch fixes a thread-safety bug where concurrent use of the same strategy instance could error in rare cases. (:issue:`4475`).
+
 .. _v6.155.6:
 
 --------------------
