@@ -391,6 +391,9 @@ def update_python_versions():
             continue
         if impl == "cpython":
             key = f"{major_minor}{'t' if ft else ''}"
+            # see https://github.com/HypothesisWorks/hypothesis/pull/4772#issuecomment-4760983630
+            if key == "3.13t":
+                continue
             candidate = f"{ver}{'+freethreaded' if ft else ''}"
         else:
             assert impl == "pypy"
@@ -662,7 +665,6 @@ PYTHONS = {
     "3.11": "3.11.15",
     "3.12": "3.12.13",
     "3.13": "3.13.14",
-    "3.13t": "3.13.14+freethreaded",
     "3.14": "3.14.6",
     "3.14t": "3.14.6+freethreaded",
     "3.15": "3.15.0b2",
