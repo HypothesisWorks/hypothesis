@@ -8,6 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis._native import __version__
+from hypothesis._native import __version__ as __version__
 
 __version_info__ = tuple(int(p) for p in __version__.split("."))
