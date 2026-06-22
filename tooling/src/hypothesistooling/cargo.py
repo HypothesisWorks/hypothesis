@@ -8,6 +8,17 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis._native import __version__
+import re
+from pathlib import Path
 
-__version_info__ = tuple(int(p) for p in __version__.split("."))
+
+def write_version(cargo_toml_path: Path, new_version: str) -> None:
+    content = cargo_toml_path.read_text(encoding="utf-8")
+    content = re.sub(
+        r'^version = "[^"]*"$',
+        f'version = "{new_version}"',
+        content,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    cargo_toml_path.write_text(content, encoding="utf-8")

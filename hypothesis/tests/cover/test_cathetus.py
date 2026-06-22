@@ -15,7 +15,7 @@ from sys import float_info
 import pytest
 
 from hypothesis import assume, given
-from hypothesis.internal.cathetus import cathetus
+from hypothesis._native.internal.cathetus import cathetus
 from hypothesis.strategies import floats
 
 

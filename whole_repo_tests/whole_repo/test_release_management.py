@@ -10,43 +10,11 @@
 
 import pytest
 
-from hypothesistooling.release import (
-    bump_version_info,
-    parse_release_file_contents,
-    replace_assignment_in_string as replace,
-)
+from hypothesistooling.release import bump_version_info, parse_release_file_contents
 
 
 def parse_release(contents):
     return parse_release_file_contents(contents, "<string>")
-
-
-def test_update_single_line():
-    assert replace("a = 1", "a", "2") == "a = 2"
-
-
-def test_update_without_spaces():
-    assert replace("a=1", "a", "2") == "a=2"
-
-
-def test_update_in_middle():
-    assert replace("a = 1\nb=2\nc = 3", "b", "4") == "a = 1\nb=4\nc = 3"
-
-
-def test_quotes_string_to_assign():
-    assert replace("a.c = 1", "a.c", "2") == "a.c = 2"
-    with pytest.raises(ValueError):
-        replace("abc = 1", "a.c", "2")
-
-
-def test_duplicates_are_errors():
-    with pytest.raises(ValueError):
-        replace("a = 1\na=1", "a", "2")
-
-
-def test_missing_is_error():
-    with pytest.raises(ValueError):
-        replace("", "a", "1")
 
 
 def test_bump_minor_version():

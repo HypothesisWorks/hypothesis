@@ -8,6 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis._native import __version__
+import sys
+from pathlib import Path
 
-__version_info__ = tuple(int(p) for p in __version__.split("."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from hypothesistooling.cargo import write_version
+
+if len(sys.argv) != 2:
+    sys.exit(f"usage: {sys.argv[0]} <new_version>")
+
+repo_root = Path(__file__).resolve().parent.parent.parent
+write_version(repo_root / "hypothesis" / "rust" / "Cargo.toml", sys.argv[1])

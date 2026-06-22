@@ -71,6 +71,8 @@ make changes and install the changed version) you can do this with:
   # You don't need to run the tests, but here's the command:
   pytest hypothesis/tests/cover/
 
+Installing from source requires a Rust toolchain to be installed on your system. You can install it here: https://rust-lang.org/tools/install/.
+
 You may wish to do all of this in a
 `virtualenv <https://docs.python.org/3/library/venv.html>`_. For example:
 
