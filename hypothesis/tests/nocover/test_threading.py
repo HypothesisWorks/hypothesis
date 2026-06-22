@@ -200,6 +200,22 @@ def test_deadline_exceeded_can_be_raised_after_threads():
         slow_test()
 
 
+def test_recursive_property_concurrent():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/4475.
+    # see comment in recursive_property.
+    counter = 0
+    for i in range(10):
+        leaf = st.integers(min_value=i)
+        targets = (leaf, st.lists(leaf))
+
+        def validate(targets=targets):
+            nonlocal counter
+            counter += 1
+            targets[counter % 2].validate()
+
+        run_concurrently(validate, n=8)
+
+
 def test_one_of_branches_lock():
     class SlowBranchesStrategy(SearchStrategy):
         @property

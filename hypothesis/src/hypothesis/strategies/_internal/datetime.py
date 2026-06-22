@@ -320,7 +320,6 @@ class DateStrategy(SearchStrategy):
             }[condition.func]
             lo = max(lo, self.min_value)
             hi = min(hi, self.max_value)
-            print(lo, hi)
             if hi < lo:
                 return nothing()
             if lo <= self.min_value and self.max_value <= hi:
@@ -342,6 +341,12 @@ def dates(
     """
     check_type(dt.date, min_value, "min_value")
     check_type(dt.date, max_value, "max_value")
+    # datetime is a subclass of date, so check_type() accepts it - but a datetime
+    # bound is almost certainly a mistake, and breaks our drawing logic downstream.
+    if isinstance(min_value, dt.datetime):
+        raise InvalidArgument(f"{min_value=} is a datetime, but expected a date")
+    if isinstance(max_value, dt.datetime):
+        raise InvalidArgument(f"{max_value=} is a datetime, but expected a date")
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if min_value == max_value:
         return just(min_value)

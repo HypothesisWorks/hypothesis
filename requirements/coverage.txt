@@ -12,13 +12,13 @@ click==8.4.1
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.14.1
+coverage[toml]==7.14.2
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.36.0
+fakeredis==2.36.2
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -54,7 +54,7 @@ pyarrow==24.0.0
     # via -r requirements/coverage.in
 pygments==2.20.0
     # via pytest
-pytest==9.0.3
+pytest==9.1.1
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -82,7 +82,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==5.3.1
+syrupy==5.3.2
     # via -r requirements/test.in
 typing-extensions==4.15.0
     # via -r requirements/coverage.in

@@ -77,7 +77,7 @@ class Shrinker:
 
     def debug(self, *args: object) -> None:
         if self.debugging_enabled:
-            print("DEBUG", self, *args)
+            print("DEBUG", self, *args)  # noqa: T201
 
     @classmethod
     def shrink(cls, initial, predicate, **kwargs):
