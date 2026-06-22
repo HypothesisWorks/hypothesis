@@ -14,7 +14,7 @@ import textwrap
 
 import pytest
 
-from hypothesistooling.projects.hypothesis import PYTHON_SRC
+from hypothesistooling.release import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (

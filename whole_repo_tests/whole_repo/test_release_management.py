@@ -10,12 +10,10 @@
 
 import pytest
 
-from hypothesistooling.releasemanagement import (
+from hypothesistooling.release import (
     bump_version_info,
     parse_release_file_contents,
-    release_date_string,
     replace_assignment_in_string as replace,
-    update_markdown_changelog,
 )
 
 
@@ -67,24 +65,6 @@ def test_invalid_release():
 
     with pytest.raises(ValueError):
         parse_release("")
-
-
-TEST_CHANGELOG = f"""
-# A test project 1.2.3 ({release_date_string()})
-
-some stuff happened
-
-# some previous log entry
-"""
-
-
-def test_update_changelog(tmp_path):
-    path = tmp_path / "CHANGELOG.md"
-    path.write_text("# some previous log entry\n", encoding="utf-8")
-    update_markdown_changelog(
-        str(path), "A test project", "1.2.3", "some stuff happened"
-    )
-    assert path.read_text(encoding="utf-8").strip() == TEST_CHANGELOG.strip()
 
 
 def test_changelog_parsing_strips_trailing_whitespace():

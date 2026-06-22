@@ -12,31 +12,35 @@ import os
 
 import pytest
 
-import hypothesistooling as tools
-from hypothesistooling import __main__ as main, releasemanagement as rm
-
-
-@pytest.mark.parametrize(
-    "project", [p for p in tools.all_projects() if p.has_release()]
+from hypothesistooling import __main__ as main
+from hypothesistooling.git import ROOT, git, has_uncommitted_changes
+from hypothesistooling.release import (
+    CHANGELOG_FILE,
+    HYPOTHESIS,
+    current_version,
+    has_release,
+    release_date_string,
 )
-def test_release_file_exists_and_is_valid(project, monkeypatch):
-    if not tools.has_uncommitted_changes(project.BASE_DIR):
+
+
+@pytest.mark.skipif(not has_release(), reason="no release file")
+def test_release_file_exists_and_is_valid(monkeypatch):
+    if not has_uncommitted_changes(HYPOTHESIS):
         pytest.xfail("Cannot run release process with uncommitted changes")
 
-    monkeypatch.setattr(tools, "create_tag", lambda *args, **kwargs: None)
-    monkeypatch.setattr(tools, "push_tag", lambda name: None)
-    monkeypatch.setattr(rm, "commit_pending_release", lambda p: None)
-    monkeypatch.setattr(project, "upload_distribution", lambda: None)
-    monkeypatch.setattr(project, "IN_TEST", True, raising=False)
+    monkeypatch.setattr(main, "create_tag", lambda *args, **kwargs: None)
+    monkeypatch.setattr(main, "push_tag", lambda name: None)
+    monkeypatch.setattr(main, "commit_pending_release", lambda: None)
+    monkeypatch.setattr(main, "upload_distribution", lambda: None)
 
     try:
-        main.do_release(project)
+        main.do_release()
 
-        with open(project.CHANGELOG_FILE, encoding="utf-8") as i:
+        with open(CHANGELOG_FILE, encoding="utf-8") as i:
             changelog = i.read()
-        assert project.current_version() in changelog
-        assert rm.release_date_string() in changelog
+        assert current_version() in changelog
+        assert release_date_string() in changelog
 
     finally:
-        tools.git("checkout", project.BASE_DIR)
-        os.chdir(tools.ROOT)
+        git("checkout", HYPOTHESIS)
+        os.chdir(ROOT)
