@@ -823,8 +823,11 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
+    # An editable install builds the native `hypothesis._native` extension into
+    # src/hypothesis/, which the docs build needs: conf.py puts src/ first on
+    # sys.path, so a regular (site-packages) install leaves _native unimportable.
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
     )
 
     if not args:

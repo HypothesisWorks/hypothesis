@@ -15,11 +15,16 @@ build:
    os: ubuntu-22.04
    tools:
       python: "3.14"
+      rust: "latest"
+   jobs:
+      # docs/conf.py inserts hypothesis/src on sys.path so the docs reflect the
+      # local checkout, but the compiled `hypothesis._native` extension only
+      # lives in site-packages after a regular install. An editable install
+      # drops it into src/hypothesis/ so the source-tree import resolves.
+      post_install:
+         - python -m pip install -e ./hypothesis[all]
 python:
    install:
       - requirements: requirements/tools.txt
-      - path: hypothesis/
-        extra_requirements:
-           - all
 sphinx:
    configuration: hypothesis/docs/conf.py
