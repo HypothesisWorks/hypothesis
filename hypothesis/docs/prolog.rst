@@ -93,6 +93,7 @@
 .. |st.sets| replace:: :func:`~hypothesis.strategies.sets`
 .. |st.dictionaries| replace:: :func:`~hypothesis.strategies.dictionaries`
 .. |st.fixed_dictionaries| replace:: :func:`~hypothesis.strategies.fixed_dictionaries`
+.. |st.dates| replace:: :func:`~hypothesis.strategies.dates`
 .. |st.datetimes| replace:: :func:`~hypothesis.strategies.datetimes`
 .. |st.builds| replace:: :func:`~hypothesis.strategies.builds`
 .. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`

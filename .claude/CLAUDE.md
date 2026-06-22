@@ -33,7 +33,7 @@ When creating a PR that changes `hypothesis/src/`:
 3. **Imitate the style in `changelog.rst`** for consistency
 4. Follow all changelog instructions in `CONTRIBUTING.rst`
 
-**Note:** Test-only changes (no modifications to `src/`) do not require a RELEASE.rst file.
+**Note:** A RELEASE.rst is required if and only if the PR modifies files under `hypothesis/src/`. PRs touching only tests, docs (including `hypothesis/docs/`), the website, tooling, or CI config should **not** include a RELEASE.rst.
 
 ## Before Committing
 

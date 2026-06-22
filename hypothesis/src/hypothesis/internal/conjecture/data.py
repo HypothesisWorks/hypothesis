@@ -717,10 +717,9 @@ class ConjectureData:
         self.start_span(TOP_LABEL)
 
     def __repr__(self) -> str:
-        return "ConjectureData(%s, %d choices%s)" % (
-            self.status.name,
-            len(self.nodes),
-            ", frozen" if self.frozen else "",
+        return (
+            f"ConjectureData({self.status.name}, {len(self.nodes)} "
+            f"choices{', frozen' if self.frozen else ''})"
         )
 
     @property

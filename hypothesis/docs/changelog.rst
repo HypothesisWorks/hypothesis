@@ -18,6 +18,56 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.155.7:
+
+--------------------
+6.155.7 - 2026-06-21
+--------------------
+
+This patch fixes a thread-safety bug where concurrent use of the same strategy instance could error in rare cases. (:issue:`4475`).
+
+.. _v6.155.6:
+
+--------------------
+6.155.6 - 2026-06-19
+--------------------
+
+This patch replaces some internal ``%``-style string formatting with f-strings. There is no user-visible change.
+
+.. _v6.155.5:
+
+--------------------
+6.155.5 - 2026-06-18
+--------------------
+
+:func:`~hypothesis.strategies.dates` now raises ``InvalidArgument`` if a
+:class:`~python:datetime.datetime` is passed as ``min_value`` or ``max_value``.
+Because ``datetime`` is a subclass of :class:`~python:datetime.date`, such
+bounds were previously accepted and then failed with a confusing ``TypeError``
+while generating examples.
+
+.. _v6.155.4:
+
+--------------------
+6.155.4 - 2026-06-18
+--------------------
+
+This patch removes a stray ``print()`` which fired whenever a |st.dates| filter was rewritten.
+
+.. _v6.155.3:
+
+--------------------
+6.155.3 - 2026-06-16
+--------------------
+
+When using an alternative backend (such as :pypi:`hypothesis-crosshair`),
+Hypothesis no longer emits a ``test_case`` observation for an iteration that the
+backend aborts via ``BackendCannotProceed`` *before the test body runs*.
+Previously such an iteration -- for example when the crosshair backend has
+exhausted its search paths -- could surface as a spurious, draw-less ``passed``
+observation with an empty representation, even though the engine already
+discards the iteration entirely.
+
 .. _v6.155.2:
 
 --------------------

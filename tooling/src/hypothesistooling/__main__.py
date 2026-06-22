@@ -416,6 +416,9 @@ def update_python_versions():
             continue
         if impl == "cpython":
             key = f"{major_minor}{'t' if ft else ''}"
+            # see https://github.com/HypothesisWorks/hypothesis/pull/4772#issuecomment-4760983630
+            if key == "3.13t":
+                continue
             candidate = f"{ver}{'+freethreaded' if ft else ''}"
         else:
             assert impl == "pypy"
@@ -447,8 +450,8 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.14",
-    "6.0": "6.0.5",
+    "5.2": "5.2.15",
+    "6.0": "6.0.6",
 }
 
 
@@ -686,12 +689,11 @@ PYTHONS = {
     "3.10": "3.10.20",
     "3.11": "3.11.15",
     "3.12": "3.12.13",
-    "3.13": "3.13.13",
-    "3.13t": "3.13.13+freethreaded",
-    "3.14": "3.14.5",
-    "3.14t": "3.14.5+freethreaded",
-    "3.15": "3.15.0b1",
-    "3.15t": "3.15.0b1+freethreaded",
+    "3.13": "3.13.14",
+    "3.14": "3.14.6",
+    "3.14t": "3.14.6+freethreaded",
+    "3.15": "3.15.0b2",
+    "3.15t": "3.15.0b2+freethreaded",
     "pypy3.10": "pypy3.10-3.10.16",
     "pypy3.11": "pypy3.11-3.11.15",
 }
@@ -794,11 +796,6 @@ standard_tox_task("snapshots")
 @task()
 def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
-
-
-@task(if_changed=(PYTHON_SRC, os.path.join(HYPOTHESIS, "examples")))
-def check_examples3(*args):
-    run_tox("examples3", PYTHONS[ci_version], *args)
 
 
 @task()
