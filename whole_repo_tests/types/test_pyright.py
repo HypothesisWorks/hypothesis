@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-from hypothesistooling.projects.hypothesis import HYPOTHESIS, PYTHON_SRC
+from hypothesistooling.release import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (

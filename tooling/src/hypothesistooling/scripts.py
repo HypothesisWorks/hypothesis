@@ -14,7 +14,7 @@ import shlex
 import subprocess
 import sys
 
-from hypothesistooling import ROOT
+from hypothesistooling.git import ROOT
 
 
 def print_command(command, args):

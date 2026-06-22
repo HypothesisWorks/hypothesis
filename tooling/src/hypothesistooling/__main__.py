@@ -20,14 +20,40 @@ from textwrap import indent
 import requests
 from coverage.config import CoverageConfig
 
-import hypothesistooling as tools
-import hypothesistooling.projects.hypothesis as hp
-from hypothesistooling import installers as install, releasemanagement as rm
+from hypothesistooling import installers as install
+from hypothesistooling.git import (
+    IS_PULL_REQUEST,
+    REPO_TESTS,
+    ROOT,
+    all_files,
+    configure_git,
+    create_tag,
+    has_changes,
+    hash_for_name,
+    is_ancestor,
+    modified_files,
+    push_tag,
+)
+from hypothesistooling.release import (
+    DOMAINS_LIST,
+    HYPOTHESIS,
+    PYTHON_SRC,
+    PYTHON_TESTS,
+    RELEASE_FILE,
+    build_distribution,
+    build_docs,
+    commit_pending_release,
+    get_autoupdate_message,
+    has_release,
+    tag_name,
+    update_changelog_and_version,
+    upload_distribution,
+)
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
 BUILD_FILES = tuple(
-    os.path.join(tools.ROOT, f)
+    os.path.join(ROOT, f)
     for f in ["tooling", "requirements", ".github", "hypothesis/tox.ini"]
 )
 TODAY = date.today().isoformat()
@@ -39,8 +65,8 @@ def task(if_changed=()):
 
     def accept(fn):
         def wrapped(*args, **kwargs):
-            if if_changed and tools.IS_PULL_REQUEST:
-                if not tools.has_changes(if_changed + BUILD_FILES):
+            if if_changed and IS_PULL_REQUEST:
+                if not has_changes(if_changed + BUILD_FILES):
                     changed = ", ".join(map(str, if_changed))
                     print(f"Skipping task due to no changes in {changed}")
                     return
@@ -79,7 +105,7 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    codespell(*(p for p in tools.all_files() if not p.name.endswith("by-domain.txt")))
+    codespell(*(p for p in all_files() if not p.name.endswith("by-domain.txt")))
 
     failed = False
 
@@ -110,43 +136,43 @@ def lint():
         sys.exit(1)
 
 
-def do_release(package):
-    if not package.has_release():
-        print(f"No release for {package.__name__}")
+def do_release():
+    if not has_release():
+        print("No release")
         return
 
-    os.chdir(package.BASE_DIR)
+    os.chdir(HYPOTHESIS)
 
     print("Updating changelog and version")
-    package.update_changelog_and_version()
+    update_changelog_and_version()
 
     print("Committing changes")
-    rm.commit_pending_release(package)
+    commit_pending_release()
 
     print("Building distribution")
-    package.build_distribution()
+    build_distribution()
 
     print("Looks good to release!")
 
-    tag_name = package.tag_name()
+    tag = tag_name()
 
-    print(f"Creating tag {tag_name}")
-    tools.create_tag(tag_name)
-    tools.push_tag(tag_name)
+    print(f"Creating tag {tag}")
+    create_tag(tag)
+    push_tag(tag)
 
     print("Uploading distribution")
-    package.upload_distribution()
+    upload_distribution()
 
 
 @task()
 def deploy():
-    HEAD = tools.hash_for_name("HEAD")
-    MASTER = tools.hash_for_name("origin/master")
+    HEAD = hash_for_name("HEAD")
+    MASTER = hash_for_name("origin/master")
 
     print("Current head:  ", HEAD)
     print("Current master:", MASTER)
 
-    if not tools.is_ancestor(HEAD, MASTER):
+    if not is_ancestor(HEAD, MASTER):
         print("Not deploying due to not being on master")
         sys.exit(0)
 
@@ -154,10 +180,9 @@ def deploy():
         print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
-    tools.configure_git()
+    configure_git()
 
-    for project in tools.all_projects():
-        do_release(project)
+    do_release()
 
     sys.exit(0)
 
@@ -204,7 +229,7 @@ def remove_consecutive_newlines_in_rst(path: Path):
 
 @task()
 def format(*, format_all=False):
-    changed = tools.modified_files()
+    changed = modified_files()
 
     format_all = format_all or os.environ.get("FORMAT_ALL", "").lower() == "true"
     if "requirements/tools.txt" in changed:
@@ -212,7 +237,7 @@ def format(*, format_all=False):
         # logic, so we need to rerun formatters.
         format_all = True
 
-    paths = tools.all_files() if format_all else changed
+    paths = all_files() if format_all else changed
 
     doc_paths_to_format = [p for p in sorted(paths) if p.suffix in {".rst", ".md"}]
     paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
@@ -226,7 +251,7 @@ def format(*, format_all=False):
         raise Exception(msg)
 
     config = CoverageConfig()
-    config.from_file(os.path.join(hp.BASE_DIR, ".coveragerc"), warn=warn, our_file=True)
+    config.from_file(os.path.join(HYPOTHESIS, ".coveragerc"), warn=warn, our_file=True)
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
     last_header_line = HEADER.splitlines()[-1].rstrip()
@@ -279,7 +304,7 @@ def check_format():
     format(format_all=bool(os.environ.get("CI")))
     n = max(map(len, VALID_STARTS))
     bad = False
-    for p in tools.all_files():
+    for p in all_files():
         if p.suffix != ".py":
             continue
         with open(p, encoding="utf-8") as fp:
@@ -337,7 +362,7 @@ def compile_requirements(*, upgrade=False):
             "hypothesis/pyproject.toml",
             "--output-file",
             str(out_file),
-            cwd=tools.ROOT,
+            cwd=ROOT,
             env={
                 "CUSTOM_COMPILE_COMMAND": "./build.sh upgrade-requirements",
                 **os.environ,
@@ -349,7 +374,7 @@ def compile_requirements(*, upgrade=False):
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
                 assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
-        out_file.write_text(out_pkgs.replace(f"{tools.ROOT}/", ""))
+        out_file.write_text(out_pkgs.replace(f"{ROOT}/", ""))
 
 
 def update_python_versions():
@@ -415,7 +440,7 @@ def update_python_versions():
     pip_tool("shed", str(thisfile))
 
     # Automatically sync ci_version with the version in build.sh
-    build_sh = tools.ROOT / "build.sh"
+    build_sh = ROOT / "build.sh"
     sh_before = build_sh.read_text(encoding="utf-8")
     sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version], sh_before)
     if sh_before != sh_after:
@@ -450,7 +475,7 @@ def update_django_versions():
     pip_tool("shed", str(thisfile))
 
     # Update the minimum version in pyproject.toml
-    pyproject_toml = hp.BASE_DIR / "pyproject.toml"
+    pyproject_toml = HYPOTHESIS / "pyproject.toml"
     content = re.sub(
         r"django>=\d+\.\d+",
         f"django>={min(versions, key=float)}",
@@ -459,7 +484,7 @@ def update_django_versions():
     pyproject_toml.write_text(content, encoding="utf-8")
 
     # Automatically sync ci_version with the version in build.sh
-    tox_ini = hp.BASE_DIR / "tox.ini"
+    tox_ini = HYPOTHESIS / "tox.ini"
     content = tox_ini.read_text(encoding="utf-8")
     print(versions)
     for short, full in versions.items():
@@ -493,15 +518,15 @@ def update_pyodide_versions():
     # Find the latest stable release for the Pyodide runtime/xbuildenv that is compatible
     # with the pyodide-build version we found
     stable_releases = [
-        release
-        for release in cross_build_environments_data["releases"].values()
-        if re.fullmatch(vers_re, release["version"])
+        rel
+        for rel in cross_build_environments_data["releases"].values()
+        if re.fullmatch(vers_re, rel["version"])
     ]
 
     compatible_releases = []
-    for release in stable_releases:  # sufficiently large values
-        min_build_version = release.get("min_pyodide_build_version", "0.0.0")
-        max_build_version = release.get("max_pyodide_build_version", "999.999.999")
+    for rel in stable_releases:  # sufficiently large values
+        min_build_version = rel.get("min_pyodide_build_version", "0.0.0")
+        max_build_version = rel.get("max_pyodide_build_version", "999.999.999")
 
         # Perform version comparisons to avoid getting an incompatible pyodide-build version
         # with the Pyodide runtime
@@ -510,7 +535,7 @@ def update_pyodide_versions():
             <= version_tuple(pyodide_build_version)
             <= version_tuple(max_build_version)
         ):
-            compatible_releases.append(release)
+            compatible_releases.append(rel)
 
     if not compatible_releases:
         raise RuntimeError(
@@ -519,13 +544,13 @@ def update_pyodide_versions():
 
     pyodide_release = max(
         compatible_releases,
-        key=lambda release: version_tuple(release["version"]),
+        key=lambda rel: version_tuple(rel["version"]),
     )
 
     pyodide_version = pyodide_release["version"]
     python_version = pyodide_release["python_version"]
 
-    ci_file = tools.ROOT / ".github/workflows/main.yml"
+    ci_file = ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
     for name, var in [
         ("PYODIDE", pyodide_version),
@@ -537,7 +562,7 @@ def update_pyodide_versions():
 
 
 def update_vendored_files():
-    vendor = pathlib.Path(hp.PYTHON_SRC) / "hypothesis" / "vendor"
+    vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
     # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
     url = "http://data.iana.org/TLD/tlds-alpha-by-domain.txt"
@@ -550,7 +575,7 @@ def update_vendored_files():
     # Always require the most recent version of tzdata - we don't need to worry about
     # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
     # Our crosshair extra is research-grade, so we require latest versions there too.
-    pyproject_toml = pathlib.Path(hp.BASE_DIR, "pyproject.toml")
+    pyproject_toml = pathlib.Path(HYPOTHESIS, "pyproject.toml")
     new = pyproject_toml.read_text(encoding="utf-8")
     for pkgname in ("tzdata", "crosshair-tool", "hypothesis-crosshair"):
         pkg_url = f"https://pypi.org/pypi/{pkgname}/json"
@@ -573,17 +598,17 @@ def upgrade_requirements():
     # we want those changes in this PR rather than leaking into a later one.
     subprocess.call(
         ["./build.sh", "format"],
-        cwd=tools.ROOT,
+        cwd=ROOT,
         env={**os.environ, "FORMAT_ALL": "true"},
     )  # exits 1 if changed
-    if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
-        msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
-        with open(hp.RELEASE_FILE, mode="w", encoding="utf-8") as f:
+    if has_diff(PYTHON_SRC) and not os.path.isfile(RELEASE_FILE):
+        msg = get_autoupdate_message(domainlist_changed=has_diff(DOMAINS_LIST))
+        with open(RELEASE_FILE, mode="w", encoding="utf-8") as f:
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
-    subprocess.call(["git", "add", "."], cwd=tools.ROOT)
+    subprocess.call(["git", "add", "."], cwd=ROOT)
 
 
 @task()
@@ -591,29 +616,29 @@ def check_requirements():
     compile_requirements(upgrade=False)
 
 
-@task(if_changed=hp.HYPOTHESIS)
+@task(if_changed=HYPOTHESIS)
 def documentation():
     try:
-        if hp.has_release():
-            hp.update_changelog_and_version()
-        hp.build_docs()
+        if has_release():
+            update_changelog_and_version()
+        build_docs()
     finally:
         subprocess.check_call(
             ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
-            cwd=hp.HYPOTHESIS,
+            cwd=HYPOTHESIS,
         )
 
 
 @task()
 def website():
-    subprocess.call([sys.executable, "-m", "pelican"], cwd=tools.ROOT / "website")
+    subprocess.call([sys.executable, "-m", "pelican"], cwd=ROOT / "website")
 
 
 @task()
 def live_website():
     subprocess.call(
         [sys.executable, "-m", "pelican", "--autoreload", "--listen"],
-        cwd=tools.ROOT / "website",
+        cwd=ROOT / "website",
     )
 
 
@@ -626,7 +651,7 @@ def live_docs():
         "--watch",
         "src",
         "--open-browser",
-        cwd=hp.HYPOTHESIS,
+        cwd=HYPOTHESIS,
     )
 
 
@@ -654,7 +679,7 @@ def run_tox(task, version, *args):
         env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS)
+    pip_tool("tox", "-e", task, *args, env=env, cwd=HYPOTHESIS)
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
@@ -676,11 +701,11 @@ ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedo
 
 python_tests = task(
     if_changed=(
-        hp.PYTHON_SRC,
-        hp.PYTHON_TESTS,
-        hp.HYPOTHESIS / "pyproject.toml",
-        tools.ROOT / "tooling",
-        hp.HYPOTHESIS / "scripts",
+        PYTHON_SRC,
+        PYTHON_TESTS,
+        HYPOTHESIS / "pyproject.toml",
+        ROOT / "tooling",
+        HYPOTHESIS / "scripts",
     )
 )
 
@@ -777,11 +802,11 @@ def check_quality(*args):
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS / "whole_repo"]
+        args = ["-n", "auto", REPO_TESTS / "whole_repo"]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -789,11 +814,11 @@ def check_whole_repo_tests(*args):
 def check_documentation(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS / "documentation"]
+        args = ["-n", "auto", REPO_TESTS / "documentation"]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -801,11 +826,11 @@ def check_documentation(*args):
 def check_types(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
     )
 
     if not args:
-        args = ["-n", "auto", tools.REPO_TESTS / "types"]
+        args = ["-n", "auto", REPO_TESTS / "types"]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -813,12 +838,12 @@ def check_types(*args):
 def check_types_api(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
     )
 
     if not args:
-        ignore = ["--ignore", tools.REPO_TESTS / "types/test_hypothesis.py"]
-        args = ["-n", "auto", tools.REPO_TESTS / "types"] + ignore
+        ignore = ["--ignore", REPO_TESTS / "types/test_hypothesis.py"]
+        args = ["-n", "auto", REPO_TESTS / "types"] + ignore
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
@@ -826,12 +851,12 @@ def check_types_api(*args):
 def check_types_hypothesis(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
     )
 
     if not args:
         testcase = "types/test_hypothesis.py"
-        args = ["-n", "auto", tools.REPO_TESTS / testcase]
+        args = ["-n", "auto", REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 

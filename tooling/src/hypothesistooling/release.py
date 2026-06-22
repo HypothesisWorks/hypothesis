@@ -14,19 +14,17 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 import requests
 import tomli
 
-import hypothesistooling as tools
-from hypothesistooling import releasemanagement as rm
+from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
+from hypothesistooling.scripts import pip_tool
 
 PACKAGE_NAME = "hypothesis"
 
-HYPOTHESIS = tools.ROOT / PACKAGE_NAME
-
-
-BASE_DIR = HYPOTHESIS
+HYPOTHESIS = ROOT / PACKAGE_NAME
 
 PYTHON_SRC = HYPOTHESIS / "src"
 PYTHON_TESTS = HYPOTHESIS / "tests"
@@ -50,6 +48,124 @@ assert __version__ is not None
 assert __version_info__ is not None
 
 
+__RELEASE_DATE_STRING = None
+
+
+def release_date_string():
+    """Returns a date string that represents what should be considered "today"
+    for the purposes of releasing, and ensure that we don't change part way
+    through a release."""
+    global __RELEASE_DATE_STRING
+    if __RELEASE_DATE_STRING is None:
+        __RELEASE_DATE_STRING = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return __RELEASE_DATE_STRING
+
+
+def assignment_matcher(name):
+    """
+    Matches a single line of the form (some space)name = (some value). e.g.
+    "  foo = 1".
+    The whole line up to the assigned value is the first matching group,
+    the rest of the line is the second matching group.
+    i.e. group 1 is the assignment, group 2 is the value. In the above
+    example group 1 would be "  foo = " and group 2 would be "1"
+    """
+    return re.compile(rf"\A(\s*{re.escape(name)}\s*=\s*)(.+)\Z")
+
+
+def replace_assignment_in_string(contents, name, value):
+    lines = contents.split("\n")
+
+    matcher = assignment_matcher(name)
+
+    count = 0
+
+    for i, l in enumerate(lines):
+        match = matcher.match(l)
+        if match is not None:
+            count += 1
+            lines[i] = match[1] + value
+
+    if count == 0:
+        raise ValueError(f"Key {name} not found in {contents}")
+    if count > 1:
+        raise ValueError(f"Key {name} found {count} times in {contents}")
+
+    return "\n".join(lines)
+
+
+def replace_assignment(filename, name, value):
+    """Replaces a single assignment of the form key = value in a file with a
+    new value, attempting to preserve the existing format.
+
+    This is fairly fragile - in particular it knows nothing about
+    the file format. The existing value is simply the rest of the line after
+    the last space after the equals.
+    """
+    with open(filename, encoding="utf-8") as f:
+        contents = f.read()
+    result = replace_assignment_in_string(contents, name, value)
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(result)
+
+
+RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
+
+
+MAJOR = "major"
+MINOR = "minor"
+PATCH = "patch"
+
+
+VALID_RELEASE_TYPES = (MAJOR, MINOR, PATCH)
+
+
+def parse_release_file_contents(release_contents, filename):
+    release_lines = [l.rstrip() for l in release_contents.split("\n")]
+
+    m = RELEASE_TYPE.match(release_lines[0])
+    if m is not None:
+        release_type = m.group(1)
+        if release_type not in VALID_RELEASE_TYPES:
+            raise ValueError(f"Unrecognised release type {release_type!r}")
+        del release_lines[0]
+        release_contents = "\n".join(release_lines).strip()
+    else:
+        raise ValueError(
+            f"{filename} does not start by specifying release type. The first "
+            "line of the file should be RELEASE_TYPE: followed by one of "
+            "major, minor, or patch, to specify the type of release that "
+            "this is (i.e. which version number to increment). Instead the "
+            f"first line was {release_lines[0]!r}"
+        )
+
+    return release_type, release_contents
+
+
+def bump_version_info(version_info, release_type):
+    new_version = list(version_info)
+    bump = VALID_RELEASE_TYPES.index(release_type)
+    new_version[bump] += 1
+    for i in range(bump + 1, len(new_version)):
+        new_version[i] = 0
+    new_version = tuple(new_version)
+    new_version_string = ".".join(map(str, new_version))
+    return new_version_string, new_version
+
+
+def commit_pending_release():
+    """Create a commit with the new release."""
+    git("rm", RELEASE_FILE)
+    git("add", "-u", HYPOTHESIS)
+
+    git(
+        "commit",
+        "-m",
+        f"Bump {PACKAGE_NAME} version to {current_version()} "
+        "and update changelog\n\n[skip ci]",
+    )
+
+
 def has_release():
     return RELEASE_FILE.exists()
 
@@ -59,16 +175,18 @@ def has_release_sample():
 
 
 def parse_release_file():
-    return rm.parse_release_file(RELEASE_FILE)
+    return parse_release_file_contents(
+        RELEASE_FILE.read_text(encoding="utf-8"), RELEASE_FILE
+    )
 
 
 def has_source_changes():
-    return tools.has_changes([PYTHON_SRC])
+    return has_changes([PYTHON_SRC])
 
 
 def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-    tools.scripts.pip_tool(
+    pip_tool(
         "sphinx-build",
         "--fail-on-warning",
         "--show-traceback",
@@ -111,7 +229,7 @@ def update_changelog_and_version():
 
     release_type, release_contents = parse_release_file()
 
-    new_version_string, new_version_info = rm.bump_version_info(
+    new_version_string, new_version_info = bump_version_info(
         __version_info__, release_type
     )
 
@@ -124,9 +242,9 @@ def update_changelog_and_version():
         beginning = beginning.replace(old, f"Hypothesis {major}.x")
         rest = "\n".join([old, len(old) * "=", "", rest])
 
-    rm.replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
+    replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
 
-    heading_for_new_version = f"{new_version_string} - {rm.release_date_string()}"
+    heading_for_new_version = f"{new_version_string} - {release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
 
     new_changelog_parts = [
@@ -148,7 +266,7 @@ def update_changelog_and_version():
     # Replace the `since="RELEASEDAY"` argument to `note_deprecation`
     # with today's date, to record it for future reference.
     before = 'since="RELEASEDAY"'
-    after = before.replace("RELEASEDAY", rm.release_date_string())
+    after = before.replace("RELEASEDAY", release_date_string())
     for root, _, files in os.walk(PYTHON_SRC):
         for fname in (os.path.join(root, f) for f in files if f.endswith(".py")):
             with open(fname, encoding="utf-8") as f:
@@ -168,7 +286,7 @@ def update_pyproject_toml():
     toml_data = tomli.loads(toml_p.read_text())
     extras = toml_data["project"]["optional-dependencies"]
     extras.pop("all")
-    readme = (tools.ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text()
     content = toml_p.read_text()
     content = re.sub(
         r'\[project\.readme\].*content-type = "text/markdown"',
@@ -203,7 +321,7 @@ def build_distribution():
 
 
 def upload_distribution():
-    tools.assert_can_release()
+    assert_can_release()
 
     # used for trusted publishing
     assert "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ
