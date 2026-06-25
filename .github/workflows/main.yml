@@ -72,7 +72,6 @@ jobs:
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche
-          - check-pypy310-cover
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311-cover
           - check-py311-nocover
@@ -339,7 +338,7 @@ jobs:
               target: x86_64,
               libc: manylinux,
               manylinux: auto,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.10 pypy3.11'
+              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
@@ -353,7 +352,7 @@ jobs:
               target: aarch64,
               libc: manylinux,
               manylinux: auto,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.10 pypy3.11'
+              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
@@ -367,21 +366,21 @@ jobs:
               target: x86_64,
               libc: '',
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.10 pypy3.11'
+              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: macos-latest,
               target: aarch64,
               libc: '',
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.10 pypy3.11'
+              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: windows-latest,
               target: x64,
               libc: '',
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.10 pypy3.11'
+              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
     steps:
     - uses: actions/checkout@v4

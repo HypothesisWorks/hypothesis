@@ -433,6 +433,9 @@ def update_python_versions():
         else:
             assert impl == "pypy"
             key = f"pypy{major_minor}"
+            # pypy3.10 is eol upstream, see https://github.com/HypothesisWorks/hypothesis/pull/4776
+            if key == "pypy3.10":
+                continue
             candidate = f"pypy{major_minor}-{ver}"
         # `uv python list` sorts newest-first, so first hit wins.
         best.setdefault(key, candidate)
@@ -704,7 +707,6 @@ PYTHONS = {
     "3.14t": "3.14.6+freethreaded",
     "3.15": "3.15.0b2",
     "3.15t": "3.15.0b2+freethreaded",
-    "pypy3.10": "pypy3.10-3.10.16",
     "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
