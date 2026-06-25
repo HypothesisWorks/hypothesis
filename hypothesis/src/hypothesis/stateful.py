@@ -658,6 +658,15 @@ class BundleConsumer(Bundle[Ex]):
     def __init__(self, bundle: Bundle[Ex]) -> None:
         super().__init__(bundle.name, consume=True)
 
+    def flatmap(self, expand):
+        if self.draw_references:
+            return Bundle(
+                self.name,
+                consume=True,
+                draw_references=False,
+            ).flatmap(expand)
+        return super().flatmap(expand)
+
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
