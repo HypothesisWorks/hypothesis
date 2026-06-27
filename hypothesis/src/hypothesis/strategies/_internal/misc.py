@@ -83,6 +83,8 @@ def just(value: T) -> SearchStrategy[T]:
 def none() -> SearchStrategy[None]:
     """Return a strategy which only generates None.
 
+    Useful as a placeholder strategy.
+
     Examples from this strategy do not shrink (because there is only
     one).
     """
@@ -124,6 +126,14 @@ NOTHING = Nothing()
 def nothing() -> SearchStrategy["Never"]:
     """This strategy never successfully draws a value and will always reject on
     an attempt to draw.
+
+    ``nothing()`` is *not* suitable as a placeholder strategy in |@given|,
+    even when used together with |@example| and with only |Phase.explicit|
+    active, because it is too easy for a change in settings or settings profile
+    to cause the test to suddenly fail mysteriously. Prefer |st.none| as a
+    placeholder strategy for this use case. See `issue #4774
+    <https://github.com/HypothesisWorks/hypothesis/issues/4774>`__ for more
+    details.
 
     Examples from this strategy do not shrink (because there are none).
     """
