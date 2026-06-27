@@ -864,6 +864,29 @@ def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
     return found_exceptions
 
 
+def _only_internal_markers(e: BaseException) -> bool:
+    # True if e is only our own Frozen/StopTest markers (possibly inside an
+    # exception group), with no real user error mixed in.
+    if isinstance(e, BaseExceptionGroup):
+        return all(_only_internal_markers(child) for child in e.exceptions)
+    return isinstance(e, (Frozen, StopTest))
+
+
+def _suppressed_a_stoptest(e: BaseException) -> bool:
+    # True if e was raised while one of our StopTests was propagating. This
+    # happens when a user error in a finally block (or stateful teardown) around
+    # data.draw suppresses the StopTest we raise during generation, which then
+    # shows up in e's __context__ chain.
+    seen = set()
+    context = e.__context__
+    while context is not None and id(context) not in seen:
+        if isinstance(context, StopTest):
+            return True
+        seen.add(id(context))
+        context = context.__context__
+    return False
+
+
 @contextlib.contextmanager
 def unwrap_markers_from_group() -> Generator[None, None, None]:
     try:
@@ -1288,11 +1311,16 @@ class StateForActualGivenExecution:
             ):
                 raise
 
-            if data.frozen:
-                # This can happen if an error occurred in a finally
-                # block somewhere, suppressing our original StopTest.
-                # We raise a new one here to resume normal operation.
+            if data.frozen and (_only_internal_markers(e) or _suppressed_a_stoptest(e)):
+                # No real user error here: it's either just our Frozen/StopTest
+                # markers, or a finally/teardown error that masked the StopTest we
+                # raise during generation (we'll see the real failure when
+                # shrinking). Re-raise StopTest so the engine carries on.
                 raise StopTest(data.testcounter) from e
+            elif data.frozen:
+                # The user raised a real error after the data was frozen (e.g. in
+                # teardown). Let it through instead of dropping it. See #4132.
+                raise
             else:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal

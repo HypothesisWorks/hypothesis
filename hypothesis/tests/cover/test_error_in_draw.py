@@ -31,6 +31,18 @@ def test_error_is_in_finally():
     assert "[0, 1, -1]" in "\n".join(err.value.__notes__)
 
 
+def test_error_raised_after_freeze_is_not_swallowed():
+    # Regression test for #4132: an error raised after the data is frozen should
+    # reach the user, not be silently swallowed.
+    @given(st.data())
+    def test(d):
+        d.conjecture_data.freeze()
+        raise TypeError("oops")
+
+    with pytest.raises(TypeError, match="oops"):
+        test()
+
+
 @given(st.data())
 def test_warns_on_bool_strategy(data):
     with pytest.warns(
