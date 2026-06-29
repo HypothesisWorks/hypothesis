@@ -876,15 +876,8 @@ def _suppressed_a_stoptest(e: BaseException) -> bool:
     # True if e was raised while one of our StopTests was propagating. This
     # happens when a user error in a finally block (or stateful teardown) around
     # data.draw suppresses the StopTest we raise during generation, which then
-    # shows up in e's __context__ chain.
-    seen = set()
-    context = e.__context__
-    while context is not None and id(context) not in seen:
-        if isinstance(context, StopTest):
-            return True
-        seen.add(id(context))
-        context = context.__context__
-    return False
+    # shows up as e's __context__.
+    return isinstance(e.__context__, StopTest)
 
 
 @contextlib.contextmanager
