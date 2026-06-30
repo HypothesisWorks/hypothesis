@@ -57,12 +57,7 @@ def release_date_string():
 
 
 RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
-
-MAJOR = "major"
-MINOR = "minor"
-PATCH = "patch"
-
-VALID_RELEASE_TYPES = (MAJOR, MINOR, PATCH)
+VALID_RELEASE_TYPES = ("major", "minor", "patch")
 
 
 def has_release():

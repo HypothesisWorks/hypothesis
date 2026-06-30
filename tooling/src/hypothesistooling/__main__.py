@@ -825,9 +825,10 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
-    # An editable install builds the native `hypothesis._native` extension into
-    # src/hypothesis/, which the docs build needs: conf.py puts src/ first on
-    # sys.path, so a regular (site-packages) install leaves _native unimportable.
+    # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
+    # source code is consulted first. Without -e, any rust code is compiled into site-packages,
+    # which the src/ prepending will not reference. -e causes rust code to be compiled
+    # into src/, which lets our sys.path edit pick it up.
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
     )
