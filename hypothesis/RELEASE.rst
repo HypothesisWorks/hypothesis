@@ -4,15 +4,11 @@ This release is the start of our migration of Hypothesis internals from Python t
 
 As a start, this release migrates a simple internal helper to Rust. As of this release, Hypothesis now requires a rust toolchain to build from source (if not installing from a native wheel).
 
-Hypothesis now ships native wheels for:
+Hypothesis now publishes a wide variety of native wheels on PyPI.
 
-* Linux x86_64 (manylinux): 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, PyPy 3.11
-* Linux x86_64 (musllinux): 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t
-* Linux aarch64 (manylinux): 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, PyPy 3.11
-* Linux aarch64 (musllinux): 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t
-* macOS x86_64: 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, PyPy 3.11
-* macOS arm64: 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, PyPy 3.11
-* Windows x64: 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, PyPy 3.11
-* Pyodide (wasm32-unknown-emscripten): 3.13
+Python versions: 3.10, 3.11, 3.12, 3.13, 3.14, 3.14t, and (except on musllinux) PyPy 3.11
+Platforms: Linux x86_64/aarch64 manylinux/musllinux, macOS x86_64/arm64, Windows x64.
+
+We additionally publish wheels for Pyodide (wasm32-unknown-emscripten) for Python 3.13 (`details <https://blog.pyodide.org/posts/314-release/>`__).
 
 If you'd like Hypothesis to ship native wheels for a platform not mentioned here, please open an issue.
