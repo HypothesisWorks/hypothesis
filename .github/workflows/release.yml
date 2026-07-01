@@ -29,7 +29,9 @@ jobs:
         task: prepare-release
     - id: compute
       run: |
-        NEW=$(./build.sh print-next-version)
+        # build.sh writes ::group:: markers to stdout,
+        # so print-next-version emits its result as JSON, which we pick out by key.
+        NEW=$(./build.sh print-next-version | grep new_version | jq -r '.new_version // empty')
         echo "new_version=${NEW}" >> "$GITHUB_OUTPUT"
 
   release-build-wheels:
