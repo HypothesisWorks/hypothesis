@@ -52,6 +52,7 @@ from typing import (
 )
 from uuid import UUID
 
+from hypothesis._native.internal.cathetus import cathetus
 from hypothesis.control import (
     cleanup,
     current_build_context,
@@ -67,7 +68,6 @@ from hypothesis.errors import (
     RewindRecursive,
     SmallSearchSpaceWarning,
 )
-from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import (
     Categories,
     CategoryName,

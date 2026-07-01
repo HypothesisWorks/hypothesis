@@ -30,6 +30,10 @@ CLAUDE.local.md
 /pythonpypy3.*
 .pyodide-xbuildenv
 
+# rust
+
+target/
+
 # python
 
 *.pyc

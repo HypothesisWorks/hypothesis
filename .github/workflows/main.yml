@@ -72,7 +72,6 @@ jobs:
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche
-          - check-pypy310-cover
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311-cover
           - check-py311-nocover
@@ -272,11 +271,12 @@ jobs:
         pyodide xbuildenv install ${{ env.PYODIDE_VERSION }}
     - name: Set up Pyodide venv and install dependencies
       run: |
-        pip install --upgrade setuptools pip wheel build
-        python -m build --wheel hypothesis --outdir dist/
-        pip download --dest=dist/ hypothesis/ pytest tzdata syrupy  # fetch all the wheels
-         rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
-         pyodide venv .venv-pyodide
+        rustup target add wasm32-unknown-emscripten
+        pip install --upgrade setuptools pip wheel
+        pyodide build hypothesis --outdir dist/
+        pip download --dest=dist/ pytest tzdata syrupy  # fetch all the wheels
+        rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
+        pyodide venv .venv-pyodide
         source .venv-pyodide/bin/activate
         pip install dist/*.whl
     - name: Run tests
@@ -299,30 +299,14 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
 
-  deploy:
+  release:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
-    runs-on: ubuntu-latest
     needs: [check-required]
-    strategy:
-      matrix:
-        task:
-          - deploy
-      fail-fast: false
+    # granted to the caller so the nested publish job can request an OIDC
+    # token for PyPI trusted publishing; contents:read lets the build jobs check out.
     permissions:
       id-token: write
-    environment:
-      name: pypi
-      url: https://pypi.org/project/hypothesis
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GH_TOKEN }}
-    - uses: ./.github/actions/install-base
-      with:
-        python-version: "3.14"
-    - name: Deploy package
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      run: |
-        TASK=${{ matrix.task }} ./build.sh
+      contents: read
+    uses: ./.github/workflows/release.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}

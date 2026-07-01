@@ -11,7 +11,6 @@
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -19,6 +18,7 @@ from datetime import datetime, timezone
 import requests
 import tomli
 
+from hypothesistooling import cargo
 from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
 from hypothesistooling.scripts import pip_tool
 
@@ -29,23 +29,18 @@ HYPOTHESIS = ROOT / PACKAGE_NAME
 PYTHON_SRC = HYPOTHESIS / "src"
 PYTHON_TESTS = HYPOTHESIS / "tests"
 DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
+CARGO_TOML = HYPOTHESIS / "rust" / "Cargo.toml"
 
 RELEASE_FILE = HYPOTHESIS / "RELEASE.rst"
 RELEASE_SAMPLE_FILE = HYPOTHESIS / "RELEASE-sample.rst"
+CHANGELOG_FILE = HYPOTHESIS / "docs" / "changelog.rst"
+DIST = HYPOTHESIS / "dist"
 
 assert PYTHON_SRC.exists()
 
 
-__version__ = None
-__version_info__ = None
-
-VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
-
-with open(VERSION_FILE, encoding="utf-8") as fp:
-    exec(fp.read())
-
-assert __version__ is not None
-assert __version_info__ is not None
+__version__ = tomli.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"]["version"]
+__version_info__ = tuple(int(p) for p in __version__.split("."))
 
 
 __RELEASE_DATE_STRING = None
@@ -61,63 +56,22 @@ def release_date_string():
     return __RELEASE_DATE_STRING
 
 
-def assignment_matcher(name):
-    """
-    Matches a single line of the form (some space)name = (some value). e.g.
-    "  foo = 1".
-    The whole line up to the assigned value is the first matching group,
-    the rest of the line is the second matching group.
-    i.e. group 1 is the assignment, group 2 is the value. In the above
-    example group 1 would be "  foo = " and group 2 would be "1"
-    """
-    return re.compile(rf"\A(\s*{re.escape(name)}\s*=\s*)(.+)\Z")
-
-
-def replace_assignment_in_string(contents, name, value):
-    lines = contents.split("\n")
-
-    matcher = assignment_matcher(name)
-
-    count = 0
-
-    for i, l in enumerate(lines):
-        match = matcher.match(l)
-        if match is not None:
-            count += 1
-            lines[i] = match[1] + value
-
-    if count == 0:
-        raise ValueError(f"Key {name} not found in {contents}")
-    if count > 1:
-        raise ValueError(f"Key {name} found {count} times in {contents}")
-
-    return "\n".join(lines)
-
-
-def replace_assignment(filename, name, value):
-    """Replaces a single assignment of the form key = value in a file with a
-    new value, attempting to preserve the existing format.
-
-    This is fairly fragile - in particular it knows nothing about
-    the file format. The existing value is simply the rest of the line after
-    the last space after the equals.
-    """
-    with open(filename, encoding="utf-8") as f:
-        contents = f.read()
-    result = replace_assignment_in_string(contents, name, value)
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(result)
-
-
 RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
+VALID_RELEASE_TYPES = ("major", "minor", "patch")
 
 
-MAJOR = "major"
-MINOR = "minor"
-PATCH = "patch"
+def has_release():
+    return RELEASE_FILE.exists()
 
 
-VALID_RELEASE_TYPES = (MAJOR, MINOR, PATCH)
+def has_release_sample():
+    return RELEASE_SAMPLE_FILE.exists()
+
+
+def parse_release_file():
+    return parse_release_file_contents(
+        RELEASE_FILE.read_text(encoding="utf-8"), RELEASE_FILE
+    )
 
 
 def parse_release_file_contents(release_contents, filename):
@@ -163,20 +117,6 @@ def commit_pending_release():
         "-m",
         f"Bump {PACKAGE_NAME} version to {current_version()} "
         "and update changelog\n\n[skip ci]",
-    )
-
-
-def has_release():
-    return RELEASE_FILE.exists()
-
-
-def has_release_sample():
-    return RELEASE_SAMPLE_FILE.exists()
-
-
-def parse_release_file():
-    return parse_release_file_contents(
-        RELEASE_FILE.read_text(encoding="utf-8"), RELEASE_FILE
     )
 
 
@@ -242,7 +182,7 @@ def update_changelog_and_version():
         beginning = beginning.replace(old, f"Hypothesis {major}.x")
         rest = "\n".join([old, len(old) * "=", "", rest])
 
-    replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
+    cargo.write_version(CARGO_TOML, new_version_string)
 
     heading_for_new_version = f"{new_version_string} - {release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
@@ -306,22 +246,29 @@ def update_pyproject_toml():
     toml_p.write_text(content)
 
 
-CHANGELOG_FILE = HYPOTHESIS / "docs" / "changelog.rst"
-DIST = HYPOTHESIS / "dist"
-
-
 def changelog():
     return CHANGELOG_FILE.read_text(encoding="utf-8")
 
 
-def build_distribution():
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-    subprocess.check_output([sys.executable, "-m", "build", "--outdir", DIST])
+def check_artifact_versions(*, expected_version):
+    # sanity check that the version in each artifact is what we expect
+    # Artifact names look like:
+    #   hypothesis-<version>-cp313-cp313-manylinux_2_17_x86_64.whl
+    #   hypothesis-<version>.tar.gz
+    pattern = re.compile(r"^hypothesis-(?P<version>[^-]+?)(?:-.+\.whl|\.tar\.gz)$")
+    artifacts = sorted(DIST.iterdir())
+    assert artifacts, f"no artifacts found in {DIST}"
+    for f in artifacts:
+        m = pattern.match(f.name)
+        assert m is not None, f"{f.name}: unrecognised artifact filename"
+        assert (
+            m.group("version") == expected_version
+        ), f"{f.name}: version {m.group('version')!r} != expected {expected_version!r}"
 
 
-def upload_distribution():
+def upload_distribution_to_pypi(*, expected_version):
     assert_can_release()
+    check_artifact_versions(expected_version=expected_version)
 
     # used for trusted publishing
     assert "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ
@@ -337,6 +284,8 @@ def upload_distribution():
         ]
     )
 
+
+def create_github_release():
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])
@@ -375,6 +324,14 @@ def upload_distribution():
         import traceback
 
         traceback.print_exc()
+
+
+def compute_new_version():
+    if not has_release():
+        return None
+    release_type, _ = parse_release_file()
+    _, new_version_info = bump_version_info(__version_info__, release_type)
+    return ".".join(str(p) for p in new_version_info)
 
 
 def current_version():

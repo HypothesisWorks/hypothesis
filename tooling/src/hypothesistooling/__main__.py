@@ -29,8 +29,6 @@ from hypothesistooling.git import (
     configure_git,
     create_tag,
     has_changes,
-    hash_for_name,
-    is_ancestor,
     modified_files,
     push_tag,
 )
@@ -40,14 +38,15 @@ from hypothesistooling.release import (
     PYTHON_SRC,
     PYTHON_TESTS,
     RELEASE_FILE,
-    build_distribution,
     build_docs,
     commit_pending_release,
+    compute_new_version,
+    create_github_release,
     get_autoupdate_message,
     has_release,
     tag_name,
     update_changelog_and_version,
-    upload_distribution,
+    upload_distribution_to_pypi,
 )
 from hypothesistooling.scripts import pip_tool
 
@@ -136,12 +135,14 @@ def lint():
         sys.exit(1)
 
 
-def do_release():
+def do_publish():
     if not has_release():
         print("No release")
         return
 
     os.chdir(HYPOTHESIS)
+
+    new_version = compute_new_version()
 
     print("Updating changelog and version")
     update_changelog_and_version()
@@ -149,41 +150,35 @@ def do_release():
     print("Committing changes")
     commit_pending_release()
 
-    print("Building distribution")
-    build_distribution()
-
-    print("Looks good to release!")
-
     tag = tag_name()
-
     print(f"Creating tag {tag}")
     create_tag(tag)
     push_tag(tag)
 
-    print("Uploading distribution")
-    upload_distribution()
+    print("Uploading distribution to PyPI")
+    upload_distribution_to_pypi(expected_version=new_version)
+
+    print("Creating GitHub release")
+    create_github_release()
 
 
 @task()
-def deploy():
-    HEAD = hash_for_name("HEAD")
-    MASTER = hash_for_name("origin/master")
+def print_next_version():
+    v = compute_new_version()
+    if v is not None:
+        print(v)
 
-    print("Current head:  ", HEAD)
-    print("Current master:", MASTER)
 
-    if not is_ancestor(HEAD, MASTER):
-        print("Not deploying due to not being on master")
-        sys.exit(0)
-
+@task()
+def publish():
+    # used for trusted publishing to PyPI
     if "ACTIONS_ID_TOKEN_REQUEST_TOKEN" not in os.environ:
-        print("Running without access to secure variables, so no deployment")
-        sys.exit(0)
+        sys.exit("ACTIONS_ID_TOKEN_REQUEST_TOKEN is required for publish")
+    if "GH_TOKEN" not in os.environ:
+        sys.exit("GH_TOKEN is required for publish (used to create GitHub release)")
 
     configure_git()
-
-    do_release()
-
+    do_publish()
     sys.exit(0)
 
 
@@ -199,6 +194,8 @@ HEADER = """
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 """.strip()
+
+RUST_HEADER = HEADER.replace("#", "//")
 
 # this pattern is copied from shed
 # https://github.com/Zac-HD/shed/blob/6471da71c5b5cc443443ef5ed072799db275e7c0/src/shed/__init__.py#L297
@@ -240,9 +237,10 @@ def format(*, format_all=False):
     paths = all_files() if format_all else changed
 
     doc_paths_to_format = [p for p in sorted(paths) if p.suffix in {".rst", ".md"}]
-    paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
+    py_paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
+    rust_paths_to_format = [p for p in sorted(paths) if p.suffix == ".rs"]
 
-    if not (paths_to_format or doc_paths_to_format):
+    if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and
@@ -254,9 +252,12 @@ def format(*, format_all=False):
     config.from_file(os.path.join(HYPOTHESIS, ".coveragerc"), warn=warn, our_file=True)
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
-    last_header_line = HEADER.splitlines()[-1].rstrip()
 
-    for p in paths_to_format:
+    for p, header in [
+        *((p, HEADER) for p in py_paths_to_format),
+        *((p, RUST_HEADER) for p in rust_paths_to_format),
+    ]:
+        last_header_line = header.splitlines()[-1].rstrip()
         lines = []
         with open(p, encoding="utf-8") as fp:
             shebang = None
@@ -279,21 +280,29 @@ def format(*, format_all=False):
             if shebang is not None:
                 fp.write(shebang)
                 fp.write("\n")
-            fp.write(HEADER)
+            fp.write(header)
             if source:
                 fp.write("\n\n")
                 fp.write(source)
             fp.write("\n")
 
-    codespell("--write-changes", *paths_to_format, *doc_paths_to_format)
+    codespell(
+        "--write-changes",
+        *py_paths_to_format,
+        *rust_paths_to_format,
+        *doc_paths_to_format,
+    )
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py310-plus", *paths_to_format, *doc_paths_to_format)
+    pip_tool("shed", "--py310-plus", *py_paths_to_format, *doc_paths_to_format)
 
     for p in doc_paths_to_format:
         remove_consecutive_newlines_in_rst(p)
 
 
-VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
+VALID_STARTS = {
+    ".py": (HEADER.split()[0], "#!/usr/bin/env python"),
+    ".rs": (RUST_HEADER.split()[0],),
+}
 
 
 @task()
@@ -302,14 +311,15 @@ def check_format():
     # the changed ones, so that formatter upgrades can't leave stale formatting
     # lurking in untouched files until they're next edited.
     format(format_all=bool(os.environ.get("CI")))
-    n = max(map(len, VALID_STARTS))
+    n = max(len(s) for starts in VALID_STARTS.values() for s in starts)
     bad = False
     for p in all_files():
-        if p.suffix != ".py":
+        valid_starts = VALID_STARTS.get(p.suffix)
+        if valid_starts is None:
             continue
         with open(p, encoding="utf-8") as fp:
             start = fp.read(n)
-            if not any(start.startswith(s) for s in VALID_STARTS):
+            if not any(start.startswith(s) for s in valid_starts):
                 print(f"{p} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
@@ -423,6 +433,9 @@ def update_python_versions():
         else:
             assert impl == "pypy"
             key = f"pypy{major_minor}"
+            # pypy3.10 is eol upstream, see https://github.com/HypothesisWorks/hypothesis/pull/4776
+            if key == "pypy3.10":
+                continue
             candidate = f"pypy{major_minor}-{ver}"
         # `uv python list` sorts newest-first, so first hit wins.
         best.setdefault(key, candidate)
@@ -694,7 +707,6 @@ PYTHONS = {
     "3.14t": "3.14.6+freethreaded",
     "3.15": "3.15.0b2",
     "3.15t": "3.15.0b2+freethreaded",
-    "pypy3.10": "pypy3.10-3.10.16",
     "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
@@ -813,8 +825,12 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
+    # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
+    # source code is consulted first. Without -e, any rust code is compiled into site-packages,
+    # which the src/ prepending will not reference. -e causes rust code to be compiled
+    # into src/, which lets our sys.path edit pick it up.
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
     )
 
     if not args:
