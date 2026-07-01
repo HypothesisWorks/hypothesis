@@ -72,7 +72,7 @@ jobs:
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t'
             }
           - {
-              os: macos-13,
+              os: macos-latest,
               target: x86_64,
               libc: '',
               manylinux: '',
@@ -138,9 +138,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # automatically updated by update_pyodide_versions()
-      PYODIDE_VERSION: 0.29.4
-      PYODIDE_BUILD_VERSION: 0.34.4
-      PYTHON_VERSION: 3.13.2
+      PYODIDE_VERSION: 314.0.0
+      PYODIDE_BUILD_VERSION: 0.35.1
+      PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
