@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import json
 import os
 import pathlib
 import re
@@ -164,9 +165,7 @@ def do_publish():
 
 @task()
 def print_next_version():
-    v = compute_new_version()
-    if v is not None:
-        print(v)
+    print(json.dumps({"new_version": compute_new_version()}))
 
 
 @task()
