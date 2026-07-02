@@ -16,8 +16,11 @@ from pytest import param
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
-from tests.snapshots.conftest import EXPLAIN_SETTINGS, SNAPSHOT_SETTINGS
+from tests.common.utils import (
+    EXPLAIN_SETTINGS,
+    SNAPSHOT_SETTINGS,
+    run_test_for_falsifying_example,
+)
 
 
 class Opaque:

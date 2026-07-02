@@ -57,8 +57,6 @@ from hypothesis.control import (
     cleanup,
     current_build_context,
     deprecate_random_in_strategy,
-    note,
-    should_note,
 )
 from hypothesis.errors import (
     HypothesisSideeffectWarning,
@@ -2369,47 +2367,91 @@ def runner(*, default: Any = not_set) -> SearchStrategy[Any]:
 
 
 class DataObject:
-    """This type only exists so that you can write type hints for tests using
-    the :func:`~hypothesis.strategies.data` strategy.  Do not use it directly!
+    """Represents a sequence of interactively drawn values for use with
+    :func:`@example <hypothesis.example>` and the
+    :func:`~hypothesis.strategies.data` strategy.
+
+    Construct with ``DataObject(draws=[v1, v2, ...])`` to supply concrete
+    values that will be returned by successive ``data.draw()`` calls.
     """
 
-    # Note that "only exists" here really means "is only exported to users",
-    # but we want to treat it as "semi-stable", not document it as "public API".
-
-    def __init__(self, data: ConjectureData) -> None:
-        self.count = 0
-        self.conjecture_data = data
-
-    __signature__ = Signature()  # hide internals from Sphinx introspection
+    def __init__(self, *, draws: list) -> None:
+        self._draws = list(draws)
+        self._count = 0
+        self._printer: RepresentationPrinter | None = None
+        self._printer_count = 0
 
     def __repr__(self) -> str:
         return "data(...)"
 
+    def _repr_pretty_(self, p, cycle):
+        if cycle or (
+            self._printer is not None
+            and not self._printer._dead
+            and self._printer.root is p.root
+        ):
+            p.text("DataObject(...)")
+            return
+        p.text("DataObject(draws=[")
+        with p.group(4):
+            self._printer = p.deferred()
+            self._printer_count = 0
+        p.break_()
+        p.text("])")
+
+    def _record_draw(self, result, label, slice_range):
+        printer = self._printer
+        if printer is not None and printer._dead:
+            self._printer = None
+            printer = None
+        if printer is not None:
+            printer.break_()
+            if label is not None:
+                printer.text(f"# {label}")
+                printer.break_()
+            self._printer_count += 1
+            printer.pretty(result)
+            printer.text(",")
+            if slice_range is not None and slice_range in printer.slice_comments:
+                printer.text(f"  # {printer.slice_comments[slice_range]}")
+
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
         """Like :obj:`~hypothesis.strategies.DrawFn`."""
         check_strategy(strategy, "strategy")
-        self.count += 1
-        desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
+        self._count += 1
+        result = self._draws[self._count - 1]
+        self._record_draw(result, label, None)
+        return result
+
+
+class _DataObject(DataObject):
+    def __init__(self, data: "ConjectureData") -> None:
+        self._count = 0
+        self.conjecture_data = data
+        self._printer: RepresentationPrinter | None = None
+        self._printer_count = 0
+
+    def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+        """Like :obj:`~hypothesis.strategies.DrawFn`."""
+        check_strategy(strategy, "strategy")
+        self._count += 1
+        desc = f"Draw {self._count}{'' if label is None else f' ({label})'}"
+
+        start = len(self.conjecture_data.nodes)
         with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
             result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
+        end = len(self.conjecture_data.nodes)
+        slice_range = (start, end) if start != end else None
+        if slice_range is not None:
+            self.conjecture_data.arg_slices.add(slice_range)
 
-        # optimization to avoid needless printer.pretty
-        if should_note():
-            printer = RepresentationPrinter(context=current_build_context())
-            printer.text(f"{desc}: ")
-            if self.conjecture_data.provider.avoid_realization:
-                printer.text("<symbolic>")
-            else:
-                printer.pretty(result)
-            note(printer.getvalue())
+        self._record_draw(result, label, slice_range)
         return result
 
 
 class DataStrategy(SearchStrategy):
     def do_draw(self, data):
-        if data._shared_data_strategy is None:
-            data._shared_data_strategy = DataObject(data)
-        return data._shared_data_strategy
+        return _DataObject(data)
 
     def __repr__(self) -> str:
         return "data()"
@@ -2459,9 +2501,12 @@ def data() -> SearchStrategy[DataObject]:
 
     .. code-block:: pycon
 
-        Falsifying example: test_values(data=data(...))
-        Draw 1: 0
-        Draw 2: 0
+        Falsifying example: test_values(
+            data=DataObject(draws=[
+                0,
+                0,
+            ]),
+        )
 
     Optionally, you can provide a label to identify values generated by each call
     to ``data.draw()``.  These labels can be used to identify values in the
@@ -2481,9 +2526,14 @@ def data() -> SearchStrategy[DataObject]:
 
     .. code-block:: pycon
 
-        Falsifying example: test_draw_sequentially(data=data(...))
-        Draw 1 (First number): 0
-        Draw 2 (Second number): 0
+        Falsifying example: test_draw_sequentially(
+            data=DataObject(draws=[
+                # First number
+                0,
+                # Second number
+                0,
+            ]),
+        )
 
     Examples from this strategy shrink by shrinking the output of each draw call.
     """

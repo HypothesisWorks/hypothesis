@@ -10,6 +10,8 @@
 
 import contextlib
 import enum
+import functools
+import inspect
 import math
 import sys
 import time
@@ -20,7 +22,7 @@ from threading import Barrier, Lock, RLock, Thread
 import pytest
 from pytest import mark
 
-from hypothesis import Phase, settings
+from hypothesis import Phase, given, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
 from hypothesis.internal.floats import next_down
@@ -339,3 +341,44 @@ def run_test_for_falsifying_example(test_fn):
     with pytest.raises(AssertionError) as err:
         test_fn()
     return "\n".join(err.value.__notes__).strip()
+
+
+SNAPSHOT_SETTINGS = settings(
+    phases=[Phase.generate, Phase.shrink],
+    print_blob=False,
+    derandomize=True,
+    database=None,
+)
+
+EXPLAIN_SETTINGS = settings(
+    phases=[Phase.generate, Phase.shrink, Phase.explain],
+    print_blob=False,
+    derandomize=True,
+    database=None,
+)
+
+
+def snapshot_given(*strategies, **kwarg_strategies):
+    """Decorator that turns the wrapped body into a pytest test: runs it as
+    a Hypothesis property test and asserts that the captured
+    falsifying-example output equals the ``snapshot`` fixture value.
+
+    The body is expected to fail so the test has a falsifying example to report.
+    """
+
+    def decorator(body):
+        @functools.wraps(body)
+        def prop_body(*args, **kwargs):
+            body(*args, **kwargs)
+
+        prop_body.__signature__ = inspect.signature(body)
+        prop_test = given(*strategies, **kwarg_strategies)(EXPLAIN_SETTINGS(prop_body))
+
+        def test_function(snapshot):
+            assert run_test_for_falsifying_example(prop_test) == snapshot
+
+        test_function.__name__ = body.__name__
+        test_function.__qualname__ = body.__qualname__
+        return test_function
+
+    return decorator
