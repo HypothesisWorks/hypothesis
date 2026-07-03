@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.1:
+
+--------------------
+6.156.1 - 2026-07-03
+--------------------
+
+This patch fixes our build pipeline from :v:`6.156.0`, so that wheels are actually published.
+
 .. _v6.156.0:
 
 --------------------

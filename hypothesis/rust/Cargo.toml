@@ -1,6 +1,6 @@
 [package]
 name = "hypothesis-native"
-version = "6.156.0"
+version = "6.156.1"
 edition = "2021"
 rust-version = "1.75"
 publish = false
