@@ -890,7 +890,16 @@ def check_pyodide():
         whl.unlink()  # fails with `invalid metadata entry 'name'`
 
     shutil.rmtree(ROOT / ".venv-pyodide", ignore_errors=True)
-    subprocess.check_call([pyodide, "venv", ".venv-pyodide"], cwd=ROOT)
+    # `pyodide venv` looks itself up with shutil.which("pyodide") and bakes the
+    # invoking PATH into the venv's pyodide wrapper, so its bin dir must be on PATH.
+    subprocess.check_call(
+        [pyodide, "venv", ".venv-pyodide"],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PATH": os.path.dirname(pyodide) + os.pathsep + os.environ["PATH"],
+        },
+    )
     venv_python = ROOT / ".venv-pyodide" / "bin" / "python"
     subprocess.check_call([venv_python, "-m", "pip", "install", *dist.glob("*.whl")])
 
