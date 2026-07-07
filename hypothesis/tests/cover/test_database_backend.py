@@ -303,12 +303,7 @@ def test_ga_corrupted_artifact():
 
 
 def test_ga_reads_artifact_without_directory_entries():
-    """Tests that artifacts without explicit directory entries can be read.
-
-    Real ``actions/upload-artifact`` zips only contain file entries, with no
-    separate directory entries, so the parent keypath is never seen via
-    ``is_dir()`` during cache initialization.
-    """
+    # see https://github.com/HypothesisWorks/hypothesis/pull/4787
     key = b"foo"
     value = b"bar"
     with ga_empty_artifact() as (path, zip_path):
