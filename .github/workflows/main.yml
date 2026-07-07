@@ -95,6 +95,7 @@ jobs:
           - check-py311-pandas15
           - check-py310-pandas14
           - check-py310-pandas13
+          - check-rust-tests
           ## FIXME: actions update means Python builds without eg _bz2, which was required
           # - check-py310-pandas12
           # - check-py310-pandas11
@@ -239,18 +240,12 @@ jobs:
       run: |
         tox -e ${{ matrix.task }}
 
-  # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
-  # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
     needs: [basic]
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: 22
-      # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
-      # The versions of pyodide-build and the Pyodide runtime may differ.
-      PYODIDE_VERSION: 314.0.0
-      PYODIDE_BUILD_VERSION: 0.35.1
-      PYTHON_VERSION: 3.14.2
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -259,34 +254,13 @@ jobs:
       uses: ./.github/actions/install-base
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        task: pyodide
+        task: check-pyodide
     - name: Set up Node
       uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
       with:
         node-version: ${{ env.NODE_VERSION }}
-    - name: Install pyodide-build and Pyodide cross-build environment
-      run: |
-        pip install pyodide-build==${{ env.PYODIDE_BUILD_VERSION }}
-        pyodide xbuildenv install ${{ env.PYODIDE_VERSION }}
-    - name: Set up Pyodide venv and install dependencies
-      run: |
-        rustup target add wasm32-unknown-emscripten
-        pip install --upgrade setuptools pip wheel
-        pyodide build hypothesis --outdir dist/
-        pip download --dest=dist/ pytest tzdata syrupy  # fetch all the wheels
-        rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
-        pyodide venv .venv-pyodide
-        source .venv-pyodide/bin/activate
-        pip install dist/*.whl
     - name: Run tests
-      run: |
-        source .venv-pyodide/bin/activate
-        # pyodide can't run multiple processes internally, so parallelize explicitly over
-        # discovered test files instead (20 at a time)
-        TEST_FILES=$(ls hypothesis/tests/cover/test*.py | grep -v "_py314")
-        echo "test files: $TEST_FILES"
-        parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
-          python -m pytest -p no:cacheprovider <<< $TEST_FILES
+      run: ./build.sh check-pyodide
 
   check-required:
     if: always()

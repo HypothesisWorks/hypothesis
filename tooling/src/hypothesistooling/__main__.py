@@ -12,8 +12,10 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
 from textwrap import indent
@@ -22,6 +24,7 @@ import requests
 from coverage.config import CoverageConfig
 
 from hypothesistooling import installers as install
+from hypothesistooling.cargo import RUST, cargo, rust_msrv
 from hypothesistooling.git import (
     IS_PULL_REQUEST,
     REPO_TESTS,
@@ -134,6 +137,12 @@ def lint():
 
     if failed:
         sys.exit(1)
+
+    cargo(
+        ci_version_rust,
+        ["clippy", "--all-targets", "--", "-D", "warnings"],
+        components=["clippy"],
+    )
 
 
 def do_publish():
@@ -293,6 +302,8 @@ def format(*, format_all=False):
     )
     pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", "--py310-plus", *py_paths_to_format, *doc_paths_to_format)
+    if rust_paths_to_format:
+        cargo(ci_version_rust, ["fmt"], components=["rustfmt"])
 
     for p in doc_paths_to_format:
         remove_consecutive_newlines_in_rst(p)
@@ -387,7 +398,7 @@ def compile_requirements(*, upgrade=False):
 
 
 def update_python_versions():
-    install.ensure_python(PYTHONS[ci_version])
+    install.ensure_python(PYTHONS[ci_version_python])
     # `uv python list` prints one candidate per line; it reports only the
     # interpreters uv knows how to install, so we don't need to translate
     # from pyenv's naming scheme any more.
@@ -451,10 +462,10 @@ def update_python_versions():
     thisfile.write_text(after, encoding="utf-8")
     pip_tool("shed", str(thisfile))
 
-    # Automatically sync ci_version with the version in build.sh
+    # Automatically sync build.sh with PYTHONS[ci_version_python]
     build_sh = ROOT / "build.sh"
     sh_before = build_sh.read_text(encoding="utf-8")
-    sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version], sh_before)
+    sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version_python], sh_before)
     if sh_before != sh_after:
         build_sh.unlink()  # so bash doesn't reload a modified file
         build_sh.write_text(sh_after, encoding="utf-8")
@@ -495,7 +506,7 @@ def update_django_versions():
     )
     pyproject_toml.write_text(content, encoding="utf-8")
 
-    # Automatically sync ci_version with the version in build.sh
+    # Sync the pinned django versions in tox.ini
     tox_ini = HYPOTHESIS / "tox.ini"
     content = tox_ini.read_text(encoding="utf-8")
     print(versions)
@@ -562,21 +573,27 @@ def update_pyodide_versions():
     pyodide_version = pyodide_release["version"]
     python_version = pyodide_release["python_version"]
 
-    ci_files = [
-        ROOT / ".github/workflows/main.yml",
-        ROOT / ".github/workflows/release.yml",
-    ]
-    for ci_file in ci_files:
-        config = ci_file.read_text(encoding="utf-8")
-        for name, var in [
-            ("PYODIDE", pyodide_version),
-            ("PYODIDE_BUILD", pyodide_build_version),
-            ("PYTHON", python_version),
-        ]:
-            config = re.sub(
-                f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config
-            )
-        ci_file.write_text(config, encoding="utf-8")
+    this_file = pathlib.Path(__file__)
+    config = this_file.read_text(encoding="utf-8")
+    for name, var in [
+        ("PYODIDE", pyodide_version),
+        ("PYODIDE_BUILD", pyodide_build_version),
+        ("PYODIDE_PYTHON", python_version),
+    ]:
+        config = re.sub(
+            f'{name}_VERSION = "{vers_re}"', f'{name}_VERSION = "{var}"', config
+        )
+    this_file.write_text(config, encoding="utf-8")
+
+    ci_file = ROOT / ".github/workflows/release.yml"
+    config = ci_file.read_text(encoding="utf-8")
+    for name, var in [
+        ("PYODIDE", pyodide_version),
+        ("PYODIDE_BUILD", pyodide_build_version),
+        ("PYODIDE_PYTHON", python_version),
+    ]:
+        config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
+    ci_file.write_text(config, encoding="utf-8")
 
 
 def update_vendored_files():
@@ -675,6 +692,7 @@ def live_docs():
 
 def run_tox(task, version, *args):
     python = install.python_executable(version)
+    install.ensure_rustc(ci_version_rust)
 
     # Create a version of the name that tox will pick up for the correct
     # interpreter alias.
@@ -697,7 +715,7 @@ def run_tox(task, version, *args):
         env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, *args, env=env, cwd=HYPOTHESIS)
+    pip_tool("tox", "-e", task, *args, env={**env, **RUST_BUILD_ENV}, cwd=HYPOTHESIS)
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
@@ -714,7 +732,19 @@ PYTHONS = {
     "3.15t": "3.15.0b2+freethreaded",
     "pypy3.11": "pypy3.11-3.11.15",
 }
-ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
+ci_version_python = (
+    "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
+)
+ci_version_rust = "1.96.1"
+
+# automatically updated by update_pyodide_versions()
+PYODIDE_VERSION = "314.0.0"
+PYODIDE_BUILD_VERSION = "0.35.1"
+PYODIDE_PYTHON_VERSION = "3.14.2"
+
+
+RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
+
 
 python_tests = task(
     if_changed=(
@@ -766,7 +796,7 @@ def tox(*args):
     run_tox(*args)
 
 
-def standard_tox_task(name, py=ci_version):
+def standard_tox_task(name, py=ci_version_python):
     TASKS["check-" + name] = python_tests(
         lambda *args: run_tox(name, PYTHONS.get(py, py), *args)
     )
@@ -777,7 +807,7 @@ standard_tox_task("pytest74")
 standard_tox_task("pytest84")
 standard_tox_task("pytest9")
 
-dj_version = max(ci_version, "3.12")
+dj_version = max(ci_version_python, "3.12")
 for n in DJANGO_VERSIONS:
     standard_tox_task(f"django{n.replace('.', '')}", py=dj_version)
 # we also test no-contrib on the latest django version
@@ -812,14 +842,92 @@ standard_tox_task("snapshots")
 
 @task()
 def check_quality(*args):
-    run_tox("quality", PYTHONS[ci_version], *args)
+    run_tox("quality", PYTHONS[ci_version_python], *args)
+
+
+rust_task = task(if_changed=RUST)
+
+
+@rust_task
+def check_rust_tests(*args):
+    cargo(rust_msrv(), ["test", *args])
+
+
+def setup_pyodide():
+    install.ensure_rustc(ci_version_rust, targets=["wasm32-unknown-emscripten"])
+    python = install.python_executable(PYODIDE_PYTHON_VERSION)
+    subprocess.check_call(
+        [python, "-m", "pip", "install", "--upgrade", "setuptools", "pip", "wheel"]
+        + [f"pyodide-build=={PYODIDE_BUILD_VERSION}"]
+    )
+    pyodide = os.path.join(os.path.dirname(python), "pyodide")
+    subprocess.check_call([pyodide, "xbuildenv", "install", PYODIDE_VERSION])
+    return pyodide
+
+
+@task()
+def check_pyodide():
+    # See https://pyodide.org/en/stable/usage/building-and-testing-packages.html
+    # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
+    pyodide = setup_pyodide()
+    python = install.python_executable(PYODIDE_PYTHON_VERSION)
+    dist = ROOT / "dist"
+    shutil.rmtree(dist, ignore_errors=True)
+
+    subprocess.check_call(
+        [pyodide, "build", "hypothesis", "--outdir", "dist/"],
+        cwd=ROOT,
+        env={**os.environ, **RUST_BUILD_ENV},
+    )
+
+    # fetch all the wheels
+    subprocess.check_call(
+        [python, "-m", "pip", "download", "--dest=dist/"]
+        + ["pytest", "tzdata", "syrupy"],
+        cwd=ROOT,
+    )
+    for whl in dist.glob("packaging-*.whl"):
+        whl.unlink()  # fails with `invalid metadata entry 'name'`
+
+    shutil.rmtree(ROOT / ".venv-pyodide", ignore_errors=True)
+    subprocess.check_call([pyodide, "venv", ".venv-pyodide"], cwd=ROOT)
+    venv_python = ROOT / ".venv-pyodide" / "bin" / "python"
+    subprocess.check_call([venv_python, "-m", "pip", "install", *dist.glob("*.whl")])
+
+    # pyodide can't run multiple processes internally, so parallelize explicitly
+    # over the discovered test files instead (20 at a time)
+    test_files = sorted(
+        str(p.relative_to(ROOT))
+        for p in (PYTHON_TESTS / "cover").glob("test*.py")
+        if "_py314" not in p.name
+    )
+    assert test_files
+    batches = [test_files[i : i + 20] for i in range(0, len(test_files), 20)]
+
+    def run_batch(batch):
+        return subprocess.run(
+            [venv_python, "-m", "pytest", "-p", "no:cacheprovider", *batch],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+
+    failed = False
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        for result in pool.map(run_batch, batches):
+            sys.stdout.write(result.stdout + result.stderr)
+            failed |= result.returncode != 0
+    if failed:
+        sys.exit(1)
 
 
 @task()
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
+    install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
 
     if not args:
@@ -830,12 +938,14 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
+    install.ensure_rustc(ci_version_rust)
     # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
     # source code is consulted first. Without -e, any rust code is compiled into site-packages,
     # which the src/ prepending will not reference. -e causes rust code to be compiled
     # into src/, which lets our sys.path edit pick it up.
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
 
     if not args:
@@ -846,8 +956,10 @@ def check_documentation(*args):
 @task()
 def check_types(*args):
     install.ensure_shellcheck()
+    install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
 
     if not args:
@@ -858,8 +970,10 @@ def check_types(*args):
 @task()
 def check_types_api(*args):
     install.ensure_shellcheck()
+    install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
 
     if not args:
@@ -871,8 +985,10 @@ def check_types_api(*args):
 @task()
 def check_types_hypothesis(*args):
     install.ensure_shellcheck()
+    install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
 
     if not args:

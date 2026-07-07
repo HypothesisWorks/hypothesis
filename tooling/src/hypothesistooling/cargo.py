@@ -9,7 +9,27 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+import subprocess
 from pathlib import Path
+
+import tomli
+
+from hypothesistooling import installers as install
+from hypothesistooling.git import ROOT
+
+RUST = ROOT / "hypothesis" / "rust"
+CARGO_TOML = RUST / "Cargo.toml"
+
+
+def rust_msrv():
+    return tomli.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
+        "rust-version"
+    ]
+
+
+def cargo(toolchain, args, *, components=(), targets=()):
+    install.ensure_rustc(toolchain, components=components, targets=targets)
+    subprocess.check_call([install.RUSTUP, "run", toolchain, "cargo", *args], cwd=RUST)
 
 
 def write_version(cargo_toml_path: Path, new_version: str) -> None:

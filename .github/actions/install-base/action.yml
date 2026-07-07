@@ -48,6 +48,7 @@ runs:
         ~/appdata/local/pip/cache
         ~/Library/Caches/pip
         ~/wheelhouse
+        hypothesis/rust/target
       key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ inputs.python-version }}-${{ inputs.python-architecture }}-${{ inputs.task }}
       restore-keys: |
         deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ inputs.python-version }}-${{ inputs.python-architecture }}

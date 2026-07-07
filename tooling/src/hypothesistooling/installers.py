@@ -8,11 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Module for obtaining various versions of Python.
-
-This is a thin shim around ``uv python install`` via the
-``ensure-python.sh`` helper script.
-"""
+"""Module for obtaining various language toolchains."""
 
 import os
 import shutil
@@ -21,6 +17,16 @@ import subprocess
 from hypothesistooling import scripts
 
 HOME = os.environ["HOME"]
+INSTALLED_PYTHONS = set()
+INSTALLED_RUSTS = set()
+
+CARGO_HOME = os.environ.get("CARGO_HOME") or os.path.join(HOME, ".cargo")
+RUSTUP = os.path.join(CARGO_HOME, "bin", "rustup")
+
+STACK = os.path.join(HOME, ".local", "bin", "stack")
+SHELLCHECK = shutil.which("shellcheck") or os.path.join(
+    HOME, ".local", "bin", "shellcheck"
+)
 
 
 def once(fn):
@@ -44,22 +50,42 @@ def python_executable(version):
     return __python_executable(version)
 
 
-PYTHONS = set()
-
-
 def ensure_python(version):
-    if version in PYTHONS:
+    if version in INSTALLED_PYTHONS:
         return
     scripts.run_script("ensure-python.sh", version)
     target = __python_executable(version)
     assert os.path.exists(target), target
-    PYTHONS.add(version)
+    INSTALLED_PYTHONS.add(version)
 
 
-STACK = os.path.join(HOME, ".local", "bin", "stack")
-SHELLCHECK = shutil.which("shellcheck") or os.path.join(
-    HOME, ".local", "bin", "shellcheck"
-)
+@once
+def ensure_rustup():
+    if os.path.exists(RUSTUP):
+        return
+    subprocess.check_call(
+        "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs "
+        "| sh -s -- -y --no-modify-path --default-toolchain none",
+        shell=True,
+        # don't abort just because a system rustup exists on PATH
+        env={**os.environ, "RUSTUP_INIT_SKIP_PATH_CHECK": "yes"},
+    )
+
+
+def ensure_rustc(version, *, components=(), targets=()):
+    key = (version, *components, *targets)
+    if key in INSTALLED_RUSTS:
+        return
+    ensure_rustup()
+    subprocess.check_call(
+        [RUSTUP, "toolchain", "install", version, "--profile", "minimal"]
+        + [arg for component in components for arg in ("--component", component)]
+    )
+    if targets:
+        subprocess.check_call(
+            [RUSTUP, "target", "add", *targets, "--toolchain", version]
+        )
+    INSTALLED_RUSTS.add(key)
 
 
 def ensure_stack():

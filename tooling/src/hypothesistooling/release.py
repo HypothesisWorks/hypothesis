@@ -19,6 +19,7 @@ import requests
 import tomli
 
 from hypothesistooling import cargo
+from hypothesistooling.cargo import CARGO_TOML
 from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
 from hypothesistooling.scripts import pip_tool
 
@@ -29,7 +30,6 @@ HYPOTHESIS = ROOT / PACKAGE_NAME
 PYTHON_SRC = HYPOTHESIS / "src"
 PYTHON_TESTS = HYPOTHESIS / "tests"
 DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
-CARGO_TOML = HYPOTHESIS / "rust" / "Cargo.toml"
 
 RELEASE_FILE = HYPOTHESIS / "RELEASE.rst"
 RELEASE_SAMPLE_FILE = HYPOTHESIS / "RELEASE-sample.rst"
