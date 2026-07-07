@@ -966,12 +966,14 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 for filename in namelist:
                     fileinfo = zf.getinfo(filename)
                     if fileinfo.is_dir():
-                        self._access_cache[PurePath(filename)] = set()
+                        self._access_cache.setdefault(PurePath(filename), set())
                     else:
                         # Get the keypath from the filename
                         keypath = PurePath(filename).parent
                         # Add the file to the keypath
-                        self._access_cache[keypath].add(PurePath(filename))
+                        self._access_cache.setdefault(keypath, set()).add(
+                            PurePath(filename)
+                        )
         except BadZipFile:
             warnings.warn(
                 "The downloaded artifact from GitHub is invalid. "
