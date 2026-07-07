@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.2:
+
+--------------------
+6.156.2 - 2026-07-07
+--------------------
+
+This patch fixes a ``KeyError`` in |GitHubArtifactDatabase| when reading an
+artifact whose zip file contains no explicit directory entries, which is the
+case for zips produced by ``actions/upload-artifact``.
+
 .. _v6.156.1:
 
 --------------------
