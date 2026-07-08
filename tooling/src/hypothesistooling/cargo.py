@@ -42,3 +42,7 @@ def write_version(cargo_toml_path: Path, new_version: str) -> None:
         flags=re.MULTILINE,
     )
     cargo_toml_path.write_text(content, encoding="utf-8")
+
+
+def update_lockfile() -> None:
+    cargo(rust_msrv(), ["update", "--workspace"])

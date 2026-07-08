@@ -183,6 +183,7 @@ def update_changelog_and_version():
         rest = "\n".join([old, len(old) * "=", "", rest])
 
     cargo.write_version(CARGO_TOML, new_version_string)
+    cargo.update_lockfile()
 
     heading_for_new_version = f"{new_version_string} - {release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
