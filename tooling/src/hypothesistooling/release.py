@@ -287,12 +287,19 @@ def upload_distribution_to_pypi(*, expected_version):
 
 
 def create_github_release():
+    # Building the docs requires hypothesis installed editably. See check_documentation
+    # comment for details of why.
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
+    )
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])
+
     textfile = os.path.join(HYPOTHESIS, "docs", "_build", "text", "changelog.txt")
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
+
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
     anchor = current_version().replace(".", "-")
     changelog_body = (
