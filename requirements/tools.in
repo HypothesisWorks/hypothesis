@@ -5,6 +5,7 @@ dpcontracts
 ipython
 lark
 libcst
+maturin
 mypy
 numpy
 pelican[markdown]
