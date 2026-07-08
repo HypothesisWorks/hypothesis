@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.4:
+
+--------------------
+6.156.4 - 2026-07-08
+--------------------
+
+In addition to our version-specific wheels, we now also publish ``abi3`` wheels, built against the 3.10 stable ABI.
+
 .. _v6.156.3:
 
 --------------------
