@@ -12,6 +12,9 @@ authors = [
 description = "The property-based testing library for Python"
 
 license = "MPL-2.0"
+# explicit reference the license file to work around a bug (?) in maturin where it
+# doesn't auto-include the license file for sdists
+license-files = ["LICENSE.txt"]
 requires-python = ">= 3.10"
 keywords = ["python", "testing", "fuzzing", "property-based-testing"]
 classifiers = [
