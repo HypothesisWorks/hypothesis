@@ -14,6 +14,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import date
 from pathlib import Path
 from textwrap import indent
@@ -720,6 +721,7 @@ python_tests = task(
     if_changed=(
         PYTHON_SRC,
         PYTHON_TESTS,
+        HYPOTHESIS / "rust",
         HYPOTHESIS / "pyproject.toml",
         ROOT / "tooling",
         HYPOTHESIS / "scripts",
@@ -813,6 +815,18 @@ standard_tox_task("snapshots")
 @task()
 def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version], *args)
+
+
+@python_tests
+def check_abi3(*args):
+    with tempfile.TemporaryDirectory() as dist:
+        pip_tool(
+            "maturin", "build", "--features", "abi3", "--out", dist, cwd=HYPOTHESIS
+        )
+        (wheel,) = Path(dist).glob("*.whl")
+        assert "abi3" in wheel.name, wheel.name
+        slug = ci_version.replace(".", "")
+        run_tox(f"py{slug}-cover", PYTHONS[ci_version], f"--installpkg={wheel}", *args)
 
 
 @task()
