@@ -817,7 +817,7 @@ class MultiplexedDatabase(ExampleDatabase):
 class _AuthStrippingRedirectHandler(HTTPRedirectHandler):
     """Drop the ``Authorization`` header when _following a cross-host redirect_."""
 
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         new = super().redirect_request(req, fp, code, msg, headers, newurl)
         if (
             new is not None
