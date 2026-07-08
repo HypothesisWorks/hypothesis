@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
@@ -24,7 +25,13 @@ import requests
 from coverage.config import CoverageConfig
 
 from hypothesistooling import installers as install
-from hypothesistooling.cargo import RUST, cargo, rust_msrv
+from hypothesistooling.cargo import (
+    RUST,
+    RUST_BUILD_ENV,
+    cargo,
+    ci_version_rust,
+    rust_msrv,
+)
 from hypothesistooling.git import (
     IS_PULL_REQUEST,
     REPO_TESTS,
@@ -735,7 +742,6 @@ PYTHONS = {
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 )
-ci_version_rust = "1.96.1"
 
 # automatically updated by update_pyodide_versions()
 PYODIDE_VERSION = "314.0.0"
@@ -743,13 +749,11 @@ PYODIDE_BUILD_VERSION = "0.35.1"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
-RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
-
-
 python_tests = task(
     if_changed=(
         PYTHON_SRC,
         PYTHON_TESTS,
+        HYPOTHESIS / "rust",
         HYPOTHESIS / "pyproject.toml",
         ROOT / "tooling",
         HYPOTHESIS / "scripts",
@@ -928,6 +932,31 @@ def check_pyodide():
             failed |= result.returncode != 0
     if failed:
         sys.exit(1)
+
+
+@python_tests
+def check_abi3(*args):
+    install.ensure_rustc(ci_version_rust)
+    with tempfile.TemporaryDirectory() as dist:
+        pip_tool(
+            "maturin",
+            "build",
+            "--features",
+            "abi3",
+            "--out",
+            dist,
+            cwd=HYPOTHESIS,
+            env={**os.environ, **RUST_BUILD_ENV},
+        )
+        (wheel,) = Path(dist).glob("*.whl")
+        assert "abi3" in wheel.name, wheel.name
+        slug = ci_version_python.replace(".", "")
+        run_tox(
+            f"py{slug}-cover",
+            PYTHONS[ci_version_python],
+            f"--installpkg={wheel}",
+            *args,
+        )
 
 
 @task()

@@ -146,6 +146,8 @@ markupsafe==3.0.3
     # via jinja2
 matplotlib-inline==0.2.2
     # via ipython
+maturin==1.14.1
+    # via -r requirements/tools.in
 mdurl==0.1.2
     # via markdown-it-py
 more-itertools==11.1.0

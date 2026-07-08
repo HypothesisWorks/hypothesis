@@ -20,6 +20,10 @@ from hypothesistooling.git import ROOT
 RUST = ROOT / "hypothesis" / "rust"
 CARGO_TOML = RUST / "Cargo.toml"
 
+ci_version_rust = "1.96.1"
+# pin any implicit cargo invocation (pip -> maturin -> cargo) to the ci toolchain
+RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
+
 
 def rust_msrv():
     return tomli.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
