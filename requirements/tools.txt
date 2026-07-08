@@ -164,7 +164,7 @@ nh3==0.3.6
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
-numpy==2.5.1
+numpy==2.4.6
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican

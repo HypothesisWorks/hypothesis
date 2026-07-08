@@ -87,6 +87,22 @@ def test_resolves_specified_ndarray_type(typ):
         lambda arr: isinstance(arr, np.ndarray) and arr.dtype.type == typ,
     )
 
+    assert_simple_property(
+        st.from_type(np.ndarray[typing.Any, np.dtype[typ]]),
+        lambda arr: isinstance(arr, np.ndarray) and arr.dtype.type == typ,
+    )
+
+
+@pytest.mark.skipif(
+    tuple(int(x) for x in np.__version__.split(".")[:2]) < (1, 22), reason="see comment"
+)
+def test_resolves_ndarray_with_typevar_dtype():
+    T = typing.TypeVar("T", bound=np.generic)
+    assert_simple_property(
+        st.from_type(np.ndarray[typing.Any, np.dtype[T]]),
+        lambda arr: isinstance(arr, np.ndarray),
+    )
+
 
 @pytest.mark.skipif(NDArray is None, **needs_np_typing)
 @pytest.mark.parametrize("typ", [workaround(t) for t in STANDARD_TYPES_TYPE])
