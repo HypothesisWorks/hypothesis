@@ -203,6 +203,7 @@ their individual contributions.
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
 * `Wilfred Hughes <https://www.github.com/wilfred>`_
+* `ychampion <https://github.com/ychampion>`_
 * `Yiyang Zhan <https://www.github.com/zhanpon>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
 * `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)

@@ -1472,6 +1472,23 @@ def test_flatmap():
     run_state_machine_as_test(Machine)
 
 
+def test_consumed_bundle_can_be_flatmapped():
+    class Machine(RuleBasedStateMachine):
+        chars = Bundle("chars")
+
+        @initialize(target=chars)
+        def create_chars(self):
+            return "ab"
+
+        @rule(character=consumes(chars).flatmap(lambda value: st.sampled_from(value)))
+        def use_flatmap(self, character):
+            assert character in "ab"
+            assert not self.bundle("chars")
+
+    Machine.TestCase.settings = Settings(stateful_step_count=2, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
 def test_use_bundle_within_other_strategies():
     class Class:
         def __init__(self, value):

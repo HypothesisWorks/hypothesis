@@ -638,7 +638,7 @@ class Bundle(SearchStrategy[Ex]):
 
     def flatmap(self, expand):
         if self.draw_references:
-            return type(self)(
+            return Bundle(
                 self.name,
                 consume=self.__reference_strategy.consume,
                 draw_references=False,
