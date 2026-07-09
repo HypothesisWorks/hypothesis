@@ -155,14 +155,31 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
     - name: Install pyodide-build and Pyodide cross-build environment
       run: |
-        pip install pyodide-build==${{ env.PYODIDE_BUILD_VERSION }}
-        pyodide xbuildenv install ${{ env.PYODIDE_VERSION }}
-    - name: Install Rust wasm32-unknown-emscripten target
-      run: rustup target add wasm32-unknown-emscripten
+        pip install pyodide-build==${PYODIDE_BUILD_VERSION}
+        pyodide xbuildenv install ${PYODIDE_VERSION}
+    - name: Get Pyodide build configuration
+      id: pyodide-config
+      run: |
+        echo "rust-toolchain=$(pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
+        echo "rustflags=$(pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
+        echo "python-minor=$(echo "$PYTHON_VERSION" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
+    - name: Install Emscripten SDK
+      run: |
+        pyodide xbuildenv install-emscripten
+        pyodide config get emscripten_dir >> "$GITHUB_PATH"
     - name: Stamp release version into Cargo.toml
-      run: python tooling/scripts/write-cargo-version.py "${{ needs.prepare-release.outputs.new_version }}"
+      run: python tooling/scripts/write-cargo-version.py "${NEEDS_PREPARE_RELEASE_OUTPUTS_NEW_VERSION}"
+      env:
+        NEEDS_PREPARE_RELEASE_OUTPUTS_NEW_VERSION: ${{ needs.prepare-release.outputs.new_version }}
     - name: Build Pyodide wheel
-      run: pyodide build hypothesis --outdir hypothesis/dist/
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+      env:
+        CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ steps.pyodide-config.outputs.rustflags }}
+      with:
+        target: wasm32-unknown-emscripten
+        args: --release --out dist --interpreter ${{ steps.pyodide-config.outputs.python-minor }}
+        working-directory: hypothesis
+        rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
     - uses: actions/upload-artifact@v4
       with:
         name: dist-pyodide
