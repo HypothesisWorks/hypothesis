@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.5:
+
+--------------------
+6.156.5 - 2026-07-10
+--------------------
+
+We now publish abi3 wheels for 32-bit linux and 32-bit windows.
+
 .. _v6.156.4:
 
 --------------------
