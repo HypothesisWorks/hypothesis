@@ -21,8 +21,16 @@ RUST = ROOT / "hypothesis" / "rust"
 CARGO_TOML = RUST / "Cargo.toml"
 
 ci_version_rust = "1.96.1"
-# pin any implicit cargo invocation (pip -> maturin -> cargo) to the ci toolchain
-RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
+
+
+def rust_build_env(*, profile="dev"):
+    # pin any implicit cargo invocation (pip -> maturin -> cargo) to the ci
+    # toolchain
+    assert profile in ("dev", "release")
+    return {
+        "RUSTUP_TOOLCHAIN": ci_version_rust,
+        "MATURIN_PEP517_ARGS": f"--profile {profile}",
+    }
 
 
 def rust_msrv():

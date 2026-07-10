@@ -456,7 +456,7 @@ def floats(
             "but allow_infinity=False"
         )
 
-    smallest_normal = width_smallest_normals[width]
+    smallest_normal = width_smallest_normals(width)
     if allow_subnormal is None:
         if min_value is not None and max_value is not None:
             if min_value == max_value:

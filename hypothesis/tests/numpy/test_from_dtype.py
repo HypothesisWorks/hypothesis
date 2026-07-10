@@ -280,7 +280,7 @@ def test_float_subnormal_generation(allow_subnormal, width):
     strat = nps.from_dtype(dtype, allow_subnormal=allow_subnormal).filter(
         lambda n: n != 0
     )
-    smallest_normal = width_smallest_normals[width]
+    smallest_normal = width_smallest_normals(width)
     if allow_subnormal:
         find_any(strat, lambda n: -smallest_normal < n < smallest_normal)
     else:
@@ -330,7 +330,7 @@ def test_complex_subnormal_generation(allow_subnormal, width):
     strat = nps.from_dtype(dtype, allow_subnormal=allow_subnormal).filter(
         lambda n: n.real != 0 and n.imag != 0
     )
-    smallest_normal = width_smallest_normals[width / 2]
+    smallest_normal = width_smallest_normals(width // 2)
 
     def condition(n):
         return (

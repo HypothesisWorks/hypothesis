@@ -27,9 +27,9 @@ from coverage.config import CoverageConfig
 from hypothesistooling import installers as install
 from hypothesistooling.cargo import (
     RUST,
-    RUST_BUILD_ENV,
     cargo,
     ci_version_rust,
+    rust_build_env,
     rust_msrv,
 )
 from hypothesistooling.git import (
@@ -697,7 +697,7 @@ def live_docs():
     )
 
 
-def run_tox(task, version, *args):
+def run_tox(task, version, *args, profile="dev"):
     python = install.python_executable(version)
     install.ensure_rustc(ci_version_rust)
 
@@ -722,7 +722,14 @@ def run_tox(task, version, *args):
         env["TOX_PYTHON_VERSION"] = ALIASES[version]  # "python3.12"
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, *args, env={**env, **RUST_BUILD_ENV}, cwd=HYPOTHESIS)
+    pip_tool(
+        "tox",
+        "-e",
+        task,
+        *args,
+        env={**env, **rust_build_env(profile=profile)},
+        cwd=HYPOTHESIS,
+    )
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
@@ -844,6 +851,11 @@ standard_tox_task("conjecture-coverage")
 standard_tox_task("snapshots")
 
 
+@python_tests
+def check_release_smoke(*args):
+    run_tox("coverage", PYTHONS[ci_version_python], *args, profile="release")
+
+
 @task()
 def check_quality(*args):
     run_tox("quality", PYTHONS[ci_version_python], *args)
@@ -881,7 +893,7 @@ def check_pyodide():
     subprocess.check_call(
         [pyodide, "build", "hypothesis", "--outdir", "dist/"],
         cwd=ROOT,
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     # fetch all the wheels
@@ -946,7 +958,7 @@ def check_abi3(*args):
             "--out",
             dist,
             cwd=HYPOTHESIS,
-            env={**os.environ, **RUST_BUILD_ENV},
+            env={**os.environ, **rust_build_env()},
         )
         (wheel,) = Path(dist).glob("*.whl")
         assert "abi3" in wheel.name, wheel.name
@@ -965,7 +977,7 @@ def check_whole_repo_tests(*args):
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     if not args:
@@ -983,7 +995,7 @@ def check_documentation(*args):
     # into src/, which lets our sys.path edit pick it up.
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     if not args:
@@ -997,7 +1009,7 @@ def check_types(*args):
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     if not args:
@@ -1011,7 +1023,7 @@ def check_types_api(*args):
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     if not args:
@@ -1026,7 +1038,7 @@ def check_types_hypothesis(*args):
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
     if not args:
