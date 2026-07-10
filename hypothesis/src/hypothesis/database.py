@@ -34,8 +34,7 @@ from typing import (
     cast,
 )
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import StorageDirectory, storage_directory
@@ -814,19 +813,6 @@ class MultiplexedDatabase(ExampleDatabase):
             db.remove_listener(self._broadcast_change)
 
 
-class _AuthStrippingRedirectHandler(HTTPRedirectHandler):
-    """Drop the ``Authorization`` header when _following a cross-host redirect_."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        new = super().redirect_request(req, fp, code, msg, headers, newurl)
-        if (
-            new is not None
-            and urlsplit(newurl).hostname != urlsplit(req.full_url).hostname
-        ):
-            new.remove_header("Authorization")
-        return new
-
-
 class GitHubArtifactDatabase(ExampleDatabase):
     """
     A file-based database loaded from a `GitHub Actions <https://docs.github.com/en/actions>`_ artifact.
@@ -1064,17 +1050,14 @@ class GitHubArtifactDatabase(ExampleDatabase):
             headers={
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28 ",
-                "Authorization": f"Bearer {self.token}",
             },
         )
+        # see https://github.com/HypothesisWorks/hypothesis/pull/4791
+        request.add_unredirected_header("Authorization", f"Bearer {self.token}")
         warning_message = None
         response_bytes: bytes | None = None
-        # GitHub redirects artifact downloads to a presigned Blob Storage URL; use
-        # an opener that strips our bearer token on that cross-host redirect, which
-        # the presigned URL would otherwise reject with a 401.
-        opener = build_opener(_AuthStrippingRedirectHandler)
         try:
-            with opener.open(request) as response:
+            with urlopen(request) as response:
                 response_bytes = response.read()
         except HTTPError as e:
             if e.code == 401:

@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import email.message
 import os
 import re
 import shutil
@@ -21,7 +20,6 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
-from urllib.request import Request
 
 import pytest
 
@@ -41,7 +39,6 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
-    _AuthStrippingRedirectHandler,
     _db_for_path,
     _hash,
     _pack_uleb128,
@@ -316,42 +313,6 @@ def test_ga_reads_artifact_without_directory_entries():
 
         database = GitHubArtifactDatabase("test", "test", path=path)
         assert list(database.fetch(key)) == [value]
-
-
-def _redirect(handler, from_url, to_url, headers):
-    return handler.redirect_request(
-        Request(from_url, headers=headers),
-        fp=None,
-        code=302,
-        msg="Found",
-        headers=email.message.Message(),
-        newurl=to_url,
-    )
-
-
-def test_auth_stripping_redirect_handler_drops_authorization_cross_host():
-    """Tests that cross-host redirects _do not_ leak the GitHub bearer token."""
-    new = _redirect(
-        _AuthStrippingRedirectHandler(),
-        "https://api.github.com/repos/o/r/actions/artifacts/1/zip",
-        "https://productionresultssa.blob.core.windows.net/x?sig=abc",
-        {"Authorization": "Bearer secret", "Accept": "application/json"},
-    )
-    assert new is not None
-    assert new.get_header("Authorization") is None
-    assert new.get_header("Accept") == "application/json"
-
-
-def test_auth_stripping_redirect_handler_keeps_authorization_same_host():
-    """Tests that same-host redirects _do_ retain the Authorization header."""
-    new = _redirect(
-        _AuthStrippingRedirectHandler(),
-        "https://api.github.com/a",
-        "https://api.github.com/b",
-        {"Authorization": "Bearer secret"},
-    )
-    assert new is not None
-    assert new.get_header("Authorization") == "Bearer secret"
 
 
 def test_ga_deletes_old_artifacts():
