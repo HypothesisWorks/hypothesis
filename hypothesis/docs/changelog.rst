@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.6:
+
+--------------------
+6.156.6 - 2026-07-10
+--------------------
+
+This patch fixes |GitHubArtifactDatabase| failing to download artifacts due to a colliding ``Authorization`` header.
+
 .. _v6.156.5:
 
 --------------------
