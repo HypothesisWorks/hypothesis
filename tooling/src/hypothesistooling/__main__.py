@@ -463,8 +463,8 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.15",
-    "6.0": "6.0.6",
+    "5.2": "5.2.16",
+    "6.0": "6.0.7",
 }
 
 
@@ -711,8 +711,8 @@ PYTHONS = {
     "3.13": "3.13.14",
     "3.14": "3.14.6",
     "3.14t": "3.14.6+freethreaded",
-    "3.15": "3.15.0b2",
-    "3.15t": "3.15.0b2+freethreaded",
+    "3.15": "3.15.0b3",
+    "3.15t": "3.15.0b3+freethreaded",
     "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version = "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
