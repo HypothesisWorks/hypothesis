@@ -1050,9 +1050,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
             headers={
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28 ",
-                "Authorization": f"Bearer {self.token}",
             },
         )
+        # see https://github.com/HypothesisWorks/hypothesis/pull/4791
+        request.add_unredirected_header("Authorization", f"Bearer {self.token}")
         warning_message = None
         response_bytes: bytes | None = None
         try:
