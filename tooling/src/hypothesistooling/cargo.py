@@ -21,7 +21,6 @@ RUST = ROOT / "hypothesis" / "rust"
 CARGO_TOML = RUST / "Cargo.toml"
 
 ci_version_rust = "1.96.1"
-# pin any implicit cargo invocation (pip -> maturin -> cargo) to the ci toolchain
 RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
 
 
@@ -49,4 +48,4 @@ def write_version(cargo_toml_path: Path, new_version: str) -> None:
 
 
 def update_lockfile() -> None:
-    cargo(rust_msrv(), ["update", "--workspace"])
+    cargo(rust_msrv(), ["update", "--workspace", "--manifest-path", str(CARGO_TOML)])
