@@ -164,12 +164,12 @@ jobs:
       # automatically updated by update_pyodide_versions()
       PYODIDE_VERSION: 314.0.2
       PYODIDE_BUILD_VERSION: 0.36.0
-      PYTHON_VERSION: 3.14.2
+      PYODIDE_PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: ${{ env.PYODIDE_PYTHON_VERSION }}
     - name: Install pyodide-build and Pyodide cross-build environment
       run: |
         pip install pyodide-build==${{ env.PYODIDE_BUILD_VERSION }}

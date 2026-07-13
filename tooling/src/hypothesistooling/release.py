@@ -18,7 +18,8 @@ from datetime import datetime, timezone
 import requests
 import tomli
 
-from hypothesistooling import cargo
+from hypothesistooling import cargo, installers as install
+from hypothesistooling.cargo import CARGO_TOML, RUST_BUILD_ENV, ci_version_rust
 from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
 from hypothesistooling.scripts import pip_tool
 
@@ -29,7 +30,6 @@ HYPOTHESIS = ROOT / PACKAGE_NAME
 PYTHON_SRC = HYPOTHESIS / "src"
 PYTHON_TESTS = HYPOTHESIS / "tests"
 DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
-CARGO_TOML = HYPOTHESIS / "rust" / "Cargo.toml"
 
 RELEASE_FILE = HYPOTHESIS / "RELEASE.rst"
 RELEASE_SAMPLE_FILE = HYPOTHESIS / "RELEASE-sample.rst"
@@ -183,7 +183,7 @@ def update_changelog_and_version():
         rest = "\n".join([old, len(old) * "=", "", rest])
 
     cargo.write_version(CARGO_TOML, new_version_string)
-    cargo.update_lockfile(CARGO_TOML)
+    cargo.update_lockfile()
 
     heading_for_new_version = f"{new_version_string} - {release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
@@ -289,8 +289,10 @@ def upload_distribution_to_pypi(*, expected_version):
 def create_github_release():
     # Building the docs requires hypothesis installed editably. See check_documentation
     # comment for details of why.
+    install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS]
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
     )
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.

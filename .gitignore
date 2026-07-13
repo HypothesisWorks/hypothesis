@@ -21,6 +21,10 @@ CLAUDE.local.md
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/hypothesis.md
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/porting/
+!.claude/skills/porting/SKILL.md
 
 # generic build components
 
@@ -39,6 +43,7 @@ target/
 *.pyc
 *.pyo
 venv*
+.venv*
 .cache
 .pytest_cache
 .mypy_cache
@@ -123,3 +128,4 @@ HypothesisWorks.github.io.iml
 jekyll.log
 /website/output/
 /t.py
+*.profraw
