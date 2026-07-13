@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
+
 import pytest
 from pytest import raises
 
@@ -32,8 +34,9 @@ def test_prints_on_failure():
 
     with raises(ValueError) as err:
         test()
-    assert "Draw 1: [0, 0]" in err.value.__notes__
-    assert "Draw 2: 0" in err.value.__notes__
+    notes = "\n".join(err.value.__notes__)
+    assert "[0, 0]" in notes
+    assert "DataObject(draws=[" in notes
 
 
 def test_prints_labels_if_given_on_failure():
@@ -47,8 +50,9 @@ def test_prints_labels_if_given_on_failure():
 
     with raises(AssertionError) as err:
         test()
-    assert "Draw 1 (Some numbers): [0, 0]" in err.value.__notes__
-    assert "Draw 2 (A number): 0" in err.value.__notes__
+    notes = "\n".join(err.value.__notes__)
+    assert re.search(r"# Some numbers\s*\n\s*\[0, 0\]", notes), notes
+    assert re.search(r"# A number\s*\n\s*0", notes), notes
 
 
 def test_given_twice_is_same():
@@ -60,8 +64,10 @@ def test_given_twice_is_same():
 
     with raises(ValueError) as err:
         test()
-    assert "Draw 1: 0" in err.value.__notes__
-    assert "Draw 2: 0" in err.value.__notes__
+    # Each DataObject renders its own draws=[...] list in the falsifying
+    # example; we should see two of them.
+    notes = "\n".join(err.value.__notes__)
+    assert notes.count("DataObject(draws=[") == 2
 
 
 # `find` doesn't seem to be thread-safe, though I don't actually see why not

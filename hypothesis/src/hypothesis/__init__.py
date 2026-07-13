@@ -30,10 +30,12 @@ from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.entry_points import run
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.internal.entropy import register_random
+from hypothesis.strategies._internal.core import DataObject
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
 __all__ = [
+    "DataObject",
     "HealthCheck",
     "Phase",
     "Verbosity",
