@@ -33,7 +33,7 @@ jobs:
           - check-format
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -53,7 +53,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == tox-* ]]; then
            TOX_TASK="${TASK#tox-}"
-           cd hypothesis-python
+           cd hypothesis
            tox -e $TOX_TASK
         else
           ./build.sh
@@ -72,7 +72,6 @@ jobs:
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche
-          - check-pypy310-cover
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311-cover
           - check-py311-nocover
@@ -84,26 +83,25 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
-          - check-py313t-cover
-          - check-py313t-nocover
-          - check-py313t-niche
           - check-quality
-          - check-pytest62
-          - check-pytest62
+          - check-pytest9
+          - check-pytest84
+          - check-pytest74
+          - check-py311-pytest62
           - check-django60
-          - check-django42
-          - check-pandas22
-          - check-pandas21
-          - check-pandas20
-          - check-pandas15
-          - check-pandas14
-          - check-pandas13
+          - check-py313-pandas22
+          - check-py312-pandas21
+          - check-py311-pandas20
+          - check-py311-pandas15
+          - check-py310-pandas14
+          - check-py310-pandas13
+          - check-abi3
           ## FIXME: actions update means Python builds without eg _bz2, which was required
           # - check-py310-pandas12
           # - check-py310-pandas11
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -118,7 +116,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -130,9 +128,9 @@ jobs:
         name: ${{ matrix.task }}-data
         include-hidden-files: true
         path: |
-          hypothesis-python/.coverage*
-          !hypothesis-python/.coveragerc
-          hypothesis-python/branch-check*
+          hypothesis/.coverage*
+          !hypothesis/.coveragerc
+          hypothesis/branch-check*
 
   nonreq:
     needs: [basic]
@@ -172,7 +170,7 @@ jobs:
           - check-numpy-nightly
       fail-fast: false
     env:
-      PYTHON_VERSION: "3.10"
+      PYTHON_VERSION: "3.14"
     steps:
     - uses: actions/checkout@v3
       with:
@@ -187,7 +185,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
         else
           ./build.sh
         fi
@@ -201,7 +199,7 @@ jobs:
           - macos-latest
         python-version:
           - "3.11"
-          - "3.13"
+          - "3.14"
         python-architecture:
           - null
           - "x86"
@@ -213,11 +211,11 @@ jobs:
           - alt-rest
         exclude:
           - { os: macos-latest, python-architecture: "x86" }
-          - { python-version: "3.13", python-architecture: "x86" }
+          - { python-version: "3.14", python-architecture: "x86" }
           - { python-version: "3.11", task: nocover }
           - { python-version: "3.11", task: rest }
-          - { python-version: "3.13", task: alt-nocover }
-          - { python-version: "3.13", task: alt-rest }
+          - { python-version: "3.14", task: alt-nocover }
+          - { python-version: "3.14", task: alt-rest }
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -238,7 +236,7 @@ jobs:
         pip install --upgrade setuptools pip wheel
         pip install tox
     - name: Run tests
-      working-directory: ./hypothesis-python
+      working-directory: ./hypothesis
       run: |
         tox -e ${{ matrix.task }}
 
@@ -251,9 +249,9 @@ jobs:
       NODE_VERSION: 22
       # Note that the versions below are updated by `update_pyodide_versions()` in our weekly cronjob.
       # The versions of pyodide-build and the Pyodide runtime may differ.
-      PYODIDE_VERSION: 0.29.1
-      PYODIDE_BUILD_VERSION: 0.31.1
-      PYTHON_VERSION: 3.13.2
+      PYODIDE_VERSION: 314.0.2
+      PYODIDE_BUILD_VERSION: 0.36.0
+      PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@v3
       with:
@@ -273,11 +271,12 @@ jobs:
         pyodide xbuildenv install ${{ env.PYODIDE_VERSION }}
     - name: Set up Pyodide venv and install dependencies
       run: |
-        pip install --upgrade setuptools pip wheel build
-        python -m build --wheel hypothesis-python --outdir dist/
-        pip download --dest=dist/ hypothesis-python/ pytest tzdata  # fetch all the wheels
-         rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
-         pyodide venv .venv-pyodide
+        rustup target add wasm32-unknown-emscripten
+        pip install --upgrade setuptools pip wheel
+        pyodide build hypothesis --outdir dist/
+        pip download --dest=dist/ pytest tzdata syrupy  # fetch all the wheels
+        rm dist/packaging-*.whl  # fails with `invalid metadata entry 'name'`
+        pyodide venv .venv-pyodide
         source .venv-pyodide/bin/activate
         pip install dist/*.whl
     - name: Run tests
@@ -285,7 +284,7 @@ jobs:
         source .venv-pyodide/bin/activate
         # pyodide can't run multiple processes internally, so parallelize explicitly over
         # discovered test files instead (20 at a time)
-        TEST_FILES=$(ls hypothesis-python/tests/cover/test*.py | grep -v "_py314")
+        TEST_FILES=$(ls hypothesis/tests/cover/test*.py | grep -v "_py314")
         echo "test files: $TEST_FILES"
         parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
           python -m pytest -p no:cacheprovider <<< $TEST_FILES
@@ -300,26 +299,14 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
 
-  deploy:
+  release:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
-    runs-on: ubuntu-latest
     needs: [check-required]
-    strategy:
-      matrix:
-        task:
-          - deploy
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GH_TOKEN }}
-    - uses: ./.github/actions/install-base
-      with:
-        python-version: "3.10"
-    - name: Deploy package
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        TASK=${{ matrix.task }} ./build.sh
+    # granted to the caller so the nested publish job can request an OIDC
+    # token for PyPI trusted publishing; contents:read lets the build jobs check out.
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/release.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}

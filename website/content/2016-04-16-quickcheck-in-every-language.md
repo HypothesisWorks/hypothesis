@@ -33,7 +33,7 @@ I thought it would be worth keeping track of which are which, so I've put togeth
 	<li>Must be under an OSI approved license.</li>
 </ol>
 <p>
-In this I've tried to to collect a list of what I think the best ones are for any given language.
+In this I've tried to collect a list of what I think the best ones are for any given language.
 I haven't used all of these, but I've used some and read and talked to people about the others.
 </p>
 
@@ -198,7 +198,7 @@ I haven't put in the depth of in time to be sure, not that I have doubts.</p>
 </p>
 
 <p>
-  For the rest though? I'm glad they exist! I care about testing about about high quality software,
+  For the rest though? I'm glad they exist! I care about testing and about high quality software,
   and they're doing their part to make it possible.
 </p>
 

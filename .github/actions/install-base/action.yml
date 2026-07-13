@@ -17,6 +17,15 @@ runs:
     with:
       python-version: ${{ inputs.python-version }}
       architecture: ${{ inputs.python-architecture }}
+  - name: Set up rust target for 32-bit windows
+    # we test 32bit windows by cross-compiling to 32bit from a 64bit host, because we don't
+    # have access to a 32bit host on github actions. Set that cross-compilation up now; otherwise,
+    # we'll compile as 64bit and try to run against a 32bit python interpreter, and crash.
+    if: ${{ inputs.python-architecture == 'x86' }}
+    shell: bash
+    run: |
+      rustup target add i686-pc-windows-msvc
+      echo "CARGO_BUILD_TARGET=i686-pc-windows-msvc" >> "$GITHUB_ENV"
   - name: Install dotnet6 for Pyjion
     if: ${{ endsWith(inputs.task, '-pyjion') }}
     shell: bash

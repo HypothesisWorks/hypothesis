@@ -28,6 +28,7 @@ select = [
     "RSE",    # flake8-raise
     "SIM",    # flake8-simplify
     "T10",    # flake8-debugger
+    "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
     "UP",     # pyupgrade
     "W",      # pycodestyle
@@ -35,26 +36,25 @@ select = [
     "RUF",    # Ruff-specific rules
 ]
 ignore = [
-  "B008",
-  "B018",
-  "C408",
-  "C420",
-  "COM812",
-  "DJ007",
-  "DJ008",
-  # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
-  # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
-  # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
-  "E501",
-  "E721",
-  "E731",
-  "E741",
-  "FBT001",
-  "FBT003",
-  "FBT001",
-  "PD011",
-  "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
-  "PT001",
+    "B008",
+    "B018",
+    "C408",
+    "C420",
+    "COM812",
+    "DJ007",
+    "DJ008",
+    # "line too long". ruff uses tool.ruff.line-length both for this rule, and for `ruff format`.
+    # We want ruff format to match black's 88 line length, so we set tool.ruff.line-length = 88. But
+    # this is a formatter suggestion, not a rule, so we also disable the E501 lint.
+    "E501",
+    "E721",
+    "E731",
+    "E741",
+    "FBT001",
+    "FBT003",
+    "PD011",
+    "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
+    "PT001",
     "PT003",
     "PT006",
     "PT007",
@@ -78,20 +78,21 @@ ignore = [
     "SIM114",
     "SIM300",
     "SIM905",
-    "UP031",
-    "UP037",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"hypothesis-python/src/hypothesis/core.py" = ["B030", "B904"]
-"hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
-"hypothesis-python/tests/nocover/test_imports.py" = ["F403", "F405"]
-"hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]
-"hypothesis-python/src/hypothesis/internal/conjecture/*" = ["B023"]
-"hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
+"!hypothesis/src/**" = ["T20"]
+"hypothesis/src/hypothesis/extra/cli.py" = ["T20"]
+"hypothesis/src/hypothesis/reporting.py" = ["T20"]
+"hypothesis/src/hypothesis/core.py" = ["B030", "B904"]
+"hypothesis/src/hypothesis/internal/compat.py" = ["F401"]
+"hypothesis/tests/nocover/test_imports.py" = ["F403", "F405"]
+"hypothesis/tests/numpy/test_randomness.py" = ["NPY002"]
+"hypothesis/src/hypothesis/internal/conjecture/*" = ["B023"]
+"hypothesis/tests/conjecture/test_data_tree.py" = ["B023"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.14"
 platform = "linux"
 
 allow_redefinition = true

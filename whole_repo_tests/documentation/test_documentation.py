@@ -16,8 +16,8 @@ from sphinx.util.inventory import InventoryFile
 
 import hypothesis.provisional
 from hypothesis.strategies import __all__ as STRATEGY_EXPORTS
+from hypothesistooling import release
 from hypothesistooling.__main__ import documentation
-from hypothesistooling.projects import hypothesispython as hp
 
 
 def test_documentation():
@@ -36,7 +36,7 @@ def get_all_exported_names():
     }
 
     # add anything exported from an extra
-    for p in (hp.PYTHON_SRC / "hypothesis" / "extra").iterdir():
+    for p in (release.PYTHON_SRC / "hypothesis" / "extra").iterdir():
         # ignore private files/dirs. Also skip django, which requires setting up
         # a django app to import:
         #   django.core.exceptions.ImproperlyConfigured: Requested setting
@@ -63,7 +63,7 @@ def test_documents_all_exported_strategies():
     # sphinx. Build to a test-specific directory, so we don't overlap builds with
     # any other test that is also building docs.
     out_dir = "documents_all_exported_strategies"
-    hp.build_docs(to=out_dir)
+    release.build_docs(to=out_dir)
     undocumented = get_all_exported_names() - {
         "hypothesis.extra.numpy.BroadcastableShapes",
     }
@@ -82,7 +82,7 @@ def test_documents_all_exported_strategies():
     #       ...
     #   }
     inventory_path = (
-        Path(hp.HYPOTHESIS_PYTHON) / "docs" / "_build" / out_dir / "objects.inv"
+        Path(release.HYPOTHESIS) / "docs" / "_build" / out_dir / "objects.inv"
     )
     with open(inventory_path, "rb") as f:
         inventory = InventoryFile.load(f, "", posixpath.join)

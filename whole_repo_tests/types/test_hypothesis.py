@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.release import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool
 
 

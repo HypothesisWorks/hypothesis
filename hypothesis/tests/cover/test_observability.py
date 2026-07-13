@@ -1,0 +1,708 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
+import base64
+import json
+import math
+import textwrap
+import threading
+from collections import defaultdict
+from contextlib import nullcontext
+
+import pytest
+
+from hypothesis import (
+    ObservabilityConfig,
+    assume,
+    event,
+    example,
+    given,
+    note,
+    seed,
+    settings,
+    strategies as st,
+    target,
+)
+from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.internal.compat import PYPY
+from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
+from hypothesis.internal.conjecture.data import Span
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
+from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.observability import (
+    choices_to_json,
+    nodes_to_json,
+    observability_enabled,
+)
+from hypothesis.stateful import (
+    RuleBasedStateMachine,
+    invariant,
+    rule,
+    run_state_machine_as_test,
+)
+from hypothesis.strategies._internal.utils import to_jsonable
+
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    run_concurrently,
+    skipif_threading,
+)
+from tests.conjecture.common import choices, integer_constr, nodes
+
+
+@skipif_threading  # captures observations from other threads
+def test_observability():
+    observations = []
+
+    @seed("deterministic so we don't miss some combination of features")
+    @example(l=[1], a=0, x=4, data=None)
+    # explicitly set max_examples=100 to override our lower example limit for coverage tests.
+    @settings(
+        database=InMemoryExampleDatabase(),
+        deadline=None,
+        max_examples=100,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    @given(st.lists(st.integers()), st.integers(), st.integers(), st.data())
+    def do_it_all(l, a, x, data):
+        event(f"{x%2=}")
+        target(x % 5, label="x%5")
+        assume(a % 9)
+        assume(len(l) > 0)
+        if data:
+            data.draw(st.text("abcdef", min_size=a % 3), label="interactive")
+        1 / ((x or 1) % 7)
+
+    with pytest.raises(ZeroDivisionError):
+        do_it_all()
+    with pytest.raises(ZeroDivisionError):
+        do_it_all()
+
+    infos = [t for t in observations if t.type == "info"]
+    assert len(infos) == 2
+    assert {t.title for t in infos} == {"Hypothesis Statistics"}
+
+    testcases = [t for t in observations if t.type == "test_case"]
+    assert len(testcases) > 50
+    assert {t.property for t in testcases} == {do_it_all.__name__}
+    assert len({t.run_start for t in testcases}) == 2
+    assert {t.status for t in testcases} == {"gave_up", "passed", "failed"}
+    for t in testcases:
+        if t.status != "gave_up":
+            assert t.timing
+            assert ("interactive" in t.arguments) == (
+                "generate:interactive" in t.timing
+            )
+
+
+def test_capture_unnamed_arguments():
+    observations = []
+
+    @given(st.integers(), st.floats(), st.data())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def f(v1, v2, data):
+        data.draw(st.booleans())
+
+    f()
+
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    for test_case in test_cases:
+        assert list(test_case.arguments.keys()) == [
+            "v1",
+            "v2",
+            "data",
+            "Draw 1",
+        ], test_case
+
+
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
+)
+def test_failure_includes_explain_phase_comments():
+    observations = []
+
+    @given(st.integers(), st.integers())
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    def test_fails(x, y):
+        if x:
+            raise AssertionError
+
+    with pytest.raises(AssertionError):
+        test_fails()
+
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    # only the last test case observation, once we've finished shrinking it,
+    # will include explain phase comments.
+    #
+    # Note that the output does *not* include `Explanation:` comments. See
+    # https://github.com/HypothesisWorks/hypothesis/pull/4399#discussion_r2101559648
+    expected = textwrap.dedent(r"""
+        test_fails(
+            x=1,
+            y=0,  # or any other generated value
+        )
+    """).strip()
+    assert test_cases[-1].representation == expected
+
+
+def test_failure_includes_notes():
+    observations = []
+
+    @given(st.data())
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    def test_fails_with_note(data):
+        note("not included 1")
+        data.draw(st.booleans())
+        note("not included 2")
+        raise AssertionError
+
+    with pytest.raises(AssertionError):
+        test_fails_with_note()
+
+    expected = textwrap.dedent("""
+        test_fails_with_note(
+            data=data(...),
+        )
+        Draw 1: False
+    """).strip()
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert test_cases[-1].representation == expected
+
+
+def test_normal_representation_includes_draws():
+    observations = []
+
+    @given(st.data())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def f(data):
+        b1 = data.draw(st.booleans())
+        note("not included")
+        b2 = data.draw(st.booleans(), label="second")
+        assume(b1 and b2)
+
+    f()
+
+    crosshair = settings.get_current_profile_name() == "crosshair"
+    expected = textwrap.dedent(f"""
+        f(
+            data={'<symbolic>' if crosshair else 'data(...)'},
+        )
+        Draw 1: True
+        Draw 2 (second): True
+    """).strip()
+    test_cases = [
+        tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
+    ]
+    assert test_cases
+    representations = {tc.representation for tc in test_cases}
+    if crosshair:
+        # Under the crosshair backend Hypothesis observes the same example under
+        # both the crosshair provider (data=<symbolic>) and its own concrete
+        # replay (data=data(...)), so there is more than one representation;
+        # just require the symbolic one to be present.
+        assert expected in representations
+    else:
+        assert {tc.representation for tc in test_cases} == {expected}
+
+
+def test_capture_named_arguments():
+    observations = []
+
+    @given(named1=st.integers(), named2=st.floats(), data=st.data())
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    def f(named1, named2, data):
+        data.draw(st.booleans())
+
+    f()
+
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    for test_case in test_cases:
+        assert list(test_case.arguments.keys()) == [
+            "named1",
+            "named2",
+            "data",
+            "Draw 1",
+        ], test_case
+
+
+def test_assume_has_status_reason():
+    observations = []
+
+    @given(st.booleans())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def f(b):
+        assume(b)
+
+    f()
+
+    gave_ups = [
+        t for t in observations if t.type == "test_case" and t.status == "gave_up"
+    ]
+    for gave_up in gave_ups:
+        assert gave_up.status_reason.startswith("failed to satisfy assume() in f")
+
+
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
+)
+def test_minimal_failing_observation():
+    observations = []
+
+    @given(st.integers(), st.integers())
+    @settings(
+        database=None,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    def test_fails(x, y):
+        if x:
+            raise AssertionError
+
+    with pytest.raises(AssertionError):
+        test_fails()
+
+    observation = [tc for tc in observations if tc.type == "test_case"][-1]
+    expected_representation = textwrap.dedent(r"""
+        test_fails(
+            x=1,
+            y=0,  # or any other generated value
+        )
+    """).strip()
+
+    assert observation.type == "test_case"
+    assert observation.property == "test_fails"
+    assert observation.status == "failed"
+    assert "AssertionError" in observation.status_reason
+    assert set(observation.timing.keys()) == {
+        "execute:test",
+        "overall:gc",
+        "generate:x",
+        "generate:y",
+    }
+    assert observation.coverage is None
+    assert observation.features == {}
+    assert observation.how_generated == "minimal failing example"
+    assert "AssertionError" in observation.metadata.traceback
+    assert "test_fails" in observation.metadata.traceback
+    assert observation.metadata.reproduction_decorator.startswith("@reproduce_failure")
+    assert observation.representation == expected_representation
+    assert observation.arguments == {"x": 1, "y": 0}
+
+
+@pytest.mark.skipif(
+    PYPY or IN_COVERAGE_TESTS, reason="coverage requires sys.settrace pre-3.12"
+)
+def test_all_failing_observations_have_reproduction_decorator():
+    observations = []
+
+    @given(st.integers())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def test_fails(x):
+        raise AssertionError
+
+    with pytest.raises(AssertionError):
+        test_fails()
+
+    # all failed test case observations should have reprodution_decorator
+    for observation in [
+        tc for tc in observations if tc.type == "test_case" and tc.status == "failed"
+    ]:
+        decorator = observation.metadata.reproduction_decorator
+        assert decorator is not None
+        assert decorator.startswith("@reproduce_failure")
+
+
+def test_observability_captures_stateful_reprs():
+    observations = []
+
+    @settings(
+        max_examples=20,
+        stateful_step_count=5,
+        observability=ObservabilityConfig(callbacks=[observations.append]),
+    )
+    class UltraSimpleMachine(RuleBasedStateMachine):
+        value = 0
+
+        @rule()
+        def inc(self):
+            self.value += 1
+
+        @rule()
+        def dec(self):
+            self.value -= 1
+
+        @invariant()
+        def limits(self):
+            assert abs(self.value) <= 100
+
+    run_state_machine_as_test(UltraSimpleMachine)
+
+    for x in observations:
+        if x.type != "test_case" or x.status == "gave_up":
+            continue
+        r = x.representation
+        assert "state.limits()" in r
+        assert "state.inc()" in r or "state.dec()" in r  # or both
+
+        t = x.timing
+        assert "execute:invariant:limits" in t
+        has_inc = "generate:rule:inc" in t and "execute:rule:inc" in t
+        has_dec = "generate:rule:dec" in t and "execute:rule:dec" in t
+        assert has_inc or has_dec
+
+
+# BytestringProvider.draw_boolean divides [0, 127] as False and [128, 255]
+# as True
+@pytest.mark.parametrize(
+    "buffer, expected_status",
+    [
+        # Status.OVERRUN
+        (b"", "gave_up"),
+        # Status.INVALID
+        (b"\x00" + bytes([255]), "gave_up"),
+        # Status.VALID
+        (b"\x00\x00", "passed"),
+        # Status.INTERESTING
+        (bytes([255]) + b"\x00", "failed"),
+    ],
+)
+def test_fuzz_one_input_status(buffer, expected_status):
+    observations = []
+
+    @given(st.booleans(), st.booleans())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def test_fails(should_fail, should_fail_assume):
+        if should_fail:
+            raise AssertionError
+        if should_fail_assume:
+            assume(False)
+
+    with (
+        pytest.raises(AssertionError) if expected_status == "failed" else nullcontext(),
+    ):
+        test_fails.hypothesis.fuzz_one_input(buffer)
+    assert len(observations) == 1
+    assert observations[0].status == expected_status
+    assert observations[0].how_generated == "fuzz_one_input"
+
+
+def test_fuzz_one_input_sets_interesting_origin():
+    # fuzz_one_input calls execute_once directly, bypassing the engine code
+    # which sets data.interesting_origin, so it must do so itself (see #4420).
+    observations = []
+
+    @given(st.booleans())
+    @settings(observability=ObservabilityConfig(callbacks=[observations.append]))
+    def test_fails(b):
+        raise AssertionError
+
+    with pytest.raises(AssertionError):
+        test_fails.hypothesis.fuzz_one_input(bytes([255]))
+
+    (observation,) = observations
+    assert observation.status == "failed"
+    origin = observation.metadata.interesting_origin
+    assert origin is not None
+    assert origin.exc_type is AssertionError
+    assert observation.status_reason == str(origin)
+
+
+def _decode_choice(value):
+    if isinstance(value, list):
+        if value[0] == "integer":
+            # large integers get cast to string, stored as ["integer", str(value)]
+            assert isinstance(value[1], str)
+            return int(value[1])
+        elif value[0] == "bytes":
+            assert isinstance(value[1], str)
+            return base64.b64decode(value[1])
+        elif value[0] == "float":
+            assert isinstance(value[1], int)
+            choice = int_to_float(value[1])
+            assert math.isnan(choice)
+            return choice
+        else:
+            return value[1]
+
+    return value
+
+
+def _decode_choices(data):
+    return [_decode_choice(value) for value in data]
+
+
+def _decode_nodes(data):
+    return [
+        ChoiceNode(
+            type=node["type"],
+            value=_decode_choice(node["value"]),
+            constraints=_decode_constraints(node["type"], node["constraints"]),
+            was_forced=node["was_forced"],
+        )
+        for node in data
+    ]
+
+
+def _decode_constraints(choice_type, data):
+    if choice_type == "integer":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "weights": (
+                None
+                if data["weights"] is None
+                else {_decode_choice(k): v for k, v in data["weights"]}
+            ),
+            "shrink_towards": _decode_choice(data["shrink_towards"]),
+        }
+    elif choice_type == "float":
+        return {
+            "min_value": _decode_choice(data["min_value"]),
+            "max_value": _decode_choice(data["max_value"]),
+            "allow_nan": data["allow_nan"],
+            "smallest_nonzero_magnitude": data["smallest_nonzero_magnitude"],
+        }
+    elif choice_type == "string":
+        return {
+            "intervals": IntervalSet(tuple(data["intervals"])),
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "bytes":
+        return {
+            "min_size": _decode_choice(data["min_size"]),
+            "max_size": _decode_choice(data["max_size"]),
+        }
+    elif choice_type == "boolean":
+        return {"p": data["p"]}
+    else:
+        raise ValueError(f"unknown choice type {choice_type}")
+
+
+def _has_surrogate(choice):
+    return isinstance(choice, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in choice)
+
+
+@example([0.0])
+@example([-0.0])
+@example([SIGNALING_NAN])
+@example([math.nan])
+@example([math.inf])
+@example([-math.inf])
+# json.{loads, dumps} does not roundtrip for surrogate pairs; they are combined
+# into the single code point by json.loads:
+#   json.loads(json.dumps("\udbf4\udc00")) == '\U0010d000'
+#
+# Ignore this case with an `assume`, and add an explicit example to ensure we
+# continue to do so.
+@example(["\udbf4\udc00"])
+@given(st.lists(choices()))
+def test_choices_json_roundtrips(choices):
+    assume(not any(_has_surrogate(choice) for choice in choices))
+    choices2 = _decode_choices(json.loads(json.dumps(choices_to_json(choices))))
+    assert choices_key(choices) == choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_nodes_json_roundtrips(nodes):
+    assume(
+        not any(
+            _has_surrogate(node.value)
+            or any(_has_surrogate(value) for value in node.constraints.values())
+            for node in nodes
+        )
+    )
+    nodes2 = _decode_nodes(json.loads(json.dumps(nodes_to_json(nodes))))
+    assert nodes == nodes2
+
+
+@pytest.mark.parametrize(
+    "choice, expected",
+    [
+        (math.nan, ["float", float_to_int(math.nan)]),
+        (SIGNALING_NAN, ["float", float_to_int(SIGNALING_NAN)]),
+        (1, 1),
+        (-1, -1),
+        (2**63 + 1, ["integer", str(2**63 + 1)]),
+        (-(2**63 + 1), ["integer", str(-(2**63 + 1))]),
+        (1.0, 1.0),
+        (-0.0, -0.0),
+        (0.0, 0.0),
+        (True, True),
+        (False, False),
+        (b"a", ["bytes", "YQ=="]),
+    ],
+)
+def test_choices_to_json_explicit(choice, expected):
+    assert choices_to_json([choice]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "choice_node, expected",
+    [
+        (
+            ChoiceNode(
+                type="integer",
+                value=2**63 + 1,
+                constraints=integer_constr(),
+                was_forced=False,
+            ),
+            {
+                "type": "integer",
+                "value": ["integer", str(2**63 + 1)],
+                "constraints": integer_constr(),
+                "was_forced": False,
+            },
+        ),
+    ],
+)
+def test_choice_nodes_to_json_explicit(choice_node, expected):
+    assert nodes_to_json([choice_node]) == [expected]
+
+
+def test_metadata_to_json():
+    # this is mostly a covering test than testing anything particular about
+    # ObservationMetadata.
+    observations = []
+
+    @given(st.integers())
+    @settings(
+        observability=ObservabilityConfig(callbacks=[observations.append], choices=True)
+    )
+    def f(n):
+        pass
+
+    f()
+
+    observations = [obs for obs in observations if obs.type == "test_case"]
+    for observation in observations:
+        assert set(
+            to_jsonable(observation.metadata, avoid_realization=False).keys()
+        ) == {
+            "traceback",
+            "reproduction_decorator",
+            "predicates",
+            "backend",
+            "sys.argv",
+            "os.getpid()",
+            "imported_at",
+            "data_status",
+            "phase",
+            "interesting_origin",
+            "choice_nodes",
+            "choice_spans",
+        }
+        assert observation.metadata.choice_nodes is not None
+
+        for span in observation.metadata.choice_spans:
+            assert isinstance(span, Span)
+            assert 0 <= span.start <= len(observation.metadata.choice_nodes)
+            assert 0 <= span.end <= len(observation.metadata.choice_nodes)
+
+
+def test_only_receives_callbacks_from_this_thread():
+    n_threads = 5
+    count_observations = defaultdict(int)
+
+    def callback(observation):
+        count_observations[threading.get_ident()] += 1
+
+    @given(st.integers())
+    @settings(
+        observability=ObservabilityConfig(
+            callbacks=[callback],
+            # Observability tries to record coverage, but we don't currently
+            # support concurrent coverage collection, and issue a warning instead.
+            #
+            # I tried to fix this with:
+            #
+            #    warnings.filterwarnings(
+            #        "ignore", message=r".*tool id \d+ is already taken by tool scrutineer.*"
+            #    )
+            #
+            # but that had a race condition somehow and sometimes still didn't work?? The
+            # warnings module is not thread-safe until 3.14, I think.
+            coverage=False,
+        )
+    )
+    def f(n):
+        pass
+
+    run_concurrently(f, n=n_threads)
+
+    assert len(count_observations) == n_threads
+    # one observation per example, plus one info observation for the overall run
+    assert set(count_observations.values()) == {settings().max_examples + 1}
+
+
+@checks_deprecated_behaviour
+def test_observability_enabled_is_deprecated():
+    observability_enabled()
+
+
+@pytest.mark.parametrize("other", [None, False])
+def test_config_union_returns_self(other):
+    config = ObservabilityConfig(callbacks=[lambda _obs: None])
+    assert config | other is config
+    assert other | config is config
+
+
+def test_observability_config_or_with_true_merges_with_default():
+    cb = lambda _obs: None
+    config = ObservabilityConfig(coverage=False, choices=True, callbacks=[cb])
+
+    for result in [config | True, True | config]:
+        assert result.coverage is True
+        assert result.choices is True
+        assert cb in result.callbacks
+        assert len(result.callbacks) == 2
+
+
+@pytest.mark.parametrize("left", [False, True])
+@pytest.mark.parametrize("right", [False, True])
+def test_config_union(left, right):
+    cb1 = lambda _obs: None
+    cb2 = lambda _obs: None
+    config1 = ObservabilityConfig(coverage=left, choices=left, callbacks=[cb1])
+    config2 = ObservabilityConfig(coverage=right, choices=right, callbacks=[cb2])
+
+    for result in [config1 | config2, config1.union(config2)]:
+        assert result.coverage is (left or right)
+        assert result.choices is (left or right)
+        assert result.callbacks == (cb1, cb2)
+
+
+def test_config_deduplicates_callbacks():
+    cb1 = lambda _obs: None
+    cb2 = lambda _obs: None
+    cb3 = lambda _obs: None
+    config1 = ObservabilityConfig(callbacks=[cb1, cb2])
+    config2 = ObservabilityConfig(callbacks=[cb2, cb3])
+
+    assert (config1 | config2).callbacks == (cb1, cb2, cb3)
+
+
+def test_config_invalid_union():
+    config = ObservabilityConfig(callbacks=[lambda _obs: None])
+    with pytest.raises(TypeError):
+        config | "invalid"
+    with pytest.raises(TypeError):
+        "invalid" | config
+    with pytest.raises(TypeError):
+        config.union("invalid")

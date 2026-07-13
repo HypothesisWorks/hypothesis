@@ -31,10 +31,20 @@ def test_python_versions_are_tested_in_ci(version):
     assert f"- check-py{slug}" in ci_checks, f"Add {version} to main.yml and tox.ini"
 
 
+def test_abi3_floor_is_minimum_supported_python():
+    cargo_toml = Path("hypothesis/rust/Cargo.toml").read_text(encoding="utf-8")
+    floor = re.search(r"pyo3/abi3-py3(\d+)", cargo_toml).group(1)
+    requires = re.search(
+        r'requires-python = ">= ?3\.(\d+)"',
+        Path("hypothesis/pyproject.toml").read_text(encoding="utf-8"),
+    ).group(1)
+    assert floor == requires
+
+
 def test_python_versions_are_in_trove_classifiers():
     got_classifiers = {
         line.strip(' ",\n')
-        for line in Path("hypothesis-python/pyproject.toml")
+        for line in Path("hypothesis/pyproject.toml")
         .read_text(encoding="utf-8")
         .splitlines()
         if "Programming Language :: Python :: 3." in line

@@ -12,31 +12,42 @@ import os
 
 import pytest
 
-import hypothesistooling as tools
-from hypothesistooling import __main__ as main, releasemanagement as rm
-
-
-@pytest.mark.parametrize(
-    "project", [p for p in tools.all_projects() if p.has_release()]
+from hypothesistooling import __main__ as main, release
+from hypothesistooling.git import ROOT, git, has_uncommitted_changes
+from hypothesistooling.release import (
+    CHANGELOG_FILE,
+    HYPOTHESIS,
+    current_version,
+    has_release,
+    release_date_string,
 )
-def test_release_file_exists_and_is_valid(project, monkeypatch):
-    if not tools.has_uncommitted_changes(project.BASE_DIR):
+
+
+@pytest.mark.skipif(not has_release(), reason="no release file")
+def test_do_publish_updates_changelog(monkeypatch):
+    if has_uncommitted_changes(HYPOTHESIS):
         pytest.xfail("Cannot run release process with uncommitted changes")
 
-    monkeypatch.setattr(tools, "create_tag", lambda *args, **kwargs: None)
-    monkeypatch.setattr(tools, "push_tag", lambda name: None)
-    monkeypatch.setattr(rm, "commit_pending_release", lambda p: None)
-    monkeypatch.setattr(project, "upload_distribution", lambda: None)
-    monkeypatch.setattr(project, "IN_TEST", True, raising=False)
+    uploaded = {}
+    monkeypatch.setattr(
+        main,
+        "upload_distribution_to_pypi",
+        lambda *, expected_version: uploaded.update(version=expected_version),
+    )
+    monkeypatch.setattr(main, "create_github_release", lambda: None)
+    monkeypatch.setattr(main, "commit_pending_release", lambda: None)
+    monkeypatch.setattr(main, "create_tag", lambda name: None)
+    monkeypatch.setattr(main, "push_tag", lambda name: None)
 
+    old_version = release.__version__, release.__version_info__
     try:
-        main.do_release(project)
+        main.do_publish()
 
-        with open(project.CHANGELOG_FILE, encoding="utf-8") as i:
-            changelog = i.read()
-        assert project.current_version() in changelog
-        assert rm.release_date_string() in changelog
-
+        changelog = CHANGELOG_FILE.read_text(encoding="utf-8")
+        assert current_version() in changelog
+        assert release_date_string() in changelog
+        assert uploaded["version"] == current_version()
     finally:
-        tools.git("checkout", project.BASE_DIR)
-        os.chdir(tools.ROOT)
+        release.__version__, release.__version_info__ = old_version
+        git("checkout", str(HYPOTHESIS))
+        os.chdir(ROOT)

@@ -10,9 +10,8 @@
 
 """Module for obtaining various versions of Python.
 
-Currently this is a thin shim around pyenv, but it would be nice to have
-this work on Windows as well by using Anaconda (as our build already
-does).
+This is a thin shim around ``uv python install`` via the
+``ensure-python.sh`` helper script.
 """
 
 import os
@@ -20,9 +19,20 @@ import shutil
 import subprocess
 
 from hypothesistooling import scripts
-from hypothesistooling.junkdrawer import once
 
 HOME = os.environ["HOME"]
+
+
+def once(fn):
+    def accept():
+        if accept.has_been_called:
+            return
+        fn()
+        accept.has_been_called = True
+
+    accept.has_been_called = False
+    accept.__name__ = fn.__name__
+    return accept
 
 
 def __python_executable(version):

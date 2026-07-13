@@ -5,8 +5,12 @@ dpcontracts
 ipython
 lark
 libcst
+maturin
 mypy
-numpy
+# numpy >= 2.5 typing stubs use the `type` keyword, new in python 3.12.
+# this causes mypy errors when type checking on 3.10 and 3.11. We can
+# drop this pin after we drop python 3.11.
+numpy<2.5
 pelican[markdown]
 pip-tools
 pyright
@@ -28,7 +32,8 @@ types-pytz
 types-redis
 typing-extensions
 watchdog # for typing
-attrs # for typing
 build
 sortedcontainers-stubs # for typing
+attrs # for typing
+tomli # for update_pyproject_toml
 -r test.in

@@ -14,12 +14,14 @@ import textwrap
 
 import pytest
 
-from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.release import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
     ASSUME_REVEALED_TYPES,
     DIFF_REVEALED_TYPES,
+    FILTER_TYPEGUARD_PREAMBLE,
+    FILTER_TYPEGUARD_REVEALED_TYPES,
     NUMPY_DIFF_REVEALED_TYPES,
     NUMPY_REVEALED_TYPES,
     PYTHON_VERSIONS,
@@ -133,16 +135,21 @@ def test_revealed_types(tmp_path, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
     f = tmp_path / "check.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis.strategies import *
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
     assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", FILTER_TYPEGUARD_REVEALED_TYPES)
+def test_filter_typeguard_revealed_types(tmp_path, val, expect):
+    f = tmp_path / "check.py"
+    f.write_text(FILTER_TYPEGUARD_PREAMBLE + f"reveal_type({val})\n", encoding="utf-8")
+    assert get_mypy_analysed_type(f) == f"SearchStrategy[{expect}]"
 
 
 @pytest.mark.parametrize("val,expect", ASSUME_REVEALED_TYPES)
@@ -150,12 +157,10 @@ def test_assume_revealed_types(tmp_path, val, expect):
     """Check that Mypy infers the correct return type for assume()."""
     f = tmp_path / "check.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis import assume
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
@@ -169,13 +174,11 @@ def test_assume_revealed_types(tmp_path, val, expect):
 def test_numpy_revealed_types(tmp_path, val, expect):
     f = tmp_path / "check.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             import numpy as np
             from hypothesis.extra.numpy import *
             reveal_type({val})
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
@@ -195,15 +198,13 @@ def test_numpy_revealed_types(tmp_path, val, expect):
 def test_pandas_column(tmp_path, val, expect):
     f = tmp_path / "test.py"
     f.write_text(
-        textwrap.dedent(
-            f"""
+        textwrap.dedent(f"""
             from hypothesis.extra.pandas import column
             from hypothesis.strategies import floats, text
 
             x = column(name="test", unique=True, dtype=None, {val})
             reveal_type(x)
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
@@ -540,8 +541,7 @@ def test_stateful_precondition_precond_requires_one_arg(tmp_path):
 def test_pos_only_args(tmp_path):
     f = tmp_path / "check_mypy_on_pos_arg_only_strats.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis.strategies as st
 
             st.tuples(a1=st.integers())
@@ -549,8 +549,7 @@ def test_pos_only_args(tmp_path):
 
             st.one_of(a1=st.integers())
             st.one_of(a1=st.integers(), a2=st.integers())
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(
@@ -564,12 +563,28 @@ def test_pos_only_args(tmp_path):
     )
 
 
+def test_mypy_issue_4665(tmp_path):
+    f = tmp_path / "check_mypy_on_fixed_dictionaries_union_values.py"
+    f.write_text(
+        textwrap.dedent("""
+            from hypothesis.strategies import SearchStrategy, fixed_dictionaries, integers, text
+
+            mapping: dict[str, SearchStrategy[str] | SearchStrategy[int]] = {
+                "ant": text(),
+                "bat": integers(),
+            }
+            fixed_dictionaries(mapping)
+            """),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [])
+
+
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
 def test_mypy_passes_on_basic_test(tmp_path, python_version):
     f = tmp_path / "check_mypy_on_basic_tests.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             import hypothesis
             import hypothesis.strategies as st
 
@@ -583,8 +598,7 @@ def test_mypy_passes_on_basic_test(tmp_path, python_version):
             @given(x=text())
             def test_bar(x: str) -> None:
                 assert x == x
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(f, [], python_version=python_version)
@@ -594,15 +608,13 @@ def test_mypy_passes_on_basic_test(tmp_path, python_version):
 def test_given_only_allows_strategies(tmp_path, python_version):
     f = tmp_path / "check_mypy_given_expects_strategies.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis import given
 
             @given(1)
             def f():
                 pass
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(f, [(4, "call-overload")], python_version=python_version)
@@ -612,16 +624,14 @@ def test_given_only_allows_strategies(tmp_path, python_version):
 def test_raises_for_mixed_pos_kwargs_in_given(tmp_path, python_version):
     f = tmp_path / "raises_for_mixed_pos_kwargs_in_given.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis import given
             from hypothesis.strategies import text
 
             @given(text(), x=text())
             def test_bar(x):
                 ...
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(f, [(5, "call-overload")], python_version=python_version)
@@ -630,8 +640,7 @@ def test_raises_for_mixed_pos_kwargs_in_given(tmp_path, python_version):
 def test_register_random_interface(tmp_path):
     f = tmp_path / "test_register_random_interface.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from random import Random
             from hypothesis import register_random
 
@@ -644,8 +653,7 @@ def test_register_random_interface(tmp_path):
 
             register_random(MyRandom())
             register_random(None)  # type: ignore[arg-type]
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(f, [])
@@ -655,8 +663,7 @@ def test_register_type_strategy_type_alias_type(tmp_path):
     # see https://github.com/HypothesisWorks/hypothesis/issues/4410
     f = tmp_path / "test_register_type_strategy_type_alias_type.py"
     f.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             from hypothesis import strategies as st
             from typing import TypeAliasType
 
@@ -667,8 +674,7 @@ def test_register_type_strategy_type_alias_type(tmp_path):
 
             # this previous failed type-checking
             st.register_type_strategy(Ints, ints())
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     assert_mypy_errors(f, [], python_version="3.12")
