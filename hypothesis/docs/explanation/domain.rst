@@ -40,10 +40,10 @@ An exact answer depends on both the strategy or strategies for the tests, and th
 
 Hypothesis' default configuration uses a distribution which is tuned to maximize the chance of finding bugs, in as few executions as possible.  We explicitly *don't* aim for a uniform distribution, nor for a 'realistic' distribution of inputs; Hypothesis' goal is to search the domain for a failing input as efficiently as possible.
 
-The test case distribution remains an active area of research and development, and we change it whenever we think that would be a net improvement for users.  Today, Hypothesis' default distribution is shaped by a wide variety of techniques and heuristics:
+The |test case| distribution remains an active area of research and development, and we change it whenever we think that would be a net improvement for users.  Today, Hypothesis' default distribution is shaped by a wide variety of techniques and heuristics:
 
 * some are statically designed into strategies - for example, |st.integers| upweights range endpoints, and samples from a mixed distribution over integer bit-widths.
-* some are dynamic features of the engine - like replaying prior examples with subsections of the input 'cloned' or otherwise altered, for bugs which trigger only when different fields have the same value (which is otherwise exponentially unlikely).
+* some are dynamic features of the engine - like replaying prior test cases with subsections of the input 'cloned' or otherwise altered, for bugs which trigger only when different fields have the same value (which is otherwise exponentially unlikely).
 * some vary depending on the code under test - we collect interesting-looking constants from imported source files as seeds for test cases.
 * `swarm testing <https://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`__ adds further randomization when choosing which rules to execute in stateful testing.
 

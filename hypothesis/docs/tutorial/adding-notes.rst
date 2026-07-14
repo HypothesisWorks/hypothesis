@@ -28,8 +28,8 @@ Sometimes you want to add some additional information to a failure, such as the 
     Shuffle: [1, 0]
     ls != ls2
 
-|note| is like a print statement that gets attached to the failing test case reported by Hypothesis. It's also reported by :ref:`observability <observability>`, and shown for all examples (if |settings.verbosity| is set to |Verbosity.verbose| or higher).
+|note| is like a print statement that gets attached to the |minimal failing test case| reported by Hypothesis. It's also reported by :ref:`observability <observability>`, and shown for all test cases (if |settings.verbosity| is set to |Verbosity.verbose| or higher).
 
 .. note::
 
-    |event| is a similar function which tells Hypothesis to count the number of test cases which reported each distinct value you pass, for inclusion in :ref:`test statistics <statistics>` and :ref:`observability reports <observability>`.
+    |event| is a similar function which tells Hypothesis to count the number of |test cases| which reported each distinct value you pass, for inclusion in :ref:`test statistics <statistics>` and :ref:`observability reports <observability>`.

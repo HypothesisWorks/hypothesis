@@ -124,6 +124,18 @@ def has_source_changes():
     return has_changes([PYTHON_SRC])
 
 
+def install_hypothesis_editable():
+    # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
+    # source code is consulted first. Without -e, any rust code is compiled into site-packages,
+    # which the src/ prepending will not reference. -e causes rust code to be compiled
+    # into src/, which lets our sys.path edit pick it up.
+    install.ensure_rustc(ci_version_rust)
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
+        env={**os.environ, **RUST_BUILD_ENV},
+    )
+
+
 def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
     pip_tool(
@@ -287,13 +299,7 @@ def upload_distribution_to_pypi(*, expected_version):
 
 
 def create_github_release():
-    # Building the docs requires hypothesis installed editably. See check_documentation
-    # comment for details of why.
-    install.ensure_rustc(ci_version_rust)
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
-    )
+    install_hypothesis_editable()
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])

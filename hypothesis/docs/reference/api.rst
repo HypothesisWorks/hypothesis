@@ -95,7 +95,7 @@ Reproducing inputs
 Control
 -------
 
-Functions that can be called from anywhere inside a test, to either modify how Hypothesis treats the current test case, or to give Hypothesis more information about the current test case.
+Functions that can be called from anywhere inside a test, to either modify how Hypothesis treats the current |test case|, or to give Hypothesis more information about the current test case.
 
 .. autofunction:: hypothesis.assume
 .. autofunction:: hypothesis.note
@@ -262,7 +262,7 @@ Using it is quite straightforward: All you need to do is subclass
 :class:`~hypothesis.extra.django.LiveServerTestCase` or
 :class:`~hypothesis.extra.django.StaticLiveServerTestCase`
 and you can use |@given| as normal,
-and the transactions will be per example
+and the transactions will be per test case
 rather than per test function as they would be if you used |@given| with a normal
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with each other). Test cases
@@ -280,7 +280,7 @@ Because Hypothesis runs this in a loop, the performance problems :class:`django:
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
-to avoid a |HealthCheck| error due to slow example generation.
+to avoid a |HealthCheck| error due to slow test case generation.
 
 Having set up a test class, you can now pass |@given|
 a strategy for Django models with |django.from_model|.
@@ -309,7 +309,7 @@ to set the valid range for this field (or used a
 :class:`~django:django.db.models.PositiveSmallIntegerField`, which would only
 need a maximum value validator).
 
-If you *do* have validators attached, Hypothesis will only generate examples
+If you *do* have validators attached, Hypothesis will only generate test cases
 that pass validation.  Sometimes that will mean that we fail a
 :class:`~hypothesis.HealthCheck` because of the filtering, so let's explicitly
 pass a strategy to skip validation at the strategy level:
@@ -451,9 +451,9 @@ External fuzzers
 Custom function execution
 -------------------------
 
-Hypothesis provides you with a hook that lets you control how it runs examples.
+Hypothesis provides you with a hook that lets you control how it runs test cases.
 
-This lets you do things like set up and tear down around each example, run examples in a subprocess, transform coroutine tests into normal tests, etc. For example, :class:`~hypothesis.extra.django.TransactionTestCase` in the Django extra runs each example in a separate database transaction.
+This lets you do things like set up and tear down around each test case, run test cases in a subprocess, transform coroutine tests into normal tests, etc. For example, :class:`~hypothesis.extra.django.TransactionTestCase` in the Django extra runs each test case in a separate database transaction.
 
 The way this works is by introducing the concept of an executor. An executor is essentially a function that takes a block of code and run it. The default executor is:
 

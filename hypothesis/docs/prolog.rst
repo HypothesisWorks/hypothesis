@@ -216,4 +216,16 @@
 .. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
 .. |alternative backends| replace:: :ref:`alternative backends <alternative-backends>`
 
+.. |test case| replace:: :term:`test case`
+.. |test cases| replace:: :term:`test cases <test case>`
+.. |explicit example| replace:: :term:`explicit example`
+.. |explicit examples| replace:: :term:`explicit examples <explicit example>`
+.. |Explicit examples| replace:: :term:`Explicit examples <explicit example>`
+.. |failing test case| replace:: :term:`failing test case`
+.. |failing test cases| replace:: :term:`failing test cases <failing test case>`
+.. |minimal failing test case| replace:: :term:`minimal failing test case`
+.. |minimal failing test cases| replace:: :term:`minimal failing test cases <minimal failing test case>`
+.. |choice sequence| replace:: :term:`choice sequence`
+.. |choice sequences| replace:: :term:`choice sequences <choice sequence>`
+
 .. |pytest.mark.parametrize| replace:: :ref:`pytest.mark.parametrize <pytest:pytest.mark.parametrize ref>`

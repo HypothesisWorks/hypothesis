@@ -171,7 +171,7 @@ class ExitReason(Enum):
     max_examples = "settings.max_examples={s.max_examples}"
     max_iterations = (
         "settings.max_examples={s.max_examples}, "
-        "but < 1% of examples satisfied assumptions"
+        "but < 1% of test cases satisfied assumptions"
     )
     max_shrinks = f"shrunk test case {MAX_SHRINKS} times"
     finished = "nothing left to do"
@@ -1022,7 +1022,7 @@ class ConjectureRunner:
         examples that are no longer interesting are cleared out.
         """
         if self.has_existing_examples():
-            self.debug("Reusing examples from database")
+            self.debug("Reusing test cases from database")
             # We have to do some careful juggling here. We have two database
             # corpora: The primary and secondary. The primary corpus is a
             # small set of minimized examples each of which has at one point
@@ -1609,7 +1609,7 @@ class ConjectureRunner:
         if Phase.shrink not in self.settings.phases or not self.interesting_examples:
             return
 
-        self.debug("Shrinking interesting examples")
+        self.debug("Shrinking failing test cases")
         self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(

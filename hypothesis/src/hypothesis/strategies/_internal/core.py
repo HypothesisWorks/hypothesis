@@ -1006,7 +1006,7 @@ def randoms(
     are of a special HypothesisRandom subclass.
 
     - If ``note_method_calls`` is set to ``True``, Hypothesis will print the
-      randomly drawn values in any failing test case. This can be helpful
+      randomly drawn values in the |minimal failing test case|. This can be helpful
       for debugging the behaviour of randomized algorithms.
     - If ``use_true_random`` is set to ``True`` then values will be drawn from
       their usual distribution, otherwise they will actually be Hypothesis
@@ -2454,7 +2454,7 @@ def data() -> SearchStrategy[DataObject]:
             n2 = data.draw(st.integers(min_value=n1))
             assert n1 + 1 <= n2
 
-    If the test fails, each draw will be printed with the failing test case.
+    If the test fails, each draw will be printed with the |minimal failing test case|.
     e.g. the above is wrong (it has a boundary condition error), so will print:
 
     .. code-block:: pycon

@@ -582,7 +582,7 @@ class PrimitiveProvider(abc.ABC):
     def per_test_case_context_manager(self) -> AbstractContextManager:
         """
         Returns a context manager which will be entered each time Hypothesis
-        starts generating and executing one test case, and exited when that test
+        starts generating and executing one |test case|, and exited when that test
         case finishes generating and executing, including if any exception is
         thrown.
 
@@ -606,7 +606,7 @@ class PrimitiveProvider(abc.ABC):
         The returned value should be non-symbolic.  If you cannot provide a value,
         raise |BackendCannotProceed| with a value of ``"discard_test_case"``.
 
-        If ``for_failure`` is ``True``, the value is associated with a failing test case.
+        If ``for_failure`` is ``True``, the value is associated with a |failing test case|.
         In this case, the backend should spend substantially more effort when
         attempting to realize the value, since it is important to avoid discarding
         failing test cases. Backends may still raise |BackendCannotProceed| when
@@ -617,9 +617,9 @@ class PrimitiveProvider(abc.ABC):
 
     def replay_choices(self, choices: tuple[ChoiceT, ...]) -> None:
         """
-        Called when Hypothesis has discovered a choice sequence which the provider
+        Called when Hypothesis has discovered a |choice sequence| which the provider
         may wish to enqueue to replay under its own instrumentation when we next
-        ask to generate a test case, rather than generating one from scratch.
+        ask to generate a |test case|, rather than generating one from scratch.
 
         This is used to e.g. warm-start :pypi:`hypothesis-crosshair` with a corpus
         of high-code-coverage inputs discovered by
@@ -628,7 +628,7 @@ class PrimitiveProvider(abc.ABC):
         return None
 
     def observe_test_case(self) -> dict[str, Any]:
-        """Called at the end of the test case when :ref:`observability
+        """Called at the end of the |test case| when :ref:`observability
         <observability>` is enabled.
 
         The return value should be a non-symbolic json-encodable dictionary,
@@ -639,7 +639,7 @@ class PrimitiveProvider(abc.ABC):
     def observe_information_messages(
         self, *, lifetime: LifetimeT
     ) -> Iterable[_BackendInfoMsg]:
-        """Called at the end of each test case and again at end of the test function.
+        """Called at the end of each |test case| and again at end of the test function.
 
         Return an iterable of ``{type: info/alert/error, title: str, content: str | dict}``
         dictionaries to be delivered as individual information messages. Hypothesis
@@ -650,7 +650,7 @@ class PrimitiveProvider(abc.ABC):
 
     def on_observation(self, observation: TestCaseObservation) -> None:  # noqa: B027
         """
-        Called at the end of each test case which uses this provider, with the same
+        Called at the end of each |test case| which uses this provider, with the same
         ``observation["type"] == "test_case"`` observation that is passed to
         other callbacks added via |add_observability_callback|. This method is not
         called with ``observation["type"] in {"info", "alert", "error"}``
@@ -723,10 +723,10 @@ class PrimitiveProvider(abc.ABC):
 
         Providers can track calls to |PrimitiveProvider.span_start| and
         |PrimitiveProvider.span_end| to learn something about the semantics of
-        the test's choice sequence. For instance, a provider could track the depth
+        the test's |choice sequence|. For instance, a provider could track the depth
         of the span tree, or the number of unique labels, which says something about
         the complexity of the choices being generated. Or a provider could track
-        the span tree across test cases in order to determine what strategies are
+        the span tree across |test cases| in order to determine what strategies are
         being used in what contexts.
 
         It is possible for Hypothesis to start and immediately stop a span,

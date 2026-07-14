@@ -197,11 +197,11 @@ class example:
     any random inputs. |@example| may be placed in any order relative to |@given|
     and |@settings|.
 
-    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
-    Explicit inputs do not count towards |settings.max_examples|. Note that
-    explicit inputs added by |@example| do not shrink. If an explicit input
-    fails, Hypothesis will stop and report the failure without generating any
-    random inputs.
+    |Explicit examples| from |@example| are run in the
+    |Phase.explicit| phase. Explicit examples do not count towards
+    |settings.max_examples|. Note that explicit examples added by |@example| do
+    not shrink. If an explicit example fails, Hypothesis will stop and report
+    the failure without generating any random inputs.
 
     |@example| can also be used to easily reproduce a failure. For instance, if
     Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
@@ -341,11 +341,11 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
 
     ``seed`` may be any hashable object. No exact meaning for ``seed`` is provided
     other than that for a fixed seed value Hypothesis will produce the same
-    examples (assuming that there are no other sources of nondeterminisim, such
+    |test cases| (assuming that there are no other sources of nondeterminisim, such
     as timing, hash randomization, or external state).
 
     For example, the following test function and |RuleBasedStateMachine| will
-    each generate the same series of examples each time they are executed:
+    each generate the same series of test cases each time they are executed:
 
     .. code-block:: python
 
@@ -382,11 +382,11 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
 
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
     """
-    Run the example corresponding to the binary ``blob`` in order to reproduce a
+    Run the |test case| corresponding to the binary ``blob`` in order to reproduce a
     failure. ``blob`` is a serialized version of the internal input representation
     of Hypothesis.
 
-    A test decorated with |@reproduce_failure| always runs exactly one example,
+    A test decorated with |@reproduce_failure| always runs exactly one test case,
     which is expected to cause a failure. If the provided ``blob`` does not
     cause a failure, Hypothesis will raise |DidNotReproduce|.
 
@@ -527,7 +527,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     if empty:
         strats = "strategies" if len(empty) > 1 else "strategy"
         return invalid(
-            f"Cannot generate examples from empty {strats}: " + ", ".join(empty),
+            f"Cannot generate test cases from empty {strats}: " + ", ".join(empty),
             exc=Unsatisfiable,
         )
 
@@ -1174,7 +1174,7 @@ class StateForActualGivenExecution:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             raise FlakyFailure(
                 f"Hypothesis {text_repr} produces unreliable results: "
-                "Falsified on the first call but did not on a subsequent one",
+                "Failed on the first call but did not on a subsequent one",
                 [exception],
             )
         return result
@@ -1717,7 +1717,7 @@ class HypothesisHandle:
         * If the bytestring was invalid, for example because it was too short or was
           filtered out by |assume| or |.filter|, |fuzz_one_input| returns ``None``.
         * If the bytestring was valid and the test passed, |fuzz_one_input| returns
-          a canonicalised and pruned bytestring which will replay that test case.
+          a canonicalised and pruned bytestring which will replay that |test case|.
           This is provided as an option to improve the performance of mutating
           fuzzers, but can safely be ignored.
         * If the test *failed*, i.e. raised an exception, |fuzz_one_input| will

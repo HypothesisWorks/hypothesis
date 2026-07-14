@@ -111,7 +111,7 @@ Sometimes, you need to remove invalid cases from your test. The best way to do t
     def test_integers(n):
         assert n % 2 == 0
 
-For more complicated conditions, you can use |assume|, which tells Hypothesis to discard any test case with a false-y argument:
+For more complicated conditions, you can use |assume|, which tells Hypothesis to discard any |test case| with a false-y argument:
 
 .. code-block:: python
 

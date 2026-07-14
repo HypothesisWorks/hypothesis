@@ -38,7 +38,7 @@ You can disable the database by passing ``database=None`` to |@settings|:
 Using |@example| to run a specific input
 ----------------------------------------
 
-If you want Hypothesis to always run a specific input, you can use |@example|. |@example| adds an explicit input which Hypothesis will run every time, in addition to the randomly generated examples. You can think of |@example| as combining unit-testing with property-based testing.
+If you want Hypothesis to always run a specific input, you can use |@example|. |@example| adds an explicit input which Hypothesis will run every time, in addition to the randomly generated |test cases|. You can think of |@example| as combining unit-testing with property-based testing.
 
 For instance, suppose we write a test using |st.integers|, but want to make sure we try a few special prime numbers every time we run the test. We can add these inputs with |@example|:
 
@@ -53,7 +53,7 @@ For instance, suppose we write a test using |st.integers|, but want to make sure
 
     test_integers()
 
-Hypothesis runs all explicit examples first, in the |Phase.explicit| phase, before generating additional random examples in the |Phase.generate| phase.
+Hypothesis runs all |explicit examples| first, in the |Phase.explicit| phase, before generating additional random test cases in the |Phase.generate| phase.
 
 Inputs from |@example| do not shrink
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

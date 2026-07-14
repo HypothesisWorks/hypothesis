@@ -295,7 +295,7 @@ def test_multiple_variables_printed():
         run_state_machine_as_test(ProducesMultiple)
 
     # This is tightly coupled to the output format of the step printing.
-    # The first line is "Falsifying Example:..." the second is creating
+    # The first line is "Failing test case:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
     assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 2 values, so should be
@@ -352,7 +352,7 @@ def test_no_variables_printed():
         run_state_machine_as_test(ProducesNoVariables)
 
     # This is tightly coupled to the output format of the step printing.
-    # The first line is "Falsifying Example:..." the second is creating
+    # The first line is "Failing test case:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
     assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 0 values, so there should be no

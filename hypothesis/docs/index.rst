@@ -102,6 +102,7 @@ Technical API reference.
   reference/index
   stateful
   Extras <extras>
+  glossary
   changelog
 
 .. toctree::

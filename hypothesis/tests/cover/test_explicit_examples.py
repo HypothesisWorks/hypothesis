@@ -174,7 +174,7 @@ def test_prints_verbose_output_for_explicit_examples():
     assert_failing_output(
         test_always_passes,
         expected_exception=None,
-        example_type="Trying explicit example",
+        prefix="Trying explicit example",
         x="NOT AN INTEGER",
     )
 

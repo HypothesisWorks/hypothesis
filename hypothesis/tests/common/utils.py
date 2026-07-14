@@ -176,7 +176,7 @@ def assert_output_contains_failure(output, test, **kwargs):
 
 def assert_failing_output(
     test,
-    example_type="Failing test case",
+    prefix="Failing test case",
     *,
     expected_exception=AssertionError,
     **kwargs,
@@ -193,7 +193,7 @@ def assert_failing_output(
             msg = str(exc_info.value) + "\n" + notes
 
     output = out.getvalue() + msg
-    assert f"{example_type}:" in output, (example_type, output)
+    assert f"{prefix}:" in output, (prefix, output)
     assert_output_contains_failure(output, test, **kwargs)
 
 
@@ -339,7 +339,7 @@ def wait_for(condition, *, timeout=1, interval=0.01):
     )
 
 
-def run_test_for_falsifying_example(test_fn):
+def run_test_for_failing_test_case(test_fn):
     with pytest.raises(AssertionError) as err:
         test_fn()
     return "\n".join(err.value.__notes__).strip()
