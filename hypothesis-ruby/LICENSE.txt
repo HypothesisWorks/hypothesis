@@ -1,8 +1,0 @@
-Copyright (c) 2018, David R. MacIver
-
-All code in this repository except where explicitly noted otherwise is released
-under the Mozilla Public License v 2.0. You can obtain a copy at https://mozilla.org/MPL/2.0/.
-
-Some code in this repository may come from other projects. Where applicable, the
-original copyright and license are noted and any modifications made are released
-dual licensed with the original license.

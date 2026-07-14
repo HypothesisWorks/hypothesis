@@ -69,10 +69,10 @@ once it has a minimized example, it replays the test so it can show you the exam
 print the exception, etc. And test run times are not actually repeatable - a test that
 takes 201ms on first running might take 199ms on the next run. This then results in
 Hypothesis thinking the test is flaky - it previously raised `DeadlineExceeded`, and now it
-doesn't. This lead to [Issue 892](http://github.com/HypothesisWorks/hypothesis-python/issues/892),
+doesn't. This lead to [Issue 892](http://github.com/HypothesisWorks/hypothesis/issues/892),
 where Florian Bruhin ran into precisely this problem when testing [Qutebrowser](https://www.qutebrowser.org/).
 
-The [solution I've ended up opting for there](https://github.com/HypothesisWorks/hypothesis-python/pull/899)
+The [solution I've ended up opting for there](https://github.com/HypothesisWorks/hypothesis/pull/899)
 is to temporarily raise the deadline during shrinking
 to something halfway between the actual deadline and the largest runtime we've seen. This
 ensures that we shrink to a larger threshold than the deadline, and then when we replay

@@ -10,34 +10,33 @@
 
 import pytest
 
-import hypothesistooling as tools
-from hypothesistooling import releasemanagement as rm
-from hypothesistooling.projects import hypothesispython as hp
+from hypothesistooling import release
 
 
-@pytest.mark.parametrize("project", tools.all_projects())
-def test_release_file_exists_and_is_valid(project):
-    if project.has_source_changes():
-        assert project.has_release(), (
+def test_release_file_exists_and_is_valid():
+    if release.has_source_changes():
+        assert release.has_release(), (
             "There are source changes but no RELEASE.rst. Please create "
             "one to describe your changes. An example can be found in "
             "RELEASE-sample.rst."
         )
-        assert project.has_release_sample(), (
+        assert release.has_release_sample(), (
             "The RELEASE-sample.rst file is missing. Please copy it "
             "to RELEASE.rst, rather than moving it."
         )
-        rm.parse_release_file(project.RELEASE_FILE)
+        release.parse_release_file()
 
 
-@pytest.mark.skipif(not hp.has_release(), reason="Checking that release")
+@pytest.mark.skipif(not release.has_release(), reason="Checking that release")
 def test_release_file_has_no_merge_conflicts():
-    _, message = rm.parse_release_file(hp.RELEASE_FILE)
+    _, message = release.parse_release_file()
     assert "<<<" not in message, "Merge conflict in RELEASE.rst"
-    if message in {hp.get_autoupdate_message(x).strip() for x in (True, False)}:
+    if message in {release.get_autoupdate_message(x).strip() for x in (True, False)}:
         return
-    _, *recent_changes, _ = hp.CHANGELOG_ANCHOR.split(hp.changelog(), maxsplit=12)
+    _, *recent_changes, _ = release.CHANGELOG_ANCHOR.split(
+        release.changelog(), maxsplit=12
+    )
     for entry in recent_changes:
-        _, version, old_msg = (x.strip() for x in hp.CHANGELOG_BORDER.split(entry))
+        _, version, old_msg = (x.strip() for x in release.CHANGELOG_BORDER.split(entry))
         assert message not in old_msg, f"Release notes already published for {version}"
         assert old_msg not in message, f"Copied {version} release notes - merge error?"

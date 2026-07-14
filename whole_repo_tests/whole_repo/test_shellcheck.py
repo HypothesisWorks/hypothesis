@@ -10,13 +10,13 @@
 
 import subprocess
 
-import hypothesistooling as tools
 from hypothesistooling import installers as install
+from hypothesistooling.git import ROOT, all_files
 
-SCRIPTS = [p for p in tools.all_files() if p.suffix == ".sh"]
+SCRIPTS = [p for p in all_files() if p.suffix == ".sh"]
 
 
 def test_all_shell_scripts_are_valid():
     subprocess.check_call(
-        [install.SHELLCHECK, "--exclude=SC1073,SC1072", *SCRIPTS], cwd=tools.ROOT
+        [install.SHELLCHECK, "--exclude=SC1073,SC1072", *SCRIPTS], cwd=ROOT
     )

@@ -2,10 +2,6 @@
 The Hypothesis Code Review Handbook
 ===================================
 
-Note: This review guide was written with the Python version in mind,
-but should apply to *all* versions. If you find a place where it's a bit
-too Python specific, please fix it or file an issue.
-
 This document outlines the process for reviewing changes to Hypothesis. It's
 partly descriptive, partly prescriptive, and entirely prone to change in
 response to circumstance and need. We're still figuring this thing out!
@@ -14,17 +10,8 @@ response to circumstance and need. We're still figuring this thing out!
 What Needs Review
 -----------------
 
-The repository includes Hypothesis implementations for multiple languages,
-which have different review requirements due to different levels of project
-maturity:
-
-- all changes to hypothesis-python and the language-independent build
-  infrastructure must be signed off by at least one person with write access to
-  the repo other than the author of the change. (These requirements will apply
-  to any Hypothesis implementations with a 1.0 release.)
-- changes by `DRMacIver <https://github.com/DRMacIver>`_ to hypothesis-ruby do
-  not require review, but will be posted as pull requests, often for long
-  enough that if someone wants to review and ask questions, they can.
+All changes must be signed off by at least one person
+with write access to the repo other than the author of the change.
 
 ----------------
 How Review Works
@@ -190,8 +177,7 @@ Public API changes must satisfy the following:
    though other maintainers are welcome and likely to chip in to review as
    well.
 9. We have a separate guide for `house API style <api-style.rst>`_ which should
-   be followed. Note that currently this only covers the API style for the Python
-   version. We are still figuring out the API style for the Ruby version.
+   be followed.
 
 ~~~~~~~~~
 Bug Fixes
@@ -257,10 +243,6 @@ All such changes should:
    examples that were previously hard to discover.
 4. If appropriate, come with a test in test_shrink_quality.py showing how they
    improve the shrinker.
-
-Note that the same rules will apply to the Ruby and Rust packages from version
-1.0, but are more relaxed in practice while we are catching up with features
-that are already well proven in Python.
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Non-Blocking Questions

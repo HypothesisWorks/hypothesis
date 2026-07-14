@@ -72,10 +72,10 @@ But Hypothesis only has one full-time contributor, and everybody else works on i
 For us, it works exceptionally well.
 
 [phd]: http://www.drmaciver.com/2017/04/life-changes-announcement-academia-edition/
-[recent]: https://github.com/HypothesisWorks/hypothesis-python/pull/1101
+[recent]: https://github.com/HypothesisWorks/hypothesis/pull/1101
 [semver]: https://semver.org/
-[typo]: https://github.com/HypothesisWorks/hypothesis-python/pull/1069
-[version.py]: https://github.com/HypothesisWorks/hypothesis-python/blob/master/src/hypothesis/version.py
+[typo]: https://github.com/HypothesisWorks/hypothesis/pull/1069
+[version.py]: https://github.com/HypothesisWorks/hypothesis/blob/master/src/hypothesis/version.py
 
 ## Why bother?
 
@@ -102,7 +102,7 @@ If you submit a patch that gets accepted, your change is available immediately, 
 This may less of tangible benefit, but it gives off nice fuzzy feelings, especially if it's your first patch.
 (Speaking of which, we're always looking [for new contributors][contributors]!)
 
-[contributors]: https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst
+[contributors]: https://github.com/HypothesisWorks/hypothesis/blob/master/CONTRIBUTING.rst
 
 ## I'm ruined for everything else
 
@@ -116,4 +116,4 @@ Look in the [scripts directory][scripts] of the main repo.
 In particular, `check-release-file.py` looks for a release note on pull requests, and `deploy.py` is what actually cuts the release.
 The code will probably need tweaking for your repo (it's closely based on the Hypothesis repo), but hopefully it provides a useful starting point.
 
-[scripts]: https://github.com/HypothesisWorks/hypothesis-python/tree/master/scripts
+[scripts]: https://github.com/HypothesisWorks/hypothesis/tree/master/scripts

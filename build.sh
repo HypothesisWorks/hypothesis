@@ -19,19 +19,27 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
+PYTHON_VERSION="3.14.6"
+
+"$SCRIPTS/ensure-uv.sh"
+if ! command -v uv >/dev/null 2>&1 ; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-}" ] ; then
     # We're on GitHub Actions, Codespaces, or Claude Code and already have a suitable Python
     PYTHON=$(command -v python3 || command -v python)
 else
     # Otherwise, we install it from scratch
-    # NOTE: tooling keeps this version in sync with ci_version in tooling
-    "$SCRIPTS/ensure-python.sh" 3.10.19
-    PYTHON=$(pythonloc 3.10.19)/bin/python
+    # NOTE: tooling keeps this version in sync with ci_version_python in tooling
+    "$SCRIPTS/ensure-python.sh" "$PYTHON_VERSION"
+    PYTHON=$(pythonloc "$PYTHON_VERSION")/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
 
-TOOL_HASH=$("$PYTHON" "$SCRIPTS/tool-hash.py" < "$TOOL_REQUIREMENTS")
+# append PYTHON_VERSION to bust caches when we upgrade versions
+TOOL_HASH=$( (cat "$TOOL_REQUIREMENTS" && echo "$PYTHON_VERSION") | "$PYTHON" "$SCRIPTS/tool-hash.py")
 
 TOOL_VIRTUALENV="$VIRTUALENVS/build-$TOOL_HASH"
 TOOL_PYTHON="$TOOL_VIRTUALENV/bin/python"
@@ -40,15 +48,8 @@ export PYTHONPATH="$ROOT/tooling/src"
 
 if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   rm -rf "$TOOL_VIRTUALENV"
-  if [ -n "${CLAUDECODE-}" ] ; then
-    # Claude Code: use venv (available) and skip pip upgrades (debian-managed)
-    "$PYTHON" -m venv "$TOOL_VIRTUALENV"
-  else
-    "$PYTHON" -m pip install --upgrade pip
-    "$PYTHON" -m pip install --upgrade virtualenv
-    "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
-  fi
-  "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
+  uv venv --seed --python "$PYTHON" "$TOOL_VIRTUALENV"
+  uv pip install --python "$TOOL_PYTHON" -r requirements/tools.txt
 fi
 
 if [ -n "${CI:-}" ] ; then echo "::endgroup::" ; fi

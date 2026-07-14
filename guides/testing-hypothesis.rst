@@ -6,7 +6,7 @@ Note: This guide is currently entirely specific to the Python version of
 Hypothesis.
 
 This is a guide to the process of testing Hypothesis itself, both how to
-run its tests and how to to write new ones.
+run its tests and how to write new ones.
 
 --------------------------
 General Testing Philosophy
@@ -37,7 +37,7 @@ a starting point, not the final goal.
   because when it was found and fixed, someone wrote a test to make sure it
   couldn't come back!
 
-The ``hypothesis-python/tests/`` directory has some notes in the README file on where various
+The ``hypothesis/tests/`` directory has some notes in the README file on where various
 kinds of tests can be found or added.  Go there for the practical stuff, or
 just ask one of the maintainers for help on a pull request!
 

@@ -13,10 +13,10 @@ import os
 import subprocess
 import sys
 
-from hypothesistooling.projects.hypothesispython import BASE_DIR
+from hypothesistooling.release import HYPOTHESIS
 
 BRANCH_CHECK = "branch-check"
-VALIDATE_BRANCH_CHECK = os.path.join(BASE_DIR, "scripts", "validate_branch_check.py")
+VALIDATE_BRANCH_CHECK = os.path.join(HYPOTHESIS, "scripts", "validate_branch_check.py")
 
 
 def write_entries(tmp_path, entries):

@@ -62,6 +62,31 @@ REVEALED_TYPES = [
         "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
         "Any",
     ),
+    ("from_regex(r'.', alphabet=None)", "str"),
+    ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
+    ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, int]"),
+    ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
+    (
+        "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
+        "dict[str | int, bool]",
+    ),
+    (
+        "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
+        "dict[str | int, bool | int]",
+    ),
+]
+
+
+FILTER_TYPEGUARD_PREAMBLE = """\
+from typing import TypeGuard
+from hypothesis.strategies import *
+def is_str(x: object) -> TypeGuard[str]:
+    return isinstance(x, str)
+"""
+
+FILTER_TYPEGUARD_REVEALED_TYPES = [
+    ("from_type(object).filter(is_str)", "str"),
+    ("one_of(integers(), text()).filter(is_str)", "str"),
 ]
 
 
@@ -88,13 +113,19 @@ DIFF_REVEALED_TYPES = [
         "dict[int, datetime.datetime]",
         "dict[int, datetime]",
     ),
+    # mypy joins heterogeneous values to their common base, pyright keeps the union
+    DifferingRevealedTypes(
+        "fixed_dictionaries({'a': text(), 'b': integers()})",
+        "dict[str, object]",
+        "dict[str, int | str]",
+    ),
 ]
 
 
 NUMPY_REVEALED_TYPES = [
     (
         'arrays(dtype=np.dtype("int32"), shape=1)',
-        "ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]]",
+        "ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]]",
     ),
     # (
     #     "arrays(dtype=np.dtype(int), shape=1)",
@@ -199,15 +230,15 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "integer_array_indices(shape=(2, 3))",
-        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[Any]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[signedinteger[Any]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-        "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
+        "tuple[ndarray[tuple[Any, ...], dtype[unsignedinteger[_8Bit]]], ...]",
     ),
     # basic_indices with allow_ellipsis=False (no EllipsisType differences)
     (

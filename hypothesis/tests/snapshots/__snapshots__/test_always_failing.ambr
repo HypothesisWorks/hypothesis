@@ -1,0 +1,407 @@
+# serializer version: 1
+# name: test_always_failing[binary]
+  '''
+  Failing test case: inner(
+      v0=b'',
+  )
+  '''
+# ---
+# name: test_always_failing[booleans]
+  '''
+  Failing test case: inner(
+      v0=False,
+  )
+  '''
+# ---
+# name: test_always_failing[builds]
+  '''
+  Failing test case: inner(
+      v0=Pair(x=0, y=''),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_from_type]
+  '''
+  Failing test case: inner(
+      v0=[],
+  )
+  '''
+# ---
+# name: test_always_failing[builds_lambda_mixed_args]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_lambda_positional_args]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_lambda_returning_object]
+  '''
+  Failing test case: inner(
+      v0=Pair(0, ''),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_lambda_with_defaults]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_multi_arg_lambda]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_no_arg_lambda]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[builds_single_arg_lambda]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[characters]
+  '''
+  Failing test case: inner(
+      v0='0',
+  )
+  '''
+# ---
+# name: test_always_failing[complex_numbers]
+  '''
+  Failing test case: inner(
+      v0=0j,
+  )
+  '''
+# ---
+# name: test_always_failing[dates]
+  '''
+  Failing test case: inner(
+      v0=datetime.date(2000, 1, 1),
+  )
+  '''
+# ---
+# name: test_always_failing[datetimes]
+  '''
+  Failing test case: inner(
+      v0=datetime.datetime(2000, 1, 1, 0, 0),
+  )
+  '''
+# ---
+# name: test_always_failing[decimals]
+  '''
+  Failing test case: inner(
+      v0=Decimal('Infinity'),
+  )
+  '''
+# ---
+# name: test_always_failing[deferred]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[dictionaries]
+  '''
+  Failing test case: inner(
+      v0={},
+  )
+  '''
+# ---
+# name: test_always_failing[emails]
+  '''
+  Failing test case: inner(
+      v0='0@A.AC',
+  )
+  '''
+# ---
+# name: test_always_failing[filter]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[fixed_dictionaries]
+  '''
+  Failing test case: inner(
+      v0={'name': '', 'age': 0},
+  )
+  '''
+# ---
+# name: test_always_failing[flatmap_lambda]
+  '''
+  Failing test case: inner(
+      v0='',
+  )
+  '''
+# ---
+# name: test_always_failing[floats]
+  '''
+  Failing test case: inner(
+      v0=0.0,
+  )
+  '''
+# ---
+# name: test_always_failing[fractions]
+  '''
+  Failing test case: inner(
+      v0=Fraction(0, 1),
+  )
+  '''
+# ---
+# name: test_always_failing[from_regex]
+  '''
+  Failing test case: inner(
+      v0='aaa',
+  )
+  '''
+# ---
+# name: test_always_failing[from_type]
+  '''
+  Failing test case: inner(
+      v0=IPv4Address('0.0.0.0'),
+  )
+  '''
+# ---
+# name: test_always_failing[frozensets]
+  '''
+  Failing test case: inner(
+      v0=frozenset(),
+  )
+  '''
+# ---
+# name: test_always_failing[functions]
+  '''
+  Failing test case: inner(
+      v0=lambda x: x,
+  )
+  '''
+# ---
+# name: test_always_failing[integers]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[ip_addresses]
+  '''
+  Failing test case: inner(
+      v0=IPv4Address('0.0.0.0'),
+  )
+  '''
+# ---
+# name: test_always_failing[iterables]
+  '''
+  Failing test case: inner(
+      v0=iter([]),
+  )
+  '''
+# ---
+# name: test_always_failing[just]
+  '''
+  Failing test case: inner(
+      v0=42,
+  )
+  '''
+# ---
+# name: test_always_failing[lists]
+  '''
+  Failing test case: inner(
+      v0=[],
+  )
+  '''
+# ---
+# name: test_always_failing[many_args]
+  '''
+  Failing test case: inner(
+      v0=0,
+      v1=0.0,
+      v2='',
+      v3=False,
+      v4=None,
+  )
+  '''
+# ---
+# name: test_always_failing[map_chained_lambdas_opaque]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[map_lambda_opaque_result]
+  '''
+  Failing test case: inner(
+      v0=Opaque(),
+  )
+  '''
+# ---
+# name: test_always_failing[map_to_bytes]
+  '''
+  Failing test case: inner(
+      v0=hashlib.sha256(b'').digest(),
+  )
+  '''
+# ---
+# name: test_always_failing[map_to_str]
+  '''
+  Failing test case: inner(
+      v0='0',
+  )
+  '''
+# ---
+# name: test_always_failing[mixed_strategies]
+  '''
+  Failing test case: inner(
+      v0=[],
+      v1={},
+      v2=10,
+  )
+  '''
+# ---
+# name: test_always_failing[none]
+  '''
+  Failing test case: inner(
+      v0=None,
+  )
+  '''
+# ---
+# name: test_always_failing[one_of]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[permutations]
+  '''
+  Failing test case: inner(
+      v0=[0, 1, 2, 3, 4],
+  )
+  '''
+# ---
+# name: test_always_failing[randoms]
+  '''
+  Failing test case: inner(
+      v0=HypothesisRandom(generated data),
+  )
+  '''
+# ---
+# name: test_always_failing[recursive]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[sampled_from]
+  '''
+  Failing test case: inner(
+      v0='alice',
+  )
+  '''
+# ---
+# name: test_always_failing[sets]
+  '''
+  Failing test case: inner(
+      v0=set(),
+  )
+  '''
+# ---
+# name: test_always_failing[shared]
+  '''
+  Failing test case: inner(
+      v0=0,
+  )
+  '''
+# ---
+# name: test_always_failing[slices]
+  '''
+  Failing test case: inner(
+      v0=slice(None, None, None),
+  )
+  '''
+# ---
+# name: test_always_failing[text]
+  '''
+  Failing test case: inner(
+      v0='',
+  )
+  '''
+# ---
+# name: test_always_failing[timedeltas]
+  '''
+  Failing test case: inner(
+      v0=datetime.timedelta(0),
+  )
+  '''
+# ---
+# name: test_always_failing[times]
+  '''
+  Failing test case: inner(
+      v0=datetime.time(0, 0),
+  )
+  '''
+# ---
+# name: test_always_failing[tuples]
+  '''
+  Failing test case: inner(
+      v0=(0, '', False),
+  )
+  '''
+# ---
+# name: test_always_failing[two_args]
+  '''
+  Failing test case: inner(
+      v0=0,
+      v1='',
+  )
+  '''
+# ---
+# name: test_always_failing[uuids]
+  '''
+  Failing test case: inner(
+      v0=UUID('e3e70682-c209-4cac-629f-6fbed82c07cd'),
+  )
+  '''
+# ---
+# name: test_always_failing_explain[explain_from_regex]
+  '''
+  Failing test case: inner(
+      v0='00',  # or any other generated value
+  )
+  '''
+# ---
+# name: test_always_failing_explain[explain_map_to_str]
+  '''
+  Failing test case: inner(
+      v0='0',  # or any other generated value
+  )
+  '''
+# ---
+# name: test_always_failing_explain[map_lambda_explain_forces_call_style]
+  '''
+  Failing test case: inner(
+      v0=1,  # or any other generated value
+  )
+  '''
+# ---

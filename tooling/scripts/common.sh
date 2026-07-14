@@ -12,25 +12,19 @@ ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
 export ROOT
 export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
-export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
+export UV_PYTHON_INSTALL_DIR="$SNAKEPIT/.uv-managed"
 
 export XDG_CACHE_HOME="$BUILD_RUNTIMES/.cache"
-# export CARGO_HOME="$XDG_CACHE_HOME/.cargo"
-# export RUSTUP_HOME="$XDG_CACHE_HOME/.rustup"
+
+export RUSTUP_HOME="$BUILD_RUNTIMES/rustup"
+export CARGO_HOME="$BUILD_RUNTIMES/cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
 
 # Note: Deliberately ignoring BUILD_RUNTIMES configuration because we don't
 # want this to go in cache, because it takes up a huge amount of space and
 # slows everything down!
 export VIRTUALENVS="${TMPDIR:-/tmp}/.hypothesis-runtimes/virtualenvs/"
-# export RBENV_VERSION="2.5.1"
-# export RBENV_ROOT="$BASE/.rbenv"
-# export INSTALLED_RUBY_DIR="$RBENV_ROOT/versions/$RBENV_VERSION/"
-
-# export GEM_HOME="$INSTALLED_RUBY_DIR"
-# export GEM_PATH="$GEM_HOME"
-
-# export PATH="$CARGO_HOME/bin:$INSTALLED_RUBY_DIR/bin:$HOME/.cargo/bin:$PATH"
 
 pythonloc() {
     VERSION="$1"

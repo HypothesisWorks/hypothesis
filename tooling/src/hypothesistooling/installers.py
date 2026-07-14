@@ -8,21 +8,37 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Module for obtaining various versions of Python.
-
-Currently this is a thin shim around pyenv, but it would be nice to have
-this work on Windows as well by using Anaconda (as our build already
-does).
-"""
+"""Module for obtaining various language toolchains."""
 
 import os
 import shutil
 import subprocess
 
 from hypothesistooling import scripts
-from hypothesistooling.junkdrawer import once
 
 HOME = os.environ["HOME"]
+INSTALLED_PYTHONS = set()
+INSTALLED_RUSTS = set()
+
+CARGO_HOME = os.environ.get("CARGO_HOME") or os.path.join(HOME, ".cargo")
+RUSTUP = os.path.join(CARGO_HOME, "bin", "rustup")
+
+STACK = os.path.join(HOME, ".local", "bin", "stack")
+SHELLCHECK = shutil.which("shellcheck") or os.path.join(
+    HOME, ".local", "bin", "shellcheck"
+)
+
+
+def once(fn):
+    def accept():
+        if accept.has_been_called:
+            return
+        fn()
+        accept.has_been_called = True
+
+    accept.has_been_called = False
+    accept.__name__ = fn.__name__
+    return accept
 
 
 def __python_executable(version):
@@ -34,29 +50,51 @@ def python_executable(version):
     return __python_executable(version)
 
 
-PYTHONS = set()
-
-
 def ensure_python(version):
-    if version in PYTHONS:
+    if version in INSTALLED_PYTHONS:
         return
     scripts.run_script("ensure-python.sh", version)
     target = __python_executable(version)
     assert os.path.exists(target), target
-    PYTHONS.add(version)
+    INSTALLED_PYTHONS.add(version)
 
 
-STACK = os.path.join(HOME, ".local", "bin", "stack")
-GHC = os.path.join(HOME, ".local", "bin", "ghc")
-SHELLCHECK = shutil.which("shellcheck") or os.path.join(
-    HOME, ".local", "bin", "shellcheck"
-)
+@once
+def ensure_rustup():
+    if os.path.exists(RUSTUP):
+        return
+    subprocess.check_call(
+        "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs "
+        "| sh -s -- -y --no-modify-path --default-toolchain none",
+        shell=True,
+        # don't abort just because a system rustup exists on PATH
+        env={**os.environ, "RUSTUP_INIT_SKIP_PATH_CHECK": "yes"},
+    )
+
+
+def ensure_rustc(version, *, components=(), targets=()):
+    key = (version, *components, *targets)
+    if key in INSTALLED_RUSTS:
+        return
+    ensure_rustup()
+    subprocess.check_call(
+        [RUSTUP, "toolchain", "install", version, "--profile", "minimal"]
+        + [arg for component in components for arg in ("--component", component)]
+    )
+    if targets:
+        subprocess.check_call(
+            [RUSTUP, "target", "add", *targets, "--toolchain", version]
+        )
+    INSTALLED_RUSTS.add(key)
 
 
 def ensure_stack():
     if os.path.exists(STACK):
         return
     subprocess.check_call("mkdir -p ~/.local/bin", shell=True)
+    # if you're on macos, this will error with "--wildcards is not supported"
+    # or similar. You should put shellcheck on your PATH with your package
+    # manager of choice; eg `brew install shellcheck`.
     subprocess.check_call(
         "curl -L https://www.stackage.org/stack/linux-x86_64 "
         "| tar xz --wildcards --strip-components=1 -C $HOME"
@@ -72,56 +110,8 @@ def update_stack():
 
 
 @once
-def ensure_ghc():
-    if os.path.exists(GHC):
-        return
-    update_stack()
-    subprocess.check_call([STACK, "setup"])
-
-
-@once
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
     update_stack()
-    ensure_ghc()
     subprocess.check_call([STACK, "install", "ShellCheck"])
-
-
-@once
-def ensure_rustup():
-    scripts.run_script("ensure-rustup.sh")
-
-
-# RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, "plugins", "ruby-build")
-
-# RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, "bin")
-
-# BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "bundle")
-# GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "gem")
-
-# RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, "bin", "rbenv")
-
-
-# @once
-# def ensure_ruby():
-#     if not os.path.exists(scripts.RBENV_ROOT):
-#         git("clone", "https://github.com/rbenv/rbenv.git", scripts.RBENV_ROOT)
-#
-#     if not os.path.exists(RUBY_BUILD):
-#         git("clone", "https://github.com/rbenv/ruby-build.git", RUBY_BUILD)
-#
-#     if not os.path.exists(
-#         os.path.join(scripts.RBENV_ROOT, "versions", scripts.RBENV_VERSION)
-#     ):
-#         subprocess.check_call([RBENV_COMMAND, "install", scripts.RBENV_VERSION])
-#
-#     subprocess.check_call([GEM_EXECUTABLE, "update", "--system"])
-#
-#     if not (
-#         os.path.exists(BUNDLER_EXECUTABLE)
-#         and subprocess.call([BUNDLER_EXECUTABLE, "version"]) == 0
-#     ):
-#         subprocess.check_call([GEM_EXECUTABLE, "install", "bundler"])
-#
-#     assert os.path.exists(BUNDLER_EXECUTABLE)

@@ -8,6 +8,7 @@ their individual contributions.
 
 .. NOTE - this list is in alphabetical order by first name (or handle).
 
+* `A. Jesse Jiryu Davis <https://github.com/ajdavis>`_
 * `Aaron Meurer <https://github.com/asmeurer>`_
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Matan <https://github.com/adamatan/adamatan>_`
@@ -43,6 +44,7 @@ their individual contributions.
 * `Chris Down  <https://chrisdown.name>`_
 * `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
 * `Chris Wesseling <https://github.com/CharString>`_
+* `Christian Hettlage <https://github.com/hettlage>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
@@ -82,6 +84,7 @@ their individual contributions.
 * `Hal Blackburn <https://github.com/h4l>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
+* `Ian Hunt-Isaak <https://github.com/ianhi>`_
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)
 * `Israel Fruchter <https://github.com/fruch>`_
 * `Ivan Tham <https://github.com/pickfire>`_

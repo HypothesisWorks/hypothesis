@@ -11,21 +11,39 @@
 .DS_Store
 .hypothesis
 .vscode/
-.claude/settings.local.json
+CLAUDE.local.md
+
+# whitelist .claude files, rather than blacklist. Some local claude files
+# (skills, agents) have to live in .claude - as opposed to eg CLAUDE.local.md,
+# which we gitignore at the top level.
+.claude/*
+!.claude/CLAUDE.md
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/hypothesis.md
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/porting/
+!.claude/skills/porting/SKILL.md
 
 # generic build components
 
 .runtimes
-/hypothesis-python/branch-check*
+/hypothesis/branch-check*
 /pythonpython3.*
 /pythonpypy3.*
 .pyodide-xbuildenv
+
+# rust
+
+target/
 
 # python
 
 *.pyc
 *.pyo
 venv*
+.venv*
 .cache
 .pytest_cache
 .mypy_cache
@@ -46,8 +64,6 @@ dist
 secrets.tar
 secrets
 
-# Rust build targets
-target
 
 _site/
 .sass-cache/
@@ -112,3 +128,4 @@ HypothesisWorks.github.io.iml
 jekyll.log
 /website/output/
 /t.py
+*.profraw
