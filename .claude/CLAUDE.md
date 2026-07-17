@@ -32,6 +32,8 @@ When creating a PR that changes `hypothesis/src/`:
 2. See `RELEASE-sample.rst` for examples
 3. **Imitate the style in `changelog.rst`** for consistency
 4. Follow all changelog instructions in `CONTRIBUTING.rst`
+5. Specific additional guidelines:
+  * Do not over-specify built-in exceptions. For example, "fix <x>, which previously raised an error" is generally better than  "fix <x>, which previously raised ``TypeError``.
 
 **Note:** A RELEASE.rst is required if and only if the PR modifies files under `hypothesis/src/`. PRs touching only tests, docs (including `hypothesis/docs/`), the website, tooling, or CI config should **not** include a RELEASE.rst.
 

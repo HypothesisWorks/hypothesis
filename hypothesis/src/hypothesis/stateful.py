@@ -528,8 +528,7 @@ class Rule:
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                consume = isinstance(v, BundleConsumer)
-                v = BundleReferenceStrategy(v.name, consume=consume)
+                v = BundleReferenceStrategy(v.name, consume=v.consume)
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -614,16 +613,19 @@ class Bundle(SearchStrategy[Ex]):
         self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
         self.draw_references = draw_references
 
+    @property
+    def consume(self) -> bool:
+        return self.__reference_strategy.consume
+
     def do_draw(self, data):
         machine = data.draw(self_strategy)
         reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
 
     def __repr__(self):
-        consume = self.__reference_strategy.consume
-        if consume is False:
+        if self.consume is False:
             return f"Bundle(name={self.name!r})"
-        return f"Bundle(name={self.name!r}, {consume=})"
+        return f"Bundle(name={self.name!r}, consume={self.consume!r})"
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time
@@ -638,10 +640,8 @@ class Bundle(SearchStrategy[Ex]):
 
     def flatmap(self, expand):
         if self.draw_references:
-            return type(self)(
-                self.name,
-                consume=self.__reference_strategy.consume,
-                draw_references=False,
+            return Bundle(
+                self.name, consume=self.consume, draw_references=False
             ).flatmap(expand)
         return super().flatmap(expand)
 
@@ -652,11 +652,6 @@ class Bundle(SearchStrategy[Ex]):
 
         # Mix in "Bundle" for collision resistance
         return hash(("Bundle", self.name))
-
-
-class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
 
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
@@ -674,7 +669,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return BundleConsumer(bundle)
+    return Bundle(bundle.name, consume=True)
 
 
 @dataclass(slots=True, frozen=True)
@@ -719,7 +714,7 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            if isinstance(t, BundleConsumer):
+            if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
                     "This will be an error in a future version of Hypothesis.",
