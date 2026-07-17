@@ -18,6 +18,30 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.6:
+
+--------------------
+6.156.6 - 2026-07-10
+--------------------
+
+This patch fixes |GitHubArtifactDatabase| failing to download artifacts due to a colliding ``Authorization`` header.
+
+.. _v6.156.5:
+
+--------------------
+6.156.5 - 2026-07-10
+--------------------
+
+We now publish abi3 wheels for 32-bit linux and 32-bit windows.
+
+.. _v6.156.4:
+
+--------------------
+6.156.4 - 2026-07-08
+--------------------
+
+In addition to our version-specific wheels, we now also publish ``abi3`` wheels, built against the 3.10 stable ABI.
+
 .. _v6.156.3:
 
 --------------------

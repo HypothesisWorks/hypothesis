@@ -24,8 +24,6 @@ ci_version_rust = "1.96.1"
 
 
 def rust_build_env(*, profile="dev"):
-    # pin any implicit cargo invocation (pip -> maturin -> cargo) to the ci
-    # toolchain
     assert profile in ("dev", "release")
     return {
         "RUSTUP_TOOLCHAIN": ci_version_rust,
@@ -57,4 +55,4 @@ def write_version(cargo_toml_path: Path, new_version: str) -> None:
 
 
 def update_lockfile() -> None:
-    cargo(rust_msrv(), ["update", "--workspace"])
+    cargo(rust_msrv(), ["update", "--workspace", "--manifest-path", str(CARGO_TOML)])
