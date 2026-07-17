@@ -393,7 +393,7 @@ def floats(
             min_value = next_up_normal(
                 min_value, width, allow_subnormal=assumed_allow_subnormal
             )
-        assert min_value > min_arg  # type: ignore
+        assert min_value > min_arg
     if max_value is not None and (
         exclude_max or (max_arg is not None and max_value > max_arg)
     ):
@@ -407,7 +407,7 @@ def floats(
             max_value = next_down_normal(
                 max_value, width, allow_subnormal=assumed_allow_subnormal
             )
-        assert max_value < max_arg  # type: ignore
+        assert max_value < max_arg
 
     if min_value == -math.inf:
         min_value = None
