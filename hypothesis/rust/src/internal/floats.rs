@@ -9,18 +9,25 @@
 // obtain one at https://mozilla.org/MPL/2.0/.
 
 mod f16_conv {
+    const F64_MANTISSA_MASK: u64 = (1 << 52) - 1;
+    const F64_IMPLICIT_BIT: u64 = 1 << 52;
+    const F16_SIGN_BIT: u16 = 0x8000;
+    const F16_INF_BITS: u16 = 0x7c00;
+    const F16_QUIET_NAN_BIT: u16 = 0x0200;
+
     /// Narrow an `f64` to IEEE 754 half-precision, returning the raw 16 bits.
     /// Round-to-nearest-even; finite values too large for the format become
     /// infinity (the caller decides whether that is an error).
     pub(crate) fn f16_bits_from_f64(value: f64) -> u16 {
         let x = value.to_bits();
-        let sign = ((x >> 48) & 0x8000) as u16;
+        // shift f64's sign bit (bit 63) down to f16's (bit 15)
+        let sign = ((x >> 48) as u16) & F16_SIGN_BIT;
         let biased = ((x >> 52) & 0x7ff) as i32;
-        let mant = x & 0x000f_ffff_ffff_ffff;
+        let mant = x & F64_MANTISSA_MASK;
 
         // inf / nan
         if biased == 0x7ff {
-            return sign | 0x7c00 | if mant != 0 { 0x0200 } else { 0 };
+            return sign | F16_INF_BITS | if mant != 0 { F16_QUIET_NAN_BIT } else { 0 };
         }
         // +/- 0
         if biased == 0 && mant == 0 {
@@ -32,7 +39,7 @@ mod f16_conv {
 
         // overflow to infinity
         if e >= 0x1f {
-            return sign | 0x7c00;
+            return sign | F16_INF_BITS;
         }
 
         // subnormal or underflow in f16
@@ -43,7 +50,7 @@ mod f16_conv {
             }
             // restore the implicit leading 1, then round-to-nearest-even while
             // shifting the 53-bit significand down to the subnormal position
-            let sig = mant | 0x0010_0000_0000_0000;
+            let sig = mant | F64_IMPLICIT_BIT;
             let shift = (43 - e) as u32;
             let half = 1u64 << (shift - 1);
             let low = sig & ((1u64 << shift) - 1);
@@ -67,7 +74,7 @@ mod f16_conv {
                 m = 0;
                 e += 1;
                 if e >= 0x1f {
-                    return sign | 0x7c00;
+                    return sign | F16_INF_BITS;
                 }
             }
         }
@@ -76,7 +83,7 @@ mod f16_conv {
 
     /// Widen the raw 16 bits of an IEEE 754 half-precision float to `f64`.
     pub(crate) fn f16_bits_to_f64(bits: u16) -> f64 {
-        let sign = if bits & 0x8000 != 0 { -1.0 } else { 1.0 };
+        let sign = if bits & F16_SIGN_BIT != 0 { -1.0 } else { 1.0 };
         let exp = (bits >> 10) & 0x1f;
         let mant = bits & 0x3ff;
         let magnitude = match exp {
@@ -95,7 +102,7 @@ mod f16_conv {
 }
 
 #[cfg(test)]
-#[path = "../../tests/embedded/internal/floats_tests.rs"]
+#[path = "../../tests/embedded/internal/test_floats.rs"]
 mod tests;
 
 #[pyo3::pymodule]
@@ -143,7 +150,7 @@ pub(crate) mod floats {
         match width {
             16 => {
                 let h = f16_bits_from_f64(value);
-                if value.is_finite() && h & 0x7fff == 0x7c00 {
+                if value.is_finite() && f16_bits_to_f64(h).is_infinite() {
                     return Err(PyOverflowError::new_err("float too large to pack"));
                 }
                 Ok(h as u64)
