@@ -473,6 +473,17 @@ def _timezone_strategy(tz):
     raise InvalidArgument(f"Cannot resolve Timezone({tz=}) to a strategy")
 
 
+def _annotated_types_alias_name(alias):
+    # Recover the name of a generic alias like annotated_types.LowerCase, so that
+    # our error message can suggest subscripting it, e.g. `LowerCase[str]`.  We
+    # only search the annotated_types namespace to keep this cheap.
+    at = sys.modules.get("annotated_types")
+    for name in dir(at) if at else ():
+        if getattr(at, name, None) is alias:
+            return name
+    return None
+
+
 def find_annotated_strategy(annotated_type):
     metadata = getattr(annotated_type, "__metadata__", ())
 
@@ -486,17 +497,29 @@ def find_annotated_strategy(annotated_type):
         ts, ms = _flat_annotated_repr_parts(annotated_type)
         bits = ", ".join([" | ".join(dict.fromkeys(ts or "?")), *dict.fromkeys(ms)])
         hint = ""
-        if any(
-            is_annotated_type(arg) and isinstance(arg.__origin__, typing.TypeVar)
-            for arg in metadata
-        ):
+        generic = next(
+            (
+                arg
+                for arg in metadata
+                if is_annotated_type(arg) and isinstance(arg.__origin__, typing.TypeVar)
+            ),
+            None,
+        )
+        if generic is not None:
             # e.g. Annotated[str, annotated_types.LowerCase], where LowerCase is
             # itself a generic alias Annotated[T, ...] intended to be subscripted.
-            hint = (
-                "  Generic aliases such as `annotated_types.LowerCase` should be "
-                "subscripted with the type and used in the type position, like "
-                "`LowerCase[str]`, rather than passed as metadata."
-            )
+            origin_rep = get_pretty_function_description(annotated_type.__origin__)
+            if name := _annotated_types_alias_name(generic):
+                hint = (
+                    f"  `{name}` is a generic alias, and goes in the type position: "
+                    f"try `{name}[{origin_rep}]` instead of passing it as metadata."
+                )
+            else:
+                hint = (
+                    "  Generic aliases such as `annotated_types.LowerCase` should be "
+                    "subscripted with the type and used in the type position, like "
+                    "`LowerCase[str]`, rather than passed as metadata."
+                )
         raise ResolutionFailed(
             f"`{ty_rep}` is invalid because nesting Annotated is only allowed for "
             f"the first (type) argument, not for later (metadata) arguments.  "
@@ -530,9 +553,13 @@ def find_annotated_strategy(annotated_type):
         warnings.warn(msg, HypothesisWarning, stacklevel=2)
 
     if timezones_strategy is not None:
-        base_strategy = (st.datetimes if base_type is datetime.datetime else st.times)(
-            timezones=timezones_strategy
-        )
+        if base_type is datetime.datetime:
+            base_strategy = st.datetimes(timezones=timezones_strategy)
+        else:
+            # a Timezone constraint on any other type, e.g. a date, is warned
+            # about as unsupported above rather than reaching this branch.
+            assert base_type is datetime.time
+            base_strategy = st.times(timezones=timezones_strategy)
     else:
         base_strategy = st.from_type(base_type)
     for filter_condition in filter_conditions:

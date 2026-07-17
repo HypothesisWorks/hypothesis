@@ -12,7 +12,7 @@ import datetime as dt
 import re
 import sys
 import zoneinfo
-from typing import Annotated
+from typing import Annotated, TypeVar
 
 import pytest
 
@@ -117,7 +117,16 @@ def test_generic_alias_in_metadata_suggests_subscripting():
     assert "Did you mean `Annotated[str, Predicate(str.islower)]`?" in str(
         excinfo.value
     )
-    assert "`LowerCase[str]`" in str(excinfo.value)
+    assert "try `LowerCase[str]`" in str(excinfo.value)
+
+
+def test_unknown_generic_alias_in_metadata_error():
+    T = TypeVar("T")
+    Positive = Annotated[T, at.Gt(0)]
+    with pytest.raises(ResolutionFailed) as excinfo:
+        check_can_generate_examples(st.from_type(Annotated[int, Positive]))
+    assert "Did you mean `Annotated[int, Gt(gt=0)]`?" in str(excinfo.value)
+    assert "subscripted with the type" in str(excinfo.value)
 
 
 def test_predicate_constraint():
