@@ -458,6 +458,21 @@ def _flat_annotated_repr_parts(annotated_type):
     return type_reps, metadata_reps
 
 
+def _timezone_strategy(tz):
+    # Interpret an annotated_types.Timezone argument, per the annotated-types docs:
+    # None means naive, ... means aware with any timezone, and a string or tzinfo
+    # requires that specific timezone.
+    if tz is None:
+        return st.none()
+    if tz is ...:
+        return st.timezones()
+    if isinstance(tz, str):
+        return st.just(zoneinfo.ZoneInfo(tz))
+    if isinstance(tz, datetime.tzinfo):
+        return st.just(tz)
+    raise InvalidArgument(f"Cannot resolve Timezone({tz=}) to a strategy")
+
+
 def find_annotated_strategy(annotated_type):
     metadata = getattr(annotated_type, "__metadata__", ())
 
@@ -470,10 +485,22 @@ def find_annotated_strategy(annotated_type):
         ty_rep = repr(annotated_type).replace("typing.Annotated", "Annotated")
         ts, ms = _flat_annotated_repr_parts(annotated_type)
         bits = ", ".join([" | ".join(dict.fromkeys(ts or "?")), *dict.fromkeys(ms)])
+        hint = ""
+        if any(
+            is_annotated_type(arg) and isinstance(arg.__origin__, typing.TypeVar)
+            for arg in metadata
+        ):
+            # e.g. Annotated[str, annotated_types.LowerCase], where LowerCase is
+            # itself a generic alias Annotated[T, ...] intended to be subscripted.
+            hint = (
+                "  Generic aliases such as `annotated_types.LowerCase` should be "
+                "subscripted with the type and used in the type position, like "
+                "`LowerCase[str]`, rather than passed as metadata."
+            )
         raise ResolutionFailed(
             f"`{ty_rep}` is invalid because nesting Annotated is only allowed for "
             f"the first (type) argument, not for later (metadata) arguments.  "
-            f"Did you mean `Annotated[{bits}]`?"
+            f"Did you mean `Annotated[{bits}]`?{hint}"
         )
     for arg in reversed(metadata):
         if isinstance(arg, st.SearchStrategy):
@@ -482,18 +509,32 @@ def find_annotated_strategy(annotated_type):
     filter_conditions = []
     unsupported = []
     constraints_map = get_constraints_filter_map()
+    at = sys.modules.get("annotated_types")
+    base_type = annotated_type.__origin__
+    timezones_strategy = None
     for constraint in _get_constraints(metadata):
         if isinstance(constraint, st.SearchStrategy):
             return constraint
         if convert := constraints_map.get(type(constraint)):
             filter_conditions.append(convert(constraint))
+        elif (
+            at is not None
+            and isinstance(constraint, at.Timezone)
+            and base_type in (datetime.datetime, datetime.time)
+        ):
+            timezones_strategy = _timezone_strategy(constraint.tz)
         else:
             unsupported.append(constraint)
     if unsupported:
         msg = f"Ignoring unsupported {', '.join(map(repr, unsupported))}"
         warnings.warn(msg, HypothesisWarning, stacklevel=2)
 
-    base_strategy = st.from_type(annotated_type.__origin__)
+    if timezones_strategy is not None:
+        base_strategy = (st.datetimes if base_type is datetime.datetime else st.times)(
+            timezones=timezones_strategy
+        )
+    else:
+        base_strategy = st.from_type(base_type)
     for filter_condition in filter_conditions:
         base_strategy = base_strategy.filter(filter_condition)
 
