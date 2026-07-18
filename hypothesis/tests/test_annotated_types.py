@@ -17,7 +17,7 @@ from typing import Annotated, TypeVar
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import HypothesisWarning, ResolutionFailed
+from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.types import _get_constraints
@@ -101,6 +101,13 @@ def test_annotated_type_int(annotated_type, expected_strategy_repr):
 )
 def test_timezone_constraint(type_, tz, predicate):
     assert_all_examples(st.from_type(Annotated[type_, at.Timezone(tz)]), predicate)
+
+
+def test_invalid_timezone_value():
+    with pytest.raises(InvalidArgument, match="Cannot resolve Timezone"):
+        check_can_generate_examples(
+            st.from_type(Annotated[dt.datetime, at.Timezone(42)])
+        )
 
 
 def test_timezone_constraint_combines_with_others():
