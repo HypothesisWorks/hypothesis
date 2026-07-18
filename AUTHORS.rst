@@ -206,3 +206,4 @@ their individual contributions.
 * `Yiyang Zhan <https://www.github.com/zhanpon>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
 * `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)
+* `zhangli091011 <https://github.com/zhangli091011>`_
