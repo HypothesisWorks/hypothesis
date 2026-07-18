@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.7:
+
+--------------------
+6.156.7 - 2026-07-18
+--------------------
+
+This patch fixes a bug where calling ``.flatmap()`` on a :func:`~hypothesis.stateful.consumes` bundle raised an error (:issue:`4427`).
+
 .. _v6.156.6:
 
 --------------------
