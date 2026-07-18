@@ -80,6 +80,16 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
+TypeAliasTypes: tuple = ()
+try:
+    TypeAliasTypes += (typing.TypeAliasType,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.12`
+try:
+    TypeAliasTypes += (typing_extensions.TypeAliasType,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 ConcatenateTypes: tuple = ()
 try:
     ConcatenateTypes += (typing.Concatenate,)
@@ -326,7 +336,7 @@ def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
     concrete_args = tuple(
         _evaluate_type_alias_type(arg, typevars=typevars) for arg in args
     )
-    if isinstance(origin, typing.TypeAliasType):
+    if isinstance(origin, TypeAliasTypes):
         for param in origin.__type_params__:
             # there's no principled reason not to support these, they're just
             # annoying to implement.
@@ -364,15 +374,13 @@ def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
     return _evaluate_type_alias_type(thing, typevars={})
 
 
-def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
-    # TypeAliasType is new in python 3.12, through the type statement. If we're
-    # before python 3.12 then this can't possibly by a TypeAliasType.
+def is_a_type_alias_type(thing):
+    # TypeAliasType is new in python 3.12, through the type statement; the
+    # typing_extensions backport provides it on earlier versions.
     #
     # https://docs.python.org/3/reference/simple_stmts.html#type
     # https://docs.python.org/3/library/typing.html#typing.TypeAliasType
-    if sys.version_info < (3, 12):
-        return False
-    return isinstance(thing, typing.TypeAliasType)
+    return isinstance(thing, TypeAliasTypes)
 
 
 def is_a_union(thing: object) -> bool:
