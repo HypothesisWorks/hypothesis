@@ -110,6 +110,16 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
+TypeVarTupleTypes: tuple = ()
+try:
+    TypeVarTupleTypes += (typing.TypeVarTuple,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 TypeGuardTypes: tuple = ()
 try:
     TypeGuardTypes += (typing.TypeGuard,)
@@ -340,13 +350,13 @@ def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
         for param in origin.__type_params__:
             # there's no principled reason not to support these, they're just
             # annoying to implement.
-            if isinstance(param, typing.TypeVarTuple):
+            if isinstance(param, TypeVarTupleTypes):
                 raise HypothesisException(
                     f"Hypothesis does not yet support resolution for TypeVarTuple "
                     f"{param} (in origin: {origin!r}). Please open an issue if "
                     "you would like to see support for this."
                 )
-            if isinstance(param, typing.ParamSpec):
+            if isinstance(param, ParamSpecTypes):
                 raise HypothesisException(
                     f"Hypothesis does not yet support resolution for ParamSpec "
                     f"{param} (in origin: {origin!r}). Please open an issue if you "
@@ -378,9 +388,13 @@ def is_a_type_alias_type(thing):
     # TypeAliasType is new in python 3.12, through the type statement; the
     # typing_extensions backport provides it on earlier versions.
     #
+    # We check the exact type rather than isinstance, because parametrizing the
+    # backport produces a types.GenericAlias, which proxies attribute lookups
+    # (including __class__) to its origin and so passes an isinstance check.
+    #
     # https://docs.python.org/3/reference/simple_stmts.html#type
     # https://docs.python.org/3/library/typing.html#typing.TypeAliasType
-    return isinstance(thing, TypeAliasTypes)
+    return type(thing) in TypeAliasTypes
 
 
 def is_a_union(thing: object) -> bool:
