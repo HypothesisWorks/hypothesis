@@ -34,7 +34,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
@@ -175,6 +175,11 @@ def test_max_size_is_respected_with_unique_sampled_from(ls):
     assert len(ls) <= 3
 
 
+# crosshair-tool 0.0.108 encodes `==` between a promoted symbolic int and a
+# symbolic float as SMT structural equality, under which +0.0 != -0.0; this
+# makes the uniqueness check take an infeasible branch and realization then
+# raises CrossHairInternal.  Remove once a fixed crosshair-tool is pinned.
+@xfail_on_crosshair(Why.other)
 @given(st.lists(st.sampled_from([0, 0.0]), unique=True, min_size=1))
 def test_issue_2247_regression(ls):
     assert len(ls) == 1
