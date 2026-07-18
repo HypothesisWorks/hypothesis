@@ -10,9 +10,8 @@
 
 import re
 import subprocess
+import tomllib
 from pathlib import Path
-
-import tomli
 
 from hypothesistooling import installers as install
 from hypothesistooling.git import ROOT
@@ -25,7 +24,7 @@ RUST_BUILD_ENV = {"RUSTUP_TOOLCHAIN": ci_version_rust}
 
 
 def rust_msrv():
-    return tomli.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
+    return tomllib.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
         "rust-version"
     ]
 

@@ -334,8 +334,6 @@ syrupy==5.5.3
     # via -r requirements/test.in
 tokenize-rt==6.2.0
     # via pyupgrade
-tomli==2.4.1
-    # via -r requirements/tools.in
 tomli-w==1.2.0
     # via tox
 tox==4.56.4
