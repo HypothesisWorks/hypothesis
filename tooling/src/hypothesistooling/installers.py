@@ -16,7 +16,7 @@ import subprocess
 
 from hypothesistooling import scripts
 
-HOME = os.environ["HOME"]
+HOME = os.path.expanduser("~")
 INSTALLED_PYTHONS = set()
 INSTALLED_RUSTS = set()
 
