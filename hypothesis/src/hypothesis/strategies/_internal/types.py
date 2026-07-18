@@ -549,8 +549,10 @@ def find_annotated_strategy(annotated_type):
         if convert := constraints_map.get(type(constraint)):
             filter_conditions.append(convert(constraint))
         elif (
-            at is not None
+            at
             and isinstance(constraint, at.Timezone)
+            # a Timezone constraint on any other type, e.g. a date, falls
+            # through to the unsupported-constraint warning below.
             and base_type in (datetime.datetime, datetime.time)
         ):
             timezones_strategy = _timezone_strategy(constraint.tz)
@@ -561,13 +563,9 @@ def find_annotated_strategy(annotated_type):
         warnings.warn(msg, HypothesisWarning, stacklevel=2)
 
     if timezones_strategy is not None:
-        if base_type is datetime.datetime:
-            base_strategy = st.datetimes(timezones=timezones_strategy)
-        else:
-            # a Timezone constraint on any other type, e.g. a date, is warned
-            # about as unsupported above rather than reaching this branch.
-            assert base_type is datetime.time
-            base_strategy = st.times(timezones=timezones_strategy)
+        assert base_type in (datetime.datetime, datetime.time)
+        fn = st.times if base_type is datetime.time else st.datetimes
+        base_strategy = fn(timezones=timezones_strategy)
     else:
         base_strategy = st.from_type(base_type)
     for filter_condition in filter_conditions:
