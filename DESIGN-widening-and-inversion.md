@@ -10,8 +10,8 @@ once we agree on the design and replace it with code.
 The plan is a three-PR sequence:
 
 1. **Span substrate** — migrate the explain-phase / pretty-printer bookkeeping from
-   hand-computed node slices onto spans, and land the explain-phase all-forced-slice
-   fix (a latent master bug). Refactoring and prep, behavior-preserving.
+   hand-computed node slices onto spans, with the all-forced-range guard that
+   migration requires. Refactoring and prep, behavior-preserving.
 2. **Widening pass** — the user-visible shrinking feature: span value recording, plus
    `_invert` debuting on the primitive strategies only, as the pass's encoding step.
 3. **Growth** — `_invert` on compound strategies, additional consumers of inversion,
@@ -102,11 +102,16 @@ is known-fragile for cached/interned objects (the code comments on small ints et
    piece 2 regressed `one_of`; the rewrite makes it draw its index directly.
 5. **Explain-phase fix** — skip slices whose nodes are all forced (nothing can vary,
    so the "or any other generated value" comment would be false). #4713 needed it
-   because piece 2 makes `just(5)` as a top-level argument an all-forced slice, but
-   it is *also* a latent fix on master (e.g. `sampled_from`'s exhaustive-fallback
-   path emits a forced index node), so we take it in PR 1 regardless.
+   because piece 2 makes `just(5)` as a top-level argument an all-forced slice. Our
+   PR 1 needs the same guard for a different reason: recording arg *spans* instead
+   of non-empty node slices means `just()` arguments now appear in the explain
+   phase's work list with empty ranges, and an empty range trivially "always fails
+   the same way". (Prototype-verified: without the guard, `just()` arguments gain a
+   false comment; master itself is not affected, since it excludes empty slices at
+   record time.)
 
-We take pieces 1 and 3 (in PRs 2), piece 5 (in PR 1), and drop 2 and 4 (§4.4).
+We take pieces 1 and 3 (in PR 2), piece 5's guard (in PR 1), and drop 2 and 4
+(§4.4).
 
 *What #4743 does:* adds internal `_invert(value) -> tuple[ChoiceT, ...]` ("return
 choices that replay to this value, best-effort") to ~20 strategies, a
@@ -182,11 +187,16 @@ pretty-printer looks comments up by span index. This deletes the manual
 it previously couldn't see, and establishes spans as the single "which region
 produced what" substrate that PR 2 reads from. No user-visible change.
 
-**All-forced-slice fix (from #4713, pulled forward).** The explain phase skips spans
-whose node range is empty or entirely forced — the value provably cannot vary, so the
-"or any other generated value" comment would be false. On master this is reachable
-(rarely) via forced draws like `sampled_from`'s exhaustive-fallback index; after
-PR 2's widening it matters more, so it lands here with the semantics fix framing.
+**All-forced-range guard (from #4713, pulled forward).** The explain phase skips
+spans whose node range is empty or entirely forced — the value provably cannot vary,
+so the "or any other generated value" comment would be false. This is a *required*
+companion to the migration, not an independent fix: arg spans, unlike the old
+non-empty node slices, include `just()`-style zero-choice draws, and without the
+guard those would always earn a false comment (an empty replacement trivially
+reproduces the failure 100 times). A regression test pins this via
+`wide-domain × just()` — note that exhaustible domains (e.g. `just × booleans`)
+never reach the explain phase at all, because the engine exits when the choice tree
+is exhausted.
 
 *Deliberately not in PR 1:* span value recording (the `dict` + the write in
 `ConjectureData.draw`) — it lands in PR 2 next to its consumer, keeping each PR
