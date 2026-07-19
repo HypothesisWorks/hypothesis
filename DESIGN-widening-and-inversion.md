@@ -1,51 +1,50 @@
 # Design: value-widening shrinks, and a path to general strategy inversion
 
-Working document for a PR that combines the strictly-necessary parts of
+Working document for the work that combines the strictly-necessary parts of
 [#4713](https://github.com/HypothesisWorks/hypothesis/pull/4713) (allow shrinking of
 generated values into wider strategies) and
 [#4743](https://github.com/HypothesisWorks/hypothesis/pull/4743) (internal
 `SearchStrategy._invert`). This file is the deliverable for now; it will be deleted
 once we agree on the design and replace it with code.
 
+The plan is a three-PR sequence:
+
+1. **Span substrate** — track values on spans; migrate the explain-phase /
+   pretty-printer bookkeeping onto spans (refactoring and prep, behavior-preserving).
+2. **Widening pass** — the user-visible shrinking feature, with `_invert` debuting on
+   the primitive strategies only, as the pass's encoding step.
+3. **Growth** — `_invert` on compound strategies, additional consumers of inversion,
+   recovering the accepted limitations. Ideas, not commitments.
+
 ## 1. Goals and non-goals
 
-**Goal (the feature).** When a user writes `wide | specific` — e.g.
+**Goal (the feature, PR 2).** When a user writes `wide | specific` — e.g.
 `st.text() | some_grammar_strategy`, `st.integers() | st.sampled_from([...])` — and
 the failing value comes from the `specific` branch, the shrinker should be able to
 slip that value across into the `wide` branch and shrink it as an arbitrary member of
 the wider space. This was #4713's motivating case ("you might want to not crash on
 arbitrary bytes, but the interesting space corresponds to some grammar").
 
-**Accepted limitation: `just()` does not slide.** We deliberately give up
-`text() | just("...")`-style widening. A `just` span contains zero choices, so any
-wide-branch encoding of its value makes the choice sequence *longer*, which the
-shrinker's monotone ordering rejects (§3). #4713 solved this by inserting artificial
-forced choice nodes into `just`/`sampled_from` spans — and that single mechanism was
-the source of nearly all of that PR's complexity and compatibility surface (§4.5).
-Accepting the limitation deletes the mechanism. The loss is small: a `just` value is a
-constant the user wrote explicitly, so "it didn't shrink further" is far less
-surprising there than for a grammar-generated blob — and §6 sketches two additive ways
-to recover `just`-sliding later. Notably, `sampled_from` still slides *without* any
-insertion (§3), so the limitation really is just `just`.
+**Accepted limitation: `just()` does not slide.** A `just` span contains zero
+choices, so any wide-branch encoding of its value makes the choice sequence *longer*,
+which the shrinker's monotone ordering rejects (§3). #4713 solved this by inserting
+artificial forced choice nodes into `just`/`sampled_from` spans — and that single
+mechanism was the source of nearly all of that PR's complexity and compatibility
+surface (§4.4). Accepting the limitation deletes the mechanism, and with it every
+generation-side behavior change. The loss is small: a `just` value is a constant the
+user wrote explicitly, so "it didn't shrink further" is far less surprising there
+than for a grammar-generated blob — and §6 sketches two additive ways to recover
+`just`-sliding later. Notably, `sampled_from` still slides *without* any insertion
+(§3), so the limitation really is just `just`.
 
-**Goal (the architecture).** Build the feature out of pieces that are each a small,
-named step toward general inversion (`value → choice sequence`), so that later work —
-non-primitive widening, "paste an externally-reported failure into `@example(...)` and
-we'll shrink it", solver-assisted inversion of `.filter`/`.map` — is additive rather
-than a rewrite.
+**Goal (the architecture).** Each PR is independently motivated and reviewable, and
+each is a named step toward general inversion (`value → choice sequence`), so that
+later work — non-primitive widening, "paste an externally-reported failure into
+`@example(...)` and we'll shrink it", solver-assisted inversion of `.filter`/`.map` —
+is additive rather than a rewrite.
 
-**Non-goals for the first PR.**
-
-- No generation-side behavior changes at all: no strategy draws differently, no choice
-  sequence changes shape. The PR is span *metadata* plus a shrink pass.
-- No `SearchStrategy._invert` method lands yet. It has no call site in the minimal
-  feature, and we've agreed not to write code that isn't immediately useful. #4743
-  (rebased and trimmed per its review) becomes the *second* PR, landing together with
-  its first real consumer (§6).
-- No inversion of non-primitive values, no `map`/`filter` inversion, no solver anything.
-- No unification of the explain-phase bookkeeping (`arg_slices`/`slice_comments`) with
-  spans in this PR — but we design the new span annotation so that unification is a
-  mechanical follow-up (§5).
+**Non-goals for this sequence.** No inversion of non-primitive values, no
+`map`/`filter` inversion, no solver anything, no change to what any strategy draws.
 
 ## 2. Background: the machinery we're touching
 
@@ -53,22 +52,24 @@ than a rewrite.
 types: `integer`, `float`, `boolean`, `string`, `bytes`) and opens/closes a `Span` — a
 labelled `[start, end)` region of the choice sequence, stored compactly in
 `SpanRecord`/`Spans` and materialized lazily after the test case completes. The
-shrinker works purely on `(nodes, spans)`; **it has no access to strategy objects**.
-Its acceptance criterion is strict: a proposal is taken only if
-`sort_key(new) < sort_key(old)`, where
+shrinker works purely on `(nodes, spans)`; **it has no access to strategy objects**,
+and the conjecture layer must not import from the strategies layer (existing
+exceptions are `TYPE_CHECKING`-only or function-local lazy imports, e.g.
+`unwrap_strategies` in `data.py`). Its acceptance criterion is strict: a proposal is
+taken only if `sort_key(new) < sort_key(old)`, where
 `sort_key = (len(nodes), tuple(choice_to_index(...)))` — shorter wins, then
 lexicographically-earlier-and-lower wins.
 
-*Explain phase / pretty-printer.* `BuildContext.track_arg_label` records a
-`(start_node, end_node)` slice per top-level argument into `data.arg_slices`;
-the shrinker's explain phase re-runs the test varying each slice and writes
-`data.slice_comments[(start, end)] = "or any other generated value"`-style notes; the
+*Explain phase / pretty-printer.* `BuildContext.track_arg_label` measures
+`len(data.nodes)` before and after each top-level argument draw and records the
+`(start_node, end_node)` slice into `data.arg_slices` — hand-derived span boundaries,
+computed that way only because spans aren't materialized until after the run. The
+shrinker's explain phase re-runs the test varying each slice and writes
+`data.slice_comments[(start, end)]` notes ("or any other generated value"); the
 pretty-printer (`RepresentationPrinter.repr_call`) looks comments up by slice.
-Separately, `BuildContext.record_call` registers id-keyed printers so objects built by
-`builds`/`map` repr as calls. This is the "spans and objects for the explain-phase
-pretty-printer" machinery — note that `arg_slices` entries are exactly the boundaries
-of the corresponding top-level spans, computed by hand because `BuildContext` runs
-before spans are materialized.
+Separately, `BuildContext.record_call` registers id-keyed printers
+(`known_object_printers`) so objects built by `builds`/`map` repr as calls — id-keying
+is known-fragile for cached/interned objects (the code comments on small ints etc.).
 
 *What #4713 does*, in five separable pieces:
 
@@ -86,36 +87,37 @@ before spans are materialized.
    permit the value, it's consumed as-is; if not, the attempt just fails harmlessly.
 4. **`one_of` rewrite** — because piece 2 inserts a forced boolean for *every*
    `sampled_from` draw, and `one_of` internally uses `sampled_from(strategies)`,
-   piece 2 regressed `one_of`; the rewrite makes it draw its index directly (plus new
-   retry/fallback logic for empty branches).
+   piece 2 regressed `one_of`; the rewrite makes it draw its index directly.
 5. **Explain-phase fix** — skip slices whose nodes are all forced (nothing can vary,
    so the "or any other generated value" comment would be false). Needed because
    piece 2 makes `just(5)` as a top-level argument an all-forced slice.
+
+We take pieces 1 and 3 (in PRs 1 and 2 respectively) and drop 2, 4, and 5 (§4.4).
 
 *What #4743 does:* adds internal `_invert(value) -> tuple[ChoiceT, ...]` ("return
 choices that replay to this value, best-effort") to ~20 strategies, a
 `CannotInvert`/`CannotInvertYet`/`DefinitelyCannotInvert` exception hierarchy,
 NaN-aware `deep_equal`, and an `invert_many` mirror of `cu.many`. Explicitly
-infrastructure-only: nothing calls it.
+infrastructure-only: nothing calls it. We take the exception hierarchy, the base
+method, and the five primitive-strategy implementations (PR 2); everything else
+waits for a consumer (§6).
 
 ## 3. The unifying model
 
 The two PRs are the two directions of the same arrow:
 
 - **Spans decode:** a span maps a region of the choice sequence to the value it
-  produced. #4713's span value recording makes the decode direction *queryable after
-  the fact*.
+  produced. Span value recording makes the decode direction *queryable after the
+  fact*.
 - **`_invert` encodes:** it maps a value back to a choice-sequence region that would
   reproduce it under a given strategy.
 
 The widening feature is `encode(wide_strategy, decode(specific_span))` followed by a
-standard shrink experiment. The minimal PR implements the encode direction only for
-the *universal strategy of each primitive type* — "any int", "any string", … — which
-needs no strategy object at all: it's a single choice node with maximally-permissive
-constraints (#4713's `_choice_node_for_value`). That is real inversion, just for the
-five easiest strategies in the library, and it is all the feature needs, because
-replay-time constraint checking specializes the universal encoding to whatever the
-wide branch actually accepts.
+standard shrink experiment. PR 2 implements the encode direction only for the
+*universal strategy of each primitive type* — "any int", "any string", … — whose
+inversions are single choices with maximally-permissive constraints. That is all the
+feature needs, because replay-time constraint checking specializes the universal
+encoding to whatever the wide branch actually accepts.
 
 **Which branches can slide is decided by arithmetic, not policy.** The universal
 encoding always costs exactly one node, and the pass also lowers the `one_of` selector
@@ -145,72 +147,119 @@ Two invariants make this design safe to evolve, and every phase must preserve th
    default to "nothing recorded"; new annotation kinds (objects, strategy references)
    are additive and cost nothing when unused.
 
-## 4. The minimal PR: two orthogonal additions
+## 4. The plan
 
-### 4.1 Span value recording (#4713 piece 1), with one framing change
+### 4.1 PR 1 — span substrate: track values on spans; migrate explain/pprint onto them
 
-`SpanRecord` gains an open-span stack and a sparse `dict[int, Any]` of recorded
-values; `ConjectureData.draw` records the value returned by `do_draw` against the
-just-closed span when `type(value)` is one of the five primitive types (exact type
-check, tuple membership — this also conveniently never records symbolic values from
-alternative backends, whose types differ from the builtins, so we never pin or realize
-them). `Span` exposes it as a property returning `None` when absent.
+Behavior-preserving refactor plus new metadata. Three parts, in one PR (or split
+1a/1b if review prefers):
 
-Recording at the `ConjectureData.draw` level — not inside individual strategies — is
-load-bearing: it's what lets `text() | st.builds(make_str, ...)` widen, because the
-*compound* branch's span records the final `str` it produced. (#4713's
-`test_widen_text_with_builds` covers this.)
+**(1a) The annotation store.** `SpanRecord` gains an open-span stack (it currently
+has no live notion of "current span") and a sparse `dict[span_index, Any]` of
+recorded values, populated by `ConjectureData.draw` from the value `do_draw` returns:
 
-Naming: propose `Span.recorded_value` / `SpanRecord.record_value_for_span(value)`,
-dropping "primitive" from the name. The *policy* (primitives only, for now) shouldn't
-be baked into the *mechanism's* name, since §6 relaxes the policy but keeps the
-mechanism. Bikeshed freely.
+- *Always*: values whose `type(...)` is one of the five primitive types (exact type
+  check — this also conveniently never records symbolic values from alternative
+  backends, whose types differ from the builtins, so we never pin or realize them).
+- *Final replay only* (`is_final` BuildContext): all values. Cached
+  `ConjectureResult`s must not pin arbitrary user objects, but the final replay's
+  data is short-lived and already holds these objects for printing.
 
-### 4.2 The widening shrink pass (#4713 piece 3), reframed as primitive inversion
+`Span` exposes `recorded_value` (returns `None` when absent). Recording at the
+`ConjectureData.draw` level — not inside individual strategies — is load-bearing for
+PR 2: it's what lets `text() | st.builds(make_str, ...)` widen, because the
+*compound* branch's span records the final `str` it produced.
 
-Port `widen_to_span_with_generated_primitive_value` and its node-synthesis helper
-essentially as-is (master already has `spans_starting_at`; the port is mechanical).
-Three presentational changes:
+**(1b) Explain/pprint migration.** Key the explain-phase data by span rather than by
+hand-computed node slices: `track_arg_label` marks "current span is reportable
+argument *k*" via the open-span stack; `arg_slices` becomes data derived from span
+boundaries; `slice_comments` becomes span-keyed; the pretty-printer resolves span →
+slice at print time. This deletes the manual `len(data.nodes)` arithmetic in
+`BuildContext`, gives the explain phase span metadata it currently can't see (e.g.
+discarded regions), and establishes spans as the single "which region produced what"
+substrate that PR 2 then reads from. No user-visible change.
 
-- Name and place the helper as what it is: inversion under the universal strategy of a
-  primitive type. Suggest `choice_node_for_primitive(value)` next to the pass in
-  `shrinker.py` (moving to `choice.py` if/when a second caller appears). Its docstring
-  should state the §3 framing — this is the function that `_invert` generalizes — so
-  the future direction is legible in the code.
-- Keep the trigger heuristic (`integer node, min_value == 0, value != 0, followed by a
-  value-carrying span`). With no `one_of` rewrite, the selector node is the index
-  drawn by `one_of`'s internal `sampled_from` — the node layout
-  `[selector][branch span...]` is exactly what the pass expects. False positives (any
-  zero-based integer draw) cost one sort-key comparison; chooser passes tolerate that
-  by construction.
-- Optionally pre-filter candidate spans on `choice_count > 0`: zero-node (`just`)
-  spans are known-futile (§3), so skip them rather than synthesizing a
-  guaranteed-rejected proposal. Purely cosmetic — the sort-key check already rejects
-  them before any test execution.
+**(1c — optional, can trail)** With final-replay values recorded on spans,
+`repr_call`'s argument values and slices can come from child spans instead of the
+objects captured at `record_call` time, reducing (not yet removing) reliance on
+id-keyed `known_object_printers`, whose id-keying is fragile for interned objects.
+This is the "object ids associated with choice-sequence-spans, shared with
+call-pprinting" idea from #4713's review thread. Include only if it falls out
+simply; the printer is object-driven, so some id-keyed lookup survives regardless.
 
-### 4.3 Tests and release note
+*Honesty note:* the always-recorded *primitive* values have their first real consumer
+in PR 2 — PR 1's pprint payoff comes from the open-span stack, the store, and
+(1b)/(1c). If reviewers object to landing that one dict-write early, it moves to PR 2
+trivially; we prefer it in PR 1 so PR 2 is purely "a shrink pass plus `_invert`".
 
-- The `tests/quality/test_widening_shrinks.py` suite from #4713, with the
-  `just`-branch cases converted to `sampled_from`/compound equivalents (they're now
-  the feature's spec), and one or two added grammar-ish composite cases, since
-  "grammar strategy sliding into `binary()`/`text()`" is the headline motivation.
-- Unit tests for span recording, adapted from #4713's `test_test_data.py` additions.
-- A regression test pinning the accepted limitation: `wide | just(v)` does *not*
-  slide, and generation behavior of `just`/`sampled_from`/`one_of` is byte-for-byte
-  unchanged (e.g. `just` still draws nothing — #4713 deleted
-  `test_just_strategy_does_not_draw`; we keep it).
-- RELEASE.rst: patch. Reword #4713's note, which promised `just`-sliding.
+### 4.2 PR 2 — the widening pass, with `_invert` on primitive strategies
 
-### 4.4 What this PR deliberately does not contain
+The feature PR, now small because the substrate exists:
+
+**`SearchStrategy._invert(value) -> tuple[ChoiceT, ...]`** lands with #4743's
+contract (best-effort, caller verifies by replay) and exception hierarchy
+(`CannotInvert`, `CannotInvertYet` as the base-class default, `DefinitelyCannotInvert`
+for provably-out-of-image), implemented **only** on the five primitive strategies:
+`IntegersStrategy`, `FloatStrategy`, `BooleansStrategy`, `BytesStrategy`, and
+`TextStrategy`/`OneCharStringStrategy` (the one-char-alphabet fast path; other
+element strategies raise `CannotInvertYet`). Each checks its constraints
+(NaN-aware where relevant) and returns `(value,)` or raises. These are #4743's
+implementations, roundtrip tests included, minus everything compound.
+
+**The widening pass** ports #4713's piece 3 (master already has
+`spans_starting_at`; the port is mechanical), with its encoding step expressed as
+inversion under the universal strategies:
+
+- The pass lazy-imports and caches canonical wide-open instances (unwrapped
+  `st.integers()`, `st.floats()`, `st.booleans()`, `st.text()`, `st.binary()`) and
+  calls `_invert(recorded_value)` on the one matching the value's type. Lazy import
+  is the sanctioned pattern for this layering cycle (`data.py` already does it for
+  `unwrap_strategies`).
+- `_invert` returns *choices*; wrapping them in `ChoiceNode`s with
+  maximally-permissive constraints (for sort-key purposes — replay re-derives the
+  wide branch's real constraints) stays a conjecture-layer helper, essentially
+  #4713's `_choice_node_for_value`. This division of labor is deliberate and
+  permanent: `_invert` never needs to know about nodes or constraints-for-sorting,
+  so future multi-choice inversions from compound strategies slot straight in.
+- Trigger heuristic unchanged from #4713 (`integer node, min_value == 0, value != 0,
+  followed by a value-carrying span`), plus a `choice_count > 0` pre-filter on
+  candidate spans, since zero-node (`just`) spans are known-futile (§3).
+
+**Tests:** #4713's `tests/quality/test_widening_shrinks.py` with `just`-branch cases
+converted to `sampled_from`/compound equivalents, plus a grammar-ish composite case
+(the headline motivation); #4743's roundtrip + out-of-image tests for the five
+primitive `_invert`s; a regression test pinning that `wide | just(v)` does not slide
+and that generation behavior is byte-for-byte unchanged (keep
+`test_just_strategy_does_not_draw`, which #4713 deleted). RELEASE.rst: patch;
+reword #4713's note, which promised `just`-sliding.
+
+*Honesty note:* in PR 2, `_invert` is only ever *called* on unconstrained instances,
+where it degenerates to a type-and-permittedness check plus `return (value,)`. The
+constrained code paths (e.g. `integers(0, 10)._invert(-5)` raising) are exercised by
+tests but not by the feature until PR 3 consumers arrive. We think that's fine — the
+implementations are small, the contract is the point — but it's the main "code not
+yet earning its keep" objection someone could raise, and routing the pass through
+`_invert` (rather than a private helper) is exactly what makes the interface real
+rather than speculative.
+
+### 4.3 Sequencing trade-offs (vs. shipping the feature first)
+
+What this ordering buys: the churny refactor (1b) is reviewed on its own,
+behavior-preserving merits instead of riding inside a feature diff; PR 2 becomes a
+small, legible "one shrink pass + one method on five classes"; and `_invert` debuts
+at minimum scope with a real consumer on day one. What it costs: the user-visible
+feature waits behind prep work, and PR 1 is the largest review. We accept that trade
+so long as PR 1 stays disciplined — no scope creep beyond 1a/1b(/1c).
+
+### 4.4 What this sequence deliberately does not contain
 
 | Piece | From | Why dropped |
 | --- | --- | --- |
 | Forced-node insertion in `just`/`sampled_from` | #4713 | Only needed for `just`-sliding, which we've accepted losing; sole source of all generation-side churn (§4.5) |
 | `one_of` rewrite + empty-branch retry logic | #4713 | Only needed to dodge insertion's forced-`False` in `sampled_from(strategies)` |
-| Explain-phase all-forced-slice skip | #4713 | Only needed once insertion creates all-forced slices. (It's *also* a latent fix for rare all-forced slices on master, e.g. `sampled_from`'s exhaustive-fallback forced index — worth a tiny standalone PR, but not this one) |
+| Explain-phase all-forced-slice skip | #4713 | Only needed once insertion creates all-forced slices. (It's *also* a latent fix for rare all-forced slices on master, e.g. `sampled_from`'s exhaustive-fallback forced index — worth a tiny standalone PR, but not this sequence) |
 | `test_stateful.py` / `reproduce_failure` blob churn | #4713 | Consequence of insertion; vanishes with it |
-| `SearchStrategy._invert` + per-strategy impls | #4743 | No call site yet; lands as PR 2 with its first consumer (§6) |
-| Exception hierarchy, `deep_equal`, `invert_many` | #4743 | Only used by `_invert`; move with it |
+| `_invert` on compound strategies (~15 of #4743's 20) | #4743 | No consumer until PR 3; includes `invert_many`, `deep_equal`, and the wrapper delegations (`Lazy`/`Deferred`/…), none of which PR 2's universal instances need |
 
 ### 4.5 What accepting the `just` limitation bought
 
@@ -229,113 +278,74 @@ following, none of which exist in this design:
 - the "primitives-only insertion is ugly/unprincipled" design argument — mooted,
   there is no insertion policy to argue about.
 
-## 5. Code sharing with the explain-phase / pretty-printer tracking
+## 5. Where the old bookkeeping ends up
 
-Short answer: a little now, real convergence in a designated follow-up, and the new
-mechanism is deliberately the *substrate* the old ones migrate onto — not a third
-parallel system.
+After PR 1 there is one substrate instead of three parallel ones:
 
-There are currently three "which region/object came from where" bookkeepers:
+1. `arg_slices` / `slice_comments` — become span-derived / span-keyed (PR 1b).
+2. `known_object_printers` — stays id-keyed for now (the printer is object-driven);
+   partially fed from span-recorded final-replay values if 1c lands. Full unification
+   is possible but low-value until PR 3 forces the object-lifetime question anyway.
+3. Span recorded values — the new store; read by the widening pass (PR 2), the
+   printer (1c), and every future consumer in §6.
 
-1. `data.arg_slices` + `data.slice_comments` — node-index slices, per top-level
-   argument, keyed by `(start, end)` tuples across `BuildContext`, the shrinker's
-   explain phase, and the pretty-printer.
-2. `known_object_printers` — id-keyed object→call reprs from `record_call`
-   (`builds`/`map`), final-replay only.
-3. (new) span recorded values — `span_index -> value`.
+## 6. PR 3 and beyond: growth, not commitments
 
-(1) is spans re-derived by hand: `track_arg_label` measures `len(data.nodes)` before
-and after a draw precisely because spans aren't materialized until after the test
-completes. The open-span stack added in §4.1 removes that limitation at the recording
-level: `SpanRecord` now knows the current span index *during* the run.
+Each item is additive; none reworks PR 1/2 interfaces.
 
-**Follow-up refactor (separate PR, before or with §6's PR 4):** key the explain-phase
-data by span index instead of node slices — `track_arg_label` marks "current span is
-reportable argument *k*", `arg_slices` becomes derived data, `slice_comments` becomes
-`dict[span_index, str]`, and the pretty-printer resolves span→slice at print time.
-This deletes the manual index arithmetic, gives the explain phase span metadata for
-free (it currently can't tell a discarded region from a real one), and means the
-widening pass, the explain phase, and the printer all read from one annotation store.
-It is pure churn from the user's perspective, which is why it is *not* in the minimal
-PR.
+**More `_invert` implementations, each landing with a consumer.** The flagship
+consumer is generation-side, where strategies are in hand and the shrinker needs no
+changes: *reproduce-and-shrink-from-value* — `_invert` a pasted/`@example` value to a
+choice sequence, seed the engine, and let normal shrinking (including the widening
+pass) take over. That consumer immediately justifies the compound implementations
+from #4743 (`tuples`, `lists` + `invert_many`, `one_of` delegation, `datetimes`, …,
+plus `deep_equal` for `just`/`sampled_from` equality) — rebased and trimmed per that
+PR's existing review threads (add_note breadcrumbs, strict-type-check unification).
 
-(2) stays as-is. It plausibly becomes a span annotation too ("span → constructed
-object + call info"), but it's final-replay-only by design (arbitrary user objects
-must not be pinned in cached `ConjectureResult`s), and unifying lifetimes buys little
-today. Revisit when §6's PR 3/4 forces us to answer the object-lifetime question
-anyway.
+**Recovering `just()`-sliding, if users ask.** Two additive options:
+*(a)* reinstate insertion scoped to `JustStrategy` + primitive values — a one-method
+change; `sampled_from` never needs it (§3), so `one_of` internals stay untouched and
+the compat surface is limited to `just(<primitive>)` users. *(b)* a post-shrink slide
+experiment outside the monotone ordering — the explain phase already demonstrates the
+pattern of non-shrinking experiments after shrinking stabilizes; a slide experiment
+("re-encode span under earlier branch, then re-shrink") terminates because the branch
+selector strictly decreases. (b) never touches generation and is also the natural
+home for *non-primitive* cross-branch movement, so we likely want it eventually
+regardless, and (a) only as a stopgap.
 
-## 6. Evolution path: where inversion goes next
+**Cross-branch inversion in the shrinker (the hard one).** Widening non-primitive
+values into non-universal wide branches requires strategy access at shrink time,
+which the shrinker architecturally lacks — the "very intrusive reworking" concern
+from #4713's thread. Two candidate designs, both compatible with the span store,
+decision deferred: *(i)* record `(strategy_ref, value)` on spans during generation
+(simple for the shrinker; needs a lifetime policy for cached results); *(ii)*
+invert-on-replay — the shrinker attaches guidance to the next run ("at span *i*,
+branch *j*: try `_invert`ing this value first") and `one_of.do_draw` inverts inline,
+where strategies naturally live. (ii) composes with (b) above.
 
-Each phase is additive over the previous; none reworks a prior phase's interfaces.
-
-**PR 2 — `_invert` core, with a consumer.** #4743 rebased, trimmed to the strategies
-its consumer exercises, plus the review threads (add_note breadcrumb trail for
-debuggability, strict-type-check unification, `LimitedStrategy`/`SharedStrategy`
-raising `CannotInvertYet`). The recommended first consumer is the **generation-side**
-one, because strategies are in hand there and the shrinker needs no changes:
-*reproduce-and-shrink-from-value* — internally, `_invert` the pasted/`@example` value
-to a choice sequence, seed the engine with it, and let normal shrinking (including the
-new widening pass) take over. This is the "paste an externally-reported failure"
-feature, and it exercises `_invert` end-to-end through `ConjectureData.for_choices`
-replay, which is exactly the verification loop invariant 1 requires. At this point
-`choice_node_for_primitive` gets a docstring cross-reference (or becomes a helper
-shared with `FloatStrategy._invert` etc., if that falls out naturally — not forced).
-
-**PR 3 — recovering `just()`-sliding, if we still want it.** Two additive options,
-in increasing order of power:
-
-- *(a) Reinstate insertion, scoped to `JustStrategy` + primitive values only.* A
-  one-method change once this PR's machinery exists; `sampled_from` never needs it
-  (§3), so `one_of` internals are unaffected and the compat surface is limited to
-  `just(<primitive>)` users. This is #4713's mechanism at its minimum viable scope.
-- *(b) A post-shrink slide experiment, outside the monotone ordering.* The explain
-  phase already demonstrates the pattern: after shrinking stabilizes, run experiments
-  that are *not* sort-key decreasing, under an explicit termination guard. A slide
-  experiment ("re-encode span under earlier branch, then re-shrink") terminates
-  because the branch selector strictly decreases each time. This handles `just`
-  without ever touching generation, and is the natural home for *non-primitive*
-  cross-branch movement too — which makes it likely we want (b) eventually
-  regardless, and (a) only if users ask before then.
-
-**PR 4 — cross-branch inversion in the shrinker (the hard one).** Widening
-non-primitive values into non-universal wide branches requires strategy access at
-shrink time, which the shrinker architecturally lacks — this is the "very intrusive
-reworking" concern from #4713's thread. Two candidate designs, both compatible with
-the span annotation store, decision explicitly deferred:
-
-- *(i) record `(strategy_ref, value)` on spans during generation.* Simple for the
-  shrinker, but pins strategies and user objects in every cached `ConjectureResult`;
-  needs a lifetime policy (weakrefs, or record only on interesting results).
-- *(ii) invert-on-replay:* the shrinker attaches guidance to the next test-case run
-  ("at span *i*, branch *j*: try `_invert`ing this value first"), and `one_of.do_draw`
-  performs the inversion inline, where strategies naturally live. No new lifetimes;
-  more plumbing between shrinker and engine. Composes with PR 3(b)'s experiment loop.
-
-**Later — smarter encoders.** `.map` inversion via a registry of known inverses
-(`"".join`, dataclass constructors, `operator.neg`, …), `.filter` via
-check-and-delegate (already in #4743), search/solver-assisted inversion for opaque
-predicates. All of these are internal upgrades behind the same
-`value → choices, raising CannotInvert` contract, invisible to every caller.
-
-Nothing in phases 2+ requires revisiting the minimal PR: the span store already
-accepts `Any`, the widening pass already treats encodings as fallible experiments, and
-generation-side behavior was never changed, so there's nothing to un-change.
+**Smarter encoders.** `.map` inversion via a registry of known inverses (`"".join`,
+dataclass constructors, …), `.filter` via check-and-delegate (already in #4743),
+search/solver-assisted inversion for opaque predicates. All internal upgrades behind
+the same `value → choices, raising CannotInvert` contract, invisible to callers.
 
 ## 7. Risks
 
 - **The `sampled_from`-slides-without-insertion prediction (§3) could be wrong.**
   It follows directly from the sort key, but #4713 only demonstrated widening *with*
-  insertion. Verify with a quick prototype before committing to this design; the
-  fallback position (only compound branches slide in PR 1) is still coherent and
-  still covers the original grammar motivation, but weakens the feature.
-- **Shrinker time**: the pass is chooser-gated and precondition-heavy
-  (`min_value == 0`, non-forced, value ≠ 0, following span has a recorded value), so
-  it's near-free when irrelevant — #4713's claim, which its narrow trigger justifies.
-- **Memory**: recorded values are references to primitives that are (for multi-node
-  spans) largely already alive elsewhere; the sparse dict is per-result. `sampled_from`
-  over large strings is the one case where the recorded value is *not* otherwise in
-  the choice sequence — still just a reference to the user's own constant. Negligible.
+  insertion. Verify with a quick prototype before PR 1 lands, since the whole
+  sequence is premised on never touching generation; the fallback position (only
+  compound branches slide) still covers the grammar motivation but weakens PR 2.
+- **PR 1 scope creep.** The explain/pprint migration touches `control.py`,
+  `data.py`, `shrinker.py`, and `vendor/pretty.py`; it must stay behavior-preserving
+  and mechanical, or it will absorb the whole sequence's review budget.
+- **Layering.** PR 2's pass calls `_invert` across the conjecture→strategies
+  boundary via a cached lazy import — precedented (`data.py`'s `unwrap_strategies`)
+  but worth a comment in code; the node-wrapping helper deliberately stays on the
+  conjecture side so the dependency is one thin, one-way call.
+- **Shrinker time**: the pass is chooser-gated and precondition-heavy, near-free when
+  irrelevant — #4713's claim, which its narrow trigger justifies.
+- **Memory**: primitive recorded values are references, and full-object recording is
+  final-replay-only by design. Negligible.
 - **Compatibility**: none. No choice sequence changes shape; databases and
   `@reproduce_failure` blobs are untouched. (This line is the point of the design.)
 
@@ -344,13 +354,16 @@ generation-side behavior was never changed, so there's nothing to un-change.
 1. **Empirical check before anything else**: prototype the pass on master and confirm
    `integers() | sampled_from([4991, ...])` and the `builds` compound case slide
    without insertion, per the §3 table. If yes, the design stands as written.
-2. Is losing `wide | just(v)` sliding acceptable? (This design says yes, with §6
-   PR 3 as the recovery path. #4713's quality tests featured it heavily, so this
-   needs explicit sign-off rather than silent dropping.)
-3. Naming: `Span.recorded_value` vs `generated_primitive_value`;
-   `choice_node_for_primitive` vs `_choice_node_for_value`.
-4. First `_invert` consumer for PR 2: reproduce-and-shrink-from-value as recommended,
-   or something smaller?
-5. Should the §5 span-keyed explain-phase refactor land *before* PR 2 (cleaner
-   substrate first) or lazily before PR 4 (only when forced)? Recommendation: lazily —
-   it's churn with no user-visible payoff until then.
+2. Is losing `wide | just(v)` sliding acceptable? (This design says yes, with §6 as
+   the recovery path. #4713's quality tests featured it heavily, so this needs
+   explicit sign-off rather than silent dropping.)
+3. PR 1 scope: is 1c (span-fed call reprs) in or out? In makes "values on spans, used
+   for pprinting" literally true in PR 1; out keeps PR 1 smaller and leaves the
+   primitive-value recording's first consumer to PR 2. Recommendation: out, unless it
+   falls out in a few lines.
+4. PR 2 wiring: `_invert` called via lazy-imported universal instances (recommended,
+   precedented) vs. keeping a conjecture-layer free function and letting `_invert`
+   land later with a generation-side consumer. The former honors "the pass is
+   implemented via `_invert`"; the latter is stricter about layering purity.
+5. Naming: `Span.recorded_value` vs `generated_primitive_value`; and does the
+   node-wrapping helper live in `shrinker.py` or `choice.py`?
