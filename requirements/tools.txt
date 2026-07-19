@@ -8,15 +8,15 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-anyio==4.14.1
+anyio==4.14.2
     # via
     #   starlette
     #   watchfiles
-asgiref==3.11.1
+asgiref==3.12.1
     # via django
 ast-serialize==0.6.0
     # via mypy
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via -r requirements/tools.in
@@ -32,7 +32,7 @@ black==26.5.1
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.5.1
+build==1.5.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
@@ -49,7 +49,7 @@ click==8.4.2
     #   black
     #   pip-tools
     #   uvicorn
-codespell==2.4.2
+codespell==2.4.3
     # via -r requirements/tools.in
 colorama==0.4.6
     # via
@@ -57,7 +57,7 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.15.0
+coverage==7.15.2
     # via -r requirements/tools.in
 cryptography==49.0.0
     # via
@@ -85,7 +85,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.29.7
+filelock==3.31.0
     # via
     #   python-discovery
     #   tox
@@ -114,7 +114,7 @@ jaraco-classes==3.4.0
     # via keyring
 jaraco-context==6.1.2
     # via keyring
-jaraco-functools==4.5.0
+jaraco-functools==4.6.0
     # via keyring
 jedi==0.20.0
     # via ipython
@@ -154,7 +154,7 @@ more-itertools==11.1.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==2.2.0
+mypy==2.3.0
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -190,9 +190,9 @@ pexpect==4.9.0
     # via
     #   -r requirements/test.in
     #   ipython
-pip-tools==7.5.3
+pip-tools==7.6.0
     # via -r requirements/tools.in
-platformdirs==4.10.0
+platformdirs==4.10.1
     # via
     #   black
     #   python-discovery
@@ -277,7 +277,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.21
+ruff==0.15.22
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -336,7 +336,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli-w==1.2.0
     # via tox
-tox==4.56.4
+tox==4.57.0
     # via -r requirements/tools.in
 traitlets==5.15.1
     # via
@@ -354,7 +354,7 @@ types-pytz==2026.2.0.20260518
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==83.0.0.20260706
+types-setuptools==83.0.0.20260716
     # via types-cffi
 typing-extensions==4.16.0
     # via
@@ -382,7 +382,7 @@ watchfiles==1.2.0
     #   sphinx-autobuild
 wcwidth==0.8.2
     # via prompt-toolkit
-websockets==16.1
+websockets==16.1.1
     # via sphinx-autobuild
 wheel==0.47.0
     # via pip-tools
