@@ -936,6 +936,11 @@ class StateForActualGivenExecution:
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
+        self.known_safe_to_repr = {
+            name
+            for name, strategy in stuff.given_kwargs.items()
+            if strategy == st.data()
+        }
 
         self.last_exception = None
         self.falsifying_examples = ()
@@ -1083,6 +1088,7 @@ class StateForActualGivenExecution:
                             else None
                         ),
                         avoid_realization=data.provider.avoid_realization,
+                        known_safe_to_repr=self.known_safe_to_repr,
                     )
                 report(printer.getvalue())
 
@@ -1100,6 +1106,7 @@ class StateForActualGivenExecution:
                         else None
                     ),
                     avoid_realization=data.provider.avoid_realization,
+                    known_safe_to_repr=self.known_safe_to_repr,
                 )
                 self._string_repr = printer.getvalue()
 

@@ -70,7 +70,7 @@ import sys
 import types
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Callable, Generator, Iterable, Sequence
+from collections.abc import Callable, Collection, Generator, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, Flag
 from functools import partial
@@ -554,6 +554,7 @@ class RepresentationPrinter:
         arg_slices: ArgLabelsT | None = None,
         leading_comment: str | None = None,
         avoid_realization: bool = False,
+        known_safe_to_repr: Collection[str] = (),
     ) -> None:
         """Helper function to represent a function call.
 
@@ -619,7 +620,7 @@ class RepresentationPrinter:
                 entry = comments.get(label)
                 if entry:
                     self._commented_slices.add(entry[1])
-                if avoid_realization:
+                if avoid_realization and label not in known_safe_to_repr:
                     self.text("<symbolic>")
                 else:
                     self.pretty(v)
