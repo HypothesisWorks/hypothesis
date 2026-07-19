@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.156.8:
+
+--------------------
+6.156.8 - 2026-07-19
+--------------------
+
+This patch improves the performance of unique collections drawing from a fixed
+pool of elements, such as :func:`~hypothesis.strategies.sets` of
+:func:`~hypothesis.strategies.sampled_from`, under symbolic-execution backends
+such as :pypi:`hypothesis-crosshair`.
+
 .. _v6.156.7:
 
 --------------------
