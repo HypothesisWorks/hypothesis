@@ -59,6 +59,7 @@ build
 dist
 .doctrees/
 .v*/
+.mypy_caches
 
 # encrypted files
 secrets.tar
