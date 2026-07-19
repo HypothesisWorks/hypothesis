@@ -82,6 +82,20 @@ def test_inquisitor_no_together_comment_if_single_argument(a, b):
     assert a
 
 
+@fails_with_output("""
+Falsifying example: test_inquisitor_skips_arguments_that_cannot_vary(
+    a='fixed',
+    b=100,
+)
+""")
+@settings(print_blob=False, derandomize=True)
+@given(st.just("fixed"), st.integers())
+def test_inquisitor_skips_arguments_that_cannot_vary(a, b):
+    # A just() draw makes no choices at all, so the explain phase must not
+    # claim its value could have been "any other generated value".
+    assert b < 100
+
+
 @st.composite
 def ints_with_forced_draw(draw):
     data = draw(st.data())

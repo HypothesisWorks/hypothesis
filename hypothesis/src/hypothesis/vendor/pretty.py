@@ -83,7 +83,9 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 PrettyPrintFunction: TypeAlias = Callable[[Any, "RepresentationPrinter", bool], None]
-ArgLabelsT: TypeAlias = dict[str, tuple[int, int]]
+# Maps each argument label ("arg[i]" or a keyword) to the index of the span
+# created by drawing that argument.
+ArgLabelsT: TypeAlias = dict[str, int]
 
 __all__ = [
     "IDKey",
@@ -267,23 +269,25 @@ class RepresentationPrinter:
         self.type_pprinters.update(_type_pprinters)
         self.deferred_pprinters.update(_deferred_type_pprinters)
 
-        # for which-parts-matter, we track a mapping from the (start_idx, end_idx)
-        # of slices into the minimal failing example; this is per-interesting_origin
-        # but we report each separately so that's someone else's problem here.
-        # Invocations of self.repr_call() can report the slice for each argument,
-        # which will then be used to look up the relevant comment if any.
+        # for which-parts-matter, we track comments keyed by the index of the
+        # span each argument's draw created in the minimal failing example;
+        # this is per-interesting_origin but we report each separately so
+        # that's someone else's problem here. Invocations of self.repr_call()
+        # can report the span for each argument, which will then be used to
+        # look up the relevant comment if any. (The None key holds the
+        # whole-test comment, which is looked up directly, not per-argument.)
         self.known_object_printers: dict[IDKey, list[PrettyPrintFunction]]
-        self.slice_comments: dict[tuple[int, int], str]
+        self.span_comments: dict[int | None, str]
         if context is None:
             self.known_object_printers = defaultdict(list)
-            self.slice_comments = {}
+            self.span_comments = {}
         else:
             self.known_object_printers = context.known_object_printers
-            self.slice_comments = context.data.slice_comments
+            self.span_comments = context.data.span_comments
         assert all(isinstance(k, IDKey) for k in self.known_object_printers)
-        # Track which slices we've already printed comments for, to avoid
-        # duplicating comments when nested objects share the same slice range.
-        self._commented_slices: set[tuple[int, int]] = set()
+        # Track which spans we've already printed comments for, to avoid
+        # duplicating comments when nested objects share the same span.
+        self._commented_spans: set[int] = set()
 
     def pretty(self, obj: object, *, cycle: bool = False) -> None:
         """Pretty print the given object."""
@@ -519,12 +523,12 @@ class RepresentationPrinter:
         # 3. Prefer shorter expressions.
         if cycle:
             return self.text("<...>")
-        # Look up comments from slice_comments if we have arg_labels
+        # Look up comments from span_comments if we have arg_labels
         comments = {}
         if arg_labels is not None:
-            for key, sr in arg_labels.items():
-                if sr in self.slice_comments:
-                    comments[key] = self.slice_comments[sr]
+            for key, span_index in arg_labels.items():
+                if span_index in self.span_comments:
+                    comments[key] = self.span_comments[span_index]
         # If there are comments, we must use our call-style repr regardless of syntax
         if not comments:
             with suppress(Exception):
@@ -542,7 +546,7 @@ class RepresentationPrinter:
                     ast.parse(p.getvalue())
                 except Exception:
                     return _repr_pprint(obj, self, cycle)
-        return self.repr_call(name, args, kwargs, arg_slices=arg_labels)
+        return self.repr_call(name, args, kwargs, arg_labels=arg_labels)
 
     def repr_call(
         self,
@@ -551,7 +555,7 @@ class RepresentationPrinter:
         kwargs: dict[str, object],
         *,
         force_split: bool | None = None,
-        arg_slices: ArgLabelsT | None = None,
+        arg_labels: ArgLabelsT | None = None,
         leading_comment: str | None = None,
         avoid_realization: bool = False,
         known_safe_to_repr: Collection[str] = (),
@@ -561,8 +565,9 @@ class RepresentationPrinter:
         - func_name, args, and kwargs should all be pretty obvious.
         - If split_lines, we'll force one-argument-per-line; otherwise we'll place
           calls that fit on a single line (and split otherwise).
-        - arg_slices is a mapping from pos-idx or keyword to (start_idx, end_idx)
-          of the Conjecture buffer, by which we can look up comments to add.
+        - arg_labels is a mapping from pos-idx or keyword to the index of the
+          span created by drawing that argument, by which we can look up
+          comments to add.
         """
         assert isinstance(func_name, str)
         if func_name.startswith(("lambda:", "lambda ")):
@@ -571,9 +576,10 @@ class RepresentationPrinter:
             # get inlined, we can emit just the body expression with no call.
             # Skip inlining only when there are actual comments on arguments,
             # since comments need the call-style repr to attach to.
-            has_comments = arg_slices and any(
-                sr in self.slice_comments and sr not in self._commented_slices
-                for sr in arg_slices.values()
+            has_comments = arg_labels and any(
+                span_index in self.span_comments
+                and span_index not in self._commented_spans
+                for span_index in arg_labels.values()
             )
             if not has_comments:
                 inlined = _try_inline_lambda(func_name, args, kwargs, self)
@@ -582,14 +588,17 @@ class RepresentationPrinter:
             func_name = f"({func_name})"
         self.text(func_name)
         # Build list of (label, value) pairs. Labels are "arg[i]" for positional
-        # args, or the keyword name. Skip slices already commented at a higher level.
+        # args, or the keyword name. Skip spans already commented at a higher level.
         all_args = [(f"arg[{i}]", v) for i, v in enumerate(args)]
         all_args += list(kwargs.items())
-        arg_slices = arg_slices or {}
-        comments: dict[str, tuple[str, tuple[int, int]]] = {}
-        for label, sr in arg_slices.items():
-            if sr in self.slice_comments and sr not in self._commented_slices:
-                comments[label] = (self.slice_comments[sr], sr)
+        arg_labels = arg_labels or {}
+        comments: dict[str, tuple[str, int]] = {}
+        for label, span_index in arg_labels.items():
+            if (
+                span_index in self.span_comments
+                and span_index not in self._commented_spans
+            ):
+                comments[label] = (self.span_comments[span_index], span_index)
 
         if leading_comment or any(k in comments for k, _ in all_args):
             # We have to split one arg per line in order to leave comments on them.
@@ -616,10 +625,10 @@ class RepresentationPrinter:
                     self.breakable(" " if i else "")
                 if not label.startswith("arg["):
                     self.text(f"{label}=")
-                # Mark slice as commented BEFORE printing value, so nested printers skip it
+                # Mark span as commented BEFORE printing value, so nested printers skip it
                 entry = comments.get(label)
                 if entry:
-                    self._commented_slices.add(entry[1])
+                    self._commented_spans.add(entry[1])
                 if avoid_realization and label not in known_safe_to_repr:
                     self.text("<symbolic>")
                 else:
@@ -927,15 +936,16 @@ def pprint_fields(
             p.pretty(getattr(obj, field))
 
 
-def _get_slice_comment(
+def _get_span_comment(
     p: RepresentationPrinter,
     arg_labels: ArgLabelsT,
     key: Any,
-) -> tuple[str, tuple[int, int]] | None:
-    """Look up a comment for a slice, if not already printed at a higher level."""
-    if (sr := arg_labels.get(key)) and sr in p.slice_comments:
-        if sr not in p._commented_slices:
-            return (p.slice_comments[sr], sr)
+) -> tuple[str, int] | None:
+    """Look up a comment for a span, if not already printed at a higher level."""
+    span_index = arg_labels.get(key)
+    if span_index is not None and span_index in p.span_comments:
+        if span_index not in p._commented_spans:
+            return (p.span_comments[span_index], span_index)
     return None
 
 
@@ -946,7 +956,7 @@ def _tuple_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
         if cycle:
             return p.text("(...)")
 
-        get = lambda i: _get_slice_comment(p, arg_labels, f"arg[{i}]")
+        get = lambda i: _get_span_comment(p, arg_labels, f"arg[{i}]")
         has_comments = any(get(i) for i in range(len(obj)))
 
         with p.group(indent=4, open="(", close=""):
@@ -956,7 +966,7 @@ def _tuple_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
                 if has_comments or idx + 1 < len(obj) or len(obj) == 1:
                     p.text(",")
                 if entry := get(idx):
-                    p._commented_slices.add(entry[1])
+                    p._commented_spans.add(entry[1])
                     p.text(f"  # {entry[0]}")
         if has_comments and obj:
             p.break_()
@@ -972,7 +982,7 @@ def _fixeddict_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
         if cycle:
             return p.text("{...}")
 
-        get = lambda k: _get_slice_comment(p, arg_labels, k)
+        get = lambda k: _get_span_comment(p, arg_labels, k)
         # Print in the dict's actual (possibly permuted) iteration order.
         keys = list(obj)
         has_comments = any(get(k) for k in keys)
@@ -986,7 +996,7 @@ def _fixeddict_pprinter(arg_labels: ArgLabelsT) -> PrettyPrintFunction:
                 if has_comments or idx + 1 < len(keys):
                     p.text(",")
                 if entry := get(key):
-                    p._commented_slices.add(entry[1])
+                    p._commented_spans.add(entry[1])
                     p.text(f"  # {entry[0]}")
         if has_comments and obj:
             p.break_()
