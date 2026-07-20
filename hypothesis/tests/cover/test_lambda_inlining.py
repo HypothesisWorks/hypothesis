@@ -151,13 +151,13 @@ def test_unparse_failure_returns_none(monkeypatch):
 
 def test_repr_call_skips_inlining_when_comments_present():
     p = pretty.RepresentationPrinter()
-    # Simulate explain-mode comments on slice (0, 5)
-    p.slice_comments[(0, 5)] = "or any other generated value"
+    # Simulate explain-mode comments on span 3
+    p.span_comments[3] = "or any other generated value"
     p.repr_call(
         "lambda x: f(x)",
         args=(42,),
         kwargs={},
-        arg_slices={"arg[0]": (0, 5)},
+        arg_labels={"arg[0]": 3},
     )
     result = p.getvalue()
     # Should NOT inline — must keep call style for the comment
@@ -165,13 +165,13 @@ def test_repr_call_skips_inlining_when_comments_present():
     assert "# or any other generated value" in result
 
 
-def test_repr_call_inlines_when_arg_slices_but_no_comments():
+def test_repr_call_inlines_when_arg_labels_but_no_comments():
     p = pretty.RepresentationPrinter()
-    # arg_slices present but no matching slice_comments
+    # arg_labels present but no matching span_comments
     p.repr_call(
         "lambda x: f(x)",
         args=(42,),
         kwargs={},
-        arg_slices={"arg[0]": (0, 5)},
+        arg_labels={"arg[0]": 3},
     )
     assert p.getvalue() == "f(42)"
