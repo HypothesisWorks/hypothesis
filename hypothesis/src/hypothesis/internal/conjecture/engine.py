@@ -40,6 +40,7 @@ from hypothesis.internal.conjecture.choice import (
     ChoiceNode,
     ChoiceT,
     ChoiceTemplate,
+    ValueHole,
     choices_key,
 )
 from hypothesis.internal.conjecture.data import (
@@ -234,10 +235,15 @@ StatisticsDict = TypedDict(
 )
 
 
-def choice_count(choices: Sequence[ChoiceT | ChoiceTemplate]) -> int | None:
+def choice_count(
+    choices: Sequence[ChoiceT | ChoiceTemplate | ValueHole],
+) -> int | None:
     count = 0
     for choice in choices:
-        if isinstance(choice, ChoiceTemplate):
+        if isinstance(choice, ValueHole):
+            # expands to however many choices the inverting strategy emits
+            return None
+        elif isinstance(choice, ChoiceTemplate):
             if choice.count is None:
                 return None
             count += choice.count
@@ -453,7 +459,7 @@ class ConjectureRunner:
 
     def cached_test_function(
         self,
-        choices: Sequence[ChoiceT | ChoiceTemplate],
+        choices: Sequence[ChoiceT | ChoiceTemplate | ValueHole],
         *,
         error_on_discard: bool = False,
         extend: int | Literal["full"] = 0,
@@ -466,11 +472,14 @@ class ConjectureRunner:
         result has discards if we cannot determine from previous runs whether
         it will have a discard.
         """
-        # node templates represent a not-yet-filled hole and therefore cannot
-        # be cached or retrieved from the cache.
-        if not any(isinstance(choice, ChoiceTemplate) for choice in choices):
-            # this type cast is validated by the isinstance check above (ie, there
-            # are no ChoiceTemplate elements).
+        # node templates and value holes represent a not-yet-filled hole and
+        # therefore cannot be cached or retrieved from the cache.
+        has_value_hole = any(isinstance(choice, ValueHole) for choice in choices)
+        if not has_value_hole and not any(
+            isinstance(choice, ChoiceTemplate) for choice in choices
+        ):
+            # this type cast is validated by the isinstance checks above (ie,
+            # there are no ChoiceTemplate or ValueHole elements).
             choices = cast(Sequence[ChoiceT], choices)
             key = self._cache_key(choices)
             try:
@@ -498,6 +507,13 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
+            # A ValueHole is only resolvable by the strategy drawn at its
+            # position, so tree simulation - which replays at the choice level
+            # with no strategies involved - would resolve it incorrectly.
+            # (ChoiceTemplate is fine: its resolution is deterministic at the
+            # choice level, so simulation and the real run agree.)
+            if has_value_hole:
+                raise PreviouslyUnseenBehaviour
             trial_data = self.new_conjecture_data(
                 choices, observer=trial_observer, max_choices=max_length
             )
@@ -1579,7 +1595,7 @@ class ConjectureRunner:
 
     def new_conjecture_data(
         self,
-        prefix: Sequence[ChoiceT | ChoiceTemplate],
+        prefix: Sequence[ChoiceT | ChoiceTemplate | ValueHole],
         *,
         observer: DataObserver | None = None,
         max_choices: int | None = None,

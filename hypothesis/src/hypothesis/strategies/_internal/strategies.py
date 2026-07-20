@@ -33,6 +33,7 @@ from typing import (
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
+    CannotInvert,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -40,6 +41,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
 )
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
@@ -563,6 +565,23 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        """
+        Return a choice sequence ``choices`` such that we expect
+
+            data = ConjectureData.for_choices(choices)
+            drawn = data.draw(self)
+
+        would produce ``drawn == value``. Inversion is best-effort: it should
+        satisfy this property with high probability, but callers must replay
+        the returned choices and check the outcome rather than rely on it.
+
+        Raises CannotInvert if we cannot construct such a choice sequence,
+        whether because ``value`` is not produced by this strategy or because
+        inversion isn't implemented for it.
+        """
+        raise CannotInvert(f"{type(self).__name__} does not support inversion")
+
 
 def _is_hashable(value: object) -> tuple[bool, int | None]:
     # hashing can be expensive; return the hash value if we compute it, so that
@@ -873,6 +892,23 @@ class OneOfStrategy(SearchStrategy[Ex]):
             )
         )
         return data.draw(strategy)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # do_draw first draws a branch index, then draws from that branch.
+        # Return the simplest candidate across all branches: the shortest
+        # encoding, breaking ties by the lower branch index - matching the
+        # shrinker's ordering over choice sequences.
+        best: tuple[ChoiceT, ...] | None = None
+        for i, branch in enumerate(self.element_strategies):
+            try:
+                candidate = (i, *branch._invert(value))
+            except CannotInvert:
+                continue
+            if best is None or len(candidate) < len(best):
+                best = candidate
+        if best is None:
+            raise CannotInvert(f"{value!r} is not produced by any branch of {self!r}")
+        return best
 
     def __repr__(self) -> str:
         return "one_of({})".format(", ".join(map(repr, self.original_strategies)))

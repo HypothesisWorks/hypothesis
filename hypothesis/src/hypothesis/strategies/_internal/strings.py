@@ -13,11 +13,16 @@ import re
 import warnings
 from collections.abc import Collection
 from functools import cache, lru_cache, partial
-from typing import cast
+from typing import Any, cast
 
-from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.errors import (
+    CannotInvert,
+    HypothesisWarning,
+    InvalidArgument,
+)
 from hypothesis.internal import charmap
 from hypothesis.internal.charmap import Categories
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
@@ -134,6 +139,13 @@ class OneCharStringStrategy(SearchStrategy[str]):
     def do_draw(self, data: ConjectureData) -> str:
         return data.draw_string(self.intervals, min_size=1, max_size=1)
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, str) or len(value) != 1:
+            raise CannotInvert(f"{value!r} is not a single character")
+        if ord(value) not in self.intervals:
+            raise CannotInvert(f"{value!r} is not in {self.intervals!r}")
+        return (value,)
+
 
 _nonempty_names = (
     "capitalize",
@@ -180,6 +192,28 @@ class TextStrategy(ListStrategy[str]):
                 ),
             )
         return "".join(super().do_draw(data))
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, str):
+            raise CannotInvert(f"{value!r} is not a string")
+        elems = unwrap_strategies(self.element_strategy)
+        if not isinstance(elems, OneCharStringStrategy):
+            # We could invert as a list of one-character draws, but nothing
+            # needs that yet.
+            raise CannotInvert(f"cannot invert non-standard elements of {self!r}")
+        effective_max = (
+            COLLECTION_DEFAULT_MAX_SIZE
+            if self.max_size == float("inf")
+            else self.max_size
+        )
+        if not (self.min_size <= len(value) <= effective_max):
+            raise CannotInvert(
+                f"len({value!r})={len(value)} outside "
+                f"[{self.min_size}, {effective_max}]"
+            )
+        if any(ord(c) not in elems.intervals for c in value):
+            raise CannotInvert(f"{value!r} contains chars outside {elems!r}")
+        return (value,)
 
     def __repr__(self) -> str:
         args = []
@@ -364,6 +398,16 @@ class BytesStrategy(SearchStrategy):
 
     def do_draw(self, data: ConjectureData) -> bytes:
         return data.draw_bytes(self.min_size, self.max_size)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, bytes):
+            raise CannotInvert(f"{value!r} is not bytes")
+        if not (self.min_size <= len(value) <= self.max_size):
+            raise CannotInvert(
+                f"len({value!r})={len(value)} outside "
+                f"[{self.min_size}, {self.max_size}]"
+            )
+        return (value,)
 
     _nonempty_filters = (
         *ListStrategy._nonempty_filters,
