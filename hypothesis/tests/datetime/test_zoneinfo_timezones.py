@@ -9,14 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+import operator
 import platform
 import zoneinfo
+from functools import partial
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies._internal.datetime import _instant
+from hypothesis.strategies._internal.datetime import DatetimeStrategy, _instant
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.debug import (
     assert_all_examples,
@@ -28,6 +31,35 @@ from tests.common.debug import (
 
 def test_utc_is_minimal():
     assert minimal(st.timezones()) is zoneinfo.ZoneInfo("UTC")
+
+
+@settings(max_examples=25)
+@given(
+    st.datetimes(timezones=st.timezones())
+    .filter(partial(operator.le, dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)))
+    .filter(partial(operator.ge, dt.datetime(2020, 4, 1, tzinfo=dt.timezone.utc)))
+)
+def test_aware_datetimes_filter_rewriting_narrows_arbitrary_timezones(value):
+    # A three-month window in a twenty-thousand-year range would fail the
+    # filter_too_much health check without rewriting.
+    assert dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc) <= value
+    assert value <= dt.datetime(2020, 4, 1, tzinfo=dt.timezone.utc)
+
+
+def test_aware_datetimes_filter_rewriting_uses_instant_semantics():
+    # A predicate comparing values which share the bound's tzinfo object uses
+    # fold-ignoring wall-clock order, while the rewritten bounds order values
+    # by the moment they refer to, matching the strategy's semantics for aware
+    # bounds.  These differ only for ambiguous wall times inside a DST fold:
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    bound = dt.datetime(2020, 11, 1, 1, 30, tzinfo=tz)  # EDT; 1-2am repeats
+    inside = dt.datetime(2020, 11, 1, 1, 0, fold=1, tzinfo=tz)  # EST, so a
+    # later instant than the bound, despite the earlier wall-clock reading
+    predicate = partial(operator.le, bound)
+    assert not predicate(inside)
+    s = unwrap_strategies(st.datetimes(timezones=st.just(tz))).filter(predicate)
+    assert isinstance(s, DatetimeStrategy)
+    assert s.in_bounds(inside)
 
 
 def test_can_generate_non_utc():
