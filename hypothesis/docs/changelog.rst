@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.157.2:
+
+--------------------
+6.157.2 - 2026-07-20
+--------------------
+
+This patch continues our migration of Hypothesis internals to rust (:issue:`4740`), porting some internal float helpers. There should be no user-visible change. If you see any change in behavior, please open an issue.
+
 .. _v6.157.1:
 
 --------------------
