@@ -32,8 +32,32 @@ from typing import (
 )
 
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.floats import float_to_int
 
 T = TypeVar("T")
+
+
+def equal_values(a: Any, b: Any) -> bool:
+    """Like ==, but requires identical types (so True != 1 != 1.0) and
+    compares floats by bitpattern (so nan == nan and 0.0 != -0.0), applying
+    both rules elementwise through lists and tuples.
+
+    Values of any other type - dicts, sets, arbitrary objects - are compared
+    by plain == after the type check, so a NaN, signed zero, or bool/int
+    confusion nested inside them is missed: a NaN there compares unequal and
+    a nested True matches 1. Callers use this for best-effort,
+    replay-verified inversion, where such a miss costs a widening opportunity
+    - the replay produces a wrong or unequal value and is rejected - never
+    correctness.
+    """
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, float):
+        # by bitpattern, matching choice_equal
+        return float_to_int(a) == float_to_int(b)
+    if isinstance(a, (list, tuple)):
+        return len(a) == len(b) and all(map(equal_values, a, b))
+    return bool(a == b)
 
 
 def replace_all(
