@@ -15,9 +15,16 @@ import pytest
 
 from hypothesis import settings, strategies as st
 from hypothesis.control import BuildContext
+from hypothesis.internal import holefill
 from hypothesis.internal.conjecture.choice import HoleRecord, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.holefill import distance_fills, fill_prefix
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+from hypothesis.internal.holefill import (
+    crosshair_fills,
+    distance_fills,
+    fill_candidates,
+    fill_prefix,
+)
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 pytestmark = pytest.mark.skipif(
@@ -159,3 +166,39 @@ def test_distance_search_terminates_on_tiny_domains():
     records = [HoleRecord(index=0, strategy=st.booleans().map(str), value="maybe")]
     fills = list(distance_fills(records, Random(0)))
     assert 1 <= len(fills) <= 10
+
+
+def test_crosshair_fills_require_the_crosshair_backend(monkeypatch):
+    # merely having crosshair installed must not change behavior
+    called = []
+    monkeypatch.setitem(AVAILABLE_PROVIDERS, "crosshair", "unused.class.path")
+    monkeypatch.setattr(
+        holefill, "_crosshair_probe", lambda records: called.append(1) or None
+    )
+    records = [HoleRecord(index=0, strategy=st.integers().map(str), value="5")]
+    list(fill_candidates(records, Random(0), backend="hypothesis"))
+    assert not called
+    list(fill_candidates(records, Random(0), backend="crosshair"))
+    assert called
+
+
+def test_crosshair_filler_is_empty_when_unavailable(monkeypatch):
+    monkeypatch.delitem(AVAILABLE_PROVIDERS, "crosshair", raising=False)
+    records = [HoleRecord(index=0, strategy=st.integers().map(str), value="5")]
+    assert list(crosshair_fills(records)) == []
+
+
+@pytest.mark.skipif(
+    "crosshair" not in AVAILABLE_PROVIDERS, reason="crosshair backend not installed"
+)
+def test_crosshair_filler_finds_exact_fills():
+    records = [
+        HoleRecord(index=0, strategy=st.integers().map(lambda x: x * 3), value=12),
+        HoleRecord(index=1, strategy=st.integers().map(str), value="7"),
+    ]
+    (fills,) = crosshair_fills(records)
+    values = [
+        draw_from_choices(record.strategy, fill)
+        for record, fill in zip(records, fills, strict=True)
+    ]
+    assert values == [12, "7"]

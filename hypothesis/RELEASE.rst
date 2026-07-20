@@ -9,9 +9,10 @@ confirms that this reproduces the failure, and reports the minimal failing
 example - so a large pasted regression input yields the same succinct report
 as a generated failure. Where an argument cannot be re-encoded directly -
 for example, values from ``.map()``, |st.composite|, or ``.flatmap()`` -
-Hypothesis runs a bounded search for choices which regenerate it. If that
-search fails or the failure does not reproduce, the example is reported
-unshrunk as usual.
+Hypothesis runs a bounded search for choices which regenerate it, solving
+for them symbolically when the :ref:`crosshair backend
+<alternative-backends>` is selected. If that search fails or the failure
+does not reproduce, the example is reported unshrunk as usual.
 
 This builds on a recent shrinking improvement, which this release also extends
 to many more strategies: in unions like ``wide_strategy | specific_strategy``,

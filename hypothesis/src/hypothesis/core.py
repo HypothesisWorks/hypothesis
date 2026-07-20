@@ -92,6 +92,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     gc_cumulative_time,
 )
 from hypothesis.internal.conjecture.providers import (
+    AVAILABLE_PROVIDERS,
     BytestringProvider,
     PrimitiveProvider,
 )
@@ -593,7 +594,7 @@ _HOLE_SEARCH_EXECUTIONS = 50
 _HOLE_PROBE_ATTEMPTS = 4
 
 
-def _fill_value_holes(runner, prefix, matches, random):
+def _fill_value_holes(runner, prefix, matches, random, *, backend):
     """Replay ``prefix`` to record its unclaimed ValueHoles, then search for
     fills whose execution reproduces the expected failure. Returns True if
     ``runner`` now holds a matching interesting example."""
@@ -608,7 +609,8 @@ def _fill_value_holes(runner, prefix, matches, random):
     else:
         return False
     for fills in itertools.islice(
-        fill_candidates(probe.hole_records, random), _HOLE_SEARCH_EXECUTIONS
+        fill_candidates(probe.hole_records, random, backend=backend),
+        _HOLE_SEARCH_EXECUTIONS,
     ):
         data = runner.cached_test_function(fill_prefix(prefix, fills))
         if data.status is Status.INTERESTING and matches(data.interesting_origin):
@@ -695,7 +697,27 @@ def _shrink_explicit_example(state, example_kwargs, err):
 
     with contextlib.suppress(RunIsComplete):
         if any(isinstance(choice, ValueHole) for choice in prefix):
-            _fill_value_holes(runner, tuple(prefix), matches, state.random)
+            if (
+                not _fill_value_holes(
+                    runner,
+                    tuple(prefix),
+                    matches,
+                    state.random,
+                    backend=state.settings.backend,
+                )
+                and state.settings.backend != "crosshair"
+            ):
+                err.add_note(
+                    "Hypothesis could not find choices which regenerate "
+                    "this explicit example, so it is reported unshrunk;"
+                    + (
+                        ""
+                        if "crosshair" in AVAILABLE_PROVIDERS
+                        else " installing hypothesis[crosshair] and"
+                    )
+                    + ' setting settings(backend="crosshair") would let a'
+                    " solver-backed search try as well."
+                )
         else:
             runner.cached_test_function(prefix)
         if runner.interesting_examples:

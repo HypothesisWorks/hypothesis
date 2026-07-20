@@ -13,6 +13,7 @@ import pytest
 from hypothesis import Phase, example, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import BaseExceptionGroup
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 
 from tests.common.utils import capture_out
 
@@ -162,6 +163,27 @@ def test_falls_back_when_search_cannot_reproduce():
 
     out = output_from_failure(test)
     assert "Falsifying explicit example: test(\n    x=11,\n)" in out
+    # and we suggest the solver-backed search as a next step
+    assert 'settings(backend="crosshair")' in out
+
+
+@pytest.mark.skipif(
+    "crosshair" not in AVAILABLE_PROVIDERS, reason="crosshair backend not installed"
+)
+def test_shrinks_mapped_argument_with_crosshair_backend():
+    @example(x=10).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(
+        phases=[Phase.explicit, Phase.shrink],
+        database=None,
+        backend="crosshair",
+        deadline=None,
+    )
+    def test(x):
+        assert x != 10
+
+    out = output_from_failure(test)
+    assert "Falsifying example: test(\n    x=10,\n)" in out
 
 
 def test_reports_other_failures_surfaced_while_shrinking():

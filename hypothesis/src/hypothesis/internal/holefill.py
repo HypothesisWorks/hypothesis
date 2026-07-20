@@ -17,7 +17,8 @@ which cannot invert - the caller replays the prefix once to collect a
 Each candidate is a list of one choice tuple per hole, proposed for all holes
 simultaneously, so evaluating it costs a single test-function execution.
 
-Fillers sit behind this interface; for now, a distance-guided search which
+Two fillers sit behind that interface: a symbolic-execution probe using the
+crosshair backend when it is installed, and a distance-guided search which
 draws and mutates values cheaply (no test execution), scoring them by edit
 distance between the canonical ``to_jsonable`` forms of the drawn value and
 the hole's target value.
@@ -30,6 +31,7 @@ from difflib import SequenceMatcher
 from random import Random
 from typing import Any
 
+from hypothesis._settings import HealthCheck, Phase, settings as Settings
 from hypothesis.control import BuildContext
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.choice import (
@@ -39,7 +41,10 @@ from hypothesis.internal.conjecture.choice import (
     choices_key,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import deep_equal
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.strategies._internal.utils import to_jsonable
 
 FillsT = list[tuple[ChoiceT, ...]]
@@ -50,6 +55,7 @@ DRAWS_PER_ROUND = 16
 POOL_SIZE = 5
 # stop after this many rounds which produced no new fill-set
 BARREN_ROUNDS_LIMIT = 5
+CROSSHAIR_MAX_EXAMPLES = 32
 
 
 def fill_prefix(
@@ -66,13 +72,19 @@ def fill_prefix(
     return tuple(out)
 
 
-def fill_candidates(records: Sequence[HoleRecord], random: Random) -> Iterator[FillsT]:
+def fill_candidates(
+    records: Sequence[HoleRecord], random: Random, *, backend: str
+) -> Iterator[FillsT]:
     """Yield candidate fills for all of ``records`` at once, best-first-ish.
 
     The caller owns execution: it splices each candidate into its prefix, runs
     the test function once, and stops on the first candidate that reproduces
-    the failure it is looking for.
+    the failure it is looking for. Crosshair fills are attempted only when the
+    test has opted into the crosshair backend - merely having it installed
+    does not change behavior.
     """
+    if backend == "crosshair":
+        yield from crosshair_fills(records)
     yield from distance_fills(records, random)
 
 
@@ -263,3 +275,66 @@ def distance_fills(records: Sequence[HoleRecord], random: Random) -> Iterator[Fi
                 break
         else:
             barren += 1
+
+
+def crosshair_fills(records: Sequence[HoleRecord]) -> Iterator[FillsT]:
+    """Yield at most one fill-set, found by drawing each hole's strategy
+    symbolically under the crosshair backend and conditioning on equality
+    with the hole's target value. Degrades silently to nothing when crosshair
+    is unavailable or fails."""
+    if "crosshair" not in AVAILABLE_PROVIDERS:
+        return
+    try:
+        fills = _crosshair_probe(records)
+    except (StopTest, Exception):
+        return
+    if fills is not None:
+        yield fills
+
+
+_PROBE_ORIGIN = InterestingOrigin(AssertionError, __file__, 0, (), ())
+
+
+def _crosshair_probe(records: Sequence[HoleRecord]) -> FillsT | None:
+    def probe(data: ConjectureData) -> None:
+        matched = True
+        # symbolic draws require the provider's own context, which the engine
+        # leaves to the (usually user-test-executing) test function
+        with (
+            data.provider.per_test_case_context_manager(),
+            BuildContext(data, wrapped_test=lambda: None),
+        ):
+            for record in records:
+                # under crosshair this comparison conditions the path
+                if data.draw(record.strategy) != record.value:
+                    matched = False
+                    break
+        if matched:
+            data.mark_interesting(_PROBE_ORIGIN)
+        data.mark_invalid()
+
+    runner = ConjectureRunner(
+        probe,
+        settings=Settings(
+            backend="crosshair",
+            database=None,
+            deadline=None,
+            max_examples=CROSSHAIR_MAX_EXAMPLES,
+            phases=[Phase.generate],
+            suppress_health_check=list(HealthCheck),
+        ),
+        random=Random(0),
+    )
+    runner.run()
+    result = runner.interesting_examples.get(_PROBE_ORIGIN)
+    if result is None:
+        return None
+    # Split the realized choices per hole by replaying them locally.
+    data = ConjectureData.for_choices(result.choices)
+    fills: FillsT = []
+    with BuildContext(data, wrapped_test=lambda: None):
+        for record in records:
+            start = len(data.nodes)
+            data.draw(record.strategy)
+            fills.append(tuple(node.value for node in data.nodes[start:]))
+    return fills
