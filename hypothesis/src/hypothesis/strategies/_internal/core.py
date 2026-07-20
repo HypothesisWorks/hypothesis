@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import codecs
+import dataclasses
 import enum
 import math
 import operator
@@ -61,6 +62,7 @@ from hypothesis.control import (
     should_note,
 )
 from hypothesis.errors import (
+    CannotInvert,
     HypothesisSideeffectWarning,
     HypothesisWarning,
     InvalidArgument,
@@ -81,7 +83,9 @@ from hypothesis.internal.compat import (
     get_type_hints,
     is_typed_named_tuple,
 )
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_callable,
     calc_label_from_name,
@@ -1142,6 +1146,30 @@ class BuildsStrategy(SearchStrategy[Ex]):
         )
         return obj
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not self.args and not self.kwargs:
+            return ()
+        if isinstance(self.target, type) and dataclasses.is_dataclass(self.target):
+            # builds(MyDataclass, ...) is inspectable: positional args map to
+            # fields in declaration order, kwargs map to fields by name.
+            if not isinstance(value, self.target):
+                raise CannotInvert(f"{value!r} is not an instance of {self.target!r}")
+            field_names = [f.name for f in dataclasses.fields(self.target)]
+            pairs = [
+                *zip(field_names, self.args, strict=False),
+                *self.kwargs.items(),
+            ]
+            choices: list[ChoiceT] = []
+            for name, strategy in pairs:
+                try:
+                    choices.extend(strategy._invert(getattr(value, name)))
+                except CannotInvert as exc:
+                    exc.add_note(f"at field {name!r} of {value!r}, strategy={self!r}")
+                    raise
+            return tuple(choices)
+        # There are other special cases we could add here, in time.
+        raise CannotInvert(f"cannot invert {self!r} (value={value!r})")
+
     def do_validate(self) -> None:
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
@@ -1968,6 +1996,28 @@ class PermutationStrategy(SearchStrategy):
         result = list(self.values)
         fisher_yates_shuffle(data, result)
         return result
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, list) or len(value) != len(self.values):
+            raise CannotInvert(f"{value!r} is not a list of the expected length")
+        # Reverse the Fisher-Yates shuffle: walk the intermediate array
+        # forward, at each step choosing the swap index j whose current
+        # element equals the target value at this position.
+        current = list(self.values)
+        choices: list[ChoiceT] = []
+        for i, target in enumerate(value[:-1]):
+            for j in range(i, len(current)):
+                if deep_equal(current[j], target):
+                    choices.append(j)
+                    current[i], current[j] = current[j], current[i]
+                    break
+            else:
+                raise CannotInvert(f"{value!r} is not a permutation of {self.values!r}")
+        # The last position is fixed by the previous swaps - check that the
+        # input really was a permutation.
+        if current and not deep_equal(current[-1], value[-1]):
+            raise CannotInvert(f"{value!r} is not a permutation of {self.values!r}")
+        return tuple(choices)
 
 
 @defines_strategy()

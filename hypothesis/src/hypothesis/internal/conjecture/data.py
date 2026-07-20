@@ -8,8 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import math
 import time
+import weakref
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
@@ -141,9 +143,23 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 # performance. We lose scan resistance, but that's probably fine here.
 POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCache(4096)
 
-# A tuple rather than a set so that ``in`` works even if a value's class has
-# an unhashable metaclass. Exact type checks also exclude symbolic backends.
-_PRIMITIVE_CHOICE_TYPES: tuple[type, ...] = (int, bool, str, bytes, float)
+# The exact types whose values record_value_for_span holds directly: small
+# immutable stdlib types, none of which support weak references. Values of
+# any other type are held via weakref where possible, so that recording never
+# extends an object's lifetime. A tuple rather than a set so that ``in``
+# works even if a value's class has an unhashable metaclass. Exact type
+# checks also exclude symbolic backends.
+_RECORDABLE_VALUE_TYPES: tuple[type, ...] = (
+    int,
+    bool,
+    str,
+    bytes,
+    float,
+    datetime.date,
+    datetime.time,
+    datetime.datetime,
+    datetime.timedelta,
+)
 
 
 class Span:
@@ -249,9 +265,12 @@ class Span:
     @property
     def recorded_value(self) -> Any:
         """The value produced by the strategy draw corresponding to this span,
-        or ``None`` if no value was recorded. Only values of the primitive
-        choice types (int, bool, float, str, bytes) are recorded."""
-        return self.owner.span_values.get(self.index)
+        or ``None`` if no value was recorded, or if a weakly-referenced value
+        has since been collected."""
+        value = self.owner.span_values.get(self.index)
+        if isinstance(value, weakref.ReferenceType):
+            value = value()
+        return value
 
 
 class SpanProperty:
@@ -363,12 +382,17 @@ class SpanRecord:
             self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
 
     def record_value_for_span(self, span_index: int, value: Any) -> None:
-        # Record ``value`` against the span at ``span_index``, if it is one of
-        # the primitive choice types. Called by ConjectureData.draw with the
-        # value each strategy's do_draw returned.
-        if type(value) not in _PRIMITIVE_CHOICE_TYPES:
-            return
-        self.span_values[span_index] = value
+        # Record ``value`` against the span at ``span_index``. Called by
+        # ConjectureData.draw with the value each strategy's do_draw returned.
+        # Values which can be neither held directly nor weakly referenced
+        # (e.g. stdlib containers) are not recorded, and so cannot widen.
+        if type(value) in _RECORDABLE_VALUE_TYPES:
+            self.span_values[span_index] = value
+        else:
+            try:
+                self.span_values[span_index] = weakref.ref(value)
+            except TypeError:
+                pass
 
 
 class _starts_and_ends(SpanProperty):

@@ -43,6 +43,7 @@ from hypothesis.errors import (
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     calc_label_from_hash,
@@ -767,6 +768,15 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def get_element(self, i: int) -> Ex | UniqueIdentifier:
         return self._transform(self.elements[i])
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # The smallest index whose (possibly transformed) element equals value.
+        # _transform might depend on external state and give us a wrong answer
+        # here; that's fine, since _invert is allowed to be fallible.
+        for i, element in enumerate(self.elements):
+            if deep_equal(self._transform(element), value):
+                return (i,)
+        raise CannotInvert(f"{value!r} is not produced by {self!r}")
+
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # Set of indices that have been tried so far, so that we never test
         # the same element twice during a draw.
@@ -823,6 +833,11 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             return element
         # If there are no allowed indices, the filter couldn't be satisfied.
         return filter_not_satisfied
+
+
+# The ids of OneOfStrategy instances an _invert call is currently walking
+# through, per thread. See OneOfStrategy._invert.
+_inverting_one_ofs = threading.local()
 
 
 class OneOfStrategy(SearchStrategy[Ex]):
@@ -898,14 +913,35 @@ class OneOfStrategy(SearchStrategy[Ex]):
         # Return the simplest candidate across all branches: the shortest
         # encoding, breaking ties by the lower branch index - matching the
         # shrinker's ordering over choice sequences.
-        best: tuple[ChoiceT, ...] | None = None
-        for i, branch in enumerate(self.element_strategies):
-            try:
-                candidate = (i, *branch._invert(value))
-            except CannotInvert:
-                continue
-            if best is None or len(candidate) < len(best):
-                best = candidate
+        #
+        # Self-referential strategies (e.g. via st.deferred) can route a
+        # branch's inversion of the same value back to this one_of, so guard
+        # against re-entry rather than recursing forever. Unlike a structural
+        # recursion into a subvalue - which terminates because values are
+        # finite - a same-value cycle can make no progress.
+        active = getattr(_inverting_one_ofs, "ids", None)
+        if active is None:
+            active = _inverting_one_ofs.ids = set()
+        if id(self) in active:
+            raise CannotInvert(f"recursive inversion of {self!r}")
+        active.add(id(self))
+        try:
+            best: tuple[ChoiceT, ...] | None = None
+            for i, branch in enumerate(self.element_strategies):
+                try:
+                    candidate = (i, *branch._invert(value))
+                except CannotInvert:
+                    continue
+                if best is None or len(candidate) < len(best):
+                    best = candidate
+                if len(best) <= 2:
+                    # A selector plus at most one choice: no later branch is
+                    # worth trying. (A zero-choice just()-like branch could
+                    # still encode in one choice, but we accept two rather
+                    # than scanning - possibly recursively - for it.)
+                    break
+        finally:
+            active.discard(id(self))
         if best is None:
             raise CannotInvert(f"{value!r} is not produced by any branch of {self!r}")
         return best
@@ -1293,6 +1329,13 @@ class FilteredStrategy(SearchStrategy[Ex]):
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 
         return filter_not_satisfied
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # If the condition accepts value, do_draw would have succeeded on its
+        # first try, drawing exactly the inner strategy's encoding.
+        if not self.condition(value):
+            raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
+        return self.filtered_strategy._invert(value)
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:

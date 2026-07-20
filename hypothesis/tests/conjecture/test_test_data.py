@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import gc
 import itertools
 
 import pytest
@@ -460,13 +461,30 @@ def test_span_without_value_returns_none():
     assert span.recorded_value is None
 
 
-def test_record_value_for_span_ignores_non_primitive():
+def test_record_value_for_span_ignores_non_weakrefable_containers():
     d = ConjectureData.for_choices([])
     d.start_span(1)
     d._ConjectureData__span_record.record_value_for_span(1, [1, 2, 3])
     d.stop_span()
     d.freeze()
     span = next(sp for sp in d.spans if sp.label == 1)
+    assert span.recorded_value is None
+
+
+def test_record_value_for_span_holds_objects_weakly():
+    class Box:
+        pass
+
+    d = ConjectureData.for_choices([])
+    d.start_span(1)
+    box = Box()
+    d._ConjectureData__span_record.record_value_for_span(1, box)
+    d.stop_span()
+    d.freeze()
+    span = next(sp for sp in d.spans if sp.label == 1)
+    assert span.recorded_value is box
+    del box
+    gc.collect()
     assert span.recorded_value is None
 
 

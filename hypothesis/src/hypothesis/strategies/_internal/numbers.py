@@ -557,3 +557,9 @@ class NanStrategy(SearchStrategy[float]):
         nan_bits = float_to_int(math.nan)
         mantissa_bits = data.draw_integer(0, 2**52 - 1)
         return int_to_float(sign_bit | nan_bits | mantissa_bits)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, float) or not math.isnan(value):
+            raise CannotInvert(f"{value!r} is not NaN")
+        bits = float_to_int(value)
+        return (bool(bits >> 63), bits & ((1 << 52) - 1))

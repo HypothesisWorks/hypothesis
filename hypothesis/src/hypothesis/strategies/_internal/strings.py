@@ -198,9 +198,8 @@ class TextStrategy(ListStrategy[str]):
             raise CannotInvert(f"{value!r} is not a string")
         elems = unwrap_strategies(self.element_strategy)
         if not isinstance(elems, OneCharStringStrategy):
-            # We could invert as a list of one-character draws, but nothing
-            # needs that yet.
-            raise CannotInvert(f"cannot invert non-standard elements of {self!r}")
+            # a non-standard element strategy is drawn one character at a time
+            return ListStrategy._invert(self, list(value))
         effective_max = (
             COLLECTION_DEFAULT_MAX_SIZE
             if self.max_size == float("inf")

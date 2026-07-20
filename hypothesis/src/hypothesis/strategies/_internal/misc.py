@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, NoReturn
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -64,6 +65,11 @@ class JustStrategy(SampledFromStrategy[Ex]):
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. (This also avoids drawing any data.)
         return self._transform(self.value)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not deep_equal(self._transform(self.value), value):
+            raise CannotInvert(f"{value!r} is not produced by {self!r}")
+        return ()
 
 
 @defines_strategy(eager=True)

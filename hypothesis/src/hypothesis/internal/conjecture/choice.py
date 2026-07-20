@@ -12,6 +12,7 @@ import math
 from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import (
+    Any,
     Literal,
     TypeAlias,
     TypedDict,
@@ -95,7 +96,8 @@ class ValueHole:
     reaches it.
     """
 
-    value: ChoiceT
+    # any value a strategy might re-encode, not just the choice types
+    value: Any
 
 
 @dataclass(slots=True, frozen=False)
