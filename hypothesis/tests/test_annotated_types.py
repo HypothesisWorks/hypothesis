@@ -8,19 +8,25 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime as dt
 import re
 import sys
-from typing import Annotated
+import zoneinfo
+from typing import Annotated, TypeVar
 
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import HypothesisWarning, ResolutionFailed
+from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.types import _get_constraints
 
-from tests.common.debug import assert_simple_property, check_can_generate_examples
+from tests.common.debug import (
+    assert_all_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+)
 
 try:
     import annotated_types as at
@@ -78,6 +84,56 @@ def test_unsupported_constraints(unsupported_constraints, message):
 def test_annotated_type_int(annotated_type, expected_strategy_repr):
     strategy = unwrap_strategies(st.from_type(annotated_type))
     assert repr(strategy) == expected_strategy_repr
+
+
+@pytest.mark.parametrize("type_", [dt.datetime, dt.time])
+@pytest.mark.parametrize(
+    "tz,predicate",
+    [
+        (None, lambda value: value.tzinfo is None),
+        (..., lambda value: value.tzinfo is not None),
+        (
+            "Europe/London",
+            lambda value: value.tzinfo == zoneinfo.ZoneInfo("Europe/London"),
+        ),
+        (dt.timezone.utc, lambda value: value.tzinfo is dt.timezone.utc),
+    ],
+)
+def test_timezone_constraint(type_, tz, predicate):
+    assert_all_examples(st.from_type(Annotated[type_, at.Timezone(tz)]), predicate)
+
+
+def test_invalid_timezone_value():
+    with pytest.raises(InvalidArgument, match="Cannot resolve Timezone"):
+        check_can_generate_examples(
+            st.from_type(Annotated[dt.datetime, at.Timezone(42)])
+        )
+
+
+def test_timezone_constraint_combines_with_others():
+    epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+    strategy = st.from_type(Annotated[dt.datetime, at.Timezone(...), at.Ge(epoch)])
+    assert_all_examples(
+        strategy, lambda value: value.tzinfo is not None and value >= epoch
+    )
+
+
+def test_generic_alias_in_metadata_suggests_subscripting():
+    with pytest.raises(ResolutionFailed) as excinfo:
+        check_can_generate_examples(st.from_type(Annotated[str, at.LowerCase]))
+    assert "Did you mean `Annotated[str, Predicate(str.islower)]`?" in str(
+        excinfo.value
+    )
+    assert "try `LowerCase[str]`" in str(excinfo.value)
+
+
+def test_unknown_generic_alias_in_metadata_error():
+    T = TypeVar("T")
+    Positive = Annotated[T, at.Gt(0)]
+    with pytest.raises(ResolutionFailed) as excinfo:
+        check_can_generate_examples(st.from_type(Annotated[int, Positive]))
+    assert "Did you mean `Annotated[int, Gt(gt=0)]`?" in str(excinfo.value)
+    assert "subscripted with the type" in str(excinfo.value)
 
 
 def test_predicate_constraint():

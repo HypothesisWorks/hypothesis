@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+
 import pytest
 import scipy
 import scipy.special
@@ -22,9 +24,15 @@ SCIPY_VERSION = tuple(int(x) for x in scipy.__version__.split("."))
 
 @given(st.integers(1, 100), st.floats(-1e150, 1e150))
 def test_stdtr_matches_scipy(df, t):
-    assert stdtr(df, t) == pytest.approx(
-        scipy.special.stdtr(df, t), rel=1e-12, abs=1e-15
-    )
+    if df == 1:
+        # scipy 1.17 regressed the accuracy of stdtr for df=1 at small |t|,
+        # with up to ~2e-9 absolute error around t=1e-8 (an upstream issue;
+        # df >= 2 still agrees with us to one ulp). df=1 has an exact closed
+        # form, so test against that stronger oracle instead of scipy.
+        expected = 0.5 + math.atan(t) / math.pi
+    else:
+        expected = scipy.special.stdtr(df, t)
+    assert stdtr(df, t) == pytest.approx(expected, rel=1e-12, abs=1e-15)
 
 
 @pytest.mark.parametrize("df", [1, 2, 3, 4, 10, 100])

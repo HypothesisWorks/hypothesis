@@ -936,6 +936,11 @@ class StateForActualGivenExecution:
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
+        self.known_safe_to_repr = {
+            name
+            for name, strategy in stuff.given_kwargs.items()
+            if strategy == st.data()
+        }
 
         self.last_exception = None
         self.falsifying_examples = ()
@@ -1051,12 +1056,12 @@ class StateForActualGivenExecution:
             args = self.stuff.args
             kwargs = dict(self.stuff.kwargs)
             if example_kwargs is None:
-                kw, argslices = context.prep_args_kwargs_from_strategies(
+                kw, arglabels = context.prep_args_kwargs_from_strategies(
                     self.stuff.given_kwargs
                 )
             else:
                 kw = example_kwargs
-                argslices = {}
+                arglabels = {}
             kwargs.update(kw)
             if expected_failure is not None:
                 nonlocal text_repr
@@ -1076,13 +1081,14 @@ class StateForActualGivenExecution:
                         args,
                         kwargs,
                         force_split=True,
-                        arg_slices=argslices,
+                        arg_labels=arglabels,
                         leading_comment=(
-                            "# " + context.data.slice_comments[(0, 0)]
-                            if (0, 0) in context.data.slice_comments
+                            "# " + context.data.span_comments[None]
+                            if None in context.data.span_comments
                             else None
                         ),
                         avoid_realization=data.provider.avoid_realization,
+                        known_safe_to_repr=self.known_safe_to_repr,
                     )
                 report(printer.getvalue())
 
@@ -1093,13 +1099,14 @@ class StateForActualGivenExecution:
                     args,
                     kwargs,
                     force_split=True,
-                    arg_slices=argslices,
+                    arg_labels=arglabels,
                     leading_comment=(
-                        "# " + context.data.slice_comments[(0, 0)]
-                        if (0, 0) in context.data.slice_comments
+                        "# " + context.data.span_comments[None]
+                        if None in context.data.span_comments
                         else None
                     ),
                     avoid_realization=data.provider.avoid_realization,
+                    known_safe_to_repr=self.known_safe_to_repr,
                 )
                 self._string_repr = printer.getvalue()
 
@@ -1502,7 +1509,7 @@ class StateForActualGivenExecution:
             ran_example = runner.new_conjecture_data(
                 falsifying_example.choices, max_choices=len(falsifying_example.choices)
             )
-            ran_example.slice_comments = falsifying_example.slice_comments
+            ran_example.span_comments = falsifying_example.span_comments
             tb = None
             origin = None
             assert falsifying_example.expected_exception is not None

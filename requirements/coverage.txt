@@ -12,7 +12,7 @@ click==8.4.2
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.15.0
+coverage[toml]==7.15.2
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -42,7 +42,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.10.0
+platformdirs==4.10.1
     # via black
 pluggy==1.6.0
     # via
