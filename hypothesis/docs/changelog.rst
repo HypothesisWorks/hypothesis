@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.157.1:
+
+--------------------
+6.157.1 - 2026-07-20
+--------------------
+
+Internal refactoring of how |Phase.explain| tracks which parts of a failing
+example can vary, with no user-visible change.
+
 .. _v6.157.0:
 
 --------------------
