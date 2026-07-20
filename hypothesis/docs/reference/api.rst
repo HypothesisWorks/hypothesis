@@ -79,6 +79,7 @@ Explicit inputs
 .. autoclass:: hypothesis.example
 .. automethod:: hypothesis.example.xfail
 .. automethod:: hypothesis.example.via
+.. automethod:: hypothesis.example.shrink
 
 .. _reproducing-inputs:
 
