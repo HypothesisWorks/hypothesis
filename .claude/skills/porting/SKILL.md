@@ -156,3 +156,19 @@ Run a difftest when it will actually tell you something — at a checkpoint afte
 - Don't leave build artifacts or scratch state in the tree: the `maturin develop` virtualenv, `hypothesis/rust/target/`, compiled `_native.*.so`, throwaway differential-test scripts. Remove them (or confirm they're git-ignored) before finishing.
 - A PR that changes `hypothesis/src/` needs a `RELEASE.rst`; a port that only moves code between languages is internal and not user-visible, so decide whether one is warranted and say which.
 - Don't mutate branch/worktree state (resets, rebases, changing the PR base) beyond what the task requires without saying so.
+
+# Rust style guide
+
+* Prefer match statements over if statements where appropriate. For example:
+
+    ```
+    if width == 64 {
+        Ok(x)
+    } else if width == 32 {
+        int_to_float(float_to_int(x, 32)?, 32)
+    } else {
+        int_to_float(float_to_int(x, 16)?, 16)
+    }
+    ```
+
+    should be written as a match instead.

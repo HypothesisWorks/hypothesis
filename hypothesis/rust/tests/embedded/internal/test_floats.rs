@@ -13,6 +13,17 @@ use half::f16;
 
 fn assert_narrowing_matches(x: f64) {
     let ours = f16_bits_from_f64(x);
+    // `half` rounds incorrectly near rounding ties:
+    //   * https://github.com/VoidStarKat/half-rs/issues/116
+    //   * https://github.com/VoidStarKat/half-rs/issues/151
+    //
+    // We skip the test on inputs which hit these bugs.
+    let truncated = f64::from_bits(x.to_bits() & !0xffff_ffff);
+    let via_f32 = (x as f32) as f64;
+    if !x.is_nan() && (f16_bits_from_f64(truncated) != ours || f16_bits_from_f64(via_f32) != ours) {
+        return;
+    }
+
     if x.is_nan() {
         let ours = f16::from_bits(ours);
         assert!(ours.is_nan(), "x={:#018x}", x.to_bits());
@@ -55,6 +66,39 @@ fn narrowing_matches_half() {
     for _ in 0..1_000_000 {
         assert_narrowing_matches(f64::from_bits(rand::random()));
     }
+}
+
+/// explicit check to actual bits without comparing to `half`, which is incorrect in some cases
+/// for rounding near ties
+#[test]
+fn narrowing_rounds_ties_correctly() {
+    let check = |x: f64, expected: u16| {
+        assert_eq!(
+            f16_bits_from_f64(x),
+            expected,
+            "x={x} ({:#018x})",
+            x.to_bits()
+        );
+        assert_eq!(
+            f16_bits_from_f64(-x),
+            0x8000 | expected,
+            "x={} ({:#018x})",
+            -x,
+            (-x).to_bits()
+        );
+    };
+
+    for bits in 0..f16::MAX.to_bits() {
+        let mid = (f16_bits_to_f64(bits) + f16_bits_to_f64(bits + 1)) / 2.0;
+        let even = if bits & 1 == 0 { bits } else { bits + 1 };
+        check(mid, even);
+        check(f64::from_bits(mid.to_bits() + 1), bits + 1);
+        check(f64::from_bits(mid.to_bits() - 1), bits);
+    }
+    // the overflow tie, halfway between f16::MAX and 2^16, rounds to infinity
+    check(65520.0, 0x7c00);
+    check(f64::from_bits(65520f64.to_bits() + 1), 0x7c00);
+    check(f64::from_bits(65520f64.to_bits() - 1), 0x7bff);
 }
 
 /// explicitly cover some rare cases that are possible-but-rare in narrowing_matches_half

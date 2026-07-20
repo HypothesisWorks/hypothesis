@@ -113,13 +113,10 @@ pub(crate) mod floats {
 
     #[pyfunction]
     fn float_of(x: f64, width: u32) -> PyResult<f64> {
-        assert!(matches!(width, 16 | 32 | 64));
-        if width == 64 {
-            Ok(x)
-        } else if width == 32 {
-            int_to_float(float_to_int(x, 32)?, 32)
-        } else {
-            int_to_float(float_to_int(x, 16)?, 16)
+        match width {
+            64 => Ok(x),
+            32 | 16 => int_to_float(float_to_int(x, width)?, width),
+            _ => panic!("invalid width {width}"),
         }
     }
 
@@ -163,7 +160,7 @@ pub(crate) mod floats {
                 Ok(f.to_bits() as u64)
             }
             64 => Ok(value.to_bits()),
-            _ => unreachable!(),
+            _ => panic!("invalid width {width}"),
         }
     }
 
@@ -174,7 +171,7 @@ pub(crate) mod floats {
             16 => Ok(f16_bits_to_f64(u16::try_from(value).unwrap())),
             32 => Ok(f32::from_bits(u32::try_from(value).unwrap()) as f64),
             64 => Ok(f64::from_bits(value)),
-            _ => unreachable!(),
+            _ => panic!("invalid width {width}"),
         }
     }
 
@@ -239,7 +236,7 @@ pub(crate) mod floats {
             16 => 2f64.powi(-(2i32.pow(5 - 1) - 2)),
             32 => 2f64.powi(-(2i32.pow(8 - 1) - 2)),
             64 => 2f64.powi(-(2i32.pow(11 - 1) - 2)),
-            _ => unreachable!(),
+            _ => panic!("invalid width {width}"),
         }
     }
 }
