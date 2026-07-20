@@ -9,10 +9,14 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.29", features = ["extension-module"] }
+pyo3 = "0.29"
 
 [features]
 abi3 = ["pyo3/abi3-py310"]
+
+[dev-dependencies]
+half = "2"
+rand = "0.9"
 
 [profile.release]
 # we may want to revisit these settings as we move more of hypothesis

@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 import requests
 
 from hypothesistooling import cargo, installers as install
-from hypothesistooling.cargo import CARGO_TOML, RUST_BUILD_ENV, ci_version_rust
+from hypothesistooling.cargo import CARGO_TOML, ci_version_rust, rust_build_env
 from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
 from hypothesistooling.scripts import pip_tool
 
@@ -294,7 +294,7 @@ def create_github_release():
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.

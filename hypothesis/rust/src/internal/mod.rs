@@ -9,9 +9,12 @@
 // obtain one at https://mozilla.org/MPL/2.0/.
 
 mod cathetus;
+mod floats;
 
 #[pyo3::pymodule]
 pub(crate) mod internal {
     #[pymodule_export]
     use super::cathetus::cathetus;
+    #[pymodule_export]
+    use super::floats::floats;
 }
