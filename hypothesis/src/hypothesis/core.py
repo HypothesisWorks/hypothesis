@@ -16,6 +16,7 @@ import dataclasses
 import datetime
 import inspect
 import io
+import itertools
 import math
 import os
 import sys
@@ -55,7 +56,6 @@ from hypothesis.control import BuildContext, currently_in_test_context
 from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
-    CannotInvert,
     DeadlineExceeded,
     DidNotReproduce,
     FailedHealthCheck,
@@ -80,7 +80,7 @@ from hypothesis.internal.compat import (
     get_type_hints,
     int_from_bytes,
 )
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import (
     BUFFER_SIZE,
@@ -105,6 +105,7 @@ from hypothesis.internal.escalation import (
     is_hypothesis_file,
 )
 from hypothesis.internal.healthcheck import fail_health_check
+from hypothesis.internal.holefill import fill_candidates, fill_prefix
 from hypothesis.internal.observability import (
     InfoObservation,
     InfoObservationType,
@@ -369,10 +370,11 @@ class example:
             def test(x):
                 assert 7 not in x  # reports the shrunk x=[7], not the example
 
-        Re-encoding is best-effort: if any argument cannot be re-encoded by
-        its strategy, or the re-encoded input does not reproduce the same
-        failure, the example is reported unshrunk, exactly as without
-        ``.shrink()``. Passing examples are unaffected.
+        Re-encoding is best-effort: where an argument cannot be re-encoded
+        directly, Hypothesis runs a bounded search for choices which
+        regenerate it. If that search fails, or the re-encoded input does not
+        reproduce the same failure, the example is reported unshrunk, exactly
+        as without ``.shrink()``. Passing examples are unaffected.
 
         ``.shrink()`` cannot be combined with ``.xfail()``, since an expected
         failure is reported as a pass rather than shrunk and raised.
@@ -584,6 +586,36 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
         )
 
 
+# Test-function executions spent searching for hole fills, per example.
+_HOLE_SEARCH_EXECUTIONS = 50
+# Replays of the holey prefix to record its holes; retried because random
+# fills at earlier holes can invalidate the run before later holes are seen.
+_HOLE_PROBE_ATTEMPTS = 4
+
+
+def _fill_value_holes(runner, prefix, matches, random):
+    """Replay ``prefix`` to record its unclaimed ValueHoles, then search for
+    fills whose execution reproduces the expected failure. Returns True if
+    ``runner`` now holds a matching interesting example."""
+    holes = sum(isinstance(choice, ValueHole) for choice in prefix)
+    for _ in range(_HOLE_PROBE_ATTEMPTS):
+        probe = runner.new_conjecture_data(prefix)
+        runner.test_function(probe)
+        if probe.status is Status.INTERESTING and matches(probe.interesting_origin):
+            return True
+        if len(probe.hole_records) == holes:
+            break
+    else:
+        return False
+    for fills in itertools.islice(
+        fill_candidates(probe.hole_records, random), _HOLE_SEARCH_EXECUTIONS
+    ):
+        data = runner.cached_test_function(fill_prefix(prefix, fills))
+        if data.status is Status.INTERESTING and matches(data.interesting_origin):
+            return True
+    return False
+
+
 def _reportable_failure(state, runner, result):
     """Replay a shrunk interesting ``result`` and package it for reporting,
     or return None if it turns out flaky."""
@@ -624,22 +656,21 @@ def _shrink_explicit_example(state, example_kwargs, err):
     """Try to shrink a failing ``@example(...).shrink()`` input.
 
     Re-encode each argument as a choice sequence via its strategy's
-    ``_invert``, confirm that replaying those choices reproduces the same
-    failure, shrink, and return ``(shrunk, extras)``: a ReportableError for
-    the minimal failing example - or None, so that the caller reports the
-    unshrunk failure as usual - plus reportables for any other failures
-    surfaced while shrinking, which we report rather than discard.
+    ``_invert_with_holes``, confirm that replaying those choices reproduces
+    the same failure - searching for choices to fill any holes left by
+    arguments that could not be re-encoded directly - then shrink, and return
+    ``(shrunk, extras)``: a ReportableError for the minimal failing example -
+    or None, so that the caller reports the unshrunk failure as usual - plus
+    reportables for any other failures surfaced along the way, which we
+    report rather than discard.
     """
     assert isinstance(state, StateForActualGivenExecution)
     if Phase.shrink not in state.settings.phases:
         return None, []
-    choices: list[Any] = []
-    try:
-        # inversion must match the draw order of prep_args_kwargs_from_strategies
-        for name, strategy in state.stuff.given_kwargs.items():
-            choices.extend(strategy._invert(example_kwargs[name]))
-    except CannotInvert:
-        return None, []
+    # inversion must match the draw order of prep_args_kwargs_from_strategies
+    prefix: list[Any] = []
+    for name, strategy in state.stuff.given_kwargs.items():
+        prefix.extend(strategy._invert_with_holes(example_kwargs[name]))
 
     runner = ConjectureRunner(
         state._execute_once_for_engine,
@@ -663,10 +694,14 @@ def _shrink_explicit_example(state, example_kwargs, err):
         )
 
     with contextlib.suppress(RunIsComplete):
-        data = runner.cached_test_function(choices)
-        if data.status is Status.INTERESTING:
-            # Shrink every failure we found: an incorrect inversion can
-            # surface genuinely unrelated bugs, which we report too.
+        if any(isinstance(choice, ValueHole) for choice in prefix):
+            _fill_value_holes(runner, tuple(prefix), matches, state.random)
+        else:
+            runner.cached_test_function(prefix)
+        if runner.interesting_examples:
+            # Shrink every failure we found: an incorrect inversion or the
+            # hole-filling search can surface genuinely unrelated bugs, which
+            # we report too.
             runner.shrink_interesting_examples()
     matching = [
         data for origin, data in runner.interesting_examples.items() if matches(origin)

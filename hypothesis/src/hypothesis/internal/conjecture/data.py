@@ -49,6 +49,7 @@ from hypothesis.internal.conjecture.choice import (
     ChoiceTemplate,
     ChoiceTypeT,
     FloatConstraints,
+    HoleRecord,
     IntegerConstraints,
     StringConstraints,
     ValueHole,
@@ -766,6 +767,7 @@ class ConjectureData:
         self.prefix = prefix
         self.nodes: tuple[ChoiceNode, ...] = ()
         self.misaligned_at: MisalignedAt | None = None
+        self.hole_records: list[HoleRecord] = []
         self.cannot_proceed_scope: CannotProceedScopeT | None = None
         self.start_span(TOP_LABEL)
 
@@ -1269,7 +1271,10 @@ class ConjectureData:
         # asked to re-encode its value: replace the hole with our inversion of
         # it, and let do_draw consume those choices (under our own constraints)
         # as usual. If we can't invert it, leave the hole for _pop_choice to
-        # treat as a misalignment.
+        # treat as a misalignment - unless the hole asks to be recorded, in
+        # which case we consume it now, draw our choices freshly, and resume
+        # the rest of the prefix once this draw completes.
+        pending_tail: tuple[ChoiceTemplate | ValueHole | ChoiceT, ...] | None = None
         if (
             self.prefix is not None
             and self.index < len(self.prefix)
@@ -1278,7 +1283,16 @@ class ConjectureData:
             try:
                 inverted = unwrapped._invert(hole.value)
             except CannotInvert:
-                pass
+                if hole.record:
+                    self.hole_records.append(
+                        HoleRecord(
+                            index=len(self.nodes),
+                            strategy=unwrapped,
+                            value=hole.value,
+                        )
+                    )
+                    pending_tail = tuple(self.prefix[self.index + 1 :])
+                    self.prefix = tuple(self.prefix[: self.index])
             else:
                 self.prefix = (
                     tuple(self.prefix[: self.index])
@@ -1324,6 +1338,9 @@ class ConjectureData:
             return v
         finally:
             self.stop_span()
+            if pending_tail is not None:
+                assert self.prefix is not None
+                self.prefix = (*self.prefix, *pending_tail)
 
     @property
     def next_span_index(self) -> int:

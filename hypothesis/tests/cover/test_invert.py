@@ -19,6 +19,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
+from hypothesis.internal.conjecture.choice import ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.strategies._internal.lazy import LazyStrategy
@@ -516,3 +517,77 @@ def test_lazy_strategy_delegates_invert():
     s = st.integers(123, 456)
     assert isinstance(s, LazyStrategy)
     assert s._invert(200) == (200,)
+
+
+def hole(value):
+    return ValueHole(value, record=True)
+
+
+@pytest.mark.parametrize(
+    "strategy,value,expected",
+    [
+        # a fully-invertible value produces the same choices as _invert
+        (st.tuples(st.integers(), st.booleans()), (5, True), (5, True)),
+        # subtrees which cannot invert become holes; the rest stay concrete
+        (
+            st.tuples(st.integers(), st.integers().map(str), st.booleans()),
+            (1, "2", True),
+            (1, hole("2"), True),
+        ),
+        (
+            st.lists(st.integers().map(lambda x: x * 2)),
+            [2, 4],
+            (True, hole(2), True, hole(4), False),
+        ),
+        (
+            st.lists(st.tuples(st.integers(), st.integers().map(str))),
+            [(1, "2")],
+            (True, 1, hole("2"), False),
+        ),
+        # a strategy with no structural override becomes a single hole
+        (st.integers().map(str), "5", (hole("5"),)),
+        # a one_of only re-encodes into a branch which inverts completely;
+        # otherwise it becomes a single hole covering the whole union, even
+        # when a branch could have partially inverted the value
+        (st.integers() | st.text().map(str.upper), 5, (0, 5)),
+        (st.integers() | st.text().map(str.upper), "ABC", (hole("ABC"),)),
+        (
+            st.booleans() | st.lists(st.integers().map(str)),
+            ["1"],
+            (hole(["1"]),),
+        ),
+        # fixed_dictionaries: values in mapping order, then an identity
+        # shuffle of the pairs
+        (
+            st.fixed_dictionaries({"a": st.integers(), "b": st.integers().map(str)}),
+            {"a": 1, "b": "2"},
+            (1, hole("2"), 0),
+        ),
+        (
+            st.fixed_dictionaries({"a": st.integers()}),
+            {"mismatched": 1},
+            (hole({"mismatched": 1}),),
+        ),
+        (
+            st.builds(_Pair, x=st.integers(), y=st.integers().map(str)),
+            _Pair(1, "2"),
+            (
+                1,
+                hole("2"),
+            ),
+        ),
+        # filters pass through when the condition holds, and hole otherwise
+        (
+            st.lists(st.integers().map(str)).filter(len),
+            ["1"],
+            (True, hole("1"), False),
+        ),
+        (st.lists(st.integers().map(str)).filter(len), [], (hole([]),)),
+        # shape mismatches also degrade to a single hole
+        (st.tuples(st.integers()), "not a tuple", (hole("not a tuple"),)),
+        (st.lists(st.integers(), max_size=1), [1, 2], (hole([1, 2]),)),
+        (st.lists(st.integers(), unique=True), [1, 1], (hole([1, 1]),)),
+    ],
+)
+def test_invert_with_holes_shapes(strategy, value, expected):
+    assert strategy._invert_with_holes(value) == expected

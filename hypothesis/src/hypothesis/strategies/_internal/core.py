@@ -83,7 +83,7 @@ from hypothesis.internal.compat import (
     get_type_hints,
     is_typed_named_tuple,
 )
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
@@ -1169,6 +1169,21 @@ class BuildsStrategy(SearchStrategy[Ex]):
             return tuple(choices)
         # There are other special cases we could add here, in time.
         raise CannotInvert(f"cannot invert {self!r} (value={value!r})")
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if not (
+            isinstance(self.target, type)
+            and dataclasses.is_dataclass(self.target)
+            and isinstance(value, self.target)
+        ):
+            return SearchStrategy._invert_with_holes(self, value)
+        field_names = [f.name for f in dataclasses.fields(self.target)]
+        pairs = [*zip(field_names, self.args, strict=False), *self.kwargs.items()]
+        return tuple(
+            choice
+            for name, strategy in pairs
+            for choice in strategy._invert_with_holes(getattr(value, name))
+        )
 
     def do_validate(self) -> None:
         tuples(*self.args).validate()

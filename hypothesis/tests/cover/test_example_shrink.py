@@ -107,7 +107,9 @@ def test_shrinks_json_object_example_to_minimal_dict():
     assert "value={'needle': None}" in out
 
 
-def test_falls_back_to_unshrunk_report_for_uninvertible_arguments():
+def test_shrinks_mapped_argument_via_search():
+    # integers().map(...) cannot invert directly; the hole-filling search
+    # must find the choice which regenerates exactly x=10.
     @example(x=10).shrink()
     @given(st.integers().map(lambda x: x * 2))
     @settings(phases=[Phase.explicit, Phase.shrink], database=None)
@@ -115,7 +117,51 @@ def test_falls_back_to_unshrunk_report_for_uninvertible_arguments():
         assert x != 10
 
     out = output_from_failure(test)
-    assert "Falsifying explicit example: test(\n    x=10,\n)" in out
+    assert "Falsifying example: test(\n    x=10,\n)" in out
+    assert "Falsifying explicit example" not in out
+
+
+def test_shrinks_mapped_argument_to_boundary():
+    # any re-encoded failure is accepted as a shrink starting point, even if
+    # unequal to the example's argument, so this shrinks to the boundary
+    @example(x=1000000).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x < 100
+
+    out = output_from_failure(test)
+    assert "x=100" in out
+    assert "Falsifying explicit example" not in out
+
+
+def test_shrinks_composite_argument_via_search():
+    @st.composite
+    def points(draw):
+        return (draw(st.integers(0, 5)), draw(st.integers(0, 5)))
+
+    @example(p=(3, 4)).shrink()
+    @given(p=points())
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(p):
+        assert p[1] < 4
+
+    out = output_from_failure(test)
+    assert "p=(0, 4)" in out
+    assert "Falsifying explicit example" not in out
+
+
+def test_falls_back_when_search_cannot_reproduce():
+    # 11 is not in the image of the strategy, and nothing else fails, so the
+    # search must exhaust its budget and report the example unshrunk.
+    @example(x=11).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x != 11
+
+    out = output_from_failure(test)
+    assert "Falsifying explicit example: test(\n    x=11,\n)" in out
 
 
 def test_reports_other_failures_surfaced_while_shrinking():

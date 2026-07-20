@@ -41,7 +41,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
 )
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.conjecture.utils import (
@@ -582,6 +582,20 @@ class SearchStrategy(Generic[Ex]):
         inversion isn't implemented for it.
         """
         raise CannotInvert(f"{type(self).__name__} does not support inversion")
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        """
+        Like ``_invert``, but partial: where a (sub)value cannot be inverted,
+        emit a ``ValueHole`` carrying it instead of raising, so that a caller
+        can search for the missing choices. Structural combinators override
+        this to invert what they can and leave holes for the rest; a one_of
+        keeps this default, so it only re-encodes into a branch that inverts
+        completely and otherwise becomes a single hole covering itself.
+        """
+        try:
+            return self._invert(value)
+        except CannotInvert:
+            return (ValueHole(value, record=True),)
 
 
 def _is_hashable(value: object) -> tuple[bool, int | None]:
@@ -1348,6 +1362,11 @@ class FilteredStrategy(SearchStrategy[Ex]):
         if not self.condition(value):
             raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
         return self.filtered_strategy._invert(value)
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if not self.condition(value):
+            return (ValueHole(value, record=True),)
+        return self.filtered_strategy._invert_with_holes(value)
 
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
