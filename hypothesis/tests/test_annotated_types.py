@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
+from hypothesis.strategies._internal.datetime import DatetimeStrategy
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.types import _get_constraints
@@ -135,6 +136,18 @@ def test_unknown_generic_alias_in_metadata_error():
         check_can_generate_examples(st.from_type(Annotated[int, Positive]))
     assert "Did you mean `Annotated[int, Gt(gt=0)]`?" in str(excinfo.value)
     assert "subscripted with the type" in str(excinfo.value)
+
+
+def test_annotated_datetime_bounds_are_rewritten():
+    lo, hi = dt.datetime(2000, 1, 1), dt.datetime(2000, 1, 2)
+    strategy = unwrap_strategies(
+        st.from_type(Annotated[dt.datetime, at.Gt(lo), at.Lt(hi)])
+    )
+    assert isinstance(strategy, DatetimeStrategy)
+    assert strategy.min_value == lo + dt.timedelta(microseconds=1)
+    assert strategy.max_value == hi - dt.timedelta(microseconds=1)
+    # and contradictory constraints give a visibly-empty strategy
+    assert st.from_type(Annotated[dt.datetime, at.Gt(hi), at.Lt(lo)]).is_empty
 
 
 def test_predicate_constraint():

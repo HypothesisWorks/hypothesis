@@ -27,6 +27,11 @@ from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.core import data
+from hypothesis.strategies._internal.datetime import (
+    DatetimeStrategy,
+    TimeStrategy,
+    _timezones_kind,
+)
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedStrategy
@@ -644,6 +649,305 @@ def test_dates_filter_rewriting():
     new = bare.filter(partial(operator.le, today))
     assert not new.is_empty
     assert new is not bare
+
+    # datetime is a date subclass, but not comparable with dates - don't rewrite
+    assert isinstance(
+        bare.filter(partial(operator.ge, dt.datetime(2003, 1, 1))), FilteredStrategy
+    )
+
+
+def test_times_filter_rewriting():
+    noon = dt.time(12)
+
+    assert st.times().filter(partial(operator.lt, dt.time.max)).is_empty
+    assert st.times().filter(partial(operator.gt, dt.time.min)).is_empty
+    assert st.times(min_value=noon).filter(partial(operator.gt, noon)).is_empty
+    assert st.times(max_value=noon).filter(partial(operator.lt, noon)).is_empty
+
+    bare = unwrap_strategies(st.times())
+    assert bare.filter(partial(operator.ge, dt.time.max)) is bare
+    assert bare.filter(partial(operator.le, dt.time.min)) is bare
+
+    new = unwrap_strategies(bare.filter(partial(operator.le, noon)))
+    assert isinstance(new, TimeStrategy)
+    assert (new.min_value, new.max_value) == (noon, dt.time.max)
+
+    # We don't rewrite times which might be aware, or bounds which are,
+    # or bounds which are not times at all
+    aware = unwrap_strategies(st.times(timezones=st.just(dt.timezone.utc)))
+    assert isinstance(aware.filter(partial(operator.ge, noon)), FilteredStrategy)
+    aware_noon = dt.time(12, tzinfo=dt.timezone.utc)
+    assert isinstance(bare.filter(partial(operator.ge, aware_noon)), FilteredStrategy)
+    assert isinstance(bare.filter(partial(operator.ge, 3)), FilteredStrategy)
+
+
+UTC_2000 = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
+
+
+class NoneOffsetTimezone(dt.tzinfo):
+    # Datetimes with this tzinfo compare as naive.
+    def utcoffset(self, value):
+        return None
+
+    def tzname(self, value):
+        return "?"
+
+    def dst(self, value):
+        return None
+
+
+class RaisingOffsetTimezone(NoneOffsetTimezone):
+    def utcoffset(self, value):
+        raise ValueError("this tzinfo has no idea what the offset is")
+
+
+def test_datetimes_filter_rewriting():
+    x = dt.datetime(2003, 1, 1)
+
+    assert st.datetimes().filter(partial(operator.lt, dt.datetime.max)).is_empty
+    assert st.datetimes().filter(partial(operator.gt, dt.datetime.min)).is_empty
+    assert st.datetimes(min_value=x).filter(partial(operator.gt, x)).is_empty
+    assert st.datetimes(max_value=x).filter(partial(operator.lt, x)).is_empty
+
+    bare = unwrap_strategies(st.datetimes())
+    assert bare.filter(partial(operator.ge, dt.datetime.max)) is bare
+    assert bare.filter(partial(operator.le, dt.datetime.min)) is bare
+
+    # Mixed naive/aware comparisons raise TypeError at draw time, so we don't
+    # rewrite a naive bound unless the values are always naive, and vice-versa.
+    aware_vals = unwrap_strategies(st.datetimes(timezones=st.just(dt.timezone.utc)))
+    for strat, bound in [(aware_vals, x), (bare, x.replace(tzinfo=dt.timezone.utc))]:
+        out = strat.filter(partial(operator.ge, bound))
+        assert isinstance(out, FilteredStrategy)
+        assert out.filtered_strategy is strat
+
+    # Nor do we rewrite when a naive-mode strategy has its own wall-clock
+    # bounds, which an aware-bounds strategy could not also enforce,
+    walled = unwrap_strategies(
+        st.datetimes(max_value=x, timezones=st.just(dt.timezone.utc))
+    )
+    assert isinstance(walled.filter(partial(operator.ge, UTC_2000)), FilteredStrategy)
+    # or when the values are aware but the bound compares as naive,
+    pseudo_naive = dt.datetime(2000, 1, 1, tzinfo=NoneOffsetTimezone())
+    assert isinstance(bare.filter(partial(operator.ge, pseudo_naive)), FilteredStrategy)
+    # or the bound's utcoffset() raises,
+    raising = dt.datetime(2000, 1, 1, tzinfo=RaisingOffsetTimezone())
+    assert isinstance(bare.filter(partial(operator.ge, raising)), FilteredStrategy)
+    # or the bound isn't a datetime at all.
+    assert isinstance(bare.filter(partial(operator.ge, "2003")), FilteredStrategy)
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate, min_value, max_value",
+    [
+        (
+            st.times(),
+            partial(operator.lt, dt.time(12)),
+            dt.time(12, 0, 0, 1),
+            dt.time.max,
+        ),
+        (st.times(), partial(operator.le, dt.time(12)), dt.time(12), dt.time.max),
+        (st.times(), partial(operator.eq, dt.time(12)), dt.time(12), dt.time(12)),
+        (st.times(), partial(operator.ge, dt.time(12)), dt.time.min, dt.time(12)),
+        (
+            st.times(),
+            partial(operator.gt, dt.time(12)),
+            dt.time.min,
+            dt.time(11, 59, 59, 999999),
+        ),
+        (
+            st.datetimes(),
+            partial(operator.lt, dt.datetime(2003, 1, 1)),
+            dt.datetime(2003, 1, 1, 0, 0, 0, 1),
+            dt.datetime.max,
+        ),
+        (
+            st.datetimes(),
+            partial(operator.le, dt.datetime(2003, 1, 1)),
+            dt.datetime(2003, 1, 1),
+            dt.datetime.max,
+        ),
+        (
+            st.datetimes(),
+            partial(operator.eq, dt.datetime(2003, 1, 1)),
+            dt.datetime(2003, 1, 1),
+            dt.datetime(2003, 1, 1),
+        ),
+        (
+            st.datetimes(),
+            partial(operator.ge, dt.datetime(2003, 1, 1)),
+            dt.datetime.min,
+            dt.datetime(2003, 1, 1),
+        ),
+        (
+            st.datetimes(),
+            partial(operator.gt, dt.datetime(2003, 1, 1)),
+            dt.datetime.min,
+            dt.datetime(2002, 12, 31, 23, 59, 59, 999999),
+        ),
+    ],
+    ids=get_pretty_function_description,
+)
+@settings(max_examples=A_FEW)
+@given(data=st.data())
+def test_time_and_datetime_filter_rewriting(
+    data, strategy, predicate, min_value, max_value
+):
+    s = unwrap_strategies(strategy.filter(predicate))
+    assert isinstance(s, (TimeStrategy, DatetimeStrategy))
+    assert (s.min_value, s.max_value) == (min_value, max_value)
+    value = data.draw(s)
+    assert predicate(value)
+
+
+def test_aware_datetimes_filter_rewriting_narrows_bounds():
+    s = unwrap_strategies(st.datetimes(timezones=st.just(dt.timezone.utc)))
+    out = s.filter(partial(operator.le, UTC_2000))
+    # An aware comparison filter is rewritten into aware bounds, which the
+    # strategy enforces exactly.
+    assert isinstance(out, DatetimeStrategy)
+    assert (out.min_value, out.max_value) == (UTC_2000, None)
+    # A filter which does not tighten those bounds is a no-op,
+    assert out.filter(partial(operator.le, UTC_2000 - dt.timedelta(days=1))) is out
+    # while a tighter filter narrows them.
+    tighter = out.filter(partial(operator.le, UTC_2000 + dt.timedelta(days=1)))
+    assert tighter.min_value == UTC_2000 + dt.timedelta(days=1)
+    upper = s.filter(partial(operator.ge, UTC_2000)).filter(
+        partial(operator.ge, UTC_2000 - dt.timedelta(days=1))
+    )
+    assert upper.max_value == UTC_2000 - dt.timedelta(days=1)
+    pinned = s.filter(partial(operator.eq, UTC_2000))
+    assert (pinned.min_value, pinned.max_value) == (UTC_2000, UTC_2000)
+
+
+def test_aware_datetimes_strict_filters_narrow_and_retain_the_predicate():
+    s = unwrap_strategies(st.datetimes(timezones=st.just(dt.timezone.utc)))
+    # A strict filter narrows to the closed interval of satisfying instants
+    # and keeps the predicate, which then rejects at most the boundary
+    # instant in each timezone.  This works even at instants whose
+    # neighbours are unrepresentable in the bound's own (or any) timezone:
+    max_utc = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
+    out = s.filter(partial(operator.lt, max_utc))
+    assert isinstance(out, FilteredStrategy)
+    assert out.filtered_strategy.min_value == max_utc
+    assert out.flat_conditions[0].args[0] == max_utc
+    # including when the strict bound does not tighten the closed interval.
+    at_min = s.filter(partial(operator.ge, UTC_2000))
+    strict = at_min.filter(partial(operator.gt, UTC_2000))
+    assert isinstance(strict, FilteredStrategy)
+    assert strict.filtered_strategy is at_min
+
+
+def test_aware_datetimes_filter_rewriting_contradictions_are_empty():
+    s = st.datetimes(timezones=st.just(dt.timezone.utc))
+    assert (
+        s.filter(partial(operator.lt, UTC_2000))
+        .filter(partial(operator.gt, UTC_2000))
+        .is_empty
+    )
+    early = st.datetimes(max_value=dt.datetime(1990, 1, 1, tzinfo=dt.timezone.utc))
+    assert early.filter(partial(operator.le, UTC_2000)).is_empty
+    late = st.datetimes(min_value=dt.datetime(2010, 1, 1, tzinfo=dt.timezone.utc))
+    assert late.filter(partial(operator.ge, UTC_2000)).is_empty
+    # A strict filter at the single remaining instant is also provably empty.
+    pinned = st.datetimes(min_value=UTC_2000, max_value=UTC_2000)
+    assert pinned.filter(partial(operator.lt, UTC_2000)).is_empty
+    assert pinned.filter(partial(operator.gt, UTC_2000)).is_empty
+
+
+@settings(max_examples=A_FEW)
+@given(
+    st.datetimes(timezones=st.just(dt.timezone(dt.timedelta(hours=-5))))
+    .filter(partial(operator.le, UTC_2000))
+    .filter(partial(operator.le, UTC_2000 - dt.timedelta(days=1)))
+    .filter(partial(operator.lt, UTC_2000))
+    .filter(partial(operator.ge, UTC_2000 + dt.timedelta(hours=1)))
+    .filter(partial(operator.ge, UTC_2000 + dt.timedelta(days=1)))
+    .filter(partial(operator.gt, UTC_2000 + dt.timedelta(hours=1)))
+)
+def test_aware_datetimes_filter_rewriting_is_exact_for_fixed_offsets(value):
+    # A one-hour window in twenty millennia would fail the filter_too_much
+    # health check without rewriting.  The looser filters have no further
+    # effect, and the strict ones exclude the endpoints.
+    assert UTC_2000 < value < UTC_2000 + dt.timedelta(hours=1)
+
+
+@settings(max_examples=A_FEW)
+@given(
+    st.datetimes(timezones=st.just(dt.timezone.utc)).filter(
+        partial(operator.ge, UTC_2000)
+    )
+)
+def test_aware_datetimes_filter_rewriting_upper_bound_only(value):
+    assert value <= UTC_2000
+
+
+def test_timezones_strategy_classification():
+    utc = dt.timezone.utc
+    assert _timezones_kind(st.none()) == "none"
+    assert _timezones_kind(st.none() | st.none()) == "none"
+    assert _timezones_kind(st.none().filter(lambda x: True)) == "none"
+    assert _timezones_kind(st.just(utc)) == "aware"
+    assert _timezones_kind(st.sampled_from([utc, dt.timezone.min])) == "aware"
+    assert _timezones_kind(st.sampled_from([None, utc])) == "unknown"
+    assert _timezones_kind(st.none() | st.just(utc)) == "unknown"
+    assert _timezones_kind(st.none().map(lambda x: x)) == "unknown"
+    assert _timezones_kind(st.just("not a tzinfo")) == "unknown"
+
+
+@fails_with(ValueError)
+@given(
+    st.datetimes(timezones=st.just(NoneOffsetTimezone())).filter(
+        partial(operator.ge, UTC_2000)
+    )
+)
+def test_rewritten_aware_bound_with_offsetless_timezone_errors_at_draw_time(value):
+    # The bound is aware and the timezones strategy generates tzinfo instances,
+    # so we rewrite - and then converting the bound into this offset-less
+    # timezone fails loudly at draw time.
+    pass
+
+
+@fails_with(ValueError)
+@given(
+    st.datetimes(timezones=st.just(RaisingOffsetTimezone())).filter(
+        partial(operator.ge, UTC_2000)
+    )
+)
+def test_rewritten_aware_bound_with_raising_timezone_errors_at_draw_time(value):
+    pass
+
+
+@fails_with(TypeError)
+@given(st.dates().filter(partial(operator.ge, dt.datetime(2003, 1, 1))))
+def test_dates_filter_with_datetime_bound_errors_at_draw_time(value):
+    pass
+
+
+@fails_with(TypeError)
+@given(st.datetimes().filter(partial(operator.ge, UTC_2000)))
+def test_naive_datetimes_with_aware_bound_error_at_draw_time(value):
+    pass
+
+
+@fails_with(TypeError)
+@given(
+    st.datetimes(timezones=st.just(dt.timezone.utc)).filter(
+        partial(operator.ge, dt.datetime(2000, 1, 1))
+    )
+)
+def test_aware_datetimes_with_naive_bound_error_at_draw_time(value):
+    pass
+
+
+@fails_with(TypeError)
+@given(
+    st.datetimes(min_value=UTC_2000, timezones=st.just(dt.timezone.utc)).filter(
+        partial(operator.ge, dt.datetime(2000, 6, 1))
+    )
+)
+def test_aware_mode_datetimes_with_naive_bound_error_at_draw_time(value):
+    pass
 
 
 @pytest.mark.skipif(
