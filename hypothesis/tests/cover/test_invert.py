@@ -12,6 +12,7 @@ import dataclasses
 import datetime as dt
 import math
 import zoneinfo
+from collections import OrderedDict
 
 import pytest
 
@@ -222,6 +223,50 @@ def test_unique_sampled_lists(data):
 
 
 @given(st.data())
+def test_unique_lists_of_tuples(data):
+    # rearranged into element_strategy=integers plus tuple_suffixes
+    strategy = st.lists(st.tuples(st.integers(), st.text()), unique_by=lambda t: t[0])
+    check_roundtrip_many(strategy, data)
+
+
+@given(st.data())
+def test_dictionaries(data):
+    min_size = data.draw(st.integers(0, 3))
+    max_size = data.draw(st.none() | st.integers(min_size + 1, min_size + 5))
+    strategy = st.dictionaries(
+        st.text(), st.integers(), min_size=min_size, max_size=max_size
+    )
+    check_roundtrip_many(strategy, data)
+
+
+@given(st.data())
+def test_dictionaries_with_dict_class(data):
+    strategy = st.dictionaries(st.text(), st.integers(), dict_class=OrderedDict)
+    check_roundtrip_many(strategy, data)
+
+
+@given(st.data())
+def test_dictionaries_sampled_keys(data):
+    # small integer keys draw from a fixed pool via UniqueSampledListStrategy
+    check_roundtrip_many(st.dictionaries(st.integers(0, 5), st.booleans()), data)
+
+
+@given(st.data())
+def test_fixed_dictionaries(data):
+    check_roundtrip_many(
+        st.fixed_dictionaries({"a": st.integers(), "b": st.booleans()}), data
+    )
+
+
+@given(st.data())
+def test_fixed_dictionaries_with_optional(data):
+    strategy = st.fixed_dictionaries(
+        {"a": st.integers()}, optional={"b": st.integers(), "c": st.text()}
+    )
+    check_roundtrip_many(strategy, data)
+
+
+@given(st.data())
 def test_deferred(data):
     check_roundtrip_many(st.deferred(lambda: st.integers()), data)
 
@@ -273,6 +318,21 @@ def test_roundtrip_explicit(strategy, value):
         (st.lists(st.integers(), max_size=2), [1, 2, 3]),
         (st.lists(st.integers(), unique=True), [1, 1]),
         (st.lists(st.sampled_from([1, 2, 3]), unique=True), [1, 4]),
+        # duplicate keys, unrepresentable in a dict but not in the list form
+        (
+            st.lists(st.tuples(st.integers(), st.text()), unique_by=lambda t: t[0]),
+            [(1, "x"), (1, "y")],
+        ),
+        (st.dictionaries(st.text(), st.integers()), {1: 2}),
+        (st.dictionaries(st.text(), st.integers()), [("a", 1)]),
+        (st.dictionaries(st.text(), st.integers(), max_size=1), {"a": 1, "b": 2}),
+        (st.fixed_dictionaries({"a": st.integers()}), {"a": 1, "z": 2}),
+        (st.fixed_dictionaries({"a": st.integers()}), {}),
+        (st.fixed_dictionaries({"a": st.integers()}), {"a": "not an int"}),
+        (
+            st.fixed_dictionaries({"a": st.integers()}, optional={"b": st.nothing()}),
+            {"a": 1, "b": 2},
+        ),
         (st.tuples(st.integers(), st.booleans()), (5,)),
         (st.tuples(st.integers(), st.booleans()), (5, True, "extra")),
         (st.floats(allow_nan=True).filter(math.isnan), 1.0),
@@ -321,12 +381,8 @@ def test_out_of_image_raises(strategy, value):
         # a mapped element strategy is not rewritten to OneCharStringStrategy
         # (unlike e.g. sampled_from of characters, which is)
         (st.text(st.characters().map(str.upper), max_size=5), "A"),
-        # dictionaries build unique lists of (key, value) tuples via
-        # tuple_suffixes, which inversion cannot pick apart
-        (st.dictionaries(st.integers(), st.integers()), {1: 2}),
         (st.sets(st.integers()), {1}),
         (st.frozensets(st.integers()), frozenset()),
-        (st.fixed_dictionaries({"a": st.integers()}), {"a": 1}),
         (st.builds(lambda x, y: x + y, st.integers(), st.integers()), 3),
         (st.shared(st.integers()), 0),
         (
@@ -401,6 +457,20 @@ def test_unimplemented_raises(strategy, value):
             (2022, 5, 15),
         ),
         (st.timedeltas(), dt.timedelta(days=2, seconds=3), (2, 3, 0)),
+        (st.dictionaries(st.text(), st.integers()), {}, (False,)),
+        (st.dictionaries(st.text(), st.integers()), {"a": 1}, (True, "a", 1, False)),
+        # required value, then presence-selection of the optional key and its
+        # value, then an identity shuffle of the two pairs
+        (
+            st.fixed_dictionaries({"a": st.integers()}, optional={"b": st.booleans()}),
+            {"a": 5, "b": True},
+            (5, True, 0, True, False, 0),
+        ),
+        (
+            st.fixed_dictionaries({"a": st.integers()}, optional={"b": st.booleans()}),
+            {"a": 5},
+            (5, False),
+        ),
         (st.integers().filter(lambda x: x > 0), 5, (5,)),
     ],
 )

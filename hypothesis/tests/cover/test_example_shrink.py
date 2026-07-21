@@ -52,26 +52,26 @@ def test_shrinks_multiple_arguments():
     assert "y=''" in out
 
 
-def test_shrinks_json_like_recursive_example():
-    # A JSON-ish strategy (minus dicts: st.dictionaries builds unique lists of
-    # key-value pairs via tuple_suffixes and .map(dict), which inversion
-    # cannot re-encode).
-    json_ish = st.recursive(
-        st.none() | st.booleans() | st.floats(allow_nan=False) | st.text(),
-        st.lists,
-    )
+json_ish = st.recursive(
+    st.none() | st.booleans() | st.floats(allow_nan=False) | st.text(),
+    lambda children: st.lists(children) | st.dictionaries(st.text(), children),
+)
 
+
+def test_shrinks_json_like_recursive_example():
     def contains_needle(v):
         if isinstance(v, str):
             return "needle" in v
         if isinstance(v, list):
             return any(map(contains_needle, v))
+        if isinstance(v, dict):
+            return any(map(contains_needle, v.values()))
         return False
 
     blob = [
         "ignore me",
         [[3.5, None, ["hello needle world", 0.0]], True],
-        ["deep", [["needle in a haystack"], False]],
+        {"deep": [{"key": "needle in a haystack"}], "other": False},
     ]
 
     @example(value=blob).shrink()
@@ -82,6 +82,29 @@ def test_shrinks_json_like_recursive_example():
 
     out = output_from_failure(test)
     assert "value='needle'" in out
+
+
+def test_shrinks_json_object_example_to_minimal_dict():
+    def has_needle_key(v):
+        if isinstance(v, dict):
+            return "needle" in v or any(map(has_needle_key, v.values()))
+        if isinstance(v, list):
+            return any(map(has_needle_key, v))
+        return False
+
+    blob = {
+        "a": ["x", {"needle": [1.5, None]}, "y"],
+        "b": {"c": {"deep": True, "needle": "stack"}},
+    }
+
+    @example(value=blob).shrink()
+    @given(json_ish)
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None, deadline=None)
+    def test(value):
+        assert not has_needle_key(value)
+
+    out = output_from_failure(test)
+    assert "value={'needle': None}" in out
 
 
 def test_falls_back_to_unshrunk_report_for_uninvertible_arguments():

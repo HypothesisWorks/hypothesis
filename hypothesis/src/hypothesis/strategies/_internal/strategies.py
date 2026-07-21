@@ -1134,6 +1134,18 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     data.stop_span(discard=True)
         raise UnsatisfiedAssumption
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # map() is not invertible in general, but a dict-like pack - e.g. the
+        # dict_class which st.dictionaries maps over a unique list of
+        # (key, value) tuples - inverts as its list of items.
+        if (
+            isinstance(self.pack, type)
+            and issubclass(self.pack, abc.Mapping)
+            and isinstance(value, self.pack)
+        ):
+            return self.mapped_strategy._invert(list(value.items()))
+        raise CannotInvert(f"cannot invert {self!r} (value={value!r})")
+
     @property
     def branches(self) -> Sequence[SearchStrategy[MappedTo]]:
         return [
