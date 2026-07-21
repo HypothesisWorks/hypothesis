@@ -126,6 +126,27 @@ def test_bounds_inside_a_fold(key, day):
     find_any(strategy, lambda d: d.fold == 1)
 
 
+@pytest.mark.parametrize("key, day", FALL_BACK_DAYS)
+def test_fold_inverted_bounds_are_invalid(key, day):
+    # fold=1 is the later moment, so these bounds are ordered by wall clock time, but not
+    # by UTC (_instant) time. This ordering should be rejected.
+    lo = at(day, 1, 45, key=key, fold=1)
+    hi = at(day, 1, 50, key=key, fold=0)
+    assert lo.replace(tzinfo=None) < hi.replace(tzinfo=None)
+    assert _instant(hi) < _instant(lo)
+    with pytest.raises(InvalidArgument):
+        st.datetimes(lo, hi, timezones=st.just(lo.tzinfo)).validate()
+
+
+@pytest.mark.parametrize("key, day", FALL_BACK_DAYS)
+def test_equal_bounds_at_ambiguous_moment_preserves_fold(key, day):
+    dt = at(day, 1, 30, key=key, fold=1)
+    assert_all_examples(
+        st.datetimes(dt, dt, timezones=st.just(dt.tzinfo)),
+        lambda d: _instant(d) == _instant(dt) and d.fold == 1,
+    )
+
+
 @pytest.mark.parametrize("kwargs", [{"no_cache": 1}])
 def test_timezones_argument_validation(kwargs):
     with pytest.raises(InvalidArgument):
