@@ -316,7 +316,6 @@ def test_has_ascii(x):
     assert any(c in ascii_characters for c in x)
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_can_derandomize():
     values = []
 
