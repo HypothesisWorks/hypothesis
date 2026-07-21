@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import OrderedDict
-from random import Random
 
 import pytest
 
@@ -28,7 +27,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import assert_simple_property, find_any, minimal
+from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky
 
 
@@ -79,13 +78,11 @@ def test_sets_are_size_bounded(xs):
     assert 2 <= len(xs) <= 10
 
 
-def test_ordered_dictionaries_preserve_keys():
-    r = Random()
-    keys = list(range(100))
-    r.shuffle(keys)
-    assert_simple_property(
-        fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])),
-        lambda x: list(x.keys()) == keys,
+def test_fixed_dictionaries_vary_key_order():
+    keys = list(range(10))
+    find_any(
+        fixed_dictionaries({k: booleans() for k in keys}),
+        lambda x: list(x.keys()) != keys,
     )
 
 

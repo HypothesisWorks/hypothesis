@@ -59,12 +59,10 @@ from hypothesis.stateful import (
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import (
-    Why,
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
     skipif_threading,
-    xfail_on_crosshair,
 )
 from tests.conjecture.common import choices, integer_constr, nodes
 
@@ -84,7 +82,6 @@ def do_it_all(l, a, x, data):
     1 / ((x or 1) % 7)
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 @skipif_threading  # captures observations from other threads
 def test_observability():
     with capture_observations() as ls:
@@ -110,7 +107,6 @@ def test_observability():
             )
 
 
-@xfail_on_crosshair(Why.other)
 def test_capture_unnamed_arguments():
     @given(st.integers(), st.floats(), st.data())
     def f(v1, v2, data):
@@ -190,10 +186,9 @@ def test_normal_representation_includes_draws():
     with capture_observations() as observations:
         f()
 
-    crosshair = settings.get_current_profile_name() == "crosshair"
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         f(
-            data={'<symbolic>' if crosshair else 'data(...)'},
+            data=data(...),
         )
         Draw 1: True
         Draw 2 (second): True
@@ -202,13 +197,9 @@ def test_normal_representation_includes_draws():
         tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
     ]
     assert test_cases
-    # TODO crosshair has a soundness bug with assume. remove branch when fixed
-    # https://github.com/pschanely/hypothesis-crosshair/issues/34
-    if not crosshair:
-        assert {tc.representation for tc in test_cases} == {expected}
+    assert {tc.representation for tc in test_cases} == {expected}
 
 
-@xfail_on_crosshair(Why.other)
 def test_capture_named_arguments():
     @given(named1=st.integers(), named2=st.floats(), data=st.data())
     def f(named1, named2, data):
@@ -318,7 +309,6 @@ class UltraSimpleMachine(RuleBasedStateMachine):
         assert abs(self.value) <= 100
 
 
-@xfail_on_crosshair(Why.other, strict=False)
 def test_observability_captures_stateful_reprs():
     with capture_observations() as ls:
         run_state_machine_as_test(UltraSimpleMachine)
@@ -368,6 +358,24 @@ def test_fuzz_one_input_status(buffer, expected_status):
     assert len(ls) == 1
     assert ls[0].status == expected_status
     assert ls[0].how_generated == "fuzz_one_input"
+
+
+def test_fuzz_one_input_sets_interesting_origin():
+    # fuzz_one_input calls execute_once directly, bypassing the engine code
+    # which sets data.interesting_origin, so it must do so itself (see #4420).
+    @given(st.booleans())
+    def test_fails(b):
+        raise AssertionError
+
+    with capture_observations() as ls, pytest.raises(AssertionError):
+        test_fails.hypothesis.fuzz_one_input(bytes([255]))
+
+    (observation,) = ls
+    assert observation.status == "failed"
+    origin = observation.metadata.interesting_origin
+    assert origin is not None
+    assert origin.exc_type is AssertionError
+    assert observation.status_reason == str(origin)
 
 
 def _decode_choice(value):

@@ -53,6 +53,7 @@ from typing import (
 )
 from uuid import UUID
 
+from hypothesis._native.internal.cathetus import cathetus
 from hypothesis.control import (
     cleanup,
     current_build_context,
@@ -70,7 +71,6 @@ from hypothesis.errors import (
     RewindRecursive,
     SmallSearchSpaceWarning,
 )
-from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import (
     Categories,
     CategoryName,
@@ -92,6 +92,7 @@ from hypothesis.internal.conjecture.utils import (
     calc_label_from_name,
     check_sample,
     combine_labels,
+    fisher_yates_shuffle,
     identity,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
@@ -503,43 +504,59 @@ def iterables(
     ).map(PrettyIter)
 
 
-# this type definition is imprecise, in multiple ways:
-# * mapping and optional can be of different types:
-#      s: dict[str | int, int] = st.fixed_dictionaries(
-#         {"a": st.integers()}, optional={1: st.integers()}
-#     )
-# * the values in either mapping or optional need not all be of the same type:
-#      s: dict[str, int | bool] = st.fixed_dictionaries(
-#         {"a": st.integers(), "b": st.booleans()}
-#     )
-# * the arguments may be of any dict-compatible type, in which case the return
-#   value will be of that type instead of dict
+# fixed_dictionaries accepts Mapping rather than the invariant dict so that
+# type-checkers can infer the value type even when the per-key strategies are
+# heterogeneous: Mapping is covariant in its value type and SearchStrategy is
+# covariant in its own, so e.g. `SearchStrategy[int] | SearchStrategy[str]` is
+# accepted as `SearchStrategy[int | str]`.  The overloads let mapping and
+# optional contribute independent key and value types, which are unioned in the
+# result.  See revealed_types.py for the resulting types.
 #
-# Overloads may help here, but I doubt we'll be able to satisfy all these
-# constraints.
+# We use fresh typevars rather than the module-level Ex because Ex has a default
+# (PEP 696), and a defaulted typevar may not precede a bare one in a signature.
 #
-# Here's some platonic ideal test cases for revealed_types.py, with the understanding
-# that some may not be achievable:
-#
-#   ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
-#   ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, bool | int]"),
-#   ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
-#   (
-#       "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
-#       "dict[str | int, bool]",
-#   ),
-#   (
-#       "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
-#       "dict[str | int, bool | int]",
-#   ),
+# The remaining imprecision is that we always report a plain dict, even though
+# at runtime the result preserves the concrete (dict-subclass) type of mapping.
+K = TypeVar("K")
+V = TypeVar("V")
+K2 = TypeVar("K2")
+V2 = TypeVar("V2")
+
+
+@overload
+def fixed_dictionaries(
+    mapping: Mapping[K, SearchStrategy[V]],
+) -> SearchStrategy[dict[K, V]]:  # pragma: no cover
+    ...
+
+
+@overload
+def fixed_dictionaries(
+    # Matching an empty mapping against NoReturn lets the result come solely
+    # from optional, rather than picking up a spurious `Any` from the empty
+    # mapping (whose key and value types are otherwise uninferable).
+    mapping: Mapping[NoReturn, NoReturn],
+    *,
+    optional: Mapping[K2, SearchStrategy[V2]],
+) -> SearchStrategy[dict[K2, V2]]:  # pragma: no cover
+    ...
+
+
+@overload
+def fixed_dictionaries(
+    mapping: Mapping[K, SearchStrategy[V]],
+    *,
+    optional: Mapping[K2, SearchStrategy[V2]],
+) -> SearchStrategy[dict[K | K2, V | V2]]:  # pragma: no cover
+    ...
 
 
 @defines_strategy()
 def fixed_dictionaries(
-    mapping: dict[T, SearchStrategy[Ex]],
+    mapping: Mapping[Any, SearchStrategy[Any]],
     *,
-    optional: dict[T, SearchStrategy[Ex]] | None = None,
-) -> SearchStrategy[dict[T, Ex]]:
+    optional: Mapping[Any, SearchStrategy[Any]] | None = None,
+) -> SearchStrategy[dict[Any, Any]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. ``mapping`` must be a dict subclass.
 
@@ -553,12 +570,12 @@ def fixed_dictionaries(
     Examples from this strategy shrink by shrinking each individual value in
     the generated dictionary, and omitting optional key-value pairs.
     """
-    check_type(dict, mapping, "mapping")
+    check_type(Mapping, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, f"mapping[{k!r}]")
 
     if optional is not None:
-        check_type(dict, optional, "optional")
+        check_type(Mapping, optional, "optional")
         for k, v in optional.items():
             check_strategy(v, f"optional[{k!r}]")
         if type(mapping) != type(optional):
@@ -573,7 +590,13 @@ def fixed_dictionaries(
                 f"which is invalid: {set(mapping) & set(optional)!r}"
             )
 
-    return FixedDictStrategy(mapping, optional=optional)
+    # FixedDictStrategy honestly types itself as SearchStrategy[Mapping], since
+    # type(mapping)(pairs) may return any Mapping subclass.  We narrow to dict
+    # here because that's what callers almost always get and find convenient.
+    return cast(
+        "SearchStrategy[dict[Any, Any]]",
+        FixedDictStrategy(mapping, optional=optional),
+    )
 
 
 _get_first_item = operator.itemgetter(0)
@@ -1330,6 +1353,7 @@ def _from_type_deferred(thing: type[Ex]) -> SearchStrategy[Ex]:
 
 
 _recurse_guard: ContextVar = ContextVar("recurse_guard")
+_abstract_recurse_guard: ContextVar = ContextVar("abstract_recurse_guard")
 
 
 def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
@@ -1579,16 +1603,20 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     # a subclass of `thing` and are not themselves a subtype of any other such
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
+    # Filter to matching subtypes *before* sorting, because computing the repr
+    # of every registered strategy (just to establish a deterministic order) is
+    # surprisingly expensive and usually wasted - the matching set is typically
+    # empty for user-defined types.
+    matching = [
+        (k, v)
+        for k, v in types._global_type_lookup.items()
+        if isinstance(k, type)
+        and issubclass(k, thing)
+        and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1
+    ]
     strategies = [
         s
-        for s in (
-            as_strategy(v, thing)
-            for k, v in sorted(types._global_type_lookup.items(), key=repr)
-            if isinstance(k, type)
-            and issubclass(k, thing)
-            and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup)
-            == 1
-        )
+        for s in (as_strategy(v, thing) for _, v in sorted(matching, key=repr))
         if s is not NotImplemented
     ]
     if any(not s.is_empty for s in strategies):
@@ -1671,12 +1699,35 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             "type without any subclasses. Consider using register_type_strategy"
         )
 
-    subclass_strategies: SearchStrategy = nothing()
-    for sc in subclasses:
-        try:
-            subclass_strategies |= _from_type(sc)
-        except Exception:
-            pass
+    # When subclasses reference `thing` (directly, or via a sibling subclass)
+    # in their own annotations, naively resolving each subclass would re-resolve
+    # the entire hierarchy once per reference - which is combinatorially
+    # expensive for mutually-recursive types.  We track the abstract types we're
+    # currently resolving and defer any recursive reference back to them (by
+    # returning the cached strategy, so the references share one object - which
+    # lets recursion in e.g. is_empty checks terminate), so each type is resolved
+    # only once per pass.  We use a guard separate from `_recurse_guard` because
+    # this catches references regardless of how they reach `_from_type` (e.g. as a
+    # union arg), and because it must not make `from_type_guarded` treat a
+    # subclass's required field of type `thing` as unresolvable.
+    try:
+        abstract_guard = _abstract_recurse_guard.get()
+    except LookupError:
+        _abstract_recurse_guard.set(abstract_guard := set())
+    if thing in abstract_guard:
+        return from_type(thing)
+
+    abstract_guard.add(thing)
+    try:
+        substrategies = []
+        for sc in subclasses:
+            try:
+                substrategies.append(_from_type(sc))
+            except Exception:
+                pass
+    finally:
+        abstract_guard.discard(thing)
+    subclass_strategies = one_of(substrategies)
     if subclass_strategies.is_empty:
         # We're unable to resolve subclasses now, but we might be able to later -
         # so we'll just go back to the mixed distribution.
@@ -1867,10 +1918,13 @@ def decimals(
 
         factor = Decimal(10) ** -places
         min_num, max_num = None, None
+        # Work out the integer bounds exactly: limited-precision division can
+        # round when the bounds have more than `places` fractional digits,
+        # which would make ceil/floor over- or undershoot the true bound.
         if min_value is not None:
-            min_num = ceil(ctx(min_value).divide(min_value, factor))
+            min_num = ceil(Fraction(min_value) / Fraction(factor))
         if max_value is not None:
-            max_num = floor(ctx(max_value).divide(max_value, factor))
+            max_num = floor(Fraction(max_value) / Fraction(factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
                 f"There are no decimals with {places} places between "
@@ -1938,13 +1992,8 @@ class PermutationStrategy(SearchStrategy):
         self.values = values
 
     def do_draw(self, data):
-        # Reversed Fisher-Yates shuffle: swap each element with itself or with
-        # a later element.  This shrinks i==j for each element, i.e. to no
-        # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
-        for i in range(len(result) - 1):
-            j = data.draw_integer(i, len(result) - 1)
-            result[i], result[j] = result[j], result[i]
+        fisher_yates_shuffle(data, result)
         return result
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:

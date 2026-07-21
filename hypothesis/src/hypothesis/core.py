@@ -936,6 +936,11 @@ class StateForActualGivenExecution:
         self.print_given_args = getattr(
             wrapped_test, "_hypothesis_internal_print_given_args", True
         )
+        self.known_safe_to_repr = {
+            name
+            for name, strategy in stuff.given_kwargs.items()
+            if strategy == st.data()
+        }
 
         self.last_exception = None
         self.falsifying_examples = ()
@@ -1051,12 +1056,12 @@ class StateForActualGivenExecution:
             args = self.stuff.args
             kwargs = dict(self.stuff.kwargs)
             if example_kwargs is None:
-                kw, argslices = context.prep_args_kwargs_from_strategies(
+                kw, arglabels = context.prep_args_kwargs_from_strategies(
                     self.stuff.given_kwargs
                 )
             else:
                 kw = example_kwargs
-                argslices = {}
+                arglabels = {}
             kwargs.update(kw)
             if expected_failure is not None:
                 nonlocal text_repr
@@ -1076,13 +1081,14 @@ class StateForActualGivenExecution:
                         args,
                         kwargs,
                         force_split=True,
-                        arg_slices=argslices,
+                        arg_labels=arglabels,
                         leading_comment=(
-                            "# " + context.data.slice_comments[(0, 0)]
-                            if (0, 0) in context.data.slice_comments
+                            "# " + context.data.span_comments[None]
+                            if None in context.data.span_comments
                             else None
                         ),
                         avoid_realization=data.provider.avoid_realization,
+                        known_safe_to_repr=self.known_safe_to_repr,
                     )
                 report(printer.getvalue())
 
@@ -1093,13 +1099,14 @@ class StateForActualGivenExecution:
                     args,
                     kwargs,
                     force_split=True,
-                    arg_slices=argslices,
+                    arg_labels=arglabels,
                     leading_comment=(
-                        "# " + context.data.slice_comments[(0, 0)]
-                        if (0, 0) in context.data.slice_comments
+                        "# " + context.data.span_comments[None]
+                        if None in context.data.span_comments
                         else None
                     ),
                     avoid_realization=data.provider.avoid_realization,
+                    known_safe_to_repr=self.known_safe_to_repr,
                 )
                 self._string_repr = printer.getvalue()
 
@@ -1205,6 +1212,7 @@ class StateForActualGivenExecution:
         ``StopTest`` must be a fatal error, and should stop the entire engine.
         """
         trace: Trace = frozenset()
+        backend_cannot_proceed = False
         try:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
@@ -1233,7 +1241,16 @@ class StateForActualGivenExecution:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
                 raise self._flaky_replay_to_failure(err, e) from None
-        except (StopTest, BackendCannotProceed):
+        except BackendCannotProceed:
+            # The engine discards this iteration entirely (see engine.py,
+            # "we're pretending this never happened"), so we shouldn't emit a
+            # test_case observation for it either -- otherwise an alternative
+            # backend that aborts before running the test (e.g. crosshair when
+            # it has exhausted its paths) surfaces a spurious, draw-less
+            # "passed" observation with an empty representation.
+            backend_cannot_proceed = True
+            raise
+        except StopTest:
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
             raise
@@ -1320,7 +1337,7 @@ class StateForActualGivenExecution:
             except BackendCannotProceed:
                 data.events = {}
 
-            if observability_enabled():
+            if observability_enabled() and not backend_cannot_proceed:
                 if runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
                 else:  # pragma: no cover  # in case of messing with internals
@@ -1492,7 +1509,7 @@ class StateForActualGivenExecution:
             ran_example = runner.new_conjecture_data(
                 falsifying_example.choices, max_choices=len(falsifying_example.choices)
             )
-            ran_example.slice_comments = falsifying_example.slice_comments
+            ran_example.span_comments = falsifying_example.span_comments
             tb = None
             origin = None
             assert falsifying_example.expected_exception is not None
@@ -2328,7 +2345,11 @@ def given(
                 except UnsatisfiedAssumption:
                     status = Status.INVALID
                     return None
-                except BaseException:
+                except BaseException as e:
+                    # The engine sets data.interesting_origin in
+                    # _execute_once_for_engine, but fuzz_one_input calls
+                    # execute_once directly, so we replicate it here.
+                    data.interesting_origin = InterestingOrigin.from_exception(e)
                     known = minimal_failures.get(data.interesting_origin)
                     if settings.database is not None and (
                         known is None or sort_key(data.nodes) <= sort_key(known)

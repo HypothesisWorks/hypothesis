@@ -491,29 +491,46 @@ class Shrinker:
         self.explain()
 
     def explain(self) -> None:
-
-        if not self.should_explain or not self.shrink_target.arg_slices:
+        if not self.should_explain or not self.shrink_target.arg_spans:
             return
+        with self.engine._log_phase_statistics("explain"):
+            self._explain()
 
+    def _explain(self) -> None:
         self.max_stall = 2**100
         shrink_target = self.shrink_target
         nodes = self.nodes
         choices = self.choices
-        chunks: dict[tuple[int, int], list[tuple[ChoiceT, ...]]] = defaultdict(list)
+        spans = self.shrink_target.spans
+        chunks: dict[int, list[tuple[ChoiceT, ...]]] = defaultdict(list)
+
+        # The node ranges of the spans we may vary. Multiple arg spans can share
+        # a range (e.g. builds() around a single strategy), in which case only
+        # the first processed gets a comment and the rest are skipped below.
+        arg_ranges = {
+            span_index: (spans[span_index].start, spans[span_index].end)
+            for span_index in self.shrink_target.arg_spans
+        }
 
         # Before we start running experiments, let's check for known inputs which would
         # make them redundant.  The shrinking process means that we've already tried many
         # variations on the minimal example, so this can save a lot of time.
         seen_passing_seq = self.engine.passing_choice_sequences(
-            prefix=self.nodes[: min(self.shrink_target.arg_slices)[0]]
+            prefix=self.nodes[: min(start for start, _ in arg_ranges.values())]
         )
 
         # Now that we've shrunk to a minimal failing example, it's time to try
         # varying each part that we've noted will go in the final report.  Consider
-        # slices in largest-first order
-        for start, end in sorted(
-            self.shrink_target.arg_slices, key=lambda x: (-(x[1] - x[0]), x)
+        # spans in largest-first order
+        for span_index, (start, end) in sorted(
+            arg_ranges.items(), key=lambda kv: (-(kv[1][1] - kv[1][0]), kv[1], kv[0])
         ):
+            # Skip spans where nothing can in fact vary: ranges that are empty
+            # (e.g. a just() draw) or consist entirely of forced choices. The
+            # "or any other generated value" comment would be false for them.
+            if all(nodes[i].was_forced for i in range(start, end)):
+                continue
+
             # Check for any previous examples that match the prefix and suffix,
             # so we can skip if we found a passing example while shrinking.
             if any(
@@ -522,14 +539,12 @@ class Shrinker:
             ):
                 continue
 
-            # Skip slices that are subsets of already-explained slices.
-            # If a larger slice can vary freely, so can its sub-slices.
-            # Note: (0, 0) is a special marker for the "together" comment that
-            # applies to the whole test, not a specific slice, so we exclude it.
+            # Skip spans whose ranges are subsets of already-explained ranges.
+            # If a larger range can vary freely, so can its sub-ranges.
             if any(
-                s <= start and end <= e
-                for s, e in self.shrink_target.slice_comments
-                if (s, e) != (0, 0)
+                spans[c].start <= start and end <= spans[c].end
+                for c in self.shrink_target.span_comments
+                if c is not None
             ):
                 continue
 
@@ -591,18 +606,18 @@ class Shrinker:
                         + result.choices[start:result_end]
                         + choices[end:]
                     )
-                    chunks[(start, end)].append(result.choices[start:result_end])
+                    chunks[span_index].append(result.choices[start:result_end])
                     result = self.engine.cached_test_function(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
                     result = cast(ConjectureResult, result)
                 else:
-                    chunks[(start, end)].append(result.choices[start:end])
+                    chunks[span_index].append(result.choices[start:end])
 
                 if shrink_target is not self.shrink_target:  # pragma: no cover
                     # If we've shrunk further without meaning to, bail out.
-                    self.shrink_target.slice_comments.clear()
+                    self.shrink_target.span_comments.clear()
                     return
                 if result.status is Status.VALID:
                     # The test passed, indicating that this param can't vary freely.
@@ -612,17 +627,19 @@ class Shrinker:
                 if self.__predicate(result):  # pragma: no branch
                     n_same_failures += 1
                     if n_same_failures >= 100:
-                        self.shrink_target.slice_comments[(start, end)] = note
+                        self.shrink_target.span_comments[span_index] = note
                         break
 
         # Finally, if we've found multiple independently-variable parts, check whether
         # they can all be varied together.
-        if len(self.shrink_target.slice_comments) <= 1:
+        if len(self.shrink_target.span_comments) <= 1:
             return
         n_same_failures_together = 0
-        # Only include slices that were actually added to slice_comments
+        # Only include spans that actually got a comment
         chunks_by_start_index = sorted(
-            (k, v) for k, v in chunks.items() if k in self.shrink_target.slice_comments
+            (arg_ranges[k], v)
+            for k, v in chunks.items()
+            if k in self.shrink_target.span_comments
         )
         for _ in range(500):  # pragma: no branch
             # no-branch here because we don't coverage-test the abort-at-500 logic.
@@ -639,14 +656,14 @@ class Shrinker:
             # This *can't* be a shrink because none of the components were.
             assert shrink_target is self.shrink_target
             if result.status == Status.VALID:
-                self.shrink_target.slice_comments[(0, 0)] = (
+                self.shrink_target.span_comments[None] = (
                     "The test sometimes passed when commented parts were varied together."
                 )
                 break  # Test passed, this param can't vary freely.
             if self.__predicate(result):  # pragma: no branch
                 n_same_failures_together += 1
                 if n_same_failures_together >= 100:
-                    self.shrink_target.slice_comments[(0, 0)] = (
+                    self.shrink_target.span_comments[None] = (
                         "The test always failed when commented parts were varied together."
                     )
                     break
@@ -663,10 +680,14 @@ class Shrinker:
         produce an irrelevant test result the outer loop discards.
         """
         nodes = self.nodes
+        spans = self.shrink_target.spans
         target_types = tuple(nodes[i].type for i in range(start, end))
         current_key = choices_key(tuple(nodes[i].value for i in range(start, end)))
         seen: set[tuple[Any, ...]] = {current_key}
-        for start2, end2 in sorted(self.shrink_target.arg_slices):
+        arg_ranges = sorted(
+            {(spans[i].start, spans[i].end) for i in self.shrink_target.arg_spans}
+        )
+        for start2, end2 in arg_ranges:
             if (start2, end2) == (start, end) or (end2 - start2) != (end - start):
                 continue
             if (
@@ -1184,66 +1205,59 @@ class Shrinker:
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
         if attempt.status is Status.OVERRUN:
-            return False
+            # Lowering a size-controlling choice can make the realigned (and
+            # now boring) collection stop triggering the failure, so the test
+            # draws further and overruns before we see the realignment -- this
+            # is common in stateful tests, where a non-failing step is followed
+            # by more steps. Re-run without the length limit to recover the
+            # realigned tree, which the repair logic below can then act on.
+            attempt = self.engine.cached_test_function(
+                [n.value for n in initial_attempt], extend="full"
+            )
+            if attempt.status is Status.OVERRUN:
+                return False
 
         if attempt.status is Status.INVALID:
             return False
 
-        if attempt.misaligned_at is not None:
-            # we're invalid due to a misalignment in the tree. We'll try to fix
-            # a very specific type of misalignment here: where we have a node of
-            # {"size": n} and tried to draw the same node, but with {"size": m < n}.
-            # This can occur with eg
-            #
-            #   n = data.draw_integer()
-            #   s = data.draw_string(min_size=n)
-            #
-            # where we try lowering n, resulting in the test_function drawing a lower
-            # min_size than our attempt had for the draw_string node.
-            #
-            # We'll now try realigning this tree by:
-            # * replacing the constraints in our attempt with what test_function tried
-            #   to draw in practice
-            # * truncating the value of that node to match min_size
-            #
-            # This helps in the specific case of drawing a value and then drawing
-            # a collection of that size...and not much else. In practice this
-            # helps because this antipattern is fairly common.
-
-            # TODO we'll probably want to apply the same trick as in the valid
-            # case of this function of preserving from the right instead of
-            # preserving from the left. see test_can_shrink_variable_string_draws.
-
-            index, attempt_choice_type, attempt_constraints, _attempt_forced = (
-                attempt.misaligned_at
-            )
-            node = self.nodes[index]
-            if node.type != attempt_choice_type:
-                return False  # pragma: no cover
-            if node.was_forced:
-                return False  # pragma: no cover
-
-            if node.type in {"string", "bytes"}:
-                # if the size *increased*, we would have to guess what to pad with
-                # in order to try fixing up this attempt. Just give up.
-                if node.constraints["min_size"] <= attempt_constraints["min_size"]:
-                    # attempts which increase min_size tend to overrun rather than
-                    # be misaligned, making a covering case difficult.
-                    return False  # pragma: no cover
-                # the size decreased in our attempt. Try again, but truncate the value
-                # to that size by removing any elements past min_size.
-                return self.consider_new_nodes(
-                    initial_attempt[: node.index]
-                    + [
-                        initial_attempt[node.index].copy(
-                            with_constraints=attempt_constraints,
-                            with_value=initial_attempt[node.index].value[
-                                : attempt_constraints["min_size"]
-                            ],
-                        )
-                    ]
-                    + initial_attempt[node.index :]
-                )
+        # When we lower a choice that controls the size of a later collection,
+        # eg
+        #
+        #   n = data.draw_integer()
+        #   s = data.draw_string(min_size=n, max_size=n)
+        #
+        # the recorded value for that collection no longer fits the constraints
+        # the test function actually used, so the engine realigns the tree by
+        # substituting a freshly-generated (simplest) value -- discarding
+        # whatever made the collection interesting. (We can't rely on
+        # ``attempt.misaligned_at`` to detect this, because the realigned choice
+        # sequence is often independently cached as an ordinary, non-misaligned
+        # result.) We detect a string/bytes node whose recorded value is now too
+        # long, and retry with it truncated to fit. We try preserving content
+        # from either end, since the interesting part may be at the start or the
+        # end (see test_can_shrink_variable_string_draws).
+        for i in range(min(len(initial_attempt), len(attempt.nodes))):
+            node = initial_attempt[i]
+            attempt_node = attempt.nodes[i]
+            if (
+                node.type == attempt_node.type
+                and node.type in {"string", "bytes"}
+                and not node.was_forced
+                and len(node.value) > attempt_node.constraints["max_size"]
+            ):
+                max_size = attempt_node.constraints["max_size"]
+                for truncated in (node.value[:max_size], node.value[-max_size:]):
+                    if self.consider_new_nodes(
+                        initial_attempt[:i]
+                        + [
+                            node.copy(
+                                with_constraints=attempt_node.constraints,
+                                with_value=truncated,
+                            )
+                        ]
+                        + initial_attempt[i + 1 :]
+                    ):
+                        return True
 
         lost_nodes = len(self.nodes) - len(attempt.nodes)
         if lost_nodes <= 0:
@@ -1292,17 +1306,18 @@ class Shrinker:
         return False
 
     def remove_discarded(self):
-        """Try removing all bytes marked as discarded.
+        """Try removing all nodes marked as discarded.
 
         This is primarily to deal with data that has been ignored while
         doing rejection sampling - e.g. as a result of an integer range, or a
         filtered strategy.
 
-        Such data will also be handled by the adaptive_example_deletion pass,
-        but that pass is necessarily more conservative and will try deleting
-        each interval individually. The common case is that all data drawn and
-        rejected can just be thrown away immediately in one block, so this pass
-        will be much faster than trying each one individually when it works.
+        Such data will also be handled by the ``node_program("X")`` deletion
+        passes, but those are necessarily more conservative and will try
+        deleting each contiguous run of nodes individually. The common case is
+        that all data drawn and rejected can just be thrown away immediately in
+        one block, so this pass will be much faster than trying each one
+        individually when it works.
 
         returns False if there is discarded data and removing it does not work,
         otherwise returns True.

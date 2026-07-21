@@ -8,14 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from example_hypothesis_entrypoint import MyCustomType
+import sys
+from pathlib import Path
 
-from hypothesis import given, strategies as st
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from hypothesistooling.cargo import write_version
 
+if len(sys.argv) != 2:
+    sys.exit(f"usage: {sys.argv[0]} <new_version>")
 
-@given(st.from_type(MyCustomType))
-def test_registered_from_entrypoint(x):
-    # This demonstrates that we've registered the type, not just
-    # worked out how to construct an instance.
-    assert isinstance(x, MyCustomType)
-    assert x.x >= 0
+repo_root = Path(__file__).resolve().parent.parent.parent
+write_version(repo_root / "hypothesis" / "rust" / "Cargo.toml", sys.argv[1])

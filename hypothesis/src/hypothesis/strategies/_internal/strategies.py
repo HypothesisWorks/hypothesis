@@ -116,14 +116,14 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     calculation = "calc_" + name
     force_key = "force_" + name
 
-    def forced_value(target: SearchStrategy) -> Any:
+    def forced_or_cached_value(target: SearchStrategy) -> Any:
         try:
             return getattr(target, force_key)
         except AttributeError:
             return getattr(target, cache_key)
 
     try:
-        return forced_value(strategy)
+        return forced_or_cached_value(strategy)
     except AttributeError:
         pass
 
@@ -138,7 +138,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     def recur(strat: SearchStrategy) -> Any:
         nonlocal hit_recursion
         try:
-            return forced_value(strat)
+            return forced_or_cached_value(strat)
         except AttributeError:
             pass
         result = mapping.get(strat, sentinel)
@@ -174,7 +174,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     def recur2(strat: SearchStrategy) -> Any:
         def recur_inner(other: SearchStrategy) -> Any:
             try:
-                return forced_value(other)
+                return forced_or_cached_value(other)
             except AttributeError:
                 pass
             listeners[other].add(strat)
@@ -221,7 +221,18 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     # them (not just the strategy we started out with).
     for k, v in mapping.items():
         setattr(k, cache_key, v)
-    return getattr(strategy, cache_key)
+    # This used to simply be `getattr(strategy, cache_key)`. That relied on the invariant
+    # that our loop above has set `strategy.cached_* = v` on `strategy` if we've reached
+    # here. However, under threading, this is not necessarily true. If a concurrent thread
+    # sets `strategy.force_* = v` in between the two places we check for `force_*`, we
+    # will not set `strategy.cached_*`.
+    #
+    # There are several places where we might do this. unwrap_strategies sets
+    # force_has_reusable_values = True. our numpy.py's `arrays` strategy also does.
+    #
+    # We guard against this in general by checking the forced and cached values here,
+    # rather than just the cached value.
+    return forced_or_cached_value(strategy)
 
 
 class SearchStrategy(Generic[Ex]):

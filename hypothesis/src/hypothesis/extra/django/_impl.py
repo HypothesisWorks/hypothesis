@@ -159,10 +159,10 @@ def from_form(
     ``...`` (:obj:`python:Ellipsis`) as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
-    # currently unsupported:
-    # ComboField
-    # FilePathField
-    # ImageField
+    # Currently unsupported:
+    # * ComboField
+    # * FilePathField
+    # * ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
         raise InvalidArgument(f"{form=} must be a subtype of Form")

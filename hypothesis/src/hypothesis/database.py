@@ -966,12 +966,14 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 for filename in namelist:
                     fileinfo = zf.getinfo(filename)
                     if fileinfo.is_dir():
-                        self._access_cache[PurePath(filename)] = set()
+                        self._access_cache.setdefault(PurePath(filename), set())
                     else:
                         # Get the keypath from the filename
                         keypath = PurePath(filename).parent
                         # Add the file to the keypath
-                        self._access_cache[keypath].add(PurePath(filename))
+                        self._access_cache.setdefault(keypath, set()).add(
+                            PurePath(filename)
+                        )
         except BadZipFile:
             warnings.warn(
                 "The downloaded artifact from GitHub is invalid. "
@@ -1048,9 +1050,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
             headers={
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28 ",
-                "Authorization": f"Bearer {self.token}",
             },
         )
+        # see https://github.com/HypothesisWorks/hypothesis/pull/4791
+        request.add_unredirected_header("Authorization", f"Bearer {self.token}")
         warning_message = None
         response_bytes: bytes | None = None
         try:

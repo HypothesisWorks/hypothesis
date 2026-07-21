@@ -30,6 +30,7 @@ import uuid
 import warnings
 import zoneinfo
 from collections.abc import Iterator
+from contextvars import ContextVar
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
@@ -79,6 +80,16 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
+TypeAliasTypes: tuple = ()
+try:
+    TypeAliasTypes += (typing.TypeAliasType,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.12`
+try:
+    TypeAliasTypes += (typing_extensions.TypeAliasType,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 ConcatenateTypes: tuple = ()
 try:
     ConcatenateTypes += (typing.Concatenate,)
@@ -96,6 +107,16 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
     ParamSpecTypes += (typing_extensions.ParamSpec,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+TypeVarTupleTypes: tuple = ()
+try:
+    TypeVarTupleTypes += (typing.TypeVarTuple,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
@@ -220,6 +241,13 @@ def type_sorting_key(t):
     return (is_container, repr(t))
 
 
+# Types whose forward references we are currently resolving, used to break the
+# recursion in self- or mutually-referential forward references such as
+# ``A = list[Union["A", str]]``.  Without this we would recurse until hitting a
+# RecursionError, which makes resolution depend on the ambient stack depth.
+_forward_ref_resolution: ContextVar[list] = ContextVar("forward_ref_resolution")
+
+
 def _resolve_forward_ref_in_caller(forward_arg: str) -> typing.Any:
     """Try to resolve a forward reference name by walking up the call stack.
 
@@ -318,17 +346,17 @@ def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
     concrete_args = tuple(
         _evaluate_type_alias_type(arg, typevars=typevars) for arg in args
     )
-    if isinstance(origin, typing.TypeAliasType):
+    if isinstance(origin, TypeAliasTypes):
         for param in origin.__type_params__:
             # there's no principled reason not to support these, they're just
             # annoying to implement.
-            if isinstance(param, typing.TypeVarTuple):
+            if isinstance(param, TypeVarTupleTypes):
                 raise HypothesisException(
                     f"Hypothesis does not yet support resolution for TypeVarTuple "
                     f"{param} (in origin: {origin!r}). Please open an issue if "
                     "you would like to see support for this."
                 )
-            if isinstance(param, typing.ParamSpec):
+            if isinstance(param, ParamSpecTypes):
                 raise HypothesisException(
                     f"Hypothesis does not yet support resolution for ParamSpec "
                     f"{param} (in origin: {origin!r}). Please open an issue if you "
@@ -356,15 +384,17 @@ def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
     return _evaluate_type_alias_type(thing, typevars={})
 
 
-def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
-    # TypeAliasType is new in python 3.12, through the type statement. If we're
-    # before python 3.12 then this can't possibly by a TypeAliasType.
+def is_a_type_alias_type(thing):
+    # TypeAliasType is new in python 3.12, through the type statement; the
+    # typing_extensions backport provides it on earlier versions.
+    #
+    # We check the exact type rather than isinstance, because parametrizing the
+    # backport produces a types.GenericAlias, which proxies attribute lookups
+    # (including __class__) to its origin and so passes an isinstance check.
     #
     # https://docs.python.org/3/reference/simple_stmts.html#type
     # https://docs.python.org/3/library/typing.html#typing.TypeAliasType
-    if sys.version_info < (3, 12):
-        return False
-    return isinstance(thing, typing.TypeAliasType)
+    return type(thing) in TypeAliasTypes
 
 
 def is_a_union(thing: object) -> bool:
@@ -450,6 +480,32 @@ def _flat_annotated_repr_parts(annotated_type):
     return type_reps, metadata_reps
 
 
+def _timezone_strategy(tz):
+    # Interpret an annotated_types.Timezone argument, per the annotated-types docs:
+    # None means naive, ... means aware with any timezone, and a string or tzinfo
+    # requires that specific timezone.
+    if tz is None:
+        return st.none()
+    if tz is ...:
+        return st.timezones()
+    if isinstance(tz, str):
+        return st.just(zoneinfo.ZoneInfo(tz))
+    if isinstance(tz, datetime.tzinfo):
+        return st.just(tz)
+    raise InvalidArgument(f"Cannot resolve Timezone({tz=}) to a strategy")
+
+
+def _annotated_types_alias_name(alias):
+    # Recover the name of a generic alias like annotated_types.LowerCase, so that
+    # our error message can suggest subscripting it, e.g. `LowerCase[str]`.  We
+    # only search the annotated_types namespace to keep this cheap.
+    at = sys.modules.get("annotated_types")
+    for name in dir(at) if at else ():
+        if getattr(at, name, None) is alias:
+            return name
+    return None
+
+
 def find_annotated_strategy(annotated_type):
     metadata = getattr(annotated_type, "__metadata__", ())
 
@@ -462,10 +518,34 @@ def find_annotated_strategy(annotated_type):
         ty_rep = repr(annotated_type).replace("typing.Annotated", "Annotated")
         ts, ms = _flat_annotated_repr_parts(annotated_type)
         bits = ", ".join([" | ".join(dict.fromkeys(ts or "?")), *dict.fromkeys(ms)])
+        hint = ""
+        generic = next(
+            (
+                arg
+                for arg in metadata
+                if is_annotated_type(arg) and isinstance(arg.__origin__, typing.TypeVar)
+            ),
+            None,
+        )
+        if generic is not None:
+            # e.g. Annotated[str, annotated_types.LowerCase], where LowerCase is
+            # itself a generic alias Annotated[T, ...] intended to be subscripted.
+            origin_rep = get_pretty_function_description(annotated_type.__origin__)
+            if name := _annotated_types_alias_name(generic):
+                hint = (
+                    f"  `{name}` is a generic alias, and goes in the type position: "
+                    f"try `{name}[{origin_rep}]` instead of passing it as metadata."
+                )
+            else:
+                hint = (
+                    "  Generic aliases such as `annotated_types.LowerCase` should be "
+                    "subscripted with the type and used in the type position, like "
+                    "`LowerCase[str]`, rather than passed as metadata."
+                )
         raise ResolutionFailed(
             f"`{ty_rep}` is invalid because nesting Annotated is only allowed for "
             f"the first (type) argument, not for later (metadata) arguments.  "
-            f"Did you mean `Annotated[{bits}]`?"
+            f"Did you mean `Annotated[{bits}]`?{hint}"
         )
     for arg in reversed(metadata):
         if isinstance(arg, st.SearchStrategy):
@@ -474,18 +554,34 @@ def find_annotated_strategy(annotated_type):
     filter_conditions = []
     unsupported = []
     constraints_map = get_constraints_filter_map()
+    at = sys.modules.get("annotated_types")
+    base_type = annotated_type.__origin__
+    timezones_strategy = None
     for constraint in _get_constraints(metadata):
         if isinstance(constraint, st.SearchStrategy):
             return constraint
         if convert := constraints_map.get(type(constraint)):
             filter_conditions.append(convert(constraint))
+        elif (
+            at
+            and isinstance(constraint, at.Timezone)
+            # a Timezone constraint on any other type, e.g. a date, falls
+            # through to the unsupported-constraint warning below.
+            and base_type in (datetime.datetime, datetime.time)
+        ):
+            timezones_strategy = _timezone_strategy(constraint.tz)
         else:
             unsupported.append(constraint)
     if unsupported:
         msg = f"Ignoring unsupported {', '.join(map(repr, unsupported))}"
         warnings.warn(msg, HypothesisWarning, stacklevel=2)
 
-    base_strategy = st.from_type(annotated_type.__origin__)
+    if timezones_strategy is not None:
+        assert base_type in (datetime.datetime, datetime.time)
+        fn = st.times if base_type is datetime.time else st.datetimes
+        base_strategy = fn(timezones=timezones_strategy)
+    else:
+        base_strategy = st.from_type(base_type)
     for filter_condition in filter_conditions:
         base_strategy = base_strategy.filter(filter_condition)
 
@@ -679,7 +775,20 @@ def from_typing_type(thing):
         if resolved is None:  # pragma: no branch
             resolved = _resolve_forward_ref_in_caller(thing.__forward_arg__)
         if resolved is not None and is_a_type(resolved):
-            return st.from_type(resolved)
+            try:
+                in_progress = _forward_ref_resolution.get()
+            except LookupError:
+                _forward_ref_resolution.set(in_progress := [])
+            if resolved in in_progress:
+                # We're already resolving this type higher up the stack, so this
+                # is a recursive reference; defer to break the cycle and rely on
+                # st.from_type's cache to tie the recursive knot.
+                return st.deferred(lambda r=resolved: st.from_type(r))
+            in_progress.append(resolved)
+            try:
+                return st.from_type(resolved)
+            finally:
+                in_progress.pop()
 
     def is_maximal(t):
         # For each k in the mapping, we use it if it's the most general type

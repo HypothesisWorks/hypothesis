@@ -17,7 +17,7 @@ import pytest
 from hypothesis import assume, given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
-from hypothesis.strategies._internal.datetime import datetime_does_not_exist
+from hypothesis.strategies._internal.datetime import _instant, datetime_does_not_exist
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, fails_with, xfail_on_crosshair
@@ -51,9 +51,18 @@ def test_timezone_aware_datetimes_are_timezone_aware(dt):
 
 
 @given(sampled_from(["min_value", "max_value"]), datetimes(timezones=timezones()))
-def test_datetime_bounds_must_be_naive(name, val):
+def test_mixed_naive_aware_datetime_bounds_are_invalid(name, val):
+    kwargs = {"min_value": dt.datetime.min, "max_value": dt.datetime.max, name: val}
     with pytest.raises(InvalidArgument):
-        datetimes(**{name: val}).validate()
+        datetimes(**kwargs).validate()
+
+
+@given(data(), datetimes(timezones=timezones()), datetimes(timezones=timezones()))
+def test_datetimes_stay_within_aware_bounds(data, lo, hi):
+    if _instant(lo) > _instant(hi):
+        lo, hi = hi, lo
+    out = data.draw(datetimes(lo, hi, timezones=timezones()))
+    assert _instant(lo) <= _instant(out) <= _instant(hi)
 
 
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
@@ -103,7 +112,6 @@ DAY_WITH_IMAGINARY_HOUR_KWARGS = {
 }
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # fromutc argument must be a datetime
 @given(datetimes(timezones=timezones()) | datetimes(**DAY_WITH_IMAGINARY_HOUR_KWARGS))
 def test_dateutil_exists_our_not_exists_are_inverse(value):
     assert datetime_does_not_exist(value) == (not tz.datetime_exists(value))

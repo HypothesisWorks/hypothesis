@@ -17,6 +17,10 @@ export UV_PYTHON_INSTALL_DIR="$SNAKEPIT/.uv-managed"
 
 export XDG_CACHE_HOME="$BUILD_RUNTIMES/.cache"
 
+export RUSTUP_HOME="$BUILD_RUNTIMES/rustup"
+export CARGO_HOME="$BUILD_RUNTIMES/cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
+
 # Note: Deliberately ignoring BUILD_RUNTIMES configuration because we don't
 # want this to go in cache, because it takes up a huge amount of space and
 # slows everything down!

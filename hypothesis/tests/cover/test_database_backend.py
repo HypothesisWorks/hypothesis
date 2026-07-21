@@ -40,6 +40,7 @@ from hypothesis.database import (
     MultiplexedDatabase,
     ReadOnlyDatabase,
     _db_for_path,
+    _hash,
     _pack_uleb128,
     _unpack_uleb128,
     choices_from_bytes,
@@ -299,6 +300,19 @@ def test_ga_corrupted_artifact():
         with pytest.warns(HypothesisWarning):
             assert list(database.fetch(b"")) == []
         assert database._disabled is True
+
+
+def test_ga_reads_artifact_without_directory_entries():
+    # see https://github.com/HypothesisWorks/hypothesis/pull/4787
+    key = b"foo"
+    value = b"bar"
+    with ga_empty_artifact() as (path, zip_path):
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            # write only a file entry, without a directory entry for its parent
+            zf.writestr(f"{_hash(key)}/{_hash(value)}", value)
+
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        assert list(database.fetch(key)) == [value]
 
 
 def test_ga_deletes_old_artifacts():

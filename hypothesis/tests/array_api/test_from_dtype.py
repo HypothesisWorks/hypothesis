@@ -87,7 +87,7 @@ def test_can_minimize_floats(xp, xps):
     assert smallest in {1, math.inf}
 
 
-smallest_normal = width_smallest_normals[32]
+smallest_normal = width_smallest_normals(32)
 
 
 @pytest.mark.parametrize(

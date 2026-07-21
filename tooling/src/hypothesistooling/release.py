@@ -11,22 +11,21 @@
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
+import tomllib
+from datetime import datetime, timezone
 
 import requests
-import tomli
 
-import hypothesistooling as tools
-from hypothesistooling import releasemanagement as rm
+from hypothesistooling import cargo, installers as install
+from hypothesistooling.cargo import CARGO_TOML, ci_version_rust, rust_build_env
+from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
+from hypothesistooling.scripts import pip_tool
 
 PACKAGE_NAME = "hypothesis"
 
-HYPOTHESIS = tools.ROOT / PACKAGE_NAME
-
-
-BASE_DIR = HYPOTHESIS
+HYPOTHESIS = ROOT / PACKAGE_NAME
 
 PYTHON_SRC = HYPOTHESIS / "src"
 PYTHON_TESTS = HYPOTHESIS / "tests"
@@ -34,20 +33,33 @@ DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
 
 RELEASE_FILE = HYPOTHESIS / "RELEASE.rst"
 RELEASE_SAMPLE_FILE = HYPOTHESIS / "RELEASE-sample.rst"
+CHANGELOG_FILE = HYPOTHESIS / "docs" / "changelog.rst"
+DIST = HYPOTHESIS / "dist"
 
 assert PYTHON_SRC.exists()
 
 
-__version__ = None
-__version_info__ = None
+__version__ = tomllib.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
+    "version"
+]
+__version_info__ = tuple(int(p) for p in __version__.split("."))
 
-VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
 
-with open(VERSION_FILE, encoding="utf-8") as fp:
-    exec(fp.read())
+__RELEASE_DATE_STRING = None
 
-assert __version__ is not None
-assert __version_info__ is not None
+
+def release_date_string():
+    """Returns a date string that represents what should be considered "today"
+    for the purposes of releasing, and ensure that we don't change part way
+    through a release."""
+    global __RELEASE_DATE_STRING
+    if __RELEASE_DATE_STRING is None:
+        __RELEASE_DATE_STRING = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return __RELEASE_DATE_STRING
+
+
+RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
+VALID_RELEASE_TYPES = ("major", "minor", "patch")
 
 
 def has_release():
@@ -59,16 +71,64 @@ def has_release_sample():
 
 
 def parse_release_file():
-    return rm.parse_release_file(RELEASE_FILE)
+    return parse_release_file_contents(
+        RELEASE_FILE.read_text(encoding="utf-8"), RELEASE_FILE
+    )
+
+
+def parse_release_file_contents(release_contents, filename):
+    release_lines = [l.rstrip() for l in release_contents.split("\n")]
+
+    m = RELEASE_TYPE.match(release_lines[0])
+    if m is not None:
+        release_type = m.group(1)
+        if release_type not in VALID_RELEASE_TYPES:
+            raise ValueError(f"Unrecognised release type {release_type!r}")
+        del release_lines[0]
+        release_contents = "\n".join(release_lines).strip()
+    else:
+        raise ValueError(
+            f"{filename} does not start by specifying release type. The first "
+            "line of the file should be RELEASE_TYPE: followed by one of "
+            "major, minor, or patch, to specify the type of release that "
+            "this is (i.e. which version number to increment). Instead the "
+            f"first line was {release_lines[0]!r}"
+        )
+
+    return release_type, release_contents
+
+
+def bump_version_info(version_info, release_type):
+    new_version = list(version_info)
+    bump = VALID_RELEASE_TYPES.index(release_type)
+    new_version[bump] += 1
+    for i in range(bump + 1, len(new_version)):
+        new_version[i] = 0
+    new_version = tuple(new_version)
+    new_version_string = ".".join(map(str, new_version))
+    return new_version_string, new_version
+
+
+def commit_pending_release():
+    """Create a commit with the new release."""
+    git("rm", RELEASE_FILE)
+    git("add", "-u", HYPOTHESIS)
+
+    git(
+        "commit",
+        "-m",
+        f"Bump {PACKAGE_NAME} version to {current_version()} "
+        "and update changelog\n\n[skip ci]",
+    )
 
 
 def has_source_changes():
-    return tools.has_changes([PYTHON_SRC])
+    return has_changes([PYTHON_SRC])
 
 
 def build_docs(*, builder="html", only=(), to=None):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-    tools.scripts.pip_tool(
+    pip_tool(
         "sphinx-build",
         "--fail-on-warning",
         "--show-traceback",
@@ -111,7 +171,7 @@ def update_changelog_and_version():
 
     release_type, release_contents = parse_release_file()
 
-    new_version_string, new_version_info = rm.bump_version_info(
+    new_version_string, new_version_info = bump_version_info(
         __version_info__, release_type
     )
 
@@ -124,9 +184,10 @@ def update_changelog_and_version():
         beginning = beginning.replace(old, f"Hypothesis {major}.x")
         rest = "\n".join([old, len(old) * "=", "", rest])
 
-    rm.replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
+    cargo.write_version(CARGO_TOML, new_version_string)
+    cargo.update_lockfile()
 
-    heading_for_new_version = f"{new_version_string} - {rm.release_date_string()}"
+    heading_for_new_version = f"{new_version_string} - {release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
 
     new_changelog_parts = [
@@ -148,7 +209,7 @@ def update_changelog_and_version():
     # Replace the `since="RELEASEDAY"` argument to `note_deprecation`
     # with today's date, to record it for future reference.
     before = 'since="RELEASEDAY"'
-    after = before.replace("RELEASEDAY", rm.release_date_string())
+    after = before.replace("RELEASEDAY", release_date_string())
     for root, _, files in os.walk(PYTHON_SRC):
         for fname in (os.path.join(root, f) for f in files if f.endswith(".py")):
             with open(fname, encoding="utf-8") as f:
@@ -162,13 +223,13 @@ def update_changelog_and_version():
 
 def update_pyproject_toml():
     # manually write back these changes using regex instead of pulling in a
-    # toml dependency for writing. tomli doesn't support writing, and
+    # toml dependency for writing. tomllib doesn't support writing, and
     # tomli-w doesn't support writing with comments.
     toml_p = HYPOTHESIS / "pyproject.toml"
-    toml_data = tomli.loads(toml_p.read_text())
+    toml_data = tomllib.loads(toml_p.read_text())
     extras = toml_data["project"]["optional-dependencies"]
     extras.pop("all")
-    readme = (tools.ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text()
     content = toml_p.read_text()
     content = re.sub(
         r'\[project\.readme\].*content-type = "text/markdown"',
@@ -188,22 +249,29 @@ def update_pyproject_toml():
     toml_p.write_text(content)
 
 
-CHANGELOG_FILE = HYPOTHESIS / "docs" / "changelog.rst"
-DIST = HYPOTHESIS / "dist"
-
-
 def changelog():
     return CHANGELOG_FILE.read_text(encoding="utf-8")
 
 
-def build_distribution():
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-    subprocess.check_output([sys.executable, "-m", "build", "--outdir", DIST])
+def check_artifact_versions(*, expected_version):
+    # sanity check that the version in each artifact is what we expect
+    # Artifact names look like:
+    #   hypothesis-<version>-cp313-cp313-manylinux_2_17_x86_64.whl
+    #   hypothesis-<version>.tar.gz
+    pattern = re.compile(r"^hypothesis-(?P<version>[^-]+?)(?:-.+\.whl|\.tar\.gz)$")
+    artifacts = sorted(DIST.iterdir())
+    assert artifacts, f"no artifacts found in {DIST}"
+    for f in artifacts:
+        m = pattern.match(f.name)
+        assert m is not None, f"{f.name}: unrecognised artifact filename"
+        assert (
+            m.group("version") == expected_version
+        ), f"{f.name}: version {m.group('version')!r} != expected {expected_version!r}"
 
 
-def upload_distribution():
-    tools.assert_can_release()
+def upload_distribution_to_pypi(*, expected_version):
+    assert_can_release()
+    check_artifact_versions(expected_version=expected_version)
 
     # used for trusted publishing
     assert "ACTIONS_ID_TOKEN_REQUEST_TOKEN" in os.environ
@@ -219,12 +287,23 @@ def upload_distribution():
         ]
     )
 
+
+def create_github_release():
+    # Building the docs requires hypothesis installed editably. See check_documentation
+    # comment for details of why.
+    install.ensure_rustc(ci_version_rust)
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
+        env={**os.environ, **rust_build_env()},
+    )
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
     build_docs(builder="text", only=["docs/changelog.rst"])
+
     textfile = os.path.join(HYPOTHESIS, "docs", "_build", "text", "changelog.txt")
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
+
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
     anchor = current_version().replace(".", "-")
     changelog_body = (
@@ -257,6 +336,14 @@ def upload_distribution():
         import traceback
 
         traceback.print_exc()
+
+
+def compute_new_version():
+    if not has_release():
+        return None
+    release_type, _ = parse_release_file()
+    _, new_version_info = bump_version_info(__version_info__, release_type)
+    return ".".join(str(p) for p in new_version_info)
 
 
 def current_version():

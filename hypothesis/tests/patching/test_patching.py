@@ -236,6 +236,50 @@ ADDED_LINES = """
 """
 
 
+def test_make_patch_handles_missing_trailing_newline(tmp_path):
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4744
+    p = tmp_path / "example.py"
+    p.write_text("a = 1\nb = 2", encoding="utf-8")  # note: no trailing newline
+    when = datetime.now()
+    msg = "a message from the test"
+    author = "the patch author"
+    got = make_patch([(str(p), "a = 1", "a = 11")], when=when, msg=msg, author=author)
+    expected = HEADER.format(when=when, msg=msg, author=author) + (
+        f"--- ./{p}\n"
+        f"+++ ./{p}\n"
+        "@@ -1,2 +1,2 @@\n"
+        "-a = 1\n"
+        "+a = 11\n"
+        " b = 2\n"
+        "\\ No newline at end of file\n"
+    )
+    assert got == expected
+
+
+def test_make_patch_handles_missing_trailing_newline_on_changed_line(tmp_path):
+    # both sides lack a trailing newline and the differing last line forces
+    # two markers, with the `-` marker in the middle of the diff.
+    p = tmp_path / "example.py"
+    p.write_text("x = 1\nlast = old", encoding="utf-8")
+    when = datetime.now()
+    msg = "a message from the test"
+    author = "the patch author"
+    got = make_patch(
+        [(str(p), "last = old", "last = new")], when=when, msg=msg, author=author
+    )
+    expected = HEADER.format(when=when, msg=msg, author=author) + (
+        f"--- ./{p}\n"
+        f"+++ ./{p}\n"
+        "@@ -1,2 +1,2 @@\n"
+        " x = 1\n"
+        "-last = old\n"
+        "\\ No newline at end of file\n"
+        "+last = new\n"
+        "\\ No newline at end of file\n"
+    )
+    assert got == expected
+
+
 @skipif_threading
 @pytest.mark.skipif(WINDOWS, reason="backslash support is tricky")
 def test_pytest_reports_patch_file_location(pytester):

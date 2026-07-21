@@ -853,7 +853,7 @@ def test_tuple_pprinter_cycle():
     from hypothesis.vendor.pretty import _tuple_pprinter
 
     t = (1, 2, 3)
-    arg_labels = {"arg[0]": (0, 1), "arg[1]": (1, 2), "arg[2]": (2, 3)}
+    arg_labels = {"arg[0]": 1, "arg[1]": 2, "arg[2]": 3}
     pprinter = _tuple_pprinter(arg_labels)
 
     out = io.StringIO()
@@ -870,9 +870,8 @@ def test_fixeddict_pprinter_cycle():
     from hypothesis.vendor.pretty import _fixeddict_pprinter
 
     d = {"a": 1, "b": 2}
-    mapping = {"a": None, "b": None}  # dummy mapping for key ordering
-    arg_labels = {"a": (0, 1), "b": (1, 2)}
-    pprinter = _fixeddict_pprinter(arg_labels, mapping)
+    arg_labels = {"a": 1, "b": 2}
+    pprinter = _fixeddict_pprinter(arg_labels)
 
     out = io.StringIO()
     p = pretty.RepresentationPrinter(out)
@@ -883,17 +882,17 @@ def test_fixeddict_pprinter_cycle():
     assert out.getvalue() == "{...}"
 
 
-def test_get_slice_comment_skips_already_commented():
-    # Test that _get_slice_comment returns None for already-commented slices
-    from hypothesis.vendor.pretty import _get_slice_comment
+def test_get_span_comment_skips_already_commented():
+    # Test that _get_span_comment returns None for already-commented spans
+    from hypothesis.vendor.pretty import _get_span_comment
 
     out = io.StringIO()
     p = pretty.RepresentationPrinter(out)
-    p.slice_comments = {(0, 5): "or any other generated value"}
-    # Mark the slice as already commented
-    p._commented_slices.add((0, 5))
+    p.span_comments = {3: "or any other generated value"}
+    # Mark the span as already commented
+    p._commented_spans.add(3)
 
-    arg_labels = {"arg[0]": (0, 5)}
-    # Should return None because slice is already in _commented_slices
-    result = _get_slice_comment(p, arg_labels, "arg[0]")
+    arg_labels = {"arg[0]": 3}
+    # Should return None because the span is already in _commented_spans
+    result = _get_span_comment(p, arg_labels, "arg[0]")
     assert result is None

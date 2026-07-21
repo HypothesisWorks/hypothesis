@@ -19,7 +19,7 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-PYTHON_VERSION="3.14.5"
+PYTHON_VERSION="3.14.6"
 
 "$SCRIPTS/ensure-uv.sh"
 if ! command -v uv >/dev/null 2>&1 ; then
@@ -31,7 +31,7 @@ if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-
     PYTHON=$(command -v python3 || command -v python)
 else
     # Otherwise, we install it from scratch
-    # NOTE: tooling keeps this version in sync with ci_version in tooling
+    # NOTE: tooling keeps this version in sync with ci_version_python in tooling
     "$SCRIPTS/ensure-python.sh" "$PYTHON_VERSION"
     PYTHON=$(pythonloc "$PYTHON_VERSION")/bin/python
 fi

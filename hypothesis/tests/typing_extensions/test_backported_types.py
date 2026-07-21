@@ -35,6 +35,7 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
+from tests.common.utils import temp_registered
 
 # we'll continue testing the typing variants until their removal from the stdlib
 # ruff: noqa: UP035, UP006, UP007
@@ -346,3 +347,31 @@ def test_typevar_type_is_consistent(data, var, expected):
     assume(v1 != v2)  # Values may vary, just not types
     assert type(v1) == type(v2)
     assert isinstance(v1, expected)
+
+
+def test_resolves_backported_typealiastype():
+    A = typing_extensions.TypeAliasType("A", int)
+    assert_simple_property(from_type(A), lambda x: isinstance(x, int))
+
+
+def test_resolves_parametrized_backported_typealiastype():
+    T = typing_extensions.TypeVar("T")
+    A = typing_extensions.TypeAliasType("A", list[T], type_params=(T,))
+    assert_all_examples(
+        from_type(A[int]), lambda value: all(isinstance(x, int) for x in value)
+    )
+
+
+def test_resolves_annotated_backported_typealiastype():
+    # An aliased Annotated does not get flattened into an outer Annotated by
+    # typing, so this exercises genuinely nested resolution.
+    A = typing_extensions.TypeAliasType("A", Annotated[int, st.integers(0, 10)])
+    assert_all_examples(
+        from_type(Annotated[A, "some metadata"]), lambda x: 0 <= x <= 10
+    )
+
+
+def test_can_register_backported_typealiastype():
+    A = typing_extensions.TypeAliasType("A", int)
+    with temp_registered(A, st.just("a")):
+        assert_simple_property(from_type(A), lambda x: x == "a")

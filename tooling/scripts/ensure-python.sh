@@ -68,6 +68,11 @@ REQUEST=$(translate_version "$VERSION")
 
 mkdir -p "$SNAKEPIT" "$UV_PYTHON_INSTALL_DIR"
 
+# uv resolves the set of installable Python downloads from a list baked into the
+# binary at build time, so a uv older than a given Python release can't install
+# it. Point uv at the latest metadata instead.
+export UV_PYTHON_DOWNLOADS_JSON_URL="https://raw.githubusercontent.com/astral-sh/uv/main/crates/uv-python/download-metadata.json"
+
 uv python install "$REQUEST"
 PYTHON_BIN=$(uv python find --managed-python "$REQUEST")
 INSTALL_ROOT=$(dirname "$(dirname "$PYTHON_BIN")")

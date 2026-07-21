@@ -30,10 +30,13 @@ Run tests using the build system:
 When creating a PR that changes `hypothesis/src/`:
 1. Create `hypothesis/RELEASE.rst` with `RELEASE_TYPE: patch` (bugfixes) or `minor` (features)
 2. See `RELEASE-sample.rst` for examples
-3. **Imitate the style in `changelog.rst`** for consistency
+3. **Imitate the style in `changelog.rst`** for consistency - read a few recent entries and match their phrasing and length
 4. Follow all changelog instructions in `CONTRIBUTING.rst`
+5. Specific additional guidelines:
+  * Do not over-specify built-in exceptions. For example, "fix <x>, which previously raised an error" is generally better than  "fix <x>, which previously raised ``TypeError``.
+  * The changelog explains *what* changed for users, not *how* - leave implementation details to the commit message and code comments.
 
-**Note:** Test-only changes (no modifications to `src/`) do not require a RELEASE.rst file.
+**Note:** A RELEASE.rst is required if and only if the PR modifies files under `hypothesis/src/`. PRs touching only tests, docs (including `hypothesis/docs/`), the website, tooling, or CI config should **not** include a RELEASE.rst.
 
 ## Before Committing
 
@@ -41,6 +44,7 @@ When creating a PR that changes `hypothesis/src/`:
    - **Concise** - remove unnecessary verbosity
    - **Idiomatic** - follows Python and Hypothesis conventions
    - **Minimally commented** - code should be self-documenting; only add comments where truly needed
+   - **Module-scope imports** - put imports at the top of the module wherever possible; only use function-local imports when needed to break a real import cycle or to lazy-load an optional dependency
 2. **Run `./build.sh format; ./build.sh lint`** immediately before committing to auto-format and lint code
 3. **Do not reference issues or PRs in commit messages** (e.g., avoid `Fixes #1234` or `See #5678`) - this clutters the issue timeline with unnecessary links
 

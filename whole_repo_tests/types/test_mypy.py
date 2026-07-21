@@ -14,7 +14,7 @@ import textwrap
 
 import pytest
 
-from hypothesistooling.projects.hypothesis import PYTHON_SRC
+from hypothesistooling.release import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
@@ -561,6 +561,23 @@ def test_pos_only_args(tmp_path):
             (8, "call-overload"),
         ],
     )
+
+
+def test_mypy_issue_4665(tmp_path):
+    f = tmp_path / "check_mypy_on_fixed_dictionaries_union_values.py"
+    f.write_text(
+        textwrap.dedent("""
+            from hypothesis.strategies import SearchStrategy, fixed_dictionaries, integers, text
+
+            mapping: dict[str, SearchStrategy[str] | SearchStrategy[int]] = {
+                "ant": text(),
+                "bat": integers(),
+            }
+            fixed_dictionaries(mapping)
+            """),
+        encoding="utf-8",
+    )
+    assert_mypy_errors(f, [])
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)

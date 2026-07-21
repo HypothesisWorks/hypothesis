@@ -10,6 +10,7 @@
 
 from collections import Counter
 
+from hypothesis.internal.conjecture.junkdrawer import find_integer
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 from hypothesis.internal.conjecture.utils import identity
@@ -52,11 +53,19 @@ class Collection(Shrinker):
         zero = self.from_order(0)
         self.consider([zero] * len(self.current))
 
-        # try deleting each element in turn, starting from the back
-        # TODO_BETTER_SHRINK: adaptively delete here by deleting larger chunks at once
-        # if early deletes succeed. use find_integer. turns O(n) into O(log(n))
-        for i in reversed(range(len(self.current))):
-            self.consider(self.current[:i] + self.current[i + 1 :])
+        # try deleting elements, starting from the back. We adaptively grow the
+        # chunk we delete via find_integer, so a run of deletable elements costs
+        # O(log(n)) calls rather than O(n).
+        i = len(self.current) - 1
+        while i >= 0:
+            base = self.current
+
+            def delete_k(k, *, i=i, base=base):
+                # delete the k elements ending at index i, i.e. base[i - k + 1 : i + 1]
+                return k <= i + 1 and self.consider(base[: i - k + 1] + base[i + 1 :])
+
+            # advance past the (possibly deleted) chunk; max(k, 1) ensures progress
+            i -= max(find_integer(delete_k), 1)
 
         # then try reordering
         Ordering.shrink(self.current, self.consider, key=self.to_order)

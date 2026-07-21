@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime as dt
+
 import crosshair
 import pytest
 from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveProvider
@@ -27,8 +29,9 @@ from tests.conjecture.common import float_constr, integer_constr, string_constr
 def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
     # test effectiveness.
+    # deadline because of https://github.com/pschanely/CrossHair/issues/422
     @given(st.integers())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(backend="crosshair", verbosity=verbosity, database=None, deadline=60_000)
     def f(n):
         assert n != 123456
 
@@ -39,11 +42,9 @@ def test_crosshair_works_for_all_verbosities(verbosity):
 @pytest.mark.parametrize("verbosity", list(Verbosity))
 def test_crosshair_works_for_all_verbosities_data(verbosity):
     # data draws have their own print path
-    if verbosity == Verbosity.quiet:
-        pytest.skip("Flaky test, pending fix")
-
+    # deadline because of https://github.com/pschanely/CrossHair/issues/422
     @given(st.data())
-    @settings(backend="crosshair", verbosity=verbosity, database=None)
+    @settings(backend="crosshair", verbosity=verbosity, database=None, deadline=60_000)
     def f(data):
         n = data.draw(st.integers())
         assert n != 123456
@@ -225,3 +226,14 @@ def test_realizes_event():
 def test_event_with_realization(value):
     event(value)
     float(value)
+
+
+def test_crosshair_can_hit_a_specific_date():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4759.
+    @given(st.dates())
+    @settings(backend="crosshair", database=None)
+    def f(d):
+        assert d != dt.date(2030, 2, 14)
+
+    with pytest.raises(AssertionError):
+        f()

@@ -122,7 +122,12 @@ def test_does_print_on_reuse_from_database():
 def test_prints_seed_on_very_slow_shrinking(monkeypatch, in_pytest):
     monkeypatch.setattr(core, "running_under_pytest", in_pytest)
 
-    @settings(database=None, deadline=None, suppress_health_check=list(HealthCheck))
+    @settings(
+        database=None,
+        deadline=None,
+        suppress_health_check=list(HealthCheck),
+        max_examples=100,
+    )
     @given(st.integers(min_value=0, max_value=2**64 - 1))
     def test(n):
         time.sleep(50)

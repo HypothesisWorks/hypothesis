@@ -31,8 +31,6 @@ from typing import (
     overload,
 )
 
-from sortedcontainers import SortedList
-
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.floats import float_to_int
 
@@ -244,27 +242,29 @@ class LazySequenceCopy(Generic[T]):
         self.__values = values
         self.__len = len(values)
         self.__mask: dict[int, T] | None = None
-        self.__popped_indices: SortedList[int] | None = None
+        # Indices passed to pop(), in pop order, each in the coordinates that
+        # were current at the time of that pop.  See __underlying_index.
+        self.__popped_at: list[int] | None = None
 
     def __len__(self) -> int:
-        if self.__popped_indices is None:
+        if self.__popped_at is None:
             return self.__len
-        return self.__len - len(self.__popped_indices)
+        return self.__len - len(self.__popped_at)
 
     def pop(self, i: int = -1) -> T:
         if len(self) == 0:
             raise IndexError("Cannot pop from empty list")
-        i = self.__underlying_index(i)
+        i, u = self.__underlying_index(i)
 
         v = None
         if self.__mask is not None:
-            v = self.__mask.pop(i, None)
+            v = self.__mask.pop(u, None)
         if v is None:
-            v = self.__values[i]
+            v = self.__values[u]
 
-        if self.__popped_indices is None:
-            self.__popped_indices = SortedList()
-        self.__popped_indices.add(i)
+        if self.__popped_at is None:
+            self.__popped_at = []
+        self.__popped_at.append(i)
         return v
 
     def swap(self, i: int, j: int) -> None:
@@ -274,7 +274,7 @@ class LazySequenceCopy(Generic[T]):
         self[i], self[j] = self[j], self[i]
 
     def __getitem__(self, i: int) -> T:
-        i = self.__underlying_index(i)
+        _, i = self.__underlying_index(i)
 
         default = self.__values[i]
         if self.__mask is None:
@@ -283,12 +283,29 @@ class LazySequenceCopy(Generic[T]):
             return self.__mask.get(i, default)
 
     def __setitem__(self, i: int, v: T) -> None:
-        i = self.__underlying_index(i)
+        _, i = self.__underlying_index(i)
         if self.__mask is None:
             self.__mask = {}
         self.__mask[i] = v
 
-    def __underlying_index(self, i: int) -> int:
+    def __underlying_index(self, i: int) -> tuple[int, int]:
+        # given an index i in the popped representation of the list, compute
+        # its corresponding index u in the underlying list. given
+        #   l = [1, 4, 2, 10, 188]
+        #   l.pop(3)
+        #   l.pop(1)
+        #   assert l == [1, 2, 188]
+        #
+        # we want l[i] == self.__values[u], and return both the normalized
+        # (non-negative, bounds-checked) i and u.
+        #
+        # A pop at index p maps each later index x in the popped coordinates
+        # to x + (p <= x) in the coordinates current at the time of that pop,
+        # so applying this from the most recent pop back to the oldest turns i
+        # into an index into the underlying sequence.  We add the comparison
+        # as an integer rather than branching on it so that, under
+        # symbolic-execution backends, symbolic indices pass through here
+        # without forcing any solver queries.
         n = len(self)
         if i < -n or i >= n:
             raise IndexError(f"Index {i} out of range [0, {n})")
@@ -296,22 +313,12 @@ class LazySequenceCopy(Generic[T]):
             i += n
         assert 0 <= i < n
 
-        if self.__popped_indices is not None:
-            # given an index i in the popped representation of the list, compute
-            # its corresponding index in the underlying list. given
-            #   l = [1, 4, 2, 10, 188]
-            #   l.pop(3)
-            #   l.pop(1)
-            #   assert l == [1, 2, 188]
-            #
-            # we want l[i] == self.__values[f(i)], where f is this function.
-            assert len(self.__popped_indices) <= len(self.__values)
-
-            for idx in self.__popped_indices:
-                if idx > i:
-                    break
-                i += 1
-        return i
+        u = i
+        if self.__popped_at is not None:
+            assert len(self.__popped_at) <= len(self.__values)
+            for p in reversed(self.__popped_at):
+                u += p <= u
+        return i, u
 
     # even though we have len + getitem, mypyc requires iter.
     def __iter__(self) -> Iterable[T]:
@@ -424,10 +431,10 @@ class ensure_free_stackframes:
             # is happening and it's hard to imagine an
             # intentionally-deeply-recursive use of this code.
             assert cur_depth <= 1000, (
-                "Hypothesis would usually add %d to the stack depth of %d here, "
-                "but we are already much deeper than expected.  Aborting now, to "
-                "avoid extending the stack limit in an infinite loop..."
-                % (self.new_limit - self.old_limit, self.old_limit)
+                f"Hypothesis would usually add {self.new_limit - self.old_limit} to "
+                f"the stack depth of {self.old_limit} here, but we are already much "
+                "deeper than expected.  Aborting now, to avoid extending the stack "
+                "limit in an infinite loop..."
             )
             try:
                 _stackframe_limiter.enter_context(

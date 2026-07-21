@@ -11,3 +11,18 @@ body[data-theme="dark"] .tooltip .tooltip-content {
 body[data-theme="dark"] .tooltip .arrow {
     background: var(--color-background-primary);
 }
+
+/*
+Furo also renders dark when the theme is "auto" (the default) and the OS
+prefers dark, via this same media query. Cover that case too; see
+https://github.com/HypothesisWorks/hypothesis/issues/4734.
+*/
+@media (prefers-color-scheme: dark) {
+    body:not([data-theme="light"]) .tooltip .tooltip-content {
+        background-color: var(--color-background-primary);
+    }
+
+    body:not([data-theme="light"]) .tooltip .arrow {
+        background: var(--color-background-primary);
+    }
+}

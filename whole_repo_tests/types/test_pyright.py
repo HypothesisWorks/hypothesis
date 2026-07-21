@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-from hypothesistooling.projects.hypothesis import HYPOTHESIS, PYTHON_SRC
+from hypothesistooling.release import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 from .revealed_types import (
@@ -147,6 +147,24 @@ def test_pyright_issue_3348(tmp_path: Path):
             st.one_of(st.integers(), st.integers())
             st.one_of([st.integers(), st.floats()])  # sequence of strats should be OK
             st.sampled_from([1, 2])
+            """),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert _get_pyright_errors(file) == []
+
+
+def test_pyright_issue_4665(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent("""
+            from hypothesis.strategies import SearchStrategy, fixed_dictionaries, integers, text
+
+            mapping: dict[str, SearchStrategy[str] | SearchStrategy[int]] = {
+                "ant": text(),
+                "bat": integers(),
+            }
+            fixed_dictionaries(mapping)
             """),
         encoding="utf-8",
     )

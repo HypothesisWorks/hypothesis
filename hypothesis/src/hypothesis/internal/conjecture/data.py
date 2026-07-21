@@ -322,6 +322,9 @@ class SpanRecord:
         self.__index_of_labels: dict[int, int] | None = {}
         self.trail = IntList()
         self.nodes: list[ChoiceNode] = []
+        # The number of spans started so far, which is also the index that the
+        # next span to start will get. Spans are indexed in start order.
+        self.span_count = 0
 
     def freeze(self) -> None:
         self.__index_of_labels = None
@@ -337,6 +340,7 @@ class SpanRecord:
             i = self.__index_of_labels.setdefault(label, len(self.labels))
             self.labels.append(label)
         self.trail.append(TrailType.CHOICE + 1 + i)
+        self.span_count += 1
 
     def stop_span(self, *, discard: bool) -> None:
         if discard:
@@ -585,8 +589,10 @@ class ConjectureResult:
     target_observations: TargetObservations
     tags: frozenset[StructuralCoverageTag]
     spans: Spans = field(repr=False, compare=False)
-    arg_slices: set[tuple[int, int]] = field(repr=False)
-    slice_comments: dict[tuple[int, int], str] = field(repr=False)
+    arg_spans: set[int] = field(repr=False)
+    # Comments for the explain phase, keyed by span index. The ``None`` key
+    # holds the whole-test comment about varying all commented parts together.
+    span_comments: dict[int | None, str] = field(repr=False)
     misaligned_at: MisalignedAt | None = field(repr=False)
     cannot_proceed_scope: CannotProceedScopeT | None = field(repr=False)
 
@@ -688,10 +694,10 @@ class ConjectureData:
         self.depth: int = -1
         self.__span_record = SpanRecord()
 
-        # Slice indices for discrete reportable parts that which-parts-matter can
+        # Span indices for discrete reportable parts that which-parts-matter can
         # try varying, to report if the minimal example always fails anyway.
-        self.arg_slices: set[tuple[int, int]] = set()
-        self.slice_comments: dict[tuple[int, int], str] = {}
+        self.arg_spans: set[int] = set()
+        self.span_comments: dict[int | None, str] = {}
         self._observability_args: dict[str, Any] = {}
         self._observability_predicates: defaultdict[str, PredicateCounts] = defaultdict(
             PredicateCounts
@@ -717,10 +723,9 @@ class ConjectureData:
         self.start_span(TOP_LABEL)
 
     def __repr__(self) -> str:
-        return "ConjectureData(%s, %d choices%s)" % (
-            self.status.name,
-            len(self.nodes),
-            ", frozen" if self.frozen else "",
+        return (
+            f"ConjectureData({self.status.name}, {len(self.nodes)} "
+            f"choices{', frozen' if self.frozen else ''})"
         )
 
     @property
@@ -1147,8 +1152,8 @@ class ConjectureData:
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),
-                arg_slices=self.arg_slices,
-                slice_comments=self.slice_comments,
+                arg_spans=self.arg_spans,
+                span_comments=self.span_comments,
                 misaligned_at=self.misaligned_at,
                 cannot_proceed_scope=self.cannot_proceed_scope,
             )
@@ -1234,6 +1239,12 @@ class ConjectureData:
             return v
         finally:
             self.stop_span()
+
+    @property
+    def next_span_index(self) -> int:
+        """The index that the next span to start will get. Spans are indexed
+        in start order, so this also counts the spans started so far."""
+        return self.__span_record.span_count
 
     def start_span(self, label: int) -> None:
         self.provider.span_start(label)

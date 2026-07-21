@@ -17,8 +17,10 @@ import sys
 import time as time_module
 from functools import wraps
 from pathlib import Path
+from types import TracebackType
 
 import pytest
+from _pytest._code.code import Traceback
 from _pytest.monkeypatch import MonkeyPatch
 
 from hypothesis import is_hypothesis_test, settings
@@ -208,6 +210,28 @@ if settings.get_current_profile_name() != "threading":
 
 random_states_after_tests = {}
 independent_random = random.Random()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # We run CI with --tb=native, which (unlike pytest's own styles) doesn't
+    # filter out the dozens of pluggy/_pytest hook frames above the test, so
+    # every failure is buried in noise. Re-apply pytest's filtering by
+    # rebuilding the traceback from just the frames it would have kept.
+    excinfo = call.excinfo
+    if (
+        excinfo is not None
+        and item.config.option.tbstyle == "native"
+        and hasattr(item, "_traceback_filter")
+    ):
+        new_tb = None
+        for entry in reversed(list(item._traceback_filter(excinfo))):
+            raw = entry._rawentry
+            new_tb = TracebackType(new_tb, raw.tb_frame, raw.tb_lasti, raw.tb_lineno)
+        if new_tb is not None:
+            excinfo.value.__traceback__ = new_tb
+            excinfo.traceback = Traceback(new_tb)
+    yield
 
 
 @pytest.hookimpl(hookwrapper=True)
