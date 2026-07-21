@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.158.0:
+
+--------------------
+6.158.0 - 2026-07-21
+--------------------
+
+:func:`~hypothesis.strategies.datetimes` now accepts timezone-aware
+``min_value`` and ``max_value`` bounds, which are treated as moments in time.
+In this case ``timezones`` defaults to :func:`~hypothesis.strategies.timezones`,
+and each generated datetime lies between the two moments.
+Passing one aware and one naive bound is an error.
+
+If :pypi:`annotated-types` has been imported, the overloaded type hints
+for this strategy now distinguish naive from aware datetimes using
+``Timezone`` metadata.
+
 .. _v6.157.2:
 
 --------------------
