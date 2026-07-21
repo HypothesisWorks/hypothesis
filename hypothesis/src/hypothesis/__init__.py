@@ -17,7 +17,12 @@ failing examples it finds.
 
 import _hypothesis_globals
 
-from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
+from hypothesis._settings import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    settings,
+)
 from hypothesis.control import (
     assume,
     currently_in_test_context,
@@ -30,11 +35,13 @@ from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.entry_points import run
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.internal.entropy import register_random
+from hypothesis.internal.observability import ObservabilityConfig
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
 __all__ = [
     "HealthCheck",
+    "ObservabilityConfig",
     "Phase",
     "Verbosity",
     "__version__",

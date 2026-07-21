@@ -36,7 +36,7 @@
                 },
                 "coverage": {
                     "type": ["object", "null"],
-                    "description": "Mapping of filename to list of covered line numbers, if coverage information is available, or None if not.  Hypothesis deliberately omits stdlib and site-packages code.",
+                    "description": ".. warning::\n\n  EXPERIMENTAL AND UNSTABLE. This attribute might change format without warning, as we figure out the right format to support both line and branch coverage.\n\n Mapping of filename to list of covered line numbers, if coverage information is available, or None if not.  Hypothesis deliberately omits stdlib and site-packages code.\n\n.. note::\n\n  Only present if observability is configured to include coverage (see |ObservabilityConfig|).",
                     "additionalProperties": {
                         "type": "array",
                         "items": {"type": "integer", "minimum": 1},

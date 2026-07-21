@@ -11,8 +11,8 @@
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.utils.deprecation import note_deprecation
 
 from tests.common.utils import Why, xfail_on_crosshair
 

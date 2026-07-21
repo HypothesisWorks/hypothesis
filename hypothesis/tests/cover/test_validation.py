@@ -293,7 +293,8 @@ def test_warn_on_strings_matching_common_codecs(codec):
 
     # if we reorder, it doesn't warn anymore
     with warnings.catch_warnings():
-        warnings.simplefilter("error")
+        # append so we respect temporary ci warning filters
+        warnings.simplefilter("error", append=True)
 
         @given(st.text(codec[1:] + codec[:1]))
         def f(s):
