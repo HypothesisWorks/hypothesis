@@ -69,6 +69,7 @@ jobs:
           - check-types-api
           - check-coverage
           - check-conjecture-coverage
+          - check-release-smoke
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche

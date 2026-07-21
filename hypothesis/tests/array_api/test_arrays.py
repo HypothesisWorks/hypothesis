@@ -531,7 +531,7 @@ def test_subnormal_elements_validation(xp, xps):
     """
     elements = {
         "min_value": 0.0,
-        "max_value": width_smallest_normals[32],
+        "max_value": width_smallest_normals(32),
         "exclude_min": True,
         "exclude_max": True,
         "allow_subnormal": True,

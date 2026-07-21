@@ -166,7 +166,7 @@ class BuildContext:
 
     @contextmanager
     def track_arg_label(self, label: str) -> Generator[ArgLabelsT, None, None]:
-        start = len(self.data.nodes)
+        span_index = self.data.next_span_index
         self._label_path.append(label)
         arg_labels: ArgLabelsT = {}
         try:
@@ -174,19 +174,15 @@ class BuildContext:
         finally:
             self._label_path.pop()
 
-            # This high up the stack, we can't see or really do much with
-            # Span / SpanRecord - not least because they're only materialized
-            # after the test case is completed.
-            #
-            # Instead, we'll stash the (start_idx, end_idx) pair on our data object
-            # for the ConjectureRunner engine to deal with, and mutate the arg_labels
-            # dict so that the pretty-printer knows where to place the
-            # which-parts-matter comments later.
-            end = len(self.data.nodes)
-            assert start <= end
-            if start != end:
-                arg_labels[label] = (start, end)
-                self.data.arg_slices.add((start, end))
+        # The draw inside this block opened a span, whose index we knew in
+        # advance even though Span objects are only materialized after the
+        # test case is completed. Stash that index on our data object for
+        # the shrinker's explain phase to vary, and mutate the arg_labels
+        # dict so that the pretty-printer knows where to place the
+        # which-parts-matter comments later. (If the draw raised instead,
+        # we skip recording, along with the rest of the test case.)
+        arg_labels[label] = span_index
+        self.data.arg_spans.add(span_index)
 
     def record_call(
         self,

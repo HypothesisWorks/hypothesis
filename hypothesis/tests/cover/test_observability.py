@@ -186,10 +186,9 @@ def test_normal_representation_includes_draws():
     with capture_observations() as observations:
         f()
 
-    crosshair = settings.get_current_profile_name() == "crosshair"
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         f(
-            data={'<symbolic>' if crosshair else 'data(...)'},
+            data=data(...),
         )
         Draw 1: True
         Draw 2 (second): True
@@ -198,15 +197,7 @@ def test_normal_representation_includes_draws():
         tc for tc in observations if tc.type == "test_case" and tc.status == "passed"
     ]
     assert test_cases
-    representations = {tc.representation for tc in test_cases}
-    if crosshair:
-        # Under the crosshair backend Hypothesis observes the same example under
-        # both the crosshair provider (data=<symbolic>) and its own concrete
-        # replay (data=data(...)), so there is more than one representation;
-        # just require the symbolic one to be present.
-        assert expected in representations
-    else:
-        assert {tc.representation for tc in test_cases} == {expected}
+    assert {tc.representation for tc in test_cases} == {expected}
 
 
 def test_capture_named_arguments():

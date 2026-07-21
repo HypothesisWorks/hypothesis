@@ -491,7 +491,7 @@ class Shrinker:
         self.explain()
 
     def explain(self) -> None:
-        if not self.should_explain or not self.shrink_target.arg_slices:
+        if not self.should_explain or not self.shrink_target.arg_spans:
             return
         with self.engine._log_phase_statistics("explain"):
             self._explain()
@@ -501,21 +501,36 @@ class Shrinker:
         shrink_target = self.shrink_target
         nodes = self.nodes
         choices = self.choices
-        chunks: dict[tuple[int, int], list[tuple[ChoiceT, ...]]] = defaultdict(list)
+        spans = self.shrink_target.spans
+        chunks: dict[int, list[tuple[ChoiceT, ...]]] = defaultdict(list)
+
+        # The node ranges of the spans we may vary. Multiple arg spans can share
+        # a range (e.g. builds() around a single strategy), in which case only
+        # the first processed gets a comment and the rest are skipped below.
+        arg_ranges = {
+            span_index: (spans[span_index].start, spans[span_index].end)
+            for span_index in self.shrink_target.arg_spans
+        }
 
         # Before we start running experiments, let's check for known inputs which would
         # make them redundant.  The shrinking process means that we've already tried many
         # variations on the minimal test case, so this can save a lot of time.
         seen_passing_seq = self.engine.passing_choice_sequences(
-            prefix=self.nodes[: min(self.shrink_target.arg_slices)[0]]
+            prefix=self.nodes[: min(start for start, _ in arg_ranges.values())]
         )
 
         # Now that we've shrunk to a minimal failing test case, it's time to try
         # varying each part that we've noted will go in the final report.  Consider
-        # slices in largest-first order
-        for start, end in sorted(
-            self.shrink_target.arg_slices, key=lambda x: (-(x[1] - x[0]), x)
+        # spans in largest-first order
+        for span_index, (start, end) in sorted(
+            arg_ranges.items(), key=lambda kv: (-(kv[1][1] - kv[1][0]), kv[1], kv[0])
         ):
+            # Skip spans where nothing can in fact vary: ranges that are empty
+            # (e.g. a just() draw) or consist entirely of forced choices. The
+            # "or any other generated value" comment would be false for them.
+            if all(nodes[i].was_forced for i in range(start, end)):
+                continue
+
             # Check for any previous test cases that match the prefix and suffix,
             # so we can skip if we found a passing example while shrinking.
             if any(
@@ -524,14 +539,12 @@ class Shrinker:
             ):
                 continue
 
-            # Skip slices that are subsets of already-explained slices.
-            # If a larger slice can vary freely, so can its sub-slices.
-            # Note: (0, 0) is a special marker for the "together" comment that
-            # applies to the whole test, not a specific slice, so we exclude it.
+            # Skip spans whose ranges are subsets of already-explained ranges.
+            # If a larger range can vary freely, so can its sub-ranges.
             if any(
-                s <= start and end <= e
-                for s, e in self.shrink_target.slice_comments
-                if (s, e) != (0, 0)
+                spans[c].start <= start and end <= spans[c].end
+                for c in self.shrink_target.span_comments
+                if c is not None
             ):
                 continue
 
@@ -593,18 +606,18 @@ class Shrinker:
                         + result.choices[start:result_end]
                         + choices[end:]
                     )
-                    chunks[(start, end)].append(result.choices[start:result_end])
+                    chunks[span_index].append(result.choices[start:result_end])
                     result = self.engine.cached_test_function(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
                     result = cast(ConjectureResult, result)
                 else:
-                    chunks[(start, end)].append(result.choices[start:end])
+                    chunks[span_index].append(result.choices[start:end])
 
                 if shrink_target is not self.shrink_target:  # pragma: no cover
                     # If we've shrunk further without meaning to, bail out.
-                    self.shrink_target.slice_comments.clear()
+                    self.shrink_target.span_comments.clear()
                     return
                 if result.status is Status.VALID:
                     # The test passed, indicating that this param can't vary freely.
@@ -614,17 +627,19 @@ class Shrinker:
                 if self.__predicate(result):  # pragma: no branch
                     n_same_failures += 1
                     if n_same_failures >= 100:
-                        self.shrink_target.slice_comments[(start, end)] = note
+                        self.shrink_target.span_comments[span_index] = note
                         break
 
         # Finally, if we've found multiple independently-variable parts, check whether
         # they can all be varied together.
-        if len(self.shrink_target.slice_comments) <= 1:
+        if len(self.shrink_target.span_comments) <= 1:
             return
         n_same_failures_together = 0
-        # Only include slices that were actually added to slice_comments
+        # Only include spans that actually got a comment
         chunks_by_start_index = sorted(
-            (k, v) for k, v in chunks.items() if k in self.shrink_target.slice_comments
+            (arg_ranges[k], v)
+            for k, v in chunks.items()
+            if k in self.shrink_target.span_comments
         )
         for _ in range(500):  # pragma: no branch
             # no-branch here because we don't coverage-test the abort-at-500 logic.
@@ -641,14 +656,14 @@ class Shrinker:
             # This *can't* be a shrink because none of the components were.
             assert shrink_target is self.shrink_target
             if result.status == Status.VALID:
-                self.shrink_target.slice_comments[(0, 0)] = (
+                self.shrink_target.span_comments[None] = (
                     "The test sometimes passed when commented parts were varied together."
                 )
                 break  # Test passed, this param can't vary freely.
             if self.__predicate(result):  # pragma: no branch
                 n_same_failures_together += 1
                 if n_same_failures_together >= 100:
-                    self.shrink_target.slice_comments[(0, 0)] = (
+                    self.shrink_target.span_comments[None] = (
                         "The test always failed when commented parts were varied together."
                     )
                     break
@@ -665,10 +680,14 @@ class Shrinker:
         produce an irrelevant test result the outer loop discards.
         """
         nodes = self.nodes
+        spans = self.shrink_target.spans
         target_types = tuple(nodes[i].type for i in range(start, end))
         current_key = choices_key(tuple(nodes[i].value for i in range(start, end)))
         seen: set[tuple[Any, ...]] = {current_key}
-        for start2, end2 in sorted(self.shrink_target.arg_slices):
+        arg_ranges = sorted(
+            {(spans[i].start, spans[i].end) for i in self.shrink_target.arg_spans}
+        )
+        for start2, end2 in arg_ranges:
             if (start2, end2) == (start, end) or (end2 - start2) != (end - start):
                 continue
             if (

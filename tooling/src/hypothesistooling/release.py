@@ -13,13 +13,13 @@ import os
 import re
 import subprocess
 import sys
+import tomllib
 from datetime import datetime, timezone
 
 import requests
-import tomli
 
 from hypothesistooling import cargo, installers as install
-from hypothesistooling.cargo import CARGO_TOML, RUST_BUILD_ENV, ci_version_rust
+from hypothesistooling.cargo import CARGO_TOML, ci_version_rust, rust_build_env
 from hypothesistooling.git import ROOT, assert_can_release, git, has_changes
 from hypothesistooling.scripts import pip_tool
 
@@ -39,7 +39,9 @@ DIST = HYPOTHESIS / "dist"
 assert PYTHON_SRC.exists()
 
 
-__version__ = tomli.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"]["version"]
+__version__ = tomllib.loads(CARGO_TOML.read_text(encoding="utf-8"))["package"][
+    "version"
+]
 __version_info__ = tuple(int(p) for p in __version__.split("."))
 
 
@@ -132,7 +134,7 @@ def install_hypothesis_editable():
     install.ensure_rustc(ci_version_rust)
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **RUST_BUILD_ENV},
+        env={**os.environ, **rust_build_env()},
     )
 
 
@@ -233,10 +235,10 @@ def update_changelog_and_version():
 
 def update_pyproject_toml():
     # manually write back these changes using regex instead of pulling in a
-    # toml dependency for writing. tomli doesn't support writing, and
+    # toml dependency for writing. tomllib doesn't support writing, and
     # tomli-w doesn't support writing with comments.
     toml_p = HYPOTHESIS / "pyproject.toml"
-    toml_data = tomli.loads(toml_p.read_text())
+    toml_data = tomllib.loads(toml_p.read_text())
     extras = toml_data["project"]["optional-dependencies"]
     extras.pop("all")
     readme = (ROOT / "README.md").read_text()

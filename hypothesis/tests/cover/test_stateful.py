@@ -1472,6 +1472,22 @@ def test_flatmap():
     run_state_machine_as_test(Machine)
 
 
+def test_consumes_flatmap():
+    class Machine(RuleBasedStateMachine):
+        my_bundle = Bundle("my_bundle")
+
+        @rule(target=my_bundle)
+        def f(self):
+            return "abcde"
+
+        @rule(value=consumes(my_bundle).flatmap(lambda v: st.just(None)))
+        def g(self, value):
+            assert value is None
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
 def test_use_bundle_within_other_strategies():
     class Class:
         def __init__(self, value):

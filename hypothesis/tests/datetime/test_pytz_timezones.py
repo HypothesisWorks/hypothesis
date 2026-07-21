@@ -17,7 +17,7 @@ import pytest
 from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, StopTest
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
-from hypothesis.strategies._internal.datetime import datetime_does_not_exist
+from hypothesis.strategies._internal.datetime import _instant, datetime_does_not_exist
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, xfail_on_crosshair
@@ -53,9 +53,38 @@ def test_timezone_aware_datetimes_are_timezone_aware(dt):
 
 
 @given(sampled_from(["min_value", "max_value"]), datetimes(timezones=timezones()))
-def test_datetime_bounds_must_be_naive(name, val):
+def test_mixed_naive_aware_datetime_bounds_are_invalid(name, val):
+    kwargs = {"min_value": dt.datetime.min, "max_value": dt.datetime.max, name: val}
     with pytest.raises(InvalidArgument):
-        datetimes(**{name: val}).validate()
+        datetimes(**kwargs).validate()
+
+
+@given(data(), datetimes(timezones=timezones()), datetimes(timezones=timezones()))
+def test_datetimes_stay_within_aware_bounds(data, lo, hi):
+    if _instant(lo) > _instant(hi):
+        lo, hi = hi, lo
+    out = data.draw(datetimes(lo, hi, timezones=timezones()))
+    assert _instant(lo) <= _instant(out) <= _instant(hi)
+
+
+@pytest.mark.parametrize("hour, minute, inverted", [(1, 15, True), (3, 0, False)])
+def test_aware_bounds_at_dublin_fall_back(hour, minute, inverted):
+    # Europe/Dublin has a negative DST offset, so mapping fold to pytz's
+    # is_dst inverts the candidate moments for an ambiguous wall time; the
+    # bounds logic must not rely on their order.  Dublin fell back from
+    # 02:00 UTC+1 to 01:00 GMT at 2020-10-25 01:00 UTC.
+    tz = pytz.timezone("Europe/Dublin")
+    lo = dt.datetime(2020, 10, 25, 0, 30, tzinfo=dt.timezone.utc)
+    hi = dt.datetime(2020, 10, 25, hour, minute, tzinfo=dt.timezone.utc)
+
+    def local(value):
+        return value.astimezone(tz).replace(tzinfo=None)
+
+    assert (local(lo) > local(hi)) == inverted
+    assert_all_examples(
+        datetimes(lo, hi, timezones=just(tz)),
+        lambda d: _instant(lo) <= _instant(d) <= _instant(hi),
+    )
 
 
 def test_underflow_in_simplify():

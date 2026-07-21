@@ -187,8 +187,9 @@ def required_args(
     kwargs = {} if kwargs is None else kwargs
     # We start with a workaround for NamedTuples, which don't have nice inits
     if inspect.isclass(target) and is_typed_named_tuple(target):
-        provided = set(kwargs) | set(target._fields[: len(args)])
-        return set(target._fields) - provided
+        fields = target._fields  # type: ignore
+        provided = set(kwargs) | set(fields[: len(args)])
+        return set(fields) - provided
     # Then we try to do the right thing with inspect.signature
     try:
         sig = get_signature(target)
