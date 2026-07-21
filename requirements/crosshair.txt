@@ -13,15 +13,15 @@ cattrs==26.1.0
     # via
     #   lsprotocol
     #   pygls
-crosshair-tool==0.0.108
+crosshair-tool==0.0.109
     # via
     #   -r requirements/crosshair.in
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.156.8
+hypothesis==6.158.1
     # via hypothesis-crosshair
-hypothesis-crosshair==0.0.28
+hypothesis-crosshair==0.0.29
     # via -r requirements/crosshair.in
 importlib-metadata==9.0.0
     # via crosshair-tool
