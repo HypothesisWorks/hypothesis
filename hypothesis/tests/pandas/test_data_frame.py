@@ -15,7 +15,7 @@ import pytest
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst, pandas as pdst
-from hypothesis.extra.pandas.impl import IntegerDtype
+from hypothesis.extra.pandas.impl import PANDAS_GE_21, IntegerDtype
 
 from tests.common.debug import (
     assert_all_examples,
@@ -29,6 +29,48 @@ from tests.pandas.helpers import supported_by_pandas
 def test_can_have_columns_of_distinct_types(df):
     assert df["a"].dtype == np.dtype(int)
     assert df["b"].dtype == np.dtype(float)
+
+
+requires_pandas21 = pytest.mark.skipif(
+    not PANDAS_GE_21, reason="timezone-aware dtypes require pandas >= 2.1"
+)
+
+
+@requires_pandas21
+def test_can_have_tz_aware_datetime_columns():
+    dtype = pd.DatetimeTZDtype(unit="us", tz="UTC")
+    assert_all_examples(
+        pdst.data_frames(
+            [pdst.column("a", dtype=dtype), pdst.column("b", dtype=dtype, unique=True)],
+            index=pdst.range_indexes(min_size=1),
+        ),
+        lambda df: df["a"].dtype == dtype
+        and df["b"].dtype == dtype
+        and df["b"].dropna().is_unique,
+    )
+
+
+@requires_pandas21
+def test_can_have_tz_aware_datetime_index():
+    dtype = pd.DatetimeTZDtype(unit="ns", tz="UTC")
+    assert_all_examples(
+        pdst.data_frames(
+            [pdst.column("a", dtype=int)], index=pdst.indexes(dtype=dtype, min_size=1)
+        ),
+        lambda df: df.index.dtype == dtype,
+    )
+
+
+@requires_pandas21
+def test_can_have_tz_aware_datetime_columns_with_rows():
+    dtype = pd.DatetimeTZDtype(unit="us", tz="UTC")
+    assert_all_examples(
+        pdst.data_frames(
+            [pdst.column("a", dtype=dtype)],
+            rows=st.tuples(st.datetimes()),
+        ),
+        lambda df: df["a"].dtype == dtype,
+    )
 
 
 @given(

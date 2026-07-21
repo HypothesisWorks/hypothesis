@@ -8,6 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime as dt
+import zoneinfo
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,7 +18,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps, pandas as pdst
-from hypothesis.extra.pandas.impl import IntegerDtype
+from hypothesis.extra.pandas.impl import PANDAS_GE_21, IntegerDtype
 
 from tests.common.debug import (
     assert_all_examples,
@@ -121,6 +124,155 @@ def test_unique_series_are_unique(s):
 @given(pdst.series(dtype="int8", name=st.just("test_name")))
 def test_name_passed_on(s):
     assert s.name == "test_name"
+
+
+TIMEZONES = [
+    "UTC",
+    dt.timezone.utc,
+    dt.timezone(dt.timedelta(hours=5, minutes=30)),
+    dt.timezone(dt.timedelta(hours=-8)),
+]
+requires_pandas21 = pytest.mark.skipif(
+    not PANDAS_GE_21, reason="timezone-aware dtypes require pandas >= 2.1"
+)
+
+
+@pytest.mark.skipif(PANDAS_GE_21, reason="only raises on pandas < 2.1")
+def test_tz_aware_dtype_requires_pandas_21():
+    with pytest.raises(InvalidArgument, match=r"requires pandas >= 2\.1"):
+        check_can_generate_examples(pdst.series(dtype="datetime64[ns, UTC]"))
+
+
+@requires_pandas21
+@pytest.mark.parametrize("unit", ["s", "ms", "us", "ns"])
+@pytest.mark.parametrize("tz", TIMEZONES)
+def test_tz_aware_series_share_one_timezone(unit, tz):
+    dtype = pd.DatetimeTZDtype(unit=unit, tz=tz)
+    assert_all_examples(
+        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
+        lambda s: s.dtype == dtype and (s.dt.tz == dtype.tz),
+    )
+
+
+@requires_pandas21
+def test_tz_aware_series_from_string_dtype():
+    assert_all_examples(
+        pdst.series(dtype="datetime64[ns, UTC]"),
+        lambda s: str(s.dtype) == "datetime64[ns, UTC]",
+    )
+
+
+@requires_pandas21
+@given(pdst.series(dtype="datetime64[s, UTC]", index=pdst.range_indexes(max_size=0)))
+def test_empty_tz_aware_series(s):
+    assert len(s) == 0
+    assert str(s.dtype) == "datetime64[s, UTC]"
+
+
+@requires_pandas21
+def test_ns_resolution_series_exercise_sub_microsecond_values():
+    find_any(
+        pdst.series(dtype="datetime64[ns, UTC]", index=pdst.range_indexes(min_size=1)),
+        lambda s: (s.dt.nanosecond != 0).any(),
+    )
+
+
+@requires_pandas21
+def test_second_resolution_covers_beyond_datetime_max():
+    # The full representable range of datetime64[s] is vastly wider than
+    # Python's datetime, which stops at the end of the year 9999.
+    epoch = dt.datetime(1970, 1, 1)
+    beyond_datetime_max = (dt.datetime.max - epoch).total_seconds() + 86400
+    find_any(
+        pdst.series(dtype="datetime64[s, UTC]", index=pdst.range_indexes(min_size=1)),
+        lambda s: _utc_seconds(s.dropna()).map(abs).gt(beyond_datetime_max).any(),
+    )
+
+
+def _utc_seconds(s):
+    return s.dt.tz_convert("UTC").dt.tz_localize(None).astype("int64")
+
+
+@requires_pandas21
+def test_tz_aware_series_accepts_custom_elements():
+    tz = dt.timezone.utc
+    elements = st.datetimes(timezones=st.just(tz)).map(lambda d: d.replace(year=2000))
+    assert_all_examples(
+        pdst.series(dtype=pd.DatetimeTZDtype("ns", tz), elements=elements),
+        lambda s: (s.dt.year == 2000).all(),
+    )
+
+
+@requires_pandas21
+def test_tz_aware_series_from_zoneinfo_timezone():
+    dtype = pd.DatetimeTZDtype(unit="us", tz=zoneinfo.ZoneInfo("America/New_York"))
+    assert_all_examples(
+        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
+        lambda s: s.dtype == dtype,
+    )
+
+
+@requires_pandas21
+def test_variable_offset_timezones_stay_within_datetime_range():
+    # Unlike fixed-offset timezones, zones whose UTC offset varies over time
+    # resolve offsets through stdlib datetimes, so generated values must stay
+    # within the years 1-9999 which those can represent.
+    dtype = pd.DatetimeTZDtype(unit="s", tz=zoneinfo.ZoneInfo("America/New_York"))
+    assert_all_examples(
+        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
+        lambda s: s.dropna().dt.year.between(1, 9999).all(),
+    )
+
+
+@requires_pandas21
+def test_tz_aware_series_from_naive_datetime_elements():
+    # Naive elements are interpreted as wall times in the dtype's timezone,
+    # with the pandas constructor's handling of DST transitions: ambiguous
+    # times resolve to the first occurrence, and imaginary times are shifted
+    # out of the gap.  We bound the elements because pandas 2.1 localizes
+    # python datetimes via nanoseconds, overflowing beyond that range.
+    dtype = pd.DatetimeTZDtype("us", zoneinfo.ZoneInfo("America/New_York"))
+    elements = st.datetimes(dt.datetime(1678, 1, 1), dt.datetime(2261, 12, 31))
+    assert_all_examples(
+        pdst.series(dtype=dtype, elements=elements),
+        lambda s: s.dtype == dtype,
+    )
+
+
+@requires_pandas21
+def test_tz_aware_series_ambiguous_times_resolve_by_fold():
+    # 01:00-01:59 on 2020-11-01 occurs twice in this timezone; the fold of
+    # each generated datetime selects which occurrence we mean, so both UTC
+    # offsets should appear in generated series.
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    strategy = pdst.series(
+        dtype=pd.DatetimeTZDtype("us", tz),
+        elements=st.datetimes(
+            dt.datetime(2020, 11, 1, 1, 0),
+            dt.datetime(2020, 11, 1, 1, 59),
+            timezones=st.just(tz),
+        ),
+        index=pdst.range_indexes(min_size=1),
+    )
+    find_any(strategy, lambda s: (s.dt.strftime("%z") == "-0400").any())
+    find_any(strategy, lambda s: (s.dt.strftime("%z") == "-0500").any())
+
+
+@requires_pandas21
+def test_tz_aware_series_imaginary_times_are_normalized():
+    # 02:00-02:59 on 2020-03-08 does not exist in this timezone; such values
+    # land on a real instant on one side of the DST gap, depending on fold.
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    strategy = pdst.series(
+        dtype=pd.DatetimeTZDtype("us", tz),
+        elements=st.datetimes(
+            dt.datetime(2020, 3, 8, 2, 0),
+            dt.datetime(2020, 3, 8, 2, 59),
+            timezones=st.just(tz),
+        ),
+        index=pdst.range_indexes(min_size=1),
+    )
+    assert_all_examples(strategy, lambda s: s.dt.hour.isin([1, 3]).all())
 
 
 @pytest.mark.skipif(
