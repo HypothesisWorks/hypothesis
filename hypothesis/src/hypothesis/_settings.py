@@ -785,6 +785,11 @@ class settings(metaclass=settingsMeta):
         shines when given minutes or hours to run.
 
         The default max examples is ``100``.
+
+        .. note::
+
+            See :doc:`../explanation/test-case-count` for details on how |max_examples|
+            interacts with other parts of Hypothesis.
         """
         return self._max_examples
 
@@ -808,8 +813,8 @@ class settings(metaclass=settingsMeta):
     @property
     def database(self):
         """
-        An instance of |ExampleDatabase| that will be used to save failing test
-        cases to, and load previous failing test cases from.
+        An instance of |ExampleDatabase| in which we will save failing |test cases|,
+        and from which we will load previous failing test cases.
 
         If not set, a |DirectoryBasedExampleDatabase| is created in the current
         working directory under ``.hypothesis/examples``. If this location is
@@ -861,7 +866,7 @@ class settings(metaclass=settingsMeta):
             ...     assert not any(x)
             ... f()
             Test case: []
-            Failing test case: [-1198601713, -67, 116, -29578]
+            Failing test case:  [-1198601713, -67, 116, -29578]
             Shrunk test case to [-1198601713]
             Shrunk test case to [-128]
             Shrunk test case to [32]

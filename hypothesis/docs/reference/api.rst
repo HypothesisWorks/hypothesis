@@ -111,7 +111,7 @@ You can mark custom events in a test using |event|:
   def test_even_integers(i):
       event(f"i mod 3 = {i%3}")
 
-These events appear in :ref:`observability <observability>` output, as well as the output of :ref:`our pytest plugin <pytest-plugin>` when run with ``--hypothesis-show-statistics``.
+These events appear in |observability| output, as well as the output of :ref:`our pytest plugin <pytest-plugin>` when run with ``--hypothesis-show-statistics``.
 
 For instance, in the latter case, you would see output like:
 

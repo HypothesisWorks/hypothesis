@@ -269,7 +269,13 @@ def should_note() -> bool:
 
 
 def note(value: object) -> None:
-    """Report this value for the |minimal failing test case|."""
+    """
+    Record a note on this |test case|. Non-string values will be automatically converted
+    to a string.
+
+    This value is reported for the |minimal failing test case|, and on |Verbosity.verbose|
+    or lower.
+    """
     if should_note():
         if not isinstance(value, str):
             value = pretty(value)

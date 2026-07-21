@@ -64,7 +64,7 @@ Also note that even if your code does not explicitly use |assume| or |.filter|, 
 Test cases which are too large
 ------------------------------
 
-For performance reasons, Hypothesis places an internal limit on the size of a single test case. If a test case exceeds this size limit, we will retry generating it and will not count it towards the |max_examples| limit. (And if we see too many of these large test cases, we will raise |HealthCheck.data_too_large|, unless suppressed with |settings.suppress_health_check|).
+For performance reasons, Hypothesis places an internal limit on the number of choices required to generate any single test case. If a test case exceeds this limit, we will retry generating it and will not count it towards the |max_examples| limit. (And if we see too many of these large test cases, we will raise |HealthCheck.data_too_large|, unless suppressed with |settings.suppress_health_check|).
 
 The specific value of this size limit is an undocumented implementation detail. The majority of Hypothesis tests do not come close to hitting it.
 

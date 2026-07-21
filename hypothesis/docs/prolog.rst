@@ -216,6 +216,9 @@
 .. |alternative backend| replace:: :ref:`alternative backend <alternative-backends>`
 .. |alternative backends| replace:: :ref:`alternative backends <alternative-backends>`
 
+.. |observability| replace:: :ref:`observability <observability>`
+.. |Observability| replace:: :ref:`Observability <observability>`
+
 .. |test case| replace:: :term:`test case`
 .. |test cases| replace:: :term:`test cases <test case>`
 .. |explicit example| replace:: :term:`explicit example`

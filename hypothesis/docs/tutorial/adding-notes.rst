@@ -28,7 +28,7 @@ Sometimes you want to add some additional information to a failure, such as the 
     Shuffle: [1, 0]
     ls != ls2
 
-|note| is like a print statement that gets attached to the |minimal failing test case| reported by Hypothesis. It's also reported by :ref:`observability <observability>`, and shown for all test cases (if |settings.verbosity| is set to |Verbosity.verbose| or higher).
+|note| is like a print statement that gets attached to the |minimal failing test case| reported by Hypothesis. It's also reported by |observability|, and shown for all test cases (if |settings.verbosity| is set to |Verbosity.verbose| or higher).
 
 .. note::
 

@@ -259,7 +259,7 @@ class TestCaseObservation(BaseObservation):
 
 def add_observability_callback(f: CallbackT, /, *, all_threads: bool = False) -> None:
     """
-    Adds ``f`` as a callback for :ref:`observability <observability>`. ``f``
+    Adds ``f`` as a callback for |observability|. ``f``
     should accept one argument, which is an observation. Whenever Hypothesis
     produces a new observation, it calls each callback with that observation.
 
@@ -291,7 +291,7 @@ def add_observability_callback(f: CallbackT, /, *, all_threads: bool = False) ->
 
 def remove_observability_callback(f: CallbackT, /) -> None:
     """
-    Removes ``f`` from the :ref:`observability <observability>` callbacks.
+    Removes ``f`` from the |observability| callbacks.
 
     If ``f`` is not in the list of observability callbacks, silently do nothing.
 
@@ -315,7 +315,7 @@ def remove_observability_callback(f: CallbackT, /) -> None:
 
 def observability_enabled() -> bool:
     """
-    Returns whether or not Hypothesis considers :ref:`observability <observability>`
+    Returns whether or not Hypothesis considers |observability|
     to be enabled. Observability is enabled if there is at least one observability
     callback present.
 

@@ -92,8 +92,8 @@ def describe_statistics(stats_dict: "StatisticsDict") -> str:
         lines.append(
             f"  - during {phase} phase ({d['duration-seconds']:.2f} seconds):\n"
             f"    - Typical runtimes: {runtime_ms}, of which {drawtime_ms} in data generation\n"
-            f"    - {statuses['valid']} passing test cases, {statuses['interesting']} "
-            f"failing test cases, {statuses['invalid'] + statuses['overrun']} "
+            f"    - {statuses['valid']} passing, {statuses['interesting']} "
+            f"failing, and {statuses['invalid'] + statuses['overrun']} "
             "invalid test cases"
         )
         # If we've found new distinct failures in this phase, report them

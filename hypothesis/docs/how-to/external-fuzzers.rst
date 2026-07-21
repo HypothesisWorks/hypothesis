@@ -1,7 +1,7 @@
 Use Hypothesis with an external fuzzer
 ======================================
 
-Sometimes you might want to point a traditional fuzzer like `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` at your code, to get coverage-guided exploration of native C extensions.  The associated tooling is often much less mature than property-based testing libraries though, so you might want to use Hypothesis strategies to describe your input data, and our world-class shrinking and :ref:`observability <observability>` tools to wrangle the results.  That's exactly what this how-to guide is about!
+Sometimes you might want to point a traditional fuzzer like `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` at your code, to get coverage-guided exploration of native C extensions.  The associated tooling is often much less mature than property-based testing libraries though, so you might want to use Hypothesis strategies to describe your input data, and our world-class shrinking and |observability| tools to wrangle the results.  That's exactly what this how-to guide is about!
 
 .. note::
 

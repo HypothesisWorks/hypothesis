@@ -13,7 +13,7 @@ Hypothesis provides type hints for all strategies and functions which return a s
     reveal_type(st.lists(st.integers()))
     # SearchStrategy[list[int]]
 
-|SearchStrategy| is the type of a strategy. It is parametrized by the type of the values it generates. You can use it to write type hints for your functions which return a strategy:
+|SearchStrategy| is the type of a strategy. It is :ref:`generic <typing:generics>` in the type of the values it generates. You can use it to write type hints for your functions which return a strategy:
 
 .. code-block:: python
 

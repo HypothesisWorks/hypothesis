@@ -35,11 +35,11 @@ If you have a test which is very expensive or very cheap to run, you can change 
     def test(n):
         print("prints five times")
 
-The default is 100 test cases.
+By default, Hypothesis will stop after generating 100 test cases.
 
 .. note::
 
-    See :doc:`../explanation/example-count` for details on how |max_examples| interacts with other parts of Hypothesis.
+    See :doc:`../explanation/test-case-count` for details on how |max_examples| interacts with other parts of Hypothesis.
 
 
 Other settings options
