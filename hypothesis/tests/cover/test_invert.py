@@ -283,6 +283,14 @@ def test_roundtrip_explicit(strategy, value):
                 2024, 3, 10, 2, 30, tzinfo=zoneinfo.ZoneInfo("America/New_York")
             ),
         ),
+        # aware bounds are not invertible yet
+        (
+            st.datetimes(
+                min_value=dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc),
+                timezones=st.just(dt.timezone.utc),
+            ),
+            dt.datetime(2020, 6, 1, tzinfo=dt.timezone.utc),
+        ),
         (st.timedeltas(), "not a timedelta"),
         (st.timedeltas(max_value=dt.timedelta(days=1)), dt.timedelta(days=10)),
         (st.just(42), 41),
