@@ -18,6 +18,23 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.160.0:
+
+--------------------
+6.160.0 - 2026-07-22
+--------------------
+
+:class:`~hypothesis.stateful.Bundle` now supports efficient |.filter|
+and |.map| methods, which compose with
+:func:`~hypothesis.stateful.consumes` in either order (:issue:`3944`).
+Previously, ``consumes(bundle).filter(fn)`` could remove rejected values from
+the bundle while retrying, and ``consumes(bundle.filter(fn))`` was a type
+error; filtered draws now select among currently-matching values and consume
+only the value which was actually drawn.
+
+Thanks to Reagan Lee for the initial implementation of this feature in
+:pull:`4084`!
+
 .. _v6.159.0:
 
 --------------------
