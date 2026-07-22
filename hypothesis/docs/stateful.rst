@@ -25,6 +25,8 @@ A rule can, in place of a normal strategy, take a :class:`~hypothesis.stateful.B
 
 Specifically, a rule that specifies ``target=a_bundle`` will cause its return value to be added to that bundle. A rule that specifies ``an_argument=a_bundle`` as a strategy will draw a value from that bundle.  A rule can also specify that an argument chooses a value from a bundle and removes that value by using :func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``.
 
+Bundles can be filtered and mapped like any other strategy, and this composes with :func:`~hypothesis.stateful.consumes` in either order: ``consumes(a_bundle.filter(fn))`` and ``consumes(a_bundle).filter(fn)`` both draw a currently-matching value and remove only that value from the bundle.
+
 .. note::
     There is some overlap between what you can do with Bundles and what you can do with instance variables. Both represent state that rules can manipulate. If you do not need to draw values that depend on the machine's state, you can simply use instance variables. If you do need to draw values that depend on the machine's state, Bundles provide a fairly straightforward way to do this. If you need rules that draw values that depend on the machine's state in some more complicated way, you will have to abandon bundles. You can use :func:`~hypothesis.strategies.runner` and |.flatmap| to access the instance from a rule: the strategy ``runner().flatmap(lambda self: sampled_from(self.a_list))`` will draw from the instance variable ``a_list``. If you need something more complicated still, you can use |st.data| to draw data from the instance (or anywhere else) based on logic in the rule.
 

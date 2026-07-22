@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, ClassVar, TypeVar, overload
+from typing import Any, ClassVar, Literal, TypeVar, overload
 from unittest import TestCase
 
 from hypothesis import strategies as st
@@ -54,8 +54,10 @@ from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureSt
 from hypothesis.strategies._internal.strategies import (
     Ex,
     OneOfStrategy,
+    SampledFromStrategy,
     SearchStrategy,
     check_strategy,
+    filter_not_satisfied,
 )
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
@@ -525,10 +527,22 @@ class Rule:
     def __post_init__(self):
         bundles = []
         for k, v in sorted(self.arguments.items()):
-            assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                v = BundleReferenceStrategy(v.name, consume=v.consume)
+                # We use a VarReference so that the printed reproduction refers to
+                # values by their variable names, except when a map transform is
+                # involved, in which case the value passed to the rule is not the one
+                # stored on the machine and we want to draw the transformed value
+                # directly instead of a reference.
+                draw_references = all(
+                    name == "filter" for name, _ in v._transformations
+                )
+                v = Bundle(
+                    v.name,
+                    consume=v.consume,
+                    draw_references=draw_references,
+                    transformations=v._transformations,
+                )
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -562,25 +576,34 @@ class Rule:
 self_strategy = st.runner()
 
 
-class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name: str, *, consume: bool = False):
-        super().__init__()
-        self.name = name
-        self.consume = consume
+class _BundleSampler(SampledFromStrategy):
+    """A single draw from the current contents of a Bundle.
 
-    def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        bundle = machine.bundle(self.name)
-        if not bundle:
-            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
-        # Shrink towards the right rather than the left. This makes it easier
-        # to delete data generated earlier, as when the error is towards the
-        # end there can be a lot of hard to remove padding.
-        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
-        if self.consume:
-            return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
-        else:
-            return bundle[position]
+    A Bundle's elements are only known at draw time, so Bundle.do_draw
+    constructs a throwaway instance of this strategy for each draw, passing
+    (position, reference) pairs as the elements.
+
+    The throwaway instance is also what makes bundle draws thread-safe:
+    Bundle and its Rule-created copies are shared by every instance of the
+    machine class, so per-draw state must live here and never on them.
+    """
+
+    def __init__(self, machine, elements, *, force_repr, transformations):
+        super().__init__(
+            elements, force_repr=force_repr, transformations=transformations
+        )
+        self.machine = machine
+
+    def _transform(self, element):
+        # Filter and map transformations apply to the value, which we look up
+        # lazily so that untested elements cost nothing; the position and
+        # reference ride along so that Bundle.do_draw can consume the chosen
+        # element and refer to it by name.
+        position, reference = element
+        result = super()._transform(self.machine.names_to_values[reference.name])
+        if result is filter_not_satisfied:
+            return filter_not_satisfied
+        return (position, reference, result)
 
 
 class Bundle(SearchStrategy[Ex]):
@@ -603,29 +626,81 @@ class Bundle(SearchStrategy[Ex]):
 
     If the ``consume`` argument is set to True, then all values that are
     drawn from this bundle will be consumed (as above) when requested.
+
+    Bundles may be used with |.filter| and |.map| like any other
+    strategy, and this composes with :func:`~hypothesis.stateful.consumes` in
+    either order - e.g. ``consumes(b.filter(fn))`` and ``consumes(b).filter(fn)``
+    are equivalent, and only ever consume the value which was actually drawn.
     """
 
     def __init__(
-        self, name: str, *, consume: bool = False, draw_references: bool = True
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        draw_references: bool = False,
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Ex], Any]], ...
+        ] = (),
     ) -> None:
         super().__init__()
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
+        self.consume = consume
         self.draw_references = draw_references
-
-    @property
-    def consume(self) -> bool:
-        return self.__reference_strategy.consume
+        self._transformations = transformations
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
-        reference = data.draw(self.__reference_strategy)
-        return machine.names_to_values[reference.name]
+        bundle = machine.bundle(self.name)
+        if not bundle:
+            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
+        # Shrink towards the right rather than the left. This makes it easier
+        # to delete data generated earlier, as when the error is towards the
+        # end there can be a lot of hard to remove padding. do_filtered_draw
+        # shrinks the index towards zero, so we list the elements newest-first.
+        sampler = _BundleSampler(
+            machine,
+            list(enumerate(bundle))[::-1],
+            force_repr=self._base_repr(),
+            transformations=self._transformations,
+        )
+        result = sampler.do_filtered_draw(data)
+        if result is filter_not_satisfied:
+            data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+        position, reference, value = result
+        if self.consume:
+            bundle.pop(position)  # pragma: no cover  # coverage is flaky here
+        return reference if self.draw_references else value
+
+    # We intercept .filter and .map, rather than relying on the generic
+    # FilteredStrategy and MappedStrategy wrappers, so that transformations
+    # apply within a single draw: the generic wrappers instead retry the whole
+    # draw when a filter fails, consuming rejected values from consuming
+    # bundles, and are opaque to the reference-drawing logic in Rule.
+    def __with_transform(self, name, f):
+        return Bundle(
+            self.name,
+            consume=self.consume,
+            draw_references=self.draw_references,
+            transformations=(*self._transformations, (name, f)),
+        )
+
+    def map(self, pack):
+        return self.__with_transform("map", pack)
+
+    def filter(self, condition):
+        return self.__with_transform("filter", condition)
+
+    def _base_repr(self):
+        consume = ", consume=True" if self.consume else ""
+        return f"Bundle(name={self.name!r}{consume})"
 
     def __repr__(self):
-        if self.consume is False:
-            return f"Bundle(name={self.name!r})"
-        return f"Bundle(name={self.name!r}, consume={self.consume!r})"
+        transforms = "".join(
+            f".{name}({get_pretty_function_description(f)})"
+            for name, f in self._transformations
+        )
+        return self._base_repr() + transforms
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time
@@ -637,13 +712,6 @@ class Bundle(SearchStrategy[Ex]):
         # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
         return not bool(machine.bundle(self.name))
-
-    def flatmap(self, expand):
-        if self.draw_references:
-            return Bundle(
-                self.name, consume=self.consume, draw_references=False
-            ).flatmap(expand)
-        return super().flatmap(expand)
 
     def __hash__(self):
         # Making this hashable means we hit the fast path of "everything is
@@ -669,7 +737,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return Bundle(bundle.name, consume=True)
+    return Bundle(bundle.name, consume=True, transformations=bundle._transformations)
 
 
 @dataclass(slots=True, frozen=True)
