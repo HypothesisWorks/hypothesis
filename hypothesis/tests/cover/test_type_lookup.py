@@ -32,13 +32,7 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
-from tests.common.utils import (
-    Why,
-    fails_with,
-    skipif_threading,
-    temp_registered,
-    xfail_on_crosshair,
-)
+from tests.common.utils import fails_with, skipif_threading, temp_registered
 
 # we'll continue testing the typing variants until their removal from the stdlib
 # ruff: noqa: UP006, UP035, UP007
@@ -266,19 +260,9 @@ def _check_instances(t):
     )
 
 
-def maybe_mark(x):
-    if x.__name__ in "Match Decimal IPv4Address":
-        marks = xfail_on_crosshair(Why.other, as_marks=True, strict=False)
-        return pytest.param(x, marks=marks)
-    return x
-
-
 @pytest.mark.parametrize(
     "typ",
-    sorted(
-        (maybe_mark(x) for x in _global_type_lookup if _check_instances(x)),
-        key=str,
-    ),
+    sorted((x for x in _global_type_lookup if _check_instances(x)), key=str),
 )
 @given(data=st.data())
 def test_can_generate_from_all_registered_types(data, typ):

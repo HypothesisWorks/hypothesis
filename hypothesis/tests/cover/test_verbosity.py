@@ -16,7 +16,7 @@ from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
 
 from tests.common.debug import minimal
-from tests.common.utils import Why, capture_out, fails, xfail_on_crosshair
+from tests.common.utils import capture_out, fails
 
 
 @contextmanager
@@ -62,7 +62,6 @@ def test_includes_progress_in_verbose_mode():
     assert "Trying example: " in out
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_prints_initial_attempts_on_find():
     with capture_verbosity() as o:
 

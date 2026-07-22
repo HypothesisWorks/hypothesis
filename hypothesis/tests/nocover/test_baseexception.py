@@ -48,7 +48,6 @@ def test_exception_propagates_fine_from_strategy(e):
         test_do_nothing()
 
 
-@xfail_on_crosshair(Why.other, strict=False)  # extra replay from backend switch
 @pytest.mark.parametrize("e", [KeyboardInterrupt, ValueError])
 def test_baseexception_no_rerun_no_flaky(e):
     runs = 0
