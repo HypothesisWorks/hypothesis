@@ -67,13 +67,13 @@ class Verbosity(Enum):
 
     quiet = "quiet"
     """
-    Hypothesis will not print any output, not even the final falsifying example.
+    Hypothesis will not print any output, not even the |minimal failing test case|.
     """
 
     normal = "normal"
     """
-    Standard verbosity. Hypothesis will print the falsifying example, alongside
-    any notes made with |note| (only for the falsfying example).
+    Standard verbosity. Hypothesis will print the |minimal failing test case|, alongside
+    any notes made with |note| (only for the minimal failing test case).
     """
 
     verbose = "verbose"
@@ -81,7 +81,7 @@ class Verbosity(Enum):
     Increased verbosity. In addition to everything in |Verbosity.normal|, Hypothesis
     will:
 
-    * Print each test case as it tries it
+    * Print each |test case| as it tries it
     * Print any notes made with |note| for each test case
     * Print each shrinking attempt
     * Print all explicit failing examples when using |@example|, instead of only
@@ -144,27 +144,27 @@ class Phase(Enum):
 
     explicit = "explicit"
     """
-    Controls whether explicit examples are run.
+    Controls whether |explicit examples| are run.
     """
 
     reuse = "reuse"
     """
-    Controls whether previous examples will be reused.
+    Controls whether previous test cases will be reused.
     """
 
     generate = "generate"
     """
-    Controls whether new examples will be generated.
+    Controls whether new test cases will be generated.
     """
 
     target = "target"
     """
-    Controls whether examples will be mutated for targeting.
+    Controls whether test cases will be mutated for targeting.
     """
 
     shrink = "shrink"
     """
-    Controls whether examples will be shrunk.
+    Controls whether failing test cases will be shrunk.
     """
 
     explain = "explain"
@@ -172,7 +172,7 @@ class Phase(Enum):
     Controls whether Hypothesis attempts to explain test failures.
 
     The explain phase has two parts, each of which is best-effort - if Hypothesis
-    can't find a useful explanation, we'll just print the minimal failing example.
+    can't find a useful explanation, we'll just print the |minimal failing test case|.
     """
 
     @classmethod
@@ -296,7 +296,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
         return list(HealthCheck)
 
     data_too_large = "data_too_large"
-    """Checks if too many examples are aborted for being too large.
+    """Checks if too many test cases are aborted for being too large.
 
     This is measured by the number of random choices that Hypothesis makes
     in order to generate something, not the size of the generated object.
@@ -306,7 +306,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     """
 
     filter_too_much = "filter_too_much"
-    """Check for when the test is filtering out too many examples, either
+    """Check for when the test is filtering out too many test cases, either
     through use of |assume| or |.filter|, or occasionally for Hypothesis
     internal reasons."""
 
@@ -334,16 +334,16 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     function_scoped_fixture = "function_scoped_fixture"
     """Checks if |@given| has been applied to a test
     with a pytest function-scoped fixture. Function-scoped fixtures run once
-    for the whole function, not once per example, and this is usually not what
+    for the whole function, not once per test case, and this is usually not what
     you want.
 
     Because of this limitation, tests that need to set up or reset
-    state for every example need to do so manually within the test itself,
+    state for every test case need to do so manually within the test itself,
     typically using an appropriate context manager.
 
     Suppress this health check only in the rare case that you are using a
     function-scoped fixture that does not need to be reset between individual
-    examples, but for some reason you cannot use a wider fixture scope
+    test cases, but for some reason you cannot use a wider fixture scope
     (e.g. session scope, module scope, class scope).
 
     This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
@@ -754,27 +754,42 @@ class settings(metaclass=settingsMeta):
     @property
     def max_examples(self):
         """
-        Once this many satisfying examples have been considered without finding any
-        counter-example, Hypothesis will stop looking.
+        Once this many satisfying |test cases| have been considered without finding
+        any failing test case, Hypothesis will stop looking.
+
+        .. note::
+
+            Historically, Hypothesis referred to test cases as "examples", including in
+            this setting name. We now refer to them as test cases throughout our
+            documentation and codebase.
+
+            This setting is an exception: to avoid ecosystem churn, this setting will
+            continue to be called ``max_examples``. Conceptually, it is better thought of
+            as "max test cases".
 
         Note that we might call your test function fewer times if we find a bug early
         or can tell that we've exhausted the search space; or more if we discard some
-        examples due to use of .filter(), assume(), or a few other things that can
+        test cases due to use of .filter(), assume(), or a few other things that can
         prevent the test case from completing successfully.
 
         The default value is chosen to suit a workflow where the test will be part of
         a suite that is regularly executed locally or on a CI server, balancing total
         running time against the chance of missing a bug.
 
-        If you are writing one-off tests, running tens of thousands of examples is
+        If you are writing one-off tests, running tens of thousands of test cases is
         quite reasonable as Hypothesis may miss uncommon bugs with default settings.
         For very complex code, we have observed Hypothesis finding novel bugs after
-        *several million* examples while testing :pypi:`SymPy <sympy>`.
-        If you are running more than 100k examples for a test, consider using our
+        *several million* test cases while testing :pypi:`SymPy <sympy>`.
+        If you are running more than 100k test cases for a test, consider using our
         :ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
         shines when given minutes or hours to run.
 
         The default max examples is ``100``.
+
+        .. note::
+
+            See :doc:`../explanation/test-case-count` for details on how |max_examples|
+            interacts with other parts of Hypothesis.
         """
         return self._max_examples
 
@@ -782,7 +797,7 @@ class settings(metaclass=settingsMeta):
     def derandomize(self):
         """
         If True, seed Hypothesis' random number generator using a hash of the test
-        function, so that every run will test the same set of examples until you
+        function, so that every run will test the same set of test cases until you
         update Hypothesis, Python, or the test function.
 
         This allows you to `check for regressions and look for bugs
@@ -798,8 +813,8 @@ class settings(metaclass=settingsMeta):
     @property
     def database(self):
         """
-        An instance of |ExampleDatabase| that will be used to save examples to
-        and load previous examples from.
+        An instance of |ExampleDatabase| in which we will save failing |test cases|,
+        and from which we will load previous failing test cases.
 
         If not set, a |DirectoryBasedExampleDatabase| is created in the current
         working directory under ``.hypothesis/examples``. If this location is
@@ -850,18 +865,18 @@ class settings(metaclass=settingsMeta):
             ... def f(x):
             ...     assert not any(x)
             ... f()
-            Trying example: []
-            Falsifying example: [-1198601713, -67, 116, -29578]
-            Shrunk example to [-1198601713]
-            Shrunk example to [-128]
-            Shrunk example to [32]
-            Shrunk example to [1]
+            Test case: []
+            Failing test case:  [-1198601713, -67, 116, -29578]
+            Shrunk test case to [-1198601713]
+            Shrunk test case to [-128]
+            Shrunk test case to [32]
+            Shrunk test case to [1]
             [1]
 
         The four levels are |Verbosity.quiet|, |Verbosity.normal|,
         |Verbosity.verbose|, and |Verbosity.debug|. |Verbosity.normal| is the
         default. For |Verbosity.quiet|, Hypothesis will not print anything out,
-        not even the final falsifying example. |Verbosity.debug| is basically
+        not even the |minimal failing test case|. |Verbosity.debug| is basically
         |Verbosity.verbose| but a bit more so. You probably don't want it.
 
         Verbosity can be passed either as a |Verbosity| enum value, or as the
@@ -887,17 +902,17 @@ class settings(metaclass=settingsMeta):
 
         Hypothesis divides tests into logically distinct phases.
 
-        - |Phase.explicit|: Running explicit examples from |@example|.
-        - |Phase.reuse|: Running examples from the database which previously failed.
-        - |Phase.generate|: Generating new random examples.
-        - |Phase.target|: Mutating examples for :ref:`targeted property-based
+        - |Phase.explicit|: Running |explicit examples| from |@example|.
+        - |Phase.reuse|: Running |test cases| from the database which previously failed.
+        - |Phase.generate|: Generating new random test cases.
+        - |Phase.target|: Mutating test cases for :ref:`targeted property-based
           testing <targeted>`. Requires |Phase.generate|.
-        - |Phase.shrink|: Shrinking failing examples.
+        - |Phase.shrink|: Shrinking |failing test cases|.
         - |Phase.explain|: Attempting to explain why a failure occurred.
           Requires |Phase.shrink|.
 
         The phases argument accepts a collection with any subset of these. E.g.
-        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
+        ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new test cases
         and shrink them, but will not run explicit examples or reuse previous failures,
         while ``settings(phases=[Phase.explicit])`` will only run explicit examples
         from |@example|.
@@ -920,10 +935,10 @@ class settings(metaclass=settingsMeta):
         there are no clearly suspicious lines of code, :pep:`we refuse the
         temptation to guess <20>`.
 
-        After shrinking to a minimal failing example, Hypothesis will try to find
-        parts of the example -- e.g. separate args to |@given|
+        After shrinking to a minimal failing test case, Hypothesis will try to find
+        parts of the test case -- e.g. separate args to |@given|
         -- which can vary freely without changing the result
-        of that minimal failing example. If the automated experiments run without
+        of that minimal failing test case. If the automated experiments run without
         finding a passing variation, we leave a comment in the final report:
 
         .. code-block:: python
@@ -935,7 +950,7 @@ class settings(metaclass=settingsMeta):
 
         Just remember that the *lack* of an explanation sometimes just means that
         Hypothesis couldn't efficiently find one, not that no explanation (or
-        simpler failing example) exists.
+        simpler failing test case) exists.
         """
 
         return self._phases
@@ -947,7 +962,7 @@ class settings(metaclass=settingsMeta):
         :ref:`stateful testing <stateful>` before we give up on finding a bug.
 
         Note that this setting is effectively multiplicative with max_examples,
-        as each example will run for a maximum of ``stateful_step_count`` steps.
+        as each test case will run for a maximum of ``stateful_step_count`` steps.
 
         The default stateful step count is ``50``.
         """
@@ -995,7 +1010,7 @@ class settings(metaclass=settingsMeta):
     @property
     def deadline(self):
         """
-        The maximum allowed duration of an individual test case, in milliseconds.
+        The maximum allowed duration of an individual |test case|, in milliseconds.
         You can pass an integer, float, or timedelta. If ``None``, the deadline
         is disabled entirely.
 
@@ -1010,8 +1025,8 @@ class settings(metaclass=settingsMeta):
     @property
     def print_blob(self):
         """
-        If set to ``True``, Hypothesis will print code for failing examples that
-        can be used with |@reproduce_failure| to reproduce the failing example.
+        If set to ``True``, Hypothesis will print code for |failing test cases| that
+        can be used with |@reproduce_failure| to reproduce the failing test case.
 
         The default value is ``False``. If running on CI, the default is ``True`` instead.
         """

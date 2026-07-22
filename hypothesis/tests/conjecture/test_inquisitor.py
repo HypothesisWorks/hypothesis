@@ -40,7 +40,7 @@ def fails_with_output(expected):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_comments_basic_fail_if_either(
+Failing test case: test_inquisitor_comments_basic_fail_if_either(
     # The test always failed when commented parts were varied together.
     a=False,  # or any other generated value
     b=True,
@@ -56,7 +56,7 @@ def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_comments_basic_fail_if_not_all(
+Failing test case: test_inquisitor_comments_basic_fail_if_not_all(
     # The test sometimes passed when commented parts were varied together.
     a='',  # or any other generated value
     b='',  # or any other generated value
@@ -71,7 +71,7 @@ def test_inquisitor_comments_basic_fail_if_not_all(a, b, c):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_no_together_comment_if_single_argument(
+Failing test case: test_inquisitor_no_together_comment_if_single_argument(
     a='',
     b='',  # or any other generated value
 )
@@ -83,7 +83,7 @@ def test_inquisitor_no_together_comment_if_single_argument(a, b):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_skips_arguments_that_cannot_vary(
+Failing test case: test_inquisitor_skips_arguments_that_cannot_vary(
     a='fixed',
     b=100,
 )
@@ -105,7 +105,7 @@ def ints_with_forced_draw(draw):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_doesnt_break_on_varying_forced_nodes(
+Failing test case: test_inquisitor_doesnt_break_on_varying_forced_nodes(
     n1=100,
     n2=0,  # or any other generated value
 )
@@ -125,7 +125,7 @@ def test_issue_3755_regression(start_date, data):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_no_misleading_comment_for_eq_args(
+Failing test case: test_inquisitor_no_misleading_comment_for_eq_args(
     n1=0,
     n2=1,
 )
@@ -149,7 +149,7 @@ class MyClass:
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_builds_subargs(
+Failing test case: test_inquisitor_builds_subargs(
     obj=MyClass(
         0,  # or any other generated value
         True,
@@ -163,7 +163,7 @@ def test_inquisitor_builds_subargs(obj):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_builds_kwargs_subargs(
+Failing test case: test_inquisitor_builds_kwargs_subargs(
     obj=MyClass(
         x=0,  # or any other generated value
         y=True,
@@ -177,7 +177,7 @@ def test_inquisitor_builds_kwargs_subargs(obj):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_tuple_subargs(
+Failing test case: test_inquisitor_tuple_subargs(
     t=(
         0,  # or any other generated value
         True,
@@ -191,7 +191,7 @@ def test_inquisitor_tuple_subargs(t):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_fixeddict_subargs(
+Failing test case: test_inquisitor_fixeddict_subargs(
     d={
         'x': 0,  # or any other generated value
         'y': True,
@@ -205,7 +205,7 @@ def test_inquisitor_fixeddict_subargs(d):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_tuple_multiple_varying(
+Failing test case: test_inquisitor_tuple_multiple_varying(
     t=(
         0,  # or any other generated value
         '',  # or any other generated value
@@ -222,7 +222,7 @@ def test_inquisitor_tuple_multiple_varying(t):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_skip_subset_slices(
+Failing test case: test_inquisitor_skip_subset_slices(
     obj=MyClass(
         (0, False),  # or any other generated value
         y=False,
@@ -239,7 +239,7 @@ def test_inquisitor_skip_subset_slices(obj):
 
 # Test for duplicate param names at different nesting levels
 @fails_with_output("""
-Falsifying example: test_inquisitor_duplicate_param_names(
+Failing test case: test_inquisitor_duplicate_param_names(
     kw=0,  # or any other generated value
     b={
         'kw': '',  # or any other generated value
@@ -269,7 +269,7 @@ class Inner:
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_multi_level_nesting(
+Failing test case: test_inquisitor_multi_level_nesting(
     bare=0,  # or any other generated value
     outer=Outer(
         inner=Inner(x=0),  # or any other generated value

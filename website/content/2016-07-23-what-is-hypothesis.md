@@ -90,7 +90,7 @@ When this is first run, you will see an error that looks something
 like this:
 
 ```
-Falsifying example: test_decode_inverts_encode(s='\xc2\xc2\x80')
+Failing test case: test_decode_inverts_encode(s='\xc2\xc2\x80')
 
 Traceback (most recent call last):
   File "/home/david/.pyenv/versions/2.7/lib/python2.7/site-packages/hypothesis/core.py", line 443, in evaluate_test_data

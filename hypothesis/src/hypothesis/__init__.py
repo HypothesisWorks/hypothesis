@@ -12,7 +12,7 @@
 some source of data.
 
 It verifies your code against a wide range of input and minimizes any
-failing examples it finds.
+failing test cases it finds.
 """
 
 import _hypothesis_globals

@@ -516,7 +516,7 @@ def test_regex_output_should_print_as_string(explain):
     explain_line = "  # or any other generated value" if explain else ""
 
     expected = f"""
-Falsifying example: test(
+Failing test case: test(
     s='00',{explain_line}
 )
 """

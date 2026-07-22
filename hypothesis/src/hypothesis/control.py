@@ -61,10 +61,10 @@ def assume(condition: object) -> Literal[True]: ...
 
 def assume(condition: object) -> Literal[True]:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
-    the example as bad, rather than failing the test.
+    the |test case| as bad, rather than failing the test.
 
     This allows you to specify properties that you *assume* will be
-    true, and let Hypothesis try to avoid similar examples in future.
+    true, and let Hypothesis try to avoid similar test cases in future.
     """
     if _current_build_context.value is None:
         note_deprecation(
@@ -269,7 +269,13 @@ def should_note() -> bool:
 
 
 def note(value: object) -> None:
-    """Report this value for the minimal failing example."""
+    """
+    Record a note on this |test case|. Non-string values will be automatically converted
+    to a string.
+
+    This value is reported for the |minimal failing test case|, and on |Verbosity.verbose|
+    or lower.
+    """
     if should_note():
         if not isinstance(value, str):
             value = pretty(value)
@@ -329,7 +335,7 @@ def target(observation: int | float, *, label: str = "") -> int | float:
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
 
-    Hypothesis will try to maximize the observed value over several examples;
+    Hypothesis will try to maximize the observed value over several |test cases|;
     almost any metric will work so long as it makes sense to increase it.
     For example, ``-abs(error)`` is a metric that increases as ``error``
     approaches zero.
@@ -347,17 +353,17 @@ def target(observation: int | float, *, label: str = "") -> int | float:
     ``target()`` with any label more than once per test case.
 
     .. note::
-        The more examples you run, the better this technique works.
+        The more test cases you run, the better this technique works.
 
         As a rule of thumb, the targeting effect is noticeable above
         :obj:`max_examples=1000 <hypothesis.settings.max_examples>`,
-        and immediately obvious by around ten thousand examples
+        and immediately obvious by around ten thousand test cases
         *per label* used by your test.
 
     :ref:`statistics` include the best score seen for each label,
     which can help avoid `the threshold problem
     <https://hypothesis.works/articles/threshold-problem/>`__ when the minimal
-    example shrinks right down to the threshold of failure (:issue:`2180`).
+    test case shrinks right down to the threshold of failure (:issue:`2180`).
     """
     check_type((int, float), observation, "observation")
     if not math.isfinite(observation):

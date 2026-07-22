@@ -123,7 +123,7 @@ In fact, both of these tests fail:
 
 ```
 
-Falsifying example: test_cloning_an_item(items=[(1, 1), (1, 1), (2, 5)], capacity=7, data=data(...))
+Failing test case: test_cloning_an_item(items=[(1, 1), (1, 1), (2, 5)], capacity=7, data=data(...))
 Draw 1: (1, 1)
 
 ```
@@ -135,7 +135,7 @@ items that are small enough to fit in it.
 
 ```
 
-Falsifying example: test_removing_a_chosen_item(items=[(1, 1), (2, 4), (1, 2)], capacity=6, data=data(...))
+Failing test case: test_removing_a_chosen_item(items=[(1, 1), (2, 4), (1, 2)], capacity=6, data=data(...))
 Draw 1: (1, 1)
 
 ```

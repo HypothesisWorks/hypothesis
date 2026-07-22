@@ -55,6 +55,7 @@ from hypothesistooling.release import (
     create_github_release,
     get_autoupdate_message,
     has_release,
+    install_hypothesis_editable,
     tag_name,
     update_changelog_and_version,
     upload_distribution_to_pypi,
@@ -663,10 +664,17 @@ def documentation():
     try:
         if has_release():
             update_changelog_and_version()
+        install_hypothesis_editable()
         build_docs()
     finally:
         subprocess.check_call(
-            ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
+            [
+                "git",
+                "checkout",
+                "docs/changelog.rst",
+                "rust/Cargo.toml",
+                "rust/Cargo.lock",
+            ],
             cwd=HYPOTHESIS,
         )
 
@@ -686,6 +694,7 @@ def live_website():
 
 @task()
 def live_docs():
+    install_hypothesis_editable()
     pip_tool(
         "sphinx-autobuild",
         "docs",
@@ -988,15 +997,7 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
-    install.ensure_rustc(ci_version_rust)
-    # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
-    # source code is consulted first. Without -e, any rust code is compiled into site-packages,
-    # which the src/ prepending will not reference. -e causes rust code to be compiled
-    # into src/, which lets our sys.path edit pick it up.
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **rust_build_env()},
-    )
+    install_hypothesis_editable()
 
     if not args:
         args = ["-n", "auto", REPO_TESTS / "documentation"]

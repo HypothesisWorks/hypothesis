@@ -239,7 +239,7 @@ class RepresentationPrinter:
 
         We use the context to represent objects constructed by strategies by showing
         *how* they were constructed, and add annotations showing which parts of the
-        minimal failing example can vary without changing the test result.
+        minimal failing test case can vary without changing the test result.
         """
         self.broken: bool = False
         self.output: TextIOBase = StringIO() if output is None else output
@@ -270,7 +270,7 @@ class RepresentationPrinter:
         self.deferred_pprinters.update(_deferred_type_pprinters)
 
         # for which-parts-matter, we track comments keyed by the index of the
-        # span each argument's draw created in the minimal failing example;
+        # span each argument's draw created in the minimal failing test case;
         # this is per-interesting_origin but we report each separately so
         # that's someone else's problem here. Invocations of self.repr_call()
         # can report the span for each argument, which will then be used to

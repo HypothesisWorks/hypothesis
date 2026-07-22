@@ -16,7 +16,7 @@ from pytest import param
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
+from tests.common.utils import run_test_for_failing_test_case
 from tests.snapshots.conftest import EXPLAIN_SETTINGS, SNAPSHOT_SETTINGS
 
 
@@ -161,7 +161,7 @@ def test_always_failing(given_args, snapshot):
     def inner(**kwargs):
         raise AssertionError
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 @pytest.mark.parametrize(
@@ -183,4 +183,4 @@ def test_always_failing_explain(given_args, snapshot):
     def inner(**kwargs):
         raise AssertionError
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot

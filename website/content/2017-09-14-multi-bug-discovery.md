@@ -63,7 +63,7 @@ Well, as of Hypothesis 3.29.0, released a few weeks ago, now it does!
 If you run the above test now, you'll get the following:
 
 ```
-Falsifying example: test(ls=[nan])
+Failing test case: test(ls=[nan])
 Traceback (most recent call last):
   File "/home/david/hypothesis-python/src/hypothesis/core.py", line 671, in run
     print_example=True, is_final=True
@@ -79,7 +79,7 @@ Traceback (most recent call last):
     assert min(ls) <= mean(ls) <= max(ls)
 AssertionError
 
-Falsifying example: test(ls=[])
+Failing test case: test(ls=[])
 Traceback (most recent call last):
   File "/home/david/hypothesis-python/src/hypothesis/core.py", line 671, in run
     print_example=True, is_final=True

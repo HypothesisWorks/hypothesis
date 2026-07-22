@@ -96,11 +96,11 @@ is to let you answer questions you didn't think of in advance.  In slogan form,
 
   *Debugging should be a data analysis problem.*
 
-By default, Hypothesis only reports the minimal failing example... but sometimes you might
-want to know something about *all* the examples.  Printing them to the terminal by increasing
+By default, Hypothesis only reports the |minimal failing test case|... but sometimes you might
+want to know something about *all* the test cases.  Printing them to the terminal by increasing
 |Verbosity| might be nice, but isn't always enough.
 This feature gives you an analysis-ready dataframe with useful columns and one row
-per test case, with columns from arguments to code coverage to pass/fail status.
+per |test case|, with columns from arguments to code coverage to pass/fail status.
 
 This is deliberately a much lighter-weight and task-specific system than e.g.
 `OpenTelemetry <https://opentelemetry.io/>`__.  It's also less detailed than time-travel
@@ -213,7 +213,7 @@ Test statistics
 
 .. note::
 
-  While test statistics are only available under pytest, you can use the :ref:`observability <observability>` interface to view similar information about your tests.
+  While test statistics are only available under pytest, you can use the |observability| interface to view similar information about your tests.
 
 You can see a number of statistics about executed tests by passing the command line argument ``--hypothesis-show-statistics``. This will include some general statistics about the test:
 
@@ -233,10 +233,10 @@ You would see:
 
     - during generate phase (0.06 seconds):
         - Typical runtimes: < 1ms, ~ 47% in data generation
-        - 100 passing examples, 0 failing examples, 0 invalid examples
+        - 100 passing, 0 failing, and 0 invalid test cases
     - Stopped because settings.max_examples=100
 
-The final "Stopped because" line tells you why Hypothesis stopped generating new examples. This is typically because we hit |max_examples|, but occasionally because we exhausted the search space or because shrinking was taking a very long time. This can be useful for understanding the behaviour of your tests.
+The final "Stopped because" line tells you why Hypothesis stopped generating new test cases. This is typically because we hit |max_examples|, but occasionally because we exhausted the search space or because shrinking was taking a very long time. This can be useful for understanding the behaviour of your tests.
 
 In some cases (such as filtered and recursive strategies) you will see events mentioned which describe some aspect of the data generation:
 
@@ -256,7 +256,7 @@ You would see something like:
 
     - during generate phase (0.08 seconds):
         - Typical runtimes: < 1ms, ~ 57% in data generation
-        - 100 passing examples, 0 failing examples, 12 invalid examples
+        - 100 passing test cases, 0 failing test cases, 12 invalid test cases
         - Events:
           * 51.79%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
           * 10.71%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)

@@ -60,8 +60,8 @@ As a result, running ``test_fails_flakily()`` will raise |FlakyFailure|. |FlakyF
 .. code-block:: none
 
   + Exception Group Traceback (most recent call last):
-  | hypothesis.errors.FlakyFailure: Hypothesis test_fails_flakily(n=0) produces unreliable results: Falsified on the first call but did not on a subsequent one (1 sub-exception)
-  | Falsifying example: test_fails_flakily(
+  | hypothesis.errors.FlakyFailure: Hypothesis test_fails_flakily(n=0) produces unreliable results: Failed on the first call but did not on a subsequent one (1 sub-exception)
+  | Failing test case: test_fails_flakily(
   |     n=0,
   | )
   | Failed to reproduce exception. Expected:
@@ -86,7 +86,7 @@ Flaky strategy definition
 
 Each strategy must 'do the same thing' (again, as seen by Hypothesis) if we replay a previously-seen input.  Failing to do so is a more subtle but equally serious form of flakiness, which leaves us unable to shrink to a minimal failing input, or even reliably report the failure in future runs.
 
-One easy way for this to occur is if a strategy depends on external state. For example, this strategy filters out previously-generated integers, including those seen in any previous test case:
+One easy way for this to occur is if a strategy depends on external state. For example, this strategy filters out previously-generated integers, including those seen in any previous |test case|:
 
 .. code-block:: python
 

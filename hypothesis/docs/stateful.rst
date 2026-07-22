@@ -117,7 +117,7 @@ You can control the detailed behaviour with a settings object on the TestCase (t
       max_examples=50, stateful_step_count=100
   )
 
-Which doubles the number of steps each program runs and halves the number of test cases that will be run.
+Which doubles the number of steps each program runs and halves the number of |test cases| that will be run.
 
 Rules
 -----

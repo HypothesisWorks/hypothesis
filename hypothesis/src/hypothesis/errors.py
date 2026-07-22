@@ -50,7 +50,7 @@ class NoSuchExample(HypothesisException):
 
 
 class Unsatisfiable(_Trimmable):
-    """We ran out of time or examples before we could find enough examples
+    """We ran out of time or test cases before we could find enough test cases
     which satisfy the assumptions of this hypothesis.
 
     This could be because the function is too slow. If so, try upping
@@ -153,7 +153,7 @@ class _WrappedBaseException(Exception):
 class FlakyFailure(ExceptionGroup, Flaky):
     """
     This function appears to fail non-deterministically: We have seen it
-    fail when passed this example at least once, but a subsequent invocation
+    fail when passed this value at least once, but a subsequent invocation
     did not fail, or caused a distinct error.
 
     Common causes for this problem are:
@@ -348,7 +348,7 @@ class BackendCannotProceed(HypothesisException):
     The optional ``scope`` argument can enable smarter integration:
 
         verified:
-            Do not request further test cases from this backend.  We *may*
+            Do not request further |test cases| from this backend.  We *may*
             generate more test cases with other backends; if one fails then
             Hypothesis will report unsound verification in the backend too.
 

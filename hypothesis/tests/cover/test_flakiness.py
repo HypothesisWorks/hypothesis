@@ -67,7 +67,7 @@ def test_fails_only_once_is_flaky():
             first_call = False
             raise Nope
 
-    with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:
+    with pytest.raises(FlakyFailure, match="Failed on the first call but") as e:
         rude()
     exceptions = e.value.exceptions
     assert len(exceptions) == 1
@@ -117,7 +117,7 @@ def rude_fn(x):
     exec(rude_def, globals())
     rude = given(integers())(rude_fn)  # noqa: F821 # defined by exec()
 
-    with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:
+    with pytest.raises(FlakyFailure, match="Failed on the first call but") as e:
         rude()
     exceptions = e.value.exceptions
     assert list(map(type, exceptions)) == [ExceptionGroup]
