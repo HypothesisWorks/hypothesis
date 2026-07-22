@@ -233,7 +233,7 @@ You would see:
 
     - during generate phase (0.06 seconds):
         - Typical runtimes: < 1ms, ~ 47% in data generation
-        - 100 passing test cases, 0 failing test cases, 0 invalid test cases
+        - 100 passing, 0 failing, and 0 invalid test cases
     - Stopped because settings.max_examples=100
 
 The final "Stopped because" line tells you why Hypothesis stopped generating new test cases. This is typically because we hit |max_examples|, but occasionally because we exhausted the search space or because shrinking was taking a very long time. This can be useful for understanding the behaviour of your tests.
