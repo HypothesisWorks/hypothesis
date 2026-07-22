@@ -478,9 +478,7 @@ def test_realization_with_verbosity_draw(verbosity):
 
         with capture_out() as out:
             test_function()
-        assert (
-            "Trying example: test_function(\n    data=data(...),\n)" in out.getvalue()
-        )
+        assert "Test case: test_function(\n    data=data(...),\n)" in out.getvalue()
         assert "Draw 1: <symbolic>" in out.getvalue()
 
 

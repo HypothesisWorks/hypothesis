@@ -83,7 +83,7 @@ def test_inquisitor_no_together_comment_if_single_argument(a, b):
 
 
 @fails_with_output("""
-Falsifying example: test_inquisitor_skips_arguments_that_cannot_vary(
+Failing test case: test_inquisitor_skips_arguments_that_cannot_vary(
     a='fixed',
     b=100,
 )
