@@ -1365,6 +1365,11 @@ class StateForActualGivenExecution:
                 except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                try:
+                    data.notes = data.provider.realize(data.notes)
+                except BackendCannotProceed:
+                    data.notes = []
+
                 data.freeze()
                 tc = make_testcase(
                     run_start=self._start_timestamp,

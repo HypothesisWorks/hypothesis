@@ -59,10 +59,12 @@ from hypothesis.stateful import (
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import (
+    Why,
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
     skipif_threading,
+    xfail_on_crosshair,
 )
 from tests.conjecture.common import choices, integer_constr, nodes
 
@@ -192,6 +194,9 @@ def test_notes_recorded_for_every_observation():
         assert tc.metadata.notes == [f"noted {x}", f"[{x}]"]
 
 
+# the f-string here formats a symbolic integer, which distracts crosshair
+# from exploring the x >= 10 branch of the assertion
+@xfail_on_crosshair(Why.undiscovered)
 def test_notes_recorded_for_minimal_failing_example():
     @given(st.integers())
     @settings(database=None)
