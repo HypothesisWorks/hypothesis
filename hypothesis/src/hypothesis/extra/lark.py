@@ -95,14 +95,20 @@ class LarkStrategy(st.SearchStrategy):
         for t in terminals:
             self.names_to_symbols[t.name] = Terminal(t.name)
             pattern = re.compile(t.pattern.to_regexp())
+
+            def lexes_entirely(string: str, pattern: re.Pattern[str] = pattern) -> bool:
+                match = pattern.match(string)
+                assert match is not None  # string fullmatches the pattern
+                return match.end() == len(string)
+
             # Lark's lexer matches terminals unanchored, so a string which
             # fullmatches a lazy pattern may still lex as a shorter token
             # plus leftover characters - e.g. common.ESCAPED_STRING can
             # fullmatch '"""', which lexes as '""' followed by an error.
             # Only generate strings the lexer would match in their entirety.
-            s = st.from_regex(pattern, fullmatch=True, alphabet=alphabet).filter(
-                lambda s, pattern=pattern: pattern.match(s).end() == len(s)
-            )
+            s: st.SearchStrategy[str] = st.from_regex(
+                pattern, fullmatch=True, alphabet=alphabet
+            ).filter(lexes_entirely)
             try:
                 s.validate()
             except IncompatibleWithAlphabet:
