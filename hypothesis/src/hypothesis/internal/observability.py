@@ -173,6 +173,7 @@ def nodes_to_json(nodes: tuple[ChoiceNode, ...]) -> list[dict[str, Any]]:
 class ObservationMetadata:
     traceback: str | None
     reproduction_decorator: str | None
+    notes: list[str]
     predicates: dict[str, PredicateCounts]
     backend: dict[str, Any]
     sys_argv: list[str]
@@ -188,6 +189,7 @@ class ObservationMetadata:
         data = {
             "traceback": self.traceback,
             "reproduction_decorator": self.reproduction_decorator,
+            "notes": self.notes,
             "predicates": self.predicates,
             "backend": self.backend,
             "sys.argv": self.sys_argv,
@@ -461,6 +463,7 @@ def make_testcase(
                 "reproduction_decorator": (
                     reproduction_decorator(data.choices) if status == "failed" else None
                 ),
+                "notes": list(data.notes),
                 "predicates": dict(data._observability_predicates),
                 "backend": backend_metadata or {},
                 "data_status": data.status,

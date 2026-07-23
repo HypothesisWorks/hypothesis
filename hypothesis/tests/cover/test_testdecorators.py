@@ -514,6 +514,21 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
         f()
 
 
+def test_notes_exhausted_search_space_in_unsatisfiable_error():
+    @given(booleans())
+    def f(v):
+        assume(False)
+
+    with pytest.raises(
+        Unsatisfiable,
+        match=(
+            r"Unable to satisfy assumptions of f\. Hypothesis tried every "
+            r"possible input"
+        ),
+    ):
+        f()
+
+
 # crosshair generates one valid input before verifying the test function,
 # so the Unsatisfiable check never occurs.
 # (not strict due to slowness causing crosshair to bail out on the first input,

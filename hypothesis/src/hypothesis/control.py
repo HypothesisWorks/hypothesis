@@ -274,12 +274,21 @@ def note(value: object) -> None:
     to a string.
 
     This value is reported for the |minimal failing test case|, and on |Verbosity.verbose|
-    or lower.
+    or higher.
+
+    Notes are also recorded in the ``metadata.notes`` key of each test case
+    observation, if :ref:`observability <observability>` is enabled.
     """
-    if should_note():
+    should_report = should_note()
+    if should_report or observability_enabled():
         if not isinstance(value, str):
             value = pretty(value)
-        report(value)
+        context = _current_build_context.value
+        assert context is not None
+        if observability_enabled():
+            context.data.note(value)
+        if should_report:
+            report(value)
 
 
 def event(value: str, payload: Any = "") -> None:

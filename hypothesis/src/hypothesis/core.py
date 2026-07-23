@@ -81,7 +81,11 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData, Status
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
+from hypothesis.internal.conjecture.engine import (
+    BUFFER_SIZE,
+    ConjectureRunner,
+    ExitReason,
+)
 from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
@@ -1361,6 +1365,11 @@ class StateForActualGivenExecution:
                 except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
 
+                try:
+                    data.notes = data.provider.realize(data.notes)
+                except BackendCannotProceed:
+                    data.notes = []
+
                 data.freeze()
                 tc = make_testcase(
                     run_start=self._start_timestamp,
@@ -1443,6 +1452,13 @@ class StateForActualGivenExecution:
         else:
             if runner.valid_examples == 0:
                 explanations = []
+                if runner.exit_reason is ExitReason.finished:
+                    explanations.append(
+                        "Hypothesis tried every possible input, so the "
+                        "assumptions of this test are impossible to satisfy - "
+                        "not merely unlikely - and running more test cases "
+                        "cannot help."
+                    )
                 # use a somewhat arbitrary cutoff to avoid recommending spurious
                 # fixes.
                 # eg, a few invalid examples from internal filters when the

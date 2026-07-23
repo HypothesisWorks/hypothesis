@@ -10,13 +10,13 @@
 
 from contextlib import contextmanager
 
-from hypothesis import example, find, given
+from hypothesis import example, find, given, note
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
 
 from tests.common.debug import minimal
-from tests.common.utils import capture_out, fails
+from tests.common.utils import capture_observations, capture_out, fails
 
 
 @contextmanager
@@ -35,6 +35,19 @@ def test_prints_intermediate_in_success():
 
         test_works()
     assert "Test case:" in o.getvalue()
+
+
+def test_notes_are_not_printed_twice_in_debug_mode():
+    # the engine's debug output must not repeat notes which were already
+    # printed, even when observability has recorded them on the data
+    @settings(verbosity=Verbosity.debug, max_examples=1, database=None)
+    @given(booleans())
+    def test_works(x):
+        note("this is a note")
+
+    with capture_verbosity() as o, capture_observations():
+        test_works()
+    assert o.getvalue().count("this is a note") == 1
 
 
 def test_does_not_log_in_quiet_mode():

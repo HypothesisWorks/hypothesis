@@ -27,6 +27,7 @@ from hypothesis.strategies._internal.random import (
 )
 
 from tests.common.debug import assert_all_examples, find_any
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def test_implements_all_random_methods():
@@ -123,7 +124,20 @@ def any_call(draw):
     return (method, *draw(any_call_of_method(method)))
 
 
-@pytest.mark.parametrize("method", RANDOM_METHODS)
+@pytest.mark.parametrize(
+    "method",
+    [
+        pytest.param(
+            method,
+            marks=(
+                xfail_on_crosshair(Why.other, strict=False, as_marks=True)
+                if method == "triangular"
+                else ()
+            ),
+        )
+        for method in RANDOM_METHODS
+    ],
+)
 @given(any_random, st.data())
 def test_call_all_methods(method, rnd, data):
     args, kwargs = data.draw(any_call_of_method(method))

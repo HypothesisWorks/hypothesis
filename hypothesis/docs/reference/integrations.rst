@@ -142,6 +142,10 @@ float observation associated with it.  All events are collected and summarized i
 recording them in observations, Hypothesis will try to maximize the targeted value.
 Knowing that, you can use this to guide the search for failing inputs.
 
+:func:`~hypothesis.note` values are also recorded, in order, under the
+``metadata.notes`` key of each test-case observation - whether or not they
+were printed to the terminal.
+
 
 Data Format
 ~~~~~~~~~~~
