@@ -92,6 +92,7 @@ their individual contributions.
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `James Lamb <https://github.com/jameslamb>`_
+* `Jayashanker Padishala <https://github.com/Jayashanker-Padishala>`_ (jayashankar.pjs@gmail.com)
 * `Jenny Rouleau <https://github.com/jennyrou>`_
 * `Jens Heinrich <https://github.com/JensHeinrich>`_
 * `Jens Tröger <https://github.com/jenstroeger>`_

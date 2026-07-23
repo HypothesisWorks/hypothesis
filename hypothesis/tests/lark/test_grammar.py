@@ -72,6 +72,19 @@ def test_can_specify_start_rule(data, start, type_):
     assert isinstance(value, type_)
 
 
+ESCAPED_STRING_LARK = Lark(r"""
+    %import common.ESCAPED_STRING
+    start: ESCAPED_STRING
+    """)
+
+
+@given(from_lark(ESCAPED_STRING_LARK))
+def test_generates_parseable_escaped_strings(string):
+    # ESCAPED_STRING's lazy pattern fullmatches strings like '"""' which the
+    # unanchored lexer tokenizes as a shorter match plus leftover characters.
+    ESCAPED_STRING_LARK.parse(string)
+
+
 def test_can_generate_ignored_tokens():
     list_grammar = r"""
     list : "[" [STRING ("," STRING)*] "]"
