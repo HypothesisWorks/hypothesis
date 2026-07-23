@@ -1451,7 +1451,7 @@ class StateForActualGivenExecution:
                     explanations.append(
                         "Hypothesis tried every possible input, so the "
                         "assumptions of this test are impossible to satisfy - "
-                        "not merely unlikely - and running more examples "
+                        "not merely unlikely - and running more test cases "
                         "cannot help."
                     )
                 # use a somewhat arbitrary cutoff to avoid recommending spurious

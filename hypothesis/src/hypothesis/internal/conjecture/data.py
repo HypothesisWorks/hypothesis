@@ -1164,10 +1164,8 @@ class ConjectureData:
         if self.frozen:
             raise Frozen(f"Cannot call {name} on frozen ConjectureData")
 
-    def note(self, value: Any) -> None:
+    def note(self, value: str) -> None:
         self.__assert_not_frozen("note")
-        if not isinstance(value, str):
-            value = repr(value)
         self.notes.append(value)
 
     def draw(

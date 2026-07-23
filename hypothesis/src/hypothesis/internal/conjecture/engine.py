@@ -962,11 +962,7 @@ class ConjectureRunner:
             assert isinstance(data, ConjectureData)  # mypy is silly
             status = f"{status} ({data.events.get('invalid because', '?')})"
 
-        newline_tab = "\n\t"
-        self.debug(
-            f"{len(data.choices)} choices -> {status}\n\t{data.choices}"
-            f"{newline_tab + newline_tab.join(data.notes) if data.notes else ''}"
-        )
+        self.debug(f"{len(data.choices)} choices -> {status}\n\t{data.choices}")
 
     def observe_for_provider(self) -> AbstractContextManager:
         def on_observation(observation: Observation) -> None:

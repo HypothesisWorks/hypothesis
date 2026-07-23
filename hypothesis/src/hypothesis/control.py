@@ -285,7 +285,7 @@ def note(value: object) -> None:
             value = pretty(value)
         context = _current_build_context.value
         assert context is not None
-        if observability_enabled() and not context.data.frozen:
+        if observability_enabled():
             context.data.note(value)
         if should_report:
             report(value)
