@@ -50,15 +50,13 @@ class NoSuchExample(HypothesisException):
 
 
 class Unsatisfiable(_Trimmable):
-    """We ran out of time or test cases before we could find enough test cases
-    which satisfy the assumptions of this hypothesis.
+    """We ran out of test cases before we could find enough which satisfy the
+    assumptions of this hypothesis.
 
-    This could be because the function is too slow. If so, try upping
-    the timeout. It could also be because the function is using assume
-    in a way that is too hard to satisfy. If so, try writing a custom
-    strategy or using a better starting point (e.g if you are requiring
-    a list has unique values you could instead filter out all duplicate
-    values from the list)
+    This could be because the function is using |assume| in a way that is
+    too hard to satisfy. If so, try writing a custom strategy or using a
+    better starting point (e.g if you are requiring a list has unique
+    values you could instead filter out all duplicate values from the list)
     """
 
 
