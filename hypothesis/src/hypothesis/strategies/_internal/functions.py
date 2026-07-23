@@ -8,7 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from inspect import Parameter, Signature
+import sys
+from inspect import (
+    Parameter,
+    Signature,
+    isasyncgenfunction,
+    iscoroutinefunction,
+    isgeneratorfunction,
+)
 from weakref import WeakKeyDictionary
 
 from hypothesis.control import note, should_note
@@ -29,6 +36,22 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.utils.conventions import UniqueIdentifier
 
 can_vary = UniqueIdentifier("can_vary")
+
+
+async def _checkpoint():  # pragma: no cover  # depends on installed frameworks
+    # Generated async functions follow Trio-style checkpoint semantics, using
+    # anyio or sniffio to find the right way to checkpoint if the user's async
+    # framework might not be asyncio.
+    if anyio := sys.modules.get("anyio"):
+        await anyio.lowlevel.checkpoint()
+        return
+    if sniffio := sys.modules.get("sniffio"):
+        if sniffio.current_async_library() == "trio":
+            await sys.modules["trio"].lowlevel.checkpoint()
+            return
+    import asyncio  # deferred to keep `import hypothesis` fast
+
+    await asyncio.sleep(0)
 
 
 class FunctionStrategy(SearchStrategy):
@@ -76,11 +99,14 @@ class FunctionStrategy(SearchStrategy):
 
     def do_draw(self, data):
         # If we know what the function returns, we show it as a constant lambda
-        # instead of noting every call - the notes would be redundant.
-        varies = self._constant is can_vary
+        # instead of noting every call - the notes would be redundant.  A
+        # lambda is a poor description of an async function though, and
+        # generator kinds are never constant, so this is for plain functions.
+        varies = self._constant is can_vary or iscoroutinefunction(self.like)
 
-        @proxies(self.like)
-        def inner(*args, **kwargs):
+        def draw_value(args, kwargs):
+            # `pure=True` is rejected for non-plain `like`s, so only the plain
+            # `inner` below can ever take the caching branch.
             if data.frozen:
                 raise InvalidState(
                     f"This generated {nicerepr(self.like)} function can only "
@@ -103,6 +129,39 @@ class FunctionStrategy(SearchStrategy):
                     rep = repr_call(self.like, args, kwargs, reorder=False)
                     note(f"Called function: {rep} -> {val!r}")
                 return val
+
+        # Define an inner function of the same kind as `like`, so that the
+        # proxy (see `proxies`) is a coroutine, generator, or async-generator
+        # function whenever `like` is.  For generator kinds, the drawn value
+        # is a list of values to yield.
+        if iscoroutinefunction(self.like):
+
+            @proxies(self.like)
+            async def inner(*args, **kwargs):
+                value = draw_value(args, kwargs)
+                await _checkpoint()
+                return value
+
+        elif isasyncgenfunction(self.like):
+
+            @proxies(self.like)
+            async def inner(*args, **kwargs):
+                for value in draw_value(args, kwargs):
+                    await _checkpoint()
+                    yield value
+                await _checkpoint()
+
+        elif isgeneratorfunction(self.like):
+
+            @proxies(self.like)
+            def inner(*args, **kwargs):
+                yield from draw_value(args, kwargs)
+
+        else:
+
+            @proxies(self.like)
+            def inner(*args, **kwargs):
+                return draw_value(args, kwargs)
 
         if not varies:
             inner._repr_pretty_ = self._pretty_constant_function
