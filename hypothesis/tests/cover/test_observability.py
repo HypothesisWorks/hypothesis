@@ -175,6 +175,38 @@ def test_failure_includes_notes():
     assert test_cases[-1].representation == expected
 
 
+def test_notes_recorded_for_every_observation():
+    @given(st.integers(0, 100))
+    @settings(database=None)
+    def f(x):
+        note(f"noted {x}")
+        note([x])
+
+    with capture_observations() as observations:
+        f()
+
+    test_cases = [tc for tc in observations if tc.type == "test_case"]
+    assert test_cases
+    for tc in test_cases:
+        x = tc.arguments["x"]
+        assert tc.metadata.notes == [f"noted {x}", f"[{x}]"]
+
+
+def test_notes_recorded_for_minimal_failing_example():
+    @given(st.integers())
+    @settings(database=None)
+    def f(x):
+        note(f"noted {x}")
+        assert x < 10
+
+    with capture_observations() as observations, pytest.raises(AssertionError):
+        f()
+
+    final = [tc for tc in observations if tc.type == "test_case"][-1]
+    assert final.how_generated == "minimal failing test case"
+    assert final.metadata.notes == ["noted 10"]
+
+
 def test_normal_representation_includes_draws():
     @given(st.data())
     def f(data):
@@ -548,6 +580,7 @@ def test_metadata_to_json():
         ) == {
             "traceback",
             "reproduction_decorator",
+            "notes",
             "predicates",
             "backend",
             "sys.argv",

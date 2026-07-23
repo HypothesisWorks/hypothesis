@@ -59,7 +59,7 @@ def test_draw_past_end_sets_overflow():
 def test_notes_repr():
     d = ConjectureData.for_choices([])
     d.note(b"hi")
-    assert repr(b"hi") in d.output
+    assert repr(b"hi") in d.notes
 
 
 def test_can_mark_interesting():
@@ -290,13 +290,13 @@ def test_can_note_non_str():
     d = ConjectureData.for_choices([])
     x = object()
     d.note(x)
-    assert repr(x) in d.output
+    assert repr(x) in d.notes
 
 
 def test_can_note_str_as_non_repr():
     d = ConjectureData.for_choices([])
     d.note("foo")
-    assert d.output == "foo"
+    assert d.notes == ["foo"]
 
 
 def test_result_is_overrun():

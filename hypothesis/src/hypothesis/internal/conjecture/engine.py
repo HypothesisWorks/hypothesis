@@ -965,7 +965,7 @@ class ConjectureRunner:
         newline_tab = "\n\t"
         self.debug(
             f"{len(data.choices)} choices -> {status}\n\t{data.choices}"
-            f"{newline_tab + data.output if data.output else ''}"
+            f"{newline_tab + newline_tab.join(data.notes) if data.notes else ''}"
         )
 
     def observe_for_provider(self) -> AbstractContextManager:

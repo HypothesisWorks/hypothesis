@@ -75,7 +75,7 @@ def test_minimal_poisoned_containers(seed, size, p, strategy_class):
 
     def test_function(data):
         v = data.draw(strategy)
-        data.output = repr(v)
+        data.note(v)
         if POISON in v:
             data.mark_interesting(interesting_origin())
 
