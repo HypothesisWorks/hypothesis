@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.1:
+
+--------------------
+6.161.1 - 2026-07-23
+--------------------
+
+:func:`~hypothesis.extra.lark.from_lark` could generate strings which the
+grammar's lexer tokenizes differently than the terminal they were generated
+for, and which therefore fail to parse - for example ``'"""'`` for Lark's
+built-in ``ESCAPED_STRING`` terminal (:issue:`4325`). Terminal strategies now
+only generate strings which the lexer would match in their entirety.
+
 .. _v6.161.0:
 
 --------------------
