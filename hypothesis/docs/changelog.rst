@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.0:
+
+--------------------
+6.161.0 - 2026-07-23
+--------------------
+
+Values recorded with :func:`~hypothesis.note` are now included in
+:ref:`observability <observability>` reports, as an ordered list of strings
+under the ``metadata.notes`` key of each test-case observation.  Previously,
+notes were only shown in the terminal for the |minimal failing test case|
+(or for every test case under |Verbosity.verbose|), and never appeared in
+observations at all.
+
 .. _v6.160.0:
 
 --------------------
