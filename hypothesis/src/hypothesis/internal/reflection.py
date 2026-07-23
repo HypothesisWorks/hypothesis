@@ -354,11 +354,13 @@ def source_exec_as_module(source: str) -> ModuleType:
 
 
 COPY_SIGNATURE_SCRIPT = """
+from contextlib import aclosing, closing
+
 from hypothesis.utils.conventions import not_set
 
 def accept({funcname}):
-    def {name}{signature}:
-        return {funcname}({invocation})
+    {def_prefix}def {name}{signature}:
+        {body}
     return {name}
 """.lstrip()
 
@@ -420,17 +422,38 @@ def define_function_signature(name, docstring, signature):
         if varkw:
             invocation_parts.append("**" + varkw.name)
 
-        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
+        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 4)]
+        free_names = [n for n in candidate_names if n not in used_names]
+        funcname, gen, val = free_names[:3]
 
-        for funcname in candidate_names:  # pragma: no branch
-            if funcname not in used_names:
-                break
+        invocation = f"{funcname}({', '.join(invocation_parts)})"
+        # Preserve the kind of the wrapped function, so that e.g. proxies for
+        # async or generator functions are themselves async or generators -
+        # closing the proxy also closes the underlying (async) generator.
+        if inspect.iscoroutinefunction(f):
+            def_prefix, body = "async ", f"return await {invocation}"
+        elif inspect.isasyncgenfunction(f):
+            def_prefix = "async "
+            body = (
+                f"async with aclosing({invocation}) as {gen}:\n"
+                f"            async for {val} in {gen}:\n"
+                f"                yield {val}"
+            )
+        elif inspect.isgeneratorfunction(f):
+            def_prefix = ""
+            body = (
+                f"with closing({invocation}) as {gen}:\n"
+                f"            return (yield from {gen})"
+            )
+        else:
+            def_prefix, body = "", f"return {invocation}"
 
         source = COPY_SIGNATURE_SCRIPT.format(
             name=name,
             funcname=funcname,
             signature=str(newsig),
-            invocation=", ".join(invocation_parts),
+            def_prefix=def_prefix,
+            body=body,
         )
         result = source_exec_as_module(source).accept(f)
         result.__doc__ = docstring
