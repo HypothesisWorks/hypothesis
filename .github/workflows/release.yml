@@ -93,6 +93,18 @@ jobs:
             }
           - {
               os: ubuntu-latest,
+              target: armv7,
+              manylinux: auto,
+              abi3-only: true
+            }
+          - {
+              os: ubuntu-latest,
+              target: armv7,
+              manylinux: musllinux_1_2,
+              abi3-only: true
+            }
+          - {
+              os: ubuntu-latest,
               target: riscv64,
               manylinux: auto,
               abi3-only: true
