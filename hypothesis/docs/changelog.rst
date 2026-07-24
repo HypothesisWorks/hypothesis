@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.2:
+
+--------------------
+6.161.2 - 2026-07-24
+--------------------
+
+We now publish abi3 wheels for Linux riscv64, for both manylinux and musllinux (:issue:`4815`).
+
 .. _v6.161.1:
 
 --------------------
