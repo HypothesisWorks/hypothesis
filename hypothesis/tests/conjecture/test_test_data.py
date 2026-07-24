@@ -13,7 +13,9 @@ import itertools
 import pytest
 
 from hypothesis import strategies as st
+from hypothesis.control import BuildContext
 from hypothesis.errors import Frozen
+from hypothesis.internal.conjecture.choice import ValueHole
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -400,3 +402,118 @@ def test_overruns_at_exactly_max_length():
         except StopTest:
             pass
         assert data.status is Status.OVERRUN
+
+
+@pytest.mark.parametrize(
+    "strategy, choices",
+    [
+        (st.integers(), [42]),
+        (st.booleans(), [True]),
+        (st.text(), ["hello"]),
+        (st.binary(), [b"abc"]),
+        (st.floats(), [1.5]),
+    ],
+)
+def test_primitive_strategy_spans_record_their_value(strategy, choices):
+    d = ConjectureData.for_choices(choices)
+    value = d.draw(strategy)
+    d.freeze()
+    strategy_span = next(sp for sp in d.spans if sp.depth == 1)
+    assert strategy_span.recorded_value == value == choices[0]
+
+
+def test_non_primitive_strategy_spans_do_not_record_a_value():
+    d = ConjectureData.for_choices([])
+    d.draw(st.just((1, "x")))
+    d.freeze()
+    outer = next(sp for sp in d.spans if sp.depth == 1)
+    assert outer.recorded_value is None
+
+
+def test_top_level_span_does_not_record_a_value():
+    d = ConjectureData.for_choices([0])
+    d.draw(st.integers())
+    d.freeze()
+    # The top-level span wraps the whole test run, not a single strategy.
+    assert d.spans[0].recorded_value is None
+
+
+def test_span_without_value_returns_none():
+    d = ConjectureData.for_choices([])
+    d.start_span(1)
+    d.stop_span()
+    d.freeze()
+    span = next(sp for sp in d.spans if sp.label == 1)
+    assert span.recorded_value is None
+
+
+def test_record_value_for_span_ignores_non_primitive():
+    d = ConjectureData.for_choices([])
+    d.start_span(1)
+    d._ConjectureData__span_record.record_value_for_span(1, [1, 2, 3])
+    d.stop_span()
+    d.freeze()
+    span = next(sp for sp in d.spans if sp.label == 1)
+    assert span.recorded_value is None
+
+
+def test_record_value_for_span_records_by_index():
+    d = ConjectureData.for_choices([])
+    record = d._ConjectureData__span_record
+    d.start_span(1)
+    d.start_span(2)
+    record.record_value_for_span(2, 42)
+    d.stop_span()
+    d.stop_span()
+    record.record_value_for_span(1, "outer")
+    d.freeze()
+    values = {sp.label: sp.recorded_value for sp in d.spans if sp.label in (1, 2)}
+    assert values == {1: "outer", 2: 42}
+
+
+def test_value_hole_is_claimed_by_the_drawn_strategy():
+    # The strategy drawn at the hole's position re-encodes the value via its
+    # own _invert, so the replay produces exactly that value.
+    d = ConjectureData(prefix=(0, ValueHole(5000)), random=None)
+    with BuildContext(d, wrapped_test=lambda: None):
+        value = d.draw(st.integers() | st.sampled_from([4991, 4999]))
+    d.freeze()
+    assert value == 5000
+    assert d.misaligned_at is None
+    assert d.choices == (0, 5000)
+
+
+def test_value_hole_out_of_image_is_a_misalignment():
+    # integers(0, 10) cannot invert 5000, so the hole is left unclaimed and
+    # the underlying draw treats it as a misalignment (drawing the simplest
+    # permitted value instead).
+    d = ConjectureData(prefix=(ValueHole(5000),), random=None)
+    with BuildContext(d, wrapped_test=lambda: None):
+        value = d.draw(st.integers(0, 10))
+    d.freeze()
+    assert value == 0
+    assert d.misaligned_at is not None
+
+
+def test_value_hole_reaching_a_raw_draw_is_a_misalignment():
+    # A hole consumed by a raw draw_* call, with no strategy to claim it,
+    # falls back to misalignment semantics.
+    d = ConjectureData(prefix=(ValueHole("xyz"),), random=None)
+    assert d.draw_integer(0, 100) == 0
+    assert d.misaligned_at is not None
+
+
+def test_value_hole_keeps_the_first_misalignment():
+    d = ConjectureData(prefix=("not an int", ValueHole(5)), random=None)
+    assert d.draw_integer() == 0
+    assert d.draw_integer() == 0
+    assert d.misaligned_at[0] == 0
+
+
+def test_value_hole_overruns_when_the_simplest_choice_is_too_large():
+    # as for ChoiceTemplate, when drawing even the simplest choice in place
+    # of an unclaimed hole would exceed BUFFER_SIZE
+    d = ConjectureData(prefix=(ValueHole(b""),), random=None)
+    with pytest.raises(StopTest):
+        d.draw_bytes(10_000, 10_000)
+    assert d.status is Status.OVERRUN
