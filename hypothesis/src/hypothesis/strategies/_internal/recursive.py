@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from typing import Any, TypeVar
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     get_pretty_function_description,
@@ -70,6 +71,9 @@ class LimitedStrategy(SearchStrategy[T]):
             raise LimitReached
         self.marker -= 1
         return data.draw(self.base_strategy)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        return self.base_strategy._invert(value)
 
     @contextmanager
     def capped(self, max_templates: int) -> Generator[None, None, None]:
@@ -183,3 +187,6 @@ class RecursiveStrategy(SearchStrategy):
                     f"Draw for {self!r} exceeded "
                     f"max_leaves={self.max_leaves} and had to be retried"
                 ] = ""
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        return self.strategy._invert(value)

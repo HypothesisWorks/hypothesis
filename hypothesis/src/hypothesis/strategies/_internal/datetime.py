@@ -16,9 +16,10 @@ import zoneinfo
 from functools import cache, partial
 from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, overload
+from typing import TYPE_CHECKING, Annotated, Any, overload
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import CannotInvertYet, DefinitelyCannotInvert, InvalidArgument
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import sampled_from
 from hypothesis.strategies._internal.lazy import unwrap_strategies
@@ -365,6 +366,33 @@ class DatetimeStrategy(SearchStrategy):
                 f"{self.max_value!r} with timezone from {self.tz_strat!r}."
             )
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if self.aware:
+            # With aware bounds, draw_aware_datetime draws wall times local to
+            # the drawn timezone, and may recurse to draw in UTC near DST folds.
+            raise CannotInvertYet(f"cannot invert aware-bounds {self!r}")
+        if type(value) is not dt.datetime:
+            raise DefinitelyCannotInvert(f"{value!r} is not a datetime")
+        naive = value.replace(tzinfo=None)
+        if not (self.min_value <= naive <= self.max_value):
+            raise DefinitelyCannotInvert(
+                f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
+            )
+        if not self.allow_imaginary and datetime_does_not_exist(value):
+            raise DefinitelyCannotInvert(f"{value!r} is an imaginary datetime")
+        tz_inv = self.tz_strat._invert(value.tzinfo)
+        return (
+            *tz_inv,
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+            value.fold,
+        )
+
     def filter(self, condition):
         if (parsed := _comparator_bound(condition)) is not None and isinstance(
             arg := parsed[1], dt.datetime
@@ -594,6 +622,26 @@ class TimeStrategy(SearchStrategy):
         tz = data.draw(self.tz_strat)
         return dt.time(**result, tzinfo=tz)
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if type(value) is not dt.time:
+            raise DefinitelyCannotInvert(f"{value!r} is not a time")
+        naive = value.replace(tzinfo=None)
+        if not (self.min_value <= naive <= self.max_value):
+            raise DefinitelyCannotInvert(
+                f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
+            )
+        # draw_capped_multipart emits fold *before* tz_strat draws (because
+        # min_value=dt.time has fold), but do_draw draws tz AFTER.
+        tz_inv = self.tz_strat._invert(value.tzinfo)
+        return (
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+            value.fold,
+            *tz_inv,
+        )
+
     def filter(self, condition):
         # We only rewrite naive times: ordering aware times works in terms of
         # utcoffset(), which is None for e.g. ZoneInfo tzinfos on a time - so
@@ -660,6 +708,15 @@ class DateStrategy(SearchStrategy):
             **draw_capped_multipart(data, self.min_value, self.max_value, DATENAMES)
         )
 
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if type(value) is not dt.date:
+            raise DefinitelyCannotInvert(f"{value!r} is not a date")
+        if not (self.min_value <= value <= self.max_value):
+            raise DefinitelyCannotInvert(
+                f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
+            )
+        return (value.year, value.month, value.day)
+
     def filter(self, condition):
         if (
             (parsed := _comparator_bound(condition)) is not None
@@ -724,6 +781,15 @@ class TimedeltaStrategy(SearchStrategy):
             low_bound = low_bound and val == low
             high_bound = high_bound and val == high
         return dt.timedelta(**result)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if type(value) is not dt.timedelta:
+            raise DefinitelyCannotInvert(f"{value!r} is not a timedelta")
+        if not (self.min_value <= value <= self.max_value):
+            raise DefinitelyCannotInvert(
+                f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
+            )
+        return (value.days, value.seconds, value.microseconds)
 
 
 @defines_strategy(force_reusable_values=True)

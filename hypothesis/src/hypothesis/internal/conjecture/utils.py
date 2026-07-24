@@ -25,6 +25,7 @@ from hypothesis.internal.floats import next_up
 from hypothesis.internal.lambda_sources import _function_key
 
 if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.choice import ChoiceT
     from hypothesis.internal.conjecture.data import ConjectureData
 
 
@@ -355,6 +356,19 @@ class many:
                 self.data.mark_invalid(why)
             else:
                 self.force_stop = True
+
+
+class invert_many:
+    def __init__(self, min_size: int, max_size: int | float) -> None:
+        self._variable_size = min_size != max_size
+
+    def more(self) -> tuple["ChoiceT", ...]:
+        return (True,) if self._variable_size else ()
+
+    def done(self) -> tuple["ChoiceT", ...]:
+        if self._variable_size:
+            return (False,)
+        return ()
 
 
 SMALLEST_POSITIVE_FLOAT: float = next_up(0.0) or sys.float_info.min

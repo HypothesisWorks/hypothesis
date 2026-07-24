@@ -11,7 +11,10 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, NoReturn
 
+from hypothesis.errors import DefinitelyCannotInvert
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.junkdrawer import deep_equal
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -62,6 +65,11 @@ class JustStrategy(SampledFromStrategy[Ex]):
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. (This also avoids drawing any data.)
         return self._transform(self.value)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not deep_equal(self._transform(self.value), value):
+            raise DefinitelyCannotInvert(f"{value!r} is not produced by {self!r}")
+        return ()
 
 
 @defines_strategy(eager=True)
@@ -133,6 +141,11 @@ def nothing() -> SearchStrategy["Never"]:
 class BooleansStrategy(SearchStrategy[bool]):
     def do_draw(self, data: ConjectureData) -> bool:
         return data.draw_boolean()
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, bool):
+            raise DefinitelyCannotInvert(f"{value!r} is not a bool")
+        return (value,)
 
     def __repr__(self) -> str:
         return "booleans()"
