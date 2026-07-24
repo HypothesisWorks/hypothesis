@@ -37,7 +37,7 @@ jobs:
   release-build-wheels:
     needs: [prepare-release]
     if: needs.prepare-release.outputs.new_version != ''
-    name: wheels (${{ matrix.os }} / ${{ matrix.target }} / ${{ matrix.libc }})
+    name: wheels (${{ matrix.os }} / ${{ matrix.target }} / ${{ matrix.manylinux }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -46,64 +46,67 @@ jobs:
           - {
               os: ubuntu-latest,
               target: x86_64,
-              libc: manylinux,
               manylinux: auto,
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
               target: x86_64,
-              libc: musllinux,
               manylinux: musllinux_1_2,
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t'
             }
           - {
               os: ubuntu-latest,
               target: aarch64,
-              libc: manylinux,
               manylinux: auto,
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
               target: aarch64,
-              libc: musllinux,
               manylinux: musllinux_1_2,
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t'
             }
           - {
               os: macos-latest,
               target: x86_64,
-              libc: '',
               manylinux: '',
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: macos-latest,
               target: aarch64,
-              libc: '',
               manylinux: '',
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: windows-latest,
               target: x64,
-              libc: '',
               manylinux: '',
               interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
               target: i686,
-              libc: manylinux,
               manylinux: auto,
+              abi3-only: true
+            }
+          - {
+              os: ubuntu-latest,
+              target: riscv64,
+              manylinux: auto,
+              abi3-only: true
+            }
+          - {
+              os: ubuntu-latest,
+              target: riscv64,
+              manylinux: musllinux_1_2,
               abi3-only: true
             }
           - {
               os: windows-latest,
               target: x86,
               python-architecture: x86,
-              libc: '',
               manylinux: '',
               abi3-only: true
             }
@@ -132,7 +135,7 @@ jobs:
         working-directory: hypothesis
     - uses: actions/upload-artifact@v4
       with:
-        name: dist-wheels-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.libc }}
+        name: dist-wheels-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.manylinux }}
         path: hypothesis/dist/*.whl
 
   release-build-sdist:
