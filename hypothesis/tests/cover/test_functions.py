@@ -14,10 +14,12 @@ import pytest
 
 from hypothesis import Verbosity, assume, find, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, InvalidState
+from hypothesis.internal.reflection import nicerepr
 from hypothesis.reporting import with_reporter
 from hypothesis.strategies import booleans, functions, integers
 
 from tests.common.debug import check_can_generate_examples
+from tests.common.utils import capture_out
 
 
 def func_a():
@@ -187,7 +189,7 @@ def test_functions_pure_two_functions_same_args_different_result(f1, f2, arg1, a
 
 
 @settings(verbosity=Verbosity.verbose)
-@given(functions(pure=False))
+@given(functions(returns=booleans(), pure=False))
 def test_functions_note_all_calls_to_impure_functions(f):
     ls = []
     with with_reporter(ls.append):
@@ -197,13 +199,77 @@ def test_functions_note_all_calls_to_impure_functions(f):
 
 
 @settings(verbosity=Verbosity.verbose)
-@given(functions(pure=True))
+@given(functions(returns=booleans(), pure=True))
 def test_functions_note_only_first_to_pure_functions(f):
     ls = []
     with with_reporter(ls.append):
         f()
         f()
     assert len(ls) == 1
+
+
+@pytest.mark.parametrize("pure", [False, True])
+def test_functions_note_no_calls_to_constant_functions(pure):
+    @settings(verbosity=Verbosity.verbose)
+    @given(functions(returns=st.just(1), pure=pure))
+    def test(f):
+        ls = []
+        with with_reporter(ls.append):
+            f()
+            f()
+        assert ls == []
+
+    test()
+
+
+def func_d(x):
+    pass
+
+
+def failing_output(test):
+    with capture_out() as out, pytest.raises(AssertionError) as exc_info:
+        test()
+    return out.getvalue() + "\n".join(getattr(exc_info.value, "__notes__", []))
+
+
+@pytest.mark.parametrize("pure", [False, True])
+@pytest.mark.parametrize(
+    "returns,expected",
+    [
+        (st.just(3), "lambda x: 3"),
+        (st.none(), "lambda x: None"),
+        (st.sampled_from(["only"]), "lambda x: 'only'"),
+    ],
+)
+def test_constant_functions_are_shown_as_lambdas(returns, expected, pure):
+    @given(f=functions(like=func_d, returns=returns, pure=pure))
+    def test(f):
+        f(1)
+        raise AssertionError
+
+    output = failing_output(test)
+    assert f"f={expected}," in output
+    assert "Called function" not in output
+
+
+@given(f=functions(like=func_d, returns=st.just(3)))
+def test_constant_functions_have_a_constant_lambda_repr(f):
+    assert nicerepr(f) == "lambda x: 3"
+
+
+@pytest.mark.parametrize(
+    "returns",
+    [st.just(3).map(str), st.just(3).filter(bool), st.sampled_from([1, 2])],
+)
+def test_non_constant_functions_still_note_their_calls(returns):
+    @given(f=functions(like=func_d, returns=returns))
+    def test(f):
+        f(1)
+        raise AssertionError
+
+    output = failing_output(test)
+    assert "f=func_d," in output
+    assert "Called function: func_d(1) ->" in output
 
 
 def test_functions_supports_find():
