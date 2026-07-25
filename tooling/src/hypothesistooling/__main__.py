@@ -681,7 +681,7 @@ def documentation():
 
 @task()
 def website():
-    subprocess.call([sys.executable, "-m", "pelican"], cwd=ROOT / "website")
+    subprocess.check_call([sys.executable, "-m", "pelican"], cwd=ROOT / "website")
 
 
 @task()
