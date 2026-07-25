@@ -5,27 +5,26 @@ on:
   push:
     branches: ["master"]
 
+  # On pull requests we build the website but don't deploy it, so that broken
+  # changes are caught in review rather than after merging.
+  pull_request:
+    branches: ["master"]
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Pull request builds don't deploy, so they get a per-branch group and are cancelled by later pushes.
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('website-{0}', github.head_ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,10 +33,32 @@ jobs:
           lfs: true
       - name: Build website
         run: ./build.sh website
-      - name: Upload artifact
+      # Serve this with e.g. `python -m http.server` instead of opening the
+      # files directly, because the site uses root-relative links.
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: 'website/output/'
+          retention-days: 14
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'website/output/'
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
