@@ -12,7 +12,14 @@ import sys
 from copy import deepcopy
 from datetime import time
 from functools import partial, wraps
-from inspect import Parameter, Signature, signature
+from inspect import (
+    Parameter,
+    Signature,
+    isasyncgenfunction,
+    iscoroutinefunction,
+    isgeneratorfunction,
+    signature,
+)
 from textwrap import dedent
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
@@ -453,6 +460,97 @@ def test_can_proxy_lambdas(func, args, expected):
 
     assert wrapped.__name__ == "<lambda>"
     assert wrapped(*args) == expected
+
+
+def test_can_proxy_async_functions():
+    async def foo(a):
+        return a
+
+    @proxies(foo)
+    async def bar(*args, **kwargs):
+        return await foo(*args, **kwargs)
+
+    assert iscoroutinefunction(bar)
+    coro = bar(1)
+    with pytest.raises(StopIteration) as stop:
+        coro.send(None)
+    assert stop.value.value == 1
+
+
+def test_can_proxy_generator_functions():
+    def foo(a):
+        yield a
+        return a + 1
+
+    @proxies(foo)
+    def bar(*args, **kwargs):
+        return (yield from foo(*args, **kwargs))
+
+    assert isgeneratorfunction(bar)
+    gen = bar(1)
+    assert next(gen) == 1
+    with pytest.raises(StopIteration) as stop:
+        next(gen)
+    assert stop.value.value == 2
+
+
+def test_can_proxy_async_generator_functions():
+    async def foo(a):
+        yield a
+
+    @proxies(foo)
+    async def bar(*args, **kwargs):
+        async for value in foo(*args, **kwargs):
+            yield value
+
+    assert isasyncgenfunction(bar)
+    agen = bar(1)
+    with pytest.raises(StopIteration) as stop:
+        agen.__anext__().send(None)
+    assert stop.value.value == 1
+    with pytest.raises(StopAsyncIteration):
+        agen.__anext__().send(None)
+
+
+def test_closing_proxied_generator_closes_the_inner_generator():
+    closed = []
+
+    def foo(a):
+        yield a
+
+    @proxies(foo)
+    def bar(a):
+        try:
+            yield a
+        finally:
+            closed.append(a)
+
+    gen = bar(1)
+    assert next(gen) == 1
+    gen.close()
+    assert closed == [1]
+
+
+def test_closing_proxied_async_generator_closes_the_inner_generator():
+    closed = []
+
+    async def foo(a):
+        yield a
+
+    @proxies(foo)
+    async def bar(a):
+        try:
+            yield a
+        finally:
+            closed.append(a)
+
+    agen = bar(1)
+    with pytest.raises(StopIteration) as stop:
+        agen.__anext__().send(None)
+    assert stop.value.value == 1
+    with pytest.raises(StopIteration):
+        agen.aclose().send(None)
+    assert closed == [1]
 
 
 class Snowman:
