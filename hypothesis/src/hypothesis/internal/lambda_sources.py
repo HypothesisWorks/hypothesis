@@ -405,8 +405,12 @@ def lambda_description(f):
     except KeyError:
         pass
 
-    key = _function_key(f, bounded_size=True)
-    location = (f.__code__.co_filename, f.__code__.co_firstlineno)
+    # Follow the breadcrumb left by impersonate() before computing the cache key,
+    # because every wrapper we generate for a given signature has identical code
+    # and so would otherwise share a key with unrelated wrapped functions.
+    target = getattr(f, "__wrapped_target", f)
+    key = _function_key(target, bounded_size=True)
+    location = (target.__code__.co_filename, target.__code__.co_firstlineno)
     try:
         description, failed_locations = LAMBDA_DIGEST_DESCRIPTION_CACHE[key]
     except KeyError:

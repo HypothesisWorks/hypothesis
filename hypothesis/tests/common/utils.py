@@ -11,6 +11,7 @@
 import contextlib
 import enum
 import math
+import os
 import sys
 import time
 import warnings
@@ -40,6 +41,11 @@ time_sleep = time.sleep
 skipif_emscripten = mark.skipif(
     sys.platform == "emscripten",
     reason="threads, processes, etc. are not available in the browser",
+)
+
+skipif_root = mark.skipif(
+    getattr(os, "geteuid", lambda: -1)() == 0,
+    reason="root ignores file permissions, so inaccessible paths are readable",
 )
 
 no_shrink = tuple(set(settings.default.phases) - {Phase.shrink, Phase.explain})

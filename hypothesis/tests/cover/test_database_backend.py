@@ -63,6 +63,7 @@ from hypothesis.utils.conventions import not_set
 from tests.common.utils import (
     checks_deprecated_behaviour,
     skipif_emscripten,
+    skipif_root,
     skipif_threading,
     wait_for,
 )
@@ -486,6 +487,7 @@ def test_gadb_coverage():
     state.values_agree(b"key")
 
 
+@skipif_root
 @pytest.mark.parametrize("dirs", [[], ["subdir"]])
 def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(
