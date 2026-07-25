@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.4:
+
+--------------------
+6.161.4 - 2026-07-25
+--------------------
+
+We now publish abi3 wheels for Linux armv7l, for both manylinux and musllinux (:issue:`4818`).
+
 .. _v6.161.3:
 
 --------------------
