@@ -12,6 +12,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Cancel in-progress PR builds if another commit is pushed.
 # On non-PR builds, fall back to the globally-unique run_id and don't cancel.
 concurrency:
@@ -35,9 +38,10 @@ jobs:
     env:
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -106,9 +110,10 @@ jobs:
     env:
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -124,7 +129,7 @@ jobs:
           ./build.sh
         fi
     - name: Upload coverage data
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       # Invoke the magic `always` function to run on both success and failure.
       if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
@@ -175,9 +180,10 @@ jobs:
     env:
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -225,9 +231,10 @@ jobs:
       # Override default from tox.ini
       PYTHONWARNDEFAULTENCODING: ""
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ matrix.python-version }} ${{ matrix.python-architecture }}"
       uses: ./.github/actions/install-base
       with:
@@ -250,16 +257,17 @@ jobs:
       NODE_VERSION: 22
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         task: check-pyodide
     - name: Set up Node
-      uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: ${{ env.NODE_VERSION }}
     - name: Run tests
@@ -271,7 +279,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check required jobs
-      uses: re-actors/alls-green@release/v1
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
       with:
         jobs: ${{ toJSON(needs) }}
 
