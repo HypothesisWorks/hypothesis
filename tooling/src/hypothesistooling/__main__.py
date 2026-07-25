@@ -116,6 +116,7 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
+    pip_tool("zizmor", ".github/")
     codespell(*(p for p in all_files() if not p.name.endswith("by-domain.txt")))
 
     failed = False
@@ -604,6 +605,70 @@ def update_pyodide_versions():
     ci_file.write_text(config, encoding="utf-8")
 
 
+@task()
+def update_gha_pins():
+    """Pin each github action to the commit sha of its latest release.
+
+    Based on https://github.com/davidism/gha-update.
+    """
+    uses_re = re.compile(
+        r"(?P<prefix>\buses: +)"
+        r"(?P<action>[\w.-]+/[\w.-]+)(?P<subdir>/[^@\s]+)?"
+        r"@(?P<ref>\S+)"
+        r"(?P<comment>.*)$"
+    )
+    files = [
+        *(ROOT / ".github" / "workflows").glob("*.yml"),
+        *(ROOT / ".github" / "actions").glob("*/action.yml"),
+    ]
+    actions = {
+        m["action"]
+        for f in files
+        for line in f.read_text(encoding="utf-8").splitlines()
+        if (m := uses_re.search(line))
+    }
+
+    session = requests.Session()
+    if token := os.environ.get("GITHUB_TOKEN", os.environ.get("GH_TOKEN")):
+        session.headers["Authorization"] = f"Bearer {token}"
+
+    latest = {}
+    for action in sorted(actions):
+        url = f"https://api.github.com/repos/{action}/tags?per_page=100"
+        tags = {}
+        while url:
+            response = session.get(url)
+            response.raise_for_status()
+            tags.update({t["name"]: t["commit"]["sha"] for t in response.json()})
+            url = response.links.get("next", {}).get("url")
+
+        versions = {}
+        for name in tags:
+            try:
+                versions[tuple(map(int, name.removeprefix("v").split(".")))] = name
+            except ValueError:
+                continue
+        assert versions, f"no release tags found for action {action}"
+
+        tag = versions[max(versions)]
+        latest[action] = (tag, tags[tag])
+
+    def replace(m):
+        tag, sha = latest[m["action"]]
+        line = f"{m['prefix']}{m['action']}{m['subdir'] or ''}@{sha} # {tag}"
+        # preserve existing comments, minus the version comment we manage
+        comment = re.sub(r"^\s*#\s*v?\d+(\.\d+)*(?=\s|$)", "", m["comment"]).strip()
+        if comment:
+            line += f" {comment}"
+        return line
+
+    for f in files:
+        lines = f.read_text(encoding="utf-8").splitlines(keepends=True)
+        f.write_text(
+            "".join(uses_re.sub(replace, line) for line in lines), encoding="utf-8"
+        )
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -651,6 +716,7 @@ def upgrade_requirements():
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
+    update_gha_pins()
     subprocess.call(["git", "add", "."], cwd=ROOT)
 
 

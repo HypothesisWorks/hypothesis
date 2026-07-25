@@ -386,6 +386,8 @@ websockets==16.1.1
     # via sphinx-autobuild
 wheel==0.47.0
     # via pip-tools
+zizmor==1.28.0
+    # via -r requirements/tools.in
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==26.1.2

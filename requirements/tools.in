@@ -33,6 +33,7 @@ types-redis
 typing-extensions
 watchdog # for typing
 build
+zizmor
 sortedcontainers-stubs # for typing
 attrs # for typing
 -r test.in
