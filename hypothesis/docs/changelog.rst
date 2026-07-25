@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.3:
+
+--------------------
+6.161.3 - 2026-07-25
+--------------------
+
+This patch improves our internal ``@proxies`` decorator, which now preserves
+the kind of the decorated function: proxies for async functions, generator
+functions, and async generator functions are themselves functions of the same
+kind.  This prepares for upcoming :func:`~hypothesis.strategies.functions`
+support (:issue:`4149`).
+
 .. _v6.161.2:
 
 --------------------
