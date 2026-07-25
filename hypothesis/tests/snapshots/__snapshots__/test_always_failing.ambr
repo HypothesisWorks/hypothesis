@@ -128,7 +128,7 @@
 # name: test_always_failing[emails]
   '''
   Failing test case: inner(
-      v0='0@A.AC',
+      v0='0@A.COM',
   )
   '''
 # ---
