@@ -37,6 +37,10 @@ jobs:
       fail-fast: false
     env:
       PYTHON_VERSION: "3.14"
+      # These jobs all run on 3.14, where coverage.py uses sys.monitoring and so
+      # costs us very little.  Tasks which don't use tox just won't measure any.
+      COVERAGE_PROCESS_START: ${{ github.workspace }}/hypothesis/pyproject.toml
+      COVERAGE_FILE: ${{ github.workspace }}/hypothesis/.coverage
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -62,6 +66,14 @@ jobs:
         else
           ./build.sh
         fi
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: coverage-data-${{ matrix.task }}
+        include-hidden-files: true
+        if-no-files-found: ignore
+        path: hypothesis/.coverage*
 
   req:
     needs: [basic]
@@ -133,11 +145,10 @@ jobs:
       # Invoke the magic `always` function to run on both success and failure.
       if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
-        name: ${{ matrix.task }}-data
+        name: coverage-data-${{ matrix.task }}
         include-hidden-files: true
         path: |
           hypothesis/.coverage*
-          !hypothesis/.coveragerc
           hypothesis/branch-check*
 
   nonreq:
@@ -273,9 +284,35 @@ jobs:
     - name: Run tests
       run: ./build.sh check-pyodide
 
+  coverage-report:
+    needs: [basic, req]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.14"
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: coverage-data-*
+        path: coverage-data
+    - run: |
+        pip install 'coverage[toml]'
+        cd hypothesis
+        python -m coverage combine ../coverage-data/*/.coverage*
+        # We report from src/, where `hypothesis` is a package rather than just a
+        # data file, so that coverage can find modules we never imported at all.
+        cd src
+        REPORT="python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage"
+        # First list the modules we don't require coverage of (`omit` in
+        # pyproject.toml).  Any which the combined data covers completely have
+        # dropped out of this report, and so could be un-omitted.
+        $REPORT --omit=no-such-file --fail-under=0
+        $REPORT
+
   check-required:
     if: always()
-    needs: [basic, req, cross]
+    needs: [basic, req, cross, coverage-report]
     runs-on: ubuntu-latest
     steps:
     - name: Check required jobs
