@@ -348,7 +348,9 @@ def source_exec_as_module(source: str) -> ModuleType:
     hexdigest = hashlib.sha384(source.encode()).hexdigest()
     result = ModuleType("hypothesis_temporary_module_" + hexdigest)
     assert isinstance(source, str)
-    exec(source, result.__dict__)
+    # A placeholder filename, in the style of `<string>`, so that any frame
+    # which reaches a traceback is at least honest about being generated code.
+    exec(compile(source, "<hypothesis>", "exec"), result.__dict__)
     eval_cache[source] = result
     return result
 
@@ -360,6 +362,7 @@ from hypothesis.utils.conventions import not_set
 
 def accept({funcname}):
     {def_prefix}def {name}{signature}:
+        __tracebackhide__ = True
         {body}
     return {name}
 """.lstrip()
@@ -492,18 +495,10 @@ def impersonate(target):
     """
 
     def accept(f):
-        # Lie shamelessly about where this code comes from, to hide the hypothesis
-        # internals from pytest, ipython, and other runtime introspection.
-        f.__code__ = f.__code__.replace(
-            co_filename=target.__code__.co_filename,
-            co_firstlineno=target.__code__.co_firstlineno,
-        )
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
         f.__globals__["__hypothesistracebackhide__"] = True
-        # But leave an breadcrumb for _describe_lambda to follow, it's
-        # just confused by the lies above
         f.__wrapped_target = target
         return f
 

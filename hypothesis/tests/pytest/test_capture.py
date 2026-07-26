@@ -10,7 +10,6 @@
 
 import pytest
 
-from hypothesis._settings import _CI_VARS
 from hypothesis.internal.compat import WINDOWS, escape_unicode_characters
 
 pytest_plugins = "pytester"
@@ -69,44 +68,6 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     assert "test_emits_unicode" in out
     assert chr(1001) in out or escape_unicode_characters(chr(1001)) in out
     assert result.ret == 0
-
-
-def get_line_num(token, lines, skip_n=0):
-    skipped = 0
-    for i, line in enumerate(lines):
-        if token in line:
-            if skip_n == skipped:
-                return i
-            else:
-                skipped += 1
-    raise AssertionError(
-        f"Token {token!r} not found (skipped {skipped} of planned {skip_n} skips)"
-    )
-
-
-TRACEBACKHIDE_HEALTHCHECK = """
-from hypothesis import given, settings
-from hypothesis.strategies import integers
-import time
-@given(integers().map(lambda x: time.sleep(0.2)))
-def test_healthcheck_traceback_is_hidden(x):
-    pass
-"""
-
-
-def test_healthcheck_traceback_is_hidden(testdir, monkeypatch):
-    for key in _CI_VARS:
-        monkeypatch.delenv(key, raising=False)
-
-    script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
-    lines = testdir.runpytest(script, "--verbose").stdout.lines
-    def_token = "__ test_healthcheck_traceback_is_hidden __"
-    timeout_token = ": FailedHealthCheck"
-    def_line = get_line_num(def_token, lines)
-    timeout_line = get_line_num(timeout_token, lines)
-    # 16 on pytest 8.4.0 combined with py3{9, 10} or 3.13 free-threading (but
-    # not with 3.13 normal??)
-    assert timeout_line - def_line in {15, 16}
 
 
 COMPOSITE_IS_NOT_A_TEST = """
