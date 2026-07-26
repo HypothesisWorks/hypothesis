@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via -r requirements/coverage.in
 black==26.5.1
     # via -r requirements/coverage.in
@@ -18,7 +18,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.36.2
+fakeredis==2.37.0
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -36,7 +36,7 @@ packaging==26.2
     # via
     #   black
     #   pytest
-pandas==3.0.3
+pandas==3.0.5
     # via -r requirements/coverage.in
 pathspec==1.1.1
     # via black
@@ -70,7 +70,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytokens==0.4.1
     # via black
-pytz==2026.2
+pytz==2026.3.post1
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
