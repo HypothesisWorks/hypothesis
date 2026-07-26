@@ -188,6 +188,15 @@ def test_second_resolution_covers_beyond_datetime_max():
 
 
 @requires_pandas21
+def test_nonzero_fixed_offset_timezone_covers_beyond_datetime_max():
+    tz = dt.timezone(dt.timedelta(hours=5, minutes=30))
+    find_any(
+        pdst.series(dtype=pd.DatetimeTZDtype("s", tz)),
+        lambda s: (s.dt.year > dt.MAXYEAR).any(),
+    )
+
+
+@requires_pandas21
 def test_tz_aware_series_accepts_custom_elements():
     tz = dt.timezone.utc
     elements = st.datetimes(timezones=st.just(tz)).map(lambda d: d.replace(year=2000))
