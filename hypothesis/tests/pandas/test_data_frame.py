@@ -42,7 +42,6 @@ def test_can_have_tz_aware_datetime_columns():
     assert_all_examples(
         pdst.data_frames(
             [pdst.column("a", dtype=dtype), pdst.column("b", dtype=dtype, unique=True)],
-            index=pdst.range_indexes(min_size=1),
         ),
         lambda df: df["a"].dtype == dtype
         and df["b"].dtype == dtype
@@ -55,7 +54,7 @@ def test_can_have_tz_aware_datetime_index():
     dtype = pd.DatetimeTZDtype(unit="ns", tz="UTC")
     assert_all_examples(
         pdst.data_frames(
-            [pdst.column("a", dtype=int)], index=pdst.indexes(dtype=dtype, min_size=1)
+            [pdst.column("a", dtype=int)], index=pdst.indexes(dtype=dtype)
         ),
         lambda df: df.index.dtype == dtype,
     )

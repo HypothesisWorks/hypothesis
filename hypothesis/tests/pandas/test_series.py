@@ -149,7 +149,7 @@ def test_tz_aware_dtype_requires_pandas_21():
 def test_tz_aware_series_share_one_timezone(unit, tz):
     dtype = pd.DatetimeTZDtype(unit=unit, tz=tz)
     assert_all_examples(
-        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
+        pdst.series(dtype=dtype),
         lambda s: s.dtype == dtype and (s.dt.tz == dtype.tz),
     )
 
@@ -172,7 +172,7 @@ def test_empty_tz_aware_series(s):
 @requires_pandas21
 def test_ns_resolution_series_exercise_sub_microsecond_values():
     find_any(
-        pdst.series(dtype="datetime64[ns, UTC]", index=pdst.range_indexes(min_size=1)),
+        pdst.series(dtype="datetime64[ns, UTC]"),
         lambda s: (s.dt.nanosecond != 0).any(),
     )
 
@@ -181,16 +181,10 @@ def test_ns_resolution_series_exercise_sub_microsecond_values():
 def test_second_resolution_covers_beyond_datetime_max():
     # The full representable range of datetime64[s] is vastly wider than
     # Python's datetime, which stops at the end of the year 9999.
-    epoch = dt.datetime(1970, 1, 1)
-    beyond_datetime_max = (dt.datetime.max - epoch).total_seconds() + 86400
     find_any(
-        pdst.series(dtype="datetime64[s, UTC]", index=pdst.range_indexes(min_size=1)),
-        lambda s: _utc_seconds(s.dropna()).map(abs).gt(beyond_datetime_max).any(),
+        pdst.series(dtype="datetime64[s, UTC]"),
+        lambda s: (s.dt.year > dt.MAXYEAR).any(),
     )
-
-
-def _utc_seconds(s):
-    return s.dt.tz_convert("UTC").dt.tz_localize(None).astype("int64")
 
 
 @requires_pandas21
@@ -206,10 +200,7 @@ def test_tz_aware_series_accepts_custom_elements():
 @requires_pandas21
 def test_tz_aware_series_from_zoneinfo_timezone():
     dtype = pd.DatetimeTZDtype(unit="us", tz=zoneinfo.ZoneInfo("America/New_York"))
-    assert_all_examples(
-        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
-        lambda s: s.dtype == dtype,
-    )
+    assert_all_examples(pdst.series(dtype=dtype), lambda s: s.dtype == dtype)
 
 
 @requires_pandas21
@@ -219,8 +210,8 @@ def test_variable_offset_timezones_stay_within_datetime_range():
     # within the years 1-9999 which those can represent.
     dtype = pd.DatetimeTZDtype(unit="s", tz=zoneinfo.ZoneInfo("America/New_York"))
     assert_all_examples(
-        pdst.series(dtype=dtype, index=pdst.range_indexes(min_size=1)),
-        lambda s: s.dropna().dt.year.between(1, 9999).all(),
+        pdst.series(dtype=dtype),
+        lambda s: s.dropna().dt.year.between(dt.MINYEAR, dt.MAXYEAR).all(),
     )
 
 
@@ -252,7 +243,6 @@ def test_tz_aware_series_ambiguous_times_resolve_by_fold():
             dt.datetime(2020, 11, 1, 1, 59),
             timezones=st.just(tz),
         ),
-        index=pdst.range_indexes(min_size=1),
     )
     find_any(strategy, lambda s: (s.dt.strftime("%z") == "-0400").any())
     find_any(strategy, lambda s: (s.dt.strftime("%z") == "-0500").any())
@@ -270,7 +260,6 @@ def test_tz_aware_series_imaginary_times_are_normalized():
             dt.datetime(2020, 3, 8, 2, 59),
             timezones=st.just(tz),
         ),
-        index=pdst.range_indexes(min_size=1),
     )
     assert_all_examples(strategy, lambda s: s.dt.hour.isin([1, 3]).all())
 

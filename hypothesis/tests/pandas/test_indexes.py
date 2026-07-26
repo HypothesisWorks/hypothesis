@@ -72,7 +72,7 @@ def test_tz_aware_datetime_indexes(unit):
     dtype = pandas.DatetimeTZDtype(unit=unit, tz="UTC")
     check_can_generate_examples(pdst.indexes(dtype=dtype, min_size=1))
     assert_all_examples(
-        pdst.indexes(dtype=dtype, min_size=1, unique=True),
+        pdst.indexes(dtype=dtype, unique=True),
         lambda ix: ix.dtype == dtype and ix.dropna().is_unique,
     )
 
