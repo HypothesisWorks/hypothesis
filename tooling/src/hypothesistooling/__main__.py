@@ -260,13 +260,15 @@ def format(*, format_all=False):
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
 
-    # .coveragerc lists several regex patterns to treat as nocover pragmas, and
+    # pyproject.toml lists several regex patterns to treat as nocover pragmas, and
     # we want to find (and delete) cases where # pragma: no cover is redundant.
     def warn(msg):
         raise Exception(msg)
 
     config = CoverageConfig()
-    config.from_file(os.path.join(HYPOTHESIS, ".coveragerc"), warn=warn, our_file=True)
+    config_file = os.path.join(HYPOTHESIS, "pyproject.toml")
+    success = config.from_file(config_file, warn=warn, our_file=True)
+    assert success, config_file
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
 

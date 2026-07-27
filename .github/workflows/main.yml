@@ -37,6 +37,10 @@ jobs:
       fail-fast: false
     env:
       PYTHON_VERSION: "3.14"
+      # These jobs all run on 3.14, where coverage.py uses sys.monitoring and so
+      # costs us very little.  Tasks which don't use tox just won't measure any.
+      COVERAGE_PROCESS_START: ${{ github.workspace }}/hypothesis/pyproject.toml
+      COVERAGE_FILE: ${{ github.workspace }}/hypothesis/.coverage
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -62,6 +66,15 @@ jobs:
         else
           ./build.sh
         fi
+    - name: Upload any coverage data
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ always() }}
+      with:
+        name: coverage-data-${{ matrix.task }}
+        include-hidden-files: true
+        # only some of the jobs in this matrix produce coverage output.
+        if-no-files-found: ignore
+        path: hypothesis/.coverage*
 
   req:
     needs: [basic]
@@ -133,11 +146,10 @@ jobs:
       # Invoke the magic `always` function to run on both success and failure.
       if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
-        name: ${{ matrix.task }}-data
+        name: coverage-data-${{ matrix.task }}
         include-hidden-files: true
         path: |
           hypothesis/.coverage*
-          !hypothesis/.coveragerc
           hypothesis/branch-check*
 
   nonreq:
@@ -273,9 +285,38 @@ jobs:
     - name: Run tests
       run: ./build.sh check-pyodide
 
+  coverage-report:
+    needs: [basic, req]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.14"
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        pattern: coverage-data-*
+        path: coverage-data
+    - run: |
+        pip install coverage
+        cd hypothesis
+        python -m coverage combine ../coverage-data/*/.coverage*
+        # We set `source = ["hypothesis"]` in [tool.coverage.run] in pyproject.toml,
+        # which means `coverage report` will look for a directory named hypothesis.
+        # cd into the right dir to make that happen.
+        cd src
+        REPORT="python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage"
+        # Show a full coverage report, including files we would otherwise omit.
+        # This line cannot fail: it's purely for debugging / observability.
+        $REPORT --omit=no-such-file --fail-under=0
+        # Now, run the actual report. This line can fail.
+        $REPORT
+
   check-required:
     if: always()
-    needs: [basic, req, cross]
+    needs: [basic, req, cross, coverage-report]
     runs-on: ubuntu-latest
     steps:
     - name: Check required jobs

@@ -65,7 +65,7 @@ else:
         from typing import (
             override as override,
         )
-    except ImportError:  # pragma: no cover
+    except ImportError:
         try:
             from typing_extensions import (
                 override as override,
