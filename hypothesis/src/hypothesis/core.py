@@ -953,7 +953,7 @@ class StateForActualGivenExecution:
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces: dict[None | InterestingOrigin, set[Trace]] = defaultdict(
+        self.explain_traces: dict[InterestingOrigin | None, set[Trace]] = defaultdict(
             set
         )
         self._start_timestamp = time.time()

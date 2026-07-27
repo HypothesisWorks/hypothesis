@@ -292,7 +292,7 @@ def lists(
     min_size: int = 0,
     max_size: int | None = None,
     unique_by: (
-        None | Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...]
+        Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...] | None
     ) = None,
     unique: bool = False,
 ) -> SearchStrategy[list[Ex]]:
@@ -479,7 +479,7 @@ def iterables(
     min_size: int = 0,
     max_size: int | None = None,
     unique_by: (
-        None | Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...]
+        Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...] | None
     ) = None,
     unique: bool = False,
 ) -> SearchStrategy[Iterable[Ex]]:

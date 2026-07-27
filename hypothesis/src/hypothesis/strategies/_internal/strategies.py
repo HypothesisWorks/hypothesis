@@ -736,8 +736,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             isinstance(x, SearchStrategy) for x in self.elements
         ):
             data._sampled_from_all_strategies_elements_message = (
-                "sampled_from was given a collection of strategies: "
-                "{!r}. Was one_of intended?",
+                (
+                    "sampled_from was given a collection of strategies: "
+                    "{!r}. Was one_of intended?"
+                ),
                 self.elements,
             )
         if result is filter_not_satisfied:

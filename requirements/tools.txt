@@ -36,9 +36,9 @@ build==1.5.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==7.1.4
+cachetools==7.1.6
     # via tox
-certifi==2026.6.17
+certifi==2026.7.22
     # via requests
 cffi==2.1.0
     # via cryptography
@@ -277,7 +277,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.22
+ruff==0.16.0
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -354,7 +354,7 @@ types-pytz==2026.2.0.20260518
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==83.0.0.20260716
+types-setuptools==83.0.0.20260724
     # via types-cffi
 typing-extensions==4.16.0
     # via
