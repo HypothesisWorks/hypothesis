@@ -61,7 +61,7 @@ assert len(lots_of_encodings) > 100  # sanity-check
 @settings(max_examples=5)
 def test_can_constrain_characters_to_codec(data, codec):
     s = data.draw(st.text(st.characters(codec=codec), min_size=25))
-    s.encode(codec)
+    assert s.encode(codec).decode(codec) == s
 
 
 @pytest.mark.parametrize(
