@@ -197,6 +197,23 @@ def test_nonzero_fixed_offset_timezone_covers_beyond_datetime_max():
 
 
 @requires_pandas21
+@given(
+    pdst.series(
+        dtype=pd.DatetimeTZDtype("s", dt.timezone(dt.timedelta(hours=5, minutes=30)))
+    )
+)
+def test_fixed_offset_series_elements_can_be_accessed(s):
+    for i in range(len(s)):
+        s.iloc[i]
+
+
+@requires_pandas21
+@given(pdst.series(dtype=pd.DatetimeTZDtype("s", zoneinfo.ZoneInfo("UTC"))))
+def test_zoneinfo_series_can_be_displayed(s):
+    repr(s)
+
+
+@requires_pandas21
 def test_tz_aware_series_accepts_custom_elements():
     tz = dt.timezone.utc
     elements = st.datetimes(timezones=st.just(tz)).map(lambda d: d.replace(year=2000))

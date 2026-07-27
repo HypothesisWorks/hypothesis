@@ -39,19 +39,15 @@ try:
 except ImportError:
     IntegerDtype = ()
 
-try:
-    from pandas._libs.tslibs.timezones import is_fixed_offset, is_utc
-
-    def has_fixed_offset(tz):
-        return is_utc(tz) or is_fixed_offset(tz)
-
-except ImportError:
-
-    def has_fixed_offset(tz):
-        return isinstance(tz, timezone)
-
-
 PANDAS_GE_21 = tuple(int(x) for x in pandas.__version__.split(".")[:2]) >= (2, 1)
+
+
+def has_constant_offset(tz):
+    # datetime.timezone instances have the same UTC offset at every instant,
+    # by construction.  Zones from zoneinfo, pytz, or dateutil - even for the
+    # UTC key - resolve their offsets through stdlib datetimes instead, which
+    # limits the usable range to years 1-9999.
+    return isinstance(tz, timezone)
 
 
 def dtype_for_elements_strategy(s):
@@ -105,18 +101,20 @@ def tz_default_elements(tz_dtype):
     """Default element strategy for a :class:`~pandas.DatetimeTZDtype`: naive
     ``datetime64[unit]`` values, interpreted as UTC instants.
 
-    With a fixed-offset timezone (including UTC) these cover the dtype's full
-    representable range.  Other timezones resolve their UTC offsets through
-    stdlib datetimes - as does pandas when displaying values - so we keep each
-    instant a day inside Python's representable range, ensuring that the
-    localized wall times stay valid too.
+    With a constant-offset timezone these cover the dtype's representable
+    range, staying a day inside the int64 bounds because pandas' internal
+    conversions - e.g. when accessing an element - can otherwise overflow.
+    All other timezones resolve their UTC offsets through stdlib datetimes,
+    as does pandas when displaying values, so for those we instead keep each
+    instant a day inside Python's representable range.
     """
-    naive = naive_datetime64_dtype(tz_dtype)
-    if has_fixed_offset(tz_dtype.tz):
-        return npst.from_dtype(naive)
     unit = tz_dtype.unit
-    lo = int(np.datetime64(datetime.min + timedelta(days=1), unit).astype(np.int64))
-    hi = int(np.datetime64(datetime.max - timedelta(days=1), unit).astype(np.int64))
+    day = int(np.timedelta64(1, "D") // np.timedelta64(1, unit))
+    if has_constant_offset(tz_dtype.tz):
+        lo, hi = -(2**63) + 1 + day, 2**63 - 1 - day
+    else:
+        lo = int(np.datetime64(datetime.min + timedelta(days=1), unit).astype(np.int64))
+        hi = int(np.datetime64(datetime.max - timedelta(days=1), unit).astype(np.int64))
     values = st.integers(lo, hi).map(lambda v: np.datetime64(v, unit))
     return values | st.just(np.datetime64("NaT", unit))
 
