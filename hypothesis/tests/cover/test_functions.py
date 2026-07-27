@@ -257,6 +257,16 @@ def test_constant_functions_have_a_constant_lambda_repr(f):
     assert nicerepr(f) == "lambda x: 3"
 
 
+raw_object = object()
+
+
+@given(f=functions(like=lambda x=raw_object: None, returns=st.just(3)))
+def test_constant_functions_show_default_values_by_repr(f):
+    # This is strictly speaking not valid syntax (contains memory marker like <...>),
+    # but we show it anyway.
+    assert nicerepr(f) == f"lambda x={raw_object!r}: 3"
+
+
 @pytest.mark.parametrize(
     "returns",
     [st.just(3).map(str), st.just(3).filter(bool), st.sampled_from([1, 2])],

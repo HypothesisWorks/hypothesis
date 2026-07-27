@@ -195,6 +195,13 @@
   )
   '''
 # ---
+# name: test_always_failing[functions_constant_returns]
+  '''
+  Failing test case: inner(
+      v0=lambda x: 3,
+  )
+  '''
+# ---
 # name: test_always_failing[integers]
   '''
   Failing test case: inner(
@@ -382,6 +389,22 @@
   Failing test case: inner(
       v0=UUID('e3e70682-c209-4cac-629f-6fbed82c07cd'),
   )
+  '''
+# ---
+# name: test_always_failing_after_calling_generated_function[constant]
+  '''
+  Failing test case: inner(
+      f=lambda x: 3,
+  )
+  '''
+# ---
+# name: test_always_failing_after_calling_generated_function[varying]
+  '''
+  Failing test case: inner(
+      f=lambda x: x,
+  )
+  Called function: (lambda x: x)(1) -> False
+  Called function: (lambda x: x)(2) -> False
   '''
 # ---
 # name: test_always_failing_explain[explain_from_regex]
