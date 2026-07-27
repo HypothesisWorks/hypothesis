@@ -92,13 +92,17 @@ def test_cli_python_equivalence(cli, code):
         ),
         (
             "re.srch",
-            "Found the 're' module, but it doesn't have a 'srch' attribute.  "
-            "Closest matches: ['search']",
+            (
+                "Found the 're' module, but it doesn't have a 'srch' attribute.  "
+                "Closest matches: ['search']"
+            ),
         ),
         (
             "re.fmatch",
-            "Found the 're' module, but it doesn't have a 'fmatch' attribute.  "
-            "Closest matches: ['match', 'fullmatch'",
+            (
+                "Found the 're' module, but it doesn't have a 'fmatch' attribute.  "
+                "Closest matches: ['match', 'fullmatch'"
+            ),
             # Python >= 3.7 has 'Match' objects too
         ),
     ],

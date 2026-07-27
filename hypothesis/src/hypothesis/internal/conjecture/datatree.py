@@ -411,7 +411,7 @@ class TreeNode:
     # - Conclusion (ConjectureData.conclude_test was called here)
     # - Killed (this branch is valid and may even have children, but should not
     #   be explored when generating novel prefixes)
-    transition: None | Branch | Conclusion | Killed = None
+    transition: Branch | Conclusion | Killed | None = None
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
