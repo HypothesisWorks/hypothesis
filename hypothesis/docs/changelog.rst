@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.161.8:
+
+--------------------
+6.161.8 - 2026-07-27
+--------------------
+
+This patch removes a redundant ``# pragma: no cover`` comment.
+There is no user-visible change.
+
 .. _v6.161.7:
 
 --------------------
