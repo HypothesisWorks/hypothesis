@@ -85,6 +85,10 @@ class Pair:
         param([st.builds(Pair, x=st.integers(), y=st.text(max_size=3))], id="builds"),
         param([st.from_type(list[int])], id="builds_from_type"),
         param([st.functions(like=lambda x: x, returns=st.booleans())], id="functions"),
+        param(
+            [st.functions(like=lambda x: x, returns=st.just(3))],
+            id="functions_constant_returns",
+        ),
         # Special types
         param([st.uuids()], id="uuids"),
         param([st.emails()], id="emails"),
@@ -159,6 +163,21 @@ def test_always_failing(given_args, snapshot):
     @SNAPSHOT_SETTINGS
     @given(**given_kwargs)
     def inner(**kwargs):
+        raise AssertionError
+
+    assert run_test_for_failing_test_case(inner) == snapshot
+
+
+@pytest.mark.parametrize(
+    "returns",
+    [param(st.just(3), id="constant"), param(st.booleans(), id="varying")],
+)
+def test_always_failing_after_calling_generated_function(returns, snapshot):
+    @SNAPSHOT_SETTINGS
+    @given(f=st.functions(like=lambda x: x, returns=returns))
+    def inner(f):
+        f(1)
+        f(2)
         raise AssertionError
 
     assert run_test_for_failing_test_case(inner) == snapshot

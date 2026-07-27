@@ -269,6 +269,13 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
 
 
 def get_pretty_function_description(f: object) -> str:
+    # Anything which knows how to pretty-print itself knows better than we do -
+    # e.g. the constant functions from st.functions(), which would otherwise
+    # borrow the name of the function they imitate.  We skip classes, whose
+    # instance method would be called with the printer as `self`, and require
+    # a callable so that pretty() can't bounce straight back to us.
+    if not isinstance(f, type) and callable(getattr(f, "_repr_pretty_", None)):
+        return pretty(f)
     if isinstance(f, partial):
         return pretty(f)
     if not hasattr(f, "__name__"):

@@ -198,6 +198,27 @@ def test_class_is_not_included_in_unbound_method():
     assert get_pretty_function_description(Foo.baz) == "baz"
 
 
+class PrettyPrintable:
+    def _repr_pretty_(self, p, cycle):
+        p.text("a pretty instance")
+
+
+def test_uses_the_objects_own_pretty_printer():
+    assert get_pretty_function_description(PrettyPrintable()) == "a pretty instance"
+
+
+def test_class_does_not_borrow_the_pretty_printer_of_its_instances():
+    assert get_pretty_function_description(PrettyPrintable) == "PrettyPrintable"
+
+
+def test_ignores_non_callable_pretty_printer():
+    def f():
+        pass
+
+    f._repr_pretty_ = "not callable"
+    assert get_pretty_function_description(f) == "f"
+
+
 def test_does_not_error_on_confused_sources():
     def ed(f, *args):
         return f
