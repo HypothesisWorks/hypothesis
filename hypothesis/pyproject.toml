@@ -158,7 +158,10 @@ source = ["hypothesis"]
 [tool.coverage.paths]
 # Tests run against an installed copy, so each job measures a different
 # site-packages directory; map them onto our source tree so we can combine them.
-source = ["src/hypothesis", "*/site-packages/hypothesis"]
+#
+# The key of `source-paths` here is arbitrary and ignored. See
+# https://coverage.readthedocs.io/en/latest/config.html#paths.
+source-paths = ["src/hypothesis", "*/site-packages/hypothesis"]
 
 [tool.coverage.report]
 fail_under = 100

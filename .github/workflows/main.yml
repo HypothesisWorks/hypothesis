@@ -66,12 +66,13 @@ jobs:
         else
           ./build.sh
         fi
-    - name: Upload coverage data
+    - name: Upload any coverage data
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: ${{ always() }}
       with:
         name: coverage-data-${{ matrix.task }}
         include-hidden-files: true
+        # only some of the jobs in this matrix produce coverage output.
         if-no-files-found: ignore
         path: hypothesis/.coverage*
 
@@ -299,17 +300,18 @@ jobs:
         pattern: coverage-data-*
         path: coverage-data
     - run: |
-        pip install 'coverage[toml]'
+        pip install coverage
         cd hypothesis
         python -m coverage combine ../coverage-data/*/.coverage*
-        # We report from src/, where `hypothesis` is a package rather than just a
-        # data file, so that coverage can find modules we never imported at all.
+        # We set `source = ["hypothesis"]` in [tool.coverage.run] in pyproject.toml,
+        # which means `coverage report` will look for a directory named hypothesis.
+        # cd into the right dir to make that happen.
         cd src
         REPORT="python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage"
-        # First list the modules we don't require coverage of (`omit` in
-        # pyproject.toml).  Any which the combined data covers completely have
-        # dropped out of this report, and so could be un-omitted.
+        # Show a full coverage report, including files we would otherwise omit.
+        # This line cannot fail: it's purely for debugging / observability.
         $REPORT --omit=no-such-file --fail-under=0
+        # Now, run the actual report. This line can fail.
         $REPORT
 
   check-required:
