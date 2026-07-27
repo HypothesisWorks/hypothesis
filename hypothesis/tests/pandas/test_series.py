@@ -196,19 +196,27 @@ def test_nonzero_fixed_offset_timezone_covers_beyond_datetime_max():
     )
 
 
-@requires_pandas21
-@given(
-    pdst.series(
-        dtype=pd.DatetimeTZDtype("s", dt.timezone(dt.timedelta(hours=5, minutes=30)))
-    )
+# Constructed conditionally because the DatetimeTZDtype constructor raises
+# for non-ns units before pandas 2.0, at module import time here.
+FIXED_OFFSET_S_DTYPE = (
+    pd.DatetimeTZDtype("s", dt.timezone(dt.timedelta(hours=5, minutes=30)))
+    if PANDAS_GE_21
+    else None
 )
+ZONEINFO_S_DTYPE = (
+    pd.DatetimeTZDtype("s", zoneinfo.ZoneInfo("UTC")) if PANDAS_GE_21 else None
+)
+
+
+@requires_pandas21
+@given(pdst.series(dtype=FIXED_OFFSET_S_DTYPE))
 def test_fixed_offset_series_elements_can_be_accessed(s):
     for i in range(len(s)):
         s.iloc[i]
 
 
 @requires_pandas21
-@given(pdst.series(dtype=pd.DatetimeTZDtype("s", zoneinfo.ZoneInfo("UTC"))))
+@given(pdst.series(dtype=ZONEINFO_S_DTYPE))
 def test_zoneinfo_series_can_be_displayed(s):
     repr(s)
 
