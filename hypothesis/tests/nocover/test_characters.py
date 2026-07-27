@@ -14,6 +14,7 @@ from encodings.aliases import aliases
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.utils import Why, xfail_on_crosshair
 
@@ -61,3 +62,29 @@ assert len(lots_of_encodings) > 100  # sanity-check
 def test_can_constrain_characters_to_codec(data, codec):
     s = data.draw(st.text(st.characters(codec=codec), min_size=25))
     s.encode(codec)
+
+
+@pytest.mark.parametrize(
+    "codec, char",
+    [
+        ("shift_jis", "¥"),  # encodes to the same byte as backslash
+        ("cp950", "•"),  # encodes to the same bytes as "‧" (U+2027)
+        ("iso2022_jp", "\x1b"),  # the escape character of this stateful codec
+    ],
+)
+def test_codec_excludes_non_round_tripping_characters(codec, char):
+    assert ord(char) not in unwrap_strategies(st.characters(codec=codec)).intervals
+    # but such characters can still be opted into via include_characters
+    included = unwrap_strategies(st.characters(codec=codec, include_characters=char))
+    assert ord(char) in included.intervals
+
+
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="large & slow symbolic strings",
+)
+@pytest.mark.parametrize("codec", ["shift_jis", "cp950", "iso2022_jp", "iso2022_kr"])
+@given(data=st.data())
+def test_codec_strings_round_trip(codec, data):
+    s = data.draw(st.text(st.characters(codec=codec), min_size=1))
+    assert s.encode(codec).decode(codec) == s

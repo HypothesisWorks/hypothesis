@@ -143,25 +143,28 @@ def charmap() -> dict[CategoryName, IntervalsT]:
 
 @cache
 def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
-    """Return an IntervalSet of characters which are part of this codec."""
+    """Return an IntervalSet of characters which round-trip through this codec."""
     assert codec_name == codecs.lookup(codec_name).name
-    fname = charmap_file(f"codec-{codec_name}")
+    fname = charmap_file(f"codec-roundtrip-{codec_name}")
     try:
         with gzip.GzipFile(fname) as gzf:
-            encodable_intervals = json.load(gzf)
+            roundtrip_intervals = json.load(gzf)
 
     except Exception:
         # This loop is kinda slow, but hopefully we don't need to do it very often!
-        encodable_intervals = []
+        roundtrip_intervals = []
         for i in range(sys.maxunicode + 1):
+            char = chr(i)
             try:
-                chr(i).encode(codec_name)
+                # A few legacy codecs have lossy fallback mappings - e.g. under
+                # shift_jis the yen sign encodes to the byte which decodes as a
+                # backslash - so we check for a round-trip, not just encoding.
+                if char.encode(codec_name).decode(codec_name) == char:
+                    roundtrip_intervals.append((i, i))
             except Exception:  # usually _but not always_ UnicodeEncodeError
                 pass
-            else:
-                encodable_intervals.append((i, i))
 
-    res = IntervalSet(encodable_intervals)
+    res = IntervalSet(roundtrip_intervals)
     res = res.union(res)
     try:
         # Write the Unicode table atomically

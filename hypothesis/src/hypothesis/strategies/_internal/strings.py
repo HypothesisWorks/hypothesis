@@ -74,10 +74,14 @@ class OneCharStringStrategy(SearchStrategy[str]):
             max_codepoint=max_codepoint,
             categories=categories,
             exclude_characters=exclude_characters,
-            include_characters=include_characters,
         )
         if codec is not None:
             intervals &= charmap.intervals_from_codec(codec)
+        # Union include_characters after the codec intersection, so that
+        # explicitly-included characters are generated even if they don't
+        # round-trip through the codec.  (they can't overlap with
+        # exclude_characters; we validate that in st.characters())
+        intervals |= IntervalSet.from_string("".join(include_characters))
 
         _arg_repr = ", ".join(
             f"{k}={v!r}"
