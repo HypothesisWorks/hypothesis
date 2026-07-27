@@ -134,6 +134,8 @@ jobs:
     - name: Stamp release version into Cargo.toml
       env:
         NEW_VERSION: ${{ needs.prepare-release.outputs.new_version }}
+      # default shell is pwsh which has different envvar expansion syntax
+      shell: bash
       run: python tooling/scripts/write-cargo-version.py "$NEW_VERSION"
     - name: Build wheels
       if: ${{ !matrix.abi3-only }}
