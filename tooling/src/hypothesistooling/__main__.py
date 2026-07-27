@@ -267,7 +267,8 @@ def format(*, format_all=False):
 
     config = CoverageConfig()
     config_file = os.path.join(HYPOTHESIS, "pyproject.toml")
-    assert config.from_file(config_file, warn=warn, our_file=True), config_file
+    success = config.from_file(config_file, warn=warn, our_file=True)
+    assert success, config_file
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
 
