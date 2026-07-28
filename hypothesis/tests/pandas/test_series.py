@@ -135,6 +135,10 @@ TIMEZONES = [
 requires_pandas21 = pytest.mark.skipif(
     not PANDAS_GE_21, reason="timezone-aware dtypes require pandas >= 2.1"
 )
+requires_pandas22 = pytest.mark.skipif(
+    tuple(int(x) for x in pd.__version__.split(".")[:2]) < (2, 2),
+    reason="pandas < 2.2 raises for naive wall times in a DST gap",
+)
 
 
 @pytest.mark.skipif(PANDAS_GE_21, reason="only raises on pandas < 2.1")
@@ -249,13 +253,14 @@ def test_variable_offset_timezones_stay_within_datetime_range():
     )
 
 
-@requires_pandas21
+@requires_pandas22
 def test_tz_aware_series_from_naive_datetime_elements():
     # Naive elements are interpreted as wall times in the dtype's timezone,
     # with the pandas constructor's handling of DST transitions: ambiguous
     # times resolve to the first occurrence, and imaginary times are shifted
-    # out of the gap.  We bound the elements because pandas 2.1 localizes
-    # python datetimes via nanoseconds, overflowing beyond that range.
+    # out of the gap on pandas >= 2.2 (2.1 instead raises, hence the skip).
+    # We bound the elements because pandas localizes python datetimes via
+    # nanoseconds, overflowing beyond that range.
     dtype = pd.DatetimeTZDtype("us", zoneinfo.ZoneInfo("America/New_York"))
     elements = st.datetimes(dt.datetime(1678, 1, 1), dt.datetime(2261, 12, 31))
     assert_all_examples(
