@@ -184,7 +184,6 @@ omit = [
     "**/_hypothesis_ftz_detector.py",
     # tests which exercise these files run in jobs which don't measure coverage
     "**/extra/cli.py",
-    "**/extra/django/*.py",
     "**/extra/ghostwriter.py",
 ]
 exclude_lines = [

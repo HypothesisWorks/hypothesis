@@ -14,14 +14,16 @@ from django import forms
 from django.conf import settings
 
 from hypothesis import assume, given
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import (
     TestCase,
     from_field,
     from_form,
     register_field_strategy,
 )
-from hypothesis.strategies import booleans, sampled_from
+from hypothesis.strategies import booleans, just, sampled_from
 
+from tests.common.debug import check_can_generate_examples
 from tests.django.toystore.forms import (
     BasicFieldForm,
     BroadBooleanField,
@@ -208,4 +210,19 @@ class TestFormsWithModelChoices(TestCase):
 
     @given(form=from_form(MultipleCompaniesForm))
     def test_multiple_companies_form_valid(self, form):
+        self.assertTrue(form.is_valid())
+
+
+class TestFromFormArguments(TestCase):
+    def test_from_form_requires_a_form_subclass(self):
+        with self.assertRaises(InvalidArgument):
+            check_can_generate_examples(from_form(int))
+
+    @given(form=from_form(EmailFieldForm, _email=...))
+    def test_ellipsis_infers_a_strategy_for_a_field(self, form):
+        self.assertTrue(form.is_valid())
+
+    @given(form=from_form(BasicFieldForm, _char=just("explicit-value")))
+    def test_explicit_field_strategy_skips_inference(self, form):
+        self.assertEqual(form.data["_char"], "explicit-value")
         self.assertTrue(form.is_valid())

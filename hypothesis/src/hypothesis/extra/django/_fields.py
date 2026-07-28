@@ -64,7 +64,10 @@ def timezones():
     if django.VERSION < (5, 0, 0) and getattr(
         django.conf.settings, "USE_DEPRECATED_PYTZ", True
     ):
-        from hypothesis.extra.pytz import timezones
+        # Our coverage-measured test suite only runs against Django >= 5.0,
+        # so this branch is unreachable there; it remains covered by our
+        # older, non-coverage-measured Django test jobs.
+        from hypothesis.extra.pytz import timezones  # pragma: no cover
     else:
         from hypothesis.strategies import timezones
 
@@ -139,7 +142,8 @@ def using_sqlite():
             .get("ENGINE", "")
             .endswith(".sqlite3")
         )
-    except django.core.exceptions.ImproperlyConfigured:
+    except django.core.exceptions.ImproperlyConfigured:  # pragma: no cover
+        # Only reachable with unconfigured settings, which our runner sets up.
         return None
 
 
@@ -268,7 +272,10 @@ def _for_text(field):
     return strategy
 
 
-if "django.contrib.auth" in settings.INSTALLED_APPS:
+if "django.contrib.auth" in settings.INSTALLED_APPS:  # pragma: no branch
+    # Our coverage-measured test settings always install contrib.auth; the
+    # "without contrib.auth" branch is instead covered by the separate
+    # django-nocontrib test job, which does not measure coverage.
     from django.contrib.auth.forms import UsernameField
 
     register_for(UsernameField)(_for_text)

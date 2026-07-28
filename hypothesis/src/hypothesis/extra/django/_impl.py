@@ -127,7 +127,9 @@ def _models_impl(draw, strat):
     """Handle the nasty part of drawing a value for models()"""
     try:
         return draw(strat)[0]
-    except IntegrityError:
+    except IntegrityError:  # pragma: no cover
+        # e.g. a race between get_or_create() and a concurrent writer; possible
+        # in principle, but never triggered deterministically by our test suite.
         reject()
 
 
@@ -226,5 +228,7 @@ def _forms_impl(draw, strat):
     """Handle the nasty part of drawing a value for from_form()"""
     try:
         return draw(strat)
-    except ValidationError:
+    except ValidationError:  # pragma: no cover
+        # Requires form-cleaning logic which rejects some generated data; our
+        # test suite doesn't trigger this deterministically.
         reject()
