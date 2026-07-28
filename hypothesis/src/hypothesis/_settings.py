@@ -1234,7 +1234,7 @@ CI = settings(
 settings.register_profile("ci", CI)
 
 
-if is_in_ci():  # pragma: no cover # covered in ci, but not locally
+if is_in_ci():
     settings.load_profile("ci")
 
 assert settings.default is not None

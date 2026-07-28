@@ -150,7 +150,7 @@ def get_type_hints(thing: object) -> dict[str, Any]:
 
     try:
         hints = typing.get_type_hints(thing, include_extras=True)
-    except (AttributeError, TypeError, NameError):  # pragma: no cover
+    except (AttributeError, TypeError, NameError):
         hints = {}
 
     if inspect.isclass(thing):
@@ -284,11 +284,11 @@ if sys.version_info[:2] < (3, 12):
         This should be removed whenever we drop support for 3.11. We can use the
         standard dataclasses.asdict after that point.
         """
-        if not dataclasses._is_dataclass_instance(obj):  # pragma: no cover
+        if not dataclasses._is_dataclass_instance(obj):
             raise TypeError("asdict() should be called on dataclass instances")
         return _asdict_inner(obj, dict_factory)
 
-else:  # pragma: no cover
+else:
     dataclass_asdict = dataclasses.asdict
 
 
@@ -301,9 +301,9 @@ if sys.version_info[:2] < (3, 13):
             raise ValueError("n must be at least one")
         iterator = iter(iterable)
         while batch := tuple(itertools.islice(iterator, n)):
-            if strict and len(batch) != n:  # pragma: no cover
+            if strict and len(batch) != n:
                 raise ValueError("batched(): incomplete batch")
             yield batch
 
-else:  # pragma: no cover
+else:
     batched = itertools.batched

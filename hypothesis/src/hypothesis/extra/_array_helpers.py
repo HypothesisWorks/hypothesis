@@ -691,7 +691,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             while j < len(result) and result[j] == slice(None):
                 j += 1
             result[i:j] = [Ellipsis]
-        elif self.allow_fewer_indices_than_dims:  # pragma: no cover
+        elif self.allow_fewer_indices_than_dims:
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
         if len(result) == 1 and data.draw(st.booleans()):

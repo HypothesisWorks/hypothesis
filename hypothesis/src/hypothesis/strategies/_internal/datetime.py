@@ -451,8 +451,7 @@ def datetimes(
     max_value: NaiveDatetime | None = None,
     *,
     timezones: SearchStrategy[None] | None = None,
-) -> SearchStrategy[NaiveDatetime]:  # pragma: no cover
-    ...
+) -> SearchStrategy[NaiveDatetime]: ...
 
 
 @overload
@@ -462,8 +461,7 @@ def datetimes(
     *,
     timezones: SearchStrategy[dt.tzinfo],
     allow_imaginary: bool = True,
-) -> SearchStrategy[AwareDatetime]:  # pragma: no cover
-    ...
+) -> SearchStrategy[AwareDatetime]: ...
 
 
 @overload
@@ -473,8 +471,7 @@ def datetimes(
     *,
     timezones: SearchStrategy[dt.tzinfo | None],
     allow_imaginary: bool = True,
-) -> SearchStrategy[dt.datetime]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dt.datetime]: ...
 
 
 @defines_strategy(force_reusable_values=True)
@@ -752,10 +749,9 @@ def _valid_key_cacheable(tzpath, key):
         if Path(root).joinpath(key).exists():  # pragma: no branch
             # No branch because most systems only have one TZPATH component.
             return True
-    else:  # pragma: no cover
-        # This branch is only taken for names which are known to zoneinfo
-        # but not present on the filesystem, i.e. on Windows with tzdata,
-        # and so is never executed by our coverage tests.
+    else:
+        # Taken for names which are known to zoneinfo but not present on the
+        # filesystem, e.g. with the tzdata package installed.
         *package_loc, resource_name = key.split("/")
         package = "tzdata.zoneinfo." + ".".join(package_loc)
         try:

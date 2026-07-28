@@ -141,9 +141,7 @@ class ConstantVisitor(NodeVisitor):
             self.constants.add(value)
             return
 
-        # I don't kow what case could go here, but am also not confident there
-        # isn't one.
-        return  # pragma: no cover
+        return
 
     def visit_UnaryOp(self, node: UnaryOp) -> None:
         # `a = -1` is actually a combination of a USub and the constant 1.

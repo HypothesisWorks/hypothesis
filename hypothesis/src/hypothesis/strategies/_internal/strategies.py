@@ -193,12 +193,7 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
         # hit the count, but having an assertion for it means that
         # testing is easier to debug and we don't just have a hung
         # test.
-        # Note: This is actually covered, by test_very_deep_deferral
-        # in tests/cover/test_deferred_strategies.py. Unfortunately it
-        # runs into a coverage bug. See
-        # https://github.com/nedbat/coveragepy/issues/605
-        # for details.
-        if count > 50:  # pragma: no cover
+        if count > 50:
             key = frozenset(mapping.items())
             assert key not in seen, (key, name)
             seen.add(key)
@@ -915,27 +910,23 @@ class OneOfStrategy(SearchStrategy[Ex]):
 @overload
 def one_of(
     __args: Sequence[SearchStrategy[Ex]],
-) -> SearchStrategy[Ex]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Ex]: ...
 
 
 @overload
-def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:  # pragma: no cover
-    ...
+def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]: ...
 
 
 @overload
 def one_of(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Ex | T]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Ex | T]: ...
 
 
 @overload
 def one_of(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Ex | T | T3]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Ex | T | T3]: ...
 
 
 @overload
@@ -944,8 +935,7 @@ def one_of(
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Ex | T | T3 | T4]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Ex | T | T3 | T4]: ...
 
 
 @overload
@@ -955,13 +945,11 @@ def one_of(
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Ex | T | T3 | T4 | T5]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Ex | T | T3 | T4 | T5]: ...
 
 
 @overload
-def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # pragma: no cover
-    ...
+def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]: ...
 
 
 @defines_strategy(eager=True)

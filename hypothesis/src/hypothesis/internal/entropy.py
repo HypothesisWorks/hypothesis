@@ -33,7 +33,7 @@ if TYPE_CHECKING:
         def getstate(self, *args: Any, **kwargs: Any) -> Any: ...
         def setstate(self, *args: Any, **kwargs: Any) -> Any: ...
 
-else:  # pragma: no cover
+else:
     RandomLike = random.Random
 
 _RKEY = count()
@@ -249,9 +249,7 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if (
-        hypothesis.core.threadlocal._hypothesis_global_random is None
-    ):  # pragma: no cover
+    if hypothesis.core.threadlocal._hypothesis_global_random is None:
         hypothesis.core.threadlocal._hypothesis_global_random = Random()
         register_random(hypothesis.core.threadlocal._hypothesis_global_random)
 

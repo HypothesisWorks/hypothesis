@@ -846,15 +846,13 @@ def rule(
     targets: Sequence[Bundle[Ex]],
     target: None = ...,
     **kwargs: SearchStrategy,
-) -> _RuleWrapper[Ex]:  # pragma: no cover
-    ...
+) -> _RuleWrapper[Ex]: ...
 
 
 @overload
 def rule(
     *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
-) -> _RuleWrapper[Ex]:  # pragma: no cover
-    ...
+) -> _RuleWrapper[Ex]: ...
 
 
 @overload
@@ -863,8 +861,7 @@ def rule(
     target: None = ...,
     targets: _OmittedArgument = ...,
     **kwargs: SearchStrategy,
-) -> Callable[[Callable[..., None]], Callable[..., None]]:  # pragma: no cover
-    ...
+) -> Callable[[Callable[..., None]], Callable[..., None]]: ...
 
 
 def rule(
@@ -941,15 +938,13 @@ def initialize(
     targets: Sequence[Bundle[Ex]],
     target: None = ...,
     **kwargs: SearchStrategy,
-) -> _RuleWrapper[Ex]:  # pragma: no cover
-    ...
+) -> _RuleWrapper[Ex]: ...
 
 
 @overload
 def initialize(
     *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
-) -> _RuleWrapper[Ex]:  # pragma: no cover
-    ...
+) -> _RuleWrapper[Ex]: ...
 
 
 @overload
@@ -958,8 +953,7 @@ def initialize(
     target: None = ...,
     targets: _OmittedArgument = ...,
     **kwargs: SearchStrategy,
-) -> Callable[[Callable[..., None]], Callable[..., None]]:  # pragma: no cover
-    ...
+) -> Callable[[Callable[..., None]], Callable[..., None]]: ...
 
 
 def initialize(

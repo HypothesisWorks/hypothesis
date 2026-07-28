@@ -332,7 +332,7 @@ def make_patch(
     return "".join(diffs)
 
 
-def save_patch(patch: str, *, slug: str = "") -> Path:  # pragma: no cover
+def save_patch(patch: str, *, slug: str = "") -> Path:
     assert re.fullmatch(r"|[a-z]+-", slug), f"malformed {slug=}"
     now = date.today().isoformat()
     cleaned = re.sub(r"^Date: .+?$", "", patch, count=1, flags=re.MULTILINE)
