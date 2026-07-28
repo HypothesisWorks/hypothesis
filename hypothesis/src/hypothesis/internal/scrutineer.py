@@ -39,7 +39,10 @@ Trace: TypeAlias = frozenset[Branch]
 def should_trace_file(fname: str) -> bool:
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
-    return not (is_hypothesis_file(fname) or fname.startswith("<"))
+    # Only called from the trace/trace_line callbacks below, so this body only
+    # ever executes inside another tool's tracing callback - which makes it
+    # invisible to sys.monitoring-based coverage (see Tracer.trace_line).
+    return not (is_hypothesis_file(fname) or fname.startswith("<"))  # pragma: no cover
 
 
 # where possible, we'll use 3.12's new sys.monitoring module for low-overhead
@@ -47,7 +50,7 @@ def should_trace_file(fname: str) -> bool:
 # tool_id = 1 is designated for coverage, but we intentionally choose a
 # non-reserved tool id so we can co-exist with coverage tools.
 MONITORING_TOOL_ID = 3
-if hasattr(sys, "monitoring"):
+if hasattr(sys, "monitoring"):  # pragma: no branch  # always true on Python >= 3.12
     MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
 
 
@@ -73,13 +76,15 @@ class Tracer:
             return False
         if hasattr(sys, "monitoring"):
             return sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-        return sys.gettrace() is None
+        return sys.gettrace() is None  # pragma: no cover  # only on Python < 3.12
 
     @property
     def branches(self) -> Trace:
         return frozenset(self._branches)
 
-    def trace(self, frame, event, arg):
+    def trace(self, frame, event, arg):  # pragma: no cover
+        # settrace-based tracing; only used as a fallback on Python < 3.12,
+        # where sys.monitoring is unavailable.
         try:
             if event == "call":
                 return self.trace
@@ -92,7 +97,12 @@ class Tracer:
         except RecursionError:
             pass
 
-    def trace_line(self, code: types.CodeType, line_number: int) -> None:
+    def trace_line(
+        self, code: types.CodeType, line_number: int
+    ) -> None:  # pragma: no cover
+        # sys.monitoring callback: code executed inside another tool's monitoring
+        # callback is invisible to sys.monitoring-based coverage, so this body
+        # can never be measured even though it runs on every traced line.
         fname = code.co_filename
         if not should_trace_file(fname):
             # this function is only called on 3.12+, but we want to avoid an
@@ -109,15 +119,15 @@ class Tracer:
         if not self._should_trace:
             return self
 
-        if not hasattr(sys, "monitoring"):
+        if not hasattr(sys, "monitoring"):  # pragma: no cover  # only on Python < 3.12
             sys.settrace(self.trace)
             return self
 
         try:
             sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
-        except ValueError:
+        except ValueError:  # pragma: no cover
             # another thread may have registered a tool for MONITORING_TOOL_ID
-            # since we checked in can_trace.
+            # since we checked in can_trace; this is a rare race condition.
             self._tried_and_failed_to_trace = True
             return self
 
@@ -132,12 +142,12 @@ class Tracer:
         if not self._should_trace:
             return
 
-        if not hasattr(sys, "monitoring"):
+        if not hasattr(sys, "monitoring"):  # pragma: no cover  # only on Python < 3.12
             sys.settrace(None)
             return
 
         if self._tried_and_failed_to_trace:
-            return
+            return  # pragma: no cover  # only true after the race in __enter__ above
 
         sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
         for event in MONITORING_EVENTS:
@@ -325,9 +335,7 @@ def tractable_coverage_report(trace: Trace) -> dict[str, list[int]]:
     coverage: dict = {}
     t = dict(trace)
     for file, line in set(t.keys()).union(t.values()) - {None}:  # type: ignore
-        # On Python <= 3.11, we can use coverage.py xor Hypothesis' tracer,
-        # so the trace will be empty and this line never run under coverage.
-        coverage.setdefault(file, set()).add(line)  # pragma: no cover
+        coverage.setdefault(file, set()).add(line)
     stdlib_fragment = f"{os.sep}lib{os.sep}python3.{sys.version_info.minor}{os.sep}"
     return {
         k: sorted(v)

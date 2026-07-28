@@ -9,19 +9,40 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from copy import copy
 
+import numpy as np
 import pytest
 
-from hypothesis.extra.array_api import find_castable_builtin_for_dtype
+from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.extra.array_api import (
+    _from_dtype,
+    dtype_from_name,
+    find_castable_builtin_for_dtype,
+    mock_xp,
+)
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import dtype_name_params, flushes_to_zero
+from tests.array_api.common import (
+    MIN_VER_FOR_COMPLEX,
+    dtype_name_params,
+    flushes_to_zero,
+)
 from tests.common.debug import (
     assert_all_examples,
     assert_no_examples,
+    check_can_generate_examples,
     find_any,
     minimal,
 )
+
+
+def _xp_without(*attrs):
+    """A copy of mock_xp with the given attributes removed."""
+    xp = copy(mock_xp)
+    for attr in attrs:
+        delattr(xp, attr)
+    return xp
 
 
 @pytest.mark.parametrize("dtype_name", dtype_name_params)
@@ -106,3 +127,66 @@ def test_subnormal_generation(xp, xps, kwargs):
         assert_no_examples(strat, lambda n: -smallest_normal < n < smallest_normal)
     else:
         find_any(strat, lambda n: -smallest_normal < n < smallest_normal)
+
+
+def _ftz_asarray(obj, dtype=None):
+    """Like np.asarray(), but flushes subnormal floats to zero - simulating an
+    array module built with e.g. -ffast-math/-ftz."""
+    arr = np.asarray(obj, dtype=dtype)
+    if np.issubdtype(arr.dtype, np.floating):
+        tiny = np.finfo(arr.dtype).tiny
+        arr = np.where((arr != 0) & (np.abs(arr) < tiny), arr.dtype.type(0), arr)
+    return arr
+
+
+def test_infers_flush_to_zero_from_asarray():
+    """from_dtype() infers allow_subnormal=False when the array module's
+    asarray() flushes subnormal floats to zero."""
+    xp = copy(mock_xp)
+    xp.asarray = _ftz_asarray
+    strat = _from_dtype(xp, "draft", xp.float32).filter(lambda n: n != 0)
+    assert_no_examples(strat, lambda n: -smallest_normal < n < smallest_normal)
+
+
+@pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
+@pytest.mark.parametrize("allow_subnormal", [True, False])
+def test_complex_from_dtype_respects_explicit_allow_subnormal(xp, xps, allow_subnormal):
+    """from_dtype() does not need to infer FTZ behaviour for complex dtypes
+    when allow_subnormal is passed explicitly."""
+    strat = xps.from_dtype(xp.complex64, allow_subnormal=allow_subnormal)
+    check_can_generate_examples(strat)
+
+
+def test_ignores_missing_bool_dtype():
+    """find_castable_builtin_for_dtype() tolerates an array module with no
+    bool dtype, so long as the dtype being looked up is found elsewhere."""
+    xp = _xp_without("bool")
+    builtin = find_castable_builtin_for_dtype(xp, "draft", xp.int8)
+    assert builtin is int
+
+
+def test_warns_and_raises_for_unrecognised_dtype_with_missing_dtypes():
+    """An unrecognised dtype raises InvalidArgument, with a warning listing
+    any dtypes missing from the array module - even for api_version=2021.12,
+    when complex dtypes are not considered at all."""
+    xp = _xp_without("float64")
+    with (
+        pytest.warns(HypothesisWarning, match=f"{mock_xp.__name__}.*float64"),
+        pytest.raises(InvalidArgument, match="not recognised"),
+    ):
+        find_castable_builtin_for_dtype(xp, "2021.12", object())
+
+
+def test_dtype_from_name_raises_for_dtype_missing_from_xp():
+    """dtype_from_name() raises a helpful error when the array module lacks
+    the named (but otherwise valid) dtype."""
+    xp = _xp_without("float64")
+    with pytest.raises(InvalidArgument, match=f"{mock_xp.__name__}.*float64"):
+        dtype_from_name(xp, "float64")
+
+
+def test_dtype_from_name_raises_for_invalid_name():
+    """dtype_from_name() raises a helpful error for names that are not valid
+    Array API dtypes."""
+    with pytest.raises(InvalidArgument, match="not a valid Array API data type"):
+        dtype_from_name(mock_xp, "int7")

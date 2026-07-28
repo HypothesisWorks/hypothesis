@@ -43,7 +43,13 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
+from hypothesis.internal.conjecture.provider_conformance import (
+    constraints_strategy,
+    float_constraints,
+    integer_constraints,
+    run_conformance_test,
+    string_constraints,
+)
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
@@ -54,7 +60,7 @@ from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import Observation, _callbacks
 
-from tests.common.debug import minimal
+from tests.common.debug import check_can_generate_examples, minimal
 from tests.common.utils import (
     capture_observations,
     capture_out,
@@ -814,7 +820,16 @@ def test_on_observation_no_override():
     f()
 
 
-@pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
+class ObservingHypothesisProvider(HypothesisProvider):
+    # a provider which returns a nonempty iterable from
+    # observe_information_messages, unlike HypothesisProvider itself.
+    def observe_information_messages(self, *, lifetime):
+        yield {"type": "info", "title": "observing-provider", "content": {}}
+
+
+@pytest.mark.parametrize(
+    "provider", [HypothesisProvider, PrngProvider, ObservingHypothesisProvider]
+)
 def test_provider_conformance(provider):
     with warnings.catch_warnings():
         # emitted by available_timezones() from st.timezone_keys() on 3.11+
@@ -825,6 +840,42 @@ def test_provider_conformance(provider):
         run_conformance_test(
             provider, settings=settings(max_examples=20, stateful_step_count=20)
         )
+
+
+def test_integer_constraints_explicit_use_flags():
+    # integer_constraints defaults use_min_value / use_max_value / use_weights
+    # to a random boolean when not specified. Cover the branches where callers
+    # pass these explicitly instead of relying on that default.
+    check_can_generate_examples(
+        integer_constraints(use_min_value=True, use_max_value=True, use_weights=True)
+    )
+
+
+def test_collection_constraints_explicit_use_flags():
+    # string_constraints (and bytes_constraints) forward use_min_size /
+    # use_max_size to _collection_constraints, which defaults them to a random
+    # boolean when not specified. Cover the branches where callers pass these
+    # explicitly instead.
+    check_can_generate_examples(
+        string_constraints(use_min_size=True, use_max_size=True)
+    )
+
+
+def test_float_constraints_explicit_use_flags():
+    # as above, but for float_constraints' use_min_value / use_max_value.
+    check_can_generate_examples(
+        float_constraints(use_min_value=True, use_max_value=True)
+    )
+
+
+def test_constraints_strategy_with_explicit_strategy_constraints():
+    # constraints_strategy defaults strategy_constraints to {} when None. Cover
+    # the branch where a caller passes an explicit dict instead.
+    check_can_generate_examples(
+        constraints_strategy(
+            "integer", strategy_constraints={"integer": {"use_min_value": True}}
+        )
+    )
 
 
 # see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion
