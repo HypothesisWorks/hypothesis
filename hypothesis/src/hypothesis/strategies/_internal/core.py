@@ -854,45 +854,18 @@ def text(
     so generated strings may be in any or none of the 'normal forms'.
     """
     check_valid_sizes(min_size, max_size)
-    if isinstance(alphabet, SearchStrategy):
-        char_strategy = unwrap_strategies(alphabet)
-        if isinstance(char_strategy, SampledFromStrategy):
-            # Check this via the up-front validation logic below, and incidentally
-            # convert into a `characters()` strategy for standard text shrinking.
-            return text(char_strategy.elements, min_size=min_size, max_size=max_size)
-        elif not isinstance(char_strategy, OneCharStringStrategy):
-            char_strategy = char_strategy.map(_check_is_single_character)
+    check_type((Collection, SearchStrategy), alphabet, "alphabet")
+
+    char_strategy: SearchStrategy[str] | None
+    if not isinstance(alphabet, SearchStrategy) and not alphabet:
+        char_strategy = nothing()
     else:
-        non_string = [c for c in alphabet if not isinstance(c, str)]
-        if non_string:
-            raise InvalidArgument(
-                "The following elements in alphabet are not unicode "
-                f"strings:  {non_string!r}"
-            )
-        not_one_char = [c for c in alphabet if len(c) != 1]
-        if not_one_char:
-            raise InvalidArgument(
-                "The following elements in alphabet are not of length one, "
-                f"which leads to violation of size constraints:  {not_one_char!r}"
-            )
-        if alphabet in ["ascii", "utf-8"]:
-            warnings.warn(
-                f"st.text({alphabet!r}): it seems like you are trying to use the "
-                f"codec {alphabet!r}. st.text({alphabet!r}) instead generates "
-                f"strings using the literal characters {list(alphabet)!r}. To specify "
-                f"the {alphabet} codec, use st.text(st.characters(codec={alphabet!r})). "
-                "If you intended to use character literals, you can silence this "
-                "warning by reordering the characters.",
-                HypothesisWarning,
-                # this stacklevel is of course incorrect, but breaking out of the
-                # levels of LazyStrategy and validation isn't worthwhile.
-                stacklevel=1,
-            )
-        char_strategy = (
-            characters(categories=(), include_characters=alphabet)
-            if alphabet
-            else nothing()
-        )
+        char_strategy = OneCharStringStrategy.from_alphabet(alphabet)
+        if char_strategy is None:
+            # a strategy which cannot be statically resolved to a fixed set of
+            # characters; check each character as it is drawn instead.
+            assert isinstance(alphabet, SearchStrategy)
+            char_strategy = unwrap_strategies(alphabet).map(_check_is_single_character)
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
     # mypy is unhappy with ListStrategy(SearchStrategy[list[Ex]]) and then TextStrategy
@@ -915,7 +888,7 @@ def from_regex(
     regex: str | Pattern[str],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] | None = characters(codec="utf-8"),
+    alphabet: Collection[str] | SearchStrategy[str] | None = characters(codec="utf-8"),
 ) -> SearchStrategy[str]:  # pragma: no cover
     ...
 
@@ -926,7 +899,7 @@ def from_regex(
     regex: AnyStr | Pattern[AnyStr],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] | None = None,
+    alphabet: Collection[str] | SearchStrategy[str] | None = None,
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
@@ -952,20 +925,31 @@ def from_regex(
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
     string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
-    The ``alphabet=`` argument constrains the characters in the generated
-    string, as for :func:`text`, and is only supported for unicode strings.
+    The ``alphabet=`` argument may be a collection of length one strings or a strategy
+    generating such strings. ``alphabet`` constrains the characters in the generated
+    string, as for :func:`text`, and is only supported for unicode strings. If a
+    strategy is passed to ``alphabet=``, it must resolve to a fixed set of characters;
+    for example, by being a |st.characters|, |st.sampled_from|, or a |st.one_of| union
+    of such strategies.
 
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
     """
     check_type((str, bytes, re.Pattern), regex, "regex")
     check_type(bool, fullmatch, "fullmatch")
+
     pattern = regex.pattern if isinstance(regex, re.Pattern) else regex
     if alphabet is not None:
-        check_type((str, SearchStrategy), alphabet, "alphabet")
+        check_type((Collection, SearchStrategy), alphabet, "alphabet")
         if not isinstance(pattern, str):
             raise InvalidArgument("alphabet= is not supported for bytestrings")
-        alphabet = OneCharStringStrategy.from_alphabet(alphabet)
+        resolved = OneCharStringStrategy.from_alphabet(alphabet)
+        if resolved is None:
+            raise InvalidArgument(
+                f"{alphabet=} must be a collection of characters, or a "
+                "sampled_from() or characters() strategy"
+            )
+        alphabet = resolved
     elif isinstance(pattern, str):
         alphabet = characters(codec="utf-8")
 
