@@ -20,6 +20,7 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import (
     EXPLANATION_STUB,
     explanatory_lines,
+    get_explaining_locations,
     make_report,
 )
 from hypothesis.vendor import pretty
@@ -163,6 +164,24 @@ def test_report_sort(random):
     note(f"expected lines: {pretty.pretty(expected_lines)}")
 
     assert report_lines == expected_lines
+
+
+def test_explanations_drop_stdlib_locations():
+    # e.g. a dataclass-generated dunder which happens to run only for failing
+    # inputs would otherwise be reported as the explanation - misleadingly,
+    # since the relevant divergence is in whatever user code called it.
+    stdlib_loc = (json.__file__, 1)
+    explanations = get_explaining_locations(
+        {"origin": [frozenset([(None, stdlib_loc)])]}
+    )
+    assert explanations == {"origin": set()}
+
+    # ...while equivalent locations in user code are still reported.
+    local_loc = (__file__, 1)
+    explanations = get_explaining_locations(
+        {"origin": [frozenset([(None, local_loc)])]}
+    )
+    assert explanations == {"origin": {local_loc}}
 
 
 def test_make_report_caps_long_explanations():

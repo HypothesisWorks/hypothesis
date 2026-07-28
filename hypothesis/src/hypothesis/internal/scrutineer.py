@@ -155,28 +155,18 @@ class Tracer:
 
 
 UNHELPFUL_LOCATIONS = (
-    # There's a branch which is only taken when an exception is active while exiting
-    # a contextmanager; this is probably after the fault has been triggered.
-    # Similar reasoning applies to a few other standard-library modules: even
-    # if the fault was later, these still aren't useful locations to report!
+    # Standard-library locations are dropped wholesale (see the ModuleLocation
+    # check in get_explaining_locations), so this list only needs to cover
+    # testing tools whose lines are usually run downstream of the actual fault.
     # Note: The list is post-processed, so use plain "/" for separator here.
-    "/contextlib.py",
-    "/inspect.py",
-    "/re.py",
-    "/re/__init__.py",  # refactored in Python 3.11
-    "/warnings.py",
-    # Quite rarely, the first AFNP line is in Pytest's internals.
+    #
+    # Quite rarely, the first always-failing line is in Pytest's internals.
     "/_pytest/**",
     "/pluggy/_*.py",
     # used by pytest for failure formatting in the terminal.
     # seen: pygments/lexer.py, pygments/formatters/, pygments/filter.py.
     "/pygments/*",
-    # used by pytest for failure formatting
-    "/difflib.py",
-    "/reprlib.py",
-    "/typing.py",
     "/conftest.py",
-    "/pprint.py",
     # syrupy registers a pytest_assertrepr_compare hook, which only runs when
     # assertions fail — making it appear as always-failing-never-passing.
     "/syrupy/__init__.py",
@@ -240,9 +230,16 @@ def get_explaining_locations(traces):
     # The last step is to filter out explanations that we know would be uninformative.
     # When this is the first AFNP location, we conclude that Scrutineer missed the
     # real divergence (earlier in the trace) and drop that unhelpful explanation.
+    # Lines inside the standard library - e.g. dataclass-generated dunders which
+    # happen to run only during failure handling - get the same treatment.
     filter_regex = re.compile(_glob_to_re(UNHELPFUL_LOCATIONS))
     return {
-        origin: {loc for loc in afnp_locs if not filter_regex.search(loc[0])}
+        origin: {
+            loc
+            for loc in afnp_locs
+            if not filter_regex.search(loc[0])
+            and ModuleLocation.from_path(loc[0]) is not ModuleLocation.STDLIB
+        }
         for origin, afnp_locs in explanations.items()
     }
 
