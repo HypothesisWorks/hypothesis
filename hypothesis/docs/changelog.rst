@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.163.0:
+
+--------------------
+6.163.0 - 2026-07-28
+--------------------
+
+The ``alphabet=`` argument of |st.from_regex| now accepts any collection of length-one strings, such as a tuple or list of characters (:issue:`4829`). This matches the existing behavior of |st.text|.
+
 .. _v6.162.0:
 
 --------------------
