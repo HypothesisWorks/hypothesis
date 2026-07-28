@@ -246,10 +246,17 @@ def get_explaining_locations(traces):
 
 # see e.g. https://docs.python.org/3/library/sysconfig.html#posix-user
 # for examples of these path schemes
-STDLIB_DIRS = {
-    Path(sysconfig.get_path("platstdlib")).resolve(),
-    Path(sysconfig.get_path("stdlib")).resolve(),
-}
+def _stdlib_dirs():
+    return {
+        Path(sysconfig.get_path("platstdlib")).resolve(),
+        Path(sysconfig.get_path("stdlib")).resolve(),
+        # Under Pyodide and other embedded pythons, the stdlib is imported from
+        # a zipfile on sys.path, which sysconfig doesn't report.
+        *map(Path, filter(lambda p: p.endswith(".zip"), sys.path)),
+    }
+
+
+STDLIB_DIRS = _stdlib_dirs()
 SITE_PACKAGES_DIRS = {
     Path(sysconfig.get_path("purelib")).resolve(),
     Path(sysconfig.get_path("platlib")).resolve(),

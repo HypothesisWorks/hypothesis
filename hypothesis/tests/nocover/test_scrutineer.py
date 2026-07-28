@@ -12,10 +12,12 @@ import json
 import sys
 import sysconfig
 from collections import defaultdict
+from pathlib import Path
 
 import pytest
 
 from hypothesis import Phase, given, note, settings, strategies as st
+from hypothesis.internal import scrutineer
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import (
     EXPLANATION_STUB,
@@ -164,6 +166,13 @@ def test_report_sort(random):
     note(f"expected lines: {pretty.pretty(expected_lines)}")
 
     assert report_lines == expected_lines
+
+
+def test_zipimported_stdlib_counts_as_stdlib(monkeypatch):
+    # Under Pyodide the stdlib is imported from e.g. "/lib/python314.zip",
+    # which sysconfig doesn't report - check we find it from sys.path.
+    monkeypatch.setattr(sys, "path", [*sys.path, "/fake/python314.zip"])
+    assert Path("/fake/python314.zip") in scrutineer._stdlib_dirs()
 
 
 def test_explanations_drop_stdlib_locations():
