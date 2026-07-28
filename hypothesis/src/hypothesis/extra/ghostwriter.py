@@ -483,7 +483,10 @@ def _get_params(func: Callable) -> dict[str, inspect.Parameter]:
         params = list(get_signature(func).parameters.values())
     except Exception:
         if params := _get_params_ufunc(func):
-            pass
+            # On numpy >= 1.26 ufuncs have an inspectable signature, so
+            # get_signature() succeeds and we take the branch below instead;
+            # only numpy <= 1.25 gets here.
+            pass  # pragma: no cover
         elif params := _get_params_builtin_fn(func):
             pass
         else:
@@ -596,7 +599,10 @@ def _imports_for_object(obj):
         return {("numpy", "dtype")}
     try:
         if is_generic_type(obj):
-            if isinstance(obj, TypeVar):
+            if isinstance(obj, TypeVar):  # pragma: no cover
+                # A bare TypeVar is `is_generic_type()` only on Python <= 3.11,
+                # where TypeVar instances are `typing._Final` subclasses; since
+                # 3.12 reimplemented TypeVar in C this branch is unreachable.
                 return {(obj.__module__, obj.__name__)}
             with contextlib.suppress(Exception):
                 return set().union(*map(_imports_for_object, obj.__args__))
@@ -749,14 +755,16 @@ def _get_module(obj):
         return KNOWN_FUNCTION_LOCATIONS[obj]
     try:
         return _get_module_helper(obj)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover  # ufunc-like objects only
         if not _is_probably_ufunc(obj):
             raise
-    for module_name in sorted(sys.modules, key=lambda n: tuple(n.split("."))):
-        if obj is getattr(sys.modules[module_name], obj.__name__, None):
-            KNOWN_FUNCTION_LOCATIONS[obj] = module_name
-            return module_name
-    raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
+        for module_name in sorted(sys.modules, key=lambda n: tuple(n.split("."))):
+            if obj is getattr(sys.modules[module_name], obj.__name__, None):
+                KNOWN_FUNCTION_LOCATIONS[obj] = module_name
+                return module_name
+        raise RuntimeError(
+            f"Could not find module for ufunc {obj.__name__} ({obj!r}"
+        ) from None
 
 
 def _get_qualname(obj: Any, *, include_module: bool = False) -> str:
@@ -928,7 +936,11 @@ def _parameters_to_annotation_name(
         imports.update(new_imports)
         return type_name
     joined = _join_generics(("typing.Union", {"typing"}), annotations)
-    if joined is None:
+    if joined is None:  # pragma: no cover
+        # `annotations` is always non-empty here (we returned above otherwise) and
+        # `_join_generics` only returns None for a falsy `origin_type_data` (never
+        # the case here) or when it filters every annotation out, which only
+        # happens for the "typing.Optional" special-case handled elsewhere.
         return None
     imports.update(joined.imports)
     return joined.type_name
@@ -1019,7 +1031,10 @@ def _parameter_to_annotation(parameter: Any) -> _AnnotationData | None:
         type_name = _get_qualname(parameter, include_module=True)
 
         # the types.UnionType does not support type arguments and needs to be translated
-        if type_name == "types.UnionType":
+        if type_name == "types.UnionType":  # pragma: no cover
+            # On Python >= 3.14, `types.UnionType` *is* `typing.Union` (same
+            # object), so `get_origin(int | str)` has qualname "typing.Union"
+            # and this branch is unreachable - kept for Python <= 3.13.
             return _AnnotationData("typing.Union", {"typing"})
     else:
         if hasattr(parameter, "__module__") and hasattr(parameter, "__name__"):
@@ -1148,7 +1163,7 @@ def _get_testable_functions(thing: object) -> dict[str, Callable]:
     elif isinstance(thing, types.ModuleType):
         if hasattr(thing, "__all__"):
             funcs = [getattr(thing, name, None) for name in thing.__all__]
-        elif hasattr(thing, "__package__"):
+        elif hasattr(thing, "__package__"):  # pragma: no branch  # never absent
             pkg = thing.__package__
             funcs = [
                 v
