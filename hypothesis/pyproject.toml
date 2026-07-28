@@ -182,6 +182,9 @@ skip_covered = true
 omit = [
     # only reachable via an also-excluded branch in strategies/_internal/numbers.py
     "**/_hypothesis_ftz_detector.py",
+    # Test files can be measured when a test runs pytest in a subprocess, but
+    # they aren't targets of our coverage requirement.
+    "**/tests/**",
 ]
 exclude_lines = [
     "pragma: no cover",
