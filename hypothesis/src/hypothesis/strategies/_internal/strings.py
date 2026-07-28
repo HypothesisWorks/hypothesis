@@ -48,6 +48,34 @@ def _check_is_single_character(c: object) -> str:
     return c
 
 
+def _check_alphabet_elements(alphabet: Collection[str]) -> None:
+    non_string = [c for c in alphabet if not isinstance(c, str)]
+    if non_string:
+        raise InvalidArgument(
+            "The following elements in alphabet are not unicode "
+            f"strings:  {non_string!r}"
+        )
+    not_one_char = [c for c in alphabet if len(c) != 1]
+    if not_one_char:
+        raise InvalidArgument(
+            "The following elements in alphabet are not of length one, "
+            f"which leads to violation of size constraints:  {not_one_char!r}"
+        )
+    if alphabet in ["ascii", "utf-8"]:
+        warnings.warn(
+            f"alphabet={alphabet!r}: it seems like you are trying to use the "
+            f"codec {alphabet!r}, but this generates strings using the literal "
+            f"characters {list(alphabet)!r}. To specify the {alphabet} codec, "
+            f"use alphabet=st.characters(codec={alphabet!r}). If you intended "
+            "to use character literals, you can silence this warning by "
+            "reordering the characters.",
+            HypothesisWarning,
+            # this stacklevel is of course incorrect, but breaking out of the
+            # levels of LazyStrategy and validation isn't worthwhile.
+            stacklevel=1,
+        )
+
+
 class OneCharStringStrategy(SearchStrategy[str]):
     """A strategy which generates single character strings of text type."""
 
@@ -104,17 +132,24 @@ class OneCharStringStrategy(SearchStrategy[str]):
         return cls(intervals, force_repr=f"characters({_arg_repr})")
 
     @classmethod
-    def from_alphabet(cls, alphabet: str | SearchStrategy) -> "OneCharStringStrategy":
-        if isinstance(alphabet, str):
+    def from_alphabet(
+        cls, alphabet: Collection[str] | SearchStrategy[str]
+    ) -> "OneCharStringStrategy | None":
+        # Shared logic for the `alphabet=` parameter of st.text and st.from_regex.
+        # Returns None if `alphabet` cannot be statically resolved to a set of characters,
+        # since each caller may wish to handle this case differently.
+        if not isinstance(alphabet, SearchStrategy):
+            _check_alphabet_elements(alphabet)
             return cls.from_characters_args(categories=(), include_characters=alphabet)
 
-        assert isinstance(alphabet, SearchStrategy)
         char_strategy = unwrap_strategies(alphabet)
         if isinstance(char_strategy, cls):
             return char_strategy
         elif isinstance(char_strategy, SampledFromStrategy):
-            for c in char_strategy.elements:
-                _check_is_single_character(c)
+            if char_strategy._transformations:
+                # resolving from .elements would ignore the .map/.filter calls
+                return None
+            _check_alphabet_elements(char_strategy.elements)
             return cls.from_characters_args(
                 categories=(),
                 include_characters=char_strategy.elements,
@@ -122,11 +157,12 @@ class OneCharStringStrategy(SearchStrategy[str]):
         elif isinstance(char_strategy, OneOfStrategy):
             intervals = IntervalSet()
             for s in char_strategy.element_strategies:
-                intervals = intervals.union(cls.from_alphabet(s).intervals)
+                resolved = cls.from_alphabet(s)
+                if resolved is None:
+                    return None
+                intervals = intervals.union(resolved.intervals)
             return cls(intervals, force_repr=repr(alphabet))
-        raise InvalidArgument(
-            f"{alphabet=} must be a sampled_from() or characters() strategy"
-        )
+        return None
 
     def __repr__(self) -> str:
         return self._force_repr or f"OneCharStringStrategy({self.intervals!r})"
