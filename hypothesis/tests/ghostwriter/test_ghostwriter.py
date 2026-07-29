@@ -754,9 +754,11 @@ def test_magic_prefers_functions_defined_directly_in_a_package(tmp_path):
         [
             sys.executable,
             "-c",
-            "import mypkg_for_magic_test\n"
-            "from hypothesis.extra import ghostwriter\n"
-            "print(ghostwriter.magic(mypkg_for_magic_test))",
+            (
+                "import mypkg_for_magic_test\n"
+                "from hypothesis.extra import ghostwriter\n"
+                "print(ghostwriter.magic(mypkg_for_magic_test))"
+            ),
         ],
         cwd=tmp_path,
         encoding="utf-8",
