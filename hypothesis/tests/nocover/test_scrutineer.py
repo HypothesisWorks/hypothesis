@@ -169,23 +169,19 @@ def test_report_sort(random):
 
 
 def test_zipimported_stdlib_counts_as_stdlib(monkeypatch):
-    # Under Pyodide the stdlib is imported from e.g. "/lib/python314.zip",
-    # which sysconfig doesn't report - check we find it from sys.path.
+    # Under Pyodide the stdlib is imported from e.g. "/lib/python314.zip".
     monkeypatch.setattr(sys, "path", [*sys.path, "/fake/python314.zip"])
     assert Path("/fake/python314.zip") in scrutineer._stdlib_dirs()
 
 
 def test_explanations_drop_stdlib_locations():
-    # e.g. a dataclass-generated dunder which happens to run only for failing
-    # inputs would otherwise be reported as the explanation - misleadingly,
-    # since the relevant divergence is in whatever user code called it.
     stdlib_loc = (json.__file__, 1)
     explanations = get_explaining_locations(
         {"origin": [frozenset([(None, stdlib_loc)])]}
     )
     assert explanations == {"origin": set()}
 
-    # ...while equivalent locations in user code are still reported.
+    # similar locations in user code are still reported
     local_loc = (__file__, 1)
     explanations = get_explaining_locations(
         {"origin": [frozenset([(None, local_loc)])]}
@@ -207,8 +203,8 @@ def test_make_report_caps_long_explanations():
 
 
 def test_explanatory_lines_short_circuits_if_already_tracing(monkeypatch):
-    # if a trace function is already active (e.g. a debugger, or coverage itself
-    # on Python < 3.12) while the explain phase runs, we bail out early instead
+    # if a trace function is already active (eg via a debugger or coverage)
+    # while the explain phase runs, we bail out early instead
     # of reporting a (probably-incomplete) explanation.
     monkeypatch.setattr(sys, "gettrace", lambda: lambda *args: None)
     result = explanatory_lines({}, settings(phases=tuple(Phase)))

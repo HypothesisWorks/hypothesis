@@ -89,7 +89,7 @@ else:
     # need balanced increment/decrement in configure/sessionstart to support nested
     # pytest (e.g. runpytest_inprocess), so this early increment in effect replaces
     # the first one in pytest_configure.
-    # (the else-branch can only run in a child process; pragma: no branch)
+    # (the else-branch can only run in a child process)
     if not os.environ.get("HYPOTHESIS_EXTEND_INITIALIZATION"):  # pragma: no branch
         _hypothesis_globals.in_initialization += 1
         if "hypothesis" in sys.modules:

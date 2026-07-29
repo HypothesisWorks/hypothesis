@@ -18,7 +18,7 @@ from hypothesis.extra.array_api import (
     NUMERIC_NAMES,
     REAL_NAMES,
     UINT_NAMES,
-    _numeric_dtypes,
+    make_strategies_namespace,
 )
 
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
@@ -67,8 +67,9 @@ def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
 def test_numeric_dtypes_excludes_complex_before_2022_12(xp):
     """numeric_dtypes() only includes real dtypes for api_version=2021.12,
     which predates complex dtype support."""
+    xps = make_strategies_namespace(xp, api_version="2021.12")
     dtypes = [getattr(xp, n) for n in REAL_NAMES]
-    assert_all_examples(_numeric_dtypes(xp, "2021.12"), lambda dtype: dtype in dtypes)
+    assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in dtypes)
 
 
 def skipif_unsupported_complex(strat_name, dtype_name):

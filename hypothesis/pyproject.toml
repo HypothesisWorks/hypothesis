@@ -153,9 +153,12 @@ exclude = [
 [tool.coverage.run]
 parallel = true
 branch = true
-# Not every job imports every measured module; the combined report is what counts.
+# Some of our CI jobs don't import any modules measured under coverage.
 disable_warnings = ["module-not-imported"]
-source = [
+# note that we use source_pkgs here to avoid the ambiguity between
+# the "hypothesis" package and the "hypothesis" directory during
+# resolution by coverage.py. source_pkgs forces package-only resolution.
+source_pkgs = [
     "hypothesis",
     "_hypothesis_ftz_detector",
     "_hypothesis_globals",
@@ -167,10 +170,11 @@ source = [
 # site-packages directory; map them onto our source tree so we can combine them.
 #
 # The keys of `source-paths` and `top-level-modules` here are arbitrary and
-# ignored, but the rules are checked in order - keep the more specific
-# hypothesis-package rule first. See
+# ignored. See
 # https://coverage.readthedocs.io/en/latest/config.html#paths.
+# (Note however that order matters).
 source-paths = ["src/hypothesis", "*/site-packages/hypothesis"]
+# e.g. our _hypothesis_pytestplugin, _hypothesis_globals, etc modules.
 top-level-modules = ["src", "*/site-packages"]
 
 [tool.coverage.report]
@@ -182,9 +186,6 @@ skip_covered = true
 omit = [
     # only reachable via an also-excluded branch in strategies/_internal/numbers.py
     "**/_hypothesis_ftz_detector.py",
-    # Test files can be measured when a test runs pytest in a subprocess, but
-    # they aren't targets of our coverage requirement.
-    "**/tests/**",
 ]
 exclude_lines = [
     "pragma: no cover",

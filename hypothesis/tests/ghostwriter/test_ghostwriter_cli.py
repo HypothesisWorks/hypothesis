@@ -240,9 +240,8 @@ def test_empty_module_is_not_error(tmp_path):
 
 
 def test_errors_equivalent_flag_with_multiple_functions():
-    # With a single function, --errors-equivalent is downgraded to a plain
-    # fuzz test (see the "--equivalent re.compile" case above); with two or
-    # more it sets allow_same_errors=True on the equivalence test.
+    # with two or more functions, --errors-equivalent sets allow_same_errors=True on the
+    # equivalence test.
     result = run("hypothesis write --errors-equivalent eval ast.literal_eval")
     result.check_returncode()
     assert not result.stderr
@@ -257,7 +256,7 @@ def test_write_command_reports_syntax_highlighting_errors(monkeypatch):
     pytest.importorskip("rich")
 
     def raise_error(*args, **kwargs):
-        raise RuntimeError("simulated failure while guessing terminal colors")
+        raise RuntimeError
 
     monkeypatch.setattr(
         hypothesis.utils.terminal, "guess_background_color", raise_error

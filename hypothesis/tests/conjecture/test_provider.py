@@ -821,8 +821,6 @@ def test_on_observation_no_override():
 
 
 class ObservingHypothesisProvider(HypothesisProvider):
-    # a provider which returns a nonempty iterable from
-    # observe_information_messages, unlike HypothesisProvider itself.
     def observe_information_messages(self, *, lifetime):
         yield {"type": "info", "title": "observing-provider", "content": {}}
 
@@ -842,40 +840,19 @@ def test_provider_conformance(provider):
         )
 
 
-def test_integer_constraints_explicit_use_flags():
-    # integer_constraints defaults use_min_value / use_max_value / use_weights
-    # to a random boolean when not specified. Cover the branches where callers
-    # pass these explicitly instead of relying on that default.
-    check_can_generate_examples(
-        integer_constraints(use_min_value=True, use_max_value=True, use_weights=True)
-    )
-
-
-def test_collection_constraints_explicit_use_flags():
-    # string_constraints (and bytes_constraints) forward use_min_size /
-    # use_max_size to _collection_constraints, which defaults them to a random
-    # boolean when not specified. Cover the branches where callers pass these
-    # explicitly instead.
-    check_can_generate_examples(
-        string_constraints(use_min_size=True, use_max_size=True)
-    )
-
-
-def test_float_constraints_explicit_use_flags():
-    # as above, but for float_constraints' use_min_value / use_max_value.
-    check_can_generate_examples(
-        float_constraints(use_min_value=True, use_max_value=True)
-    )
-
-
-def test_constraints_strategy_with_explicit_strategy_constraints():
-    # constraints_strategy defaults strategy_constraints to {} when None. Cover
-    # the branch where a caller passes an explicit dict instead.
-    check_can_generate_examples(
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        integer_constraints(use_min_value=True, use_max_value=True, use_weights=True),
+        string_constraints(use_min_size=True, use_max_size=True),
+        float_constraints(use_min_value=True, use_max_value=True),
         constraints_strategy(
             "integer", strategy_constraints={"integer": {"use_min_value": True}}
-        )
-    )
+        ),
+    ],
+)
+def test_constraints_explicit_arguments(strategy):
+    check_can_generate_examples(strategy)
 
 
 # see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion

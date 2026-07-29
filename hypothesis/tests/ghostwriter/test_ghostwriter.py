@@ -15,6 +15,7 @@ import inspect
 import json
 import re
 import socket
+import subprocess
 import sys
 import time
 import unittest
@@ -557,10 +558,27 @@ class ForwardRefA:
     pass
 
 
+T = TypeVar("T")
+
+
 @pytest.mark.parametrize(
     "parameter, type_name",
     [
         (ForwardRef("this_ref_does_not_exist"), None),
+        # `Callable[[X], ...]` args are passed through as a list; if any member
+        # is unresolvable the whole list annotation is dropped rather than
+        # partially rendered.
+        ([ForwardRef("NopeNopeNope")], None),
+        # `get_origin(int | str)` is `types.UnionType` (== `typing.Union` as of
+        # Python 3.14), which we render as `typing.Union[...]`.
+        (type(int | str), ghostwriter._AnnotationData("typing.Union", {"typing"})),
+        (
+            int | str,
+            ghostwriter._AnnotationData("typing.Union[int, str]", {"typing"}),
+        ),
+        # An unparametrized generic like `list[T]`, where `T` is an unbound
+        # TypeVar, is treated the same as the bare `list` type.
+        (list[T], ghostwriter._AnnotationData("list", set())),
         # ForwardRef.evaluate() logic is new in 3.14
         *(
             []
@@ -578,34 +596,6 @@ class ForwardRefA:
 )
 def test_parameter_to_annotation(parameter, type_name):
     assert ghostwriter._parameter_to_annotation(parameter) == type_name
-
-
-def test_parameter_to_annotation_callable_args_with_unresolvable_member():
-    # `Callable[[X], ...]` args are passed through as a list; if any member is
-    # unresolvable the whole list annotation is dropped rather than partially
-    # rendered.
-    assert ghostwriter._parameter_to_annotation([ForwardRef("NopeNopeNope")]) is None
-
-
-def test_parameter_to_annotation_new_style_union_type():
-    # `get_origin(int | str)` is `types.UnionType` (== `typing.Union` as of
-    # Python 3.14), which we render as `typing.Union[...]`.
-    union_type_cls = type(int | str)
-    assert ghostwriter._parameter_to_annotation(union_type_cls) == (
-        ghostwriter._AnnotationData("typing.Union", {"typing"})
-    )
-    assert ghostwriter._parameter_to_annotation(int | str) == (
-        ghostwriter._AnnotationData("typing.Union[int, str]", {"typing"})
-    )
-
-
-def test_parameter_to_annotation_bare_typevar_args_are_stripped():
-    # An unparametrized generic like `list[T]`, where `T` is an unbound TypeVar,
-    # should be treated the same as the bare `list` type.
-    T = TypeVar("T")
-    assert ghostwriter._parameter_to_annotation(list[T]) == ghostwriter._AnnotationData(
-        "list", set()
-    )
 
 
 @pytest.mark.parametrize(
@@ -660,31 +650,35 @@ def test_type_from_doc_fragment(token, expected):
     assert ghostwriter._type_from_doc_fragment(token) == expected
 
 
-def test_strategy_for_skips_empty_and_unrecognised_tokens():
-    # A trailing comma produces an empty token (skipped), and "quux" is not a
-    # recognised type name (also skipped) - leaving just the `int` token.
-    param = inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD)
-    docstring = "b (int, quux, ): a param"
-    strat = ghostwriter._strategy_for(param, docstring)
-    assert repr(strat) == "one_of(nothing(), integers())"
-
-
-def test_strategy_for_inserts_unseen_default_as_element():
-    # The default isn't one of the doc-derived elements/types, so it's added
-    # as an extra sampled element.
-    param = inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD, default=5)
-    docstring = "b (str): a string param"
-    strat = ghostwriter._strategy_for(param, docstring)
-    assert repr(strat) == "one_of(just(5), text())"
-
-
-def test_strategy_for_falls_through_to_next_pattern_on_empty_match():
-    # The RST-style pattern matches, but "quux" resolves to nothing useful, so
-    # we fall through the (empty) Google- and Numpy-style attempts and end up
-    # guessing from the argument name instead.
-    param = inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD)
-    docstring = ":type x: quux"
-    assert repr(ghostwriter._strategy_for(param, docstring)) == "nothing()"
+@pytest.mark.parametrize(
+    "param, docstring, expected_repr",
+    [
+        # A trailing comma produces an empty token (skipped), and "quux" is not
+        # a recognised type name (also skipped) - leaving just the `int` token.
+        (
+            inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            "b (int, quux, ): a param",
+            "one_of(nothing(), integers())",
+        ),
+        # The default isn't one of the doc-derived elements/types, so it's
+        # added as an extra sampled element.
+        (
+            inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD, default=5),
+            "b (str): a string param",
+            "one_of(just(5), text())",
+        ),
+        # The RST-style pattern matches, but "quux" resolves to nothing useful,
+        # so we fall through the (empty) Google- and Numpy-style attempts and
+        # end up guessing from the argument name instead.
+        (
+            inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            ":type x: quux",
+            "nothing()",
+        ),
+    ],
+)
+def test_strategy_for(param, docstring, expected_repr):
+    assert repr(ghostwriter._strategy_for(param, docstring)) == expected_repr
 
 
 @pytest.mark.parametrize(
@@ -715,23 +709,24 @@ def test_guess_strategy_by_argname(name, expected_repr):
     assert repr(ghostwriter._guess_strategy_by_argname(name)) == expected_repr
 
 
-def test_get_params_builtin_fn_no_docstring_match():
-    # `divmod`'s docstring doesn't start with "divmod(...)", so we can't
-    # recover a signature from it at all.
-    assert ghostwriter._get_params_builtin_fn(divmod) == []
-
-
-def test_get_params_builtin_fn_handles_slash_and_star_markers():
-    # __build_class__'s docstring is "__build_class__(func, name, /, *bases,
-    # [metaclass], **kwds)", exercising the "/" and "*" (and "**") markers.
-    params = ghostwriter._get_params_builtin_fn(builtins.__build_class__)
-    assert [p.name for p in params] == ["func", "name", "metaclass"]
-
-
-def test_get_params_builtin_fn_stops_at_invalid_identifier():
-    # time.get_clock_info's docstring argument is "name: str", which is not a
-    # valid Python identifier - so we stop parsing immediately.
-    assert ghostwriter._get_params_builtin_fn(time.get_clock_info) == []
+@pytest.mark.parametrize(
+    "func, expected_names",
+    [
+        # `divmod`'s docstring doesn't start with "divmod(...)", so we can't
+        # recover a signature from it at all.
+        (divmod, []),
+        # __build_class__'s docstring is "__build_class__(func, name, /,
+        # *bases, [metaclass], **kwds)", exercising the "/" and "*" (and "**")
+        # markers.
+        (builtins.__build_class__, ["func", "name", "metaclass"]),
+        # time.get_clock_info's docstring argument is "name: str", which is not
+        # a valid Python identifier - so we stop parsing immediately.
+        (time.get_clock_info, []),
+    ],
+)
+def test_get_params_builtin_fn(func, expected_names):
+    params = ghostwriter._get_params_builtin_fn(func)
+    assert [p.name for p in params] == expected_names
 
 
 def test_get_testable_functions_skips_callable_without_a_name():
@@ -755,17 +750,27 @@ def test_magic_prefers_functions_defined_directly_in_a_package(tmp_path):
     (pkg / "sub.py").write_text(
         "def sub_func(x: int) -> int:\n    return x\n", encoding="utf-8"
     )
-    sys.path.insert(0, str(tmp_path))
-    try:
-        import mypkg_for_magic_test
-
-        source_code = ghostwriter.magic(mypkg_for_magic_test)
-    finally:
-        sys.path.remove(str(tmp_path))
-        sys.modules.pop("mypkg_for_magic_test", None)
-        sys.modules.pop("mypkg_for_magic_test.sub", None)
+    source_code = subprocess.check_output(
+        [
+            sys.executable,
+            "-c",
+            "import mypkg_for_magic_test\n"
+            "from hypothesis.extra import ghostwriter\n"
+            "print(ghostwriter.magic(mypkg_for_magic_test))",
+        ],
+        cwd=tmp_path,
+        encoding="utf-8",
+    )
     assert "pkg_func" in source_code
     assert "sub_func" not in source_code
+
+
+def test_magic_module_without_spec():
+    # __spec__ is None for __main__ in scripts and the REPL, and for
+    # dynamically created modules
+    mod = ModuleType("my_script")
+    mod.timsort = timsort
+    assert "timsort" in ghostwriter.magic(mod)
 
 
 def test_magic_does_not_merge_equivalent_functions_with_different_returns():
@@ -793,20 +798,24 @@ def test_idempotent_explicit_annotate(annotate):
     assert (" -> None" in source_code) == annotate
 
 
-def test_binary_operation_requires_a_callable_distributes_over():
-    with pytest.raises(InvalidArgument, match="must be an operation which"):
-        ghostwriter.binary_operation(compose_types, distributes_over=42)
-
-
-def test_binary_operation_requires_at_least_one_property():
-    with pytest.raises(InvalidArgument, match="at least one property"):
-        ghostwriter.binary_operation(
-            compose_types,
-            associative=False,
-            commutative=False,
-            identity=None,
-            distributes_over=None,
-        )
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({"distributes_over": 42}, "must be an operation which"),
+        (
+            {
+                "associative": False,
+                "commutative": False,
+                "identity": None,
+                "distributes_over": None,
+            },
+            "at least one property",
+        ),
+    ],
+)
+def test_binary_operation_invalid_arguments(kwargs, match):
+    with pytest.raises(InvalidArgument, match=match):
+        ghostwriter.binary_operation(compose_types, **kwargs)
 
 
 def test_binary_operation_merges_different_operand_strategies():

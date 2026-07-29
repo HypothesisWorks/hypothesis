@@ -7,3 +7,6 @@ files.
 
 The ``explain`` phase no longer reports lines inside the standard library,
 which were occasionally included in (and made for misleading) explanations.
+
+The constants-collection feature introduced in :ref:`version 6.131.1 <v6.131.1>`
+now also collects the float components of complex literals like ``3.5j``.

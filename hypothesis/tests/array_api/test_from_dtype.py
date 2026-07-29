@@ -129,19 +129,18 @@ def test_subnormal_generation(xp, xps, kwargs):
         find_any(strat, lambda n: -smallest_normal < n < smallest_normal)
 
 
-def _ftz_asarray(obj, dtype=None):
-    """Like np.asarray(), but flushes subnormal floats to zero - simulating an
-    array module built with e.g. -ffast-math/-ftz."""
-    arr = np.asarray(obj, dtype=dtype)
-    if np.issubdtype(arr.dtype, np.floating):
-        tiny = np.finfo(arr.dtype).tiny
-        arr = np.where((arr != 0) & (np.abs(arr) < tiny), arr.dtype.type(0), arr)
-    return arr
-
-
 def test_infers_flush_to_zero_from_asarray():
     """from_dtype() infers allow_subnormal=False when the array module's
     asarray() flushes subnormal floats to zero."""
+
+    def _ftz_asarray(obj, dtype=None):
+        """Like np.asarray(), but flushes subnormal floats to zero"""
+        arr = np.asarray(obj, dtype=dtype)
+        if np.issubdtype(arr.dtype, np.floating):
+            tiny = np.finfo(arr.dtype).tiny
+            arr = np.where((arr != 0) & (np.abs(arr) < tiny), arr.dtype.type(0), arr)
+        return arr
+
     xp = copy(mock_xp)
     xp.asarray = _ftz_asarray
     strat = _from_dtype(xp, "draft", xp.float32).filter(lambda n: n != 0)

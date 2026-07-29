@@ -36,13 +36,10 @@ Trace: TypeAlias = frozenset[Branch]
 
 
 @functools.cache
-def should_trace_file(fname: str) -> bool:
+def should_trace_file(fname: str) -> bool:  # pragma: no cover
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
-    # Only called from the trace/trace_line callbacks below, so this body only
-    # ever executes inside another tool's tracing callback - which makes it
-    # invisible to sys.monitoring-based coverage (see Tracer.trace_line).
-    return not (is_hypothesis_file(fname) or fname.startswith("<"))  # pragma: no cover
+    return not (is_hypothesis_file(fname) or fname.startswith("<"))
 
 
 # where possible, we'll use 3.12's new sys.monitoring module for low-overhead
@@ -82,9 +79,7 @@ class Tracer:
     def branches(self) -> Trace:
         return frozenset(self._branches)
 
-    def trace(self, frame, event, arg):  # pragma: no cover
-        # settrace-based tracing; only used as a fallback on Python < 3.12,
-        # where sys.monitoring is unavailable.
+    def trace(self, frame, event, arg):  # pragma: no cover  # only on Python < 3.12
         try:
             if event == "call":
                 return self.trace
@@ -100,9 +95,8 @@ class Tracer:
     def trace_line(
         self, code: types.CodeType, line_number: int
     ) -> None:  # pragma: no cover
-        # sys.monitoring callback: code executed inside another tool's monitoring
-        # callback is invisible to sys.monitoring-based coverage, so this body
-        # can never be measured even though it runs on every traced line.
+        # sys.monitoring callbacks do not fire for other monitoring tools, so coverage.py
+        # can't see this function.
         fname = code.co_filename
         if not should_trace_file(fname):
             # this function is only called on 3.12+, but we want to avoid an
@@ -155,11 +149,7 @@ class Tracer:
 
 
 UNHELPFUL_LOCATIONS = (
-    # Standard-library locations are dropped wholesale (see the ModuleLocation
-    # check in get_explaining_locations), so this list only needs to cover
-    # testing tools whose lines are usually run downstream of the actual fault.
     # Note: The list is post-processed, so use plain "/" for separator here.
-    #
     # Quite rarely, the first always-failing line is in Pytest's internals.
     "/_pytest/**",
     "/pluggy/_*.py",
@@ -230,14 +220,13 @@ def get_explaining_locations(traces):
     # The last step is to filter out explanations that we know would be uninformative.
     # When this is the first AFNP location, we conclude that Scrutineer missed the
     # real divergence (earlier in the trace) and drop that unhelpful explanation.
-    # Lines inside the standard library - e.g. dataclass-generated dunders which
-    # happen to run only during failure handling - get the same treatment.
     filter_regex = re.compile(_glob_to_re(UNHELPFUL_LOCATIONS))
     return {
         origin: {
             loc
             for loc in afnp_locs
             if not filter_regex.search(loc[0])
+            # In addition to UNHELPFUL_LOCATIONS, we drop all stdlib locations.
             and ModuleLocation.from_path(loc[0]) is not ModuleLocation.STDLIB
         }
         for origin, afnp_locs in explanations.items()
@@ -252,7 +241,7 @@ def _stdlib_dirs():
         Path(sysconfig.get_path("stdlib")).resolve(),
         # Under Pyodide and other embedded pythons, the stdlib is imported from
         # a zipfile on sys.path, which sysconfig doesn't report.
-        *map(Path, filter(lambda p: p.endswith(".zip"), sys.path)),
+        *(Path(p) for p in sys.path if p.endswith(".zip")),
     }
 
 

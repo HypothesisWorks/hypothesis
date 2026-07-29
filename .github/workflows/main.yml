@@ -138,7 +138,7 @@ jobs:
       run: |
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-py314-niche ]]; then
-          # Collect (cheap, sys.monitoring-based) coverage from this job too.
+          # Collect (sys.monitoring-based) coverage from this job too.
           export COVERAGE_PROCESS_START=${{ github.workspace }}/hypothesis/pyproject.toml
           export COVERAGE_FILE=${{ github.workspace }}/hypothesis/.coverage
         fi

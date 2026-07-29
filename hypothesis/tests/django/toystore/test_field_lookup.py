@@ -28,21 +28,15 @@ from tests.django.toystore.models import Company
 
 
 class TestFieldLookupEdgeCases(TestCase):
-    def test_datetime_fields_without_use_tz(self):
-        # Covers the non-timezone-aware branch of _for_datetime.
+    def test_datetime_fields_without_tz(self):
         with override_settings(USE_TZ=False):
             check_can_generate_examples(from_field(dm.DateTimeField()))
             check_can_generate_examples(from_field(df.DateTimeField()))
-
-    def test_form_time_field_without_use_tz(self):
-        # Covers the non-timezone-aware branch of _for_form_time.
-        with override_settings(USE_TZ=False):
             check_can_generate_examples(from_field(df.TimeField()))
 
     def test_time_and_duration_fields_when_not_using_sqlite(self):
         # Covers the branches of _for_model_time and _for_duration that are
-        # only taken on non-SQLite backends; patching using_sqlite() avoids
-        # the need to actually reconfigure the test database connection.
+        # only taken on non-SQLite backends.
         with mock.patch.object(_fields_module, "using_sqlite", return_value=False):
             check_can_generate_examples(from_field(dm.TimeField()))
             check_can_generate_examples(from_field(dm.DurationField()))
@@ -65,27 +59,22 @@ class TestFieldLookupEdgeCases(TestCase):
 
     @given(st.just(None))
     def test_binary_field(self, _):
-        # Covers both branches of _for_binary.
         check_can_generate_examples(from_field(dm.BinaryField()))
         find_any(from_field(dm.BinaryField(blank=True)), lambda b: b == b"")
 
-    def test_register_field_strategy_requires_a_field_subclass(self):
-        with self.assertRaises(InvalidArgument):
-            register_field_strategy(str, st.just("x"))
-
-    def test_register_field_strategy_rejects_already_registered_fields(self):
-        with self.assertRaises(InvalidArgument):
-            register_field_strategy(dm.BooleanField, st.just(True))
-
-    def test_register_field_strategy_rejects_autofield(self):
-        with self.assertRaises(InvalidArgument):
-            register_field_strategy(dm.AutoField, st.just(1))
+    def test_register_field_strategy_rejects_invalid_fields(self):
+        # not a Field subclass, already registered, and AutoField respectively
+        for field, strategy in [
+            (str, st.just("x")),
+            (dm.BooleanField, st.just(True)),
+            (dm.AutoField, st.just(1)),
+        ]:
+            with self.assertRaises(InvalidArgument):
+                register_field_strategy(field, strategy)
 
     @given(st.just(None))
     def test_model_charfield_with_choices_and_blank_includes_empty_string(self, _):
-        field = dm.CharField(
-            max_length=10, choices=(("a", "A"), ("b", "B")), blank=True
-        )
+        field = dm.CharField(choices=(("a", "A"), ("b", "B")), blank=True)
         find_any(from_field(field), lambda v: v == "")
 
     @given(st.just(None))

@@ -936,12 +936,7 @@ def _parameters_to_annotation_name(
         imports.update(new_imports)
         return type_name
     joined = _join_generics(("typing.Union", {"typing"}), annotations)
-    if joined is None:  # pragma: no cover
-        # `annotations` is always non-empty here (we returned above otherwise) and
-        # `_join_generics` only returns None for a falsy `origin_type_data` (never
-        # the case here) or when it filters every annotation out, which only
-        # happens for the "typing.Optional" special-case handled elsewhere.
-        return None
+    assert joined is not None
     imports.update(joined.imports)
     return joined.type_name
 
@@ -1163,8 +1158,11 @@ def _get_testable_functions(thing: object) -> dict[str, Callable]:
     elif isinstance(thing, types.ModuleType):
         if hasattr(thing, "__all__"):
             funcs = [getattr(thing, name, None) for name in thing.__all__]
-        elif hasattr(thing, "__package__"):  # pragma: no branch  # never absent
-            pkg = thing.__package__
+        else:
+            # thing.__spec__ is None for e.g. __main__ in scripts and the REPL,
+            # and dynamically created modules
+            spec = thing.__spec__
+            pkg = spec.parent if spec is not None else None
             funcs = [
                 v
                 for k, v in vars(thing).items()

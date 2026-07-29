@@ -544,12 +544,22 @@ def test_subnormal_elements_validation(xp, xps):
         check_can_generate_examples(strat)
 
 
-def _array_strategy(xp, xps, dtype):
-    """An ArrayStrategy for the given dtype, for exercising check_set_value()
-    directly with contrived (val, val_0d) pairs that real array modules are
-    unlikely to produce (e.g. modern NumPy raises rather than silently
-    mismatching on integer overflow)."""
-    return ArrayStrategy(
+@pytest.mark.parametrize(
+    "dtype_name, val, stored, match",
+    [
+        ("int8", 5, 6, "cannot be represented"),
+        ("float32", 5.0, 6.0, "cannot be represented"),
+        # a non-numeric element makes the subnormal check itself error, which
+        # still reports the generic message rather than propagating
+        ("float32", "not a float", 6.0, "cannot be represented"),
+        ("float32", width_smallest_normals(32) / 2, 0.0, "Generated subnormal"),
+    ],
+)
+def test_check_set_value_mismatch_errors(xp, xps, dtype_name, val, stored, match):
+    """check_set_value() explains elements which don't round-trip through the
+    array module, with a subnormal-specific message where relevant."""
+    dtype = getattr(xp, dtype_name)
+    strategy = ArrayStrategy(
         xp=xp,
         api_version=xps.api_version,
         elements_strategy=st.just(0),
@@ -558,51 +568,14 @@ def _array_strategy(xp, xps, dtype):
         fill=st.nothing(),
         unique=False,
     )
-
-
-def test_check_set_value_raises_generic_error_for_non_float_mismatch(xp, xps):
-    """check_set_value() raises the generic mismatch error (not the
-    subnormal-specific one) for non-float dtypes."""
-    strategy = _array_strategy(xp, xps, xp.int8)
-    val_0d = xp.asarray(6, dtype=xp.int8)
-    with pytest.raises(InvalidArgument, match="cannot be represented"):
-        strategy.check_set_value(5, val_0d, st.just(5))
-
-
-def test_check_set_value_raises_generic_error_for_non_subnormal_float_mismatch(xp, xps):
-    """check_set_value() raises the generic mismatch error for a float
-    mismatch that is not subnormal."""
-    strategy = _array_strategy(xp, xps, xp.float32)
-    val_0d = xp.asarray(6.0, dtype=xp.float32)
-    with pytest.raises(InvalidArgument, match="cannot be represented"):
-        strategy.check_set_value(5.0, val_0d, st.just(5.0))
-
-
-def test_check_set_value_raises_generic_error_when_subnormal_check_errors(xp, xps):
-    """When the generated element doesn't support abs()/comparison (so the
-    subnormal check itself raises), check_set_value() still reports the
-    generic mismatch error rather than propagating the error."""
-    strategy = _array_strategy(xp, xps, xp.float32)
-    val_0d = xp.asarray(6.0, dtype=xp.float32)
-    with pytest.raises(InvalidArgument, match="cannot be represented"):
-        strategy.check_set_value("not a float", val_0d, st.just("not a float"))
-
-
-def test_check_set_value_raises_for_subnormal_mismatch(xp, xps):
-    """check_set_value() raises a subnormal-specific error when a subnormal
-    float element does not round-trip through the array module."""
-    strategy = _array_strategy(xp, xps, xp.float32)
-    subnormal = width_smallest_normals(32) / 2
-    val_0d = xp.asarray(0.0, dtype=xp.float32)
-    with pytest.raises(InvalidArgument, match="Generated subnormal float"):
-        strategy.check_set_value(subnormal, val_0d, st.just(subnormal))
+    with pytest.raises(InvalidArgument, match=match):
+        strategy.check_set_value(val, xp.asarray(stored, dtype=dtype), st.just(val))
 
 
 @pytest.mark.parametrize("shape", [3, 10])
 def test_reports_conversion_failure_for_dense_arrays(xp, xps, shape):
     """When elements cannot be converted to the array's dtype in the fully
-    dense (fill=nothing) code path, a helpful error is raised - listing the
-    elements in full for small arrays, and a truncated form for larger ones."""
+    dense (fill=nothing) code path, a helpful error is raised."""
     strat = xps.arrays(
         dtype=xp.int8, shape=shape, elements=st.just(300), fill=st.nothing()
     )
