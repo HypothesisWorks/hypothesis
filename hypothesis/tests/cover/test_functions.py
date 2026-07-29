@@ -8,7 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import AsyncIterator, Generator, Iterator
+from collections.abc import (
+    AsyncIterator,
+    Generator,
+    Iterator,
+)
 from inspect import (
     isasyncgenfunction,
     iscoroutinefunction,
@@ -24,7 +28,7 @@ from hypothesis.internal.reflection import nicerepr
 from hypothesis.reporting import with_reporter
 from hypothesis.strategies import booleans, functions, integers
 
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import assert_all_examples, check_can_generate_examples
 from tests.common.utils import capture_out
 
 
@@ -473,3 +477,70 @@ def test_can_close_generated_async_generators_early():
 def test_pure_is_invalid_except_for_plain_functions(like):
     with pytest.raises(InvalidArgument, match="pure=True is invalid"):
         check_can_generate_examples(functions(like=like, pure=True))
+
+
+def make_gen_like(annotation, *, is_async=False):
+    prefix = "async " if is_async else ""
+    # pass our globals so we can reference things like the module-level IteratorSubclass
+    # in test strings
+    namespace = dict(globals())
+    exec(
+        f"from collections.abc import *\n{prefix}def like(a) -> {annotation}:\n    yield",
+        namespace,
+    )
+    return namespace["like"]
+
+
+class IteratorSubclass(Iterator[bool]):
+    def __next__(self):
+        raise StopIteration
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    ["Iterator[bool]", "Iterable[bool]", "Generator[bool, None, None]"],
+)
+def test_generator_functions_accept_any_iterator_like_annotation(annotation):
+    assert_all_examples(
+        functions(like=make_gen_like(annotation)),
+        lambda f: all(isinstance(value, bool) for value in f(1)),
+    )
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    ["AsyncIterator[bool]", "AsyncIterable[bool]", "AsyncGenerator[bool, None]"],
+)
+def test_async_generator_functions_accept_any_async_iterator_like_annotation(
+    annotation,
+):
+    assert_all_examples(
+        functions(like=make_gen_like(annotation, is_async=True)),
+        lambda f: all(isinstance(value, bool) for value in collect_async_gen(f(1))),
+    )
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        "bool",
+        "tuple[bool, str]",
+        "list[bool]",
+        "IteratorSubclass",
+        "AsyncIterator[bool]",
+    ],
+)
+def test_generator_functions_reject_other_annotations(annotation):
+    with pytest.raises(InvalidArgument, match="Cannot infer the yield type"):
+        check_can_generate_examples(functions(like=make_gen_like(annotation)))
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    ["bool", "tuple[bool, str]", "list[bool]", "Iterator[bool]"],
+)
+def test_async_generator_functions_reject_other_annotations(annotation):
+    with pytest.raises(InvalidArgument, match="Cannot infer the yield type"):
+        check_can_generate_examples(
+            functions(like=make_gen_like(annotation, is_async=True))
+        )

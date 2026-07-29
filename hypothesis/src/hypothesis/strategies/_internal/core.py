@@ -19,10 +19,15 @@ import sys
 import typing
 import warnings
 from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
     Callable,
     Collection,
+    Generator,
     Hashable,
     Iterable,
+    Iterator,
     Mapping,
     Sequence,
 )
@@ -2661,7 +2666,23 @@ def _functions(*, like, returns, pure):
         if is_gen:
             # The return annotation describes the iterator, so e.g. yield
             # integers for `-> Iterator[int]` or `-> AsyncIterator[int]`.
-            args = get_args(hints.get("return"))
+            allowed = (
+                (AsyncIterator, AsyncIterable, AsyncGenerator)
+                if isasyncgenfunction(like)
+                else (Iterator, Iterable, Generator)
+            )
+            ret = hints.get("return")
+            # normalize eg Iterator[bool] to Iterator while keeping Iterator as Iterator.
+            kind = get_origin(ret) or ret
+            if ret is not None and kind not in allowed:
+                options = ", ".join(t.__name__ for t in allowed)
+                raise InvalidArgument(
+                    f"Cannot infer the yield type of like={nicerepr(like)!r} "
+                    f"from its return annotation {ret!r}. Expected one of "
+                    f"{options}. Alternatively, pass returns= to specify the yield type "
+                    "explicitly."
+                )
+            args = get_args(ret)
             returns = from_type(args[0]) if args else none()
         else:
             # Passing `None` has never been *documented* as working, but it
