@@ -155,7 +155,7 @@ def _get_exceptioninfo():
     if "_pytest._code" in sys.modules:  # old versions only
         with contextlib.suppress(Exception):
             return sys.modules["_pytest._code"].ExceptionInfo
-    return None  # pragma: no cover  # coverage tests always use pytest
+    return None
 
 
 def format_exception(err, tb):

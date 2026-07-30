@@ -1126,7 +1126,7 @@ class ConjectureRunner:
         if (
             self.valid_examples >= self.settings.max_examples
             or (self.invalid_examples + self.overrun_examples) > invalid_threshold
-        ):  # pragma: no cover
+        ):
             return False
 
         # If we haven't found a bug, keep looking - if we hit any limits on

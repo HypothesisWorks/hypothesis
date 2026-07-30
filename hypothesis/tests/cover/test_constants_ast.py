@@ -32,7 +32,9 @@ from hypothesis.internal.constants_ast import (
 from tests.common.utils import skipif_emscripten, skipif_threading
 
 constant_ints = st.integers(max_value=-101) | st.integers(min_value=101)
-constant_floats = st.floats(allow_nan=False, allow_infinity=False)
+constant_floats = st.floats(allow_nan=False, allow_infinity=False).filter(
+    lambda x: x != 0
+)
 constant_bytes = st.binary(min_size=1, max_size=50)
 constant_strings = st.text(min_size=1, max_size=10).filter(lambda s: not s.isspace())
 constants = constant_ints | constant_floats | constant_bytes | constant_strings
@@ -91,10 +93,16 @@ def test_constants_not_equal_to_set(constants):
         ("a = +142", {142}),
         ("a = 101 + 102", {101, 102}),
         ("a = ~ 142", {142}),
+        ("a = 3.5j", {3.5}),
+        ("a = -3.5j", {-3.5}),
+        ("a = 101 + 3.5j", {101, 3.5}),
         # the following cases are ignored:
         # * booleans
+        # * None
+        # * Ellipsis
         # * math.inf and math.nan (not constants, but we don't want to collect them
         #   even if they were)
+        # * ±0.0
         # * f-strings
         # * long strings
         # * pure-whitespace strings
@@ -118,6 +126,12 @@ def test_constants_not_equal_to_set(constants):
         ("a = 10", set()),
         ("a = -1", set()),
         ("a = b''", set()),
+        ("a = None", set()),
+        ("a = ...", set()),
+        # 1e999j overflows to inf
+        ("a = 1e999j", set()),
+        ("a = 0.0", set()),
+        ("a = -0.0", set()),
     ],
 )
 def test_constants_from_ast(source, expected):

@@ -9,11 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import builtins
 import enum
+import inspect
 import json
 import re
 import socket
+import subprocess
 import sys
+import time
 import unittest
 import unittest.mock
 from collections.abc import KeysView, Sequence, Sized, ValuesView
@@ -21,7 +25,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, ModuleType
-from typing import Any, ForwardRef
+from typing import Any, ForwardRef, TypeVar
 
 import attr
 import click
@@ -273,6 +277,9 @@ def test_no_hashability_filter():
         (ghostwriter.roundtrip, ["not callable"]),
         (ghostwriter.equivalent, [sorted]),
         (ghostwriter.equivalent, [sorted, "not callable"]),
+        (ghostwriter.magic, []),
+        (ghostwriter.magic, [42]),
+        (ghostwriter.binary_operation, [42]),
     ],
 )
 def test_invalid_func_inputs(gw, args):
@@ -534,6 +541,13 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     assert isinstance(
         cli.obj_name(str(temp_script_file_with_py_function)), FunctionType
     )
+    # A dotted name whose leading module can't be imported, and which has no
+    # further dots to split off a class name, gets a meaningful UsageError.
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("nonexistentmodulexyz123.foo")
+    assert e.match(
+        "Failed to import the nonexistentmodulexyz123 module for introspection."
+    )
 
 
 def test_gets_public_location_not_impl_location():
@@ -544,10 +558,27 @@ class ForwardRefA:
     pass
 
 
+T = TypeVar("T")
+
+
 @pytest.mark.parametrize(
     "parameter, type_name",
     [
         (ForwardRef("this_ref_does_not_exist"), None),
+        # `Callable[[X], ...]` args are passed through as a list; if any member
+        # is unresolvable the whole list annotation is dropped rather than
+        # partially rendered.
+        ([ForwardRef("NopeNopeNope")], None),
+        # `get_origin(int | str)` is `types.UnionType` (== `typing.Union` as of
+        # Python 3.14), which we render as `typing.Union[...]`.
+        (type(int | str), ghostwriter._AnnotationData("typing.Union", {"typing"})),
+        (
+            int | str,
+            ghostwriter._AnnotationData("typing.Union[int, str]", {"typing"}),
+        ),
+        # An unparametrized generic like `list[T]`, where `T` is an unbound
+        # TypeVar, is treated the same as the bare `list` type.
+        (list[T], ghostwriter._AnnotationData("list", set())),
         # ForwardRef.evaluate() logic is new in 3.14
         *(
             []
@@ -565,3 +596,250 @@ class ForwardRefA:
 )
 def test_parameter_to_annotation(parameter, type_name):
     assert ghostwriter._parameter_to_annotation(parameter) == type_name
+
+
+@pytest.mark.parametrize(
+    "origin_type_data, annotations, expected",
+    [
+        (None, [], None),
+        (
+            ("typing.Optional", {"typing"}),
+            [
+                ghostwriter._AnnotationData("int", set()),
+                ghostwriter._AnnotationData("None", set()),
+            ],
+            ghostwriter._AnnotationData("typing.Optional[int]", {"typing"}),
+        ),
+    ],
+)
+def test_join_generics(origin_type_data, annotations, expected):
+    assert ghostwriter._join_generics(origin_type_data, annotations) == expected
+
+
+@pytest.mark.parametrize(
+    "docstring, expected",
+    [
+        # An unrecognised exception name is skipped rather than included.
+        (":raises FooBarBazNotAnException: never happens", ()),
+        # A builtin name which isn't an Exception subclass is also skipped.
+        (":raises object: not really an exception", ()),
+        (
+            ":raises FooBarBazNotAnException: never happens\n:raises ValueError: bad",
+            (ValueError,),
+        ),
+    ],
+)
+def test_exceptions_from_docstring_skips_unrecognised_names(docstring, expected):
+    assert ghostwriter._exceptions_from_docstring(docstring) == expected
+
+
+@pytest.mark.parametrize(
+    "token, expected",
+    [
+        # "list of str": since `str` resolves directly, we never try the
+        # singular-of-plural fallback.
+        ("list of str", list[str]),
+        # "tuple of int": elements resolve fine, but "tuple" isn't one of the
+        # special-cased collection names, so we fall back to the bare "tuple".
+        ("tuple of int", tuple),
+        # Dotted names fall back to a module lookup.
+        ("re.Pattern", re.Pattern),
+    ],
+)
+def test_type_from_doc_fragment(token, expected):
+    assert ghostwriter._type_from_doc_fragment(token) == expected
+
+
+@pytest.mark.parametrize(
+    "param, docstring, expected_repr",
+    [
+        # A trailing comma produces an empty token (skipped), and "quux" is not
+        # a recognised type name (also skipped) - leaving just the `int` token.
+        (
+            inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            "b (int, quux, ): a param",
+            "one_of(nothing(), integers())",
+        ),
+        # The default isn't one of the doc-derived elements/types, so it's
+        # added as an extra sampled element.
+        (
+            inspect.Parameter("b", inspect.Parameter.POSITIONAL_OR_KEYWORD, default=5),
+            "b (str): a string param",
+            "one_of(just(5), text())",
+        ),
+        # The RST-style pattern matches, but "quux" resolves to nothing useful,
+        # so we fall through the (empty) Google- and Numpy-style attempts and
+        # end up guessing from the argument name instead.
+        (
+            inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            ":type x: quux",
+            "nothing()",
+        ),
+    ],
+)
+def test_strategy_for(param, docstring, expected_repr):
+    assert repr(ghostwriter._strategy_for(param, docstring)) == expected_repr
+
+
+@pytest.mark.parametrize(
+    "name, expected_repr",
+    [
+        ("func", "functions()"),
+        ("predicate", "functions(returns=booleans(), pure=True)"),
+        ("lst", "lists(nothing())"),
+        ("my_uuid", "uuids().map(str)"),
+        ("is_active", "booleans()"),
+        ("amount", "one_of(integers(), floats())"),
+        ("offset", "integers()"),
+        ("dropout", "floats(min_value=0, max_value=1)"),
+        ("lat", "floats(min_value=-90, max_value=90)"),
+        ("lon", "floats(min_value=-180, max_value=180)"),
+        ("tolerance", "floats(min_value=0)"),
+        ("alpha", "floats()"),
+        ("email", "emails()"),
+        ("slug", "from_regex('\\\\w+', fullmatch=True)"),
+        ("char", "characters()"),
+        ("path", "nothing()"),
+        # plural fallback: no direct rule for "amounts", but "amount" resolves
+        # to something non-empty, so we wrap it in a list.
+        ("amounts", "lists(one_of(integers(), floats()))"),
+    ],
+)
+def test_guess_strategy_by_argname(name, expected_repr):
+    assert repr(ghostwriter._guess_strategy_by_argname(name)) == expected_repr
+
+
+@pytest.mark.parametrize(
+    "func, expected_names",
+    [
+        # `divmod`'s docstring doesn't start with "divmod(...)", so we can't
+        # recover a signature from it at all.
+        (divmod, []),
+        # __build_class__'s docstring is "__build_class__(func, name, /,
+        # *bases, [metaclass], **kwds)", exercising the "/" and "*" (and "**")
+        # markers.
+        (builtins.__build_class__, ["func", "name", "metaclass"]),
+        # time.get_clock_info's docstring argument is "name: str", which is not
+        # a valid Python identifier - so we stop parsing immediately.
+        (time.get_clock_info, []),
+    ],
+)
+def test_get_params_builtin_fn(func, expected_names):
+    params = ghostwriter._get_params_builtin_fn(func)
+    assert [p.name for p in params] == expected_names
+
+
+def test_get_testable_functions_skips_callable_without_a_name():
+    # A callable instance with no `__name__`/`__qualname__` can't be looked up
+    # by qualified name, so it's silently dropped rather than raising.
+    class Nameless:
+        def __call__(self, x: int):
+            pass
+
+    assert ghostwriter._get_testable_functions(Nameless()) == {}
+
+
+def test_magic_prefers_functions_defined_directly_in_a_package(tmp_path):
+    pkg = tmp_path / "mypkg_for_magic_test"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text(
+        "from mypkg_for_magic_test.sub import sub_func\n\n"
+        "def pkg_func(x: int) -> int:\n    return x\n",
+        encoding="utf-8",
+    )
+    (pkg / "sub.py").write_text(
+        "def sub_func(x: int) -> int:\n    return x\n", encoding="utf-8"
+    )
+    source_code = subprocess.check_output(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import mypkg_for_magic_test\n"
+                "from hypothesis.extra import ghostwriter\n"
+                "print(ghostwriter.magic(mypkg_for_magic_test))"
+            ),
+        ],
+        cwd=tmp_path,
+        encoding="utf-8",
+    )
+    assert "pkg_func" in source_code
+    assert "sub_func" not in source_code
+
+
+def test_magic_module_without_spec():
+    # __spec__ is None for __main__ in scripts and the REPL, and for
+    # dynamically created modules
+    mod = ModuleType("my_script")
+    mod.timsort = timsort
+    assert "timsort" in ghostwriter.magic(mod)
+
+
+def test_magic_does_not_merge_equivalent_functions_with_different_returns():
+    # Two functions with the same (unqualified) name and parameters, but
+    # different return-type annotations, aren't treated as equivalent - so we
+    # get two separate fuzz tests rather than one equivalence test.
+    ns_a: dict = {}
+    exec("def foo(x: int) -> int:\n    return x\n", ns_a)
+    foo_a = ns_a["foo"]
+    foo_a.__module__ = "ghostwriter_test_mod_a"
+
+    ns_b: dict = {}
+    exec("def foo(x: int) -> str:\n    return str(x)\n", ns_b)
+    foo_b = ns_b["foo"]
+    foo_b.__module__ = "ghostwriter_test_mod_b"
+
+    source_code = ghostwriter.magic(foo_a, foo_b)
+    assert source_code.count("def test_fuzz_foo(") == 2
+    assert "def test_equivalent_" not in source_code
+
+
+@pytest.mark.parametrize("annotate", [True, False])
+def test_idempotent_explicit_annotate(annotate):
+    source_code = ghostwriter.idempotent(sorted, annotate=annotate)
+    assert (" -> None" in source_code) == annotate
+
+
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({"distributes_over": 42}, "must be an operation which"),
+        (
+            {
+                "associative": False,
+                "commutative": False,
+                "identity": None,
+                "distributes_over": None,
+            },
+            "at least one property",
+        ),
+    ],
+)
+def test_binary_operation_invalid_arguments(kwargs, match):
+    with pytest.raises(InvalidArgument, match=match):
+        ghostwriter.binary_operation(compose_types, **kwargs)
+
+
+def test_binary_operation_merges_different_operand_strategies():
+    def different_types_op(amount, text):
+        return (amount, text)
+
+    source_code = ghostwriter.binary_operation(different_types_op, identity=None)
+    assert "one_of(" in source_code
+    exec(source_code, {})
+
+
+def test_ufunc_ghostwriter_function():
+    numpy = pytest.importorskip("numpy")
+    # numpy.isnan is a plain (non-generalized) ufunc none of whose type
+    # signatures involve the object dtype.
+    source_code = ghostwriter.ufunc(numpy.isnan)
+    exec(source_code, {})
+    # Also cover passing an explicit `annotate`, rather than the default None.
+    source_code = ghostwriter.ufunc(numpy.isnan, annotate=True)
+    exec(source_code, {})
+
+
+def test_ufunc_ghostwriter_rejects_non_ufunc():
+    with pytest.raises(InvalidArgument, match="does not seem to be a ufunc"):
+        ghostwriter.ufunc(len)

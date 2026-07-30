@@ -354,7 +354,7 @@ class RepresentationPrinter:
                             self.type_pprinters[cls] = printer
                             return printer(obj, self, cycle)
                         else:
-                            if hasattr(cls, "__attrs_attrs__"):  # pragma: no cover
+                            if hasattr(cls, "__attrs_attrs__"):
                                 return pprint_fields(
                                     obj,
                                     self,
@@ -643,7 +643,7 @@ class RepresentationPrinter:
 
 
 class Printable:
-    def output(self, stream: TextIOBase, output_width: int) -> int:  # pragma: no cover
+    def output(self, stream: TextIOBase, output_width: int) -> int:
         raise NotImplementedError
 
 

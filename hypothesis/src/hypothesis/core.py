@@ -722,7 +722,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
     if global_force_seed is not None:
         return Random(global_force_seed)
 
-    if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+    if threadlocal._hypothesis_global_random is None:
         threadlocal._hypothesis_global_random = Random()
     seed = threadlocal._hypothesis_global_random.getrandbits(128)
     wrapped_test._hypothesis_internal_use_generated_seed = seed
@@ -1221,11 +1221,7 @@ class StateForActualGivenExecution:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
                     result = self.execute_once(data)
-                    if (
-                        data.status == Status.VALID and tracer.branches
-                    ):  # pragma: no cover
-                        # This is in fact covered by our *non-coverage* tests, but due
-                        # to the settrace() contention *not* by our coverage tests.
+                    if data.status == Status.VALID and tracer.branches:
                         self.explain_traces[None].add(tracer.branches)
                 finally:
                     trace = tracer.branches
@@ -1317,8 +1313,7 @@ class StateForActualGivenExecution:
                 self.failed_normally = True
 
                 interesting_origin = InterestingOrigin.from_exception(e)
-                if trace:  # pragma: no cover
-                    # Trace collection is explicitly disabled under coverage.
+                if trace:
                     self.explain_traces[interesting_origin].add(trace)
                 if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
@@ -1493,8 +1488,7 @@ class StateForActualGivenExecution:
             and not PYPY
             and self._should_trace()
             and not Tracer.can_trace()
-        ):  # pragma: no cover
-            # actually covered by our tests, but only on >= 3.12
+        ):
             warnings.warn(
                 "avoiding tracing test function because tool id "
                 f"{MONITORING_TOOL_ID} is already taken by tool "
@@ -1827,8 +1821,7 @@ def given(
     _: EllipsisType, /
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 @overload
@@ -1836,8 +1829,7 @@ def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 @overload
@@ -1845,8 +1837,7 @@ def given(
     **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 def given(
@@ -1979,7 +1970,7 @@ def given(
             and isinstance(
                 test, sys.modules["_pytest.fixtures"].FixtureFunctionDefinition
             )
-        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+        ):
             raise InvalidArgument("@given cannot be applied to a pytest fixture")
 
         given_arguments = tuple(_given_arguments)
@@ -2206,8 +2197,7 @@ def given(
                     # wrapped up in an exception group.  Because we break out of the loop
                     # immediately on finding a skip, if present it's always the last error.
                     if isinstance(errors[-1].exception, skip_exceptions_to_reraise()):
-                        # Covered by `test_issue_3453_regression`, just in a subprocess.
-                        del errors[:-1]  # pragma: no cover
+                        del errors[:-1]
 
                     if state.settings.verbosity < Verbosity.verbose:
                         # keep only one error per interesting origin, unless

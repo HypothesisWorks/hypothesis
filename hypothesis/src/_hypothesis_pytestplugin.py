@@ -65,7 +65,8 @@ class StoringReporter:
     def __call__(self, msg):
         if self.config.getoption("capture", "fd") == "no":
             self.report(msg)
-        if not isinstance(msg, str):
+        if not isinstance(msg, str):  # pragma: no cover
+            # e.g. the dict payloads from our observability machinery
             msg = repr(msg)
         self.results.append(msg)
 
@@ -88,7 +89,8 @@ else:
     # need balanced increment/decrement in configure/sessionstart to support nested
     # pytest (e.g. runpytest_inprocess), so this early increment in effect replaces
     # the first one in pytest_configure.
-    if not os.environ.get("HYPOTHESIS_EXTEND_INITIALIZATION"):
+    # (the else-branch can only run in a child process)
+    if not os.environ.get("HYPOTHESIS_EXTEND_INITIALIZATION"):  # pragma: no branch
         _hypothesis_globals.in_initialization += 1
         if "hypothesis" in sys.modules:
             # Some other plugin has imported hypothesis, so we'll check if there
@@ -169,7 +171,7 @@ else:
             # with the extra values given (in this case 'verbosity')
             settings.register_profile(name, verbosity=verbosity_value)
             settings.load_profile(name)
-        if (
+        if (  # pragma: no cover  # the explain option is currently untested
             config.getoption(EXPLAIN_OPTION)
             and Phase.explain not in settings.default.phases
         ):
@@ -326,10 +328,12 @@ else:
         if hasattr(config, "stash"):
             # pytest 7
             return config.stash.get(key, default)
-        elif hasattr(config, "_store"):
+        # The old-pytest fallbacks below are covered by the check-pytest*
+        # jobs, which don't measure coverage.
+        elif hasattr(config, "_store"):  # pragma: no cover
             # pytest 5.4
             return config._store.get(key, default)
-        else:
+        else:  # pragma: no cover
             return getattr(config, key, default)
 
     @pytest.hookimpl(hookwrapper=True)
@@ -358,7 +362,7 @@ else:
                 xml.add_global_property(name, stats_base64)
 
             # If there's a terminal report, include our summary stats for each test
-            if terminalreporter is not None:
+            if terminalreporter is not None:  # pragma: no branch
                 report.__dict__[STATS_KEY] = stats
 
             # If there's an HTML report, include our summary stats for each test
@@ -399,7 +403,9 @@ else:
 
         from hypothesis.internal.observability import _WROTE_TO
 
-        if _WROTE_TO:
+        if _WROTE_TO:  # pragma: no cover
+            # Observability output is only produced by tests which run pytest
+            # in a subprocess, where we don't measure coverage.
             terminalreporter.section("Hypothesis")
             for fname in sorted(_WROTE_TO):
                 terminalreporter.write_line(f"observations written to {fname}")
@@ -412,10 +418,10 @@ else:
             try:
                 gc_patches()
                 fname = save_patch(patch)
-            except Exception:
+            except Exception:  # pragma: no cover
                 # fail gracefully if we hit any filesystem or permissions problems
                 return
-            if not _WROTE_TO:
+            if not _WROTE_TO:  # pragma: no branch
                 terminalreporter.section("Hypothesis")
             terminalreporter.write_line(
                 f"`git apply {fname}` to add failing test cases to your code."

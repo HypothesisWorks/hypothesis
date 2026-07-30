@@ -805,10 +805,7 @@ class DataTree:
                     key=id(branch),
                 )
 
-                # We don't expect this assertion to ever fire, but coverage
-                # wants the loop inside to run if you have branch checking
-                # on, hence the pragma.
-                assert (  # pragma: no cover
+                assert (
                     attempts != 1000
                     or len(branch.children) < branch.max_children
                     or any(not v.is_exhausted for v in branch.children.values())

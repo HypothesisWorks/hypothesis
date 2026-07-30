@@ -108,12 +108,10 @@ class IntList(Sequence[int]):
         return len(self.__underlying)
 
     @overload
-    def __getitem__(self, i: int) -> int: ...  # pragma: no cover
+    def __getitem__(self, i: int) -> int: ...
 
     @overload
-    def __getitem__(
-        self, i: slice
-    ) -> "list[int] | ArrayType[int]": ...  # pragma: no cover
+    def __getitem__(self, i: slice) -> "list[int] | ArrayType[int]": ...
 
     def __getitem__(self, i: int | slice) -> "int | list[int] | ArrayType[int]":
         return self.__underlying[i]

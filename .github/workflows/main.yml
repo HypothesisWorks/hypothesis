@@ -102,6 +102,8 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
+          # niche tests also collect coverage on 3.14; see the run step below.
+          - check-py314-niche
           - check-quality
           - check-pytest9
           - check-pytest84
@@ -135,6 +137,11 @@ jobs:
     - name: Run tests
       run: |
         export TASK=${{ matrix.task }}
+        if [[ $TASK == check-py314-niche ]]; then
+          # Collect (sys.monitoring-based) coverage from this job too.
+          export COVERAGE_PROCESS_START=${{ github.workspace }}/hypothesis/pyproject.toml
+          export COVERAGE_FILE=${{ github.workspace }}/hypothesis/.coverage
+        fi
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
           ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
@@ -144,7 +151,9 @@ jobs:
     - name: Upload coverage data
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       # Invoke the magic `always` function to run on both success and failure.
-      if: ${{ always() && endsWith(matrix.task, '-coverage') }}
+      # check-django60 and check-py314-niche also collect coverage; see
+      # [testenv:django] in tox.ini and the run step above.
+      if: ${{ always() && (endsWith(matrix.task, '-coverage') || matrix.task == 'check-django60' || matrix.task == 'check-py314-niche') }}
       with:
         name: coverage-data-${{ matrix.task }}
         include-hidden-files: true
@@ -160,10 +169,6 @@ jobs:
         task:
           - check-py314-cover
           - check-py314-nocover
-          # Blocked by a 3.14rc1 bug. see
-          # https://github.com/HypothesisWorks/hypothesis/pull/4490#issuecomment-3144989862.
-          # Can revisit in 3.14rc2.
-          # - check-py314-niche
           - check-py314t-cover
           - check-py314t-nocover
           - check-py314t-niche

@@ -509,7 +509,7 @@ def floats(
         def downcast(x: float) -> float:
             try:
                 return float_of(x, width)
-            except OverflowError:  # pragma: no cover
+            except OverflowError:
                 reject()
 
         result = result.map(downcast)

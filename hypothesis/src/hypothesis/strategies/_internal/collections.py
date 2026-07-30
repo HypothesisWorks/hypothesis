@@ -91,27 +91,23 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
 
 
 @overload
-def tuples() -> SearchStrategy[tuple[()]]:  # pragma: no cover
-    ...
+def tuples() -> SearchStrategy[tuple[()]]: ...
 
 
 @overload
-def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[tuple[Ex]]:  # pragma: no cover
-    ...
+def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[tuple[Ex]]: ...
 
 
 @overload
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[tuple[Ex, T]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[tuple[Ex, T]]: ...
 
 
 @overload
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[tuple[Ex, T, T3]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[tuple[Ex, T, T3]]: ...
 
 
 @overload
@@ -120,8 +116,7 @@ def tuples(
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[tuple[Ex, T, T3, T4]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[tuple[Ex, T, T3, T4]]: ...
 
 
 @overload
@@ -131,15 +126,13 @@ def tuples(
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[tuple[Ex, T, T3, T4, T5]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[tuple[Ex, T, T3, T4, T5]]: ...
 
 
 @overload
 def tuples(
     *args: SearchStrategy[Any],
-) -> SearchStrategy[tuple[Any, ...]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[tuple[Any, ...]]: ...
 
 
 @cacheable

@@ -11,12 +11,20 @@
 import json
 import sys
 import sysconfig
+from collections import defaultdict
+from pathlib import Path
 
 import pytest
 
-from hypothesis import given, note, settings, strategies as st
+from hypothesis import Phase, given, note, settings, strategies as st
+from hypothesis.internal import scrutineer
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.scrutineer import make_report
+from hypothesis.internal.scrutineer import (
+    EXPLANATION_STUB,
+    explanatory_lines,
+    get_explaining_locations,
+    make_report,
+)
 from hypothesis.vendor import pretty
 
 from tests.common.utils import skipif_threading
@@ -158,3 +166,46 @@ def test_report_sort(random):
     note(f"expected lines: {pretty.pretty(expected_lines)}")
 
     assert report_lines == expected_lines
+
+
+def test_zipimported_stdlib_counts_as_stdlib(monkeypatch):
+    # Under Pyodide the stdlib is imported from e.g. "/lib/python314.zip".
+    monkeypatch.setattr(sys, "path", [*sys.path, "/fake/python314.zip"])
+    assert Path("/fake/python314.zip") in scrutineer._stdlib_dirs()
+
+
+def test_explanations_drop_stdlib_locations():
+    stdlib_loc = (json.__file__, 1)
+    explanations = get_explaining_locations(
+        {"origin": [frozenset([(None, stdlib_loc)])]}
+    )
+    assert explanations == {"origin": set()}
+
+    # similar locations in user code are still reported
+    local_loc = (__file__, 1)
+    explanations = get_explaining_locations(
+        {"origin": [frozenset([(None, local_loc)])]}
+    )
+    assert explanations == {"origin": {local_loc}}
+
+
+def test_make_report_caps_long_explanations():
+    # if there are more locations than fit under cap_lines_at, make_report
+    # truncates them and reports how many were hidden.
+    locations = {(f"/a/b{i}.py", i) for i in range(10)}
+    report = make_report({"origin": locations}, cap_lines_at=2)
+    lines = report["origin"]
+
+    assert lines[: len(EXPLANATION_STUB)] == list(EXPLANATION_STUB)
+    report_lines = lines[len(EXPLANATION_STUB) :]
+    assert len(report_lines) == 3
+    assert report_lines[-1] == "        (and 8 more with settings.verbosity >= verbose)"
+
+
+def test_explanatory_lines_short_circuits_if_already_tracing(monkeypatch):
+    # if a trace function is already active (eg via a debugger or coverage)
+    # while the explain phase runs, we bail out early instead
+    # of reporting a (probably-incomplete) explanation.
+    monkeypatch.setattr(sys, "gettrace", lambda: lambda *args: None)
+    result = explanatory_lines({}, settings(phases=tuple(Phase)))
+    assert result == defaultdict(list)

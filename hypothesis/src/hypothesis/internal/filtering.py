@@ -236,7 +236,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if len(predicate.args) == 1:
             arg = predicate.args[0]
             func = predicate.func
-        else:  # pragma: no cover  # Python 3.14+ only
+        else:
             assert predicate.args[0] is Placeholder
             arg = predicate.args[1]
             func = {  # reverses the table below; eq is unchanged

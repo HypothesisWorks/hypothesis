@@ -99,7 +99,7 @@ if IN_COVERAGE_TESTS:
 
         return accept
 
-else:  # pragma: no cover
+else:
 
     def check_function(f: Func) -> Func:
         return f

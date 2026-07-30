@@ -153,15 +153,29 @@ exclude = [
 [tool.coverage.run]
 parallel = true
 branch = true
-source = ["hypothesis"]
+# Some of our CI jobs don't import any modules measured under coverage.
+disable_warnings = ["module-not-imported"]
+# note that we use source_pkgs here to avoid the ambiguity between
+# the "hypothesis" package and the "hypothesis" directory during
+# resolution by coverage.py. source_pkgs forces package-only resolution.
+source_pkgs = [
+    "hypothesis",
+    "_hypothesis_ftz_detector",
+    "_hypothesis_globals",
+    "_hypothesis_pytestplugin",
+]
 
 [tool.coverage.paths]
 # Tests run against an installed copy, so each job measures a different
 # site-packages directory; map them onto our source tree so we can combine them.
 #
-# The key of `source-paths` here is arbitrary and ignored. See
+# The keys of `source-paths` and `top-level-modules` here are arbitrary and
+# ignored. See
 # https://coverage.readthedocs.io/en/latest/config.html#paths.
+# (Note however that order matters).
 source-paths = ["src/hypothesis", "*/site-packages/hypothesis"]
+# e.g. our _hypothesis_pytestplugin, _hypothesis_globals, etc modules.
+top-level-modules = ["src", "*/site-packages"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -170,20 +184,8 @@ skip_covered = true
 # Omitted when reporting rather than when measuring, so that we can also report
 # on how close the combined data comes to covering these modules.
 omit = [
-    # never measured anyway, being outside `source`
+    # only reachable via an also-excluded branch in strategies/_internal/numbers.py
     "**/_hypothesis_ftz_detector.py",
-    "**/_hypothesis_pytestplugin.py",
-    "**/_hypothesis_globals.py",
-    "**/extra/array_api.py",
-    "**/extra/cli.py",
-    "**/extra/django/*.py",
-    "**/extra/ghostwriter.py",
-    "**/extra/pytestplugin.py",
-    "**/internal/scrutineer.py",
-    "**/utils/terminal.py",
-    "**/internal/conjecture/provider_conformance.py",
-    # covered by our attrs tests in check-niche
-    "**/strategies/_internal/attrs.py",
 ]
 exclude_lines = [
     "pragma: no cover",

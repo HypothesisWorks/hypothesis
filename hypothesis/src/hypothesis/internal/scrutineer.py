@@ -36,7 +36,7 @@ Trace: TypeAlias = frozenset[Branch]
 
 
 @functools.cache
-def should_trace_file(fname: str) -> bool:
+def should_trace_file(fname: str) -> bool:  # pragma: no cover
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
     return not (is_hypothesis_file(fname) or fname.startswith("<"))
@@ -47,7 +47,7 @@ def should_trace_file(fname: str) -> bool:
 # tool_id = 1 is designated for coverage, but we intentionally choose a
 # non-reserved tool id so we can co-exist with coverage tools.
 MONITORING_TOOL_ID = 3
-if hasattr(sys, "monitoring"):
+if hasattr(sys, "monitoring"):  # pragma: no branch  # always true on Python >= 3.12
     MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
 
 
@@ -73,13 +73,13 @@ class Tracer:
             return False
         if hasattr(sys, "monitoring"):
             return sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-        return sys.gettrace() is None
+        return sys.gettrace() is None  # pragma: no cover  # only on Python < 3.12
 
     @property
     def branches(self) -> Trace:
         return frozenset(self._branches)
 
-    def trace(self, frame, event, arg):
+    def trace(self, frame, event, arg):  # pragma: no cover  # only on Python < 3.12
         try:
             if event == "call":
                 return self.trace
@@ -92,7 +92,11 @@ class Tracer:
         except RecursionError:
             pass
 
-    def trace_line(self, code: types.CodeType, line_number: int) -> None:
+    def trace_line(
+        self, code: types.CodeType, line_number: int
+    ) -> None:  # pragma: no cover
+        # sys.monitoring callbacks do not fire for other monitoring tools, so coverage.py
+        # can't see this function.
         fname = code.co_filename
         if not should_trace_file(fname):
             # this function is only called on 3.12+, but we want to avoid an
@@ -109,15 +113,15 @@ class Tracer:
         if not self._should_trace:
             return self
 
-        if not hasattr(sys, "monitoring"):
+        if not hasattr(sys, "monitoring"):  # pragma: no cover  # only on Python < 3.12
             sys.settrace(self.trace)
             return self
 
         try:
             sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
-        except ValueError:
+        except ValueError:  # pragma: no cover
             # another thread may have registered a tool for MONITORING_TOOL_ID
-            # since we checked in can_trace.
+            # since we checked in can_trace; this is a rare race condition.
             self._tried_and_failed_to_trace = True
             return self
 
@@ -132,12 +136,12 @@ class Tracer:
         if not self._should_trace:
             return
 
-        if not hasattr(sys, "monitoring"):
+        if not hasattr(sys, "monitoring"):  # pragma: no cover  # only on Python < 3.12
             sys.settrace(None)
             return
 
         if self._tried_and_failed_to_trace:
-            return
+            return  # pragma: no cover  # only true after the race in __enter__ above
 
         sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
         for event in MONITORING_EVENTS:
@@ -145,28 +149,14 @@ class Tracer:
 
 
 UNHELPFUL_LOCATIONS = (
-    # There's a branch which is only taken when an exception is active while exiting
-    # a contextmanager; this is probably after the fault has been triggered.
-    # Similar reasoning applies to a few other standard-library modules: even
-    # if the fault was later, these still aren't useful locations to report!
     # Note: The list is post-processed, so use plain "/" for separator here.
-    "/contextlib.py",
-    "/inspect.py",
-    "/re.py",
-    "/re/__init__.py",  # refactored in Python 3.11
-    "/warnings.py",
-    # Quite rarely, the first AFNP line is in Pytest's internals.
+    # Quite rarely, the first always-failing line is in Pytest's internals.
     "/_pytest/**",
     "/pluggy/_*.py",
     # used by pytest for failure formatting in the terminal.
     # seen: pygments/lexer.py, pygments/formatters/, pygments/filter.py.
     "/pygments/*",
-    # used by pytest for failure formatting
-    "/difflib.py",
-    "/reprlib.py",
-    "/typing.py",
     "/conftest.py",
-    "/pprint.py",
     # syrupy registers a pytest_assertrepr_compare hook, which only runs when
     # assertions fail — making it appear as always-failing-never-passing.
     "/syrupy/__init__.py",
@@ -232,17 +222,30 @@ def get_explaining_locations(traces):
     # real divergence (earlier in the trace) and drop that unhelpful explanation.
     filter_regex = re.compile(_glob_to_re(UNHELPFUL_LOCATIONS))
     return {
-        origin: {loc for loc in afnp_locs if not filter_regex.search(loc[0])}
+        origin: {
+            loc
+            for loc in afnp_locs
+            if not filter_regex.search(loc[0])
+            # In addition to UNHELPFUL_LOCATIONS, we drop all stdlib locations.
+            and ModuleLocation.from_path(loc[0]) is not ModuleLocation.STDLIB
+        }
         for origin, afnp_locs in explanations.items()
     }
 
 
 # see e.g. https://docs.python.org/3/library/sysconfig.html#posix-user
 # for examples of these path schemes
-STDLIB_DIRS = {
-    Path(sysconfig.get_path("platstdlib")).resolve(),
-    Path(sysconfig.get_path("stdlib")).resolve(),
-}
+def _stdlib_dirs():
+    return {
+        Path(sysconfig.get_path("platstdlib")).resolve(),
+        Path(sysconfig.get_path("stdlib")).resolve(),
+        # Under Pyodide and other embedded pythons, the stdlib is imported from
+        # a zipfile on sys.path, which sysconfig doesn't report.
+        *(Path(p) for p in sys.path if p.endswith(".zip")),
+    }
+
+
+STDLIB_DIRS = _stdlib_dirs()
 SITE_PACKAGES_DIRS = {
     Path(sysconfig.get_path("purelib")).resolve(),
     Path(sysconfig.get_path("platlib")).resolve(),
@@ -325,9 +328,7 @@ def tractable_coverage_report(trace: Trace) -> dict[str, list[int]]:
     coverage: dict = {}
     t = dict(trace)
     for file, line in set(t.keys()).union(t.values()) - {None}:  # type: ignore
-        # On Python <= 3.11, we can use coverage.py xor Hypothesis' tracer,
-        # so the trace will be empty and this line never run under coverage.
-        coverage.setdefault(file, set()).add(line)  # pragma: no cover
+        coverage.setdefault(file, set()).add(line)
     stdlib_fragment = f"{os.sep}lib{os.sep}python3.{sys.version_info.minor}{os.sep}"
     return {
         k: sorted(v)

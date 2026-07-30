@@ -161,12 +161,11 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @overload
-def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cover
-    ...
+def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]: ...
 
 
 @overload
-def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
+def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     ...
 
@@ -174,8 +173,7 @@ def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: n
 @overload
 def sampled_from(
     elements: type[enum.Enum] | Sequence[Any],
-) -> SearchStrategy[Any]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Any]: ...
 
 
 @defines_strategy(eager="try")
@@ -252,7 +250,7 @@ def sampled_from(
         def has_annotations(elements):
             if sys.version_info[:2] < (3, 14):
                 return vars(elements).get("__annotations__")
-            else:  # pragma: no cover  # covered by 3.14 tests
+            else:
                 import annotationlib
 
                 return bool(annotationlib.get_annotations(elements))
@@ -521,8 +519,7 @@ V2 = TypeVar("V2")
 @overload
 def fixed_dictionaries(
     mapping: Mapping[K, SearchStrategy[V]],
-) -> SearchStrategy[dict[K, V]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K, V]]: ...
 
 
 @overload
@@ -533,8 +530,7 @@ def fixed_dictionaries(
     mapping: Mapping[NoReturn, NoReturn],
     *,
     optional: Mapping[K2, SearchStrategy[V2]],
-) -> SearchStrategy[dict[K2, V2]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K2, V2]]: ...
 
 
 @overload
@@ -542,8 +538,7 @@ def fixed_dictionaries(
     mapping: Mapping[K, SearchStrategy[V]],
     *,
     optional: Mapping[K2, SearchStrategy[V2]],
-) -> SearchStrategy[dict[K | K2, V | V2]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K | K2, V | V2]]: ...
 
 
 @defines_strategy()
@@ -879,8 +874,7 @@ def from_regex(
     regex: bytes | Pattern[bytes],
     *,
     fullmatch: bool = False,
-) -> SearchStrategy[bytes]:  # pragma: no cover
-    ...
+) -> SearchStrategy[bytes]: ...
 
 
 @overload
@@ -889,8 +883,7 @@ def from_regex(
     *,
     fullmatch: bool = False,
     alphabet: Collection[str] | SearchStrategy[str] | None = characters(codec="utf-8"),
-) -> SearchStrategy[str]:  # pragma: no cover
-    ...
+) -> SearchStrategy[str]: ...
 
 
 @cacheable
@@ -1193,7 +1186,7 @@ def builds(
             isinstance(target, type)
             and (attr := sys.modules.get("attr")) is not None
             and attr.has(target)
-        ):  # pragma: no cover  # covered by our attrs tests in check-niche
+        ):
             # Use our custom introspection for attrs classes
             from hypothesis.strategies._internal.attrs import from_attrs
 
@@ -1399,7 +1392,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     if types.is_a_union(thing):
         args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
         return one_of([_from_type(t) for t in args])
-    if thing in types.LiteralStringTypes:  # pragma: no cover
+    if thing in types.LiteralStringTypes:
         # We can't really cover this because it needs either
         # typing-extensions or python3.11+ typing.
         # `LiteralString` from runtime's point of view is just a string.
@@ -1428,7 +1421,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 "`from __future__ import annotations` instead of forward-reference "
                 "strings."
             )
-        raise InvalidArgument(f"{thing=} must be a type")  # pragma: no cover
+        raise InvalidArgument(f"{thing=} must be a type")
 
     if thing in types.NON_RUNTIME_TYPES:
         # Some code like `st.from_type(TypeAlias)` does not make sense.
@@ -1455,7 +1448,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[origin], thing)
             if strategy is not NotImplemented:
                 return strategy
-    except TypeError:  # pragma: no cover
+    except TypeError:
         # This was originally due to a bizarre divergence in behaviour on Python 3.9.0:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
         # has __args__ = ([], foo); and as a result is non-hashable.
@@ -2002,7 +1995,7 @@ class DrawFn(Protocol):
     """
 
     def __init__(self):
-        raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
+        raise TypeError("Protocols cannot be instantiated")
 
     # Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
@@ -2477,7 +2470,7 @@ def data() -> SearchStrategy[DataObject]:
 if sys.version_info < (3, 12):
     # TypeAliasType is new in 3.12
     RegisterTypeT: TypeAlias = type[Ex]
-else:  # pragma: no cover  # covered by test_mypy.py
+else:
     from typing import TypeAliasType
 
     # see https://github.com/HypothesisWorks/hypothesis/issues/4410
@@ -2649,26 +2642,21 @@ def _functions(*, like, returns, pure):
 if typing.TYPE_CHECKING or ParamSpec is not None:
 
     @overload
-    def functions(
-        *, pure: bool = ...
-    ) -> SearchStrategy[Callable[[], None]]:  # pragma: no cover
-        ...
+    def functions(*, pure: bool = ...) -> SearchStrategy[Callable[[], None]]: ...
 
     @overload
     def functions(
         *,
         like: Callable[P, T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[P, T]]: ...
 
     @overload
     def functions(
         *,
         returns: SearchStrategy[T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[[], T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[[], T]]: ...
 
     @overload
     def functions(
@@ -2676,8 +2664,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         like: Callable[P, Any],
         returns: SearchStrategy[T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[P, T]]: ...
 
     @defines_strategy()
     def functions(*, like=lambda: None, returns=..., pure=False):

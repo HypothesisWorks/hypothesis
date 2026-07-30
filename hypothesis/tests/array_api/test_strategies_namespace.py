@@ -91,3 +91,13 @@ def test_complex_dtypes_raises_on_2021_12():
     for api_version in NOMINAL_VERSIONS[1:]:
         xps = make_strategies_namespace(mock_xp, api_version=api_version)
         assert isinstance(xps.complex_dtypes(), SearchStrategy)
+
+
+def test_strategies_namespace_requires_name_and_api_version():
+    """The StrategiesNamespace class underlying make_strategies_namespace()
+    requires both 'name' and 'api_version' kwargs."""
+    namespace_cls = type(make_strategies_namespace(mock_xp, api_version="draft"))
+    with pytest.raises(ValueError, match="'api_version' kwarg required"):
+        namespace_cls(name="mock")
+    with pytest.raises(ValueError, match="'name' kwarg required"):
+        namespace_cls(api_version="draft")

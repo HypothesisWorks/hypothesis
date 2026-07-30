@@ -14,7 +14,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
+from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES, ArrayStrategy
 from hypothesis.internal.floats import width_smallest_normals
 
 from tests.array_api.common import (
@@ -541,4 +541,43 @@ def test_subnormal_elements_validation(xp, xps):
         with pytest.raises(InvalidArgument, match="Generated subnormal float"):
             check_can_generate_examples(strat)
     else:
+        check_can_generate_examples(strat)
+
+
+@pytest.mark.parametrize(
+    "dtype_name, val, stored, match",
+    [
+        ("int8", 5, 6, "cannot be represented"),
+        ("float32", 5.0, 6.0, "cannot be represented"),
+        # a non-numeric element makes the subnormal check itself error, which
+        # still reports the generic message rather than propagating
+        ("float32", "not a float", 6.0, "cannot be represented"),
+        ("float32", width_smallest_normals(32) / 2, 0.0, "Generated subnormal"),
+    ],
+)
+def test_check_set_value_mismatch_errors(xp, xps, dtype_name, val, stored, match):
+    """check_set_value() explains elements which don't round-trip through the
+    array module, with a subnormal-specific message where relevant."""
+    dtype = getattr(xp, dtype_name)
+    strategy = ArrayStrategy(
+        xp=xp,
+        api_version=xps.api_version,
+        elements_strategy=st.just(0),
+        dtype=dtype,
+        shape=(1,),
+        fill=st.nothing(),
+        unique=False,
+    )
+    with pytest.raises(InvalidArgument, match=match):
+        strategy.check_set_value(val, xp.asarray(stored, dtype=dtype), st.just(val))
+
+
+@pytest.mark.parametrize("shape", [3, 10])
+def test_reports_conversion_failure_for_dense_arrays(xp, xps, shape):
+    """When elements cannot be converted to the array's dtype in the fully
+    dense (fill=nothing) code path, a helpful error is raised."""
+    strat = xps.arrays(
+        dtype=xp.int8, shape=shape, elements=st.just(300), fill=st.nothing()
+    )
+    with pytest.raises(InvalidArgument, match="could not be converted"):
         check_can_generate_examples(strat)
