@@ -64,6 +64,7 @@ def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
     assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in dtypes)
 
 
+@pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
 def test_numeric_dtypes_excludes_complex_before_2022_12(xp):
     """numeric_dtypes() only includes real dtypes for api_version=2021.12,
     which predates complex dtype support."""
