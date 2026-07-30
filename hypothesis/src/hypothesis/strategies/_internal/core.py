@@ -19,10 +19,15 @@ import sys
 import typing
 import warnings
 from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
     Callable,
     Collection,
+    Generator,
     Hashable,
     Iterable,
+    Iterator,
     Mapping,
     Sequence,
 )
@@ -30,7 +35,15 @@ from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import Parameter, Signature, isabstract, isclass
+from inspect import (
+    Parameter,
+    Signature,
+    isabstract,
+    isasyncgenfunction,
+    isclass,
+    iscoroutinefunction,
+    isgeneratorfunction,
+)
 from re import Pattern
 from types import EllipsisType, FunctionType, GenericAlias
 from typing import (
@@ -2630,12 +2643,49 @@ def _functions(*, like, returns, pure):
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
+    if pure and (
+        iscoroutinefunction(like)
+        or isgeneratorfunction(like)
+        or isasyncgenfunction(like)
+    ):
+        raise InvalidArgument(
+            f"pure=True is invalid for like={nicerepr(like)!r}, because async "
+            "functions are for non-deterministic IO and generators are consumed "
+            "by iteration, so returning a cached value makes no sense"
+        )
+    is_gen = isgeneratorfunction(like) or isasyncgenfunction(like)
     if returns in (None, ...):
-        # Passing `None` has never been *documented* as working, but it still
-        # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
-        returns = from_type(hints.get("return", type(None)))
+        if is_gen:
+            # The return annotation describes the iterator, so e.g. yield
+            # integers for `-> Iterator[int]` or `-> AsyncIterator[int]`.
+            allowed = (
+                (AsyncIterator, AsyncIterable, AsyncGenerator)
+                if isasyncgenfunction(like)
+                else (Iterator, Iterable, Generator)
+            )
+            ret = hints.get("return")
+            # normalize eg Iterator[bool] to Iterator while keeping Iterator as Iterator.
+            kind = get_origin(ret) or ret
+            if ret is not None and kind not in allowed:
+                options = ", ".join(t.__name__ for t in allowed)
+                raise InvalidArgument(
+                    f"Cannot infer the yield type of like={nicerepr(like)!r} "
+                    f"from its return annotation {ret!r}. Expected one of "
+                    f"{options}. Alternatively, pass returns= to specify the yield type "
+                    "explicitly."
+                )
+            args = get_args(ret)
+            returns = from_type(args[0]) if args else none()
+        else:
+            # Passing `None` has never been *documented* as working, but it
+            # still did from May 2020 to Jan 2022 so we'll avoid breaking it
+            # without cause.
+            returns = from_type(hints.get("return", type(None)))
     check_strategy(returns, "returns")
+    if is_gen:
+        # Generated generator functions draw a list of values to yield up front.
+        returns = lists(returns)
     return FunctionStrategy(like, returns, pure)
 
 
@@ -2680,6 +2730,20 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         strategy.  If ``returns`` is not passed, we attempt to infer a strategy
         from the return-type annotation if present, falling back to :func:`~none`.
 
+        If ``like`` is an async function, a generator function, or an async
+        generator function, the generated function will be of the same kind.
+        Awaiting a generated async function returns a value drawn from
+        ``returns``, while generated generator functions draw a list of
+        values from ``returns`` up front and then yield from it - so a
+        return-type annotation like ``Iterator[int]`` or ``AsyncIterator[int]``
+        means we infer ``returns=integers()``.  ``pure=True`` is only
+        supported when ``like`` is a plain function.
+
+        Generated async functions and async generators follow Trio-style
+        checkpoint semantics, using :pypi:`anyio` or :pypi:`sniffio` if
+        imported to find the right way to checkpoint, and falling back to
+        :mod:`asyncio` otherwise.
+
         If ``pure=True``, all arguments passed to the generated function must be
         hashable, and if passed identical arguments the original return value will
         be returned again - *not* regenerated, so beware mutable values.
@@ -2710,6 +2774,20 @@ else:  # pragma: no cover
         for the function is drawn from the ``returns`` argument, which must be a
         strategy.  If ``returns`` is not passed, we attempt to infer a strategy
         from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``like`` is an async function, a generator function, or an async
+        generator function, the generated function will be of the same kind.
+        Awaiting a generated async function returns a value drawn from
+        ``returns``, while generated generator functions draw a list of
+        values from ``returns`` up front and then yield from it - so a
+        return-type annotation like ``Iterator[int]`` or ``AsyncIterator[int]``
+        means we infer ``returns=integers()``.  ``pure=True`` is only
+        supported when ``like`` is a plain function.
+
+        Generated async functions and async generators follow Trio-style
+        checkpoint semantics, using :pypi:`anyio` or :pypi:`sniffio` if
+        imported to find the right way to checkpoint, and falling back to
+        :mod:`asyncio` otherwise.
 
         If ``pure=True``, all arguments passed to the generated function must be
         hashable, and if passed identical arguments the original return value will
