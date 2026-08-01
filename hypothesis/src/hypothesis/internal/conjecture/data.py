@@ -105,6 +105,9 @@ TargetObservations = dict[str, int | float]
 MisalignedAt: TypeAlias = tuple[int, ChoiceTypeT, ChoiceConstraintsT, ChoiceT | None]
 
 TOP_LABEL = calc_label_from_name("top")
+UNIQUE_COLLECTION_LABEL = calc_label_from_name(
+    "a collection with a uniqueness constraint"
+)
 MAX_DEPTH = 100
 
 threadlocal = ThreadLocal(global_test_counter=int)
@@ -419,13 +422,26 @@ class _mutator_groups(SpanProperty):
     def __init__(self, spans: "Spans") -> None:
         super().__init__(spans)
         self.groups: dict[int, set[tuple[int, int]]] = defaultdict(set)
+        self._unique_stack: list[int] = []
 
     def start_span(self, i: int, label_index: int) -> None:
         # TODO should we discard start == end cases? occurs for eg st.data()
         # which is conditionally or never drawn from. arguably swapping
         # nodes with the empty list is a useful mutation enabled by start == end?
-        key = (self.spans[i].start, self.spans[i].end)
-        self.groups[label_index].add(key)
+        #
+        # Skip spans inside a unique collection: duplicating one element of a
+        # unique collection over another is certain to fail the uniqueness
+        # filter and be discarded.  The collection's own span is still added,
+        # so duplicating a collection as a whole remains possible.
+        if not self._unique_stack:
+            key = (self.spans[i].start, self.spans[i].end)
+            self.groups[label_index].add(key)
+        if self.spans.labels[label_index] == UNIQUE_COLLECTION_LABEL:
+            self._unique_stack.append(i)
+
+    def stop_span(self, i: int, *, discarded: bool) -> None:
+        if self._unique_stack and self._unique_stack[-1] == i:
+            self._unique_stack.pop()
 
     def finish(self) -> Iterable[set[tuple[int, int]]]:
         # Discard groups with only one span, since the mutator can't
