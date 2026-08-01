@@ -36,13 +36,20 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      # workflow_run events don't reliably include the PR number (in
-      # particular for PRs from forks), so look it up from the head commit.
+      # workflow_run events don't include the PR number for PRs from forks,
+      # and the commits/{sha}/pulls endpoint doesn't find those either, so
+      # search by head commit - and fail loudly rather than deploying to a
+      # nonsense branch if the search comes up empty.
       - name: Find PR number
         id: pr
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" \
-            --jq '"number=\(.[0].number)"' >> "$GITHUB_OUTPUT"
+          number="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "sha:$HEAD_SHA" --json number --jq '.[0].number')"
+          if ! [[ "$number" =~ ^[0-9]+$ ]]; then
+            echo "No open PR found for commit $HEAD_SHA" >&2
+            exit 1
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
       - name: Download website build
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
