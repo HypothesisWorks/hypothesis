@@ -25,6 +25,7 @@ from typing import (
 from hypothesis.internal.conjecture.choice import (
     ChoiceNode,
     ChoiceT,
+    ValueHole,
     choice_equal,
     choice_from_index,
     choice_key,
@@ -353,6 +354,7 @@ class Shrinker:
             ShrinkPass(self.lower_integers_together),
             ShrinkPass(self.lower_duplicated_characters),
             ShrinkPass(self.normalize_unicode_chars),
+            ShrinkPass(self.widen_to_span_with_recorded_value),
         ]
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
@@ -1634,6 +1636,51 @@ class Shrinker:
                 + self.nodes[node.index + 1 :]
             ):
                 return
+
+    def widen_to_span_with_recorded_value(self, chooser):
+        """Replace a strategy's choices with a ValueHole carrying the value it
+        produced, so that the replay re-encodes that value more simply.
+
+        We look for a span which starts with a non-forced zero-based non-zero
+        integer choice (heuristically: a one_of branch selector), makes more
+        than one choice, and has a recorded value, and propose the same
+        choice sequence with the span's choices replaced by a single
+        ValueHole. At replay time the hole is claimed by whichever strategy
+        draws at that position: a one_of's ``_invert`` tries every alternative
+        in-process and returns the simplest encoding whose image contains the
+        value, so one test execution covers all of its branches. If the
+        result is a strictly simpler choice sequence which still fails, it is
+        kept, and normal shrinking takes the re-encoded value the rest of the
+        way. All knowledge of how to encode values lives with the strategies,
+        not here.
+        """
+        node = chooser.choose(
+            self.nodes,
+            lambda n: (
+                n.type == "integer"
+                and not n.was_forced
+                and n.constraints["min_value"] == 0
+                and n.value != 0
+            ),
+        )
+
+        span_idx = chooser.choose(
+            self.spans_starting_at[node.index],
+            # Single-choice spans are excluded: they are either not a one_of
+            # (e.g. the selector draw's own span), or a one_of whose current
+            # branch made no choices, like just() - and a re-encoding of the
+            # latter would be longer, which incorporate_test_data rejects.
+            lambda i: self.spans[i].recorded_value is not None
+            and self.spans[i].choice_count > 1,
+        )
+        span = self.spans[span_idx]
+
+        attempt = (
+            self.choices[: span.start]
+            + (ValueHole(span.recorded_value),)
+            + self.choices[span.end :]
+        )
+        self.incorporate_test_data(self.engine.cached_test_function(attempt))
 
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type

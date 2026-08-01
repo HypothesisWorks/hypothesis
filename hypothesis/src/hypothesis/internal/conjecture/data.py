@@ -28,6 +28,7 @@ from typing import (
 )
 
 from hypothesis.errors import (
+    CannotInvert,
     CannotProceedScopeT,
     ChoiceTooLarge,
     FlakyStrategyDefinition,
@@ -48,6 +49,7 @@ from hypothesis.internal.conjecture.choice import (
     FloatConstraints,
     IntegerConstraints,
     StringConstraints,
+    ValueHole,
     choice_constraints_key,
     choice_from_index,
     choice_permitted,
@@ -138,6 +140,10 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 # This cache can be quite hot and so we prefer LRUCache over LRUReusedCache for
 # performance. We lose scan resistance, but that's probably fine here.
 POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCache(4096)
+
+# A tuple rather than a set so that ``in`` works even if a value's class has
+# an unhashable metaclass. Exact type checks also exclude symbolic backends.
+_PRIMITIVE_CHOICE_TYPES: tuple[type, ...] = (int, bool, str, bytes, float)
 
 
 class Span:
@@ -240,6 +246,13 @@ class Span:
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
 
+    @property
+    def recorded_value(self) -> Any:
+        """The value produced by the strategy draw corresponding to this span,
+        or ``None`` if no value was recorded. Only values of the primitive
+        choice types (int, bool, float, str, bytes) are recorded."""
+        return self.owner.span_values.get(self.index)
+
 
 class SpanProperty:
     """There are many properties of spans that we calculate by
@@ -325,6 +338,7 @@ class SpanRecord:
         # The number of spans started so far, which is also the index that the
         # next span to start will get. Spans are indexed in start order.
         self.span_count = 0
+        self.span_values: dict[int, Any] = {}
 
     def freeze(self) -> None:
         self.__index_of_labels = None
@@ -347,6 +361,14 @@ class SpanRecord:
             self.trail.append(TrailType.STOP_SPAN_DISCARD)
         else:
             self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
+
+    def record_value_for_span(self, span_index: int, value: Any) -> None:
+        # Record ``value`` against the span at ``span_index``, if it is one of
+        # the primitive choice types. Called by ConjectureData.draw with the
+        # value each strategy's do_draw returned.
+        if type(value) not in _PRIMITIVE_CHOICE_TYPES:
+            return
+        self.span_values[span_index] = value
 
 
 class _starts_and_ends(SpanProperty):
@@ -447,6 +469,7 @@ class Spans:
     def __init__(self, record: SpanRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
+        self.span_values = record.span_values
         self.__length = self.trail.count(
             TrailType.STOP_SPAN_DISCARD
         ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
@@ -608,7 +631,7 @@ class ConjectureData:
     @classmethod
     def for_choices(
         cls,
-        choices: Sequence[ChoiceTemplate | ChoiceT],
+        choices: Sequence[ChoiceTemplate | ValueHole | ChoiceT],
         *,
         observer: DataObserver | None = None,
         provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
@@ -630,7 +653,7 @@ class ConjectureData:
         random: Random | None,
         observer: DataObserver | None = None,
         provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
-        prefix: Sequence[ChoiceTemplate | ChoiceT] | None = None,
+        prefix: Sequence[ChoiceTemplate | ValueHole | ChoiceT] | None = None,
         max_choices: int | None = None,
         provider_kw: dict[str, Any] | None = None,
     ) -> None:
@@ -1079,6 +1102,19 @@ class ConjectureData:
                     self.mark_overrun()
             return choice
 
+        if isinstance(value, ValueHole):
+            # A hole that no strategy claimed: either its value could not be
+            # inverted, or it fell out of alignment with strategy draw
+            # boundaries. Treat it as a misalignment.
+            if self.misaligned_at is None:
+                self.misaligned_at = (self.index, choice_type, constraints, forced)
+            try:
+                choice = choice_from_index(0, choice_type, constraints)
+            except ChoiceTooLarge:
+                self.mark_overrun()
+            self.index += 1
+            return choice
+
         choice = value
         node_choice_type = {
             str: "string",
@@ -1203,11 +1239,35 @@ class ConjectureData:
             label = unwrapped.label
             assert isinstance(label, int)
 
+        # If the next prefix element is a ValueHole, we are the strategy being
+        # asked to re-encode its value: replace the hole with our inversion of
+        # it, and let do_draw consume those choices (under our own constraints)
+        # as usual. If we can't invert it, leave the hole for _pop_choice to
+        # treat as a misalignment.
+        if (
+            self.prefix is not None
+            and self.index < len(self.prefix)
+            and isinstance(hole := self.prefix[self.index], ValueHole)
+        ):
+            try:
+                inverted = unwrapped._invert(hole.value)
+            except CannotInvert:
+                pass
+            else:
+                self.prefix = (
+                    tuple(self.prefix[: self.index])
+                    + tuple(inverted)
+                    + tuple(self.prefix[self.index + 1 :])
+                )
+
+        span_index = self.__span_record.span_count
         self.start_span(label=label)
         try:
             if not at_top_level:
                 try:
-                    return unwrapped.do_draw(self)
+                    v = unwrapped.do_draw(self)
+                    self.__span_record.record_value_for_span(span_index, v)
+                    return v
                 except FlakyStrategyDefinition as err:
                     # Record the strategy stack as the error unwinds, so that an
                     # inconsistent-generation failure is explained in terms of the
@@ -1234,6 +1294,7 @@ class ConjectureData:
             if observability_enabled():
                 avoid = self.provider.avoid_realization
                 self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
+            self.__span_record.record_value_for_span(span_index, v)
             return v
         finally:
             self.stop_span()

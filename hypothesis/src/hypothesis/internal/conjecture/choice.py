@@ -81,6 +81,23 @@ class ChoiceTemplate:
             assert self.count > 0
 
 
+@dataclass(slots=True, frozen=True)
+class ValueHole:
+    """A hole in a choice sequence, carrying a value instead of choices.
+
+    When ``ConjectureData.draw`` finds a ValueHole at the current prefix
+    position, it asks the strategy being drawn to ``_invert`` the value, and
+    on success splices the resulting choices into the prefix in place of the
+    hole - so the value is re-encoded by whichever strategy is drawn at that
+    position, with that strategy's own constraints. If no strategy claims the
+    hole (inversion failed, or the hole fell out of alignment with strategy
+    draw boundaries), it is treated as a misalignment when a draw_* call
+    reaches it.
+    """
+
+    value: ChoiceT
+
+
 @dataclass(slots=True, frozen=False)
 class ChoiceNode:
     type: ChoiceTypeT
