@@ -90,8 +90,10 @@ def test_can_constrain_characters_to_codec(data, codec):
 )
 def test_non_round_tripping_characters_must_be_decided(codec, chars):
     assert non_roundtrip_chars(codec) == chars
-    with pytest.raises(InvalidArgument, match="round-trip"):
+    with pytest.raises(InvalidArgument, match="round-trip") as excinfo:
         st.characters(codec=codec).validate()
+    # the \u-escaped form is also shown, unless it's just the repr again
+    assert ("aka" in str(excinfo.value)) == (ascii(chars) != repr(chars))
     # deciding only some of them is not enough
     if len(chars) > 1:
         with pytest.raises(InvalidArgument, match="round-trip"):

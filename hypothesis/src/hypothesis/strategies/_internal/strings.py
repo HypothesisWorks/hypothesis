@@ -81,13 +81,16 @@ class OneCharStringStrategy(SearchStrategy[str]):
             intervals &= encodable
             if undecided := (intervals & non_roundtrip) - include_intervals:
                 chars = "".join(map(chr, undecided))
+                # also show the \u-escaped form, in case the raw repr doesn't
+                # display or copy-paste cleanly in the user's terminal
+                aka = "" if ascii(chars) == repr(chars) else f" (aka {chars!a})"
                 raise InvalidArgument(
-                    f"Characters {chars!r} can be encoded with codec={codec!r}, "
-                    "but do not decode back to the same character, so strings "
-                    "containing them do not round-trip.  Please pass each of "
-                    "them in either include_characters, to generate them "
-                    f"anyway, or exclude_characters={chars!r}, to generate "
-                    "only characters which round-trip."
+                    f"Characters {chars!r}{aka} can be encoded with "
+                    f"codec={codec!r}, but do not decode back to the same "
+                    "character, so strings containing them do not round-trip.  "
+                    "Please pass each of them in either include_characters, "
+                    f"to generate them anyway, or exclude_characters={chars!r}, "
+                    "to generate only characters which round-trip."
                 )
         # include_characters are generated even if excluded by other arguments,
         # such as the passed categories or codepoint range.  (overlap with
