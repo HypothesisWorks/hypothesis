@@ -49,7 +49,7 @@ def decode(lst):
     return q
 ```
 
-We can test this using Hypothesis and py.test as follows:
+We can test this using Hypothesis and pytest as follows:
 
 
 ```python

@@ -154,7 +154,7 @@ The @precondition decorator constrains when a rule is allowed to fire: We are no
 an empty heap, so the pop rule may only fire when there is data to be popped.
 
 We can run this by getting a standard unit test TestCase object out of it to be picked up by unittest
-or py.test as normal:
+or pytest as normal:
 
 ```python
 TestHeaps = HeapMachine.TestCase

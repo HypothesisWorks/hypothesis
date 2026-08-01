@@ -18,7 +18,7 @@ This is a bug fix release for a single bug:
 My tendency of doing immediate patch releases for bugs is unusual but
 generally seems to be appreciated. In this case this was a bug that was
 blocking
-[a py.test merge](https://github.com/pytest-dev/pytest/pull/1705).
+[a pytest merge](https://github.com/pytest-dev/pytest/pull/1705).
 
 I suspect this is not the last bug around atomic file creation on
 Windows. Cross platform atomic file creation seems to be a harder

@@ -27,7 +27,7 @@ Additionally there have been some minor bug fixes:
 
 * In some cases Hypothesis should produce fewer duplicate examples (this will mostly
   only affect cases with a single parameter).
-* py.test command line parameters are now under an option group for Hypothesis (thanks
+* pytest command line parameters are now under an option group for Hypothesis (thanks
   to David Keijser for fixing this)
 * Hypothesis would previously error if you used function annotations on your tests under
   Python 3.4.
