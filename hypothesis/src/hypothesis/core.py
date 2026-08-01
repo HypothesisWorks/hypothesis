@@ -868,6 +868,35 @@ def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
     return found_exceptions
 
 
+def _is_hypothesis_exception(e: BaseException) -> bool:
+    """Whether ``e`` is a Hypothesis marker/control exception, or a group
+    consisting only of such exceptions."""
+    if isinstance(e, HypothesisException):
+        return True
+    if isinstance(e, BaseExceptionGroup):
+        return all(_is_hypothesis_exception(exc) for exc in e.exceptions)
+    return False
+
+
+def _has_stoptest_in_context(e: BaseException) -> bool:
+    """Whether a ``StopTest`` is chained in the exception context of ``e``.
+
+    The engine raises ``StopTest`` for control flow; if user code in a
+    ``finally`` block raises while that ``StopTest`` is propagating, the new
+    exception is implicitly chained to it. A genuine user exception raised
+    while data is frozen (e.g. after an explicit ``freeze()``) has no such
+    chain, so it can be told apart from the finally-suppression case.
+    """
+    seen: set[int] = set()
+    current = e.__context__
+    while current is not None and id(current) not in seen:
+        if isinstance(current, StopTest):
+            return True
+        seen.add(id(current))
+        current = current.__context__
+    return False
+
+
 @contextlib.contextmanager
 def unwrap_markers_from_group() -> Generator[None, None, None]:
     try:
@@ -1296,10 +1325,17 @@ class StateForActualGivenExecution:
                 raise
 
             if data.frozen:
-                # This can happen if an error occurred in a finally
-                # block somewhere, suppressing our original StopTest.
-                # We raise a new one here to resume normal operation.
-                raise StopTest(data.testcounter) from e
+                if _is_hypothesis_exception(e) or _has_stoptest_in_context(e):
+                    # This can happen if an error occurred in a finally
+                    # block somewhere, suppressing our original StopTest.
+                    # We raise a new one here to resume normal operation.
+                    raise StopTest(data.testcounter) from e
+                # A genuine user exception raised while data is frozen (e.g.
+                # after an explicit ``data.conjecture_data.freeze()``) cannot
+                # be concluded as an interesting example (the data is frozen),
+                # so let it propagate and fail the test run instead of
+                # swallowing it as control flow (see #4132).
+                raise
             else:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal

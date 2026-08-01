@@ -208,3 +208,4 @@ their individual contributions.
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
 * `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)
 * `zhangli091011 <https://github.com/zhangli091011>`_
+* `feiiiiii5 <https://github.com/feiiiiii5>`_

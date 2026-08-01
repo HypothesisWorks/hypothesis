@@ -55,6 +55,30 @@ def test_user_error_and_frozen() -> None:
     assert isinstance(e.exceptions[1], TypeError)
 
 
+def test_user_error_after_freeze_is_reported() -> None:
+    @given(st.data())
+    def user_error_after_freeze(data: DataObject) -> None:
+        data.conjecture_data.freeze()
+        raise TypeError("oops")
+
+    with pytest.raises(TypeError, match="oops"):
+        user_error_after_freeze()
+
+
+def test_user_error_and_frozen_after_freeze_is_reported() -> None:
+    @given(st.data())
+    def user_error_and_frozen(data: DataObject) -> None:
+        data.conjecture_data.freeze()
+        raise ExceptionGroup("", [Frozen(), TypeError("oops")])
+
+    with pytest.raises(ExceptionGroup) as excinfo:
+        user_error_and_frozen()
+    e = excinfo.value
+    assert len(e.exceptions) == 2
+    assert isinstance(e.exceptions[0], Frozen)
+    assert isinstance(e.exceptions[1], TypeError)
+
+
 def test_user_error_and_stoptest() -> None:
     # if the code base had "proper" handling of exceptiongroups, the StopTest would
     # probably be handled by an except*.
