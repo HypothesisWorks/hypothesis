@@ -304,6 +304,22 @@ def test_plateaued_score_does_not_rerun_optimiser():
     assert len(seen) == 1
 
 
+def test_optimisation_pass_stops_at_its_valid_example_budget():
+    def test(data):
+        data.target_observations["n"] = data.draw_integer(0, 2**64 - 1)
+
+    runner = ConjectureRunner(
+        test, settings=settings(runner_settings, max_examples=2000), random=Random(0)
+    )
+    runner.cached_test_function((0,))
+
+    # This score can always be improved, so without the max_valid ceiling
+    # this pass would consume the entire run.
+    max_valid = runner.valid_examples + 10
+    assert runner.optimise_targets(max_valid=max_valid)
+    assert runner.valid_examples <= max_valid + 100
+
+
 def test_optimisation_spend_is_bounded_for_large_budgets():
     def test(data):
         n = sum(data.draw_integer(0, 100) for _ in range(5))
