@@ -684,6 +684,11 @@ class ConjectureData:
         self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth: int = 0
         self.has_discards: bool = False
+        # While positive, we are drawing an element of a unique collection, so
+        # a "simplest" ChoiceTemplate enumerates progressively larger choices
+        # (via the shared counter) instead of repeating guaranteed-duplicates.
+        self.unique_element_depth: int = 0
+        self.simplest_index: int = 0
 
         self.provider: PrimitiveProvider = (
             provider(self, **provider_kw) if isinstance(provider, type) else provider
@@ -1080,10 +1085,19 @@ class ConjectureData:
             # node if the alternative is not "the entire data is an overrun".
             assert self.index == len(self.prefix) - 1
             if node.type == "simplest":
-                if forced is not None:
-                    choice = forced
+                index = 0
+                if forced is None and self.unique_element_depth:
+                    # imported here to break an import cycle
+                    from hypothesis.internal.conjecture.datatree import (
+                        compute_max_children,
+                    )
+
+                    index = self.simplest_index % compute_max_children(
+                        choice_type, constraints
+                    )
+                    self.simplest_index += 1
                 try:
-                    choice = choice_from_index(0, choice_type, constraints)
+                    choice = choice_from_index(index, choice_type, constraints)
                 except ChoiceTooLarge:
                     self.mark_overrun()
             else:

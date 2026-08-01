@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen
+from hypothesis.internal.conjecture.choice import ChoiceTemplate
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -400,3 +401,40 @@ def test_overruns_at_exactly_max_length():
         except StopTest:
             pass
         assert data.status is Status.OVERRUN
+
+
+def test_simplest_template_enumerates_unique_collection_elements():
+    # an all-simplest draw would duplicate elements and never satisfy the
+    # uniqueness constraint, so the template enumerates instead.
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    result = data.draw(st.lists(st.integers(), unique=True, min_size=3, max_size=3))
+    assert len(set(result)) == 3
+
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    assert data.draw(st.lists(st.booleans(), unique=True, min_size=2)) == [False, True]
+
+
+def test_simplest_template_unique_collections_are_canonical():
+    # the enumeration restarts for each top-level unique collection, so probes
+    # do not depend on what was drawn earlier in the test case...
+    strategy = st.lists(st.integers(), unique=True, min_size=3, max_size=3)
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    assert data.draw(strategy) == data.draw(strategy)
+
+    # ...but nested unique collections keep counting, so that the sibling
+    # elements of their parent collection remain distinct.
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    result = data.draw(
+        st.lists(
+            st.lists(st.integers(), min_size=2, max_size=2),
+            unique_by=tuple,
+            min_size=2,
+            max_size=2,
+        )
+    )
+    assert len({tuple(inner) for inner in result}) == 2
+
+
+def test_simplest_template_still_simplest_without_uniqueness():
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
