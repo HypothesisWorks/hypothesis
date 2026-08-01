@@ -696,7 +696,14 @@ def characters(
     ``include_characters`` which cannot be encoded using this codec will
     raise an exception.  If non-encodable codepoints or categories are
     explicitly allowed, the ``codec`` argument will exclude them without
-    raising an exception.
+    raising an exception.  A few legacy codecs have characters which encode
+    successfully but do not decode back to the same character - for example
+    the yen sign becomes a backslash under ``shift_jis`` - and if any could
+    be generated we issue
+    :class:`~hypothesis.errors.NonRoundTrippableCharactersWarning`.  Pass
+    each of them in either ``include_characters``, to generate them without
+    the warning, or ``exclude_characters``, to generate only characters
+    which round-trip.
 
     .. _general category: https://en.wikipedia.org/wiki/Unicode_character_property
     .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode

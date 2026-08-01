@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import TYPE_CHECKING, TypeAlias, cast, final
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ class IntervalSet:
     def __len__(self) -> int:
         return self.size
 
-    def __iter__(self) -> Iterable[int]:
+    def __iter__(self) -> Iterator[int]:
         for u, v in self.intervals:
             yield from range(u, v + 1)
 

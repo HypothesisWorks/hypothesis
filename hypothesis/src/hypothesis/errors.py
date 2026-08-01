@@ -333,6 +333,16 @@ class SmallSearchSpaceWarning(HypothesisWarning):
     in a meaningful way, for example by only creating default instances."""
 
 
+class NonRoundTrippableCharactersWarning(HypothesisWarning):
+    """Issued when the ``codec`` argument to
+    :func:`~hypothesis.strategies.characters` allows generating characters
+    which encode successfully, but do not decode back to the same character.
+
+    Pass each such character in either ``include_characters`` or
+    ``exclude_characters`` to silence this warning.
+    """
+
+
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
 _valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 

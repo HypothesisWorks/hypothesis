@@ -229,6 +229,7 @@ Custom exceptions raised by Hypothesis.
 .. autoclass:: hypothesis.errors.HypothesisException
 .. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
 .. autoclass:: hypothesis.errors.NonInteractiveExampleWarning
+.. autoclass:: hypothesis.errors.NonRoundTrippableCharactersWarning
 .. autoclass:: hypothesis.errors.Flaky
 .. autoclass:: hypothesis.errors.FlakyStrategyDefinition
 .. autoclass:: hypothesis.errors.FlakyFailure
