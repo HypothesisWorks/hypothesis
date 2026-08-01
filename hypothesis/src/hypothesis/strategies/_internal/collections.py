@@ -19,7 +19,7 @@ from hypothesis.errors import CannotInvert, InvalidArgument
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.data import UNIQUE_COLLECTION_LABEL, ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, equal_values
 from hypothesis.internal.conjecture.utils import combine_labels
@@ -356,6 +356,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
         filtered = FilteredStrategy(
             self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
+        data.start_span(UNIQUE_COLLECTION_LABEL)
         while elements.more():
             value = filtered.do_filtered_draw(data)
             if value is filter_not_satisfied:
@@ -367,6 +368,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))
                 result.append(value)
+        data.stop_span()
         assert self.max_size >= len(result) >= self.min_size
         return result
 
