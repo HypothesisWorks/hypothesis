@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis import assume, example, given, settings, strategies as st
 from hypothesis.internal.conjecture.provider_conformance import (
     interval_lists,
     intervals,
@@ -73,15 +73,37 @@ def intervals_to_set(ints):
     return set(IntervalSet(ints))
 
 
-@settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
-@example(x=[(0, 1), (3, 3)], y=[(1, 3)])
-@example(x=[(0, 1)], y=[(0, 0), (1, 1)])
-@example(x=[(0, 1)], y=[(1, 1)])
-@given(interval_lists(max_codepoint=200), interval_lists(max_codepoint=200))
-def test_subtraction_of_intervals(x, y):
+@st.composite
+def overlapping_interval_lists(draw, max_codepoint=200):
+    """Two interval lists whose sets are guaranteed to intersect.
+
+    The old test generated both lists independently and used
+    ``assume(not xs.isdisjoint(ys))``; under the crosshair backend every
+    example failed that filter (459/459), making the test flaky in CI.
+    Building the overlap in by construction keeps the same coverage without
+    relying on a filter that the backends may never satisfy.
+    """
+    x = draw(interval_lists(min_size=1, max_codepoint=max_codepoint))
+    shared = draw(st.sampled_from(sorted(intervals_to_set(x))))
+    y_pairs = draw(
+        st.lists(
+            st.tuples(st.integers(0, max_codepoint), st.integers(0, max_codepoint))
+        )
+    )
+    y_pairs = [tuple(sorted(pair)) for pair in y_pairs]
+    y_pairs.append((shared, shared))
+    return x, sorted(set(y_pairs))
+
+
+@example(([(0, 1), (3, 3)], [(1, 3)]))
+@example(([(0, 1)], [(0, 0), (1, 1)]))
+@example(([(0, 1)], [(1, 1)]))
+@given(overlapping_interval_lists(max_codepoint=200))
+def test_subtraction_of_intervals(pair):
+    x, y = pair
     xs = intervals_to_set(x)
     ys = intervals_to_set(y)
-    assume(not xs.isdisjoint(ys))
+    assert not xs.isdisjoint(ys)  # guaranteed by the strategy, kept as an invariant
     z = IntervalSet(x).difference(IntervalSet(y)).intervals
     assert z == tuple(sorted(z))
     for a, b in z:
