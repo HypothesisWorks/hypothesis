@@ -330,6 +330,20 @@ class ConjectureRunner:
         )
         self.best_examples_of_observed_targets: dict[str, ConjectureResult] = {}
 
+        # Scheduling state for the targeting phase. For large max_examples we
+        # interleave repeated optimisation passes with generation, aiming to
+        # spend up to half the budget on optimisation in total.
+        self._target_passes: int = 0
+        self._target_valid_spent: int = 0
+        self._last_pass_valid_spent: int = 0
+        self._last_pass_calls: int = 0
+        self._last_pass_improvements: int = 0
+        self._valid_at_last_pass: int = 0
+        self._best_scores_at_last_pass: dict[str, float] = {}
+        # The per-target improvement cap ramps up exponentially, persisting
+        # across passes so later passes can climb further per target.
+        self._optimiser_max_improvements: int = 10
+
         # We keep the pareto front in the example database if we have one. This
         # is only marginally useful at present, but speeds up local development
         # because it means that large targets will be quickly surfaced in your
@@ -1252,8 +1266,16 @@ class ConjectureRunner:
         # the distribution towards small (and less powerful) examples. Flaky
         # and loud health checks are better than silent performance degradation.
         small_example_cap = min(self.settings.max_examples // 10, 50)
-        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1, 10)
-        ran_optimisations = False
+        # For small budgets we run a single optimisation pass halfway through
+        # the budget, which experience shows is roughly optimal. For larger
+        # budgets we instead start optimising early and interleave repeated
+        # passes with generation - see _should_optimise_now.
+        if self.settings.max_examples < 1000:
+            first_pass_at = max(
+                self.settings.max_examples // 2, small_example_cap + 1, 10
+            )
+        else:
+            first_pass_at = max(200, small_example_cap + 1)
         self._switch_to_hypothesis_provider = False
 
         while self.should_generate_more():
@@ -1337,13 +1359,8 @@ class ConjectureRunner:
             # actually exhausts our budget: It might finish running and we
             # discover that actually we still could run a bunch more test cases
             # if we want.
-            if (
-                self.valid_examples >= max(small_example_cap, optimise_at)
-                and not ran_optimisations
-            ):
-                ran_optimisations = True
-                self._current_phase = "target"
-                self.optimise_targets()
+            if self._should_optimise_now(first_pass_at):
+                self._run_optimise_pass()
 
     def generate_mutations_from(self, data: ConjectureData | ConjectureResult) -> None:
         # A thing that is often useful but rarely happens by accident is
@@ -1503,36 +1520,105 @@ class ConjectureRunner:
                     else:
                         failed_mutations += 1
 
-    def optimise_targets(self) -> None:
+    def _should_optimise_now(self, first_pass_at: int) -> bool:
+        """Decide whether to run an optimisation pass at this point in the
+        generation loop."""
+        if not self.should_optimise:
+            return False
+        if self._target_passes == 0:
+            return self.valid_examples >= first_pass_at
+        # We only repeat passes for large budgets, and stop once optimisation
+        # has consumed its half-share of the total budget.
+        if (
+            self.settings.max_examples < 1000
+            or self._target_valid_spent >= self.settings.max_examples // 2
+        ):
+            return False
+        generated_since = self.valid_examples - self._valid_at_last_pass
+        # A new best score found by generation is fresh material worth
+        # climbing from, provided we've generated for a little while since
+        # the last pass.
+        if generated_since >= max(1, self._last_pass_valid_spent // 2) and any(
+            score > self._best_scores_at_last_pass.get(target, NO_SCORE)
+            for target, score in self.best_observed_targets.items()
+        ):
+            return True
+        # Otherwise, keep alternating on a fair-share schedule as long as the
+        # previous pass was still finding improvements - re-running a dry
+        # optimiser is a waste of budget.
+        return (
+            generated_since >= self._last_pass_valid_spent
+            and self._last_pass_calls > 0
+            and self._last_pass_improvements / self._last_pass_calls > 0.01
+        )
+
+    def _run_optimise_pass(self) -> None:
+        """Run one optimisation pass and record its cost and yield, which
+        _should_optimise_now uses to schedule the next pass."""
+        if self.settings.max_examples < 1000:
+            # A single unbudgeted pass, as we only ever run one.
+            max_valid = None
+        else:
+            budget = self.settings.max_examples // 2
+            remaining = budget - self._target_valid_spent
+            pass_budget = min(max(200, remaining // 4), remaining)
+            max_valid = self.valid_examples + pass_budget
+        self._current_phase = "target"
+        start_valid = self.valid_examples
+        start_calls = self.call_count
+        try:
+            self.optimise_targets(max_valid=max_valid)
+        finally:
+            self._target_passes += 1
+            self._last_pass_valid_spent = self.valid_examples - start_valid
+            self._target_valid_spent += self._last_pass_valid_spent
+            self._last_pass_calls = self.call_count - start_calls
+            self._valid_at_last_pass = self.valid_examples
+            self._best_scores_at_last_pass = dict(self.best_observed_targets)
+            self._current_phase = "generate"
+
+    def optimise_targets(self, *, max_valid: int | None = None) -> None:
         """If any target observations have been made, attempt to optimise them
-        all."""
+        all, stopping early if ``self.valid_examples`` reaches ``max_valid``."""
         if not self.should_optimise:
             return
         from hypothesis.internal.conjecture.optimiser import Optimiser
 
-        # We want to avoid running the optimiser for too long in case we hit
-        # an unbounded target score. We start this off fairly conservatively
-        # in case interesting examples are easy to find and then ramp it up
-        # on an exponential schedule so we don't hamper the optimiser too much
-        # if it needs a long time to find good enough improvements.
-        max_improvements = 10
+        self._last_pass_improvements = 0
         while True:
             prev_calls = self.call_count
 
             any_improvements = False
 
             for target, data in list(self.best_examples_of_observed_targets.items()):
+                if max_valid is not None and self.valid_examples >= max_valid:
+                    return
+                # We want to avoid running the optimiser for too long in case
+                # we hit an unbounded target score. We start this off fairly
+                # conservatively in case interesting examples are easy to find
+                # and then ramp it up on an exponential schedule so we don't
+                # hamper the optimiser too much if it needs a long time to
+                # find good enough improvements.
                 optimiser = Optimiser(
-                    self, data, target, max_improvements=max_improvements
+                    self,
+                    data,
+                    target,
+                    max_improvements=self._optimiser_max_improvements,
                 )
                 optimiser.run()
+                self._last_pass_improvements += optimiser.improvements
                 if optimiser.improvements > 0:
                     any_improvements = True
 
             if self.interesting_examples:
                 break
 
-            max_improvements *= 2
+            self._optimiser_max_improvements = min(
+                self._optimiser_max_improvements * 2, 1000
+            )
+
+            if max_valid is not None and self.valid_examples >= max_valid:
+                break
 
             if any_improvements:
                 continue

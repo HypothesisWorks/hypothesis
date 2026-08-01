@@ -218,6 +218,114 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     assert runner.best_observed_targets["m"] == 100
 
 
+def record_optimise_passes(runner):
+    """Record runner.valid_examples at the start of each optimisation pass."""
+    seen = []
+    original = runner.optimise_targets
+
+    def recording(**kwargs):
+        seen.append(runner.valid_examples)
+        original(**kwargs)
+
+    runner.optimise_targets = recording
+    return seen
+
+
+def test_small_budgets_run_a_single_pass_at_half_budget():
+    def test(data):
+        data.target_observations["n"] = data.draw_integer(0, 2**16 - 1)
+
+    runner = ConjectureRunner(test, settings=runner_settings, random=Random(0))
+    seen = record_optimise_passes(runner)
+    runner.run()
+
+    assert len(seen) == 1
+    assert seen[0] >= 50
+
+
+def test_large_budgets_start_optimising_early():
+    def test(data):
+        data.target_observations["n"] = data.draw_integer(0, 2**16 - 1)
+
+    runner = ConjectureRunner(
+        test, settings=settings(runner_settings, max_examples=2000), random=Random(0)
+    )
+    seen = record_optimise_passes(runner)
+    runner.run()
+
+    assert seen[0] <= 250
+
+
+def scheduler_state_runner(**kwargs):
+    runner = ConjectureRunner(
+        lambda data: None,
+        settings=settings(runner_settings, max_examples=2000),
+        random=Random(0),
+    )
+    runner._target_passes = 1
+    runner._last_pass_valid_spent = 100
+    runner._last_pass_calls = 200
+    runner._valid_at_last_pass = 300
+    runner.valid_examples = 300
+    runner._best_scores_at_last_pass = {"n": 5.0}
+    runner.best_observed_targets["n"] = 5.0
+    for k, v in kwargs.items():
+        setattr(runner, k, v)
+    return runner
+
+
+def test_reruns_when_generation_finds_a_new_best_score():
+    runner = scheduler_state_runner(valid_examples=360)
+    assert not runner._should_optimise_now(200)
+    runner.best_observed_targets["n"] = 10.0
+    assert runner._should_optimise_now(200)
+
+
+def test_reruns_on_fair_share_schedule_while_still_improving():
+    runner = scheduler_state_runner(valid_examples=400, _last_pass_improvements=50)
+    assert runner._should_optimise_now(200)
+
+
+def test_does_not_rerun_a_dry_optimiser():
+    runner = scheduler_state_runner(valid_examples=400, _last_pass_improvements=0)
+    assert not runner._should_optimise_now(200)
+
+
+def test_does_not_rerun_once_target_budget_is_spent():
+    runner = scheduler_state_runner(
+        valid_examples=1500, _last_pass_improvements=50, _target_valid_spent=1000
+    )
+    assert not runner._should_optimise_now(200)
+
+
+def test_plateaued_score_does_not_rerun_optimiser():
+    def test(data):
+        data.draw_integer(0, 2**16 - 1)
+        data.target_observations["n"] = 1.0
+
+    runner = ConjectureRunner(
+        test, settings=settings(runner_settings, max_examples=2000), random=Random(0)
+    )
+    seen = record_optimise_passes(runner)
+    runner.run()
+
+    assert len(seen) == 1
+
+
+def test_optimisation_spend_is_bounded_for_large_budgets():
+    def test(data):
+        n = sum(data.draw_integer(0, 100) for _ in range(5))
+        data.target_observations["n"] = n
+
+    runner = ConjectureRunner(
+        test, settings=settings(runner_settings, max_examples=2000), random=Random(0)
+    )
+    runner.run()
+
+    # aim for roughly half the budget, with some per-pass overshoot allowed.
+    assert runner._target_valid_spent <= 1500
+
+
 @given(nodes())
 @example(
     ChoiceNode(
