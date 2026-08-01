@@ -79,6 +79,20 @@ def test_user_error_and_frozen_after_freeze_is_reported() -> None:
     assert isinstance(e.exceptions[1], TypeError)
 
 
+def test_user_error_with_non_stoptest_context_after_freeze_is_reported() -> None:
+    @given(st.data())
+    def user_error_with_context(data: DataObject) -> None:
+        data.conjecture_data.freeze()
+        try:
+            raise ValueError("inner")
+        except ValueError:
+            raise TypeError("outer")
+
+    with pytest.raises(TypeError, match="outer") as excinfo:
+        user_error_with_context()
+    assert isinstance(excinfo.value.__context__, ValueError)
+
+
 def test_user_error_and_stoptest() -> None:
     # if the code base had "proper" handling of exceptiongroups, the StopTest would
     # probably be handled by an except*.
