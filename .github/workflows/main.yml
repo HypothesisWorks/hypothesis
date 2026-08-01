@@ -297,6 +297,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
+        # Deep enough to diff the PR merge commit against its base parent.
+        fetch-depth: 2
     - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: "3.14"
@@ -305,6 +307,18 @@ jobs:
         pattern: coverage-data-*
         path: coverage-data
     - run: |
+        # PRs which change no python-test-relevant files skip most check-*
+        # tasks entirely (see `if_changed` in hypothesistooling and BUILD_FILES
+        # therein), so several jobs contribute no coverage data and the
+        # combined report can't reach 100%.  Report it anyway, but only
+        # enforce the threshold when the data is complete.
+        FAIL_UNDER=100
+        if [[ "$GITHUB_EVENT_NAME" == pull_request ]] && \
+           ! git diff --name-only HEAD^1 HEAD | \
+             grep -qE '^(hypothesis/(src|tests|rust|scripts|pyproject\.toml|tox\.ini)|tooling/|requirements/|\.github/)'; then
+          echo "Python tests were skipped for this PR, so coverage data is incomplete."
+          FAIL_UNDER=0
+        fi
         pip install coverage
         cd hypothesis
         python -m coverage combine ../coverage-data/*/.coverage*
@@ -312,12 +326,8 @@ jobs:
         # which means `coverage report` will look for a directory named hypothesis.
         # cd into the right dir to make that happen.
         cd src
-        REPORT="python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage"
-        # Show a full coverage report, including files we would otherwise omit.
-        # This line cannot fail: it's purely for debugging / observability.
-        $REPORT --omit=no-such-file --fail-under=0
-        # Now, run the actual report. This line can fail.
-        $REPORT
+        python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage \
+          --fail-under=$FAIL_UNDER
 
   check-required:
     if: always()
