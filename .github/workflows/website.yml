@@ -5,8 +5,10 @@ on:
   push:
     branches: ["master"]
 
-  # On pull requests we build the website but don't deploy it, so that broken
-  # changes are caught in review rather than after merging.
+  # On pull requests we build the website but don't deploy it to Pages, so
+  # that broken changes are caught in review rather than after merging.  If
+  # the PR touches the website we also upload artifacts which the
+  # website-preview workflow deploys to Cloudflare Pages as a live preview.
   pull_request:
     branches: ["master"]
 
@@ -32,16 +34,40 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
+          # Deep enough to diff the PR merge commit against its base parent.
+          fetch-depth: 2
+      - name: Check whether the PR touches the website
+        id: changes
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(website/|\.github/workflows/website)'; then
+            echo "website=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "website=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build website
         run: ./build.sh website
       # Serve this with e.g. `python -m http.server` instead of opening the
       # files directly, because the site uses root-relative links.
       - name: Upload preview artifact
+        if: github.event_name != 'pull_request' || steps.changes.outputs.website == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: website
           path: 'website/output/'
           retention-days: 14
+      # Uploaded only when the PR touches the website, so that the preview
+      # workflow deploys (and comments on) only website PRs.
+      - name: Save PR number for the preview deployment
+        if: github.event_name == 'pull_request' && steps.changes.outputs.website == 'true'
+        run: echo "${{ github.event.pull_request.number }}" > pr-number.txt
+      - name: Upload PR number artifact
+        if: github.event_name == 'pull_request' && steps.changes.outputs.website == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-number
+          path: pr-number.txt
+          retention-days: 1
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
