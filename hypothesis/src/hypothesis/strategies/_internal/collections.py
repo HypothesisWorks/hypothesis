@@ -357,8 +357,18 @@ class UniqueListStrategy(ListStrategy[Ex]):
             self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
         data.start_span(UNIQUE_COLLECTION_LABEL)
+        if data.unique_element_depth == 0:
+            # Reset the enumeration of "simplest" template draws for each
+            # top-level unique collection, so that probes are canonical.  A
+            # collection nested inside another unique collection keeps
+            # counting, so that sibling elements remain distinct.
+            data.simplest_index = 0
         while elements.more():
-            value = filtered.do_filtered_draw(data)
+            data.unique_element_depth += 1
+            try:
+                value = filtered.do_filtered_draw(data)
+            finally:
+                data.unique_element_depth -= 1
             if value is filter_not_satisfied:
                 elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
