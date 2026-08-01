@@ -6,7 +6,7 @@ author: drmaciver
 ---
 
 Probably the number one complaint I hear from Hypothesis users is that it
-"doesn't work" with py.test fixtures. [This isn't true](http://hypothesis.works/articles/hypothesis-pytest-fixtures/),
+"doesn't work" with pytest fixtures. [This isn't true](http://hypothesis.works/articles/hypothesis-pytest-fixtures/),
 but it does have one very specific limitation in how it works that annoys people:
 It only runs function scoped fixtures once for the entire test, not once per
 example. Because of the way people use function scoped fixtures for handling

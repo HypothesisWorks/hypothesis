@@ -59,10 +59,10 @@ and turns it into a normal test function.
 
 An important consequence of that is that Hypothesis is not itself a test
 runner. It works inside your normal testing framework - it will work fine
-with nose, py.test, unittest, etc. because all it does is expose a function
+with nose, pytest, unittest, etc. because all it does is expose a function
 of the right name that the test runner can then pick up.
 
-Using it with a py.test or nose style test looks like this:
+Using it with a pytest or nose style test looks like this:
 
 ```python
 from mercurial.encoding import fromutf8b, toutf8b

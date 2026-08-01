@@ -12,7 +12,7 @@ What happens when you run a test using Hypothesis? This article will help you un
 The Python version of Hypothesis uses *decorators* to transform a test function that
 doesn't use Hypothesis into one that does.
 
-Consider the following example using [py.test](http://pytest.org/latest/) style testing:
+Consider the following example using [pytest](http://pytest.org/latest/) style testing:
 
 ```python
 from hypothesis import given
@@ -31,7 +31,7 @@ decorator takes none and may be invoked as a normal test:
 python -m pytest test_floats.py
 ```
 
-And we see the following output from py.test:
+And we see the following output from pytest:
 
 ```
     @given(floats(), floats())
