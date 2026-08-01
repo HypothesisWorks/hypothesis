@@ -8,7 +8,8 @@ name: Deploy website preview
 #
 # Requires a Cloudflare Pages project named `hypothesis-website`, and the
 # CLOUDFLARE_API_TOKEN (with Cloudflare Pages:Edit) and CLOUDFLARE_ACCOUNT_ID
-# repository secrets.
+# secrets in the `website-preview` environment, which should have a deployment
+# branch policy allowing only master so that no other workflow can read them.
 
 on:
   # Safe here because we never check out or execute anything from the PR.
@@ -26,6 +27,7 @@ jobs:
   deploy-preview:
     if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    environment: website-preview
     permissions:
       actions: read
       contents: read
