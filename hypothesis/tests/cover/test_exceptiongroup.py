@@ -85,8 +85,8 @@ def test_user_error_with_non_stoptest_context_after_freeze_is_reported() -> None
         data.conjecture_data.freeze()
         try:
             raise ValueError("inner")
-        except ValueError:
-            raise TypeError("outer")
+        except ValueError as err:
+            raise TypeError("outer") from err
 
     with pytest.raises(TypeError, match="outer") as excinfo:
         user_error_with_context()
