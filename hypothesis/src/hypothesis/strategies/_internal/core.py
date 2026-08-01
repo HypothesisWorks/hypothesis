@@ -668,9 +668,8 @@ def characters(
       that list will be not be produced. Any overlap between
       ``include_characters`` and ``exclude_characters`` will raise an
       exception.
-    - If ``codec`` is specified, only characters which round-trip - i.e. encode
-      and then decode back to the same character - under the specified
-      `codec encodings`_ will be produced.
+    - If ``codec`` is specified, only characters in the specified `codec encodings`_
+      will be produced.
 
     The ``_codepoint`` arguments must be integers between zero and
     :obj:`python:sys.maxunicode`.  The ``_characters`` arguments must be
@@ -689,10 +688,12 @@ def characters(
     ``include_characters`` which cannot be encoded using this codec will
     raise an exception.  If non-encodable codepoints or categories are
     explicitly allowed, the ``codec`` argument will exclude them without
-    raising an exception.  A few legacy codecs also have characters which
-    encode successfully but decode to something else - for example the yen
-    sign becomes a backslash under ``shift_jis`` - and these are excluded
-    too, unless passed in ``include_characters``.
+    raising an exception.  A few legacy codecs have characters which encode
+    successfully but do not decode back to the same character - for example
+    the yen sign becomes a backslash under ``shift_jis`` - and if any could
+    be generated we raise an error, unless each is passed in either
+    ``include_characters`` (to generate it anyway) or ``exclude_characters``
+    (to generate only characters which round-trip).
 
     .. _general category: https://en.wikipedia.org/wiki/Unicode_character_property
     .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode

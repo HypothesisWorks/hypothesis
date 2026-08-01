@@ -1,8 +1,9 @@
 RELEASE_TYPE: minor
 
-The ``codec`` argument to :func:`~hypothesis.strategies.characters` now
-excludes characters which do not round-trip: a few legacy codecs have lossy
-mappings where encoding succeeds but decoding returns a different character,
-for example the yen sign becomes a backslash under ``shift_jis``, so
-generated strings could fail encode-decode round-trip tests (:issue:`4813`).
-If you want such characters anyway, pass them in ``include_characters``.
+:func:`~hypothesis.strategies.characters` now raises an error if the
+``codec`` argument would allow generating characters which encode
+successfully but do not decode back to the same character - for example
+the yen sign becomes a backslash under ``shift_jis`` - since strings
+containing them do not round-trip (:issue:`4813`).  Pass each such
+character in ``include_characters`` to generate it anyway, or in
+``exclude_characters`` to generate only characters which round-trip.
