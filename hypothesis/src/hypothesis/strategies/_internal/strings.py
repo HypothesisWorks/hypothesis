@@ -15,7 +15,11 @@ from collections.abc import Collection
 from functools import cache, lru_cache, partial
 from typing import cast
 
-from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.errors import (
+    HypothesisWarning,
+    InvalidArgument,
+    NonRoundTrippableCharactersWarning,
+)
 from hypothesis.internal import charmap
 from hypothesis.internal.charmap import Categories
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -84,13 +88,19 @@ class OneCharStringStrategy(SearchStrategy[str]):
                 # also show the \u-escaped form, in case the raw repr doesn't
                 # display or copy-paste cleanly in the user's terminal
                 aka = "" if ascii(chars) == repr(chars) else f" (aka {chars!a})"
-                raise InvalidArgument(
+                warnings.warn(
                     f"Characters {chars!r}{aka} can be encoded with "
                     f"codec={codec!r}, but do not decode back to the same "
                     "character, so strings containing them do not round-trip.  "
-                    "Please pass each of them in either include_characters, "
-                    f"to generate them anyway, or exclude_characters={chars!r}, "
-                    "to generate only characters which round-trip."
+                    "Pass each of them in either include_characters, to "
+                    f"generate them without this warning, or "
+                    f"exclude_characters={chars!r}, to generate only "
+                    "characters which round-trip.",
+                    NonRoundTrippableCharactersWarning,
+                    # this stacklevel is of course incorrect, but breaking out
+                    # of the levels of LazyStrategy and validation isn't
+                    # worthwhile.
+                    stacklevel=1,
                 )
         # include_characters are generated even if excluded by other arguments,
         # such as the passed categories or codepoint range.  (overlap with
