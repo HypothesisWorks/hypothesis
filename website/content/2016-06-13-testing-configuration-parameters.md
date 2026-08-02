@@ -126,14 +126,14 @@ In both cases, a password would no longer validate against itself:
 
 
 ```
-Falsifying example: test_a_password_verifies(
+Failing test case: test_a_password_verifies(
     password='', time_cost=1, parallelism=1, memory_cost=8, hash_len=4,
     salt_len=8,
 )
 ```
 
 ```
-Falsifying example: test_a_password_verifies(
+Failing test case: test_a_password_verifies(
     password='', time_cost=1, parallelism=1, memory_cost=8,
     hash_len=513, salt_len=8
 )

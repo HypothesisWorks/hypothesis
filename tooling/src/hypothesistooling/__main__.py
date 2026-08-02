@@ -55,6 +55,7 @@ from hypothesistooling.release import (
     create_github_release,
     get_autoupdate_message,
     has_release,
+    install_hypothesis_editable,
     tag_name,
     update_changelog_and_version,
     upload_distribution_to_pypi,
@@ -115,6 +116,7 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
+    pip_tool("zizmor", ".github/")
     codespell(*(p for p in all_files() if not p.name.endswith("by-domain.txt")))
 
     failed = False
@@ -258,13 +260,15 @@ def format(*, format_all=False):
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
 
-    # .coveragerc lists several regex patterns to treat as nocover pragmas, and
+    # pyproject.toml lists several regex patterns to treat as nocover pragmas, and
     # we want to find (and delete) cases where # pragma: no cover is redundant.
     def warn(msg):
         raise Exception(msg)
 
     config = CoverageConfig()
-    config.from_file(os.path.join(HYPOTHESIS, ".coveragerc"), warn=warn, our_file=True)
+    config_file = os.path.join(HYPOTHESIS, "pyproject.toml")
+    success = config.from_file(config_file, warn=warn, our_file=True)
+    assert success, config_file
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
 
@@ -603,6 +607,70 @@ def update_pyodide_versions():
     ci_file.write_text(config, encoding="utf-8")
 
 
+@task()
+def update_gha_pins():
+    """Pin each github action to the commit sha of its latest release.
+
+    Based on https://github.com/davidism/gha-update.
+    """
+    uses_re = re.compile(
+        r"(?P<prefix>\buses: +)"
+        r"(?P<action>[\w.-]+/[\w.-]+)(?P<subdir>/[^@\s]+)?"
+        r"@(?P<ref>\S+)"
+        r"(?P<comment>.*)$"
+    )
+    files = [
+        *(ROOT / ".github" / "workflows").glob("*.yml"),
+        *(ROOT / ".github" / "actions").glob("*/action.yml"),
+    ]
+    actions = {
+        m["action"]
+        for f in files
+        for line in f.read_text(encoding="utf-8").splitlines()
+        if (m := uses_re.search(line))
+    }
+
+    session = requests.Session()
+    if token := os.environ.get("GITHUB_TOKEN", os.environ.get("GH_TOKEN")):
+        session.headers["Authorization"] = f"Bearer {token}"
+
+    latest = {}
+    for action in sorted(actions):
+        url = f"https://api.github.com/repos/{action}/tags?per_page=100"
+        tags = {}
+        while url:
+            response = session.get(url)
+            response.raise_for_status()
+            tags.update({t["name"]: t["commit"]["sha"] for t in response.json()})
+            url = response.links.get("next", {}).get("url")
+
+        versions = {}
+        for name in tags:
+            try:
+                versions[tuple(map(int, name.removeprefix("v").split(".")))] = name
+            except ValueError:
+                continue
+        assert versions, f"no release tags found for action {action}"
+
+        tag = versions[max(versions)]
+        latest[action] = (tag, tags[tag])
+
+    def replace(m):
+        tag, sha = latest[m["action"]]
+        line = f"{m['prefix']}{m['action']}{m['subdir'] or ''}@{sha} # {tag}"
+        # preserve existing comments, minus the version comment we manage
+        comment = re.sub(r"^\s*#\s*v?\d+(\.\d+)*(?=\s|$)", "", m["comment"]).strip()
+        if comment:
+            line += f" {comment}"
+        return line
+
+    for f in files:
+        lines = f.read_text(encoding="utf-8").splitlines(keepends=True)
+        f.write_text(
+            "".join(uses_re.sub(replace, line) for line in lines), encoding="utf-8"
+        )
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -650,6 +718,7 @@ def upgrade_requirements():
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
+    update_gha_pins()
     subprocess.call(["git", "add", "."], cwd=ROOT)
 
 
@@ -663,17 +732,24 @@ def documentation():
     try:
         if has_release():
             update_changelog_and_version()
+        install_hypothesis_editable()
         build_docs()
     finally:
         subprocess.check_call(
-            ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
+            [
+                "git",
+                "checkout",
+                "docs/changelog.rst",
+                "rust/Cargo.toml",
+                "rust/Cargo.lock",
+            ],
             cwd=HYPOTHESIS,
         )
 
 
 @task()
 def website():
-    subprocess.call([sys.executable, "-m", "pelican"], cwd=ROOT / "website")
+    subprocess.check_call([sys.executable, "-m", "pelican"], cwd=ROOT / "website")
 
 
 @task()
@@ -686,6 +762,7 @@ def live_website():
 
 @task()
 def live_docs():
+    install_hypothesis_editable()
     pip_tool(
         "sphinx-autobuild",
         "docs",
@@ -742,8 +819,8 @@ PYTHONS = {
     "3.13": "3.13.14",
     "3.14": "3.14.6",
     "3.14t": "3.14.6+freethreaded",
-    "3.15": "3.15.0b3",
-    "3.15t": "3.15.0b3+freethreaded",
+    "3.15": "3.15.0b4",
+    "3.15t": "3.15.0b4+freethreaded",
     "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version_python = (
@@ -751,8 +828,8 @@ ci_version_python = (
 )
 
 # automatically updated by update_pyodide_versions()
-PYODIDE_VERSION = "314.0.2"
-PYODIDE_BUILD_VERSION = "0.36.0"
+PYODIDE_VERSION = "314.0.3"
+PYODIDE_BUILD_VERSION = "0.37.0"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
@@ -988,15 +1065,7 @@ def check_whole_repo_tests(*args):
 @task()
 def check_documentation(*args):
     install.ensure_shellcheck()
-    install.ensure_rustc(ci_version_rust)
-    # Here is why -e is necessary: our docs build prepends src/ onto sys.path so the local
-    # source code is consulted first. Without -e, any rust code is compiled into site-packages,
-    # which the src/ prepending will not reference. -e causes rust code to be compiled
-    # into src/, which lets our sys.path edit pick it up.
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "-e", HYPOTHESIS],
-        env={**os.environ, **rust_build_env()},
-    )
+    install_hypothesis_editable()
 
     if not args:
         args = ["-n", "auto", REPO_TESTS / "documentation"]

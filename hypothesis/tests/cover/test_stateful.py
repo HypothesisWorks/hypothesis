@@ -30,6 +30,7 @@ from hypothesis.core import encode_failure
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
     DidNotReproduce,
+    FailedHealthCheck,
     Flaky,
     FlakyStrategyDefinition,
     InvalidArgument,
@@ -48,6 +49,11 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 from hypothesis.strategies import binary, data, integers, just, lists
+from hypothesis.strategies._internal.collections import (
+    UniqueListStrategy,
+    UniqueSampledListStrategy,
+)
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.utils import (
     Why,
@@ -295,7 +301,7 @@ def test_multiple_variables_printed():
         run_state_machine_as_test(ProducesMultiple)
 
     # This is tightly coupled to the output format of the step printing.
-    # The first line is "Falsifying Example:..." the second is creating
+    # The first line is "Failing test case:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
     assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 2 values, so should be
@@ -352,7 +358,7 @@ def test_no_variables_printed():
         run_state_machine_as_test(ProducesNoVariables)
 
     # This is tightly coupled to the output format of the step printing.
-    # The first line is "Falsifying Example:..." the second is creating
+    # The first line is "Failing test case:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
     assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 0 values, so there should be no
@@ -732,7 +738,7 @@ def test_invariant_failling_present_in_falsifying_example():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = BadInvariant()
 state.initialize_1()
 state.invariant_1()
@@ -774,7 +780,7 @@ def test_invariant_present_in_falsifying_example():
         run_state_machine_as_test(BadRuleWithGoodInvariants)
 
     expected = """
-Falsifying example:
+Failing test case:
 state = BadRuleWithGoodInvariants()
 state.invariant_1()
 state.initialize_1()
@@ -943,7 +949,7 @@ def test_initialize_rule_populate_bundle():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = WithInitializeBundleRules()
 a_0 = state.initialize_a(dep='dep')
 state.fail_fast(param=a_0)
@@ -1071,7 +1077,7 @@ def test_can_manually_call_initialize_rule():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = StateMachine()
 state.initialize()
 state.fail_eventually()
@@ -1091,7 +1097,7 @@ def test_steps_printed_despite_pytest_fail():
     with pytest.raises(Failed) as err:
         run_state_machine_as_test(RaisesProblem)
     assert "\n".join(err.value.__notes__).strip() == """
-Falsifying example:
+Failing test case:
 state = RaisesProblem()
 state.oops()
 state.teardown()""".strip()
@@ -1305,7 +1311,7 @@ def test_single_target_multiple():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 state.fail_fast(param=a_2)
@@ -1354,7 +1360,7 @@ def test_targets_repr(bundle_names, initial, repr_):
 
     result = "\n".join(err.value.__notes__)
     assert result == f"""
-Falsifying example:
+Failing test case:
 state = Machine()
 {repr_}
 state.fail_fast()
@@ -1388,7 +1394,7 @@ def test_multiple_targets():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 b_0, b_1, b_2 = a_0, a_1, a_2
@@ -1426,7 +1432,7 @@ def test_multiple_common_targets():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Falsifying example:
+Failing test case:
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 b_0, b_1, b_2 = a_0, a_1, a_2
@@ -1507,6 +1513,271 @@ def test_use_bundle_within_other_strategies():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_can_filter_bundle():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(10))
+
+        @rule(value=values.filter(lambda x: x % 2 == 0))
+        def use(self, value):
+            assert value % 2 == 0
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_can_map_bundle():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(1, 2, 3)
+
+        @rule(value=values.map(lambda x: x * 10))
+        def use(self, value):
+            assert value in (10, 20, 30)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_can_filter_mapped_bundle():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(10))
+
+        @rule(value=values.filter(lambda x: x % 2 == 0).map(lambda x: x + 1))
+        def use(self, value):
+            assert value % 2 == 1
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_filtering_consumed_bundle_consumes_only_the_drawn_value():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(10))
+
+        @rule(value=consumes(values).filter(lambda x: x % 2 == 0))
+        def pop_even(self, value):
+            assert value % 2 == 0
+            remaining = {
+                self.names_to_values[ref.name] for ref in self.bundle("values")
+            }
+            # rejected values are not consumed from the bundle
+            assert {1, 3, 5, 7, 9} <= remaining
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=20)
+    run_state_machine_as_test(Machine)
+
+
+def test_can_consume_filtered_bundle():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(4))
+
+        @rule(value=consumes(values.filter(lambda x: x == 3)))
+        def pop(self, value):
+            assert value == 3
+
+    Machine.TestCase.settings = Settings(stateful_step_count=1, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_can_consume_mapped_bundle():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(1, 2, 3)
+
+        @rule(value=consumes(values).map(lambda x: x * 10))
+        def pop(self, value):
+            assert value in (10, 20, 30)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=2, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_prints_variable_names_for_filtered_bundle_arguments():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(1, 2, 3)
+
+        @rule(
+            a1=values.filter(lambda x: x < 2),
+            a2=values.filter(lambda x: x > 2),
+            a3=values,
+        )
+        def fail_fast(self, a1, a2, a3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert result == """
+Failing test case:
+state = Machine()
+values_0, values_1, values_2 = state.fill()
+state.fail_fast(a1=values_0, a2=values_2, a3=values_2)
+state.teardown()
+""".strip()
+
+
+def test_prints_variable_names_for_consumed_filtered_bundle_arguments():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(1, 2, 3)
+
+        @rule(
+            v1=consumes(values).filter(lambda x: x < 2),
+            v2=consumes(values).filter(lambda x: x > 2),
+            v3=consumes(values),
+        )
+        def fail_fast(self, v1, v2, v3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert result == """
+Failing test case:
+state = Machine()
+values_0, values_1, values_2 = state.fill()
+state.fail_fast(v1=values_0, v2=values_2, v3=values_1)
+state.teardown()
+""".strip()
+
+
+def test_prints_mapped_bundle_values_directly():
+    # With a map transformation, the value passed to the rule is not the one
+    # stored on the machine - so we print the transformed value, not the name.
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple("ret1", "ret2")
+
+        @rule(
+            v1=values,
+            v2=values.map(lambda x: x + x),
+            v3=consumes(values).map(lambda x: x + x),
+            v4=values,
+        )
+        def fail_fast(self, v1, v2, v3, v4):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert result == """
+Failing test case:
+state = Machine()
+values_0, values_1 = state.fill()
+state.fail_fast(v1=values_1, v2='ret2ret2', v3='ret2ret2', v4=values_0)
+state.teardown()
+""".strip()
+
+
+@xfail_on_crosshair(Why.other, strict=False)  # health check may not trigger
+def test_unsatisfiable_bundle_filter_fails_health_check():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return 0
+
+        @rule(value=values.filter(lambda x: False))
+        def use(self, value):
+            raise AssertionError("should be unreachable")
+
+    Machine.TestCase.settings = Settings(stateful_step_count=2, max_examples=2)
+    with pytest.raises(FailedHealthCheck, match="filter_too_much"):
+        run_state_machine_as_test(Machine)
+
+
+def test_can_generate_unique_lists_of_bundle_values():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(5))
+
+        @rule(vs=lists(values, unique=True, min_size=2))
+        def use(self, vs):
+            assert len(set(vs)) == len(vs)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=3, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_can_generate_unique_lists_of_filtered_bundle_values():
+    class Machine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(10))
+
+        @rule(vs=lists(values.filter(lambda x: x % 2 == 0), unique=True, min_size=2))
+        def use(self, vs):
+            assert len(set(vs)) == len(vs)
+            assert all(v % 2 == 0 for v in vs)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=3, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_unique_lists_of_bundle_values_use_the_generic_unique_strategy():
+    # A Bundle's elements are only known at draw time, so lists(..., unique=True)
+    # must not route to UniqueSampledListStrategy, which statically inspects the
+    # elements of a SampledFromStrategy when the lists() strategy is constructed.
+    s = unwrap_strategies(lists(Bundle("b"), unique=True))
+    assert isinstance(s, UniqueListStrategy)
+    assert not isinstance(s, UniqueSampledListStrategy)
+
+
+def test_bundle_repr_includes_transformations():
+    b = Bundle("b")
+    assert repr(b) == "Bundle(name='b')"
+    assert repr(consumes(b)) == "Bundle(name='b', consume=True)"
+    assert repr(b.filter(bool)) == "Bundle(name='b').filter(bool)"
+    assert (
+        repr(consumes(b.filter(bool))) == "Bundle(name='b', consume=True).filter(bool)"
+    )
+    assert repr(consumes(b).filter(bool)) == repr(consumes(b.filter(bool)))
 
 
 def test_precondition_cannot_be_used_without_rule():

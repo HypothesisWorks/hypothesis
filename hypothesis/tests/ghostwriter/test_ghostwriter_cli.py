@@ -17,9 +17,12 @@ import subprocess
 import sys
 
 import pytest
+from click.testing import CliRunner
 
+import hypothesis.utils.terminal
 from hypothesis import settings, strategies as st
 from hypothesis.errors import StopTest
+from hypothesis.extra import cli
 from hypothesis.extra.ghostwriter import (
     binary_operation,
     equivalent,
@@ -92,13 +95,17 @@ def test_cli_python_equivalence(cli, code):
         ),
         (
             "re.srch",
-            "Found the 're' module, but it doesn't have a 'srch' attribute.  "
-            "Closest matches: ['search']",
+            (
+                "Found the 're' module, but it doesn't have a 'srch' attribute.  "
+                "Closest matches: ['search']"
+            ),
         ),
         (
             "re.fmatch",
-            "Found the 're' module, but it doesn't have a 'fmatch' attribute.  "
-            "Closest matches: ['match', 'fullmatch'",
+            (
+                "Found the 're' module, but it doesn't have a 'fmatch' attribute.  "
+                "Closest matches: ['match', 'fullmatch'"
+            ),
             # Python >= 3.7 has 'Match' objects too
         ),
     ],
@@ -230,3 +237,32 @@ def test_empty_module_is_not_error(tmp_path):
     assert result.returncode == 0
     assert "Error: " not in result.stderr
     assert "# Found no testable functions" in result.stdout
+
+
+def test_errors_equivalent_flag_with_multiple_functions():
+    # with two or more functions, --errors-equivalent sets allow_same_errors=True on the
+    # equivalence test.
+    result = run("hypothesis write --errors-equivalent eval ast.literal_eval")
+    result.check_returncode()
+    assert not result.stderr
+    expected = equivalent(eval, ast.literal_eval, allow_same_errors=True)
+    assert result.stdout.strip() == expected.strip()
+
+
+def test_write_command_reports_syntax_highlighting_errors(monkeypatch):
+    # If something goes wrong while syntax-highlighting the generated code with
+    # `rich`, we fall back to printing the plain code after a warning instead
+    # of crashing.  Without `rich` installed we never try highlighting at all.
+    pytest.importorskip("rich")
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError
+
+    monkeypatch.setattr(
+        hypothesis.utils.terminal, "guess_background_color", raise_error
+    )
+    runner = CliRunner()
+    result = runner.invoke(cli.main, ["write", "sorted"])
+    assert result.exit_code == 0
+    assert "# Error while syntax-highlighting code" in result.output
+    assert "def test_fuzz_sorted" in result.output

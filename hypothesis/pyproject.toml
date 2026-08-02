@@ -70,7 +70,7 @@ def test_matches_builtin(ls):
     assert sorted(ls) == my_sort(ls)
 ```
 
-This randomized testing can catch bugs and edge cases that you didn't think of and wouldn't have found. In addition, when Hypothesis does find a bug, it doesn't just report any failing example — it reports the simplest possible one. This makes property-based tests a powerful tool for debugging, as well as testing.
+This randomized testing can catch bugs and edge cases that you didn't think of and wouldn't have found. In addition, when Hypothesis does find a bug, it doesn't just report any failing test case — it reports the simplest possible one. This makes property-based tests a powerful tool for debugging, as well as testing.
 
 For instance,
 
@@ -79,10 +79,10 @@ def my_sort(ls):
     return sorted(set(ls))
 ```
 
-fails with the simplest possible failing example:
+fails with the simplest possible failing test case:
 
 ```
-Falsifying example: test_matches_builtin(ls=[0, 0])
+Failing test case: test_matches_builtin(ls=[0, 0])
 ```
 
 ### Installation
@@ -116,7 +116,7 @@ pandas = ["pandas>=1.1"]
 pytest = ["pytest>=4.6"]
 dpcontracts = ["dpcontracts>=0.4"]
 redis = ["redis>=3.0.0"]
-crosshair = ["hypothesis-crosshair>=0.0.28", "crosshair-tool>=0.0.108"]
+crosshair = ["hypothesis-crosshair>=0.0.30", "crosshair-tool>=0.0.109"]
 # zoneinfo is an odd one: every dependency is platform-conditional.
 zoneinfo = ["tzdata>=2026.3; sys_platform == 'win32' or sys_platform == 'emscripten'"]
 # We only support Django versions with upstream support - see
@@ -126,7 +126,7 @@ zoneinfo = ["tzdata>=2026.3; sys_platform == 'win32' or sys_platform == 'emscrip
 django = ["django>=5.2"]
 watchdog = ["watchdog>=4.0.0"]
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
-all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.108", "django>=5.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.28", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.21.6", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2026.3; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
+all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.109", "django>=5.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.30", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.21.6", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2026.3; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
 [project.scripts]
 hypothesis = "hypothesis.extra.cli:main"
@@ -153,27 +153,40 @@ exclude = [
 [tool.coverage.run]
 parallel = true
 branch = true
-source = ["hypothesis"]
-omit = [
-    "**/_hypothesis_ftz_detector.py",
-    "**/_hypothesis_pytestplugin.py",
-    "**/_hypothesis_globals.py",
-    "**/extra/array_api.py",
-    "**/extra/cli.py",
-    "**/extra/django/*.py",
-    "**/extra/ghostwriter.py",
-    "**/extra/pytestplugin.py",
-    "**/internal/scrutineer.py",
-    "**/utils/terminal.py",
-    "**/internal/conjecture/provider_conformance.py",
-    # covered by our attrs tests in check-niche
-    "**/strategies/_internal/attrs.py"
+# Some of our CI jobs don't import any modules measured under coverage.
+disable_warnings = ["module-not-imported"]
+# note that we use source_pkgs here to avoid the ambiguity between
+# the "hypothesis" package and the "hypothesis" directory during
+# resolution by coverage.py. source_pkgs forces package-only resolution.
+source_pkgs = [
+    "hypothesis",
+    "_hypothesis_ftz_detector",
+    "_hypothesis_globals",
+    "_hypothesis_pytestplugin",
 ]
+
+[tool.coverage.paths]
+# Tests run against an installed copy, so each job measures a different
+# site-packages directory; map them onto our source tree so we can combine them.
+#
+# The keys of `source-paths` and `top-level-modules` here are arbitrary and
+# ignored. See
+# https://coverage.readthedocs.io/en/latest/config.html#paths.
+# (Note however that order matters).
+source-paths = ["src/hypothesis", "*/site-packages/hypothesis"]
+# e.g. our _hypothesis_pytestplugin, _hypothesis_globals, etc modules.
+top-level-modules = ["src", "*/site-packages"]
 
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
 skip_covered = true
+# Omitted when reporting rather than when measuring, so that we can also report
+# on how close the combined data comes to covering these modules.
+omit = [
+    # only reachable via an also-excluded branch in strategies/_internal/numbers.py
+    "**/_hypothesis_ftz_detector.py",
+]
 exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",

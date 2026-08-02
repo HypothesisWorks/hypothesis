@@ -132,7 +132,7 @@ When using |st.composite|, you have to finish generating the entire input before
 
 .. note::
 
-    The downside of this power is that |st.data| is incompatible |@example|, and that Hypothesis cannot print a nice representation of values generated from |st.data| when reporting failing examples, because the draws are spread out. Where possible, prefer |st.composite| to |st.data|.
+    The downside of this power is that |st.data| is incompatible |@example|, and that Hypothesis cannot print a nice representation of values generated from |st.data| when reporting |failing test cases|, because the draws are spread out. Where possible, prefer |st.composite| to |st.data|.
 
 For instance, here's how we would write our earlier |st.composite| example using |st.data|:
 

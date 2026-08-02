@@ -12,6 +12,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Cancel in-progress PR builds if another commit is pushed.
 # On non-PR builds, fall back to the globally-unique run_id and don't cancel.
 concurrency:
@@ -34,10 +37,15 @@ jobs:
       fail-fast: false
     env:
       PYTHON_VERSION: "3.14"
+      # These jobs all run on 3.14, where coverage.py uses sys.monitoring and so
+      # costs us very little.  Tasks which don't use tox just won't measure any.
+      COVERAGE_PROCESS_START: ${{ github.workspace }}/hypothesis/pyproject.toml
+      COVERAGE_FILE: ${{ github.workspace }}/hypothesis/.coverage
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -58,6 +66,15 @@ jobs:
         else
           ./build.sh
         fi
+    - name: Upload any coverage data
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ always() }}
+      with:
+        name: coverage-data-${{ matrix.task }}
+        include-hidden-files: true
+        # only some of the jobs in this matrix produce coverage output.
+        if-no-files-found: ignore
+        path: hypothesis/.coverage*
 
   req:
     needs: [basic]
@@ -69,6 +86,7 @@ jobs:
           - check-types-api
           - check-coverage
           - check-conjecture-coverage
+          - check-snapshots
           - check-release-smoke
           - check-py310-cover
           - check-py310-nocover
@@ -84,6 +102,8 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
+          # niche tests also collect coverage on 3.14; see the run step below.
+          - check-py314-niche
           - check-quality
           - check-pytest9
           - check-pytest84
@@ -105,9 +125,10 @@ jobs:
     env:
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -116,6 +137,11 @@ jobs:
     - name: Run tests
       run: |
         export TASK=${{ matrix.task }}
+        if [[ $TASK == check-py314-niche ]]; then
+          # Collect (sys.monitoring-based) coverage from this job too.
+          export COVERAGE_PROCESS_START=${{ github.workspace }}/hypothesis/pyproject.toml
+          export COVERAGE_FILE=${{ github.workspace }}/hypothesis/.coverage
+        fi
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
           ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis && echo tests/$GROUP | xargs -n1 echo | grep -Ev "_py312|_py314" | xargs)
@@ -123,15 +149,16 @@ jobs:
           ./build.sh
         fi
     - name: Upload coverage data
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       # Invoke the magic `always` function to run on both success and failure.
-      if: ${{ always() && endsWith(matrix.task, '-coverage') }}
+      # check-django60 and check-py314-niche also collect coverage; see
+      # [testenv:django] in tox.ini and the run step above.
+      if: ${{ always() && (endsWith(matrix.task, '-coverage') || matrix.task == 'check-django60' || matrix.task == 'check-py314-niche') }}
       with:
-        name: ${{ matrix.task }}-data
+        name: coverage-data-${{ matrix.task }}
         include-hidden-files: true
         path: |
           hypothesis/.coverage*
-          !hypothesis/.coveragerc
           hypothesis/branch-check*
 
   nonreq:
@@ -142,10 +169,6 @@ jobs:
         task:
           - check-py314-cover
           - check-py314-nocover
-          # Blocked by a 3.14rc1 bug. see
-          # https://github.com/HypothesisWorks/hypothesis/pull/4490#issuecomment-3144989862.
-          # Can revisit in 3.14rc2.
-          # - check-py314-niche
           - check-py314t-cover
           - check-py314t-nocover
           - check-py314t-niche
@@ -174,9 +197,10 @@ jobs:
     env:
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
@@ -224,9 +248,10 @@ jobs:
       # Override default from tox.ini
       PYTHONWARNDEFAULTENCODING: ""
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ matrix.python-version }} ${{ matrix.python-architecture }}"
       uses: ./.github/actions/install-base
       with:
@@ -249,28 +274,68 @@ jobs:
       NODE_VERSION: 22
       PYTHON_VERSION: "3.14"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: "Install base for Python ${{ env.PYTHON_VERSION }}"
       uses: ./.github/actions/install-base
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         task: check-pyodide
     - name: Set up Node
-      uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: ${{ env.NODE_VERSION }}
     - name: Run tests
       run: ./build.sh check-pyodide
 
+  coverage-report:
+    needs: [basic, req]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+        # Deep enough to diff the PR merge commit against its base parent.
+        fetch-depth: 2
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.14"
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        pattern: coverage-data-*
+        path: coverage-data
+    - run: |
+        # PRs which change no python-test-relevant files skip most check-*
+        # tasks entirely (see `if_changed` in hypothesistooling and BUILD_FILES
+        # therein), so several jobs contribute no coverage data and the
+        # combined report can't reach 100%.  Report it anyway, but only
+        # enforce the threshold when the data is complete.
+        FAIL_UNDER=100
+        if [[ "$GITHUB_EVENT_NAME" == pull_request ]] && \
+           ! git diff --name-only HEAD^1 HEAD | \
+             grep -qE '^(hypothesis/(src|tests|rust|scripts|pyproject\.toml|tox\.ini)|tooling/|requirements/|\.github/)'; then
+          echo "Python tests were skipped for this PR, so coverage data is incomplete."
+          FAIL_UNDER=0
+        fi
+        pip install coverage
+        cd hypothesis
+        python -m coverage combine ../coverage-data/*/.coverage*
+        # We set `source = ["hypothesis"]` in [tool.coverage.run] in pyproject.toml,
+        # which means `coverage report` will look for a directory named hypothesis.
+        # cd into the right dir to make that happen.
+        cd src
+        python -m coverage report --rcfile=../pyproject.toml --data-file=../.coverage \
+          --fail-under=$FAIL_UNDER
+
   check-required:
     if: always()
-    needs: [basic, req, cross]
+    needs: [basic, req, cross, coverage-report]
     runs-on: ubuntu-latest
     steps:
     - name: Check required jobs
-      uses: re-actors/alls-green@release/v1
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
       with:
         jobs: ${{ toJSON(needs) }}
 

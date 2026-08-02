@@ -17,7 +17,15 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
-from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.stateful import (
+    Bundle,
+    RuleBasedStateMachine,
+    consumes,
+    initialize,
+    invariant,
+    multiple,
+    rule,
+)
 from hypothesis.strategies import SearchStrategy
 
 from tests.common.debug import check_can_generate_examples
@@ -55,6 +63,34 @@ def test_run_stateful_test_concurrently():
         @invariant()
         def my_invariant(self):
             pass
+
+    TestMyStateful = MyStateMachine.TestCase().runTest
+    run_concurrently(TestMyStateful, n=2)
+
+
+def test_run_stateful_test_with_transformed_bundles_concurrently():
+    # Bundles (and the reference-drawing copies Rule creates from them) are
+    # shared by every instance of the machine class, including across threads,
+    # so drawing from a bundle must not store per-draw state on the strategy.
+    class MyStateMachine(RuleBasedStateMachine):
+        values = Bundle("values")
+
+        @initialize(target=values)
+        def fill(self):
+            return multiple(*range(10))
+
+        @rule(target=values, n=values.filter(lambda x: x % 2 == 0))
+        def use_filtered(self, n):
+            assert n % 2 == 0
+            return n
+
+        @rule(n=values.map(lambda x: -x - 1))
+        def use_mapped(self, n):
+            assert n < 0
+
+        @rule(n=consumes(values).filter(lambda x: x % 2 == 0))
+        def pop_even(self, n):
+            assert n % 2 == 0
 
     TestMyStateful = MyStateMachine.TestCase().runTest
     run_concurrently(TestMyStateful, n=2)

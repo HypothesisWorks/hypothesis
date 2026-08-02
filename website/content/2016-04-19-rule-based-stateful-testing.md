@@ -86,7 +86,7 @@ E         Use -v to get the full diff
 
 binheap.py:74: AssertionError
 ----- Hypothesis -----
-Falsifying example: test_pop_in_sorted_order(ls=[0, 1, 0])
+Failing test case: test_pop_in_sorted_order(ls=[0, 1, 0])
 ```
 
 So we replace heappop with a correct implementation which rebalances the heap:
@@ -154,7 +154,7 @@ The @precondition decorator constrains when a rule is allowed to fire: We are no
 an empty heap, so the pop rule may only fire when there is data to be popped.
 
 We can run this by getting a standard unit test TestCase object out of it to be picked up by unittest
-or py.test as normal:
+or pytest as normal:
 
 ```python
 TestHeaps = HeapMachine.TestCase

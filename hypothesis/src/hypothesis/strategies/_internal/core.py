@@ -20,10 +20,15 @@ import sys
 import typing
 import warnings
 from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
     Callable,
     Collection,
+    Generator,
     Hashable,
     Iterable,
+    Iterator,
     Mapping,
     Sequence,
 )
@@ -31,7 +36,15 @@ from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import Parameter, Signature, isabstract, isclass
+from inspect import (
+    Parameter,
+    Signature,
+    isabstract,
+    isasyncgenfunction,
+    isclass,
+    iscoroutinefunction,
+    isgeneratorfunction,
+)
 from re import Pattern
 from types import EllipsisType, FunctionType, GenericAlias
 from typing import (
@@ -166,12 +179,11 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @overload
-def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cover
-    ...
+def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]: ...
 
 
 @overload
-def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
+def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     ...
 
@@ -179,8 +191,7 @@ def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: n
 @overload
 def sampled_from(
     elements: type[enum.Enum] | Sequence[Any],
-) -> SearchStrategy[Any]:  # pragma: no cover
-    ...
+) -> SearchStrategy[Any]: ...
 
 
 @defines_strategy(eager="try")
@@ -257,7 +268,7 @@ def sampled_from(
         def has_annotations(elements):
             if sys.version_info[:2] < (3, 14):
                 return vars(elements).get("__annotations__")
-            else:  # pragma: no cover  # covered by 3.14 tests
+            else:
                 import annotationlib
 
                 return bool(annotationlib.get_annotations(elements))
@@ -297,7 +308,7 @@ def lists(
     min_size: int = 0,
     max_size: int | None = None,
     unique_by: (
-        None | Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...]
+        Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...] | None
     ) = None,
     unique: bool = False,
 ) -> SearchStrategy[list[Ex]]:
@@ -484,7 +495,7 @@ def iterables(
     min_size: int = 0,
     max_size: int | None = None,
     unique_by: (
-        None | Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...]
+        Callable[[Ex], Hashable] | tuple[Callable[[Ex], Hashable], ...] | None
     ) = None,
     unique: bool = False,
 ) -> SearchStrategy[Iterable[Ex]]:
@@ -526,8 +537,7 @@ V2 = TypeVar("V2")
 @overload
 def fixed_dictionaries(
     mapping: Mapping[K, SearchStrategy[V]],
-) -> SearchStrategy[dict[K, V]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K, V]]: ...
 
 
 @overload
@@ -538,8 +548,7 @@ def fixed_dictionaries(
     mapping: Mapping[NoReturn, NoReturn],
     *,
     optional: Mapping[K2, SearchStrategy[V2]],
-) -> SearchStrategy[dict[K2, V2]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K2, V2]]: ...
 
 
 @overload
@@ -547,8 +556,7 @@ def fixed_dictionaries(
     mapping: Mapping[K, SearchStrategy[V]],
     *,
     optional: Mapping[K2, SearchStrategy[V2]],
-) -> SearchStrategy[dict[K | K2, V | V2]]:  # pragma: no cover
-    ...
+) -> SearchStrategy[dict[K | K2, V | V2]]: ...
 
 
 @defines_strategy()
@@ -693,7 +701,14 @@ def characters(
     ``include_characters`` which cannot be encoded using this codec will
     raise an exception.  If non-encodable codepoints or categories are
     explicitly allowed, the ``codec`` argument will exclude them without
-    raising an exception.
+    raising an exception.  A few legacy codecs have characters which encode
+    successfully but do not decode back to the same character - for example
+    the yen sign becomes a backslash under ``shift_jis`` - and if any could
+    be generated we issue
+    :class:`~hypothesis.errors.NonRoundTrippableCharactersWarning`.  Pass
+    each of them in either ``include_characters``, to generate them without
+    the warning, or ``exclude_characters``, to generate only characters
+    which round-trip.
 
     .. _general category: https://en.wikipedia.org/wiki/Unicode_character_property
     .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode
@@ -859,45 +874,18 @@ def text(
     so generated strings may be in any or none of the 'normal forms'.
     """
     check_valid_sizes(min_size, max_size)
-    if isinstance(alphabet, SearchStrategy):
-        char_strategy = unwrap_strategies(alphabet)
-        if isinstance(char_strategy, SampledFromStrategy):
-            # Check this via the up-front validation logic below, and incidentally
-            # convert into a `characters()` strategy for standard text shrinking.
-            return text(char_strategy.elements, min_size=min_size, max_size=max_size)
-        elif not isinstance(char_strategy, OneCharStringStrategy):
-            char_strategy = char_strategy.map(_check_is_single_character)
+    check_type((Collection, SearchStrategy), alphabet, "alphabet")
+
+    char_strategy: SearchStrategy[str] | None
+    if not isinstance(alphabet, SearchStrategy) and not alphabet:
+        char_strategy = nothing()
     else:
-        non_string = [c for c in alphabet if not isinstance(c, str)]
-        if non_string:
-            raise InvalidArgument(
-                "The following elements in alphabet are not unicode "
-                f"strings:  {non_string!r}"
-            )
-        not_one_char = [c for c in alphabet if len(c) != 1]
-        if not_one_char:
-            raise InvalidArgument(
-                "The following elements in alphabet are not of length one, "
-                f"which leads to violation of size constraints:  {not_one_char!r}"
-            )
-        if alphabet in ["ascii", "utf-8"]:
-            warnings.warn(
-                f"st.text({alphabet!r}): it seems like you are trying to use the "
-                f"codec {alphabet!r}. st.text({alphabet!r}) instead generates "
-                f"strings using the literal characters {list(alphabet)!r}. To specify "
-                f"the {alphabet} codec, use st.text(st.characters(codec={alphabet!r})). "
-                "If you intended to use character literals, you can silence this "
-                "warning by reordering the characters.",
-                HypothesisWarning,
-                # this stacklevel is of course incorrect, but breaking out of the
-                # levels of LazyStrategy and validation isn't worthwhile.
-                stacklevel=1,
-            )
-        char_strategy = (
-            characters(categories=(), include_characters=alphabet)
-            if alphabet
-            else nothing()
-        )
+        char_strategy = OneCharStringStrategy.from_alphabet(alphabet)
+        if char_strategy is None:
+            # a strategy which cannot be statically resolved to a fixed set of
+            # characters; check each character as it is drawn instead.
+            assert isinstance(alphabet, SearchStrategy)
+            char_strategy = unwrap_strategies(alphabet).map(_check_is_single_character)
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
     # mypy is unhappy with ListStrategy(SearchStrategy[list[Ex]]) and then TextStrategy
@@ -911,8 +899,7 @@ def from_regex(
     regex: bytes | Pattern[bytes],
     *,
     fullmatch: bool = False,
-) -> SearchStrategy[bytes]:  # pragma: no cover
-    ...
+) -> SearchStrategy[bytes]: ...
 
 
 @overload
@@ -920,9 +907,8 @@ def from_regex(
     regex: str | Pattern[str],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] | None = characters(codec="utf-8"),
-) -> SearchStrategy[str]:  # pragma: no cover
-    ...
+    alphabet: Collection[str] | SearchStrategy[str] | None = characters(codec="utf-8"),
+) -> SearchStrategy[str]: ...
 
 
 @cacheable
@@ -931,7 +917,7 @@ def from_regex(
     regex: AnyStr | Pattern[AnyStr],
     *,
     fullmatch: bool = False,
-    alphabet: str | SearchStrategy[str] | None = None,
+    alphabet: Collection[str] | SearchStrategy[str] | None = None,
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
@@ -957,20 +943,31 @@ def from_regex(
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
     string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
-    The ``alphabet=`` argument constrains the characters in the generated
-    string, as for :func:`text`, and is only supported for unicode strings.
+    The ``alphabet=`` argument may be a collection of length one strings or a strategy
+    generating such strings. ``alphabet`` constrains the characters in the generated
+    string, as for :func:`text`, and is only supported for unicode strings. If a
+    strategy is passed to ``alphabet=``, it must resolve to a fixed set of characters;
+    for example, by being a |st.characters|, |st.sampled_from|, or a |st.one_of| union
+    of such strategies.
 
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
     """
     check_type((str, bytes, re.Pattern), regex, "regex")
     check_type(bool, fullmatch, "fullmatch")
+
     pattern = regex.pattern if isinstance(regex, re.Pattern) else regex
     if alphabet is not None:
-        check_type((str, SearchStrategy), alphabet, "alphabet")
+        check_type((Collection, SearchStrategy), alphabet, "alphabet")
         if not isinstance(pattern, str):
             raise InvalidArgument("alphabet= is not supported for bytestrings")
-        alphabet = OneCharStringStrategy.from_alphabet(alphabet)
+        resolved = OneCharStringStrategy.from_alphabet(alphabet)
+        if resolved is None:
+            raise InvalidArgument(
+                f"{alphabet=} must be a collection of characters, or a "
+                "sampled_from() or characters() strategy"
+            )
+        alphabet = resolved
     elif isinstance(pattern, str):
         alphabet = characters(codec="utf-8")
 
@@ -1011,7 +1008,7 @@ def randoms(
     are of a special HypothesisRandom subclass.
 
     - If ``note_method_calls`` is set to ``True``, Hypothesis will print the
-      randomly drawn values in any falsifying test case. This can be helpful
+      randomly drawn values in the |minimal failing test case|. This can be helpful
       for debugging the behaviour of randomized algorithms.
     - If ``use_true_random`` is set to ``True`` then values will be drawn from
       their usual distribution, otherwise they will actually be Hypothesis
@@ -1236,7 +1233,7 @@ def builds(
             isinstance(target, type)
             and (attr := sys.modules.get("attr")) is not None
             and attr.has(target)
-        ):  # pragma: no cover  # covered by our attrs tests in check-niche
+        ):
             # Use our custom introspection for attrs classes
             from hypothesis.strategies._internal.attrs import from_attrs
 
@@ -1442,7 +1439,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     if types.is_a_union(thing):
         args = sorted(thing.__args__, key=types.type_sorting_key)  # type: ignore
         return one_of([_from_type(t) for t in args])
-    if thing in types.LiteralStringTypes:  # pragma: no cover
+    if thing in types.LiteralStringTypes:
         # We can't really cover this because it needs either
         # typing-extensions or python3.11+ typing.
         # `LiteralString` from runtime's point of view is just a string.
@@ -1471,7 +1468,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 "`from __future__ import annotations` instead of forward-reference "
                 "strings."
             )
-        raise InvalidArgument(f"{thing=} must be a type")  # pragma: no cover
+        raise InvalidArgument(f"{thing=} must be a type")
 
     if thing in types.NON_RUNTIME_TYPES:
         # Some code like `st.from_type(TypeAlias)` does not make sense.
@@ -1498,7 +1495,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[origin], thing)
             if strategy is not NotImplemented:
                 return strategy
-    except TypeError:  # pragma: no cover
+    except TypeError:
         # This was originally due to a bizarre divergence in behaviour on Python 3.9.0:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
         # has __args__ = ([], foo); and as a result is non-hashable.
@@ -2073,7 +2070,7 @@ class DrawFn(Protocol):
     """
 
     def __init__(self):
-        raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
+        raise TypeError("Protocols cannot be instantiated")
 
     # Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
@@ -2509,18 +2506,18 @@ def data() -> SearchStrategy[DataObject]:
             n2 = data.draw(st.integers(min_value=n1))
             assert n1 + 1 <= n2
 
-    If the test fails, each draw will be printed with the falsifying example.
+    If the test fails, each draw will be printed with the |minimal failing test case|.
     e.g. the above is wrong (it has a boundary condition error), so will print:
 
     .. code-block:: pycon
 
-        Falsifying example: test_values(data=data(...))
+        Failing test case: test_values(data=data(...))
         Draw 1: 0
         Draw 2: 0
 
     Optionally, you can provide a label to identify values generated by each call
     to ``data.draw()``.  These labels can be used to identify values in the
-    output of a falsifying example.
+    output of a failing test case.
 
     For instance:
 
@@ -2536,7 +2533,7 @@ def data() -> SearchStrategy[DataObject]:
 
     .. code-block:: pycon
 
-        Falsifying example: test_draw_sequentially(data=data(...))
+        Failing test case: test_draw_sequentially(data=data(...))
         Draw 1 (First number): 0
         Draw 2 (Second number): 0
 
@@ -2548,7 +2545,7 @@ def data() -> SearchStrategy[DataObject]:
 if sys.version_info < (3, 12):
     # TypeAliasType is new in 3.12
     RegisterTypeT: TypeAlias = type[Ex]
-else:  # pragma: no cover  # covered by test_mypy.py
+else:
     from typing import TypeAliasType
 
     # see https://github.com/HypothesisWorks/hypothesis/issues/4410
@@ -2708,38 +2705,70 @@ def _functions(*, like, returns, pure):
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
+    if pure and (
+        iscoroutinefunction(like)
+        or isgeneratorfunction(like)
+        or isasyncgenfunction(like)
+    ):
+        raise InvalidArgument(
+            f"pure=True is invalid for like={nicerepr(like)!r}, because async "
+            "functions are for non-deterministic IO and generators are consumed "
+            "by iteration, so returning a cached value makes no sense"
+        )
+    is_gen = isgeneratorfunction(like) or isasyncgenfunction(like)
     if returns in (None, ...):
-        # Passing `None` has never been *documented* as working, but it still
-        # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
-        returns = from_type(hints.get("return", type(None)))
+        if is_gen:
+            # The return annotation describes the iterator, so e.g. yield
+            # integers for `-> Iterator[int]` or `-> AsyncIterator[int]`.
+            allowed = (
+                (AsyncIterator, AsyncIterable, AsyncGenerator)
+                if isasyncgenfunction(like)
+                else (Iterator, Iterable, Generator)
+            )
+            ret = hints.get("return")
+            # normalize eg Iterator[bool] to Iterator while keeping Iterator as Iterator.
+            kind = get_origin(ret) or ret
+            if ret is not None and kind not in allowed:
+                options = ", ".join(t.__name__ for t in allowed)
+                raise InvalidArgument(
+                    f"Cannot infer the yield type of like={nicerepr(like)!r} "
+                    f"from its return annotation {ret!r}. Expected one of "
+                    f"{options}. Alternatively, pass returns= to specify the yield type "
+                    "explicitly."
+                )
+            args = get_args(ret)
+            returns = from_type(args[0]) if args else none()
+        else:
+            # Passing `None` has never been *documented* as working, but it
+            # still did from May 2020 to Jan 2022 so we'll avoid breaking it
+            # without cause.
+            returns = from_type(hints.get("return", type(None)))
     check_strategy(returns, "returns")
+    if is_gen:
+        # Generated generator functions draw a list of values to yield up front.
+        returns = lists(returns)
     return FunctionStrategy(like, returns, pure)
 
 
 if typing.TYPE_CHECKING or ParamSpec is not None:
 
     @overload
-    def functions(
-        *, pure: bool = ...
-    ) -> SearchStrategy[Callable[[], None]]:  # pragma: no cover
-        ...
+    def functions(*, pure: bool = ...) -> SearchStrategy[Callable[[], None]]: ...
 
     @overload
     def functions(
         *,
         like: Callable[P, T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[P, T]]: ...
 
     @overload
     def functions(
         *,
         returns: SearchStrategy[T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[[], T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[[], T]]: ...
 
     @overload
     def functions(
@@ -2747,8 +2776,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         like: Callable[P, Any],
         returns: SearchStrategy[T],
         pure: bool = ...,
-    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
-        ...
+    ) -> SearchStrategy[Callable[P, T]]: ...
 
     @defines_strategy()
     def functions(*, like=lambda: None, returns=..., pure=False):
@@ -2763,6 +2791,20 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         for the function is drawn from the ``returns`` argument, which must be a
         strategy.  If ``returns`` is not passed, we attempt to infer a strategy
         from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``like`` is an async function, a generator function, or an async
+        generator function, the generated function will be of the same kind.
+        Awaiting a generated async function returns a value drawn from
+        ``returns``, while generated generator functions draw a list of
+        values from ``returns`` up front and then yield from it - so a
+        return-type annotation like ``Iterator[int]`` or ``AsyncIterator[int]``
+        means we infer ``returns=integers()``.  ``pure=True`` is only
+        supported when ``like`` is a plain function.
+
+        Generated async functions and async generators follow Trio-style
+        checkpoint semantics, using :pypi:`anyio` or :pypi:`sniffio` if
+        imported to find the right way to checkpoint, and falling back to
+        :mod:`asyncio` otherwise.
 
         If ``pure=True``, all arguments passed to the generated function must be
         hashable, and if passed identical arguments the original return value will
@@ -2794,6 +2836,20 @@ else:  # pragma: no cover
         for the function is drawn from the ``returns`` argument, which must be a
         strategy.  If ``returns`` is not passed, we attempt to infer a strategy
         from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``like`` is an async function, a generator function, or an async
+        generator function, the generated function will be of the same kind.
+        Awaiting a generated async function returns a value drawn from
+        ``returns``, while generated generator functions draw a list of
+        values from ``returns`` up front and then yield from it - so a
+        return-type annotation like ``Iterator[int]`` or ``AsyncIterator[int]``
+        means we infer ``returns=integers()``.  ``pure=True`` is only
+        supported when ``like`` is a plain function.
+
+        Generated async functions and async generators follow Trio-style
+        checkpoint semantics, using :pypi:`anyio` or :pypi:`sniffio` if
+        imported to find the right way to checkpoint, and falling back to
+        :mod:`asyncio` otherwise.
 
         If ``pure=True``, all arguments passed to the generated function must be
         hashable, and if passed identical arguments the original return value will

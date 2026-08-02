@@ -12,7 +12,7 @@ from enum import Flag, auto
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
+from tests.common.utils import run_test_for_failing_test_case
 from tests.snapshots.conftest import SNAPSHOT_SETTINGS
 
 
@@ -31,7 +31,7 @@ def test_data_draw(snapshot):
         data.draw(st.text(max_size=3))
         raise AssertionError
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_sampled_from_enum_flag(snapshot):
@@ -45,7 +45,7 @@ def test_sampled_from_enum_flag(snapshot):
     def inner(c):
         assert not (c & Color.RED)
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_sampled_from_module_level_enum_flag(snapshot):
@@ -54,4 +54,4 @@ def test_sampled_from_module_level_enum_flag(snapshot):
     def inner(d):
         assert not (d & Direction.NORTH)
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot

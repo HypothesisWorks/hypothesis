@@ -26,6 +26,7 @@ from hypothesis.internal.floats import (
 )
 
 from tests.common.debug import find_any, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 try:
     import numpy
@@ -259,6 +260,12 @@ def test_cannot_exclude_endpoint_with_zero_interval(lo, hi, exmin, exmax):
 WIDTHS = (64, 32, 16)
 
 
+# crosshair-tool 0.0.109 can realize a symbolic float to a rational that is not
+# representable as an IEEE double (e.g. 1 + 2**-1064 when constrained to != 1);
+# converting it to a concrete float then rounds to the excluded value, so the
+# bounds-validation in st.floats() raises a spurious InvalidArgument.  Remove
+# once a fixed crosshair-tool is pinned.
+@xfail_on_crosshair(Why.other, strict=False)
 @pytest.mark.parametrize("nonfloat", [st.nothing(), st.none()])
 @given(data=st.data(), width=st.sampled_from(WIDTHS))
 def test_fuzzing_floats_bounds(data, width, nonfloat):

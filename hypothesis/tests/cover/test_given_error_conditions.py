@@ -39,7 +39,7 @@ def test_raises_unsatisfiable_if_passed_explicit_nothing():
 
     with pytest.raises(
         Unsatisfiable,
-        match=r"Cannot generate examples from empty strategy: x=nothing\(\)",
+        match=r"Cannot generate test cases from empty strategy: x=nothing\(\)",
     ):
         test_never_runs()
 

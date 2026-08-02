@@ -15,7 +15,7 @@ import unicodedata
 import pytest
 
 from hypothesis import HealthCheck, Phase, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
     SPACE_CHARS,
@@ -499,6 +499,35 @@ def test_can_pass_union_for_alphabet(_):
     pass
 
 
+@pytest.mark.parametrize("alphabet", ["ab", ("a", "b"), ["a", "b"], {"a", "b"}])
+def test_can_pass_collections_for_alphabet(alphabet):
+    assert_all_examples(
+        st.from_regex(r".+", alphabet=alphabet), lambda s: set(s) <= {"a", "b"}
+    )
+
+
+@pytest.mark.parametrize(
+    "alphabet, error_part",
+    [
+        (("a", 1), "not unicode strings"),
+        (("ab",), "not of length one"),
+        (st.sampled_from(["a", 1]), "not unicode strings"),
+        (st.sampled_from(["ab"]), "not of length one"),
+        (st.sampled_from("ab").map(str.upper), "must be a collection of characters"),
+        (st.integers(), "must be a collection of characters"),
+        (st.just("a") | st.integers(), "must be a collection of characters"),
+    ],
+)
+def test_invalid_alphabets(alphabet, error_part):
+    with pytest.raises(InvalidArgument, match=error_part):
+        st.from_regex(r".", alphabet=alphabet).validate()
+
+
+def test_alphabet_codec_warning():
+    with pytest.warns(HypothesisWarning, match="trying to use the codec"):
+        st.from_regex(r".", alphabet="ascii").validate()
+
+
 @pytest.mark.parametrize("explain", [False, True])
 def test_regex_output_should_print_as_string(explain):
     phases = [Phase.generate, Phase.shrink]
@@ -516,7 +545,7 @@ def test_regex_output_should_print_as_string(explain):
     explain_line = "  # or any other generated value" if explain else ""
 
     expected = f"""
-Falsifying example: test(
+Failing test case: test(
     s='00',{explain_line}
 )
 """

@@ -81,7 +81,11 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData, Status
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
+from hypothesis.internal.conjecture.engine import (
+    BUFFER_SIZE,
+    ConjectureRunner,
+    ExitReason,
+)
 from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
@@ -197,11 +201,11 @@ class example:
     any random inputs. |@example| may be placed in any order relative to |@given|
     and |@settings|.
 
-    Explicit inputs from |@example| are run in the |Phase.explicit| phase.
-    Explicit inputs do not count towards |settings.max_examples|. Note that
-    explicit inputs added by |@example| do not shrink. If an explicit input
-    fails, Hypothesis will stop and report the failure without generating any
-    random inputs.
+    |Explicit examples| from |@example| are run in the
+    |Phase.explicit| phase. Explicit examples do not count towards
+    |settings.max_examples|. Note that explicit examples added by |@example| do
+    not shrink. If an explicit example fails, Hypothesis will stop and report
+    the failure without generating any random inputs.
 
     |@example| can also be used to easily reproduce a failure. For instance, if
     Hypothesis reports that ``f(n=[0, math.nan])`` fails, you can add
@@ -341,11 +345,11 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
 
     ``seed`` may be any hashable object. No exact meaning for ``seed`` is provided
     other than that for a fixed seed value Hypothesis will produce the same
-    examples (assuming that there are no other sources of nondeterminisim, such
+    |test cases| (assuming that there are no other sources of nondeterminisim, such
     as timing, hash randomization, or external state).
 
     For example, the following test function and |RuleBasedStateMachine| will
-    each generate the same series of examples each time they are executed:
+    each generate the same series of test cases each time they are executed:
 
     .. code-block:: python
 
@@ -382,11 +386,11 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
 
 def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
     """
-    Run the example corresponding to the binary ``blob`` in order to reproduce a
+    Run the |test case| corresponding to the binary ``blob`` in order to reproduce a
     failure. ``blob`` is a serialized version of the internal input representation
     of Hypothesis.
 
-    A test decorated with |@reproduce_failure| always runs exactly one example,
+    A test decorated with |@reproduce_failure| always runs exactly one test case,
     which is expected to cause a failure. If the provided ``blob`` does not
     cause a failure, Hypothesis will raise |DidNotReproduce|.
 
@@ -527,7 +531,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     if empty:
         strats = "strategies" if len(empty) > 1 else "strategy"
         return invalid(
-            f"Cannot generate examples from empty {strats}: " + ", ".join(empty),
+            f"Cannot generate test cases from empty {strats}: " + ", ".join(empty),
             exc=Unsatisfiable,
         )
 
@@ -647,7 +651,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 with contextlib.suppress(StopTest):
                     empty_data.conclude_test(Status.INVALID)
             except BaseException as err:
-                # In order to support reporting of multiple failing examples, we yield
+                # In order to support reporting of multiple failing test cases, we yield
                 # each of the (report text, error) pairs we find back to the top-level
                 # runner.  This also ensures that user-facing stack traces have as few
                 # frames of Hypothesis internals as possible.
@@ -682,9 +686,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 break
             finally:
                 if fragments_reported:
-                    assert fragments_reported[0].startswith("Falsifying example")
+                    assert fragments_reported[0].startswith("Failing test case")
                     fragments_reported[0] = fragments_reported[0].replace(
-                        "Falsifying example", "Falsifying explicit example", 1
+                        "Failing test case", "Failing explicit example", 1
                     )
 
                 empty_data.freeze()
@@ -700,7 +704,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     deliver_observation(tc)
 
             if fragments_reported:
-                verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
+                verbose_report(fragments_reported[0].replace("Failing", "Trying", 1))
                 for f in fragments_reported[1:]:
                     verbose_report(f)
 
@@ -718,7 +722,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
     if global_force_seed is not None:
         return Random(global_force_seed)
 
-    if threadlocal._hypothesis_global_random is None:  # pragma: no cover
+    if threadlocal._hypothesis_global_random is None:
         threadlocal._hypothesis_global_random = Random()
     seed = threadlocal._hypothesis_global_random.getrandbits(128)
     wrapped_test._hypothesis_internal_use_generated_seed = seed
@@ -949,7 +953,7 @@ class StateForActualGivenExecution:
         self.failed_normally = False
         self.failed_due_to_deadline = False
 
-        self.explain_traces: dict[None | InterestingOrigin, set[Trace]] = defaultdict(
+        self.explain_traces: dict[InterestingOrigin | None, set[Trace]] = defaultdict(
             set
         )
         self._start_timestamp = time.time()
@@ -1070,9 +1074,9 @@ class StateForActualGivenExecution:
             if print_example or current_verbosity() >= Verbosity.verbose:
                 printer = RepresentationPrinter(context=context)
                 if print_example:
-                    printer.text("Falsifying example:")
+                    printer.text("Failing test case:")
                 else:
-                    printer.text("Trying example:")
+                    printer.text("Test case:")
 
                 if self.print_given_args:
                     printer.text(" ")
@@ -1181,7 +1185,7 @@ class StateForActualGivenExecution:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             raise FlakyFailure(
                 f"Hypothesis {text_repr} produces unreliable results: "
-                "Falsified on the first call but did not on a subsequent one",
+                "Failed on the first call but did not on a subsequent one",
                 [exception],
             )
         return result
@@ -1217,11 +1221,7 @@ class StateForActualGivenExecution:
             with Tracer(should_trace=self._should_trace()) as tracer:
                 try:
                     result = self.execute_once(data)
-                    if (
-                        data.status == Status.VALID and tracer.branches
-                    ):  # pragma: no cover
-                        # This is in fact covered by our *non-coverage* tests, but due
-                        # to the settrace() contention *not* by our coverage tests.
+                    if data.status == Status.VALID and tracer.branches:
                         self.explain_traces[None].add(tracer.branches)
                 finally:
                     trace = tracer.branches
@@ -1313,8 +1313,7 @@ class StateForActualGivenExecution:
                 self.failed_normally = True
 
                 interesting_origin = InterestingOrigin.from_exception(e)
-                if trace:  # pragma: no cover
-                    # Trace collection is explicitly disabled under coverage.
+                if trace:
                     self.explain_traces[interesting_origin].add(trace)
                 if interesting_origin.exc_type == DeadlineExceeded:
                     self.failed_due_to_deadline = True
@@ -1360,6 +1359,11 @@ class StateForActualGivenExecution:
                     self._string_repr = data.provider.realize(self._string_repr)
                 except BackendCannotProceed:
                     self._string_repr = "<backend failed to realize symbolic arguments>"
+
+                try:
+                    data.notes = data.provider.realize(data.notes)
+                except BackendCannotProceed:
+                    data.notes = []
 
                 data.freeze()
                 tc = make_testcase(
@@ -1443,6 +1447,13 @@ class StateForActualGivenExecution:
         else:
             if runner.valid_examples == 0:
                 explanations = []
+                if runner.exit_reason is ExitReason.finished:
+                    explanations.append(
+                        "Hypothesis tried every possible input, so the "
+                        "assumptions of this test are impossible to satisfy - "
+                        "not merely unlikely - and running more test cases "
+                        "cannot help."
+                    )
                 # use a somewhat arbitrary cutoff to avoid recommending spurious
                 # fixes.
                 # eg, a few invalid examples from internal filters when the
@@ -1477,8 +1488,7 @@ class StateForActualGivenExecution:
             and not PYPY
             and self._should_trace()
             and not Tracer.can_trace()
-        ):  # pragma: no cover
-            # actually covered by our tests, but only on >= 3.12
+        ):
             warnings.warn(
                 "avoiding tracing test function because tool id "
                 f"{MONITORING_TOOL_ID} is already taken by tool "
@@ -1562,12 +1572,12 @@ class StateForActualGivenExecution:
             finally:
                 ran_example.freeze()
                 if observability_enabled():
-                    # log our observability line for the final failing example
+                    # log our observability line for the final failing test case
                     tc = make_testcase(
                         run_start=self._start_timestamp,
                         property=self.test_identifier,
                         data=ran_example,
-                        how_generated="minimal failing example",
+                        how_generated="minimal failing test case",
                         representation=self._string_repr,
                         arguments=ran_example._observability_args,
                         timing=self._timing_features,
@@ -1579,12 +1589,12 @@ class StateForActualGivenExecution:
                     deliver_observation(tc)
 
                 # Whether or not replay actually raised the exception again, we want
-                # to print the reproduce_failure decorator for the failing example.
+                # to print the reproduce_failure decorator for the failing test case.
                 if self.settings.print_blob:
                     fragments.append(
-                        "\nYou can reproduce this example by temporarily adding "
+                        "\nYou can reproduce this test case by temporarily adding "
                         f"{reproduction_decorator(falsifying_example.choices)} "
-                        "as a decorator on your test case"
+                        "as a decorator on your test function"
                     )
 
         _raise_to_user(
@@ -1640,7 +1650,7 @@ def _raise_to_user(
     errors_to_report, settings, target_lines, trailer="", *, unsound_backend=None
 ):
     """Helper function for attaching notes and grouping multiple errors."""
-    failing_prefix = "Falsifying example: "
+    failing_prefix = "Failing test case: "
     ls = []
     for error in errors_to_report:
         for note in error.fragments:
@@ -1677,14 +1687,14 @@ def _raise_to_user(
 def fake_subTest(self, msg=None, **__):
     """Monkeypatch for `unittest.TestCase.subTest` during `@given`.
 
-    If we don't patch this out, each failing example is reported as a
+    If we don't patch this out, each failing test case is reported as a
     separate failing test by the unittest test runner, which is
     obviously incorrect. We therefore replace it for the duration with
     this version.
     """
     warnings.warn(
-        "subTest per-example reporting interacts badly with Hypothesis "
-        "trying hundreds of examples, so we disable it for the duration of "
+        "subTest per-test-case reporting interacts badly with Hypothesis "
+        "trying hundreds of test cases, so we disable it for the duration of "
         "any test that uses `@given`.",
         HypothesisWarning,
         stacklevel=2,
@@ -1724,7 +1734,7 @@ class HypothesisHandle:
         * If the bytestring was invalid, for example because it was too short or was
           filtered out by |assume| or |.filter|, |fuzz_one_input| returns ``None``.
         * If the bytestring was valid and the test passed, |fuzz_one_input| returns
-          a canonicalised and pruned bytestring which will replay that test case.
+          a canonicalised and pruned bytestring which will replay that |test case|.
           This is provided as an option to improve the performance of mutating
           fuzzers, but can safely be ignored.
         * If the test *failed*, i.e. raised an exception, |fuzz_one_input| will
@@ -1811,8 +1821,7 @@ def given(
     _: EllipsisType, /
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 @overload
@@ -1820,8 +1829,7 @@ def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 @overload
@@ -1829,8 +1837,7 @@ def given(
     **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
     [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
-]:  # pragma: no cover
-    ...
+]: ...
 
 
 def given(
@@ -1963,7 +1970,7 @@ def given(
             and isinstance(
                 test, sys.modules["_pytest.fixtures"].FixtureFunctionDefinition
             )
-        ):  # pragma: no cover # covered by pytest/test_fixtures, but not by cover/
+        ):
             raise InvalidArgument("@given cannot be applied to a pytest fixture")
 
         given_arguments = tuple(_given_arguments)
@@ -2190,8 +2197,7 @@ def given(
                     # wrapped up in an exception group.  Because we break out of the loop
                     # immediately on finding a skip, if present it's always the last error.
                     if isinstance(errors[-1].exception, skip_exceptions_to_reraise()):
-                        # Covered by `test_issue_3453_regression`, just in a subprocess.
-                        del errors[:-1]  # pragma: no cover
+                        del errors[:-1]
 
                     if state.settings.verbosity < Verbosity.verbose:
                         # keep only one error per interesting origin, unless
@@ -2208,7 +2214,7 @@ def given(
                     and getattr(wrapped_test, "hypothesis_explicit_examples", ())
                 )
                 SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
-                    "Hypothesis has been told to run no examples for this test."
+                    "Hypothesis has been told to run no test cases for this test."
                 )
                 if not (
                     Phase.reuse in settings.phases or Phase.generate in settings.phases

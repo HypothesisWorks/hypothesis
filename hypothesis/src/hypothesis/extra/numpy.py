@@ -992,7 +992,7 @@ def _no_title_is_name_of_a_titled_field(ls):
     seen = set()
     for title_and_name, *_ in ls:
         if isinstance(title_and_name, tuple):
-            if seen.intersection(title_and_name):  # pragma: no cover
+            if seen.intersection(title_and_name):
                 # Our per-element filters below make this as rare as possible,
                 # so it's not always covered.
                 return False

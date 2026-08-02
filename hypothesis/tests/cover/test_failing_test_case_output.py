@@ -13,7 +13,7 @@ import pytest
 from hypothesis import Phase, example, given, settings, strategies as st
 
 OUTPUT_WITH_BREAK = """
-Falsifying explicit example: test(
+Failing explicit example: test(
     x={0!r},
     y={0!r},
 )

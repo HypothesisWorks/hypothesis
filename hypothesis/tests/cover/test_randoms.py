@@ -124,7 +124,20 @@ def any_call(draw):
     return (method, *draw(any_call_of_method(method)))
 
 
-@pytest.mark.parametrize("method", RANDOM_METHODS)
+@pytest.mark.parametrize(
+    "method",
+    [
+        pytest.param(
+            method,
+            marks=(
+                xfail_on_crosshair(Why.other, strict=False, as_marks=True)
+                if method == "triangular"
+                else ()
+            ),
+        )
+        for method in RANDOM_METHODS
+    ],
+)
 @given(any_random, st.data())
 def test_call_all_methods(method, rnd, data):
     args, kwargs = data.draw(any_call_of_method(method))
@@ -177,7 +190,6 @@ def test_copying_synchronizes(r1, method_call):
     assert getattr(r1, method)(*args, **kwargs) == getattr(r2, method)(*args, **kwargs)
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_seeding_to_different_values_does_not_synchronize(use_true_random):
     @given(
@@ -193,7 +205,6 @@ def test_seeding_to_different_values_does_not_synchronize(use_true_random):
         test()
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 @pytest.mark.parametrize("use_true_random", [True, False])
 def test_unrelated_calls_desynchronizes(use_true_random):
     @given(

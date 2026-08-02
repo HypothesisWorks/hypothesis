@@ -173,6 +173,7 @@ def nodes_to_json(nodes: tuple[ChoiceNode, ...]) -> list[dict[str, Any]]:
 class ObservationMetadata:
     traceback: str | None
     reproduction_decorator: str | None
+    notes: list[str]
     predicates: dict[str, PredicateCounts]
     backend: dict[str, Any]
     sys_argv: list[str]
@@ -188,6 +189,7 @@ class ObservationMetadata:
         data = {
             "traceback": self.traceback,
             "reproduction_decorator": self.reproduction_decorator,
+            "notes": self.notes,
             "predicates": self.predicates,
             "backend": self.backend,
             "sys.argv": self.sys_argv,
@@ -259,7 +261,7 @@ class TestCaseObservation(BaseObservation):
 
 def add_observability_callback(f: CallbackT, /, *, all_threads: bool = False) -> None:
     """
-    Adds ``f`` as a callback for :ref:`observability <observability>`. ``f``
+    Adds ``f`` as a callback for |observability|. ``f``
     should accept one argument, which is an observation. Whenever Hypothesis
     produces a new observation, it calls each callback with that observation.
 
@@ -291,7 +293,7 @@ def add_observability_callback(f: CallbackT, /, *, all_threads: bool = False) ->
 
 def remove_observability_callback(f: CallbackT, /) -> None:
     """
-    Removes ``f`` from the :ref:`observability <observability>` callbacks.
+    Removes ``f`` from the |observability| callbacks.
 
     If ``f`` is not in the list of observability callbacks, silently do nothing.
 
@@ -315,7 +317,7 @@ def remove_observability_callback(f: CallbackT, /) -> None:
 
 def observability_enabled() -> bool:
     """
-    Returns whether or not Hypothesis considers :ref:`observability <observability>`
+    Returns whether or not Hypothesis considers |observability|
     to be enabled. Observability is enabled if there is at least one observability
     callback present.
 
@@ -461,6 +463,7 @@ def make_testcase(
                 "reproduction_decorator": (
                     reproduction_decorator(data.choices) if status == "failed" else None
                 ),
+                "notes": list(data.notes),
                 "predicates": dict(data._observability_predicates),
                 "backend": backend_metadata or {},
                 "data_status": data.status,

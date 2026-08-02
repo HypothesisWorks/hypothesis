@@ -51,7 +51,7 @@ assert inf <= 8.98846567431158e+307
  +  where inf = mean([8.988465674311579e+307, 8.98846567431158e+307])
  +  and   8.98846567431158e+307 = max([8.988465674311579e+307, 8.98846567431158e+307])
 
-Falsifying example: test_mean_is_within_reasonable_bounds(
+Failing test case: test_mean_is_within_reasonable_bounds(
     ls=[8.988465674311579e+307, 8.98846567431158e+307]
 )
 ```
@@ -74,7 +74,7 @@ assert 1.390671161567e-309 <= 1.390671161566996e-309
 where 1.390671161567e-309 = min([1.390671161567e-309, 1.390671161567e-309, 1.390671161567e-309])
 and   1.390671161566996e-309 = mean([1.390671161567e-309, 1.390671161567e-309, 1.390671161567e-309])
 
-Falsifying example: test_mean_is_within_reasonable_bounds(
+Failing test case: test_mean_is_within_reasonable_bounds(
     ls=[1.390671161567e-309, 1.390671161567e-309, 1.390671161567e-309]
 )
 ```
@@ -107,7 +107,7 @@ assert inf <= 8.98846567431158e+307
 where inf = mean([8.988465674311579e+307, 8.98846567431158e+307])
 and   8.98846567431158e+307 = max([8.988465674311579e+307, 8.98846567431158e+307])
 
-Falsifying example: test_mean_is_within_reasonable_bounds(
+Failing test case: test_mean_is_within_reasonable_bounds(
     ls=[8.988465674311579e+307, 8.98846567431158e+307]
 )
 ```
@@ -119,7 +119,7 @@ this is broken too
 ```
 OverflowError: integer division result too large for a float
 
-Falsifying example: test_mean_is_within_reasonable_bounds(
+Failing test case: test_mean_is_within_reasonable_bounds(
     ls=[8.988465674311579e+307, 8.98846567431158e+307]
 )
 ```

@@ -1077,7 +1077,7 @@ except ImportError:
         np = Mock()
     else:
         np = None  # type: ignore[assignment]
-if np is not None:
+if np is not None:  # pragma: no branch  # numpy is a hard requirement of our test suite
 
     class FloatInfo(NamedTuple):
         bits: int

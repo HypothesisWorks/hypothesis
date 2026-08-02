@@ -267,8 +267,7 @@ class ArtificialRandom(HypothesisRandom):
                 result = self.__data.draw_integer(start, stop - 1)
         elif method == "randint":
             result = self.__data.draw_integer(kwargs["a"], kwargs["b"])
-        # New in Python 3.12, so not taken by our coverage job
-        elif method == "binomialvariate":  # pragma: no cover
+        elif method == "binomialvariate":
             result = self.__data.draw_integer(0, kwargs["n"])
         elif method == "choice":
             seq = kwargs["seq"]

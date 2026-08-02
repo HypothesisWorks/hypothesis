@@ -43,7 +43,13 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
+from hypothesis.internal.conjecture.provider_conformance import (
+    constraints_strategy,
+    float_constraints,
+    integer_constraints,
+    run_conformance_test,
+    string_constraints,
+)
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
@@ -54,7 +60,7 @@ from hypothesis.internal.floats import SIGNALING_NAN, clamp
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import Observation, _callbacks
 
-from tests.common.debug import minimal
+from tests.common.debug import check_can_generate_examples, minimal
 from tests.common.utils import (
     capture_observations,
     capture_out,
@@ -464,7 +470,7 @@ def test_realization_with_verbosity(verbosity):
 
         with capture_out() as out:
             test_function()
-        assert "Trying example: test_function(\n    f=<symbolic>,\n)" in out.getvalue()
+        assert "Test case: test_function(\n    f=<symbolic>,\n)" in out.getvalue()
 
 
 @pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])
@@ -478,9 +484,7 @@ def test_realization_with_verbosity_draw(verbosity):
 
         with capture_out() as out:
             test_function()
-        assert (
-            "Trying example: test_function(\n    data=data(...),\n)" in out.getvalue()
-        )
+        assert "Test case: test_function(\n    data=data(...),\n)" in out.getvalue()
         assert "Draw 1: <symbolic>" in out.getvalue()
 
 
@@ -816,7 +820,14 @@ def test_on_observation_no_override():
     f()
 
 
-@pytest.mark.parametrize("provider", [HypothesisProvider, PrngProvider])
+class ObservingHypothesisProvider(HypothesisProvider):
+    def observe_information_messages(self, *, lifetime):
+        yield {"type": "info", "title": "observing-provider", "content": {}}
+
+
+@pytest.mark.parametrize(
+    "provider", [HypothesisProvider, PrngProvider, ObservingHypothesisProvider]
+)
 def test_provider_conformance(provider):
     with warnings.catch_warnings():
         # emitted by available_timezones() from st.timezone_keys() on 3.11+
@@ -827,6 +838,21 @@ def test_provider_conformance(provider):
         run_conformance_test(
             provider, settings=settings(max_examples=20, stateful_step_count=20)
         )
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        integer_constraints(use_min_value=True, use_max_value=True, use_weights=True),
+        string_constraints(use_min_size=True, use_max_size=True),
+        float_constraints(use_min_value=True, use_max_value=True),
+        constraints_strategy(
+            "integer", strategy_constraints={"integer": {"use_min_value": True}}
+        ),
+    ],
+)
+def test_constraints_explicit_arguments(strategy):
+    check_can_generate_examples(strategy)
 
 
 # see https://github.com/HypothesisWorks/hypothesis/issues/4462 and discussion

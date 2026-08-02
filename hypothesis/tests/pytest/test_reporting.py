@@ -33,7 +33,7 @@ def test_runs_reporting_hook(testdir):
     out = "\n".join(result.stdout.lines)
     assert "test_this_one_is_ok" in out
     assert "Captured stdout call" not in out
-    assert "Falsifying example" in out
+    assert "Failing test case" in out
     assert result.ret != 0
 
 

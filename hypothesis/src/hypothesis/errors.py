@@ -50,15 +50,13 @@ class NoSuchExample(HypothesisException):
 
 
 class Unsatisfiable(_Trimmable):
-    """We ran out of time or examples before we could find enough examples
-    which satisfy the assumptions of this hypothesis.
+    """We ran out of test cases before we could find enough which satisfy the
+    assumptions of this hypothesis.
 
-    This could be because the function is too slow. If so, try upping
-    the timeout. It could also be because the function is using assume
-    in a way that is too hard to satisfy. If so, try writing a custom
-    strategy or using a better starting point (e.g if you are requiring
-    a list has unique values you could instead filter out all duplicate
-    values from the list)
+    This could be because the function is using |assume| in a way that is
+    too hard to satisfy. If so, try writing a custom strategy or using a
+    better starting point (e.g if you are requiring a list has unique
+    values you could instead filter out all duplicate values from the list)
     """
 
 
@@ -171,7 +169,7 @@ class _WrappedBaseException(Exception):
 class FlakyFailure(ExceptionGroup, Flaky):
     """
     This function appears to fail non-deterministically: We have seen it
-    fail when passed this example at least once, but a subsequent invocation
+    fail when passed this value at least once, but a subsequent invocation
     did not fail, or caused a distinct error.
 
     Common causes for this problem are:
@@ -353,6 +351,16 @@ class SmallSearchSpaceWarning(HypothesisWarning):
     in a meaningful way, for example by only creating default instances."""
 
 
+class NonRoundTrippableCharactersWarning(HypothesisWarning):
+    """Issued when the ``codec`` argument to
+    :func:`~hypothesis.strategies.characters` allows generating characters
+    which encode successfully, but do not decode back to the same character.
+
+    Pass each such character in either ``include_characters`` or
+    ``exclude_characters`` to silence this warning.
+    """
+
+
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
 _valid_cannot_proceed_scopes = CannotProceedScopeT.__args__  # type: ignore
 
@@ -366,7 +374,7 @@ class BackendCannotProceed(HypothesisException):
     The optional ``scope`` argument can enable smarter integration:
 
         verified:
-            Do not request further test cases from this backend.  We *may*
+            Do not request further |test cases| from this backend.  We *may*
             generate more test cases with other backends; if one fails then
             Hypothesis will report unsound verification in the backend too.
 

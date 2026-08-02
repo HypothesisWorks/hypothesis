@@ -18,7 +18,7 @@ from hypothesis.internal import charmap
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
-try:  # pragma: no cover
+try:
     import re._constants as sre
     import re._parser as sre_parse
 
@@ -597,7 +597,7 @@ def _strategy(
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )
-        elif code == ATOMIC_GROUP:  # pragma: no cover  # new in Python 3.11
+        elif code == ATOMIC_GROUP:
             return _strategy(value, context, is_unicode, alphabet=alphabet)
 
         else:

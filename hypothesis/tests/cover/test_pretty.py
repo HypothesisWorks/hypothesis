@@ -418,9 +418,11 @@ def test_collections_defaultdict():
         (defaultdict(list), "defaultdict(list, {})"),
         (
             defaultdict(list, {"key": "-" * 50}),
-            "defaultdict(list,\n"
-            "            {'key': '-----------------------------------------"
-            "---------'})",
+            (
+                "defaultdict(list,\n"
+                "            {'key': '-----------------------------------------"
+                "---------'})"
+            ),
         ),
         (a, "defaultdict(defaultdict(...), {})"),
         (b, "defaultdict(list, {'key': defaultdict(...)})"),
@@ -439,16 +441,18 @@ def test_collections_ordereddict():
         (OrderedDict(), "OrderedDict()"),
         (
             OrderedDict((i, i) for i in range(1000, 1010)),
-            "OrderedDict([(1000, 1000),\n"
-            "             (1001, 1001),\n"
-            "             (1002, 1002),\n"
-            "             (1003, 1003),\n"
-            "             (1004, 1004),\n"
-            "             (1005, 1005),\n"
-            "             (1006, 1006),\n"
-            "             (1007, 1007),\n"
-            "             (1008, 1008),\n"
-            "             (1009, 1009)])",
+            (
+                "OrderedDict([(1000, 1000),\n"
+                "             (1001, 1001),\n"
+                "             (1002, 1002),\n"
+                "             (1003, 1003),\n"
+                "             (1004, 1004),\n"
+                "             (1005, 1005),\n"
+                "             (1006, 1006),\n"
+                "             (1007, 1007),\n"
+                "             (1008, 1008),\n"
+                "             (1009, 1009)])"
+            ),
         ),
         (a, "OrderedDict([('key', OrderedDict(...))])"),
     ]
@@ -466,26 +470,28 @@ def test_collections_deque():
         (deque([1, 2, 3]), "deque([1, 2, 3])"),
         (
             deque(i for i in range(1000, 1020)),
-            "deque([1000,\n"
-            "       1001,\n"
-            "       1002,\n"
-            "       1003,\n"
-            "       1004,\n"
-            "       1005,\n"
-            "       1006,\n"
-            "       1007,\n"
-            "       1008,\n"
-            "       1009,\n"
-            "       1010,\n"
-            "       1011,\n"
-            "       1012,\n"
-            "       1013,\n"
-            "       1014,\n"
-            "       1015,\n"
-            "       1016,\n"
-            "       1017,\n"
-            "       1018,\n"
-            "       1019])",
+            (
+                "deque([1000,\n"
+                "       1001,\n"
+                "       1002,\n"
+                "       1003,\n"
+                "       1004,\n"
+                "       1005,\n"
+                "       1006,\n"
+                "       1007,\n"
+                "       1008,\n"
+                "       1009,\n"
+                "       1010,\n"
+                "       1011,\n"
+                "       1012,\n"
+                "       1013,\n"
+                "       1014,\n"
+                "       1015,\n"
+                "       1016,\n"
+                "       1017,\n"
+                "       1018,\n"
+                "       1019])"
+            ),
         ),
         (a, "deque([deque(...)])"),
     ]
@@ -722,7 +728,7 @@ class ValidSyntaxRepr:
 
 @given(st.data())
 def test_pprint_with_call_or_repr_as_call(data):
-    # mapped pprint repr only triggers for failing examples - which makes an
+    # mapped pprint repr only triggers for failing test cases - which makes an
     # end to end test given hypothesis difficult. fake our way around it.
     current_build_context().is_final = True
 

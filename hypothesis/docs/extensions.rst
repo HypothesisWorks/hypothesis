@@ -202,8 +202,12 @@ loading our pytest plugin from your ``conftest.py`` instead::
 
 Another alternative, which we in fact use in our CI self-tests because it works
 well also with parallel tests, is to automatically start coverage early for all
-new processes if an environment variable is set.
-This automatic starting is set up by the PyPi package :pypi:`coverage_enable_subprocess`.
+new processes if an environment variable is set.  Set this up by `installing a
+.pth file <https://coverage.readthedocs.io/en/latest/subprocess.html>`__ into
+your environment's site-packages::
+
+    echo "import coverage; coverage.process_startup()" > \
+        "$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')/coverage_subprocess.pth"
 
 This means all configuration must be done in ``.coveragerc``, and not on the
 command line::
@@ -214,7 +218,6 @@ command line::
 
 Then, set the relevant environment variable and run normally::
 
-    python -m pip install coverage_enable_subprocess
     export COVERAGE_PROCESS_START=$PATH/.coveragerc
     pytest [-n auto] ...
     coverage combine

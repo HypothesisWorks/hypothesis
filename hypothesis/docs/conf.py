@@ -67,6 +67,7 @@ redirects = {
     "supported": "compatibility.html",
     "changes": "changelog.html",
     "strategies": "extensions.html",
+    "explanation/example-count": "test-case-count.html",
     # these pages were removed without replacement
     "support": "index.html",
     "manifesto": "index.html",
@@ -183,6 +184,7 @@ intersphinx_mapping = {
     "redis": ("https://redis.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
+    "typing": ("https://typing.python.org/en/latest/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
     "lark": ("https://lark-parser.readthedocs.io/en/stable/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
@@ -221,12 +223,7 @@ html_theme = "furo"
 # remove "Hypothesis <version> documentation" from just below logo on the sidebar
 html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
-html_css_files = [
-    "better-signatures.css",
-    "wrap-in-tables.css",
-    "no-scroll.css",
-    "dark-fix.css",
-]
+html_css_files = ["styles.css"]
 htmlhelp_basename = "Hypothesisdoc"
 html_favicon = "../../brand/favicon.ico"
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"

@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis import given
-from hypothesis.strategies import binary, characters, text, tuples
+from hypothesis.strategies import binary, characters, just, sampled_from, text, tuples
 
 from tests.common.debug import minimal
 
@@ -77,6 +77,16 @@ def test_respects_alphabet_if_list(xs):
 @given(text(alphabet="cdef"))
 def test_respects_alphabet_if_string(xs):
     assert set(xs).issubset(set("cdef"))
+
+
+@given(text(alphabet=characters(max_codepoint=ord("b")) | just("d")))
+def test_respects_alphabet_if_union(xs):
+    assert all(c <= "b" or c == "d" for c in xs)
+
+
+@given(text(alphabet=sampled_from("abc").filter(lambda c: c != "a") | just("d")))
+def test_respects_transformed_alphabet_in_union(xs):
+    assert "a" not in xs
 
 
 @given(text())

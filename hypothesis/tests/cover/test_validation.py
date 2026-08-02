@@ -278,6 +278,13 @@ def test_check_strategy_might_suggest_sampled_from():
     check_strategy_(integers(), "passes for our custom coverage check")
 
 
+def test_text_alphabet_must_be_collection_or_strategy():
+    with pytest.raises(
+        InvalidArgument, match="Expected one of Collection, SearchStrategy"
+    ):
+        st.text(alphabet=123).validate()
+
+
 @pytest.mark.parametrize("codec", ["ascii", "utf-8"])
 def test_warn_on_strings_matching_common_codecs(codec):
     with pytest.warns(

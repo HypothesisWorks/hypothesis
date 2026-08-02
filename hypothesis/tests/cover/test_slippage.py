@@ -348,12 +348,12 @@ def test_stops_immediately_on_replay():
         seen.add(x)
         assert x
 
-    # On the first run, we look for up to ten examples:
+    # On the first run, we look for up to ten test cases:
     with pytest.raises(AssertionError):
         test()
     assert 1 < len(seen) <= MIN_TEST_CALLS
 
-    # With failing examples in the database, we stop at one.
+    # With failing test cases in the database, we stop at one.
     seen.clear()
     with pytest.raises(AssertionError):
         test()

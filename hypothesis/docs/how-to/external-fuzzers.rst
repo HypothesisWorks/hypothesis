@@ -1,14 +1,14 @@
 Use Hypothesis with an external fuzzer
 ======================================
 
-Sometimes you might want to point a traditional fuzzer like `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` at your code, to get coverage-guided exploration of native C extensions.  The associated tooling is often much less mature than property-based testing libraries though, so you might want to use Hypothesis strategies to describe your input data, and our world-class shrinking and :ref:`observability <observability>` tools to wrangle the results.  That's exactly what this how-to guide is about!
+Sometimes you might want to point a traditional fuzzer like `python-afl <https://github.com/jwilk/python-afl>`__ or Google's :pypi:`atheris` at your code, to get coverage-guided exploration of native C extensions.  The associated tooling is often much less mature than property-based testing libraries though, so you might want to use Hypothesis strategies to describe your input data, and our world-class shrinking and |observability| tools to wrangle the results.  That's exactly what this how-to guide is about!
 
 .. note::
 
     If you already have Hypothesis tests and want to fuzz them, or are targeting pure Python code, we strongly recommend the purpose-built `HypoFuzz <https://hypofuzz.com/>`_.
     This page is about writing traditional 'fuzz harnesses' with an external fuzzer, using parts of Hypothesis.
 
-In order to support this workflow, Hypothesis exposes the |fuzz_one_input| method. |fuzz_one_input| takes a bytestring, parses it into a test case, and executes the corresponding test once. This means you can treat each of your Hypothesis tests as a traditional fuzz target, by pointing the fuzzer at |fuzz_one_input|.
+In order to support this workflow, Hypothesis exposes the |fuzz_one_input| method. |fuzz_one_input| takes a bytestring, parses it into a |test case|, and executes the corresponding test once. This means you can treat each of your Hypothesis tests as a traditional fuzz target, by pointing the fuzzer at |fuzz_one_input|.
 
 For example:
 

@@ -70,7 +70,7 @@ This test will clearly fail, which can be confirmed by running ``pytest example.
         def test_integers(n):
     >       assert n < 50
     E       assert 50 < 50
-    E       Falsifying example: test_integers(
+    E       Failing test case: test_integers(
     E           n=50,
     E       )
 
@@ -111,7 +111,7 @@ Sometimes, you need to remove invalid cases from your test. The best way to do t
     def test_integers(n):
         assert n % 2 == 0
 
-For more complicated conditions, you can use |assume|, which tells Hypothesis to discard any test case with a false-y argument:
+For more complicated conditions, you can use |assume|, which tells Hypothesis to discard any |test case| with a false-y argument:
 
 .. code-block:: python
 

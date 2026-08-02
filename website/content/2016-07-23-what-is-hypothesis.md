@@ -59,10 +59,10 @@ and turns it into a normal test function.
 
 An important consequence of that is that Hypothesis is not itself a test
 runner. It works inside your normal testing framework - it will work fine
-with nose, py.test, unittest, etc. because all it does is expose a function
+with nose, pytest, unittest, etc. because all it does is expose a function
 of the right name that the test runner can then pick up.
 
-Using it with a py.test or nose style test looks like this:
+Using it with a pytest or nose style test looks like this:
 
 ```python
 from mercurial.encoding import fromutf8b, toutf8b
@@ -90,7 +90,7 @@ When this is first run, you will see an error that looks something
 like this:
 
 ```
-Falsifying example: test_decode_inverts_encode(s='\xc2\xc2\x80')
+Failing test case: test_decode_inverts_encode(s='\xc2\xc2\x80')
 
 Traceback (most recent call last):
   File "/home/david/.pyenv/versions/2.7/lib/python2.7/site-packages/hypothesis/core.py", line 443, in evaluate_test_data

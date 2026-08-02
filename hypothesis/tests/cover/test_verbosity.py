@@ -10,13 +10,13 @@
 
 from contextlib import contextmanager
 
-from hypothesis import example, find, given
+from hypothesis import example, find, given, note
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
 
 from tests.common.debug import minimal
-from tests.common.utils import Why, capture_out, fails, xfail_on_crosshair
+from tests.common.utils import capture_observations, capture_out, fails
 
 
 @contextmanager
@@ -34,7 +34,20 @@ def test_prints_intermediate_in_success():
             pass
 
         test_works()
-    assert "Trying example" in o.getvalue()
+    assert "Test case:" in o.getvalue()
+
+
+def test_notes_are_not_printed_twice_in_debug_mode():
+    # the engine's debug output must not repeat notes which were already
+    # printed, even when observability has recorded them on the data
+    @settings(verbosity=Verbosity.debug, max_examples=1, database=None)
+    @given(booleans())
+    def test_works(x):
+        note("this is a note")
+
+    with capture_verbosity() as o, capture_observations():
+        test_works()
+    assert o.getvalue().count("this is a note") == 1
 
 
 def test_does_not_log_in_quiet_mode():
@@ -59,10 +72,9 @@ def test_includes_progress_in_verbose_mode():
         )
     out = o.getvalue()
     assert out
-    assert "Trying example: " in out
+    assert "Test case: " in out
 
 
-@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_prints_initial_attempts_on_find():
     with capture_verbosity() as o:
 
@@ -83,7 +95,7 @@ def test_prints_initial_attempts_on_find():
 
         foo()
 
-    assert "Trying example" in o.getvalue()
+    assert "Test case:" in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
@@ -102,7 +114,7 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if "example" in l]) > 2
+    assert len([l for l in lines if "Test case:" in l]) > 2
     assert [l for l in lines if "AssertionError" in l]
 
 

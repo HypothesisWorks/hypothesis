@@ -411,7 +411,7 @@ class TreeNode:
     # - Conclusion (ConjectureData.conclude_test was called here)
     # - Killed (this branch is valid and may even have children, but should not
     #   be explored when generating novel prefixes)
-    transition: None | Branch | Conclusion | Killed = None
+    transition: Branch | Conclusion | Killed | None = None
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
@@ -805,10 +805,7 @@ class DataTree:
                     key=id(branch),
                 )
 
-                # We don't expect this assertion to ever fire, but coverage
-                # wants the loop inside to run if you have branch checking
-                # on, hence the pragma.
-                assert (  # pragma: no cover
+                assert (
                     attempts != 1000
                     or len(branch.children) < branch.max_children
                     or any(not v.is_exhausted for v in branch.children.values())

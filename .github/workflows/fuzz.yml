@@ -15,21 +15,28 @@ on:
   # pull_request:
   #   branches: [ master ]
 
+permissions:
+  contents: read
+  # dawidd6/action-download-artifact requires actions: read to download
+  # artifacts from previous runs
+  actions: read
+
 jobs:
   fuzz:
     if: github.repository == 'HypothesisWorks/hypothesis' || github.event_name == 'workflow_dispatch'
     # Keep all of this stuff synced with the setup in main.yml for CI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+        persist-credentials: false
     - name: Set up Python 3.14
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: "3.14.2"
     - name: Restore cache
-      uses: actions/cache@v3
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ~/.cache
@@ -48,7 +55,7 @@ jobs:
     # we want to multiplex across and that would be annoying to manage.
     # TODO: revisit this later; a redis-like service would be so much nicer.
     - name: Download example database
-      uses: dawidd6/action-download-artifact@v9
+      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
       with:
         name: hypothesis-example-db
         path: .hypothesis/examples
@@ -74,7 +81,7 @@ jobs:
             --ignore=hypothesis/tests/ghostwriter/
 
     - name: Upload patch files with covering and failing `@example()`s
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: always()
       with:
         name: explicit-example-patches
@@ -84,7 +91,7 @@ jobs:
     # Note that we can also pull it down to use locally via
     # https://hypothesis.readthedocs.io/en/latest/database.html#hypothesis.database.GitHubArtifactDatabase
     - name: Upload example database
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: always()
       with:
         name: hypothesis-example-db

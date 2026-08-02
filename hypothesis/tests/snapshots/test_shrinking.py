@@ -10,7 +10,7 @@
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
+from tests.common.utils import run_test_for_failing_test_case
 from tests.snapshots.conftest import SNAPSHOT_SETTINGS
 
 
@@ -20,7 +20,7 @@ def test_shrunk_list(snapshot):
     def inner(xs):
         assert sum(xs) <= 1000
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_shrunk_string(snapshot):
@@ -29,7 +29,7 @@ def test_shrunk_string(snapshot):
     def inner(s):
         assert s == s.lower()
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_shrunk_float(snapshot):
@@ -38,4 +38,4 @@ def test_shrunk_float(snapshot):
     def inner(x):
         assert x <= 0.5
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot

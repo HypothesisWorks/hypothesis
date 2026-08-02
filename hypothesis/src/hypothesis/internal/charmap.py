@@ -142,27 +142,43 @@ def charmap() -> dict[CategoryName, IntervalsT]:
 
 
 @cache
-def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
-    """Return an IntervalSet of characters which are part of this codec."""
+def intervals_from_codec(
+    codec_name: str,
+) -> tuple[IntervalSet, IntervalSet]:  # pragma: no cover
+    """Return IntervalSets of characters which can be encoded with this codec,
+    and the subset which encode successfully but do not decode back to the
+    same character."""
     assert codec_name == codecs.lookup(codec_name).name
-    fname = charmap_file(f"codec-{codec_name}")
+    fname = charmap_file(f"codec-v2-{codec_name}")
     try:
         with gzip.GzipFile(fname) as gzf:
-            encodable_intervals = json.load(gzf)
+            encodable_intervals, non_roundtrip_intervals = json.load(gzf)
 
     except Exception:
         # This loop is kinda slow, but hopefully we don't need to do it very often!
         encodable_intervals = []
+        non_roundtrip_intervals = []
         for i in range(sys.maxunicode + 1):
+            char = chr(i)
             try:
-                chr(i).encode(codec_name)
+                encoded = char.encode(codec_name)
             except Exception:  # usually _but not always_ UnicodeEncodeError
-                pass
-            else:
-                encodable_intervals.append((i, i))
+                continue
+            encodable_intervals.append((i, i))
+            try:
+                # A few legacy codecs have lossy fallback mappings - e.g. under
+                # shift_jis the yen sign encodes to the byte which decodes as a
+                # backslash - so we track the non-round-tripping subset too.
+                roundtrips = encoded.decode(codec_name) == char
+            except Exception:
+                roundtrips = False
+            if not roundtrips:
+                non_roundtrip_intervals.append((i, i))
 
     res = IntervalSet(encodable_intervals)
     res = res.union(res)
+    non_roundtrip = IntervalSet(non_roundtrip_intervals)
+    non_roundtrip = non_roundtrip.union(non_roundtrip)
     try:
         # Write the Unicode table atomically
         storage_dir = storage_directory("tmp")
@@ -171,11 +187,11 @@ def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
         os.close(fd)
         # Explicitly set the mtime to get reproducible output
         with gzip.GzipFile(tmpfile, "wb", mtime=1) as f:
-            f.write(json.dumps(res.intervals).encode())
+            f.write(json.dumps([res.intervals, non_roundtrip.intervals]).encode())
         os.renames(tmpfile, fname)
     except Exception:
         pass
-    return res
+    return res, non_roundtrip
 
 
 _categories: Categories | None = None

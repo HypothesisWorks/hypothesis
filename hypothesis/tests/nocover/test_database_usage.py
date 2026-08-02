@@ -77,7 +77,6 @@ def test_clears_out_database_as_things_get_boring():
         raise AssertionError
 
 
-@xfail_on_crosshair(Why.other, strict=False)
 def test_trashes_invalid_examples():
     database = InMemoryExampleDatabase()
 

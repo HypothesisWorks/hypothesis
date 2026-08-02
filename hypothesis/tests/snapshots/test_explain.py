@@ -10,7 +10,7 @@
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import run_test_for_falsifying_example
+from tests.common.utils import run_test_for_failing_test_case
 from tests.snapshots.conftest import EXPLAIN_SETTINGS
 
 
@@ -26,7 +26,7 @@ def test_explain_comments_basic_fail_if_either(snapshot):
     def inner(a, b, c, d, e):
         assert not (b and d)
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_comments_basic_fail_if_not_all(snapshot):
@@ -36,7 +36,7 @@ def test_explain_comments_basic_fail_if_not_all(snapshot):
         condition = a and b and c
         assert condition
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_no_together_comment_if_single_argument(snapshot):
@@ -45,7 +45,7 @@ def test_explain_no_together_comment_if_single_argument(snapshot):
     def inner(a, b):
         assert a
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 class MyClass:
@@ -60,7 +60,7 @@ def test_explain_builds_subargs(snapshot):
     def inner(obj):
         assert not obj.y
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_builds_kwargs_subargs(snapshot):
@@ -69,7 +69,7 @@ def test_explain_builds_kwargs_subargs(snapshot):
     def inner(obj):
         assert not obj.y
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_tuple_subargs(snapshot):
@@ -78,7 +78,7 @@ def test_explain_tuple_subargs(snapshot):
     def inner(t):
         assert not t[1]
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_fixeddict_subargs(snapshot):
@@ -87,7 +87,7 @@ def test_explain_fixeddict_subargs(snapshot):
     def inner(d):
         assert not d["y"]
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_tuple_multiple_varying(snapshot):
@@ -96,7 +96,7 @@ def test_explain_tuple_multiple_varying(snapshot):
     def inner(t):
         assert not t[2]
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_skip_subset_slices(snapshot):
@@ -105,7 +105,7 @@ def test_explain_skip_subset_slices(snapshot):
     def inner(obj):
         assert obj.y
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 def test_explain_duplicate_param_names(snapshot):
@@ -117,7 +117,7 @@ def test_explain_duplicate_param_names(snapshot):
     def inner(kw, b):
         assert not b["c"]
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 class Outer:
@@ -142,7 +142,7 @@ def test_explain_multi_level_nesting(snapshot):
     def inner(bare, outer):
         assert not outer.value
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot
 
 
 # Regression for https://github.com/HypothesisWorks/hypothesis/issues/4708.
@@ -168,4 +168,4 @@ def test_explain_unstable_one_of_labels(snapshot):
     def inner(w):
         assert not isinstance(w.a, list)
 
-    assert run_test_for_falsifying_example(inner) == snapshot
+    assert run_test_for_failing_test_case(inner) == snapshot

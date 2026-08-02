@@ -36,9 +36,9 @@ build==1.5.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==7.1.4
+cachetools==7.1.6
     # via tox
-certifi==2026.6.17
+certifi==2026.7.22
     # via requests
 cffi==2.1.0
     # via cryptography
@@ -85,7 +85,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.31.0
+filelock==3.32.0
     # via
     #   python-discovery
     #   tox
@@ -192,7 +192,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.6.0
     # via -r requirements/tools.in
-platformdirs==4.10.1
+platformdirs==4.11.0
     # via
     #   black
     #   python-discovery
@@ -225,7 +225,7 @@ pygments==2.19.2
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.10.1
+pyproject-api==1.11.0
     # via tox
 pyproject-hooks==1.2.0
     # via
@@ -244,7 +244,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.4.4
+python-discovery==1.5.0
     # via
     #   tox
     #   virtualenv
@@ -277,7 +277,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.15.22
+ruff==0.16.0
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -293,7 +293,7 @@ sortedcontainers==2.4.0
     #   sortedcontainers-stubs
 sortedcontainers-stubs==2.4.3
     # via -r requirements/tools.in
-soupsieve==2.8.4
+soupsieve==2.9.1
     # via beautifulsoup4
 sphinx==9.1.0
     # via
@@ -336,7 +336,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli-w==1.2.0
     # via tox
-tox==4.57.0
+tox==4.58.0
     # via -r requirements/tools.in
 traitlets==5.15.1
     # via
@@ -354,7 +354,7 @@ types-pytz==2026.2.0.20260518
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==83.0.0.20260716
+types-setuptools==83.0.0.20260724
     # via types-cffi
 typing-extensions==4.16.0
     # via
@@ -372,7 +372,7 @@ urllib3==2.7.0
     #   twine
 uvicorn==0.51.0
     # via sphinx-autobuild
-virtualenv==21.6.1
+virtualenv==21.7.0
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -386,6 +386,8 @@ websockets==16.1.1
     # via sphinx-autobuild
 wheel==0.47.0
     # via pip-tools
+zizmor==1.28.0
+    # via -r requirements/tools.in
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==26.1.2

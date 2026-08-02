@@ -87,7 +87,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.12`
 try:
     TypeAliasTypes += (typing_extensions.TypeAliasType,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 ConcatenateTypes: tuple = ()
@@ -97,7 +97,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
     ConcatenateTypes += (typing_extensions.Concatenate,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 ParamSpecTypes: tuple = ()
@@ -107,7 +107,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
     ParamSpecTypes += (typing_extensions.ParamSpec,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 TypeVarTupleTypes: tuple = ()
@@ -117,7 +117,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
     TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 TypeGuardTypes: tuple = ()
@@ -131,7 +131,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
     TypeGuardTypes += (typing_extensions.TypeGuard, typing_extensions.TypeIs)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
@@ -142,7 +142,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
     RequiredTypes += (typing_extensions.Required,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
@@ -153,7 +153,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
     NotRequiredTypes += (typing_extensions.NotRequired,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
@@ -164,7 +164,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
     ReadOnlyTypes += (typing_extensions.ReadOnly,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
@@ -175,7 +175,7 @@ except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
     LiteralStringTypes += (typing_extensions.LiteralString,)
-except AttributeError:  # pragma: no cover
+except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
@@ -184,7 +184,7 @@ except AttributeError:  # pragma: no cover
 # when unwrapping `TypedDict`'s annotations.
 try:
     extended_get_origin = typing_extensions.get_origin
-except AttributeError:  # pragma: no cover
+except AttributeError:
     # `typing_extensions` might not be installed, in this case - fallback:
     extended_get_origin = get_origin
 
@@ -228,7 +228,7 @@ for name in (
         pass
     try:
         NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)
-    except AttributeError:  # pragma: no cover
+    except AttributeError:
         pass  # typing_extensions might not be installed
 
 
@@ -323,7 +323,7 @@ def try_issubclass(thing, superclass):
         return False
 
 
-def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
+def _evaluate_type_alias_type(thing, *, typevars):
     if isinstance(thing, typing.TypeVar):
         if thing not in typevars:
             raise ValueError(
@@ -375,7 +375,7 @@ def _evaluate_type_alias_type(thing, *, typevars):  # pragma: no cover # 3.12+
     return origin[concrete_args]
 
 
-def evaluate_type_alias_type(thing):  # pragma: no cover # covered on 3.12+
+def evaluate_type_alias_type(thing):
     # this function takes a GenericAlias whose origin is a TypeAliasType,
     # which corresponds to `type A[T] = list[T]; thing = A[int]`, and returns
     # the fully-instantiated underlying type.
@@ -444,7 +444,7 @@ def get_constraints_filter_map():
             at.MaxLen: lambda constraint: partial(max_len, constraint.max_length),
             at.Predicate: lambda constraint: constraint.func,
         }
-    return {}  # pragma: no cover
+    return {}
 
 
 def _get_constraints(args: tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
@@ -716,7 +716,7 @@ def from_typing_type(thing):
         memoryview in mapping
         and getattr(thing, "__args__", None)
         and not hasattr(thing.__args__[0], "__buffer__")
-    ):  # pragma: no cover  # covered by 3.14+
+    ):
         # Both memoryview and list are direct subclasses of Sequence. If we ask for
         # st.from_type(Sequence[A]), we will get both list[A] and memoryview[A].
         # But unless A implements the buffer protocol with __buffer__, resolving
@@ -826,7 +826,7 @@ def from_typing_type(thing):
         # and we expect `try_issubclass(k, k) == True`.
         and try_issubclass(collections.abc.Sequence, thing)
         and sum(try_issubclass(collections.abc.Sequence, T) for T in mapping) == 0
-    ):  # pragma: no cover  # covered on 3.14+
+    ):
         strategies.append((collections.abc.Sequence, st.binary()))
 
     # Sort strategies according to our type-sorting heuristic for stable output
@@ -880,7 +880,7 @@ utc_offsets = st.builds(
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
 if sys.version_info < (3, 12):
     _RegistryKeyT: typing.TypeAlias = type
-else:  # pragma: no cover
+else:
     _RegistryKeyT: typing.TypeAlias = type | typing.TypeAliasType
 
 _global_type_lookup: dict[
@@ -1084,10 +1084,9 @@ def register(type_, fallback=None, *, module=typing):
     if isinstance(type_, str):
         # Use the name of generic types which are not available on all
         # versions, and the function just won't be added to the registry;
-        # also works when module=None because typing_extensions isn't
-        # installed (nocover because it _is_ in our coverage tests).
+        # also works when module=None because typing_extensions isn't installed.
         type_ = getattr(module, type_, None)
-        if type_ is None:  # pragma: no cover
+        if type_ is None:
             return lambda f: f
 
     def inner(func):
@@ -1361,7 +1360,7 @@ def resolve_TypeVar(thing):
 
     if bound is not None:
         resolve_strategies(bound)
-    if default not in NoDefaults:  # pragma: no cover
+    if default not in NoDefaults:
         # Coverage requires 3.13 or `typing_extensions` package.
         resolve_strategies(default)
 

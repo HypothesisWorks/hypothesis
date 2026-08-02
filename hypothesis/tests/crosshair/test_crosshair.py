@@ -228,6 +228,11 @@ def test_event_with_realization(value):
     float(value)
 
 
+# Any earlier crosshair-backed test which ran under an observability callback
+# (e.g. test_realizes_event) leaves process-global crosshair state which stops
+# this test from finding the failing example.  Remove the xfail once that
+# state-leak is fixed upstream.
+@pytest.mark.xfail(strict=False, reason="observability in a previous test breaks this")
 def test_crosshair_can_hit_a_specific_date():
     # See https://github.com/HypothesisWorks/hypothesis/issues/4759.
     @given(st.dates())

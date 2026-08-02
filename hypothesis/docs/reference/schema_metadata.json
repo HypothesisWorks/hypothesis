@@ -9,6 +9,11 @@
             "type": ["string", "null"],
             "description": "The ``@reproduce_failure`` decorator string for failing tests, if and only if ``status == \"failed\"``."
         },
+        "notes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "The values recorded by calls to |note|, in order."
+        },
         "predicates": {
             "type": "object",
             "description": "The number of times each |assume| and |@precondition| predicate was satisfied (``True``) and not satisfied (``False``).",
@@ -61,6 +66,6 @@
             "description": "The internal ``InterestingOrigin`` object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
         }
     },
-    "required": ["traceback", "reproduction_decorator", "predicates", "backend", "sys.argv", "os.getpid()", "imported_at", "data_status", "interesting_origin"],
+    "required": ["traceback", "reproduction_decorator", "notes", "predicates", "backend", "sys.argv", "os.getpid()", "imported_at", "data_status", "interesting_origin"],
     "additionalProperties": false
 }

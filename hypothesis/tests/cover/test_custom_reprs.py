@@ -123,7 +123,7 @@ def test_as_created_reprs_fallback_for_distinct_calls_same_obj():
     with pytest.raises(AssertionError) as err:
         inner()
     expected_re = r"""
-Falsifying example: inner\(
+Failing test case: inner\(
     a=<.*Foo object at 0x[0-9A-Fa-f]+>,
     b=<.*Foo object at 0x[0-9A-Fa-f]+>,
 \)

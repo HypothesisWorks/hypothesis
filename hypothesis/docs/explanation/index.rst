@@ -7,4 +7,4 @@ These explanation pages are oriented towards deepening your understanding of Hyp
    :maxdepth: 1
 
    domain
-   example-count
+   test-case-count

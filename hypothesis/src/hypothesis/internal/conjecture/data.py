@@ -582,7 +582,7 @@ class ConjectureResult:
     interesting_origin: InterestingOrigin | None
     nodes: tuple[ChoiceNode, ...] = field(repr=False, compare=False)
     length: int
-    output: str
+    notes: list[str]
     expected_exception: BaseException | None
     expected_traceback: str | None
     has_discards: bool
@@ -655,7 +655,7 @@ class ConjectureData:
 
         self.length: int = 0
         self.index: int = 0
-        self.output: str = ""
+        self.notes: list[str] = []
         self.status: Status = Status.VALID
         self.frozen: bool = False
         self.testcounter: int = threadlocal.global_test_counter
@@ -1146,7 +1146,7 @@ class ConjectureData:
                 spans=self.spans,
                 nodes=self.nodes,
                 length=self.length,
-                output=self.output,
+                notes=self.notes,
                 expected_traceback=self.expected_traceback,
                 expected_exception=self.expected_exception,
                 has_discards=self.has_discards,
@@ -1164,11 +1164,9 @@ class ConjectureData:
         if self.frozen:
             raise Frozen(f"Cannot call {name} on frozen ConjectureData")
 
-    def note(self, value: Any) -> None:
+    def note(self, value: str) -> None:
         self.__assert_not_frozen("note")
-        if not isinstance(value, str):
-            value = repr(value)
-        self.output += value
+        self.notes.append(value)
 
     def draw(
         self,

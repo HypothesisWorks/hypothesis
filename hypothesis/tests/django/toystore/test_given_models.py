@@ -206,6 +206,10 @@ class TestPosOnlyArg(TestCase):
         self.assertRaises(TypeError, from_model, Car, None)
         self.assertRaises(TypeError, from_model, model=Customer)
 
+    def test_from_model_requires_a_model_subclass(self):
+        with self.assertRaises(InvalidArgument):
+            check_can_generate_examples(from_model(int))
+
 
 class TestUserSpecifiedAutoId(TestCase):
     @given(from_model(UserSpecifiedAutoId))

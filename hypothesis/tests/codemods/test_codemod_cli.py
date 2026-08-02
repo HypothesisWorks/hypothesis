@@ -10,6 +10,10 @@
 
 import subprocess
 
+import pytest
+
+from hypothesis.extra import cli, codemods
+
 BEFORE = """
 from hypothesis.strategies import complex_numbers, complex_numbers as cn
 
@@ -67,3 +71,56 @@ def test_codemod_from_stdin():
     result = run("hypothesis codemod -", input=BEFORE)
     assert result.returncode == 0
     assert result.stdout.rstrip() == AFTER.rstrip()
+
+
+def test_codemod_stdin_rejects_additional_paths(tmp_path):
+    (tmp_path / "mycode.py").write_text(BEFORE, encoding="utf-8")
+    result = run("hypothesis codemod - mycode.py", cwd=tmp_path)
+    assert result.returncode != 0
+    assert "Cannot specify multiple paths when reading from stdin!" in result.stderr
+
+
+def test_codemod_reports_skipped_files_to_stderr(tmp_path):
+    fname = tmp_path / "broken.py"
+    fname.write_text("import hypothesis\ndef f(:\n", encoding="utf-8")
+    result = run(f"hypothesis codemod {fname.name}", cwd=tmp_path)
+    assert f"skipping {str(fname.name)!r} due to" in result.stderr
+
+
+def test_refactor_reports_missing_file(tmp_path):
+    # The exception text varies by platform, so only check the message prefix.
+    fname = tmp_path / "no_such_file_here.py"
+    message = cli._refactor(codemods.refactor, str(fname))
+    assert message.startswith(f"skipping {str(fname)!r} due to ")
+
+
+def test_refactor_skips_files_without_hypothesis_mention(tmp_path):
+    fname = tmp_path / "nothing_to_do.py"
+    fname.write_text("x = 1\n", encoding="utf-8")
+    assert cli._refactor(codemods.refactor, str(fname)) is None
+
+
+def test_refactor_reports_syntax_errors(tmp_path):
+    fname = tmp_path / "broken.py"
+    fname.write_text("import hypothesis\ndef f(:\n", encoding="utf-8")
+    message = cli._refactor(codemods.refactor, str(fname))
+    assert message.startswith(f"skipping {str(fname)!r} due to")
+
+
+def test_refactor_reraises_non_syntax_errors(tmp_path):
+    fname = tmp_path / "mentions_hypothesis.py"
+    fname.write_text("import hypothesis\nx = 1\n", encoding="utf-8")
+
+    def always_fails(code):
+        raise ValueError("boom")
+
+    with pytest.raises(ValueError, match="boom"):
+        cli._refactor(always_fails, str(fname))
+
+
+def test_refactor_does_not_rewrite_unchanged_files(tmp_path):
+    fname = tmp_path / "already_fine.py"
+    content = "import hypothesis\nx = 1\n"
+    fname.write_text(content, encoding="utf-8")
+    assert cli._refactor(codemods.refactor, str(fname)) is None
+    assert fname.read_text(encoding="utf-8") == content

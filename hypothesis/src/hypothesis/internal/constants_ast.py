@@ -130,19 +130,23 @@ class ConstantVisitor(NodeVisitor):
             return
         if isinstance(value, bool):
             return
-        if isinstance(value, float) and math.isinf(value):
-            # we already upweight inf.
+        if isinstance(value, float) and (math.isinf(value) or value == 0.0):
+            # we already upweight inf and ±0.
             return
         if isinstance(value, int) and -100 < value < 100:
             # we already upweight small integers.
             return
-
         if isinstance(value, (int, float, bytes, str)):
             self.constants.add(value)
             return
-
-        # I don't kow what case could go here, but am also not confident there
-        # isn't one.
+        if isinstance(value, complex):
+            self._add_constant(value.imag)
+            self._add_constant(value.real)
+            return
+        if value in (None, ...):
+            return
+        # we currently cover all possible cases, but future python versions may introduce
+        # additional cases
         return  # pragma: no cover
 
     def visit_UnaryOp(self, node: UnaryOp) -> None:
@@ -150,7 +154,7 @@ class ConstantVisitor(NodeVisitor):
         if (
             isinstance(node.op, USub)
             and isinstance(node.operand, Constant)
-            and isinstance(node.operand.value, (int, float))
+            and isinstance(node.operand.value, (int, float, complex))
             and not isinstance(node.operand.value, bool)
         ):
             self._add_constant(-node.operand.value)
