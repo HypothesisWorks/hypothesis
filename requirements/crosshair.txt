@@ -19,7 +19,7 @@ crosshair-tool==0.0.109
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.161.5
+hypothesis==6.165.0
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.30
     # via -r requirements/crosshair.in
