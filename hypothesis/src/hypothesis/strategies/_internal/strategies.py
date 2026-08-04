@@ -51,6 +51,7 @@ from hypothesis.internal.conjecture.utils import (
     combine_labels,
 )
 from hypothesis.internal.coverage import check_function
+from hypothesis.internal.invertstring import preimage_candidates
 from hypothesis.internal.reflection import (
     get_pretty_function_description,
     is_identity_function,
@@ -1134,6 +1135,21 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
             and isinstance(value, self.pack)
         ):
             return self.mapped_strategy._invert(list(value.items()))
+        # A pack which builds a string can often be undone by analyzing its
+        # source.  Candidates are unverified guesses, so check each one by
+        # actually calling pack before trusting it; only then may we hand it
+        # to the inner strategy.
+        for candidate in preimage_candidates(self.pack, value):
+            try:
+                packed = self.pack(candidate)
+            except Exception:
+                continue
+            if not equal_values(packed, value):
+                continue
+            try:
+                return self.mapped_strategy._invert(candidate)
+            except CannotInvert:
+                continue
         raise CannotInvert(f"cannot invert {self!r} (value={value!r})")
 
     @property
