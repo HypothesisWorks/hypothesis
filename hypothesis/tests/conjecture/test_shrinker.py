@@ -1079,3 +1079,87 @@ def test_ephemeral_objects_are_not_widened():
         [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
     )
     assert shrinker.choices == (1, 0)
+
+
+def test_pump_replaces_just_branch_with_wide_encoding():
+    # A pump alone rewrites the just() branch (selector=1, no further choices)
+    # into the text() branch carrying the recorded value, even though the
+    # result is a longer choice sequence.
+    strategy = st.text() | st.just("xyzzy-plover")
+
+    @shrinking_from((1,))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "xyzzy" in value:
+            data.mark_interesting(interesting_origin())
+
+    assert shrinker.pump_once()
+    assert shrinker.choices == (0, "xyzzy-plover")
+
+
+def test_full_shrink_pumps_and_then_minimizes():
+    # End-to-end: pump out of the just() branch, then let normal shrinking
+    # minimize the re-encoded value - and check the engine reports the pumped
+    # result rather than the sort_key-smaller pre-pump example.
+    strategy = st.text() | st.just("xyzzy-plover")
+
+    @shrinking_from((1,))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "xyzzy" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (0, "xyzzy")
+    (stored,) = shrinker.engine.interesting_examples.values()
+    assert stored.choices == (0, "xyzzy")
+
+
+def test_no_pump_when_value_is_outside_the_wide_branch():
+    # text(alphabet="ab") cannot encode "XYZ", so the hole is unclaimed and
+    # the pump degrades to a misalignment which fails acceptance.
+    strategy = st.text(alphabet="ab") | st.just("XYZ")
+
+    @shrinking_from((1,))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "XYZ" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (1,)
+
+
+def test_no_pump_when_the_just_branch_is_earlier():
+    # Moving *into* an earlier just() branch makes the sequence shorter, so
+    # the ordinary monotone passes take it; afterwards the selector is
+    # already minimal and no pump can fire, leaving the just() value.
+    strategy = st.just("xyzzy-plover") | st.text()
+
+    @shrinking_from((1, "xyzzy-wombat"))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "xyzzy" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (0,)
+    assert not shrinker.pumped
+
+
+def test_multiple_pumps_alternate_with_normal_shrinking():
+    # Each one_of needs its own pump, with re-fixation in between: the loop
+    # in pump_selectors pumps the first, re-shrinks, pumps the second,
+    # re-shrinks, and then terminates because no selector can go lower.
+    strategy_a = st.text() | st.just("marker-one")
+    strategy_b = st.text() | st.just("marker-two")
+
+    @shrinking_from((1, 1))
+    def shrinker(data: ConjectureData):
+        a = data.draw(strategy_a)
+        b = data.draw(strategy_b)
+        if "one" in a and "two" in b:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (0, "one", 0, "two")

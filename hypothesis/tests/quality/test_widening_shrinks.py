@@ -20,9 +20,13 @@ widening itself rewrites the choice sequence is the
 test_widening_* / test_full_shrink_* tests in tests/conjecture/test_shrinker.py,
 which assert exact choice-sequence transitions.
 
-``just()`` values deliberately do not widen: a just() draw makes no choices,
-so any wide-branch encoding of its value would make the choice sequence
-longer, which the shrinker never accepts.
+A just() draw makes no choices, so any wide-branch encoding of its value
+makes the choice sequence longer, and the shrinker's monotone ordering alone
+would never accept it. Such branches are instead escaped by bounded
+anti-shrink "pumps" after normal shrinking has fixated (see
+``Shrinker.pump_selectors``); the last two tests cover that. Pumps only ever
+lower the branch selector, so a just() *ahead* of the wide strategy - as in
+``just(x) | text()`` - still reports the just() value.
 """
 
 import datetime as dt
@@ -167,16 +171,17 @@ def test_widen_dates_with_compound_branch():
     ) == dt.date(2021, 6, 10)
 
 
-def test_just_does_not_widen():
-    # Accepted limitation: a just() span has no choices to re-encode.
+def test_just_widens():
+    # A just() span has no choices to re-encode, so this needs a pump rather
+    # than an ordinary widening shrink.
     strat = text() | just("xyzzy-plover")
     val = minimal(strat, lambda s: "xyzzy" in s)
-    assert val == "xyzzy-plover"
+    assert val == "xyzzy"
 
 
-def test_single_element_sampled_from_does_not_widen():
+def test_single_element_sampled_from_widens():
     # sampled_from with one element collapses to just() at construction time,
-    # and so inherits its limitation.
+    # and so is likewise handled by a pump.
     strat = text() | sampled_from(["xyzzy-plover"])
     val = minimal(strat, lambda s: "xyzzy" in s)
-    assert val == "xyzzy-plover"
+    assert val == "xyzzy"

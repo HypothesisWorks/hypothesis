@@ -1704,6 +1704,33 @@ class ConjectureRunner:
         s.shrink()
         return s.shrink_target
 
+    def replace_interesting_example(self, data: ConjectureResult) -> None:
+        """Explicitly replace the stored interesting example for ``data``'s
+        origin with ``data``, which need not be sort_key-smaller.
+
+        ``test_function`` only ever replaces a stored example with a strictly
+        sort_key-smaller one, which is the right gate for ordinary monotone
+        shrinking. When the shrinker accepts a pump (see
+        ``Shrinker.pump_selectors``), its final target is deliberately more
+        complex than the example this origin had on record before the pump,
+        so that gate never fires and the pumped result would be silently
+        discarded at reporting time. The shrinker calls this at the end of a
+        pumped shrink to make its final target the reported example, without
+        weakening the monotone gate for everything else.
+        """
+        key = data.interesting_origin
+        assert key is not None
+        assert data.status == Status.INTERESTING
+        existing = self.interesting_examples[key]
+        if choices_key(data.choices) == choices_key(existing.choices):
+            return
+        self.shrinks += 1
+        self.downgrade_choices(existing.choices)
+        self.__data_cache.unpin(self._cache_key(existing.choices))
+        self.save_choices(data.choices)
+        self.interesting_examples[key] = data
+        self.__data_cache.pin(self._cache_key(data.choices), data)
+
     def new_shrinker(
         self,
         example: ConjectureData | ConjectureResult,

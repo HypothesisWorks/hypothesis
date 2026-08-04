@@ -69,6 +69,12 @@ if TYPE_CHECKING:
 
 ShrinkPredicateT: TypeAlias = Callable[[ConjectureResult | _Overrun], bool]
 
+# The maximum number of pumps (accepted anti-shrink moves which lower a one_of
+# branch selector; see Shrinker.pump_selectors) in a single shrink run. This is
+# a backstop for the termination of the pump/fixate alternation, which is not
+# otherwise guaranteed - see the comment in pump_selectors.
+MAX_PUMPS = 100
+
 
 def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
     """Returns a sort key such that "simpler" choice sequences are smaller than
@@ -152,7 +158,9 @@ class Shrinker:
     have some initial ConjectureData object and some property of interest
     that it satisfies, and we want to find a ConjectureData object with a
     shortlex (see sort_key above) smaller choice sequence that exhibits the same
-    property.
+    property. (Almost: pump_selectors accepts a bounded number of anti-shrink
+    moves after ordinary shrinking has run out, so the final target is not
+    always shortlex-smaller than the initial one.)
 
     Currently the only property of interest we use is that the status is
     INTERESTING and the interesting_origin takes on some fixed value, but we
@@ -330,6 +338,10 @@ class Shrinker:
         self.shrink_target = initial
         self.clear_change_tracking()
         self.shrinks = 0
+        # Whether we have accepted at least one pump (see pump_selectors), in
+        # which case shrink_target is not sort_key-smaller than the example the
+        # engine has on record and must explicitly replace it at the end.
+        self.pumped = False
 
         # We terminate shrinks that seem to have reached their logical
         # conclusion: If we've called the underlying test function at
@@ -447,6 +459,7 @@ class Shrinker:
         try:
             self.initial_coarse_reduction()
             self.greedy_shrink()
+            self.pump_selectors()
         except StopShrinking:
             # If we stopped shrinking because we're making slow progress (instead of
             # reaching a local optimum), don't run the explain-phase logic.
@@ -491,7 +504,19 @@ class Shrinker:
                             f"deleting {pass_.deletions} choice{s(pass_.deletions)}."
                         )
                 self.debug("")
-        self.explain()
+        try:
+            self.explain()
+        finally:
+            # A pumped shrink_target is more complex than the example the
+            # engine has on record for this origin (which predates the pump),
+            # so the monotone gate in ConjectureRunner.test_function never
+            # replaced it. Do so explicitly, or the pumped result would be
+            # silently discarded at reporting time. This runs after the
+            # explain phase because explain's experiments can themselves pass
+            # that gate (e.g. by re-taking the pre-pump one_of branch) and
+            # would overwrite the stored example again.
+            if self.pumped:
+                self.engine.replace_interesting_example(self.shrink_target)
 
     def explain(self) -> None:
         if not self.should_explain or not self.shrink_target.arg_spans:
@@ -1671,6 +1696,8 @@ class Shrinker:
             # (e.g. the selector draw's own span), or a one_of whose current
             # branch made no choices, like just() - and a re-encoding of the
             # latter would be longer, which incorporate_test_data rejects.
+            # Those spans are instead handled by pump_selectors, which runs
+            # with relaxed acceptance after normal shrinking has fixated.
             lambda i: self.spans[i].recorded_value is not no_recorded_value
             and self.spans[i].choice_count > 1,
         )
@@ -1682,6 +1709,132 @@ class Shrinker:
             + self.choices[span.end :]
         )
         self.incorporate_test_data(self.engine.cached_test_function(attempt))
+
+    def pump_selectors(self) -> None:
+        """Escape one_of branches which normal shrinking treats as minimal, by
+        accepting bounded anti-shrink moves ("pumps", after shrinkray).
+
+        A pump is the same ValueHole move as widen_to_span_with_recorded_value,
+        but with relaxed acceptance: the result is adopted iff the hole was
+        claimed (no misalignment), the result still satisfies the shrink
+        predicate, and the choice at the span's first node - the one_of branch
+        selector - is strictly lower than before, even if the overall choice
+        sequence is longer. Unlike the widen pass, spans
+        making a single choice are eligible: a branch like just(x) makes no
+        choices of its own, so every wide re-encoding of its value is longer
+        than the branch it replaces, and the monotone sort_key ordering used
+        everywhere else would never accept one.
+
+        Pumps run as a loop after normal shrinking has fixated, not as a
+        shrink pass: each accepted pump deliberately makes the choice sequence
+        more complex, so we re-run the normal (monotone) passes to fixate on
+        the pumped target before trying to pump again, and stop when no pump
+        fires.
+
+        Termination: each pump strictly lowers one selector, and everything
+        between pumps is monotone in sort_key, so the intended measure is the
+        lexicographic pair (multiset of selector values, sort_key). That pair
+        is not *provably* decreasing: sort_key is itself lexicographic, so a
+        monotone pass may raise a later selector while lowering an earlier
+        value, or move an unrelated choice into a selector position by
+        deleting nodes before it, after which a pump could lower it again. In
+        practice passes never raise a value in place and misaligned draws are
+        filled with index-zero choices, so re-raising a selector requires a
+        deletion-shift coincidence; rather than rely on the measure alone we
+        cap the total number of pumps at MAX_PUMPS (with the engine-level
+        shrinking deadline behind it).
+        """
+        if self.shrink_target.status != Status.INTERESTING:
+            # The shrinker is also used to simplify members of the pareto
+            # front, where there is no failure to preserve, let alone a
+            # one_of branch selector worth complicating the test case over.
+            return
+        for _ in range(MAX_PUMPS):
+            if not self.pump_once():
+                return
+            self.greedy_shrink()
+
+    def pump_once(self) -> bool:
+        """Try to pump each candidate span of the current shrink target in
+        turn, adopting the first success. Returns True if progress was made.
+
+        Candidate spans are as in widen_to_span_with_recorded_value, except
+        that single-choice spans are eligible too.
+        """
+        for node in self.nodes:
+            if not (
+                node.type == "integer"
+                and not node.was_forced
+                and node.constraints["min_value"] == 0
+                # As in reduce_each_alternative, real one_of selectors are
+                # small; this also excludes most sampled_from index draws.
+                and 0 < node.value <= 10
+            ):
+                continue
+            assert isinstance(node.value, int)
+            for span_idx in self.spans_starting_at[node.index]:
+                span = self.spans[span_idx]
+                if span.recorded_value is no_recorded_value or span.choice_count == 0:
+                    continue
+                if (
+                    span.choice_count == 1
+                    and type(span.recorded_value) is int
+                    and span.recorded_value == node.value
+                ):
+                    # A single-choice span whose recorded value *is* its one
+                    # choice is an ordinary draw like integers(0, 10), not a
+                    # one_of branch: re-encoding it reproduces it exactly.
+                    continue
+                attempt = (
+                    self.choices[: span.start]
+                    + (ValueHole(span.recorded_value),)
+                    + self.choices[span.end :]
+                )
+                # A ValueHole expands to however many choices the claiming
+                # strategy emits, so cached_test_function cannot compute a
+                # length limit and would leave the run unbounded - and after a
+                # degraded (misaligned) hole, an unbounded run generates
+                # random data freely, which can be extremely slow. A real pump
+                # only needs a few extra choices, so cap the attempt
+                # explicitly; holes are never cached, so calling test_function
+                # directly loses nothing.
+                data = self.engine.new_conjecture_data(
+                    attempt, max_choices=len(self.choices) + 8
+                )
+                self.engine.test_function(data)
+                result = data.as_result()
+                self.check_calls()
+                if (
+                    result.status == Status.INTERESTING
+                    # A misaligned run means the hole was not claimed by a
+                    # strategy's inversion: whatever it produced is not a
+                    # re-encoding of the recorded value, so it may only be
+                    # adopted by the ordinary monotone gate below.
+                    and result.misaligned_at is None
+                    and self.__predicate(result)
+                    and self.__allow_transition(self.shrink_target, result)
+                    and span.start < len(result.nodes)
+                    and (new_node := result.nodes[span.start]).type == "integer"
+                    and new_node.value < node.value
+                ):
+                    assert isinstance(result, ConjectureResult)
+                    self.debug(
+                        f"Pumped selector at node {node.index} from "
+                        f"{node.value} to {new_node.value}"
+                    )
+                    self.update_shrink_target(result)
+                    # update_shrink_target normally only ever moves to a
+                    # sort_key-smaller target; reset the change tracking so
+                    # that it does not try to diff across this pump.
+                    self.clear_change_tracking()
+                    self.pumped = True
+                    return True
+                # Not a pump, but possibly an ordinary (monotone) improvement.
+                previous = self.shrink_target
+                self.incorporate_test_data(result)
+                if previous is not self.shrink_target:
+                    return True
+        return False
 
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type
