@@ -1016,6 +1016,49 @@ def test_widening_re_encodes_a_multipart_span():
     assert shrinker.choices == (0, 2021, 6, 15)
 
 
+def test_widening_inverts_through_string_map():
+    # The wide branch is a .map over text(); re-encoding the specific
+    # branch's value there requires analyzing the pack's source to strip
+    # the constant prefix.
+    wide = st.text().map(lambda s: "id-" + s)
+    specific = st.builds(
+        lambda a, b: "id-" + a + b,
+        st.sampled_from("xy"),
+        st.sampled_from(["zzy", "zzy"]),
+    )
+    strategy = wide | specific
+
+    @shrinking_from((1, 0, 0))
+    def shrinker(data: ConjectureData):
+        # builds() requires a build context
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if "zz" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, "xzzy")
+
+
+def test_full_shrink_slides_string_map_to_the_bare_needle():
+    # End-to-end: a specific mapped branch widens to plain text(), which
+    # then shrinks all the way to the needle substring.
+    strategy = st.text() | st.sampled_from(["dragon", "wyvern"]).map(
+        lambda s: "id-" + s
+    )
+
+    @shrinking_from((1, 0))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "dragon" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (0, "dragon")
+
+
 def test_widening_does_not_accept_longer_encodings():
     # datetimes() would re-encode the value in nine choices, strictly longer
     # than the sampled branch's two - and the shrinker never accepts a longer

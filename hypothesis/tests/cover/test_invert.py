@@ -624,9 +624,9 @@ def test_utc_frame_cannot_encode_values_which_overflow_utc():
 @pytest.mark.parametrize(
     "strategy,value",
     [
-        (st.integers().map(str), "1"),
         # a mapped element strategy is not rewritten to OneCharStringStrategy
-        # (unlike e.g. sampled_from of characters, which is)
+        # (unlike e.g. sampled_from of characters, which is), and text() wraps
+        # a strategy alphabet in a further sourceless validation pack
         (st.text(st.characters().map(str.upper), max_size=5), "A"),
         (st.sets(st.integers()), {1}),
         (st.frozensets(st.integers()), frozenset()),
