@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import strategies as st
+from hypothesis import given, seed, settings, strategies as st
 
 from tests.common.debug import find_any
 
@@ -45,4 +45,40 @@ def test_can_find_duplicated_subtree():
             and v[0] == v[2][0]
             and v[1] == v[2][1]
         ),
+    )
+
+
+def test_mutations_avoid_duplicating_within_unique_collections():
+    # Duplicating one element of a unique collection onto another element of
+    # the same collection is certain to be rejected, wasting (potentially
+    # expensive) element draws.
+    executions = 0
+    delivered = 0
+
+    @st.composite
+    def counted_integers(draw):
+        nonlocal executions
+        executions += 1
+        return draw(st.integers())
+
+    @seed(0)
+    @settings(max_examples=100, database=None)
+    @given(st.sets(counted_integers(), min_size=3, max_size=3))
+    def t(x):
+        nonlocal delivered
+        delivered += len(x)
+
+    t()
+    # around 6x before we taught the mutator about uniqueness; now ~1.06x
+    assert executions <= 1.5 * delivered
+
+
+def test_can_duplicate_between_unique_collections():
+    # While the mutator avoids duplicating elements within a single unique
+    # collection, duplicating between two different collections is still
+    # possible (and useful).
+    unique_lists = st.lists(st.integers(), unique=True, min_size=1, max_size=5)
+    find_any(
+        st.tuples(unique_lists, unique_lists),
+        lambda t: bool({x for x in t[0] if abs(x) > 2**40} & set(t[1])),
     )
