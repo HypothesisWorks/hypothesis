@@ -11,10 +11,11 @@
 import math
 from decimal import Decimal
 from fractions import Fraction
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from hypothesis.control import reject
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import CannotInvert, InvalidArgument
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
@@ -30,6 +31,7 @@ from hypothesis.internal.floats import (
     next_down_normal,
     next_up,
     next_up_normal,
+    sign_aware_lte,
     width_smallest_normals,
 )
 from hypothesis.internal.validation import (
@@ -84,6 +86,15 @@ class IntegersStrategy(SearchStrategy[int]):
         return data.draw_integer(
             min_value=self.start, max_value=self.end, weights=weights
         )
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise CannotInvert(f"{value!r} is not an integer")
+        if self.start is not None and value < self.start:
+            raise CannotInvert(f"{value!r} is below min_value={self.start!r}")
+        if self.end is not None and value > self.end:
+            raise CannotInvert(f"{value!r} is above max_value={self.end!r}")
+        return (value,)
 
     def filter(self, condition):
         if condition is math.isfinite:
@@ -188,6 +199,26 @@ class FloatStrategy(SearchStrategy[float]):
             allow_nan=self.allow_nan,
             smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
         )
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if type(value) is not float:
+            raise CannotInvert(f"{value!r} is not a float")
+        if math.isnan(value):
+            if not self.allow_nan:
+                raise CannotInvert(f"NaN not permitted by {self!r}")
+            return (value,)
+        if 0 < abs(value) < self.smallest_nonzero_magnitude:
+            raise CannotInvert(
+                f"{value!r} below smallest_nonzero_magnitude="
+                f"{self.smallest_nonzero_magnitude!r}"
+            )
+        if not sign_aware_lte(self.min_value, value) or not sign_aware_lte(
+            value, self.max_value
+        ):
+            raise CannotInvert(
+                f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
+            )
+        return (value,)
 
     def filter(self, condition):
         # Handle a few specific weird cases.
