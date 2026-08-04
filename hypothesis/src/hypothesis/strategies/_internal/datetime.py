@@ -29,6 +29,7 @@ from hypothesis.strategies._internal.strategies import (
     OneOfStrategy,
     SampledFromStrategy,
     SearchStrategy,
+    one_of,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
 
@@ -902,6 +903,37 @@ def _valid_key_cacheable(tzpath, key):
             return False
 
 
+def _timezone_key_strategies(*, allow_prefix):
+    """SampledFromStrategy branches for IANA keys: plain keys first, then one
+    branch per allowed prefix, with the prefix applied as a sampled_from
+    transformation. one_of's branch selector is therefore the prefix choice,
+    which shrinks towards - and can be re-encoded as - an unprefixed key."""
+    with warnings.catch_warnings():
+        try:
+            warnings.simplefilter("ignore", EncodingWarning)
+        except NameError:  # pragma: no cover
+            pass
+        # On Python 3.12 (and others?), `available_timezones()` opens files
+        # without specifying an encoding - which our selftests make an error.
+        available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
+
+    # TODO: filter out alias and deprecated names if disallowed
+
+    def valid_key(key):
+        return key == "UTC" or _valid_key_cacheable(zoneinfo.TZPATH, key)
+
+    # TODO: work out how to place a higher priority on "weird" timezones
+    # For details see https://github.com/HypothesisWorks/hypothesis/issues/2414
+    plain = [key for key in available_timezones if valid_key(key)]
+    branches = [sampled_from(plain)]
+    if allow_prefix:
+        for prefix in ("posix", "right"):
+            keys = [key for key in plain if valid_key(f"{prefix}/{key}")]
+            if keys:
+                branches.append(sampled_from(keys).map(f"{prefix}/{{}}".format))
+    return branches
+
+
 @defines_strategy(force_reusable_values=True)
 def timezone_keys(
     *,
@@ -940,37 +972,7 @@ def timezone_keys(
     # check_type(bool, allow_alias, "allow_alias")
     # check_type(bool, allow_deprecated, "allow_deprecated")
     check_type(bool, allow_prefix, "allow_prefix")
-
-    with warnings.catch_warnings():
-        try:
-            warnings.simplefilter("ignore", EncodingWarning)
-        except NameError:  # pragma: no cover
-            pass
-        # On Python 3.12 (and others?), `available_timezones()` opens files
-        # without specifying an encoding - which our selftests make an error.
-        available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
-
-    # TODO: filter out alias and deprecated names if disallowed
-
-    # When prefixes are allowed, we first choose a key and then flatmap to get our
-    # choice with one of the available prefixes.  That in turn means that we need
-    # some logic to determine which prefixes are available for a given key:
-
-    def valid_key(key):
-        return key == "UTC" or _valid_key_cacheable(zoneinfo.TZPATH, key)
-
-    # TODO: work out how to place a higher priority on "weird" timezones
-    # For details see https://github.com/HypothesisWorks/hypothesis/issues/2414
-    strategy = sampled_from([key for key in available_timezones if valid_key(key)])
-
-    if not allow_prefix:
-        return strategy
-
-    def sample_with_prefixes(zone):
-        keys_with_prefixes = (zone, f"posix/{zone}", f"right/{zone}")
-        return sampled_from([key for key in keys_with_prefixes if valid_key(key)])
-
-    return strategy.flatmap(sample_with_prefixes)
+    return one_of(_timezone_key_strategies(allow_prefix=allow_prefix))
 
 
 @defines_strategy(force_reusable_values=True)
@@ -989,8 +991,11 @@ def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
         ``pip install hypothesis[zoneinfo]`` installs it, if and only if needed.
     """
     check_type(bool, no_cache, "no_cache")
-    return timezone_keys().map(
-        zoneinfo.ZoneInfo.no_cache if no_cache else zoneinfo.ZoneInfo
+    ctor = zoneinfo.ZoneInfo.no_cache if no_cache else zoneinfo.ZoneInfo
+    # Mapping each sampled_from branch folds ctor into its transformations,
+    # keeping the whole strategy re-encodable (unlike mapping the one_of).
+    return one_of(
+        [keys.map(ctor) for keys in _timezone_key_strategies(allow_prefix=True)]
     )
 
 

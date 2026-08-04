@@ -24,6 +24,7 @@ from hypothesis.internal.conjecture.choice import ValueHole, choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
 from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.strategies import one_of
 
 pytestmark = pytest.mark.skipif(
     settings().backend == "crosshair", reason="cannot _invert symbolic values"
@@ -239,11 +240,53 @@ def test_aware_datetimes_reproduce_imaginary_values_in_wall_clock_frame():
     assert_roundtrip(strategy, dt.datetime(2024, 3, 10, 2, 30, tzinfo=_NY))
 
 
-def test_aware_datetimes_with_default_timezones_do_not_invert():
-    # the default timezones() strategy cannot re-encode its tzinfo draw
-    strategy = st.datetimes(min_value=dt.datetime(2020, 1, 1, tzinfo=_UTC))
+@given(st.data())
+def test_aware_datetimes_with_default_timezones(data):
+    strategy = st.datetimes(
+        dt.datetime(2020, 1, 1, tzinfo=_UTC),
+        dt.datetime(2021, 1, 1, tzinfo=_UTC),
+    )
+    check_roundtrip_many(strategy, data)
+
+
+@given(st.data())
+def test_timezone_keys(data):
+    check_roundtrip_many(st.timezone_keys(), data)
+
+
+@given(st.data())
+def test_timezones(data):
+    # inverting a ZoneInfo relies on instances being cached per key, so that
+    # plain == (which ZoneInfo does not override) compares equal
+    assert zoneinfo.ZoneInfo("America/New_York") is zoneinfo.ZoneInfo(
+        "America/New_York"
+    )
+    check_roundtrip_many(st.timezones(), data)
+
+
+def test_prefixed_timezone_keys_invert(monkeypatch):
+    # This environment may not ship posix/ or right/ tzdata files, so treat
+    # every key as valid: each prefix then forms its own one_of branch, whose
+    # selector re-encodes - and shrinks - the prefix choice.
+    import hypothesis.strategies._internal.datetime as dtmodule
+
+    monkeypatch.setattr(dtmodule, "_valid_key_cacheable", lambda tzpath, key: True)
+    branches = dtmodule._timezone_key_strategies(allow_prefix=True)
+    assert len(branches) == 3
+    strategy = one_of(branches)
+    assert strategy._invert("UTC") == (0, 0)
+    assert strategy._invert("posix/UTC") == (1, 0)
+    assert strategy._invert("right/UTC") == (2, 0)
+    assert_roundtrip(strategy, "posix/UTC")
     with pytest.raises(CannotInvert):
-        strategy._invert(dt.datetime(2020, 6, 1, tzinfo=_UTC))
+        strategy._invert("posix/no/such/zone")
+
+
+def test_no_cache_timezones_do_not_invert():
+    # ZoneInfo.no_cache instances compare by identity, so a fresh instance
+    # per draw can never equal the value being inverted
+    with pytest.raises(CannotInvert):
+        st.timezones(no_cache=True)._invert(zoneinfo.ZoneInfo("UTC"))
 
 
 @given(st.data())
