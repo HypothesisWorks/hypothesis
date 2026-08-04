@@ -1256,7 +1256,7 @@ class ConjectureData:
             else:
                 self.prefix = (
                     tuple(self.prefix[: self.index])
-                    + tuple(inverted)
+                    + inverted
                     + tuple(self.prefix[self.index + 1 :])
                 )
 

@@ -22,7 +22,7 @@ which assert exact choice-sequence transitions.
 
 ``just()`` values deliberately do not widen: a just() draw makes no choices,
 so any wide-branch encoding of its value would make the choice sequence
-longer, which the shrinker never accepts. The last two tests pin that.
+longer, which the shrinker never accepts.
 """
 
 import hypothesis.strategies as st
