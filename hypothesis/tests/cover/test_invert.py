@@ -179,6 +179,11 @@ _NY = zoneinfo.ZoneInfo("America/New_York")
 _UTC = zoneinfo.ZoneInfo("UTC")
 
 
+class _RaisingTzinfo(dt.tzinfo):
+    def utcoffset(self, value):
+        raise RuntimeError("broken tzinfo")
+
+
 @given(st.data())
 def test_aware_datetimes(data):
     tz = data.draw(st.sampled_from([_UTC, _NY]))
@@ -507,6 +512,34 @@ def test_roundtrip_explicit(strategy, value):
                 2024, 3, 10, 2, 30, tzinfo=zoneinfo.ZoneInfo("America/New_York")
             ),
         ),
+        # an imaginary value inside aware instant bounds
+        (
+            st.datetimes(
+                dt.datetime(2024, 1, 1, tzinfo=_NY),
+                dt.datetime(2025, 1, 1, tzinfo=_NY),
+                timezones=st.just(_NY),
+                allow_imaginary=False,
+            ),
+            dt.datetime(2024, 3, 10, 2, 30, tzinfo=_NY),
+        ),
+        # inside the instant bounds, but outside the wall-clock drawing window
+        (
+            st.datetimes(
+                dt.datetime(2020, 10, 30, 12, tzinfo=_NY),
+                dt.datetime(2020, 11, 1, 1, 15, fold=1, tzinfo=_NY),
+                timezones=st.just(_NY),
+            ),
+            dt.datetime(2020, 11, 1, 1, 30, tzinfo=_NY),
+        ),
+        # a tzinfo whose utcoffset() raises cannot be located at all
+        (
+            st.datetimes(
+                dt.datetime(2020, 1, 1, tzinfo=_UTC),
+                dt.datetime(2021, 1, 1, tzinfo=_UTC),
+                timezones=st.just(_UTC),
+            ),
+            dt.datetime(2020, 6, 1, tzinfo=_RaisingTzinfo()),
+        ),
         (st.timedeltas(), "not a timedelta"),
         (st.timedeltas(max_value=dt.timedelta(days=1)), dt.timedelta(days=10)),
         (st.just(42), 41),
@@ -519,11 +552,73 @@ def test_roundtrip_explicit(strategy, value):
         (st.permutations([1, 2, 3]), [1, 2, 4]),
         (st.permutations([1, 2, 3]), [1, 2]),
         (st.builds(_Pair, x=st.integers(), y=st.integers()), "not a Pair"),
+        (st.builds(_Pair, x=st.integers(), y=st.integers()), _Pair("bad", 2)),
+        (st.tuples(st.integers()), ("not an int",)),
+        (st.lists(st.nothing()), [1]),
+        (st.lists(st.integers(), unique_by=lambda x: x.key), [1, 2]),
+        (st.lists(st.sampled_from([1, 2, 3]), unique=True), "not a list"),
+        (st.lists(st.sampled_from([1, 2, 3]), unique=True, min_size=2), [1]),
+        (st.dictionaries(st.sampled_from([1, 2, 3]), st.integers()), {1: "x"}),
+        (st.fixed_dictionaries({"a": st.integers()}), "not a dict"),
+        (
+            st.fixed_dictionaries({"a": st.booleans()}, optional={"b": st.integers()}),
+            {"a": True, "b": "not an int"},
+        ),
     ],
 )
 def test_out_of_image_raises(strategy, value):
     with pytest.raises(CannotInvert):
         strategy._invert(value)
+
+
+def test_empty_element_strategy_inverts_only_the_empty_list():
+    assert st.lists(st.nothing())._invert([]) == ()
+
+
+def test_unique_list_with_tuple_suffixes_rejects_malformed_values():
+    # dictionaries() maps dict over a unique list of (key, value) pairs; go
+    # through the inner list strategy directly to check its shape guards.
+    dicts = st.dictionaries(st.integers(), st.integers())
+    inner = dicts.wrapped_strategy.wrapped_strategy.mapped_strategy
+    with pytest.raises(CannotInvert):
+        inner._invert("not a list")
+    with pytest.raises(CannotInvert):
+        inner._invert([1, 2])
+
+
+def test_aware_datetimes_with_unrepresentable_bound_cannot_invert():
+    # every wall time representable in UTC-00:30 is after this strategy's
+    # maximum instant, so no drawing window exists in that timezone
+    strategy = st.datetimes(
+        dt.datetime(1, 1, 1, 0, 0, tzinfo=dt.timezone.utc),
+        dt.datetime(1, 1, 1, 0, 20, tzinfo=dt.timezone.utc),
+        timezones=st.just(dt.timezone.utc),
+    ).wrapped_strategy
+    tz = dt.timezone(-dt.timedelta(minutes=30))
+    value = dt.datetime(1, 1, 1, 0, 10, tzinfo=dt.timezone.utc)
+    with pytest.raises(CannotInvert):
+        strategy._invert_aware_fields(value, tz, imaginary=False)
+
+
+# Bounds inside the same DST fold are in inverted wall-clock order, so this
+# strategy draws in the UTC frame; see the roundtrip test of the same name.
+_utc_frame_strategy = st.datetimes(
+    dt.datetime(2020, 11, 1, 1, 59, tzinfo=_NY, fold=0),
+    dt.datetime(2020, 11, 1, 1, 1, tzinfo=_NY, fold=1),
+    timezones=st.just(_NY),
+).wrapped_strategy
+
+
+def test_utc_frame_cannot_encode_imaginary_values():
+    value = dt.datetime(2020, 11, 1, 1, 30, tzinfo=_NY)
+    with pytest.raises(CannotInvert):
+        _utc_frame_strategy._invert_aware_fields(value, _NY, imaginary=True)
+
+
+def test_utc_frame_cannot_encode_values_which_overflow_utc():
+    value = dt.datetime.max.replace(tzinfo=dt.timezone(-dt.timedelta(hours=1)))
+    with pytest.raises(CannotInvert):
+        _utc_frame_strategy._invert_aware_fields(value, _NY, imaginary=False)
 
 
 @pytest.mark.parametrize(
