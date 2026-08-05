@@ -40,6 +40,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     draw_choice,
+    no_recorded_value,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
     endswith,
@@ -1670,7 +1671,7 @@ class Shrinker:
             # (e.g. the selector draw's own span), or a one_of whose current
             # branch made no choices, like just() - and a re-encoding of the
             # latter would be longer, which incorporate_test_data rejects.
-            lambda i: self.spans[i].recorded_value is not None
+            lambda i: self.spans[i].recorded_value is not no_recorded_value
             and self.spans[i].choice_count > 1,
         )
         span = self.spans[span_idx]

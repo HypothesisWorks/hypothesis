@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
+import datetime as dt
 import time
 
 import pytest
@@ -15,6 +17,7 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -985,3 +988,94 @@ def test_widening_does_not_apply_to_just():
         [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
     )
     assert shrinker.choices == (1,)
+
+
+def test_widening_re_encodes_a_multipart_span():
+    # The specific branch encodes its date in four choices via sampled parts;
+    # widening re-encodes the whole span - selector included - as the dates()
+    # branch's equal-length (year, month, day) form, which can then shrink.
+    specific = st.builds(
+        dt.date,
+        st.sampled_from([2021, 2022]),
+        st.sampled_from([6, 7]),
+        st.sampled_from([15, 20]),
+    )
+    strategy = st.dates() | specific
+
+    @shrinking_from((1, 0, 0, 0))
+    def shrinker(data: ConjectureData):
+        # builds() requires a build context
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if dt.date(2021, 6, 10) <= value <= dt.date(2021, 7, 1):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, 2021, 6, 15)
+
+
+def test_widening_does_not_accept_longer_encodings():
+    # datetimes() would re-encode the value in nine choices, strictly longer
+    # than the sampled branch's two - and the shrinker never accepts a longer
+    # choice sequence, so the specific branch is kept.
+    values = [dt.datetime(2021, 6, 15, 4), dt.datetime(2021, 6, 20, 12)]
+    strategy = st.datetimes() | st.sampled_from(values)
+
+    @shrinking_from((1, 1))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if dt.datetime(2021, 6, 10) <= value <= dt.datetime(2021, 7, 1):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, 1)
+
+
+@dataclasses.dataclass
+class Point:
+    x: int
+
+
+def test_widening_a_weakly_recorded_object():
+    # Class instances are recorded via weakref; sampled_from keeps its
+    # elements alive, so the recorded value is still there to widen from.
+    strategy = st.builds(Point, st.integers()) | st.sampled_from(
+        [Point(4991), Point(4999)]
+    )
+
+    @shrinking_from((1, 0))
+    def shrinker(data: ConjectureData):
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if 4990 <= value.x <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, 4991)
+
+
+@pytest.mark.skipif(PYPY, reason="requires refcounting for prompt collection")
+def test_ephemeral_objects_are_not_widened():
+    # A weakly-recorded object built fresh each draw is collected as soon as
+    # the generating run finishes, so there is no recorded value to widen.
+    strategy = st.builds(Point, st.integers()) | st.builds(
+        Point, st.sampled_from([4991, 4999])
+    )
+
+    @shrinking_from((1, 0))
+    def shrinker(data: ConjectureData):
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if 4990 <= value.x <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, 0)

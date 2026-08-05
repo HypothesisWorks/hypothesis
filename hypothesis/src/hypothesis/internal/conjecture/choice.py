@@ -95,7 +95,8 @@ class ValueHole:
     reaches it.
     """
 
-    value: ChoiceT
+    # any value a strategy might re-encode, not just the choice types
+    value: object
 
 
 @dataclass(slots=True, frozen=False)

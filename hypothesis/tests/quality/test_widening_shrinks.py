@@ -25,6 +25,8 @@ so any wide-branch encoding of its value would make the choice sequence
 longer, which the shrinker never accepts.
 """
 
+import datetime as dt
+
 import hypothesis.strategies as st
 from hypothesis.strategies import builds, integers, just, lists, sampled_from, text
 
@@ -147,6 +149,22 @@ def test_widen_skips_alternatives_that_cannot_hold_the_value():
     strat = st.booleans() | integers() | sampled_from([4991, 5009])
     val = minimal(strat, lambda n: 4990 <= n <= 5010)
     assert val == 4990
+
+
+def test_widen_dates_with_compound_branch():
+    # dates() re-encodes the value in as many choices as the compound branch
+    # spends, so widening applies; it could not slide into e.g. datetimes(),
+    # whose longer encoding the shrinker would reject.
+    specific = builds(
+        dt.date,
+        sampled_from([2021, 2022]),
+        sampled_from([6, 7]),
+        sampled_from([15, 20]),
+    )
+    assert minimal(
+        st.dates() | specific,
+        lambda d: dt.date(2021, 6, 10) <= d <= dt.date(2021, 7, 1),
+    ) == dt.date(2021, 6, 10)
 
 
 def test_just_does_not_widen():
