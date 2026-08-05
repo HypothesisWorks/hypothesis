@@ -14,7 +14,7 @@ from typing import Any
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -178,3 +178,6 @@ class LazyStrategy(SearchStrategy[Ex]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         return self.wrapped_strategy._invert(value)
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        return self.wrapped_strategy._invert_with_holes(value)

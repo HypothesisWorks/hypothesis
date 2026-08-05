@@ -12,6 +12,7 @@ import math
 from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import (
+    Any,
     Literal,
     TypeAlias,
     TypedDict,
@@ -93,9 +94,27 @@ class ValueHole:
     hole (inversion failed, or the hole fell out of alignment with strategy
     draw boundaries), it is treated as a misalignment when a draw_* call
     reaches it.
+
+    With ``record=True``, a declining strategy instead consumes the hole:
+    it appends a ``HoleRecord`` to ``ConjectureData.hole_records``, draws its
+    own choices freshly, and the rest of the prefix resumes afterwards - so a
+    single replay stays aligned and records every unclaimed hole, letting a
+    caller search for choices that re-encode the recorded values.
     """
 
     # any value a strategy might re-encode, not just the choice types
+    value: object
+    record: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class HoleRecord:
+    """A ``ValueHole(record=True)`` that no strategy claimed during replay:
+    the index of the choice at which the declining strategy began drawing,
+    the strategy itself, and the hole's target value."""
+
+    index: int
+    strategy: Any  # SearchStrategy; typed loosely to avoid an import cycle
     value: object
 
 

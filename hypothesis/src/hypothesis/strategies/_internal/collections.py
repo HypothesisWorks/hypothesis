@@ -18,7 +18,7 @@ from hypothesis.control import current_build_context
 from hypothesis.errors import CannotInvert, InvalidArgument
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, equal_values
@@ -103,6 +103,15 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
                 add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
                 raise
         return tuple(choices)
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if not isinstance(value, tuple) or len(value) != len(self.element_strategies):
+            return SearchStrategy._invert_with_holes(self, value)
+        return tuple(
+            choice
+            for strategy, element in zip(self.element_strategies, value, strict=True)
+            for choice in strategy._invert_with_holes(element)
+        )
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return any(recur(e) for e in self.element_strategies)
@@ -262,6 +271,21 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         choices.extend(elements.done())
         return tuple(choices)
 
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if (
+            not isinstance(value, list)
+            or not (self.min_size <= len(value) <= self.max_size)
+            or self.element_strategy.is_empty
+        ):
+            return SearchStrategy._invert_with_holes(self, value)
+        elements = cu.invert_many(self.min_size, self.max_size)
+        choices: list[ChoiceT | ValueHole] = []
+        for element in value:
+            choices.extend(elements.more())
+            choices.extend(self.element_strategy._invert_with_holes(element))
+        choices.extend(elements.done())
+        return tuple(choices)
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self.element_strategy!r}, "
@@ -417,6 +441,19 @@ class UniqueListStrategy(ListStrategy[Ex]):
         choices.extend(elements.done())
         return tuple(choices)
 
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if self.tuple_suffixes is not None or not isinstance(value, list):
+            return SearchStrategy._invert_with_holes(self, value)
+        try:
+            unique = all(
+                len(set(map(keyfunc, value))) == len(value) for keyfunc in self.keys
+            )
+        except TypeError:
+            unique = False
+        if not unique:
+            return SearchStrategy._invert_with_holes(self, value)
+        return ListStrategy._invert_with_holes(self, value)
+
 
 class UniqueSampledListStrategy(UniqueListStrategy):
     def do_draw(self, data: ConjectureData) -> list[Ex]:
@@ -489,6 +526,10 @@ class UniqueSampledListStrategy(UniqueListStrategy):
             # with an exhausted pool, do_draw stops without drawing a boolean
             choices.extend(elements.done())
         return tuple(choices)
+
+    # do_draw indexes into the pool of not-yet-drawn elements, so element-wise
+    # structural composition would produce the wrong choices here.
+    _invert_with_holes = SearchStrategy._invert_with_holes
 
 
 class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
@@ -599,6 +640,20 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
 
     def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.fixed)
+
+    def _invert_with_holes(self, value: Any) -> tuple[ChoiceT | ValueHole, ...]:
+        if (
+            self.optional is not None
+            or not isinstance(value, Mapping)
+            or set(value.keys()) != set(self.mapping.keys())
+        ):
+            return SearchStrategy._invert_with_holes(self, value)
+        choices: list[ChoiceT | ValueHole] = []
+        for key, strategy in self.mapping.items():
+            choices.extend(strategy._invert_with_holes(value[key]))
+        # an identity Fisher-Yates shuffle of the (key, value) pairs
+        choices.extend(range(len(self.mapping) - 1))
+        return tuple(choices)
 
     def __repr__(self) -> str:
         if self.optional is not None:
