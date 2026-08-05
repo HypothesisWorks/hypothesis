@@ -163,8 +163,6 @@ _RECORDABLE_VALUE_TYPES: tuple[type, ...] = (
     datetime.timedelta,
 )
 
-# Sentinel distinguishing "no value was recorded for this span" from a
-# recorded value of None.
 no_recorded_value = UniqueIdentifier("no_recorded_value")
 
 

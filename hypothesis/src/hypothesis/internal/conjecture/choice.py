@@ -12,7 +12,6 @@ import math
 from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import (
-    Any,
     Literal,
     TypeAlias,
     TypedDict,
@@ -97,7 +96,7 @@ class ValueHole:
     """
 
     # any value a strategy might re-encode, not just the choice types
-    value: Any
+    value: object
 
 
 @dataclass(slots=True, frozen=False)

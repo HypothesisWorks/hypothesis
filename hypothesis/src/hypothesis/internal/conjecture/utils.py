@@ -360,10 +360,10 @@ class many:
 
 class invert_many:
     """The inversion counterpart of ``many``: the boolean choices that
-    ``many`` would draw for a collection of known size. Fixed-size collections
-    draw no booleans at all; variable-size ones draw a continuation boolean
-    before each element (forced while below min_size, but forced draws still
-    consume a choice) and a final False to stop (forced at max_size)."""
+    ``many`` would draw around each element. Fixed-size collections draw no
+    booleans at all; variable-size ones draw a continuation boolean before
+    each element (forced while below min_size, but forced draws still consume
+    a choice) and a final False to stop (forced at max_size)."""
 
     def __init__(self, min_size: int, max_size: int | float) -> None:
         self._variable_size = min_size != max_size

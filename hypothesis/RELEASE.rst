@@ -11,5 +11,4 @@ branch when the strategies involved include
 :func:`~hypothesis.strategies.builds` of a dataclass,
 :func:`~hypothesis.strategies.permutations`, the
 :func:`~hypothesis.strategies.dates` family of strategies, and filtered,
-deferred, or recursive combinations of them - where previously only the
-primitive strategies could re-encode a value.
+deferred, or recursive combinations of them.

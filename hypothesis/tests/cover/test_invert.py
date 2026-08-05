@@ -128,10 +128,15 @@ def test_one_of(data):
 
 @given(st.data())
 def test_lists(data):
-    min_size = data.draw(st.integers(0, 5))
-    max_size = data.draw(st.integers(min_size, min_size + 10))
-    strategy = st.lists(st.integers(), min_size=min_size, max_size=max_size)
-    check_roundtrip_many(strategy, data)
+    kwargs = {}
+    min_size = data.draw(st.none() | st.integers(0, 5))
+    if min_size is not None:
+        kwargs["min_size"] = min_size
+    lo = min_size or 0
+    max_size = data.draw(st.none() | st.integers(lo, lo + 10))
+    if max_size is not None:
+        kwargs["max_size"] = max_size
+    check_roundtrip_many(st.lists(st.integers(), **kwargs), data)
 
 
 @given(st.data())
