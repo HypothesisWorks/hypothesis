@@ -1,0 +1,275 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
+import pytest
+
+from hypothesis import Phase, example, given, settings, strategies as st
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import BaseExceptionGroup
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
+
+from tests.common.utils import capture_out
+
+pytestmark = pytest.mark.skipif(
+    settings().backend == "crosshair", reason="cannot _invert symbolic values"
+)
+
+
+def output_from_failure(test):
+    with capture_out() as out, pytest.raises(AssertionError) as exc_info:
+        test()
+    notes = "\n".join(getattr(exc_info.value, "__notes__", []))
+    return out.getvalue() + str(exc_info.value) + "\n" + notes
+
+
+def test_shrinks_failing_explicit_example():
+    @example(x=[1, 2, 3, 4, 5, 6, 7, 8, 9]).shrink()
+    @given(st.lists(st.integers()))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert 7 not in x
+
+    out = output_from_failure(test)
+    assert "Failing test case: test(\n    x=[7],\n)" in out
+    assert "explicit example" not in out
+
+
+def test_shrinks_multiple_arguments():
+    @example(x=[10, 20, 30], y="irrelevant").shrink()
+    @given(x=st.lists(st.integers()), y=st.text())
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x, y):
+        assert sum(x) < 25
+
+    out = output_from_failure(test)
+    assert "x=[25]" in out
+    assert "y=''" in out
+
+
+json_ish = st.recursive(
+    st.none() | st.booleans() | st.floats(allow_nan=False) | st.text(),
+    lambda children: st.lists(children) | st.dictionaries(st.text(), children),
+)
+
+
+def test_shrinks_json_like_recursive_example():
+    def contains_needle(v):
+        if isinstance(v, str):
+            return "needle" in v
+        if isinstance(v, list):
+            return any(map(contains_needle, v))
+        if isinstance(v, dict):
+            return any(map(contains_needle, v.values()))
+        return False
+
+    blob = [
+        "ignore me",
+        [[3.5, None, ["hello needle world", 0.0]], True],
+        {"deep": [{"key": "needle in a haystack"}], "other": False},
+    ]
+
+    @example(value=blob).shrink()
+    @given(json_ish)
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None, deadline=None)
+    def test(value):
+        assert not contains_needle(value)
+
+    out = output_from_failure(test)
+    assert "value='needle'" in out
+
+
+def test_shrinks_json_object_example_to_minimal_dict():
+    def has_needle_key(v):
+        if isinstance(v, dict):
+            return "needle" in v or any(map(has_needle_key, v.values()))
+        if isinstance(v, list):
+            return any(map(has_needle_key, v))
+        return False
+
+    blob = {
+        "a": ["x", {"needle": [1.5, None]}, "y"],
+        "b": {"c": {"deep": True, "needle": "stack"}},
+    }
+
+    @example(value=blob).shrink()
+    @given(json_ish)
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None, deadline=None)
+    def test(value):
+        assert not has_needle_key(value)
+
+    out = output_from_failure(test)
+    assert "value={'needle': None}" in out
+
+
+def test_shrinks_mapped_argument_via_search():
+    # integers().map(...) cannot invert directly; the hole-filling search
+    # must find the choice which regenerates exactly x=10.
+    @example(x=10).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x != 10
+
+    out = output_from_failure(test)
+    assert "Failing test case: test(\n    x=10,\n)" in out
+    assert "explicit example" not in out
+
+
+def test_shrinks_mapped_argument_to_boundary():
+    # any re-encoded failure is accepted as a shrink starting point, even if
+    # unequal to the example's argument, so this shrinks to the boundary
+    @example(x=1000000).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x < 100
+
+    out = output_from_failure(test)
+    assert "x=100" in out
+    assert "explicit example" not in out
+
+
+def test_shrinks_composite_argument_via_search():
+    @st.composite
+    def points(draw):
+        return (draw(st.integers(0, 5)), draw(st.integers(0, 5)))
+
+    @example(p=(3, 4)).shrink()
+    @given(p=points())
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(p):
+        assert p[1] < 4
+
+    out = output_from_failure(test)
+    assert "p=(0, 4)" in out
+    assert "explicit example" not in out
+
+
+def test_falls_back_when_search_cannot_reproduce():
+    # 11 is not in the image of the strategy, and nothing else fails, so the
+    # search must exhaust its budget and report the example unshrunk.
+    @example(x=11).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x != 11
+
+    out = output_from_failure(test)
+    assert "Failing explicit example: test(\n    x=11,\n)" in out
+    # and we suggest the solver-backed search as a next step
+    assert 'settings(backend="crosshair")' in out
+
+
+@pytest.mark.skipif(
+    "crosshair" not in AVAILABLE_PROVIDERS, reason="crosshair backend not installed"
+)
+def test_shrinks_mapped_argument_with_crosshair_backend():
+    @example(x=10).shrink()
+    @given(st.integers().map(lambda x: x * 2))
+    @settings(
+        phases=[Phase.explicit, Phase.shrink],
+        database=None,
+        backend="crosshair",
+        deadline=None,
+    )
+    def test(x):
+        assert x != 10
+
+    out = output_from_failure(test)
+    assert "Failing test case: test(\n    x=10,\n)" in out
+
+
+def test_reports_other_failures_surfaced_while_shrinking():
+    # Shrinking x=1200 towards zero tries x=0, hitting the second assertion:
+    # a genuinely different bug, which is reported alongside the expected one.
+    @example(x=1200).shrink()
+    @given(st.integers())
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert x <= 1000
+        assert x != 0
+
+    with pytest.raises(BaseExceptionGroup) as exc_info:
+        test()
+    assert len(exc_info.value.exceptions) == 2
+    notes = "\n".join(
+        "\n".join(getattr(e, "__notes__", [])) for e in exc_info.value.exceptions
+    )
+    assert "x=1001" in notes
+    assert "x=0" in notes
+
+
+def test_falls_back_when_replay_does_not_reproduce():
+    calls = []
+
+    @example(x=0).shrink()
+    @given(st.integers())
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        calls.append(x)
+        # fails only on the very first call, so the re-encoded replay passes
+        assert len(calls) > 1
+
+    out = output_from_failure(test)
+    assert "Failing explicit example: test(\n    x=0,\n)" in out
+
+
+def test_falls_back_when_shrink_phase_is_disabled():
+    @example(x=[1, 2, 3, 4, 5, 6, 7, 8, 9]).shrink()
+    @given(st.lists(st.integers()))
+    @settings(phases=[Phase.explicit], database=None)
+    def test(x):
+        assert 7 not in x
+
+    out = output_from_failure(test)
+    assert "Failing explicit example" in out
+
+
+def test_shrink_does_nothing_for_passing_examples():
+    @example(x=[1]).shrink()
+    @given(st.lists(st.integers()))
+    @settings(phases=[Phase.explicit], database=None)
+    def test(x):
+        pass
+
+    test()
+
+
+def test_shrunk_example_reports_reproduce_failure_blob():
+    @example(x=[1, 2, 3, 4, 5, 6, 7, 8, 9]).shrink()
+    @given(st.lists(st.integers()))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None, print_blob=True)
+    def test(x):
+        assert 7 not in x
+
+    out = output_from_failure(test)
+    assert "@reproduce_failure" in out
+    assert "x=[7]" in out
+
+
+def test_shrink_cannot_be_combined_with_xfail():
+    with pytest.raises(InvalidArgument, match="Cannot combine"):
+        example(x=1).xfail().shrink()
+    with pytest.raises(InvalidArgument, match="Cannot combine"):
+        example(x=1).shrink().xfail()
+    # ...but an xfail whose condition is False is inert, and allowed
+    example(x=1).xfail(condition=False).shrink()
+    example(x=1).shrink().xfail(condition=False)
+
+
+def test_shrink_is_idempotent():
+    @example(x=[7, 8, 9]).shrink().shrink()
+    @given(st.lists(st.integers()))
+    @settings(phases=[Phase.explicit, Phase.shrink], database=None)
+    def test(x):
+        assert 7 not in x
+
+    out = output_from_failure(test)
+    assert "x=[7]" in out

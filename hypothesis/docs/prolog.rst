@@ -5,6 +5,8 @@
 .. |@example.via| replace:: :func:`@example(...).via() <hypothesis.example.via>`
 .. |example.xfail| replace:: :func:`example.xfail <hypothesis.example.xfail>`
 .. |example.via| replace:: :func:`example.via <hypothesis.example.via>`
+.. |@example.shrink| replace:: :func:`@example(...).shrink() <hypothesis.example.shrink>`
+.. |example.shrink| replace:: :func:`example.shrink <hypothesis.example.shrink>`
 .. |@settings| replace:: :func:`@settings <hypothesis.settings>`
 .. |settings| replace:: :func:`settings <hypothesis.settings>`
 .. |@composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
