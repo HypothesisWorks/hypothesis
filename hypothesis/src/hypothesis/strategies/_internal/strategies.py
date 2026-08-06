@@ -55,6 +55,7 @@ from hypothesis.internal.conjecture.utils import (
     combine_labels,
 )
 from hypothesis.internal.coverage import check_function
+from hypothesis.internal.invertstring import string_template
 from hypothesis.internal.reflection import (
     get_pretty_function_description,
     is_identity_function,
@@ -1158,8 +1159,47 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
             if not isinstance(value, self.pack):
                 return Impossible(f"{value!r} is not an instance of {self.pack!r}")
             return self.mapped_strategy._invert(list(value.items()))
-        # an opaque pack tells us nothing either way
-        return self._hole(value, f"cannot invert {self!r} (value={value!r})")
+        # A string-building pack may be undone by analysing its source;
+        # a pack we cannot analyse tells us nothing either way.
+        template = string_template(self.pack) if isinstance(value, str) else None
+        if template is None:
+            return self._hole(value, f"cannot invert {self!r} (value={value!r})")
+        segment = template.split(value)
+        if segment is None:
+            return Impossible(f"{value!r} does not match the template of {self!r}")
+        # Preimages are unverified guesses, so check each by calling pack
+        # before handing it to the inner strategy.
+        verified = False
+        partials: list[tuple[ChoiceT | ValueHole, ...]] = []
+        for preimage in template.parses(segment):
+            if not self._packs_to(preimage, value):
+                continue
+            verified = True
+            inner = self.mapped_strategy._invert(preimage)
+            if isinstance(inner, Impossible):
+                continue
+            if not any(isinstance(c, ValueHole) for c in inner):
+                # a complete encoding of a verified preimage: the whole map inverts
+                return inner
+            partials.append(inner)
+        if not verified:
+            return Impossible(f"no verified preimage of {value!r} under {self!r}")
+        if not partials and template.conv == "direct":
+            # concatenation has exactly one preimage, and it was Impossible
+            return Impossible(
+                f"{segment!r} cannot be produced by {self.mapped_strategy!r}"
+            )
+        return self._hole(
+            value,
+            f"cannot invert {self!r} (value={value!r})",
+            candidates=tuple(partials),
+        )
+
+    def _packs_to(self, preimage: Any, value: Any) -> bool:
+        try:
+            return equal_values(self.pack(preimage), value)
+        except Exception:
+            return False
 
     @property
     def branches(self) -> Sequence[SearchStrategy[MappedTo]]:

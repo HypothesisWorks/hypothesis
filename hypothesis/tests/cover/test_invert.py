@@ -29,6 +29,7 @@ from hypothesis.internal.conjecture.choice import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
+from hypothesis.internal.invertstring import string_template
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import one_of
 
@@ -482,8 +483,10 @@ def test_roundtrip_explicit(strategy, value):
             dt.date(2025, 1, 1),
         ),
         (st.times(), "not a time"),
+        (st.times(), dt.time(12, 0, tzinfo=dt.timezone.utc)),
         (st.times(min_value=dt.time(12, 0)), dt.time(6, 0)),
         (st.datetimes(), "not a datetime"),
+        (st.datetimes(), dt.datetime(2020, 6, 1, tzinfo=dt.timezone.utc)),
         (st.datetimes(max_value=dt.datetime(2020, 1, 1)), dt.datetime(2025, 1, 1)),
         # a naive value into an aware-bounded strategy
         (
@@ -599,6 +602,10 @@ def test_unique_list_with_tuple_suffixes_rejects_malformed_values():
     inner = dicts.wrapped_strategy.wrapped_strategy.mapped_strategy
     assert isinstance(inner._invert("not a list"), Impossible)
     assert isinstance(inner._invert([1, 2]), Impossible)
+    # and likewise for the pool-indexed variant used with sampled_from keys
+    sampled = st.dictionaries(st.sampled_from([1, 2, 3]), st.integers())
+    inner = sampled.wrapped_strategy.wrapped_strategy.mapped_strategy
+    assert isinstance(inner._invert([1, 2]), Impossible)
 
 
 def test_aware_datetimes_with_unrepresentable_bound_cannot_invert():
@@ -640,7 +647,6 @@ def test_utc_frame_cannot_encode_values_which_overflow_utc():
 @pytest.mark.parametrize(
     "strategy,value",
     [
-        (st.integers().map(str), "1"),
         # a mapped element strategy is not rewritten to OneCharStringStrategy
         # (unlike e.g. sampled_from of characters, which is)
         (st.text(st.characters().map(str.upper), max_size=5), "A"),
@@ -989,3 +995,168 @@ def test_hole_budget_aborts_pathological_inversions():
     finally:
         _hole_budget.remaining = None
     assert st.integers()._invert(5) == (5,)
+
+
+_ID_PREFIX = "id-"
+_ID_TEMPLATE = "id-{0}"
+
+
+def _parenthesize(s):
+    return "(" + s + ")"
+
+
+@pytest.mark.parametrize(
+    "strategy,value,expected",
+    [
+        # constant-prefix/suffix concatenation
+        (st.text().map(lambda s: "pre-" + s), "pre-xyz", ("xyz",)),
+        (st.text().map(lambda s: s + "-post"), "xyz-post", ("xyz",)),
+        (st.text().map(lambda s: "a" + s + "b"), "aXb", ("X",)),
+        # constants may come from globals, closures, or named functions
+        (st.text().map(lambda s: _ID_PREFIX + s), "id-x", ("x",)),
+        (st.text().map(_parenthesize), "(deep)", ("deep",)),
+        # single-field formatting, in all its spellings
+        (st.text().map("id-{}".format), "id-dragon", ("dragon",)),
+        (st.text().map("{}!".format), "ok!", ("ok",)),
+        (st.text().map(_ID_TEMPLATE.format), "id-x", ("x",)),
+        (st.text().map(lambda s: f"id-{s}"), "id-x", ("x",)),
+        (st.text().map(lambda s: _ID_TEMPLATE.format(s)), "id-x", ("x",)),
+        # a formatted field parses back to non-string preimages too
+        (st.integers().map(lambda n: f"n={n}"), "n=5", (5,)),
+        (st.integers().map("v{}".format), "v7", (7,)),
+        (st.booleans().map("{}?".format), "True?", (True,)),
+        # str() and repr() are the trivial template: parse the whole value back
+        (st.integers().map(str), "17", (17,)),
+        (st.booleans().map(str), "True", (True,)),
+        (st.lists(st.integers()).map(str), "[1, 2]", (True, 1, True, 2, False)),
+        (st.text().map(str), "abc", ("abc",)),
+        (st.integers().map(repr), "17", (17,)),
+        (st.text().map(repr), "'abc'", ("abc",)),
+        (st.lists(st.integers()).map(repr), "[1, 2]", (True, 1, True, 2, False)),
+        # nested maps invert innermost-last
+        (st.text().map(lambda s: "a" + s).map(lambda s: "b" + s), "baX", ("X",)),
+        # inside a union, giving cross-branch re-encoding of mapped strings
+        (
+            st.text().map(lambda s: "id-" + s) | st.sampled_from(["id-a", "id-b"]),
+            "id-b",
+            (0, "b"),
+        ),
+    ],
+)
+def test_string_pack_inversion(strategy, value, expected):
+    assert strategy._invert(value) == expected
+    assert_roundtrip(strategy, value)
+
+
+def test_closure_constants_resolve():
+    prefix = "pre|"
+    strategy = st.text().map(lambda s: prefix + s)
+    assert strategy._invert("pre|abc") == ("abc",)
+    assert_roundtrip(strategy, "pre|abc")
+
+
+@pytest.mark.parametrize(
+    "strategy,value",
+    [
+        # a fully-understood template whose constant text is absent
+        (st.text().map(lambda s: "pre-" + s), "wrong-prefix"),
+        (st.text().map(lambda s: s + "!"), "no-bang"),
+        (st.text().map("id-{}".format), "wrong-prefix"),
+        # concatenation has exactly one preimage, and the inner strategy
+        # proves it impossible
+        (st.text(max_size=2).map(lambda s: "pre-" + s), "pre-toolong"),
+        # nothing verifies: repr of the raw string adds quotes, and
+        # literal_eval cannot parse the value
+        (st.integers().map(repr), "not an int"),
+        # a string-template pack of a non-dict is not analysed for dict packs
+        (st.dictionaries(st.text(), st.integers()), [("a", 1)]),
+    ],
+)
+def test_string_packs_which_are_provably_impossible(strategy, value):
+    assert isinstance(strategy._invert(value), Impossible)
+
+
+@pytest.mark.parametrize(
+    "strategy,value",
+    [
+        # unsupported pack shapes: case ops, str(), %-templates, string
+        # methods, multiple or spec-carrying fields
+        (st.text().map(str.upper), "ABC"),
+        (st.text().map(lambda s: "%s!" % s), "x!"),  # noqa: UP031
+        (st.text().map(lambda s: s.replace("a", "b")), "b"),
+        (st.text().map(lambda s: s.zfill(3)), "00x"),
+        (st.text().map(lambda s: ",".join([s])), "x"),  # noqa: FLY002
+        (st.text().map(lambda s: f"{s}{s}"), "xx"),
+        (st.text().map(lambda s: f"{s:>3}"), "  x"),
+        # a formatted field whose verified preimage the inner strategy
+        # rejects: the parse candidates are not exhaustive, so no proof
+        (st.integers().map("v{}".format), "vnot-an-int"),
+        (st.integers().map(str), "not an int"),
+        (st.integers().map(repr), "'abc'"),
+    ],
+)
+def test_unanalysable_string_packs_give_a_hole(strategy, value):
+    result = strategy._invert(value)
+    assert any(isinstance(c, ValueHole) for c in result)
+
+
+def test_string_pack_keeps_verified_preimage_as_candidate():
+    # the preimage "A" is verified against the outer pack, but the inner
+    # .map(chr) cannot encode it - so it survives as a partial candidate
+    strategy = st.integers().map(chr).map(lambda s: "x" + s)
+    (h,) = strategy._invert("xA")
+    assert h.value == "xA"
+    ((inner,),) = h.candidates
+    assert isinstance(inner, ValueHole)
+    assert inner.value == "A"
+
+
+def _multi_statement_pack(s):
+    assert isinstance(s, str)
+    return "p" + s
+
+
+def _bare_return_pack(s):
+    return
+
+
+async def _async_pack(s):
+    return "p" + s
+
+
+_exec_ns: dict = {}
+exec("def _exec_pack(s): return 'p' + s", _exec_ns)
+
+
+def _documented_pack(s):
+    """Prefix the argument."""
+    return "doc-" + s
+
+
+def test_def_pack_with_docstring_inverts():
+    assert_roundtrip(st.text().map(_documented_pack), "doc-x")
+
+
+@pytest.mark.parametrize(
+    "fn",
+    [
+        "{".format,  # malformed template
+        "{!r}".format,  # unsupported conversion
+        lambda s: s.strip() + "!",  # unsupported concatenation segment
+        lambda s: ("a" + "b").format(s),  # template is not a resolvable constant
+        eval("lambda s: 'p' + s"),  # no source available for the lambda
+        _exec_ns["_exec_pack"],  # no source available for the def
+        _async_pack,  # not a plain function body
+        _bare_return_pack,  # returns nothing
+        lambda a, b: "ab",  # wrong arity
+        _multi_statement_pack,
+    ],
+)
+def test_unanalysable_pack_shapes_have_no_template(fn):
+    assert string_template(fn) is None
+
+
+def test_a_raising_pack_fails_verification():
+    strategy = st.text().map(lambda s: "p" + s).wrapped_strategy
+    assert strategy._packs_to("x", "px")
+    assert not strategy._packs_to(123, "p123")
