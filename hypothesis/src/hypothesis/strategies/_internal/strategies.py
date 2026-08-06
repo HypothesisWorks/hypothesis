@@ -33,7 +33,6 @@ from typing import (
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
-    CannotInvert,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -41,7 +40,12 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
 )
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import (
+    ChoiceT,
+    Impossible,
+    InvertResultT,
+    ValueHole,
+)
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
 from hypothesis.internal.conjecture.utils import (
@@ -561,22 +565,29 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         """
         Return a choice sequence ``choices`` such that we expect
 
             data = ConjectureData.for_choices(choices)
             drawn = data.draw(self)
 
-        would produce ``drawn == value``. Inversion is best-effort: it should
-        satisfy this property with high probability, but callers must replay
-        the returned choices and check the outcome rather than rely on it.
-
-        Raises CannotInvert if we cannot construct such a choice sequence,
-        whether because ``value`` is not produced by this strategy or because
-        inversion isn't implemented for it.
+        would produce ``drawn == value``. Total and best-effort: a (sub)value
+        we cannot encode becomes a ValueHole in the returned encoding, a
+        value this strategy provably cannot produce returns Impossible, and
+        callers must replay a complete encoding and check the outcome rather
+        than rely on it.
         """
-        raise CannotInvert(f"{type(self).__name__} does not support inversion")
+        return self._hole(value, f"{type(self).__name__} does not support inversion")
+
+    def _hole(
+        self,
+        value: Any,
+        cause: str,
+        *,
+        candidates: tuple[tuple[ChoiceT | ValueHole, ...], ...] = (),
+    ) -> tuple[ValueHole, ...]:
+        return (ValueHole(value, strategy=self, candidates=candidates, cause=cause),)
 
 
 def _is_hashable(value: object) -> tuple[bool, int | None]:
@@ -765,14 +776,14 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def get_element(self, i: int) -> Ex | UniqueIdentifier:
         return self._transform(self.elements[i])
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         # The smallest index whose (possibly transformed) element equals value.
         # _transform might depend on external state and give us a wrong answer
-        # here; that's fine, since _invert is allowed to be fallible.
+        # here; that's fine, since inversion is allowed to be fallible.
         for i, element in enumerate(self.elements):
             if equal_values(self._transform(element), value):
                 return (i,)
-        raise CannotInvert(f"{value!r} is not produced by {self!r}")
+        return Impossible(f"{value!r} is not produced by {self!r}")
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # Set of indices that have been tried so far, so that we never test
@@ -832,7 +843,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         return filter_not_satisfied
 
 
-# The ids of OneOfStrategy instances an _invert call is currently walking
+# The ids of OneOfStrategy instances an inversion is currently walking
 # through, per thread. See OneOfStrategy._invert.
 _inverting_one_ofs = threading.local()
 
@@ -905,11 +916,14 @@ class OneOfStrategy(SearchStrategy[Ex]):
         )
         return data.draw(strategy)
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         # do_draw first draws a branch index, then draws from that branch.
-        # Return the simplest candidate across all branches: the shortest
-        # encoding, breaking ties by the lower branch index - matching the
-        # shrinker's ordering over choice sequences.
+        # Return the simplest complete candidate across all branches: the
+        # shortest encoding, breaking ties by the lower branch index -
+        # matching the shrinker's ordering over choice sequences. When no
+        # branch encodes the value completely, become a single hole with the
+        # partially-encoding branches as candidates - unless every branch is
+        # Impossible, in which case so is the union.
         #
         # Self-referential strategies (e.g. via st.deferred) can route a
         # branch's inversion of the same value back to this one_of, so guard
@@ -920,15 +934,24 @@ class OneOfStrategy(SearchStrategy[Ex]):
         if active is None:
             active = _inverting_one_ofs.ids = set()
         if id(self) in active:
-            raise CannotInvert(f"recursive inversion of {self!r}")
+            return self._hole(value, f"recursive inversion of {self!r}")
         active.add(id(self))
         try:
-            best: tuple[ChoiceT, ...] | None = None
+            best: tuple[ChoiceT | ValueHole, ...] | None = None
+            partials: list[tuple[ChoiceT | ValueHole, ...]] = []
+            saw_unknown = False
             for i, branch in enumerate(self.element_strategies):
-                try:
-                    candidate = (i, *branch._invert(value))
-                except CannotInvert:
+                result = branch._invert(value)
+                if isinstance(result, Impossible):
                     continue
+                if any(isinstance(c, ValueHole) for c in result):
+                    saw_unknown = True
+                    # skip branches which encoded nothing: a whole-value hole
+                    # is no better than the hole this one_of becomes
+                    if len(result) > 1 or not isinstance(result[0], ValueHole):
+                        partials.append((i, *result))
+                    continue
+                candidate = (i, *result)
                 if best is None or len(candidate) < len(best):
                     best = candidate
                 if len(best) <= 2:
@@ -939,9 +962,12 @@ class OneOfStrategy(SearchStrategy[Ex]):
                     break
         finally:
             active.discard(id(self))
-        if best is None:
-            raise CannotInvert(f"{value!r} is not produced by any branch of {self!r}")
-        return best
+        if best is not None:
+            return best
+        cause = f"{value!r} is not produced by any branch of {self!r}"
+        if not saw_unknown:
+            return Impossible(cause)
+        return self._hole(value, cause, candidates=tuple(partials))
 
     def __repr__(self) -> str:
         return "one_of({})".format(", ".join(map(repr, self.original_strategies)))
@@ -1124,17 +1150,16 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     data.stop_span(discard=True)
         raise UnsatisfiedAssumption
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         # map() is not invertible in general, but a dict-like pack - e.g. the
         # dict_class which st.dictionaries maps over a unique list of
         # (key, value) tuples - inverts as its list of items.
-        if (
-            isinstance(self.pack, type)
-            and issubclass(self.pack, abc.Mapping)
-            and isinstance(value, self.pack)
-        ):
+        if isinstance(self.pack, type) and issubclass(self.pack, abc.Mapping):
+            if not isinstance(value, self.pack):
+                return Impossible(f"{value!r} is not an instance of {self.pack!r}")
             return self.mapped_strategy._invert(list(value.items()))
-        raise CannotInvert(f"cannot invert {self!r} (value={value!r})")
+        # an opaque pack tells us nothing either way
+        return self._hole(value, f"cannot invert {self!r} (value={value!r})")
 
     @property
     def branches(self) -> Sequence[SearchStrategy[MappedTo]]:
@@ -1332,11 +1357,16 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
         return filter_not_satisfied
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         # If the condition accepts value, do_draw would have succeeded on its
         # first try, drawing exactly the inner strategy's encoding.
-        if not self.condition(value):
-            raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
+        try:
+            ok = self.condition(value)
+        except Exception:
+            # a raising predicate is not evidence the value cannot be generated
+            return self._hole(value, f"filter {self!r} raised on {value!r}")
+        if not ok:
+            return Impossible(f"{value!r} does not satisfy filter {self!r}")
         return self.filtered_strategy._invert(value)
 
     @property

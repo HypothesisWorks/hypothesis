@@ -18,8 +18,8 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, overload
 
-from hypothesis.errors import CannotInvert, InvalidArgument
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.choice import Impossible, InvertResultT
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import sampled_from
 from hypothesis.strategies._internal.lazy import unwrap_strategies
@@ -387,42 +387,50 @@ class DatetimeStrategy(SearchStrategy):
                 f"{self.max_value!r} with timezone from {self.tz_strat!r}."
             )
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if self.aware:
             if type(value) is not dt.datetime or value.tzinfo is None:
-                raise CannotInvert(f"{value!r} is not an aware datetime")
+                return Impossible(f"{value!r} is not an aware datetime")
             try:
                 in_bounds = self.in_bounds(value)
                 imaginary = datetime_does_not_exist(value)
             except Exception:
-                raise CannotInvert(
-                    f"could not locate {value!r} relative to {self!r}"
-                ) from None
+                # a broken tzinfo tells us nothing either way
+                return self._hole(
+                    value, f"could not locate {value!r} relative to {self!r}"
+                )
             if not in_bounds:
-                raise CannotInvert(f"{value!r} outside the instant bounds of {self!r}")
+                return Impossible(f"{value!r} outside the instant bounds of {self!r}")
             if imaginary and not self.allow_imaginary:
-                raise CannotInvert(
+                return Impossible(
                     f"{value!r} is an imaginary datetime, but allow_imaginary=False"
                 )
-            return (
-                *self.tz_strat._invert(value.tzinfo),
-                *self._invert_aware_fields(value, value.tzinfo, imaginary=imaginary),
-            )
+            fields = self._invert_aware_fields(value, value.tzinfo, imaginary=imaginary)
+            if isinstance(fields, Impossible):
+                # the drawing frame provably cannot reproduce the value
+                return fields
+            tz = self.tz_strat._invert(value.tzinfo)
+            if isinstance(tz, Impossible):
+                return tz
+            return (*tz, *fields)
         if type(value) is not dt.datetime:
-            raise CannotInvert(f"{value!r} is not a datetime")
+            return Impossible(f"{value!r} is not a datetime")
         naive = value.replace(tzinfo=None)
         if not (self.min_value <= naive <= self.max_value):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         if not self.allow_imaginary and datetime_does_not_exist(value):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} is an imaginary datetime, but allow_imaginary=False"
             )
         # do_draw draws the timezone first, then the naive parts (with fold
         # drawn last, since it is ignored in datetime comparisons).
+        tz = self.tz_strat._invert(value.tzinfo)
+        if isinstance(tz, Impossible):
+            return tz
         return (
-            *self.tz_strat._invert(value.tzinfo),
+            *tz,
             value.year,
             value.month,
             value.day,
@@ -439,25 +447,25 @@ class DatetimeStrategy(SearchStrategy):
         try:
             window = self._wall_clock_window(tz)
         except _UnrepresentableBound as err:
-            raise CannotInvert(str(err)) from None
+            return Impossible(str(err))
         if window is None:
             # do_draw would draw in UTC and convert; converting an imaginary
             # wall time to UTC and back does not round-trip, so be conservative.
             if imaginary:
-                raise CannotInvert(
+                return Impossible(
                     f"the UTC drawing frame cannot reproduce imaginary {value!r}"
                 )
             try:
                 utc_value = value.astimezone(dt.timezone.utc)
             except OverflowError:
-                raise CannotInvert(f"{value!r} is not representable in UTC") from None
+                return Impossible(f"{value!r} is not representable in UTC")
             return self._invert_aware_fields(
                 utc_value, dt.timezone.utc, imaginary=False
             )
         min_local, max_local = window
         naive = value.replace(tzinfo=None)
         if not (min_local <= naive <= max_local):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} is outside the wall-clock window of {self!r} in {tz!r}"
             )
         return (
@@ -697,23 +705,26 @@ class TimeStrategy(SearchStrategy):
         tz = data.draw(self.tz_strat)
         return dt.time(**result, tzinfo=tz)
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if type(value) is not dt.time:
-            raise CannotInvert(f"{value!r} is not a time")
+            return Impossible(f"{value!r} is not a time")
         naive = value.replace(tzinfo=None)
         if not (self.min_value <= naive <= self.max_value):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         # unlike DatetimeStrategy, do_draw draws the naive parts first - with
         # fold at the end, via draw_capped_multipart - and the timezone last.
+        tz = self.tz_strat._invert(value.tzinfo)
+        if isinstance(tz, Impossible):
+            return tz
         return (
             value.hour,
             value.minute,
             value.second,
             value.microsecond,
             value.fold,
-            *self.tz_strat._invert(value.tzinfo),
+            *tz,
         )
 
     def filter(self, condition):
@@ -782,11 +793,11 @@ class DateStrategy(SearchStrategy):
             **draw_capped_multipart(data, self.min_value, self.max_value, DATENAMES)
         )
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if type(value) is not dt.date:
-            raise CannotInvert(f"{value!r} is not a date")
+            return Impossible(f"{value!r} is not a date")
         if not (self.min_value <= value <= self.max_value):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         return (value.year, value.month, value.day)
@@ -856,11 +867,11 @@ class TimedeltaStrategy(SearchStrategy):
             high_bound = high_bound and val == high
         return dt.timedelta(**result)
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if type(value) is not dt.timedelta:
-            raise CannotInvert(f"{value!r} is not a timedelta")
+            return Impossible(f"{value!r} is not a timedelta")
         if not (self.min_value <= value <= self.max_value):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} outside [{self.min_value!r}, {self.max_value!r}]"
             )
         return (value.days, value.seconds, value.microseconds)
