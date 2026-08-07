@@ -9,9 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import threading
 from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Literal,
     TypeAlias,
     TypedDict,
@@ -24,6 +26,9 @@ from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.floats import float_to_int, make_float_clamper, sign_aware_lte
 from hypothesis.internal.intervalsets import IntervalSet
+
+if TYPE_CHECKING:
+    from hypothesis.strategies._internal.strategies import SearchStrategy
 
 T = TypeVar("T")
 
@@ -82,21 +87,61 @@ class ChoiceTemplate:
 
 
 @dataclass(slots=True, frozen=True)
-class ValueHole:
-    """A hole in a choice sequence, carrying a value instead of choices.
+class Impossible:
+    """Returned by ``_invert`` when no choice sequence can make the strategy
+    produce the value - unlike a hole, where some choices might work but we
+    don't know which."""
 
-    When ``ConjectureData.draw`` finds a ValueHole at the current prefix
-    position, it asks the strategy being drawn to ``_invert`` the value, and
-    on success splices the resulting choices into the prefix in place of the
-    hole - so the value is re-encoded by whichever strategy is drawn at that
-    position, with that strategy's own constraints. If no strategy claims the
-    hole (inversion failed, or the hole fell out of alignment with strategy
-    draw boundaries), it is treated as a misalignment when a draw_* call
-    reaches it.
+    # innermost-first notes, appended to as enclosing strategies embed this
+    cause: tuple[str, ...]
+
+    def __init__(self, *cause: str) -> None:
+        object.__setattr__(self, "cause", cause)
+
+    def with_note(self, note: str) -> "Impossible":
+        return Impossible(*self.cause, note)
+
+
+# The most holes one inversion may create while claiming, as a safety valve
+# for pathological values; breaching it aborts the inversion unclaimed.
+HOLE_LIMIT = 10_000
+
+_hole_budget = threading.local()
+
+
+class InvertAborted(Exception):
+    """Internal: abandon an in-progress inversion - the hole budget was
+    breached, or a strategy tried to draw."""
+
+
+@dataclass(slots=True, frozen=True)
+class ValueHole:
+    """A hole in a choice sequence: a value some strategy declined to encode,
+    in place of the choices which would produce it.
+
+    At draw time, the strategy drawn at the hole's position re-encodes the
+    value via ``_invert`` and splices in the resulting choices; an unclaimed
+    hole is treated as a misalignment. ``candidates`` holds alternative
+    partial encodings of the value, each itself possibly containing nested
+    holes.
     """
 
     # any value a strategy might re-encode, not just the choice types
     value: object
+    strategy: "SearchStrategy | None" = None
+    candidates: "tuple[tuple[ChoiceT | ValueHole, ...], ...]" = ()
+    # why direct encoding failed
+    cause: str | None = None
+
+    def __post_init__(self) -> None:
+        remaining = getattr(_hole_budget, "remaining", None)
+        if remaining is not None:
+            if remaining <= 0:
+                raise InvertAborted
+            _hole_budget.remaining = remaining - 1
+
+
+InvertResultT: TypeAlias = tuple[ChoiceT | ValueHole, ...] | Impossible
 
 
 @dataclass(slots=True, frozen=False)
