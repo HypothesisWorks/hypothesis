@@ -1193,7 +1193,7 @@ class BytestringProvider(PrimitiveProvider):
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
     ) -> float:
-        n = self._draw_bits(64)
+        n = self._draw_bits(65)
         sign = -1 if n >> 64 else 1
         f = sign * lex_to_float(n & ((1 << 64) - 1))
         clamper = make_float_clamper(
