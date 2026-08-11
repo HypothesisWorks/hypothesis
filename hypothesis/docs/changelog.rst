@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.3:
+
+--------------------
+6.165.3 - 2026-08-11
+--------------------
+
+This patch fixes ``BytestringProvider.draw_float`` so that it can generate
+negative floats. Previously, only 64 bits were drawn for a 65-bit float index
+format, so the sign bit was always zero and negative floats could never be
+produced.
+
 .. _v6.165.2:
 
 --------------------
