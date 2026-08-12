@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.5:
+
+--------------------
+6.165.5 - 2026-08-12
+--------------------
+
+This release continues the terminology change in :ref:`version 6.159.0 <v6.159.0>`, updating more internal wording and names from "example" to "test case".
+
 .. _v6.165.4:
 
 --------------------
