@@ -116,9 +116,9 @@ def shortlex(s):
 
 @dataclass(slots=True, frozen=False)
 class HealthCheckState:
-    valid_examples: int = field(default=0)
-    invalid_examples: int = field(default=0)
-    overrun_examples: int = field(default=0)
+    valid_test_cases: int = field(default=0)
+    invalid_test_cases: int = field(default=0)
+    overrun_test_cases: int = field(default=0)
     draw_times: defaultdict[str, list[float]] = field(
         default_factory=lambda: defaultdict(list)
     )
@@ -302,9 +302,9 @@ class ConjectureRunner:
         self.finish_shrinking_deadline: float | None = None
         self.call_count: int = 0
         self.misaligned_count: int = 0
-        self.valid_examples: int = 0
-        self.invalid_examples: int = 0
-        self.overrun_examples: int = 0
+        self.valid_test_cases: int = 0
+        self.invalid_test_cases: int = 0
+        self.overrun_test_cases: int = 0
         self.random: Random = random or Random(_random.getrandbits(128))
         self.database_key: bytes | None = database_key
         self.ignore_limits: bool = ignore_limits
@@ -318,13 +318,13 @@ class ConjectureRunner:
         # Time spent in any nested phase, so the enclosing phase can exclude it.
         self._nested_phase_seconds: float = 0.0
 
-        self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
-        # We use call_count because there may be few possible valid_examples.
+        self.interesting_test_cases: dict[InterestingOrigin, ConjectureResult] = {}
+        # We use call_count because there may be few possible valid_test_cases.
         self.first_bug_found_at: int | None = None
         self.last_bug_found_at: int | None = None
         self.first_bug_found_time: float = math.inf
 
-        self.shrunk_examples: set[InterestingOrigin] = set()
+        self.shrunk_test_cases: set[InterestingOrigin] = set()
         self.health_check_state: HealthCheckState | None = None
         self.tree: DataTree = DataTree()
         self.provider: PrimitiveProvider | type[PrimitiveProvider] = _get_provider(
@@ -334,7 +334,7 @@ class ConjectureRunner:
         self.best_observed_targets: defaultdict[str, float] = defaultdict(
             lambda: NO_SCORE
         )
-        self.best_examples_of_observed_targets: dict[str, ConjectureResult] = {}
+        self.best_test_cases_of_observed_targets: dict[str, ConjectureResult] = {}
 
         # We keep the pareto front in the example database if we have one. This
         # is only marginally useful at present, but speeds up local development
@@ -413,7 +413,7 @@ class ConjectureRunner:
             )
             stats["duration-seconds"] += elapsed - self._nested_phase_seconds
             stats["test-cases"] += self.stats_per_test_case
-            stats["distinct-failures"] = len(self.interesting_examples)
+            stats["distinct-failures"] = len(self.interesting_test_cases)
             stats["shrinks-successful"] = self.shrinks
             self.stats_per_test_case = saved_stats
             self._current_phase = saved_phase
@@ -576,10 +576,10 @@ class ConjectureRunner:
                     self._switch_to_hypothesis_provider = True
 
             # treat all BackendCannotProceed exceptions as invalid. This isn't
-            # great; "verified" should really be counted as self.valid_examples += 1.
-            # But we check self.valid_examples == 0 to determine whether to raise
+            # great; "verified" should really be counted as self.valid_test_cases += 1.
+            # But we check self.valid_test_cases == 0 to determine whether to raise
             # Unsatisfiable, and that would throw this check off.
-            self.invalid_examples += 1
+            self.invalid_test_cases += 1
             data.cannot_proceed_scope = exc.scope
 
         # this fiddly bit of control flow is to work around `return` being
@@ -669,31 +669,31 @@ class ConjectureRunner:
             for k, v in data.target_observations.items():
                 self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
 
-                if k not in self.best_examples_of_observed_targets:
+                if k not in self.best_test_cases_of_observed_targets:
                     data_as_result = data.as_result()
                     assert not isinstance(data_as_result, _Overrun)
-                    self.best_examples_of_observed_targets[k] = data_as_result
+                    self.best_test_cases_of_observed_targets[k] = data_as_result
                     continue
 
-                existing_example = self.best_examples_of_observed_targets[k]
-                existing_score = existing_example.target_observations[k]
+                existing_test_case = self.best_test_cases_of_observed_targets[k]
+                existing_score = existing_test_case.target_observations[k]
 
                 if v < existing_score:
                     continue
 
                 if v > existing_score or sort_key(data.nodes) < sort_key(
-                    existing_example.nodes
+                    existing_test_case.nodes
                 ):
                     data_as_result = data.as_result()
                     assert not isinstance(data_as_result, _Overrun)
-                    self.best_examples_of_observed_targets[k] = data_as_result
+                    self.best_test_cases_of_observed_targets[k] = data_as_result
 
         if data.status is Status.VALID:
-            self.valid_examples += 1
+            self.valid_test_cases += 1
         if data.status is Status.INVALID:
-            self.invalid_examples += 1
+            self.invalid_test_cases += 1
         if data.status is Status.OVERRUN:
-            self.overrun_examples += 1
+            self.overrun_test_cases += 1
 
         if data.status == Status.INTERESTING:
             if not self.using_hypothesis_backend:
@@ -731,7 +731,7 @@ class ConjectureRunner:
             key = data.interesting_origin
             changed = False
             try:
-                existing = self.interesting_examples[key]
+                existing = self.interesting_test_cases[key]
             except KeyError:
                 changed = True
                 self.last_bug_found_at = self.call_count
@@ -747,11 +747,11 @@ class ConjectureRunner:
 
             if changed:
                 self.save_choices(data.choices)
-                self.interesting_examples[key] = data.as_result()  # type: ignore
+                self.interesting_test_cases[key] = data.as_result()  # type: ignore
                 if not self.using_hypothesis_backend:
                     self._backend_found_failure = True
                 self.__data_cache.pin(self._cache_key(data.choices), data.as_result())
-                self.shrunk_examples.discard(key)
+                self.shrunk_test_cases.discard(key)
 
             if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
@@ -772,15 +772,15 @@ class ConjectureRunner:
             )
             self.exit_with(ExitReason.very_slow_shrinking)
 
-        if not self.interesting_examples:
+        if not self.interesting_test_cases:
             # Note that this logic is reproduced to end the generation phase when
-            # we have interesting examples.  Update that too if you change this!
+            # we have interesting test cases.  Update that too if you change this!
             # (The doubled implementation is because here we exit the engine entirely,
             #  while in the other case below we just want to move on to shrinking.)
-            if self.valid_examples >= self.settings.max_examples:
+            if self.valid_test_cases >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
-            if (self.invalid_examples + self.overrun_examples) > (
-                INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+            if (self.invalid_test_cases + self.overrun_test_cases) > (
+                INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_test_cases
             ):
                 self.exit_with(ExitReason.max_iterations)
 
@@ -817,29 +817,29 @@ class ConjectureRunner:
             state.draw_times[k].append(v)
 
         if data.status == Status.VALID:
-            state.valid_examples += 1
+            state.valid_test_cases += 1
         elif data.status == Status.INVALID:
-            state.invalid_examples += 1
+            state.invalid_test_cases += 1
         else:
             assert data.status == Status.OVERRUN
-            state.overrun_examples += 1
+            state.overrun_test_cases += 1
 
         max_valid_draws = 10
         max_invalid_draws = 50
         max_overrun_draws = 20
 
-        assert state.valid_examples <= max_valid_draws
+        assert state.valid_test_cases <= max_valid_draws
 
-        if state.valid_examples == max_valid_draws:
+        if state.valid_test_cases == max_valid_draws:
             self.health_check_state = None
             return
 
-        if state.overrun_examples == max_overrun_draws:
+        if state.overrun_test_cases == max_overrun_draws:
             fail_health_check(
                 self.settings,
                 "Generated inputs routinely consumed more than the maximum "
-                f"allowed entropy: {state.valid_examples} inputs were generated "
-                f"successfully, while {state.overrun_examples} inputs exceeded the "
+                f"allowed entropy: {state.valid_test_cases} inputs were generated "
+                f"successfully, while {state.overrun_test_cases} inputs exceeded the "
                 f"maximum allowed entropy during generation."
                 "\n\n"
                 f"Testing with inputs this large tends to be slow, and to produce "
@@ -856,12 +856,12 @@ class ConjectureRunner:
                 "for details.",
                 HealthCheck.data_too_large,
             )
-        if state.invalid_examples == max_invalid_draws:
+        if state.invalid_test_cases == max_invalid_draws:
             fail_health_check(
                 self.settings,
                 "It looks like this test is filtering out a lot of inputs. "
-                f"{state.valid_examples} inputs were generated successfully, "
-                f"while {state.invalid_examples} inputs were filtered out. "
+                f"{state.valid_test_cases} inputs were generated successfully, "
+                f"while {state.invalid_test_cases} inputs were filtered out. "
                 "\n\n"
                 "An input might be filtered out by calls to assume(), "
                 "strategy.filter(...), or occasionally by Hypothesis internals."
@@ -891,11 +891,11 @@ class ConjectureRunner:
             and not self.thread_overlap.get(threading.get_ident(), False)
         ):
             extra_str = []
-            if state.invalid_examples:
-                extra_str.append(f"{state.invalid_examples} invalid inputs")
-            if state.overrun_examples:
+            if state.invalid_test_cases:
+                extra_str.append(f"{state.invalid_test_cases} invalid inputs")
+            if state.overrun_test_cases:
                 extra_str.append(
-                    f"{state.overrun_examples} inputs which exceeded the "
+                    f"{state.overrun_test_cases} inputs which exceeded the "
                     "maximum allowed entropy"
                 )
             extra_str = ", and ".join(extra_str)
@@ -904,7 +904,7 @@ class ConjectureRunner:
             fail_health_check(
                 self.settings,
                 "Input generation is slow: Hypothesis only generated "
-                f"{state.valid_examples} valid inputs after {draw_time:.2f} "
+                f"{state.valid_test_cases} valid inputs after {draw_time:.2f} "
                 f"seconds{extra_str}."
                 "\n" + state.timing_report() + "\n\n"
                 "This could be for a few reasons:"
@@ -1006,11 +1006,11 @@ class ConjectureRunner:
                 self._run()
             except RunIsComplete:
                 pass
-            for v in self.interesting_examples.values():
+            for v in self.interesting_test_cases.values():
                 self.debug_data(v)
             self.debug(
-                f"Run complete after {self.call_count} examples "
-                f"({self.valid_examples} valid) and {self.shrinks} shrinks"
+                f"Run complete after {self.call_count} test cases "
+                f"({self.valid_test_cases} valid) and {self.shrinks} shrinks"
             )
 
     @property
@@ -1019,32 +1019,32 @@ class ConjectureRunner:
             return None
         return self.settings.database
 
-    def has_existing_examples(self) -> bool:
+    def has_existing_test_cases(self) -> bool:
         return self.database is not None and Phase.reuse in self.settings.phases
 
-    def reuse_existing_examples(self) -> None:
+    def reuse_existing_test_cases(self) -> None:
         """If appropriate (we have a database and have been told to use it),
-        try to reload existing examples from the database.
+        try to reload existing test cases from the database.
 
         If there are a lot we don't try all of them. We always try the
-        smallest example in the database (which is guaranteed to be the
-        last failure) and the largest (which is usually the seed example
+        smallest test case in the database (which is guaranteed to be the
+        last failure) and the largest (which is usually the seed test case
         which the last failure came from but we don't enforce that). We
         then take a random sampling of the remainder and try those. Any
-        examples that are no longer interesting are cleared out.
+        test cases that are no longer interesting are cleared out.
         """
-        if self.has_existing_examples():
+        if self.has_existing_test_cases():
             self.debug("Reusing test cases from database")
             # We have to do some careful juggling here. We have two database
             # corpora: The primary and secondary. The primary corpus is a
-            # small set of minimized examples each of which has at one point
+            # small set of minimized test cases each of which has at one point
             # demonstrated a distinct bug. We want to retry all of these.
 
-            # We also have a secondary corpus of examples that have at some
+            # We also have a secondary corpus of test cases that have at some
             # point demonstrated interestingness (currently only ones that
-            # were previously non-minimal examples of a bug, but this will
+            # were previously non-minimal test cases for a bug, but this will
             # likely expand in future). These are a good source of potentially
-            # interesting examples, but there are a lot of them, so we down
+            # interesting test cases, but there are a lot of them, so we down
             # sample the secondary corpus to a more manageable size.
 
             corpus = sorted(
@@ -1095,14 +1095,14 @@ class ConjectureRunner:
                 if all_interesting_in_primary_were_exact:
                     self.reused_previously_shrunk_test_case = True
 
-            # Because self.database is not None (because self.has_existing_examples())
+            # Because self.database is not None (because self.has_existing_test_cases())
             # and self.database_key is not None (because we fetched using it above),
             # we can guarantee self.pareto_front is not None
             assert self.pareto_front is not None
 
-            # If we've not found any interesting examples so far we try some of
+            # If we've not found any interesting test cases so far we try some of
             # the pareto front from the last run.
-            if len(corpus) < desired_size and not self.interesting_examples:
+            if len(corpus) < desired_size and not self.interesting_test_cases:
                 desired_extra = desired_size - len(corpus)
                 pareto_corpus = list(self.settings.database.fetch(self.pareto_key))
                 if len(pareto_corpus) > desired_extra:
@@ -1137,18 +1137,18 @@ class ConjectureRunner:
         # the shrinking phase having found one or more bugs, while the other
         # will exit having found zero bugs.
         invalid_threshold = (
-            INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_examples
+            INVALID_THRESHOLD_BASE + INVALID_PER_VALID * self.valid_test_cases
         )
         if (
-            self.valid_examples >= self.settings.max_examples
-            or (self.invalid_examples + self.overrun_examples) > invalid_threshold
+            self.valid_test_cases >= self.settings.max_examples
+            or (self.invalid_test_cases + self.overrun_test_cases) > invalid_threshold
         ):
             return False
 
         # If we haven't found a bug, keep looking - if we hit any limits on
         # the number of tests to run that will raise an exception and stop
         # the run.
-        if not self.interesting_examples:
+        if not self.interesting_test_cases:
             return True
         # Users who disable shrinking probably want to exit as fast as possible.
         # If we've found a bug and won't report more than one, stop looking.
@@ -1170,10 +1170,10 @@ class ConjectureRunner:
             self.first_bug_found_at + 1000, self.last_bug_found_at * 2
         )
 
-    def generate_new_examples(self) -> None:
+    def generate_new_test_cases(self) -> None:
         if Phase.generate not in self.settings.phases:
             return
-        if self.interesting_examples:
+        if self.interesting_test_cases:
             # The example database has failing test cases from a previous run,
             # so we'd rather report that they're still failing ASAP than take
             # the time to look for additional failures.
@@ -1243,13 +1243,13 @@ class ConjectureRunner:
         # it has failed too many times in a row.
         consecutive_zero_extend_is_invalid = 0
 
-        # We control growth during initial example generation, for two
+        # We control growth during initial test case generation, for two
         # reasons:
         #
-        # * It gives us an opportunity to find small examples early, which
+        # * It gives us an opportunity to find small test cases early, which
         #   gives us a fast path for easy to find bugs.
         # * It avoids low probability events where we might end up
-        #   generating very large examples during health checks, which
+        #   generating very large test cases during health checks, which
         #   on slower machines can trigger HealthCheck.too_slow.
         #
         # The heuristic we use is that we attempt to estimate the smallest
@@ -1257,18 +1257,18 @@ class ConjectureRunner:
         # an order of magnitude larger than that. If we fail to estimate
         # the size accurately, we skip over this prefix and try again.
         #
-        # We need to tune the example size based on the initial prefix,
+        # We need to tune the test case size based on the initial prefix,
         # because any fixed size might be too small, and any size based
         # on the strategy in general can fall afoul of strategies that
         # have very different sizes for different prefixes.
         #
-        # We previously set a minimum value of 10 on small_example_cap, with the
+        # We previously set a minimum value of 10 on small_test_case_cap, with the
         # reasoning of avoiding flaky health checks. However, some users set a
         # low max_examples for performance. A hard lower bound in this case biases
-        # the distribution towards small (and less powerful) examples. Flaky
+        # the distribution towards small (and less powerful) test cases. Flaky
         # and loud health checks are better than silent performance degradation.
-        small_example_cap = min(self.settings.max_examples // 10, 50)
-        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1, 10)
+        small_test_case_cap = min(self.settings.max_examples // 10, 50)
+        optimise_at = max(self.settings.max_examples // 2, small_test_case_cap + 1, 10)
         ran_optimisations = False
         self._switch_to_hypothesis_provider = False
 
@@ -1283,24 +1283,24 @@ class ConjectureRunner:
             self._current_phase = "generate"
             prefix = self.generate_novel_prefix()
             if (
-                self.valid_examples <= small_example_cap
-                and self.call_count <= 5 * small_example_cap
-                and not self.interesting_examples
+                self.valid_test_cases <= small_test_case_cap
+                and self.call_count <= 5 * small_test_case_cap
+                and not self.interesting_test_cases
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                minimal_example = self.cached_test_function(
+                minimal_test_case = self.cached_test_function(
                     prefix + (ChoiceTemplate("simplest", count=None),)
                 )
 
-                if minimal_example.status < Status.VALID:
+                if minimal_test_case.status < Status.VALID:
                     consecutive_zero_extend_is_invalid += 1
                     continue
                 # Because the Status code is greater than Status.VALID, it cannot be
-                # Status.OVERRUN, which guarantees that the minimal_example is a
+                # Status.OVERRUN, which guarantees that the minimal_test_case is a
                 # ConjectureResult object.
-                assert isinstance(minimal_example, ConjectureResult)
+                assert isinstance(minimal_test_case, ConjectureResult)
                 consecutive_zero_extend_is_invalid = 0
-                minimal_extension = len(minimal_example.choices) - len(prefix)
+                minimal_extension = len(minimal_test_case.choices) - len(prefix)
                 max_length = len(prefix) + minimal_extension * 5
 
                 # We could end up in a situation where even though the prefix was
@@ -1324,8 +1324,8 @@ class ConjectureRunner:
                 if trial_data.observer.killed:
                     continue
 
-                # We might have hit the cap on number of examples we should
-                # run when calculating the minimal example.
+                # We might have hit the cap on number of test cases we should
+                # run when calculating the minimal test case.
                 if not self.should_generate_more():
                     break
 
@@ -1342,19 +1342,19 @@ class ConjectureRunner:
                 and "invalid because" not in data.events
             ):
                 data.events["invalid because"] = (
-                    "reduced max size for early examples (avoids flaky health checks)"
+                    "reduced max size for early test cases (avoids flaky health checks)"
                 )
 
             self.generate_mutations_from(data)
 
             # Although the optimisations are logically a distinct phase, we
-            # actually normally run them as part of example generation. The
+            # actually normally run them as part of test case generation. The
             # reason for this is that we cannot guarantee that optimisation
             # actually exhausts our budget: It might finish running and we
             # discover that actually we still could run a bunch more test cases
             # if we want.
             if (
-                self.valid_examples >= max(small_example_cap, optimise_at)
+                self.valid_test_cases >= max(small_test_case_cap, optimise_at)
                 and not ran_optimisations
             ):
                 ran_optimisations = True
@@ -1473,9 +1473,9 @@ class ConjectureRunner:
                 else:
                     start, end = self.random.choice([(start1, end1), (start2, end2)])
                     replacement = data.choices[start:end]
-                    # We attempt to replace both the examples with
+                    # We attempt to replace both the spans with
                     # whichever choice we made. Note that this might end
-                    # up messing up and getting the example boundaries
+                    # up messing up and getting the span boundaries
                     # wrong - labels matching are only a best guess as to
                     # whether the two are equivalent - but it doesn't
                     # really matter. It may not achieve the desired result,
@@ -1528,7 +1528,7 @@ class ConjectureRunner:
 
         # We want to avoid running the optimiser for too long in case we hit
         # an unbounded target score. We start this off fairly conservatively
-        # in case interesting examples are easy to find and then ramp it up
+        # in case interesting test cases are easy to find and then ramp it up
         # on an exponential schedule so we don't hamper the optimiser too much
         # if it needs a long time to find good enough improvements.
         max_improvements = 10
@@ -1537,7 +1537,7 @@ class ConjectureRunner:
 
             any_improvements = False
 
-            for target, data in list(self.best_examples_of_observed_targets.items()):
+            for target, data in list(self.best_test_cases_of_observed_targets.items()):
                 optimiser = Optimiser(
                     self, data, target, max_improvements=max_improvements
                 )
@@ -1545,7 +1545,7 @@ class ConjectureRunner:
                 if optimiser.improvements > 0:
                     any_improvements = True
 
-            if self.interesting_examples:
+            if self.interesting_test_cases:
                 break
 
             max_improvements *= 2
@@ -1567,16 +1567,16 @@ class ConjectureRunner:
         # have to use the primitive provider to interpret database bits...
         self._switch_to_hypothesis_provider = True
         with self._log_phase_statistics("reuse"):
-            self.reuse_existing_examples()
+            self.reuse_existing_test_cases()
         # Fast path for development: If the database gave us interesting
-        # examples from the previously stored primary key, don't try
+        # test cases from the previously stored primary key, don't try
         # shrinking it again as it's unlikely to work.
         if self.reused_previously_shrunk_test_case:
             self.exit_with(ExitReason.finished)
         # ...but we should use the supplied provider when generating...
         self._switch_to_hypothesis_provider = False
         with self._log_phase_statistics("generate"):
-            self.generate_new_examples()
+            self.generate_new_test_cases()
             # We normally run the targeting phase mixed in with the generate phase,
             # but if we've been asked to run it but not generation then we have to
             # run it explicitly on its own here.
@@ -1586,7 +1586,7 @@ class ConjectureRunner:
         # ...and back to the primitive provider when shrinking.
         self._switch_to_hypothesis_provider = True
         with self._log_phase_statistics("shrink"):
-            self.shrink_interesting_examples()
+            self.shrink_interesting_test_cases()
         self.exit_with(ExitReason.finished)
 
     def new_conjecture_data(
@@ -1611,21 +1611,21 @@ class ConjectureRunner:
             random=self.random,
         )
 
-    def shrink_interesting_examples(self) -> None:
-        """If we've found interesting examples, try to replace each of them
-        with a minimal interesting example with the same interesting_origin.
+    def shrink_interesting_test_cases(self) -> None:
+        """If we've found interesting test cases, try to replace each of them
+        with a minimal interesting test case with the same interesting_origin.
 
-        We may find one or more examples with a new interesting_origin
+        We may find one or more test cases with a new interesting_origin
         during the shrink process. If so we shrink these too.
         """
-        if Phase.shrink not in self.settings.phases or not self.interesting_examples:
+        if Phase.shrink not in self.settings.phases or not self.interesting_test_cases:
             return
 
         self.debug("Shrinking failing test cases")
         self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(
-            self.interesting_examples.values(), key=lambda d: sort_key(d.nodes)
+            self.interesting_test_cases.values(), key=lambda d: sort_key(d.nodes)
         ):
             assert prev_data.status == Status.INTERESTING
             data = self.new_conjecture_data(prev_data.choices)
@@ -1635,21 +1635,21 @@ class ConjectureRunner:
 
         self.clear_secondary_key()
 
-        while len(self.shrunk_examples) < len(self.interesting_examples):
-            target, example = min(
+        while len(self.shrunk_test_cases) < len(self.interesting_test_cases):
+            target, result = min(
                 (
                     (k, v)
-                    for k, v in self.interesting_examples.items()
-                    if k not in self.shrunk_examples
+                    for k, v in self.interesting_test_cases.items()
+                    if k not in self.shrunk_test_cases
                 ),
                 key=lambda kv: (sort_key(kv[1].nodes), shortlex(repr(kv[0]))),
             )
-            self.debug(f"Shrinking {target!r}: {example.choices}")
+            self.debug(f"Shrinking {target!r}: {result.choices}")
 
             if not self.settings.report_multiple_bugs:
                 # If multi-bug reporting is disabled, we shrink our currently-minimal
-                # failure, allowing 'slips' to any bug with a smaller minimal example.
-                self.shrink(example, lambda d: d.status == Status.INTERESTING)
+                # failure, allowing 'slips' to any bug with a smaller minimal test case.
+                self.shrink(result, lambda d: d.status == Status.INTERESTING)
                 return
 
             def predicate(d: ConjectureResult | _Overrun) -> bool:
@@ -1658,13 +1658,13 @@ class ConjectureRunner:
                 d = cast(ConjectureResult, d)
                 return d.interesting_origin == target
 
-            self.shrink(example, predicate)
+            self.shrink(result, predicate)
 
-            self.shrunk_examples.add(target)
+            self.shrunk_test_cases.add(target)
 
     def clear_secondary_key(self) -> None:
-        if self.has_existing_examples():
-            # If we have any smaller examples in the secondary corpus, now is
+        if self.has_existing_test_cases():
+            # If we have any smaller test cases in the secondary corpus, now is
             # a good time to try them to see if they work as shrinks. They
             # probably won't, but it's worth a shot and gives us a good
             # opportunity to clear out the database.
@@ -1681,32 +1681,32 @@ class ConjectureRunner:
                     continue
                 primary = {
                     choices_to_bytes(v.choices)
-                    for v in self.interesting_examples.values()
+                    for v in self.interesting_test_cases.values()
                 }
                 if shortlex(c) > max(map(shortlex, primary)):
                     break
 
                 self.cached_test_function(choices)
                 # We unconditionally remove c from the secondary key as it
-                # is either now primary or worse than our primary example
-                # of this reason for interestingness.
+                # is either now primary or worse than our primary test case
+                # for this reason for interestingness.
                 self.settings.database.delete(self.secondary_key, c)
 
     def shrink(
         self,
-        example: ConjectureData | ConjectureResult,
+        initial: ConjectureData | ConjectureResult,
         predicate: ShrinkPredicateT | None = None,
         allow_transition: (
             Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
         ) = None,
     ) -> ConjectureData | ConjectureResult:
-        s = self.new_shrinker(example, predicate, allow_transition)
+        s = self.new_shrinker(initial, predicate, allow_transition)
         s.shrink()
         return s.shrink_target
 
     def new_shrinker(
         self,
-        example: ConjectureData | ConjectureResult,
+        initial: ConjectureData | ConjectureResult,
         predicate: ShrinkPredicateT | None = None,
         allow_transition: (
             Callable[[ConjectureData | ConjectureResult, ConjectureData], bool] | None
@@ -1714,7 +1714,7 @@ class ConjectureRunner:
     ) -> Shrinker:
         return Shrinker(
             self,
-            example,
+            initial,
             predicate,
             allow_transition=allow_transition,
             explain=Phase.explain in self.settings.phases,

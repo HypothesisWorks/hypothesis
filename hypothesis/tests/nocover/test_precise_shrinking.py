@@ -123,11 +123,11 @@ def precisely_shrink(
         buf = runner.cached_test_function(initial_choices)
         assert buf.status == Status.INTERESTING
         assert buf.choices == initial_choices
-        assert runner.interesting_examples
-        runner.shrink_interesting_examples()
+        assert runner.interesting_test_cases
+        runner.shrink_interesting_test_cases()
     except RunIsComplete:
         assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
-    (result,) = runner.interesting_examples.values()
+    (result,) = runner.interesting_test_cases.values()
 
     data = ConjectureData.for_choices(result.choices)
     result_value = safe_draw(data, strategy)

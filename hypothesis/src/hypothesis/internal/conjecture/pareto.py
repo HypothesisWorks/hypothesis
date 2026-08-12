@@ -48,7 +48,7 @@ def dominance(left: ConjectureResult, right: ConjectureResult) -> DominanceRelat
         * Something that is smaller in shrinking order is better.
         * Something that has higher status is better.
         * Each ``interesting_origin`` is treated as its own score, so if two
-          interesting examples have different origins then neither dominates
+          interesting test cases have different origins then neither dominates
           the other.
         * For each target observation, a higher score is better.
 
@@ -114,7 +114,7 @@ class ParetoFront:
 
     Note that the pareto front is potentially quite large, and currently this
     will store the entire front in memory. This is bounded by the number of
-    valid examples we run, which is max_examples in normal execution, and
+    valid test cases we run, which is max_examples in normal execution, and
     currently we do not support workflows with large max_examples which have
     large values of max_examples very well anyway, so this isn't a major issue.
     In future we may weish to implement some sort of paging out to disk so that
@@ -307,19 +307,19 @@ class ParetoOptimiser:
         seen = set()
 
         # We iterate backwards through the pareto front, using the shrinker to
-        # (hopefully) replace each example with a smaller one. Note that it's
+        # (hopefully) replace each test case with a smaller one. Note that it's
         # important that we start from the end for two reasons: Firstly, by
         # doing it this way we ensure that any new front members we discover
         # during optimisation will also get optimised (because they will be
         # inserted into the part of the front that we haven't visited yet),
         # and secondly we generally expect that we will not finish this process
         # in a single run, because it's relatively expensive in terms of our
-        # example budget, and by starting from the end we ensure that each time
+        # test case budget, and by starting from the end we ensure that each time
         # we run the tests we improve the pareto front because we work on the
         # bits that we haven't covered yet.
         i = len(self.front) - 1
         prev = None
-        while i >= 0 and not self.__engine.interesting_examples:
+        while i >= 0 and not self.__engine.interesting_test_cases:
             assert self.front
             i = min(i, len(self.front) - 1)
             target = self.front[i]
@@ -335,7 +335,7 @@ class ParetoOptimiser:
                 shrinker.
 
                 Note that during shrinking we may discover other smaller
-                examples that this function will reject and will get added to
+                test cases that this function will reject and will get added to
                 the front. This is fine, because they will be processed on
                 later iterations of this loop."""
                 if dominance(destination, source) == DominanceRelation.LEFT_DOMINATES:

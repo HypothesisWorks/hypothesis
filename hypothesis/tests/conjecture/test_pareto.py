@@ -158,9 +158,9 @@ def test_down_samples_the_pareto_front():
         db.save(runner.pareto_key, choices_to_bytes((n1, n2)))
 
     with pytest.raises(RunIsComplete):
-        runner.reuse_existing_examples()
+        runner.reuse_existing_test_cases()
 
-    assert runner.valid_examples == 1000
+    assert runner.valid_test_cases == 1000
 
 
 def test_stops_loading_pareto_front_if_interesting():
@@ -186,7 +186,7 @@ def test_stops_loading_pareto_front_if_interesting():
     for n1, n2 in itertools.product(range(256), range(256)):
         db.save(runner.pareto_key, choices_to_bytes((n1, n2)))
 
-    runner.reuse_existing_examples()
+    runner.reuse_existing_test_cases()
     assert runner.call_count == 1
 
 
@@ -247,7 +247,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
     runner.pareto_optimise = None
     runner.optimise_targets()
 
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
 
 
 def test_stops_optimising_once_interesting():
@@ -269,7 +269,7 @@ def test_stops_optimising_once_interesting():
     assert data.status == Status.VALID
     runner.pareto_optimise()
     assert runner.call_count <= 20
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
 
 
 def test_pareto_contains():

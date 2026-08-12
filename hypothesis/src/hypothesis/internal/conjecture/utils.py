@@ -109,11 +109,11 @@ def check_sample(
             f"Cannot sample from {values!r} because it is not an ordered collection. "
             f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
-            "example, the sampled values must have the same iteration order "
+            "test case, the sampled values must have the same iteration order "
             "on every run - ruling out sets, dicts, etc due to hash "
             "randomization. Most cases can simply use `sorted(values)`, but "
             "mixed types or special values such as math.nan require careful "
-            "handling - and note that when simplifying an example, "
+            "handling - and note that when shrinking a test case, "
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):

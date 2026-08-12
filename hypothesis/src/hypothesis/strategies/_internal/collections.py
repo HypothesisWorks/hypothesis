@@ -193,7 +193,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         self.element_strategy = elements
         if min_size > BUFFER_SIZE:
             raise InvalidArgument(
-                f"{self!r} can never generate an example, because min_size is larger "
+                f"{self!r} can never generate a value, because min_size is larger "
                 "than Hypothesis supports.  Including it is at best slowing down your "
                 "tests for no benefit; at worst making them fail (maybe flakily) with "
                 "a HealthCheck error."

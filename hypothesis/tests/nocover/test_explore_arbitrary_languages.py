@@ -109,7 +109,7 @@ def run_language_test_for(root, data, seed):
     finally:
         if data is not None:
             note(root)
-    assume(runner.interesting_examples)
+    assume(runner.interesting_test_cases)
 
 
 # technically nested-engine, but same problem

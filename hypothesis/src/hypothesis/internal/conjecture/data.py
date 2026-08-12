@@ -729,7 +729,7 @@ class ConjectureData:
         self.__result: ConjectureResult | None = None
 
         # Observations used for targeted search.  They'll be aggregated in
-        # ConjectureRunner.generate_new_examples and fed to TargetSelector.
+        # ConjectureRunner.generate_new_test_cases and fed to TargetSelector.
         self.target_observations: TargetObservations = {}
 
         # Tags which indicate something about which part of the search space
@@ -747,7 +747,7 @@ class ConjectureData:
         self.__span_record = SpanRecord()
 
         # Span indices for discrete reportable parts that which-parts-matter can
-        # try varying, to report if the minimal example always fails anyway.
+        # try varying, to report if the minimal test case always fails anyway.
         self.arg_spans: set[int] = set()
         self.span_comments: dict[int | None, str] = {}
         self._observability_args: dict[str, Any] = {}

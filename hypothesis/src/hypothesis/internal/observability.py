@@ -424,7 +424,7 @@ def make_testcase(
     elif data.interesting_origin:
         status_reason = str(data.interesting_origin)
     elif phase == "shrink" and data.status == Status.OVERRUN:
-        status_reason = "exceeded size of current best example"
+        status_reason = "exceeded size of current best test case"
     else:
         status_reason = str(data.events.pop("invalid because", ""))
 

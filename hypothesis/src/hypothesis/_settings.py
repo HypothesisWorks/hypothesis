@@ -974,7 +974,8 @@ class settings(metaclass=settingsMeta):
         Because Hypothesis runs the test many times, it can sometimes find multiple
         bugs in a single run.  Reporting all of them at once is usually very useful,
         but replacing the exceptions can occasionally clash with debuggers.
-        If disabled, only the exception with the smallest minimal example is raised.
+        If disabled, only the exception with the smallest
+        |minimal failing test case| is raised.
 
         The default value is ``True``.
         """

@@ -92,9 +92,9 @@ def test_avoids_zig_zag_trap(p):
     )
 
     runner.cached_test_function((m, m + 1, marker))
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     runner.run()
-    (v,) = runner.interesting_examples.values()
+    (v,) = runner.interesting_test_cases.values()
     data = ConjectureData.for_choices(v.choices)
 
     m = data.draw_integer(0, 2**n_bits - 1)

@@ -1812,7 +1812,7 @@ def _make_binop_body(
             _write_call(func, "b", "a", assign="right"),
         )
     if identity is not None:
-        # Guess that the identity element is the minimal example from our operands
+        # Guess that the identity element is the minimal value from our operands
         # strategy.  This is correct often enough to be worthwhile, and close enough
         # that it's a good starting point to edit much of the rest.
         if identity is ...:

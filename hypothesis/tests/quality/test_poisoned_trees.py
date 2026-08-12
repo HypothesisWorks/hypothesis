@@ -80,9 +80,9 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             data.mark_interesting(interesting_origin())
 
     runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
-    runner.generate_new_examples()
-    runner.shrink_interesting_examples()
-    (data,) = runner.interesting_examples.values()
+    runner.generate_new_test_cases()
+    runner.shrink_interesting_test_cases()
+    (data,) = runner.interesting_test_cases.values()
     assert len(ConjectureData.for_choices(data.choices).draw(strat)) == size
 
     # find the nodes corresponding to n1 and n2
@@ -117,8 +117,8 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             + (data.choices[node.index + 2 :])
             + (marker,)
         )
-        assert runner.interesting_examples
+        assert runner.interesting_test_cases
 
-        runner.shrink_interesting_examples()
-        (shrunk,) = runner.interesting_examples.values()
+        runner.shrink_interesting_test_cases()
+        (shrunk,) = runner.interesting_test_cases.values()
         assert ConjectureData.for_choices(shrunk.choices).draw(strat) == (POISON,)

@@ -75,7 +75,7 @@ Where possible, you should use |.filter|. Hypothesis can often rewrite simple fi
 
 For more complex relationships that can't be expressed with |.filter|, use |assume|.
 
-Here's an example of a test where we want to filter out two different types of examples:
+Here's an example of a test where we want to filter out two different types of inputs:
 
 .. code-block:: python
 

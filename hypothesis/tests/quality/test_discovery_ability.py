@@ -91,7 +91,7 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 ),
             )
             runner.run()
-            if runner.interesting_examples:
+            if runner.interesting_test_cases:
                 successes += 1
                 if successes >= required_runs:
                     return
