@@ -336,7 +336,7 @@ class ConjectureRunner:
         )
         self.best_examples_of_observed_targets: dict[str, ConjectureResult] = {}
 
-        # Scheduling state for the targeting phase. For large max_examples we
+        # Scheduling state for the target phase. For large max_examples we
         # interleave repeated optimisation passes with generation, aiming to
         # spend up to half the budget on optimisation in total - see
         # _should_optimise_now.
@@ -1531,15 +1531,13 @@ class ConjectureRunner:
                         failed_mutations += 1
 
     def _should_optimise_now(self) -> bool:
-        """Decide whether to run an optimisation pass at this point in the
-        generation loop."""
+        """Decide whether to run an optimisation pass at this point in generation."""
         if not self.should_optimise:
             return False
         if self.valid_examples >= self._next_optimise_at:
             return True
-        # After the first pass, a new best score found by generation is fresh
-        # material worth climbing from even if the last pass went dry - for
-        # large budgets, while optimisation's half-share of the budget lasts.
+        # After the first pass, we should optimize if we have found a new best score from
+        # generation and we have the budget to continue optimizing.
         return (
             self._best_scores_at_last_pass is not None
             and self.settings.max_examples >= 1000
@@ -1553,7 +1551,7 @@ class ConjectureRunner:
     def _run_optimise_pass(self) -> None:
         """Run one optimisation pass, then schedule the next one."""
         if self.settings.max_examples < 1000:
-            # A single unbudgeted pass, as we only ever run one.
+            # We'll only ever run a single optimization pass in this case.
             max_valid = None
         else:
             remaining = self.settings.max_examples // 2 - self._target_valid_spent
@@ -1567,8 +1565,7 @@ class ConjectureRunner:
             spent = self.valid_examples - start_valid
             self._target_valid_spent += spent
             # Alternate with generation on a fair-share schedule for as long
-            # as passes keep finding improvements and budget remains; a dry
-            # optimiser is only worth re-running on fresh material.
+            # as passes keep finding improvements and budget remains.
             if (
                 max_valid is not None
                 and improved
@@ -1644,7 +1641,7 @@ class ConjectureRunner:
         self._switch_to_hypothesis_provider = False
         with self._log_phase_statistics("generate"):
             self.generate_new_examples()
-            # We normally run the targeting phase mixed in with the generate phase,
+            # We normally run the target phase mixed in with the generate phase,
             # but if we've been asked to run it but not generation then we have to
             # run it explicitly on its own here.
             if Phase.generate not in self.settings.phases:
