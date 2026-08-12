@@ -8,8 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import math
 import time
+import types
+import weakref
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
@@ -28,6 +31,7 @@ from typing import (
 )
 
 from hypothesis.errors import (
+    CannotInvert,
     CannotProceedScopeT,
     ChoiceTooLarge,
     FlakyStrategyDefinition,
@@ -48,6 +52,7 @@ from hypothesis.internal.conjecture.choice import (
     FloatConstraints,
     IntegerConstraints,
     StringConstraints,
+    ValueHole,
     choice_constraints_key,
     choice_from_index,
     choice_permitted,
@@ -70,7 +75,7 @@ from hypothesis.internal.floats import (
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
 from hypothesis.reporting import debug_report
-from hypothesis.utils.conventions import not_set
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.threading import ThreadLocal
 
@@ -138,6 +143,27 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 # This cache can be quite hot and so we prefer LRUCache over LRUReusedCache for
 # performance. We lose scan resistance, but that's probably fine here.
 POOLED_CONSTRAINTS_CACHE: LRUCache[tuple[Any, ...], ChoiceConstraintsT] = LRUCache(4096)
+
+# The exact types whose values record_value_for_span holds directly: small
+# immutable stdlib types, none of which support weak references. Values of
+# any other type are held via weakref where possible, so that recording never
+# extends an object's lifetime. A tuple rather than a set so that ``in``
+# works even if a value's class has an unhashable metaclass. Exact type
+# checks also exclude symbolic backends.
+_RECORDABLE_VALUE_TYPES: tuple[type, ...] = (
+    int,
+    bool,
+    str,
+    bytes,
+    float,
+    types.NoneType,
+    datetime.date,
+    datetime.time,
+    datetime.datetime,
+    datetime.timedelta,
+)
+
+no_recorded_value = UniqueIdentifier("no_recorded_value")
 
 
 class Span:
@@ -240,6 +266,17 @@ class Span:
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
 
+    @property
+    def recorded_value(self) -> Any:
+        """The value produced by the strategy draw corresponding to this span,
+        or the ``no_recorded_value`` sentinel if no value was recorded, or if
+        a weakly-referenced value has since been collected."""
+        value = self.owner.span_values.get(self.index, no_recorded_value)
+        if isinstance(value, weakref.ReferenceType):
+            referent = value()
+            return no_recorded_value if referent is None else referent
+        return value
+
 
 class SpanProperty:
     """There are many properties of spans that we calculate by
@@ -325,6 +362,7 @@ class SpanRecord:
         # The number of spans started so far, which is also the index that the
         # next span to start will get. Spans are indexed in start order.
         self.span_count = 0
+        self.span_values: dict[int, Any] = {}
 
     def freeze(self) -> None:
         self.__index_of_labels = None
@@ -347,6 +385,19 @@ class SpanRecord:
             self.trail.append(TrailType.STOP_SPAN_DISCARD)
         else:
             self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
+
+    def record_value_for_span(self, span_index: int, value: Any) -> None:
+        # Record ``value`` against the span at ``span_index``. Called by
+        # ConjectureData.draw with the value each strategy's do_draw returned.
+        # Values which can be neither held directly nor weakly referenced
+        # (e.g. stdlib containers) are not recorded, and so cannot widen.
+        if type(value) in _RECORDABLE_VALUE_TYPES:
+            self.span_values[span_index] = value
+        else:
+            try:
+                self.span_values[span_index] = weakref.ref(value)
+            except TypeError:
+                pass
 
 
 class _starts_and_ends(SpanProperty):
@@ -447,6 +498,7 @@ class Spans:
     def __init__(self, record: SpanRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
+        self.span_values = record.span_values
         self.__length = self.trail.count(
             TrailType.STOP_SPAN_DISCARD
         ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
@@ -608,7 +660,7 @@ class ConjectureData:
     @classmethod
     def for_choices(
         cls,
-        choices: Sequence[ChoiceTemplate | ChoiceT],
+        choices: Sequence[ChoiceTemplate | ValueHole | ChoiceT],
         *,
         observer: DataObserver | None = None,
         provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
@@ -630,7 +682,7 @@ class ConjectureData:
         random: Random | None,
         observer: DataObserver | None = None,
         provider: PrimitiveProvider | type[PrimitiveProvider] = HypothesisProvider,
-        prefix: Sequence[ChoiceTemplate | ChoiceT] | None = None,
+        prefix: Sequence[ChoiceTemplate | ValueHole | ChoiceT] | None = None,
         max_choices: int | None = None,
         provider_kw: dict[str, Any] | None = None,
     ) -> None:
@@ -717,6 +769,7 @@ class ConjectureData:
         self.expected_traceback: str | None = None
 
         self.prefix = prefix
+        self._inverting = False
         self.nodes: tuple[ChoiceNode, ...] = ()
         self.misaligned_at: MisalignedAt | None = None
         self.cannot_proceed_scope: CannotProceedScopeT | None = None
@@ -799,6 +852,11 @@ class ConjectureData:
         observe: bool,
         forced: ChoiceT | None,
     ) -> ChoiceT:
+        if self._inverting:
+            # A strategy tried to draw while re-encoding a ValueHole - e.g. a
+            # filter predicate which draws, like stateful's rule filters.
+            # Inversions must be pure, so treat this as unencodable.
+            raise CannotInvert("cannot draw during _invert")
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
@@ -1079,6 +1137,19 @@ class ConjectureData:
                     self.mark_overrun()
             return choice
 
+        if isinstance(value, ValueHole):
+            # A hole that no strategy claimed: either its value could not be
+            # inverted, or it fell out of alignment with strategy draw
+            # boundaries. Treat it as a misalignment.
+            if self.misaligned_at is None:
+                self.misaligned_at = (self.index, choice_type, constraints, forced)
+            try:
+                choice = choice_from_index(0, choice_type, constraints)
+            except ChoiceTooLarge:
+                self.mark_overrun()
+            self.index += 1
+            return choice
+
         choice = value
         node_choice_type = {
             str: "string",
@@ -1203,11 +1274,38 @@ class ConjectureData:
             label = unwrapped.label
             assert isinstance(label, int)
 
+        # If the next prefix element is a ValueHole, we are the strategy being
+        # asked to re-encode its value: replace the hole with our inversion of
+        # it, and let do_draw consume those choices (under our own constraints)
+        # as usual. If we can't invert it, leave the hole for _pop_choice to
+        # treat as a misalignment.
+        if (
+            self.prefix is not None
+            and self.index < len(self.prefix)
+            and isinstance(hole := self.prefix[self.index], ValueHole)
+        ):
+            self._inverting = True
+            try:
+                inverted = unwrapped._invert(hole.value)
+            except CannotInvert:
+                pass
+            else:
+                self.prefix = (
+                    tuple(self.prefix[: self.index])
+                    + inverted
+                    + tuple(self.prefix[self.index + 1 :])
+                )
+            finally:
+                self._inverting = False
+
+        span_index = self.__span_record.span_count
         self.start_span(label=label)
         try:
             if not at_top_level:
                 try:
-                    return unwrapped.do_draw(self)
+                    v = unwrapped.do_draw(self)
+                    self.__span_record.record_value_for_span(span_index, v)
+                    return v
                 except FlakyStrategyDefinition as err:
                     # Record the strategy stack as the error unwinds, so that an
                     # inconsistent-generation failure is explained in terms of the
@@ -1234,6 +1332,7 @@ class ConjectureData:
             if observability_enabled():
                 avoid = self.provider.avoid_realization
                 self._observability_args[key] = to_jsonable(v, avoid_realization=avoid)
+            self.__span_record.record_value_for_span(span_index, v)
             return v
         finally:
             self.stop_span()

@@ -62,7 +62,7 @@ def test_sort_is_idempotent(ls):
     assert sorted(sort1) == sort1
 ```
 
-This exposes a normal function which can be picked up by a standard runner such as py.test. You can also just call it
+This exposes a normal function which can be picked up by a standard runner such as pytest. You can also just call it
 directly:
 
 ```python

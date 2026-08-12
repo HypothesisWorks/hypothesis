@@ -8,11 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
+import datetime as dt
 import time
 
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis.control import BuildContext
+from hypothesis.errors import CannotInvert
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -20,6 +25,7 @@ from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, StopSh
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.utils import skipif_time_unpatched
 from tests.conjecture.common import (
@@ -858,3 +864,218 @@ def test_normalize_unicode_chars_skips_when_no_simplification():
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
     assert shrinker.choices == ("A",)
+
+
+def test_widening_replaces_branch_choices_with_wide_encoding():
+    # Starting from the sampled_from branch (selector=1) with index 1, the
+    # widening pass alone rewrites the sequence to the integers() branch
+    # (selector=0) carrying the recorded value - and nothing else.
+    strategy = st.integers() | st.sampled_from([4991, 4999])
+
+    @shrinking_from((1, 1))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if 4990 <= value <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, 4999)
+
+
+def test_widening_replaces_multi_choice_span_with_wide_encoding():
+    # The specific branch spends three choices building its string; widening
+    # re-encodes the whole span as one text() draw of the same value.
+    compound = st.builds(
+        lambda a, b: a + b, st.sampled_from("xy"), st.sampled_from(["zzy", "zzy"])
+    )
+    strategy = st.text() | compound
+
+    @shrinking_from((1, 0, 0))
+    def shrinker(data: ConjectureData):
+        # builds() requires a build context
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if "zz" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, "xzzy")
+
+
+def test_full_shrink_widens_and_then_minimizes():
+    # End-to-end at the choice level: from the specific branch all the way to
+    # the minimal value of the wide branch.
+    strategy = st.integers() | st.sampled_from([4991, 4999])
+
+    @shrinking_from((1, 1))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if 4990 <= value <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.shrink()
+    assert shrinker.choices == (0, 4990)
+
+
+def test_widening_targets_the_simplest_viable_alternative():
+    # booleans() cannot invert an integer, so widening settles on the
+    # integers() branch rather than giving up after the first alternative.
+    strategy = st.booleans() | st.integers() | st.sampled_from([4991, 4999])
+
+    @shrinking_from((2, 1))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if 4990 <= value <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, 4999)
+
+
+def test_widening_keeps_improving_on_the_best_alternative():
+    # The first viable alternative (a verbose two-choice encoding) is
+    # accepted, then replaced by the strictly simpler one-choice text()
+    # encoding: we try every simpler alternative, not just the first success.
+    intervals = unwrap_strategies(st.characters()).intervals
+
+    class VerboseText(st.SearchStrategy):
+        def do_draw(self, data):
+            value = data.draw_string(intervals, min_size=0)
+            data.draw_integer(0, 1)
+            return value
+
+        def _invert(self, value):
+            if not isinstance(value, str):
+                raise CannotInvert(f"{value!r} is not a string")
+            return (value, 0)
+
+    compound = st.builds(
+        lambda a, b: a + b, st.sampled_from("xy"), st.sampled_from(["zzy", "zzy"])
+    )
+    strategy = VerboseText() | st.text() | compound
+
+    @shrinking_from((2, 0, 0))
+    def shrinker(data: ConjectureData):
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if "zz" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, "xzzy")
+
+
+def test_widening_does_not_apply_to_just():
+    # A just() branch has no choices to re-encode; the widening pass must
+    # leave the sequence alone (re-encoding would make it longer).
+    strategy = st.text() | st.just("dragonfruit")
+
+    @shrinking_from((1,))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if "dragon" in value:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1,)
+
+
+def test_widening_re_encodes_a_multipart_span():
+    # The specific branch encodes its date in four choices via sampled parts;
+    # widening re-encodes the whole span - selector included - as the dates()
+    # branch's equal-length (year, month, day) form, which can then shrink.
+    specific = st.builds(
+        dt.date,
+        st.sampled_from([2021, 2022]),
+        st.sampled_from([6, 7]),
+        st.sampled_from([15, 20]),
+    )
+    strategy = st.dates() | specific
+
+    @shrinking_from((1, 0, 0, 0))
+    def shrinker(data: ConjectureData):
+        # builds() requires a build context
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if dt.date(2021, 6, 10) <= value <= dt.date(2021, 7, 1):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, 2021, 6, 15)
+
+
+def test_widening_does_not_accept_longer_encodings():
+    # datetimes() would re-encode the value in nine choices, strictly longer
+    # than the sampled branch's two - and the shrinker never accepts a longer
+    # choice sequence, so the specific branch is kept.
+    values = [dt.datetime(2021, 6, 15, 4), dt.datetime(2021, 6, 20, 12)]
+    strategy = st.datetimes() | st.sampled_from(values)
+
+    @shrinking_from((1, 1))
+    def shrinker(data: ConjectureData):
+        value = data.draw(strategy)
+        if dt.datetime(2021, 6, 10) <= value <= dt.datetime(2021, 7, 1):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, 1)
+
+
+@dataclasses.dataclass
+class Point:
+    x: int
+
+
+def test_widening_a_weakly_recorded_object():
+    # Class instances are recorded via weakref; sampled_from keeps its
+    # elements alive, so the recorded value is still there to widen from.
+    strategy = st.builds(Point, st.integers()) | st.sampled_from(
+        [Point(4991), Point(4999)]
+    )
+
+    @shrinking_from((1, 0))
+    def shrinker(data: ConjectureData):
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if 4990 <= value.x <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (0, 4991)
+
+
+@pytest.mark.skipif(PYPY, reason="requires refcounting for prompt collection")
+def test_ephemeral_objects_are_not_widened():
+    # A weakly-recorded object built fresh each draw is collected as soon as
+    # the generating run finishes, so there is no recorded value to widen.
+    strategy = st.builds(Point, st.integers()) | st.builds(
+        Point, st.sampled_from([4991, 4999])
+    )
+
+    @shrinking_from((1, 0))
+    def shrinker(data: ConjectureData):
+        with BuildContext(data, wrapped_test=lambda: None):
+            value = data.draw(strategy)
+        if 4990 <= value.x <= 5010:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes(
+        [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
+    )
+    assert shrinker.choices == (1, 0)

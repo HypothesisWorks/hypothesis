@@ -5,10 +5,16 @@ on:
   push:
     branches: ["master"]
 
-  # On pull requests we build the website but don't deploy it, so that broken
-  # changes are caught in review rather than after merging.
+  # On pull requests which touch the website we build it but don't deploy to
+  # Pages, so that broken changes are caught in review rather than after
+  # merging; the website-preview workflow then deploys the uploaded artifact
+  # to Cloudflare Pages as a live preview.
   pull_request:
     branches: ["master"]
+    paths:
+      - "website/**"
+      - "brand/**"
+      - ".github/workflows/website*.yml"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

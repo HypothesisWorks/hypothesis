@@ -64,6 +64,14 @@ class ChoiceTooLarge(HypothesisException):
     """An internal error raised by choice_from_index."""
 
 
+class CannotInvert(HypothesisException):
+    """
+    Internal error raised by SearchStrategy._invert, either because the value
+    is not produced by that strategy, or because we haven't implemented an
+    inversion for it.
+    """
+
+
 class Flaky(_Trimmable):
     """
     Base class for indeterministic failures. Usually one of the more
@@ -331,6 +339,16 @@ class RewindRecursive(Exception):
 class SmallSearchSpaceWarning(HypothesisWarning):
     """Indicates that an inferred strategy does not span the search space
     in a meaningful way, for example by only creating default instances."""
+
+
+class NonRoundTrippableCharactersWarning(HypothesisWarning):
+    """Issued when the ``codec`` argument to
+    :func:`~hypothesis.strategies.characters` allows generating characters
+    which encode successfully, but do not decode back to the same character.
+
+    Pass each such character in either ``include_characters`` or
+    ``exclude_characters`` to silence this warning.
+    """
 
 
 CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]

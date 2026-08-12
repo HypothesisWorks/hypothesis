@@ -14,6 +14,7 @@ from typing import Any
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -174,3 +175,6 @@ class LazyStrategy(SearchStrategy[Ex]):
 
     def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        return self.wrapped_strategy._invert(value)

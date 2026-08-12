@@ -1,6 +1,6 @@
 [package]
 name = "hypothesis-native"
-version = "6.164.0"
+version = "6.165.3"
 edition = "2021"
 rust-version = "1.91"
 publish = false
@@ -9,7 +9,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.29"
+pyo3 = "0.29.2"
 
 [features]
 abi3 = ["pyo3/abi3-py310"]

@@ -1,0 +1,88 @@
+name: Deploy website preview
+
+# Deploys the website built from a pull request to Cloudflare Pages, and
+# posts (or updates) a comment on the PR with the preview URL.  This runs via
+# workflow_run so that it has access to secrets even for PRs from forks; it
+# must therefore never execute code from the PR - we only upload the static
+# site which the unprivileged build workflow produced.
+#
+# Requires a Cloudflare Pages project named `hypothesis-website`, and the
+# CLOUDFLARE_API_TOKEN (with Cloudflare Pages:Edit) and CLOUDFLARE_ACCOUNT_ID
+# secrets in the `website-preview` environment, which should have a deployment
+# branch policy allowing only master so that no other workflow can read them.
+
+on:
+  # Safe here because we never check out or execute anything from the PR.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: ["Build website & deploy to GitHub Pages"]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: website-preview-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: website-preview
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      # workflow_run events don't include the PR number for PRs from forks,
+      # and the commits/{sha}/pulls endpoint doesn't find those either, so
+      # search by head commit - and fail loudly rather than deploying to a
+      # nonsense branch if the search comes up empty.
+      - name: Find PR number
+        id: pr
+        run: |
+          number="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "sha:$HEAD_SHA" --json number --jq '.[0].number')"
+          if ! [[ "$number" =~ ^[0-9]+$ ]]; then
+            echo "No open PR found for commit $HEAD_SHA" >&2
+            exit 1
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          # Only comment the preview URL on PRs which actually change the
+          # website; e.g. dependency updates build and deploy it silently.
+          if gh pr diff "$number" --repo "$GITHUB_REPOSITORY" --name-only \
+              | grep -q '^website/'; then
+            echo "comment=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "comment=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download website build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: website
+          path: site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >
+            pages deploy site
+            --project-name=hypothesis-website
+            --branch=pr-${{ steps.pr.outputs.number }}
+            --commit-hash=${{ github.event.workflow_run.head_sha }}
+      - name: Comment preview URL on PR
+        if: steps.pr.outputs.comment == 'true'
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          # The stable per-PR alias, e.g. https://pr-123.hypothesis-website.pages.dev
+          URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --edit-last --create-if-none \
+            --body "Website preview for $HEAD_SHA: $URL"
