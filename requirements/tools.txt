@@ -188,7 +188,7 @@ pexpect==4.9.0
     # via
     #   -r requirements/test.in
     #   ipython
-pip-tools==7.6.0
+pip-tools==7.6.1
     # via -r requirements/tools.in
 platformdirs==4.11.1
     # via

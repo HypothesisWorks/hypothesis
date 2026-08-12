@@ -425,7 +425,7 @@ def update_python_versions():
     for line in result.splitlines():
         token = line.strip().split()[0] if line.strip() else ""
         if m := re.match(
-            r"(cpython|pypy)-(\d+\.\d+\.\d+(?:[a-z]\d+)?)(\+freethreaded)?", token
+            r"(cpython|pypy)-(\d+\.\d+\.\d+(?:[a-z]+\d+)?)(\+freethreaded)?", token
         ):
             impl, ver, ft = m.groups()
             versions.append((impl, ver, bool(ft)))
@@ -820,7 +820,8 @@ PYTHONS = {
     "3.13": "3.13.15",
     "3.14": "3.14.7",
     "3.14t": "3.14.7+freethreaded",
-    "3.15": "3.15.0",
+    "3.15": "3.15.0rc1",
+    "3.15t": "3.15.0rc1+freethreaded",
     "pypy3.11": "pypy3.11-3.11.15",
 }
 ci_version_python = (
