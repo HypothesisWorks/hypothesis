@@ -136,7 +136,7 @@ class Conclusion:
 # by using this. We just may think the node is exhausted when in fact it has more
 # possible children to be explored. This has the potential to finish generation
 # early due to exhausting the entire tree, but that is quite unlikely: (1) the
-# number of examples would have to be quite high, and (2) the tree would have to
+# number of test cases would have to be quite high, and (2) the tree would have to
 # contain only one or two nodes, or generate_novel_prefix would simply switch to
 # exploring another non-exhausted node.
 #
@@ -146,7 +146,7 @@ class Conclusion:
 # unconditionally is cheaper than estimating against this value.
 #
 # The one case where this may be detrimental is fuzzing, where the throughput of
-# examples is so high that it really may saturate important nodes. We'll cross
+# test cases is so high that it really may saturate important nodes. We'll cross
 # that bridge when we come to it.
 MAX_CHILDREN_EFFECTIVELY_INFINITE: Final[int] = 10_000_000
 

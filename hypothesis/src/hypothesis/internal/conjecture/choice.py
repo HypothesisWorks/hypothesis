@@ -118,7 +118,7 @@ class ChoiceNode:
         if self.was_forced:
             assert with_value is None, "modifying a forced node doesn't make sense"
         # explicitly not copying index. node indices are only assigned via
-        # ExampleRecord. This prevents footguns with relying on stale indices
+        # SpanRecord. This prevents footguns with relying on stale indices
         # after copying.
         return ChoiceNode(
             type=self.type,

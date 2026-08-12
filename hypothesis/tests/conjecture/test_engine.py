@@ -100,7 +100,7 @@ def test_can_load_data_from_a_corpus():
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
-    (last_data,) = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_test_cases.values()
     assert last_data.choices == (value,)
     assert len(list(db.fetch(key))) == 1
 
@@ -119,11 +119,11 @@ def slow_shrinker():
 def test_terminates_shrinks(n, monkeypatch):
     db = InMemoryExampleDatabase()
 
-    def generate_new_examples(self):
+    def generate_new_test_cases(self):
         self.cached_test_function((255,) * 1000)
 
     monkeypatch.setattr(
-        ConjectureRunner, "generate_new_examples", generate_new_examples
+        ConjectureRunner, "generate_new_test_cases", generate_new_test_cases
     )
     monkeypatch.setattr(engine_module, "MAX_SHRINKS", n)
 
@@ -134,7 +134,7 @@ def test_terminates_shrinks(n, monkeypatch):
         database_key=b"key",
     )
     runner.run()
-    (last_data,) = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_test_cases.values()
     assert last_data.status == Status.INTERESTING
     assert runner.exit_reason == ExitReason.max_shrinks
     assert runner.shrinks == n
@@ -223,7 +223,7 @@ def test_can_navigate_to_a_valid_example():
     runner = ConjectureRunner(f, settings=settings(max_examples=5000, database=None))
     with buffer_size_limit(4):
         runner.run()
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
 
 
 def test_stops_after_max_examples_when_reading():
@@ -298,12 +298,12 @@ def test_interleaving_engines():
         runner = ConjectureRunner(g, random=rnd)
         children.append(runner)
         runner.run()
-        if runner.interesting_examples:
+        if runner.interesting_test_cases:
             data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (b"\0",)
     for c in children:
-        assert not c.interesting_examples
+        assert not c.interesting_test_cases
 
 
 def test_phases_can_disable_shrinking():
@@ -437,7 +437,7 @@ def fails_health_check(label, **kwargs):
         with pytest.raises(FailedHealthCheck) as e:
             runner.run()
         assert str(label) in str(e.value)
-        assert not runner.interesting_examples
+        assert not runner.interesting_test_cases
 
     return accept
 
@@ -641,7 +641,7 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
 
     runner = ConjectureRunner(f, settings=settings(max_examples=50))
     runner.run()
-    assert runner.valid_examples == len(seen)
+    assert runner.valid_test_cases == len(seen)
 
 
 @pytest.mark.parametrize("skip_target", [False, True])
@@ -649,11 +649,11 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
 def test_clears_out_its_database_on_shrinking(
     initial_attempt, skip_target, monkeypatch
 ):
-    def generate_new_examples(self):
+    def generate_new_test_cases(self):
         self.cached_test_function(initial_attempt)
 
     monkeypatch.setattr(
-        ConjectureRunner, "generate_new_examples", generate_new_examples
+        ConjectureRunner, "generate_new_test_cases", generate_new_test_cases
     )
 
     key = b"key"
@@ -674,18 +674,18 @@ def test_clears_out_its_database_on_shrinking(
         if n != 127 or not skip_target:
             db.save(runner.secondary_key, choices_to_bytes([n]))
     runner.run()
-    assert len(runner.interesting_examples) == 1
+    assert len(runner.interesting_test_cases) == 1
     for b in db.fetch(runner.secondary_key):
         assert choices_from_bytes(b)[0] >= 127
     assert len(list(db.fetch(runner.database_key))) == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
-    def generate_new_examples(self):
+    def generate_new_test_cases(self):
         self.cached_test_function((1,))
 
     monkeypatch.setattr(
-        ConjectureRunner, "generate_new_examples", generate_new_examples
+        ConjectureRunner, "generate_new_test_cases", generate_new_test_cases
     )
 
     def f(data):
@@ -694,15 +694,15 @@ def test_shrinks_both_interesting_examples(monkeypatch):
 
     runner = ConjectureRunner(f)
     runner.run()
-    assert runner.interesting_examples[interesting_origin(0)].choices == (0,)
-    assert runner.interesting_examples[interesting_origin(1)].choices == (1,)
+    assert runner.interesting_test_cases[interesting_origin(0)].choices == (0,)
+    assert runner.interesting_test_cases[interesting_origin(1)].choices == (1,)
 
 
 def test_discarding(monkeypatch):
     monkeypatch.setattr(Shrinker, "shrink", Shrinker.remove_discarded)
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function((False, True) * 10),
     )
 
@@ -777,7 +777,7 @@ def test_discarding_can_fail():
 def test_shrinking_from_mostly_zero(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda self: self.cached_test_function((0,) * 5 + (2,)),
     )
 
@@ -794,7 +794,7 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     monkeypatch.setattr(Shrinker, "shrink", Shrinker.remove_discarded)
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function((False, False, True, True)),
     )
 
@@ -835,7 +835,7 @@ def test_database_clears_secondary_key():
         database.save(runner.secondary_key, choices_to_bytes([i]))
 
     runner.cached_test_function((10,))
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
 
     assert len(set(database.fetch(key))) == 1
     assert len(set(database.fetch(runner.secondary_key))) == 10
@@ -867,7 +867,7 @@ def test_database_uses_values_from_secondary_key():
         database.save(runner.secondary_key, choices_to_bytes([i]))
 
     runner.cached_test_function((10,))
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     assert len(set(database.fetch(key))) == 1
     assert len(set(database.fetch(runner.secondary_key))) == 10
 
@@ -878,7 +878,7 @@ def test_database_uses_values_from_secondary_key():
         choices_from_bytes(b)[0] for b in database.fetch(runner.secondary_key)
     } == set(range(6, 11))
 
-    (v,) = runner.interesting_examples.values()
+    (v,) = runner.interesting_test_cases.values()
     assert v.choices == (5,)
 
 
@@ -1129,7 +1129,7 @@ def test_exhaust_space():
     )
     runner.run()
     assert runner.tree.is_exhausted
-    assert runner.valid_examples == 2
+    assert runner.valid_test_cases == 2
 
 
 SMALL_COUNT_SETTINGS = settings(runner_settings, max_examples=500)
@@ -1179,7 +1179,7 @@ def test_prefix_cannot_exceed_buffer_size(monkeypatch):
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS, random=Random(0))
         runner.run()
-        assert runner.valid_examples == buffer_size
+        assert runner.valid_test_cases == buffer_size
 
 
 def test_does_not_shrink_multiple_bugs_when_told_not_to():
@@ -1198,9 +1198,9 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
         random=Random(0),
     )
     runner.cached_test_function((255, 255))
-    runner.shrink_interesting_examples()
+    runner.shrink_interesting_test_cases()
 
-    results = {d.choices for d in runner.interesting_examples.values()}
+    results = {d.choices for d in runner.interesting_test_cases.values()}
     assert len(results.intersection({(0, 1), (1, 0)})) == 1
 
 
@@ -1261,19 +1261,19 @@ def test_shrink_after_max_examples():
         # to debug if anything goes wrong.
         random=Random(0),
     )
-    runner.shrink_interesting_examples = Mock(name="shrink_interesting_examples")
+    runner.shrink_interesting_test_cases = Mock(name="shrink_interesting_test_cases")
     runner.run()
 
     # First, verify our test assumptions: we found a bug, kept running, and
     # then hit max-examples.
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     assert post_failure_calls[0] >= (max_examples - fail_at)
     assert runner.call_count >= max_examples
-    assert runner.valid_examples == max_examples
+    assert runner.valid_test_cases == max_examples
 
     # Now check that we still performed shrinking, even after hitting the
     # example limit.
-    assert runner.shrink_interesting_examples.call_count == 1
+    assert runner.shrink_interesting_test_cases.call_count == 1
     assert runner.exit_reason == ExitReason.finished
 
 
@@ -1317,19 +1317,19 @@ def test_shrink_after_max_iterations():
         ),
         random=Random(0),
     )
-    runner.shrink_interesting_examples = Mock(name="shrink_interesting_examples")
+    runner.shrink_interesting_test_cases = Mock(name="shrink_interesting_test_cases")
     runner.run()
 
     # First, verify our test assumptions: we found a bug, kept running, and
     # then hit the test call limit.
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     assert post_failure_calls[0] >= (max_iterations - fail_at) - 1
     assert runner.call_count >= max_iterations
-    assert runner.valid_examples == 0
+    assert runner.valid_test_cases == 0
 
     # Now check that we still performed shrinking, even after hitting the
     # test call limit.
-    assert runner.shrink_interesting_examples.call_count == 1
+    assert runner.shrink_interesting_test_cases.call_count == 1
     assert runner.exit_reason == ExitReason.finished
 
 
@@ -1460,7 +1460,7 @@ def test_runs_full_set_of_examples():
     )
 
     runner.run()
-    assert runner.valid_examples == runner_settings.max_examples
+    assert runner.valid_test_cases == runner_settings.max_examples
 
 
 def test_runs_optimisation_even_if_not_generating():
@@ -1488,7 +1488,7 @@ def test_runs_optimisation_once_when_generating():
 
     runner.optimise_targets = Mock(name="optimise_targets")
     try:
-        runner.generate_new_examples()
+        runner.generate_new_test_cases()
     except RunIsComplete:
         pass
     assert runner.optimise_targets.call_count == 1
@@ -1504,7 +1504,7 @@ def test_does_not_run_optimisation_when_max_examples_is_small():
 
     runner.optimise_targets = Mock(name="optimise_targets")
     try:
-        runner.generate_new_examples()
+        runner.generate_new_test_cases()
     except RunIsComplete:
         pass
     assert runner.optimise_targets.call_count == 0
@@ -1718,9 +1718,9 @@ def test_does_not_shrink_if_replaying_from_database():
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     choices = (123,)
     runner.save_choices(choices)
-    runner.shrink_interesting_examples = None
+    runner.shrink_interesting_test_cases = None
     runner.run()
-    (last_data,) = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_test_cases.values()
     assert last_data.choices == choices
 
 
@@ -1735,7 +1735,7 @@ def test_does_shrink_if_replaying_inexact_from_database():
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.save_choices((123, 2))
     runner.run()
-    (last_data,) = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_test_cases.values()
     assert last_data.choices == (0,)
 
 
@@ -1774,7 +1774,7 @@ def test_skips_secondary_if_interesting_is_found():
             runner.database_key if i < 10 else runner.secondary_key,
             choices_to_bytes([i]),
         )
-    runner.reuse_existing_examples()
+    runner.reuse_existing_test_cases()
     assert runner.call_count == 10
 
 
@@ -1804,7 +1804,7 @@ def test_discards_invalid_db_entries(key_name):
 
     assert len(set(db.fetch(key))) == 6
     # this will clear out the invalid entries and use the valid one
-    runner.reuse_existing_examples()
+    runner.reuse_existing_test_cases()
     runner.clear_secondary_key()
 
     assert set(db.fetch(runner.database_key)) == {valid}
@@ -1829,7 +1829,7 @@ def test_discards_invalid_db_entries_pareto():
         db.save(runner.pareto_key, b)
 
     assert len(set(db.fetch(runner.pareto_key))) == 5
-    runner.reuse_existing_examples()
+    runner.reuse_existing_test_cases()
 
     assert not set(db.fetch(runner.database_key))
     assert not set(db.fetch(runner.pareto_key))

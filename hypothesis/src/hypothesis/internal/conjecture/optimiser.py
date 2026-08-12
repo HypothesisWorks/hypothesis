@@ -83,9 +83,7 @@ class Optimiser:
 
     def hill_climb(self) -> None:
         """The main hill climbing loop where we actually do the work: Take
-        data, and attempt to improve its score for target. select_example takes
-        a data object and returns an index to an example where we should focus
-        our efforts."""
+        data, and attempt to improve its score for target."""
 
         nodes_examined = set()
 

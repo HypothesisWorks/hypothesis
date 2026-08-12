@@ -76,8 +76,8 @@ Prefer |@example| over the database for correctness
 
 While the database is useful for quick local iteration, Hypothesis may invalidate it when upgrading (because e.g. the internal format may have changed). Changes to the source code of a test function may also change its database key, invalidating its stored entries. We therefore recommend against relying on the database for the correctness of your tests. If you want to ensure an input is run every time, use |@example|.
 
-Replaying examples with |@reproduce_failure|
---------------------------------------------
+Replaying test cases with |@reproduce_failure|
+----------------------------------------------
 
 If |settings.print_blob| is set to ``True`` (the default in the ``ci`` settings profile), and a test fails, Hypothesis will print an |@reproduce_failure| decorator containing an opaque blob as part of the error message:
 

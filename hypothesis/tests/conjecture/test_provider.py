@@ -573,9 +573,9 @@ def test_backend_realize_cannot_proceed_increments_invalid():
             test,
             settings=settings(backend="never_proceeds", database=None),
         )
-        assert runner.invalid_examples == 0
+        assert runner.invalid_test_cases == 0
         runner.cached_test_function([1])
-        assert runner.invalid_examples == 1
+        assert runner.invalid_test_cases == 1
 
 
 def test_backend_realize_cannot_proceed_exception_increments_invalid():
@@ -590,9 +590,9 @@ def test_backend_realize_cannot_proceed_exception_increments_invalid():
             test,
             settings=settings(backend="never_proceeds", database=None),
         )
-        assert runner.invalid_examples == 0
+        assert runner.invalid_test_cases == 0
         runner.cached_test_function([1])
-        assert runner.invalid_examples == 1
+        assert runner.invalid_test_cases == 1
 
 
 class FallibleProvider(TrivialProvider):

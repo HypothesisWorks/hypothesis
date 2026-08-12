@@ -328,7 +328,7 @@ class SearchStrategy(Generic[Ex]):
                 "The `.example()` method is good for exploring strategies, but should "
                 "only be used interactively.  We recommend using `@given` for tests - "
                 "it performs better, saves and replays failures to avoid flakiness, "
-                f"and reports minimal examples. (strategy: {self!r})",
+                f"and reports minimal failing test cases. (strategy: {self!r})",
                 NonInteractiveExampleWarning,
                 stacklevel=2,
             )
@@ -350,7 +350,7 @@ class SearchStrategy(Generic[Ex]):
                 raise HypothesisException(
                     "Using example() inside a test function is a bad "
                     "idea. Instead consider using hypothesis.strategies.data() "
-                    "to draw more examples during testing. See "
+                    "to draw more values during testing. See "
                     "https://hypothesis.readthedocs.io/en/latest/reference/"
                     "strategies.html#hypothesis.strategies.data for more details."
                 )

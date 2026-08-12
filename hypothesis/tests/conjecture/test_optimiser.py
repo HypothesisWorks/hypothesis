@@ -219,12 +219,12 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
 
 
 def record_optimise_passes(runner):
-    """Record runner.valid_examples at the start of each optimisation pass."""
+    """Record runner.valid_test_cases at the start of each optimisation pass."""
     testcase_counts = []
     original = runner.optimise_targets
 
     def recording(**kwargs):
-        testcase_counts.append(runner.valid_examples)
+        testcase_counts.append(runner.valid_test_cases)
         return original(**kwargs)
 
     runner.optimise_targets = recording
@@ -263,7 +263,7 @@ def scheduler_state_runner():
         settings=settings(runner_settings, max_examples=2000),
         random=Random(0),
     )
-    runner.valid_examples = 400
+    runner.valid_test_cases = 400
     runner._next_optimise_at = math.inf
     runner._best_scores_at_last_pass = {"n": 5.0}
     runner.best_observed_targets["n"] = 5.0
@@ -317,9 +317,9 @@ def test_optimisation_pass_stops_at_its_valid_example_budget():
 
     # This score can always be improved, so without the max_valid ceiling
     # this pass would consume the entire run.
-    max_valid = runner.valid_examples + 10
+    max_valid = runner.valid_test_cases + 10
     assert runner.optimise_targets(max_valid=max_valid)
-    assert runner.valid_examples <= max_valid + 100
+    assert runner.valid_test_cases <= max_valid + 100
 
 
 def test_optimisation_spend_is_bounded_for_large_budgets():

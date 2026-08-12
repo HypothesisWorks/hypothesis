@@ -133,14 +133,14 @@ def float_runner(start, condition, *, constraints=None):
 
     runner = ConjectureRunner(test_function)
     runner.cached_test_function((float(start),))
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     return runner
 
 
 def minimal_from(start, condition, *, constraints=None):
     runner = float_runner(start, condition, constraints=constraints)
-    runner.shrink_interesting_examples()
-    (v,) = runner.interesting_examples.values()
+    runner.shrink_interesting_test_cases()
+    (v,) = runner.interesting_test_cases.values()
     f = v.choices[0]
     assert condition(f)
     return f

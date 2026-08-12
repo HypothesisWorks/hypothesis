@@ -594,7 +594,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     state.execute_once,
                     empty_data,
                     is_final=True,
-                    print_example=True,
+                    print_test_case=True,
                     example_kwargs=example_kwargs,
                 )
                 with with_reporter(fragments_reported.append):
@@ -947,7 +947,7 @@ class StateForActualGivenExecution:
         }
 
         self.last_exception = None
-        self.falsifying_examples = ()
+        self.falsifying_test_cases = ()
         self.ever_executed = False
         self.xfail_example_reprs: set[str] = set()
         self.failed_normally = False
@@ -985,7 +985,7 @@ class StateForActualGivenExecution:
         self,
         data,
         *,
-        print_example=False,
+        print_test_case=False,
         is_final=False,
         expected_failure=None,
         example_kwargs=None,
@@ -1071,9 +1071,9 @@ class StateForActualGivenExecution:
                 nonlocal text_repr
                 text_repr = repr_call(test, args, kwargs)
 
-            if print_example or current_verbosity() >= Verbosity.verbose:
+            if print_test_case or current_verbosity() >= Verbosity.verbose:
                 printer = RepresentationPrinter(context=context)
-                if print_example:
+                if print_test_case:
                     printer.text("Failing test case:")
                 else:
                     printer.text("Test case:")
@@ -1194,16 +1194,16 @@ class StateForActualGivenExecution:
         self, err: FlakyReplay, context: BaseException
     ) -> FlakyFailure:
         assert self._runner is not None
-        # Note that in the mark_interesting case, _context_ itself
-        # is part of err._interesting_examples - but it's not in
-        # _runner.interesting_examples - this is fine, as the context
+        # Note that in the mark_interesting case, _context_
+        # is part of err._interesting_origins - but it's not in
+        # _runner.interesting_test_cases - this is fine, as the context
         # (i.e., immediate exception) is appended.
-        interesting_examples = [
-            self._runner.interesting_examples[origin]
+        interesting_test_cases = [
+            self._runner.interesting_test_cases[origin]
             for origin in err._interesting_origins
-            if origin in self._runner.interesting_examples
+            if origin in self._runner.interesting_test_cases
         ]
-        exceptions = [result.expected_exception for result in interesting_examples]
+        exceptions = [result.expected_exception for result in interesting_test_cases]
         exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 
@@ -1438,14 +1438,14 @@ class StateForActualGivenExecution:
 
         if runner.call_count == 0:
             return
-        if runner.interesting_examples:
-            self.falsifying_examples = sorted(
-                runner.interesting_examples.values(),
+        if runner.interesting_test_cases:
+            self.falsifying_test_cases = sorted(
+                runner.interesting_test_cases.values(),
                 key=lambda d: sort_key(d.nodes),
                 reverse=True,
             )
         else:
-            if runner.valid_examples == 0:
+            if runner.valid_test_cases == 0:
                 explanations = []
                 if runner.exit_reason is ExitReason.finished:
                     explanations.append(
@@ -1456,23 +1456,23 @@ class StateForActualGivenExecution:
                     )
                 # use a somewhat arbitrary cutoff to avoid recommending spurious
                 # fixes.
-                # eg, a few invalid examples from internal filters when the
+                # eg, a few invalid test cases from internal filters when the
                 # problem is the user generating large inputs, or a
                 # few overruns during internal mutation when the problem is
                 # impossible user filters/assumes.
-                if runner.invalid_examples > min(20, runner.call_count // 5):
+                if runner.invalid_test_cases > min(20, runner.call_count // 5):
                     explanations.append(
-                        f"{runner.invalid_examples} of {runner.call_count} "
-                        "examples failed a .filter() or assume() condition. Try "
+                        f"{runner.invalid_test_cases} of {runner.call_count} "
+                        "test cases failed a .filter() or assume() condition. Try "
                         "making your filters or assumes less strict, or rewrite "
                         "using strategy parameters: "
                         "st.integers().filter(lambda x: x > 0) fails less often "
                         "(that is, never) when rewritten as st.integers(min_value=1)."
                     )
-                if runner.overrun_examples > min(20, runner.call_count // 5):
+                if runner.overrun_test_cases > min(20, runner.call_count // 5):
                     explanations.append(
-                        f"{runner.overrun_examples} of {runner.call_count} "
-                        "examples were too large to finish generating; try "
+                        f"{runner.overrun_test_cases} of {runner.call_count} "
+                        "test cases were too large to finish generating; try "
                         "reducing the typical size of your inputs?"
                     )
                 rep = get_pretty_function_description(self.test)
@@ -1497,11 +1497,11 @@ class StateForActualGivenExecution:
                 stacklevel=3,
             )
 
-        if not self.falsifying_examples:
+        if not self.falsifying_test_cases:
             return
         elif not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
             # Pretend that we only found one failure, by discarding the others.
-            del self.falsifying_examples[:-1]
+            del self.falsifying_test_cases[:-1]
 
         # The engine found one or more failures, so we need to reproduce and
         # report them.
@@ -1513,26 +1513,27 @@ class StateForActualGivenExecution:
             report_lines.append("")
 
         explanations = explanatory_lines(self.explain_traces, self.settings)
-        for falsifying_example in self.falsifying_examples:
+        for falsifying_test_case in self.falsifying_test_cases:
             fragments = []
 
-            ran_example = runner.new_conjecture_data(
-                falsifying_example.choices, max_choices=len(falsifying_example.choices)
+            ran_test_case = runner.new_conjecture_data(
+                falsifying_test_case.choices,
+                max_choices=len(falsifying_test_case.choices),
             )
-            ran_example.span_comments = falsifying_example.span_comments
+            ran_test_case.span_comments = falsifying_test_case.span_comments
             tb = None
             origin = None
-            assert falsifying_example.expected_exception is not None
-            assert falsifying_example.expected_traceback is not None
+            assert falsifying_test_case.expected_exception is not None
+            assert falsifying_test_case.expected_traceback is not None
             try:
                 with with_reporter(fragments.append):
                     self.execute_once(
-                        ran_example,
-                        print_example=True,
+                        ran_test_case,
+                        print_test_case=True,
                         is_final=True,
                         expected_failure=(
-                            falsifying_example.expected_exception,
-                            falsifying_example.expected_traceback,
+                            falsifying_test_case.expected_exception,
+                            falsifying_test_case.expected_traceback,
                         ),
                     )
             except StopTest as e:
@@ -1540,28 +1541,28 @@ class StateForActualGivenExecution:
                 # how to access the current exception, if it failed
                 # differently on this run. In fact, in the only known
                 # reproducer, the StopTest is caused by OVERRUN before the
-                # test is even executed. Possibly because all initial examples
+                # test is even executed. Possibly because all initial test cases
                 # failed until the final non-traced replay, and something was
                 # exhausted? Possibly a FIXME, but sufficiently weird to
                 # ignore for now.
                 err = FlakyFailure(
-                    "Inconsistent results: An example failed on the "
+                    "Inconsistent results: A test case failed on the "
                     "first run but now succeeds (or fails with another "
                     "error, or is for some reason not runnable).",
                     # (note: e is a BaseException)
-                    [falsifying_example.expected_exception or e],
+                    [falsifying_test_case.expected_exception or e],
                 )
                 errors_to_report.append(ReportableError(fragments, err))
             except UnsatisfiedAssumption as e:  # pragma: no cover  # ironically flaky
                 err = FlakyFailure(
-                    "Unreliable assumption: An example which satisfied "
+                    "Unreliable assumption: A test case which satisfied "
                     "assumptions on the first run now fails it.",
                     [e],
                 )
                 errors_to_report.append(ReportableError(fragments, err))
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
-                fragments.extend(explanations[falsifying_example.interesting_origin])
+                fragments.extend(explanations[falsifying_test_case.interesting_origin])
                 error_with_tb = e.with_traceback(get_trimmed_traceback())
                 errors_to_report.append(ReportableError(fragments, error_with_tb))
                 tb = format_exception(e, get_trimmed_traceback(e))
@@ -1570,16 +1571,16 @@ class StateForActualGivenExecution:
                 # execute_once() will always raise either the expected error, or Flaky.
                 raise NotImplementedError("This should be unreachable")
             finally:
-                ran_example.freeze()
+                ran_test_case.freeze()
                 if observability_enabled():
                     # log our observability line for the final failing test case
                     tc = make_testcase(
                         run_start=self._start_timestamp,
                         property=self.test_identifier,
-                        data=ran_example,
+                        data=ran_test_case,
                         how_generated="minimal failing test case",
                         representation=self._string_repr,
-                        arguments=ran_example._observability_args,
+                        arguments=ran_test_case._observability_args,
                         timing=self._timing_features,
                         coverage=None,  # Not recorded when we're replaying the MFE
                         status="passed" if sys.exc_info()[0] else "failed",
@@ -1593,7 +1594,7 @@ class StateForActualGivenExecution:
                 if self.settings.print_blob:
                     fragments.append(
                         "\nYou can reproduce this test case by temporarily adding "
-                        f"{reproduction_decorator(falsifying_example.choices)} "
+                        f"{reproduction_decorator(falsifying_test_case.choices)} "
                         "as a decorator on your test function"
                     )
 
@@ -2104,7 +2105,7 @@ def given(
                         f"{type(runner).__qualname__}, but this "
                         "class does not inherit from the supported versions in "
                         "`hypothesis.extra.django`.  Use the Hypothesis variants "
-                        "to ensure that each example is run in a separate "
+                        "to ensure that each test case is run in a separate "
                         "database transaction."
                     )
 
@@ -2163,7 +2164,7 @@ def given(
                     try:
                         state.execute_once(
                             ConjectureData.for_choices(decode_failure(failure)),
-                            print_example=True,
+                            print_test_case=True,
                             is_final=True,
                         )
                         raise DidNotReproduce(
@@ -2213,14 +2214,14 @@ def given(
                     Phase.explicit in state.settings.phases
                     and getattr(wrapped_test, "hypothesis_explicit_examples", ())
                 )
-                SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
+                SKIP_BECAUSE_NO_TEST_CASES = unittest.SkipTest(
                     "Hypothesis has been told to run no test cases for this test."
                 )
                 if not (
                     Phase.reuse in settings.phases or Phase.generate in settings.phases
                 ):
                     if not ran_explicit_examples:
-                        raise SKIP_BECAUSE_NO_EXAMPLES
+                        raise SKIP_BECAUSE_NO_TEST_CASES
                     return
 
                 try:
@@ -2287,7 +2288,7 @@ def given(
                         raise the_error_hypothesis_found
 
                 if not (ran_explicit_examples or state.ever_executed):
-                    raise SKIP_BECAUSE_NO_EXAMPLES
+                    raise SKIP_BECAUSE_NO_TEST_CASES
             finally:
                 with thread_overlap_lock:
                     del thread_overlap[threadid]
@@ -2323,8 +2324,8 @@ def given(
                 thread_overlap=thread_overlap,
             )
             database_key = function_digest(test) + b".secondary"
-            # We track the minimal-so-far example for each distinct origin, so
-            # that we track log-n instead of n examples for long runs.  In particular
+            # We track the minimal-so-far test case for each distinct origin, so
+            # that we track log-n instead of n test cases for long runs.  In particular
             # it means that we saturate for common errors in long runs instead of
             # storing huge volumes of low-value data.
             minimal_failures: dict = {}
@@ -2423,7 +2424,7 @@ def find(
     random: Random | None = None,
     database_key: bytes | None = None,
 ) -> Ex:
-    """Returns the minimal example from the given strategy ``specifier`` that
+    """Returns the minimal value from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
     if settings is None:
         settings = Settings(max_examples=2000)
@@ -2433,7 +2434,7 @@ def find(
 
     if database_key is None and settings.database is not None:
         # Note: The database key is not guaranteed to be unique. If not, replaying
-        # of database examples may fail to reproduce due to being replayed on the
+        # of database test cases may fail to reproduce due to being replayed on the
         # wrong condition.
         database_key = function_digest(condition)
 

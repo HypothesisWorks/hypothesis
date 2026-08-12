@@ -62,7 +62,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     )
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function((b"\0",) * 10),
     )
 
@@ -199,7 +199,7 @@ def test_can_reorder_spans():
 def test_permits_but_ignores_raising_order(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function((1,)),
     )
 
@@ -338,7 +338,7 @@ def test_zig_zags_quickly():
             data.mark_interesting(interesting_origin(1))
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
-    assert shrinker.engine.valid_examples <= 100
+    assert shrinker.engine.valid_test_cases <= 100
     assert shrinker.choices == (1, 1)
 
 
@@ -371,7 +371,7 @@ def test_zig_zags_quickly_with_shrink_towards(
             data.mark_interesting(interesting_origin())
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.minimize_individual_choices)])
-    assert shrinker.engine.valid_examples <= 40
+    assert shrinker.engine.valid_test_cases <= 40
     assert shrinker.choices == expected
 
 

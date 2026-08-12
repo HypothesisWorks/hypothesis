@@ -311,8 +311,8 @@ class Shrinker:
         in_target_phase: bool = False,
     ):
         """Create a shrinker for a particular engine, with a given starting
-        point and predicate. When shrink() is called it will attempt to find an
-        example for which predicate is True and which is strictly smaller than
+        point and predicate. When shrink() is called it will attempt to find a
+        test case for which predicate is True and which is strictly smaller than
         initial.
 
         Note that initial is a ConjectureData object, and predicate
@@ -325,7 +325,7 @@ class Shrinker:
         self.__derived_values: dict = {}
 
         self.initial_size = len(initial.choices)
-        # We keep track of the current best example on the shrink_target
+        # We keep track of the current best test case on the shrink_target
         # attribute.
         self.shrink_target = initial
         self.clear_change_tracking()
@@ -535,7 +535,7 @@ class Shrinker:
                 continue
 
             # Check for any previous test cases that match the prefix and suffix,
-            # so we can skip if we found a passing example while shrinking.
+            # so we can skip if we found a passing test case while shrinking.
             if any(
                 startswith(seen, nodes[:start]) and endswith(seen, nodes[end:])
                 for seen in seen_passing_seq
@@ -565,7 +565,7 @@ class Shrinker:
                 # no-branch here because we don't coverage-test the abort-at-500 logic.
 
                 if n_attempt - 10 - len(candidates) > n_same_failures * 5:
-                    # stop early if we're seeing mostly invalid examples
+                    # stop early if we're seeing mostly invalid test cases
                     break  # pragma: no cover
 
                 if n_attempt < len(candidates):
@@ -1338,7 +1338,7 @@ class Shrinker:
 
             # This can happen if we have discards but they are all of
             # zero length. This shouldn't happen very often so it's
-            # faster to check for it here than at the point of example
+            # faster to check for it here than at the point of span
             # generation.
             if not discarded:
                 break

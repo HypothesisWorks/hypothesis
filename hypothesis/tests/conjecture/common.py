@@ -61,8 +61,8 @@ def run_to_data(f):
         random=Random(0),
     )
     runner.run()
-    assert runner.interesting_examples
-    (last_data,) = runner.interesting_examples.values()
+    assert runner.interesting_test_cases
+    (last_data,) = runner.interesting_test_cases.values()
     return last_data
 
 
@@ -99,9 +99,9 @@ def shrinking_from(start):
             random=Random(0),
         )
         runner.cached_test_function(start)
-        assert runner.interesting_examples
+        assert runner.interesting_test_cases
 
-        (last_data,) = runner.interesting_examples.values()
+        (last_data,) = runner.interesting_test_cases.values()
         return runner.new_shrinker(last_data, lambda d: d.status == Status.INTERESTING)
 
     return accept

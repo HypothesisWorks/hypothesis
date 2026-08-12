@@ -20,7 +20,7 @@
                 },
                 "representation": {
                     "type": "string",
-                    "description": "The string representation of the input. In Hypothesis, this includes the property name and arguments (like ``test_a(a=1)``), any interactive draws from |st.data|, and additionally some comments from |Phase.explain| for failing examples."
+                    "description": "The string representation of the input. In Hypothesis, this includes the property name and arguments (like ``test_a(a=1)``), any interactive draws from |st.data|, and additionally some comments from |Phase.explain| for failing test cases."
                 },
                 "arguments": {
                     "type": "object",
@@ -28,7 +28,7 @@
                 },
                 "how_generated": {
                     "type": ["string", "null"],
-                    "description": "How the input was generated, if known.  In Hypothesis this might be an explicit example, generated during a particular phase with some backend, or by replaying the minimal failing example."
+                    "description": "How the input was generated, if known.  In Hypothesis this might be an explicit example, generated during a particular phase with some backend, or by replaying the minimal failing test case."
                 },
                 "features": {
                     "type": "object",

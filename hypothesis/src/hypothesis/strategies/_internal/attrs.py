@@ -96,7 +96,7 @@ def from_attrs_attribute(
     """Infer a strategy from the metadata on an attr.Attribute object."""
     # Try inferring from the default argument.  Note that this will only help if
     # the user passed `...` to builds() for this attribute, but in that case
-    # we use it as the minimal example.
+    # we use it as the minimal value.
     default: SearchStrategy = st.nothing()
     # attr/__init__.pyi uses overloads to declare Factory as a function, not a
     # class. This is a fib - at runtime and always, it is a class.

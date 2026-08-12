@@ -83,7 +83,7 @@ def datetime_tz_dtype(dtype):
     if tz_dtype is not None and not PANDAS_GE_21:  # pragma: no cover
         # Before pandas 2.0, non-nanosecond units silently coerce to ns; on
         # pandas 2.0.x, formatting values outside the ns-representable range
-        # raises OutOfBoundsDatetime, so failing examples could not be shown.
+        # raises OutOfBoundsDatetime, so failing test cases could not be shown.
         raise InvalidArgument(
             "Generating timezone-aware datetimes requires pandas >= 2.1, but "
             f"you have pandas {pandas.__version__}"

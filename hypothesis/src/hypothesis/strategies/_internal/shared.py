@@ -47,7 +47,7 @@ class SharedStrategy(SearchStrategy[Ex]):
             if self.label != other.label:
                 warnings.warn(
                     f"Different strategies are shared under {key=}. This"
-                    " risks drawing values that are not valid examples for the strategy,"
+                    " risks drawing values that are not valid for the strategy,"
                     " or that have a narrower range than expected."
                     f" Conflicting strategies: ({self!r}, {other!r}).",
                     HypothesisWarning,

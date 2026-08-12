@@ -44,7 +44,7 @@ def test_saves_data_while_shrinking(monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function([bytes([255] * 10)]),
     )
 
@@ -57,7 +57,7 @@ def test_saves_data_while_shrinking(monkeypatch):
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
-    assert runner.interesting_examples
+    assert runner.interesting_test_cases
     assert len(seen) == n
 
     in_db = {choices_from_bytes(b)[0] for b in non_covering_examples(db)}
@@ -70,7 +70,7 @@ def test_can_discard(monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner,
-        "generate_new_examples",
+        "generate_new_test_cases",
         lambda runner: runner.cached_test_function(
             tuple(bytes(v) for i in range(n) for v in [i, i])
         ),

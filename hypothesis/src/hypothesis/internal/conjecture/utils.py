@@ -109,11 +109,11 @@ def check_sample(
             f"Cannot sample from {values!r} because it is not an ordered collection. "
             f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
-            "example, the sampled values must have the same iteration order "
+            "test case, the sampled values must have the same iteration order "
             "on every run - ruling out sets, dicts, etc due to hash "
             "randomization. Most cases can simply use `sorted(values)`, but "
             "mixed types or special values such as math.nan require careful "
-            "handling - and note that when simplifying an example, "
+            "handling - and note that when shrinking a test case, "
             "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
@@ -261,7 +261,7 @@ class Sampler:
 
 class many:
     """Utility class for collections. Bundles up the logic we use for "should I
-    keep drawing more values?" and handles starting and stopping examples in
+    keep drawing more values?" and handles starting and stopping spans in
     the right place.
 
     Intended usage is something like:
@@ -343,7 +343,7 @@ class many:
             return False
 
     def reject(self, why: str | None = None) -> None:
-        """Reject the last example (i.e. don't count it towards our budget of
+        """Reject the last element (i.e. don't count it towards our budget of
         elements because it's not going to go in the final collection)."""
         assert self.count > 0
         self.count -= 1
