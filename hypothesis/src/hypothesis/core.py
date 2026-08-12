@@ -2324,8 +2324,8 @@ def given(
                 thread_overlap=thread_overlap,
             )
             database_key = function_digest(test) + b".secondary"
-            # We track the minimal-so-far example for each distinct origin, so
-            # that we track log-n instead of n examples for long runs.  In particular
+            # We track the minimal-so-far test case for each distinct origin, so
+            # that we track log-n instead of n test cases for long runs.  In particular
             # it means that we saturate for common errors in long runs instead of
             # storing huge volumes of low-value data.
             minimal_failures: dict = {}

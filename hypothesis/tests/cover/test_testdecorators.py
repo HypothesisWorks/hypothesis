@@ -508,7 +508,7 @@ def test_notes_high_filter_rates_in_unsatisfiable_error():
         Unsatisfiable,
         match=(
             rf"Unable to satisfy assumptions of f\. {INVALID_THRESHOLD_BASE+1} of "
-            rf"{INVALID_THRESHOLD_BASE+1} examples failed a \.filter\(\) or assume\(\)"
+            rf"{INVALID_THRESHOLD_BASE+1} test cases failed a \.filter\(\) or assume\(\)"
         ),
     ):
         f()
@@ -547,7 +547,7 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
         pass
 
     match = (
-        rf"{INVALID_THRESHOLD_BASE+1} of {INVALID_THRESHOLD_BASE+1} examples were too large to"
+        rf"{INVALID_THRESHOLD_BASE+1} of {INVALID_THRESHOLD_BASE+1} test cases were too large to"
         rf" finish generating; try reducing the typical size of your inputs\?"
     )
     with (

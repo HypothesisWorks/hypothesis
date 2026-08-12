@@ -261,7 +261,7 @@ class Sampler:
 
 class many:
     """Utility class for collections. Bundles up the logic we use for "should I
-    keep drawing more values?" and handles starting and stopping examples in
+    keep drawing more values?" and handles starting and stopping spans in
     the right place.
 
     Intended usage is something like:
@@ -343,7 +343,7 @@ class many:
             return False
 
     def reject(self, why: str | None = None) -> None:
-        """Reject the last example (i.e. don't count it towards our budget of
+        """Reject the last element (i.e. don't count it towards our budget of
         elements because it's not going to go in the final collection)."""
         assert self.count > 0
         self.count -= 1
