@@ -509,6 +509,7 @@ def test_can_pass_collections_for_alphabet(alphabet):
 @pytest.mark.parametrize(
     "pattern, alphabet",
     [
+        (r"[^\d\D]", st.characters()),
         (re.compile("[^\\u0000-\\u00ff]", re.ASCII), st.characters()),
         ("[^abc]", st.sampled_from("abc")),
         ("[\\d]", st.sampled_from("abc")),
@@ -517,6 +518,10 @@ def test_can_pass_collections_for_alphabet(alphabet):
         (".", st.just("\n")),
         ("[^a]*", st.just("a")),
         ("[a-z]", st.just("0")),
+        (
+            re.compile("[\\u0100-\\u0200]", re.ASCII | re.IGNORECASE),
+            st.characters(min_codepoint=0x100),
+        ),
     ],
 )
 def test_charsets_which_match_nothing_in_the_alphabet(pattern, alphabet):
