@@ -931,6 +931,21 @@ def test_initialize_rule():
     assert result[5] == "state.teardown()"
 
 
+def test_one_of_with_a_single_bundle_branch():
+    class SingleBundleBranch(RuleBasedStateMachine):
+        b = Bundle("b")
+
+        @rule(target=b)
+        def create(self):
+            return 1
+
+        @rule(value=st.one_of(b, st.nothing()))
+        def consume(self, value):
+            assert value == 1
+
+    run_state_machine_as_test(SingleBundleBranch)
+
+
 def test_initialize_rule_populate_bundle():
     class WithInitializeBundleRules(RuleBasedStateMachine):
         a = Bundle("a")
