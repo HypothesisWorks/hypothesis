@@ -13,6 +13,8 @@ pyo3 = "0.29.2"
 
 [features]
 abi3 = ["pyo3/abi3-py310"]
+# see eg https://labs.quansight.org/blog/python-abi-abi3t
+abi3t = ["pyo3/abi3t-py315"]
 
 [dev-dependencies]
 half = "2"

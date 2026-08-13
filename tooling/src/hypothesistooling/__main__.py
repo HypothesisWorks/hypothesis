@@ -1049,6 +1049,28 @@ def check_abi3(*args):
         )
 
 
+@python_tests
+def check_abi3t(*args):
+    # abi3t is only available from 3.15+
+    install.ensure_rustc(ci_version_rust)
+    with tempfile.TemporaryDirectory() as dist:
+        pip_tool(
+            "maturin",
+            "build",
+            "--features",
+            "abi3t",
+            "--interpreter",
+            install.python_executable(PYTHONS["3.15"]),
+            "--out",
+            dist,
+            cwd=HYPOTHESIS,
+            env={**os.environ, **rust_build_env()},
+        )
+        (wheel,) = Path(dist).glob("*.whl")
+        assert "abi3t" in wheel.name, wheel.name
+        run_tox("py315t-cover", PYTHONS["3.15t"], f"--installpkg={wheel}", *args)
+
+
 @task()
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
