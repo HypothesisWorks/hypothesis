@@ -15,6 +15,7 @@ from re import Pattern
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
@@ -70,6 +71,16 @@ GROUP_CACHE_STRATEGY: SearchStrategy[dict] = st.shared(
 
 class IncompatibleWithAlphabet(InvalidArgument):
     pass
+
+
+def chars_in_alphabet(intervals: IntervalSet, description: str) -> SearchStrategy[str]:
+    # An empty intersection has no character to draw, so we report it like a literal
+    # outside the alphabet rather than returning a strategy which cannot be drawn from.
+    if len(intervals) == 0:
+        raise IncompatibleWithAlphabet(
+            f"{description} does not match any character in the specified alphabet"
+        )
+    return OneCharStringStrategy(intervals)
 
 
 @st.composite
@@ -163,9 +174,13 @@ class CharactersBuilder:
             intervals = charmap.query() - intervals
             multi_chars.clear()
         # and finally return the intersection with our alphabet
-        return OneCharStringStrategy(intervals & self._alphabet.intervals) | (
-            st.sampled_from(sorted(multi_chars)) if multi_chars else st.nothing()
-        )
+        intervals &= self._alphabet.intervals
+        if multi_chars:
+            # The character these case-fold from is in the alphabet, so intervals is not empty
+            return OneCharStringStrategy(intervals) | st.sampled_from(
+                sorted(multi_chars)
+            )
+        return chars_in_alphabet(intervals, "This character class")
 
     def add_category(self, category):
         """Update unicode state to match sre_parse object ``category``."""
@@ -459,9 +474,10 @@ def _strategy(
                         stack.extend(set(char.swapcase()) - blacklist)
 
             if is_unicode:
-                return OneCharStringStrategy(
+                return chars_in_alphabet(
                     unwrap_strategies(alphabet).intervals
-                    & charmap.query(exclude_characters=blacklist)
+                    & charmap.query(exclude_characters=blacklist),
+                    f"The negated literal {c!r}",
                 )
             else:
                 return binary_char.filter(lambda c: c not in blacklist)
@@ -523,9 +539,10 @@ def _strategy(
                 assert alphabet is not None
                 if context.flags & re.DOTALL:
                     return alphabet
-                return OneCharStringStrategy(
+                return chars_in_alphabet(
                     unwrap_strategies(alphabet).intervals
-                    & charmap.query(exclude_characters="\n")
+                    & charmap.query(exclude_characters="\n"),
+                    "'.'",
                 )
             else:
                 if context.flags & re.DOTALL:
