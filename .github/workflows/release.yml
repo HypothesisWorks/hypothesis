@@ -117,9 +117,27 @@ jobs:
               abi3-only: true
             }
           - {
+              os: ubuntu-latest,
+              target: ppc64le,
+              manylinux: auto,
+              abi3-only: true
+            }
+          - {
+              os: ubuntu-latest,
+              target: ppc64le,
+              manylinux: musllinux_1_2,
+              abi3-only: true
+            }
+          - {
               os: windows-latest,
               target: x86,
               python-architecture: x86,
+              manylinux: '',
+              abi3-only: true
+            }
+          - {
+              os: windows-11-arm,
+              target: aarch64,
               manylinux: '',
               abi3-only: true
             }
