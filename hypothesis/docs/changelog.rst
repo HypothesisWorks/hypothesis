@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.7:
+
+--------------------
+6.165.7 - 2026-08-14
+--------------------
+
+This release adds support for Python 3.15. |st.from_type| can now resolve the new ``sentinel`` builtin.
+
 .. _v6.165.6:
 
 --------------------
