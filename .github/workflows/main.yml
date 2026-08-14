@@ -104,6 +104,10 @@ jobs:
           - check-py313-niche
           # niche tests also collect coverage on 3.14; see the run step below.
           - check-py314-niche
+          - check-py315-cover
+          - check-py315-nocover
+          - check-py315t-cover
+          - check-py315t-nocover
           - check-quality
           - check-pytest9
           - check-pytest84
@@ -172,11 +176,8 @@ jobs:
           - check-py314t-cover
           - check-py314t-nocover
           - check-py314t-niche
-          # - check-py315-cover
-          # - check-py315-nocover
+          # 3.15 niche is waiting on scipy and lark to support 3.15
           # - check-py315-niche
-          # - check-py315t-cover
-          # - check-py315t-nocover
           # - check-py315t-niche
           - check-django52
           ## `-cover` is too slow under crosshair; use a custom split

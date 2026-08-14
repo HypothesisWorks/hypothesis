@@ -354,6 +354,13 @@ def source_exec_as_module(source: str) -> ModuleType:
 
     hexdigest = hashlib.sha384(source.encode()).hexdigest()
     result = ModuleType("hypothesis_temporary_module_" + hexdigest)
+    # ModuleType() sets __spec__ = None. Later, we call @impersonate on functions defined
+    # in the module, which gives it a real co_filename. Python traceback formatting then
+    # calls internal linecache code which warns on the combination of "real on-disk file"
+    # + "null __spec__".
+    #
+    # Sidestep this by deleting __spec__; we don't need it.
+    del result.__spec__
     assert isinstance(source, str)
     exec(source, result.__dict__)
     eval_cache[source] = result

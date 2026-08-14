@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import dis
 import hashlib
 import inspect
 import linecache
@@ -101,12 +102,21 @@ def _function_key(f, *, bounded_size=False, ignore_name=False):
 
 
 class _op:
-    # Opcodes, from dis.opmap. These may change between major versions.
-    NOP = 9
-    LOAD_FAST = 85
-    LOAD_FAST_LOAD_FAST = 88
-    LOAD_FAST_BORROW = 86
-    LOAD_FAST_BORROW_LOAD_FAST_BORROW = 87
+    # Look up the opcode values dynamically, since they can change between versions. If
+    # the opcode does not exist on a version, we set it to None.
+    NOP = dis.opmap["NOP"]
+    LOAD_FAST = dis.opmap["LOAD_FAST"]
+    LOAD_FAST_LOAD_FAST = (
+        dis.opmap["LOAD_FAST_LOAD_FAST"] if sys.version_info[:2] >= (3, 13) else None
+    )
+    LOAD_FAST_BORROW = (
+        dis.opmap["LOAD_FAST_BORROW"] if sys.version_info[:2] >= (3, 14) else None
+    )
+    LOAD_FAST_BORROW_LOAD_FAST_BORROW = (
+        dis.opmap["LOAD_FAST_BORROW_LOAD_FAST_BORROW"]
+        if sys.version_info[:2] >= (3, 14)
+        else None
+    )
 
 
 def _normalize_code(f, l):
@@ -129,6 +139,8 @@ def _normalize_code(f, l):
             lambda a, b: a == [b[0] >> 4, b[0] & 15],
         ),
     ]
+    # Avoid applying any transform with an opcode that doesn't exist on this python version.
+    transforms = [t for t in transforms if None not in t[0] + t[1]]
     # augment with converse
     transforms += [
         (

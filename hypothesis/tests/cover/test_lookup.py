@@ -74,12 +74,9 @@ generics = sorted(
         t
         for t in types._global_type_lookup
         # We ignore TypeVar, because it is not a Generic type:
-        if isinstance(t, types.typing_root_type)
-        and t != typing.TypeVar
-        and (
-            sys.version_info[:2] <= (3, 11)
-            or t != getattr(typing, "ByteString", object())
-        )
+        if isinstance(t, types.typing_root_type) and t != typing.TypeVar
+        # accessing ByteString warns on 3.15
+        and (not ((3, 12) <= sys.version_info[:2] < (3, 14)) or t != typing.ByteString)
     ),
     key=str,
 )
@@ -139,7 +136,8 @@ def test_typing_Type_Union(ex):
     "typ",
     [
         pytest.param(
-            getattr(collections.abc, "ByteString", ...),
+            # accessing ByteString warns on 3.15
+            collections.abc.ByteString if sys.version_info[:2] < (3, 14) else ...,
             marks=pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="removed"),
         ),
         typing.Match,
