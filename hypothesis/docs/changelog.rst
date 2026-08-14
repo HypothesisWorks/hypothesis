@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.6:
+
+--------------------
+6.165.6 - 2026-08-14
+--------------------
+
+We now publish abi3 wheels for Windows arm64 and Linux ppc64le (manylinux + musllinux; :issue:`4852`).
+
 .. _v6.165.5:
 
 --------------------
