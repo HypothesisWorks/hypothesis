@@ -141,6 +141,9 @@ def test_script_example_does_not_emit_warning(tmp_path):
 
 @skipif_emscripten
 @pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
+# pexpect forks, and 3.15 warns about forking from a process with threads in it,
+# which we are under xdist.
+@pytest.mark.filterwarnings("ignore:.*is multi-threaded.*:DeprecationWarning")
 def test_interactive_example_does_not_emit_warning():
     import pexpect
 
