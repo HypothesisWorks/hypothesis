@@ -1005,6 +1005,12 @@ if sys.version_info[:2] < (3, 14):
 
     _global_type_lookup[memoryview] = st.binary().map(memoryview)
 
+if sys.version_info[:2] >= (3, 15):
+    _global_type_lookup[builtins.sentinel] = st.builds(  # type: ignore
+        builtins.sentinel,  # type: ignore
+        st.text(),
+    )
+
 
 _global_type_lookup.update(
     {
