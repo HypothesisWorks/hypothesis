@@ -507,6 +507,36 @@ def test_can_pass_collections_for_alphabet(alphabet):
 
 
 @pytest.mark.parametrize(
+    "pattern, alphabet",
+    [
+        (r"[^\d\D]", st.characters()),
+        (re.compile("[^\\u0000-\\u00ff]", re.ASCII), st.characters()),
+        ("[^abc]", st.sampled_from("abc")),
+        ("[\\d]", st.sampled_from("abc")),
+        ("\\d", st.sampled_from("abc")),
+        ("[^a]", st.just("a")),
+        (".", st.just("\n")),
+        ("[^a]*", st.just("a")),
+        ("[a-z]", st.just("0")),
+        (
+            re.compile("[\\u0100-\\u0200]", re.ASCII | re.IGNORECASE),
+            st.characters(min_codepoint=0x100),
+        ),
+    ],
+)
+def test_charsets_which_match_nothing_in_the_alphabet(pattern, alphabet):
+    with pytest.raises(InvalidArgument, match="specified alphabet"):
+        st.from_regex(pattern, alphabet=alphabet).validate()
+
+
+def test_charset_matching_nothing_only_rules_out_its_own_branch():
+    assert_all_examples(
+        st.from_regex("[^a]|a", alphabet=st.just("a"), fullmatch=True),
+        lambda s: s == "a",
+    )
+
+
+@pytest.mark.parametrize(
     "alphabet, error_part",
     [
         (("a", 1), "not unicode strings"),
