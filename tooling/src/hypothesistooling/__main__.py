@@ -1049,6 +1049,32 @@ def check_abi3(*args):
         )
 
 
+@python_tests
+def check_abi3t(*args):
+    # abi3t is only available from 3.15+
+    install.ensure_rustc(ci_version_rust)
+    with tempfile.TemporaryDirectory() as dist:
+        pip_tool(
+            "maturin",
+            "build",
+            "--features",
+            "abi3t",
+            "--interpreter",
+            install.python_executable(PYTHONS["3.15"]),
+            "--out",
+            dist,
+            cwd=HYPOTHESIS,
+            env={**os.environ, **rust_build_env()},
+        )
+        (wheel,) = Path(dist).glob("*.whl")
+        assert "abi3t" in wheel.name, wheel.name
+        # somewhat surprisingly, abi3t wheels are actually used for both gil-enabled
+        # and free-threaded builds of python on 3.15+. Smoke test both here.
+        for version in ["3.15", "3.15t"]:
+            env = "py" + version.replace(".", "") + "-cover"
+            run_tox(env, PYTHONS[version], f"--installpkg={wheel}", *args)
+
+
 @task()
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()

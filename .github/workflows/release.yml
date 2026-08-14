@@ -170,6 +170,24 @@ jobs:
         manylinux: ${{ matrix.manylinux }}
         args: --release --out dist --features abi3
         working-directory: hypothesis
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      id: abi3t-python
+      with:
+        # abi3t is only available from 3.15+. If we don't specify this, maturin
+        # builds a version-specific wheel instead.
+        python-version: '3.15'
+        # can drop once 3.15 is out
+        allow-prereleases: true
+        architecture: ${{ matrix.python-architecture }}
+    - name: Build abi3t wheel
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+      with:
+        target: ${{ matrix.target }}
+        manylinux: ${{ matrix.manylinux }}
+        # maturin builds inside a container for manylinux, so we have to reference the
+        # container's python instead
+        args: --release --out dist --features abi3t --interpreter ${{ matrix.manylinux && 'python3.15' || steps.abi3t-python.outputs.python-path }}
+        working-directory: hypothesis
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: dist-wheels-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.manylinux }}
