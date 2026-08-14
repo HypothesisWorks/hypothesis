@@ -1068,7 +1068,11 @@ def check_abi3t(*args):
         )
         (wheel,) = Path(dist).glob("*.whl")
         assert "abi3t" in wheel.name, wheel.name
-        run_tox("py315t-cover", PYTHONS["3.15t"], f"--installpkg={wheel}", *args)
+        # somewhat surprisingly, abi3t wheels are actually used for both gil-enabled
+        # and free-threaded builds of python on 3.15+. Smoke test both here.
+        for version in ["3.15", "3.15t"]:
+            env = "py" + version.replace(".", "") + "-cover"
+            run_tox(env, PYTHONS[version], f"--installpkg={wheel}", *args)
 
 
 @task()

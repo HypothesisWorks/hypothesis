@@ -174,6 +174,7 @@ packaging==26.3
     #   pytest
     #   sphinx
     #   tox
+    #   tox-uv-bare
     #   twine
     #   wheel
 parso==0.8.7
@@ -334,7 +335,13 @@ tokenize-rt==6.2.0
 tomli-w==1.2.0
     # via tox
 tox==4.58.0
+    # via
+    #   -r requirements/tools.in
+    #   tox-uv-bare
+tox-uv==1.36.0
     # via -r requirements/tools.in
+tox-uv-bare==1.36.0
+    # via tox-uv
 traitlets==5.16.1
     # via
     #   ipython
@@ -367,6 +374,8 @@ urllib3==2.7.0
     #   id
     #   requests
     #   twine
+uv==0.12.3
+    # via tox-uv
 uvicorn==0.52.1
     # via sphinx-autobuild
 virtualenv==21.7.3
