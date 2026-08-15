@@ -35,12 +35,9 @@ except ImportError:  # Python < 3.11
 from typing import Any, AnyStr
 
 from hypothesis import reject, strategies as st
-from hypothesis.internal.charmap import CategoryName, as_general_categories, categories
+from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import add_note, int_to_byte
 from hypothesis.strategies import SearchStrategy
-
-UNICODE_CATEGORIES = set(categories())
-
 
 SPACE_CHARS = set(" \t\n\r\f\v")
 UNICODE_SPACE_CHARS = SPACE_CHARS | set("\x1c\x1d\x1e\x1f\x85")
@@ -132,12 +129,10 @@ class Context:
 
 
 class CharactersBuilder:
-    """Helper object that allows to configure `characters` strategy with
-    various unicode categories and characters. Also allows negation of
-    configured set.
+    """Helper object that collects the members of a regex character class
+    and produces a strategy for the class.
 
-    :param negate: If True, configure :func:`hypothesis.strategies.characters`
-        to match anything other than configured character set
+    :param negate: If True, generate the complement of the configured set
     :param flags: Regex flags. They affect how and which characters are matched
     """
 
@@ -148,34 +143,26 @@ class CharactersBuilder:
         flags: re.RegexFlag = re.RegexFlag(0),
         alphabet: SearchStrategy,
     ):
-        self._categories: set[CategoryName] = set()
+        self._intervals = IntervalSet()
         self._whitelist_chars: set[str] = set()
-        self._blacklist_chars: set[str] = set()
         self._negate = negate
-        self._ignorecase = flags & re.IGNORECASE
+        self._flags = flags
         self.code_to_char: Any = chr
         self._alphabet = unwrap_strategies(alphabet)
-        if flags & re.ASCII:
-            self._alphabet = OneCharStringStrategy(
-                self._alphabet.intervals & charmap.query(max_codepoint=127)
-            )
 
     @property
     def strategy(self) -> SearchStrategy:
         """Returns resulting strategy that generates configured char set."""
-        # Start by getting the set of all characters allowed by the pattern
-        white_chars = self._whitelist_chars - self._blacklist_chars
-        multi_chars = {c for c in white_chars if len(c) > 1}
-        intervals = charmap.query(
-            categories=self._categories,
-            exclude_characters=self._blacklist_chars,
-            include_characters=white_chars - multi_chars,
+        # A character class matches the union of its members
+        multi_chars = {c for c in self._whitelist_chars if len(c) > 1}
+        intervals = self._intervals | IntervalSet.from_string(
+            "".join(self._whitelist_chars - multi_chars)
         )
-        # Then take the complement if this is from a negated character class
+        # or the complement of that union, if it's a negated class
         if self._negate:
             intervals = charmap.query() - intervals
             multi_chars.clear()
-        # and finally return the intersection with our alphabet
+        # and finally we take the intersection with our alphabet
         intervals &= self._alphabet.intervals
         strategy = _intervals_to_strategy(intervals, description="This character class")
         if multi_chars:
@@ -184,43 +171,62 @@ class CharactersBuilder:
 
     def add_category(self, category):
         """Update unicode state to match sre_parse object ``category``."""
-        if category == sre.CATEGORY_DIGIT:
-            self._categories |= UNICODE_DIGIT_CATEGORIES
-        elif category == sre.CATEGORY_NOT_DIGIT:
-            self._categories |= UNICODE_CATEGORIES - UNICODE_DIGIT_CATEGORIES
-        elif category == sre.CATEGORY_SPACE:
-            self._categories |= UNICODE_SPACE_CATEGORIES
-            self._whitelist_chars |= UNICODE_SPACE_CHARS
-        elif category == sre.CATEGORY_NOT_SPACE:
-            self._categories |= UNICODE_CATEGORIES - UNICODE_SPACE_CATEGORIES
-            self._blacklist_chars |= UNICODE_SPACE_CHARS
-        elif category == sre.CATEGORY_WORD:
-            self._categories |= UNICODE_WORD_CATEGORIES
-            self._whitelist_chars.add("_")
-        elif category == sre.CATEGORY_NOT_WORD:
-            self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
-            self._blacklist_chars.add("_")
+        # re.ASCII restricts the positive categories \d, \s, and \w to ascii
+        # characters.  The negative categories \D, \S, and \W match the full
+        # complement of their positive counterpart, so under re.ASCII they
+        # match *more* characters, not fewer.
+        max_codepoint = 127 if self._flags & re.ASCII else None
+        if category in (sre.CATEGORY_DIGIT, sre.CATEGORY_NOT_DIGIT):
+            intervals = charmap.query(
+                categories=UNICODE_DIGIT_CATEGORIES, max_codepoint=max_codepoint
+            )
+        elif category in (sre.CATEGORY_SPACE, sre.CATEGORY_NOT_SPACE):
+            if max_codepoint is None:
+                intervals = charmap.query(
+                    categories=UNICODE_SPACE_CATEGORIES,
+                    include_characters=UNICODE_SPACE_CHARS,
+                )
+            else:
+                intervals = IntervalSet.from_string("".join(SPACE_CHARS))
+        elif category in (sre.CATEGORY_WORD, sre.CATEGORY_NOT_WORD):
+            intervals = charmap.query(
+                categories=UNICODE_WORD_CATEGORIES,
+                max_codepoint=max_codepoint,
+                include_characters="_",
+            )
         else:
             raise NotImplementedError(f"Unknown character category: {category}")
+        if category in (
+            sre.CATEGORY_NOT_DIGIT,
+            sre.CATEGORY_NOT_SPACE,
+            sre.CATEGORY_NOT_WORD,
+        ):
+            intervals = charmap.query() - intervals
+        self._intervals |= intervals
 
     def add_char(self, c: str) -> None:
         """Add given char to the whitelist."""
         self._whitelist_chars.add(c)
+        swapped = c.swapcase()
         if (
-            self._ignorecase
-            and re.match(re.escape(c), c.swapcase(), flags=re.IGNORECASE) is not None
+            self._flags & re.IGNORECASE
+            and swapped != c
+            and re.match(
+                re.escape(c), swapped, flags=re.IGNORECASE | (self._flags & re.ASCII)
+            )
+            is not None
         ):
-            # Note that it is possible that `len(c.swapcase()) > 1`
-            self._whitelist_chars.add(c.swapcase())
+            # Note that it is possible that `len(c.swapcase()) > 1`, and that
+            # under re.ASCII non-ascii characters do not case-fold at all.
+            self._whitelist_chars.add(swapped)
 
 
 class BytesBuilder(CharactersBuilder):
     def __init__(self, *, negate: bool = False, flags: re.RegexFlag = re.RegexFlag(0)):
         self._whitelist_chars = set()
-        self._blacklist_chars = set()
         self._negate = negate
+        self._flags = flags
         self._alphabet = None
-        self._ignorecase = flags & re.IGNORECASE
         self.code_to_char = int_to_byte
 
     @property
@@ -440,7 +446,12 @@ def _strategy(
             if (
                 context.flags & re.IGNORECASE
                 and c != c.swapcase()
-                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
+                and re.match(
+                    re.escape(c),
+                    c.swapcase(),
+                    re.IGNORECASE | (context.flags & re.ASCII),
+                )
+                is not None
                 and not chars_not_in_alphabet(alphabet, c.swapcase())
             ):
                 # We do the explicit check for swapped-case matching because
@@ -454,7 +465,12 @@ def _strategy(
             blacklist = {c}
             if (
                 context.flags & re.IGNORECASE
-                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
+                and re.match(
+                    re.escape(c),
+                    c.swapcase(),
+                    re.IGNORECASE | (context.flags & re.ASCII),
+                )
+                is not None
             ):
                 # There are a few cases where .swapcase() returns two characters,
                 # but is still a case-insensitive match.  In such cases we add *both*
@@ -500,30 +516,16 @@ def _strategy(
                     pass
                 elif charset_code == sre.LITERAL:
                     # Regex '[a]' (single char)
-                    c = builder.code_to_char(charset_value)
-                    if chars_not_in_alphabet(builder._alphabet, c):
-                        raise IncompatibleWithAlphabet(
-                            f"Literal {c!r} is not in the specified alphabet"
-                        )
-                    builder.add_char(c)
+                    # Note that we do not check the alphabet here: the class
+                    # matches the union of its members, so it only becomes
+                    # incompatible if *no* member intersects the alphabet -
+                    # which .strategy checks for.
+                    builder.add_char(builder.code_to_char(charset_value))
                 elif charset_code == sre.RANGE:
                     # Regex '[a-z]' (char range)
                     low, high = charset_value
-                    chars = empty.join(map(builder.code_to_char, range(low, high + 1)))
-                    if len(chars) == len(
-                        invalid := chars_not_in_alphabet(alphabet, chars)
-                    ):
-                        raise IncompatibleWithAlphabet(
-                            f"Charset '[{chr(low)}-{chr(high)}]' contains characters {invalid!r} "
-                            f"which are not in the specified alphabet"
-                        )
-                    for c in chars:
-                        if isinstance(c, int):
-                            c = int_to_byte(c)
-                        if c not in invalid:
-                            # add_char is typed as str, but BytesBuilder shares it
-                            # and add_char's body works for bytes too.
-                            builder.add_char(c)  # type: ignore[arg-type]
+                    for code_point in range(low, high + 1):
+                        builder.add_char(builder.code_to_char(code_point))
                 elif charset_code == sre.CATEGORY:
                     # Regex '[\w]' (char category)
                     builder.add_category(charset_value)
@@ -559,10 +561,10 @@ def _strategy(
             # Various groups: '(...)', '(:...)' or '(?P<name>...)'
             old_flags = context.flags
             context.flags = (context.flags | value[1]) & ~value[2]
-
-            strat = _strategy(value[-1], context, is_unicode, alphabet=alphabet)
-
-            context.flags = old_flags
+            try:
+                strat = _strategy(value[-1], context, is_unicode, alphabet=alphabet)
+            finally:
+                context.flags = old_flags
 
             if value[0]:
                 strat = update_group(value[0], strat)
@@ -600,11 +602,17 @@ def _strategy(
             at_least, at_most, subregex = value
             if at_most == sre.MAXREPEAT:
                 at_most = None
+            try:
+                sub = recurse(subregex)
+            except IncompatibleWithAlphabet:
+                # A subpattern which can't be generated from the alphabet is
+                # fine if we're allowed to repeat it zero times.
+                if at_least == 0:
+                    return st.just(empty)
+                raise
             if at_least == 0 and at_most == 1:
-                return st.just(empty) | recurse(subregex)
-            return st.lists(recurse(subregex), min_size=at_least, max_size=at_most).map(
-                empty.join
-            )
+                return st.just(empty) | sub
+            return st.lists(sub, min_size=at_least, max_size=at_most).map(empty.join)
 
         elif code == sre.GROUPREF_EXISTS:
             # Regex '(?(id/name)yes-pattern|no-pattern)'

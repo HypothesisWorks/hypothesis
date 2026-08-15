@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+import string
 import sys
 import unicodedata
 
@@ -41,6 +42,14 @@ def is_ascii(s):
 
 def is_digit(s):
     return all(unicodedata.category(c) in UNICODE_DIGIT_CATEGORIES for c in s)
+
+
+def is_ascii_digit(s):
+    return all(c in string.digits for c in s)
+
+
+def is_ascii_word(s):
+    return all(c in string.ascii_letters + string.digits + "_" for c in s)
 
 
 def is_space(s):
@@ -205,10 +214,12 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 @pytest.mark.parametrize("is_unicode", [False, True])
 @pytest.mark.parametrize("invert", [False, True])
 def test_groups(pattern, is_unicode, invert):
+    # Under re.ASCII, the positive categories \d \s \w match only ascii
+    # characters, and the negative categories \D \S \W match everything else.
     if "d" in pattern.lower():
-        group_pred = is_digit
+        group_pred = is_digit if is_unicode else is_ascii_digit
     elif "w" in pattern.lower():
-        group_pred = is_word
+        group_pred = is_word if is_unicode else is_ascii_word
     else:
         # Special behaviour due to \x1c, INFORMATION SEPARATOR FOUR
         group_pred = is_unicode_space if is_unicode else is_space
@@ -510,18 +521,13 @@ def test_can_pass_collections_for_alphabet(alphabet):
     "pattern, alphabet",
     [
         (r"[^\d\D]", st.characters()),
-        (re.compile("[^\\u0000-\\u00ff]", re.ASCII), st.characters()),
         ("[^abc]", st.sampled_from("abc")),
         ("[\\d]", st.sampled_from("abc")),
         ("\\d", st.sampled_from("abc")),
         ("[^a]", st.just("a")),
         (".", st.just("\n")),
-        ("[^a]*", st.just("a")),
+        ("[^a]+", st.just("a")),
         ("[a-z]", st.just("0")),
-        (
-            re.compile("[\\u0100-\\u0200]", re.ASCII | re.IGNORECASE),
-            st.characters(min_codepoint=0x100),
-        ),
     ],
 )
 def test_charsets_which_match_nothing_in_the_alphabet(pattern, alphabet):
@@ -533,6 +539,84 @@ def test_charset_matching_nothing_only_rules_out_its_own_branch():
     assert_all_examples(
         st.from_regex("[^a]|a", alphabet=st.just("a"), fullmatch=True),
         lambda s: s == "a",
+    )
+
+
+def test_zero_minimum_repeats_incompatible_with_alphabet():
+    # a subpattern which is incompatible with the alphabet can still be
+    # repeated zero times - see issue #4857
+    strategy = st.from_regex("a*b*", alphabet="a", fullmatch=True)
+    find_any(strategy, lambda s: s == "")
+    find_any(strategy, lambda s: s == "aa")
+    assert_all_examples(strategy, lambda s: set(s) <= {"a"})
+    assert_all_examples(
+        st.from_regex("ab?", alphabet="a", fullmatch=True), lambda s: s == "a"
+    )
+
+
+def test_inline_flags_do_not_leak_out_of_an_incompatible_subpattern():
+    # `(?i:Ā)` is incompatible with the alphabet, but the group's flags must not leak
+    # onto the following `k`.
+    alphabet = st.characters(max_codepoint=127)
+    regex = re.compile("(?i:\u0100)*k")
+    assert_all_examples(base_regex_strategy(regex, alphabet=alphabet), regex.fullmatch)
+    # and likewise for a group which turns a flag *off*
+    regex = re.compile("(?-i:\u0100)*k", re.IGNORECASE)
+    find_any(base_regex_strategy(regex, alphabet=alphabet), lambda s: s == "K")
+
+
+def test_ascii_inverted_categories_match_all_of_unicode():
+    # \D under re.ASCII matches everything except [0-9], rather than being
+    # restricted to ascii characters - see issue #4858
+    regex = re.compile(r"\D", re.ASCII)
+    assert regex.fullmatch("٣")
+    assert_all_examples(
+        st.from_regex(regex, alphabet="٣", fullmatch=True), lambda s: s == "٣"
+    )
+
+
+@pytest.mark.parametrize(
+    "pattern",
+    [
+        re.compile("[Ï-İ]", re.IGNORECASE | re.ASCII),
+        re.compile("[^\\u0000-\\u00ff]", re.ASCII),
+        re.compile("ï", re.IGNORECASE | re.ASCII),
+    ],
+)
+def test_ascii_flag_does_not_restrict_characters_or_ranges(pattern):
+    # re.ASCII changes what \d \s \w match and restricts casefolding to ascii
+    # characters, but explicit characters and ranges are unaffected - see
+    # issue #4858
+    assert_all_examples(
+        base_regex_strategy(pattern, alphabet=st.characters()), pattern.fullmatch
+    )
+
+
+def test_ascii_characters_still_fold_under_ascii_flag():
+    strategy = st.from_regex(re.compile("i", re.IGNORECASE | re.ASCII), fullmatch=True)
+    find_any(strategy, lambda s: s == "I")
+
+
+def test_class_with_negative_category_and_positive_members():
+    # [\W_] matches the union of \W and {"_"} - see issue #4859
+    regex = re.compile(r"[\W_]")
+    assert_all_examples(
+        st.from_regex(regex, alphabet="_", fullmatch=True), lambda s: s == "_"
+    )
+    find_any(st.from_regex(r"\A[\W_]\Z"), lambda s: s == "_")
+
+
+def test_negated_class_excludes_all_members():
+    # [^\W_] matches the complement of the union: word characters except "_"
+    regex = re.compile(r"[^\W_]")
+    assert_all_examples(
+        base_regex_strategy(regex, alphabet=st.characters()), regex.fullmatch
+    )
+
+
+def test_negated_class_with_members_outside_alphabet():
+    assert_all_examples(
+        st.from_regex("[^bc]", alphabet="a", fullmatch=True), lambda s: s == "a"
     )
 
 
