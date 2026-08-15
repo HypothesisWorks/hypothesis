@@ -554,6 +554,17 @@ def test_zero_minimum_repeats_incompatible_with_alphabet():
     )
 
 
+def test_inline_flags_do_not_leak_out_of_an_incompatible_subpattern():
+    # `(?i:Ā)` is incompatible with the alphabet, but the group's flags must not leak
+    # onto the following `k`.
+    alphabet = st.characters(max_codepoint=127)
+    regex = re.compile("(?i:\u0100)*k")
+    assert_all_examples(base_regex_strategy(regex, alphabet=alphabet), regex.fullmatch)
+    # and likewise for a group which turns a flag *off*
+    regex = re.compile("(?-i:\u0100)*k", re.IGNORECASE)
+    find_any(base_regex_strategy(regex, alphabet=alphabet), lambda s: s == "K")
+
+
 def test_ascii_inverted_categories_match_all_of_unicode():
     # \D under re.ASCII matches everything except [0-9], rather than being
     # restricted to ascii characters - see issue #4858

@@ -129,10 +129,8 @@ class Context:
 
 
 class CharactersBuilder:
-    """Helper object that collects the members of a regex character class -
-    literal characters, ranges, and categories like ``\\d`` - and produces a
-    strategy for the class.  A class matches the union of its members, or the
-    complement of that union for negated classes like ``[^...]``.
+    """Helper object that collects the members of a regex character class
+    and produces a strategy for the class.
 
     :param negate: If True, generate the complement of the configured set
     :param flags: Regex flags. They affect how and which characters are matched
@@ -563,10 +561,10 @@ def _strategy(
             # Various groups: '(...)', '(:...)' or '(?P<name>...)'
             old_flags = context.flags
             context.flags = (context.flags | value[1]) & ~value[2]
-
-            strat = _strategy(value[-1], context, is_unicode, alphabet=alphabet)
-
-            context.flags = old_flags
+            try:
+                strat = _strategy(value[-1], context, is_unicode, alphabet=alphabet)
+            finally:
+                context.flags = old_flags
 
             if value[0]:
                 strat = update_group(value[0], strat)
