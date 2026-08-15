@@ -127,6 +127,11 @@ def test_one_of(data):
 
 
 @given(st.data())
+def test_one_of_with_a_single_branch(data):
+    check_roundtrip_many(st.integers() | st.nothing(), data)
+
+
+@given(st.data())
 def test_lists(data):
     kwargs = {}
     min_size = data.draw(st.none() | st.integers(0, 5))

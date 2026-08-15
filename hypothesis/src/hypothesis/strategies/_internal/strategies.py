@@ -898,8 +898,14 @@ class OneOfStrategy(SearchStrategy[Ex]):
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
+        strategies = self.element_strategies
+        if len(strategies) == 1:
+            # optimization: skip constructing SampledFromStrategy if we only have one
+            # strategy. This can happen for eg `st.integers() | st.nothing()`.
+            return data.draw(strategies[0])
+
         strategy = data.draw(
-            SampledFromStrategy(self.element_strategies).filter(
+            SampledFromStrategy(strategies).filter(
                 lambda s: not s.is_currently_empty(data)
             )
         )
@@ -916,6 +922,9 @@ class OneOfStrategy(SearchStrategy[Ex]):
         # against re-entry rather than recursing forever. Unlike a structural
         # recursion into a subvalue - which terminates because values are
         # finite - a same-value cycle can make no progress.
+        if len(self.element_strategies) == 1:
+            return self.element_strategies[0]._invert(value)
+
         active = getattr(_inverting_one_ofs, "ids", None)
         if active is None:
             active = _inverting_one_ofs.ids = set()
