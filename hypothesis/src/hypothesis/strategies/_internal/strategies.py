@@ -902,10 +902,6 @@ class OneOfStrategy(SearchStrategy[Ex]):
         if len(strategies) == 1:
             # optimization: skip constructing SampledFromStrategy if we only have one
             # strategy. This can happen for eg `st.integers() | st.nothing()`.
-            if strategies[0].is_currently_empty(data):
-                data.mark_invalid(
-                    f"Aborted test because {strategies[0]!r} is currently empty"
-                )
             return data.draw(strategies[0])
 
         strategy = data.draw(
