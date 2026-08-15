@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.9:
+
+--------------------
+6.165.9 - 2026-08-15
+--------------------
+
+This patch improves the performance of |st.one_of| when it can be simplified to a single real strategy, for example ``st.integers() | st.nothing()``.
+
 .. _v6.165.8:
 
 --------------------
