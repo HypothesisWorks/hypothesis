@@ -43,6 +43,8 @@ from hypothesis.internal.observability import (
     TESTCASE_CALLBACKS,
     InfoObservation,
     TestCaseObservation,
+    _callbacks,
+    _callbacks_all_threads,
     add_observability_callback,
     choices_to_json,
     nodes_to_json,
@@ -607,13 +609,16 @@ def test_metadata_to_json():
 
 @contextlib.contextmanager
 def restore_callbacks():
-    callbacks = hypothesis.internal.observability._callbacks.copy()
-    callbacks_all = hypothesis.internal.observability._callbacks_all_threads.copy()
+    callbacks = {thread_id: cs.copy() for thread_id, cs in _callbacks.items()}
+    callbacks_all = _callbacks_all_threads.copy()
     try:
         yield
     finally:
-        hypothesis.internal.observability._callbacks = callbacks
-        hypothesis.internal.observability._callbacks_all_threads = callbacks_all
+        # restore in-place, so we also affect the references imported by other source
+        # files
+        _callbacks.clear()
+        _callbacks.update(callbacks)
+        _callbacks_all_threads[:] = callbacks_all
 
 
 @contextlib.contextmanager
@@ -626,13 +631,6 @@ def with_collect_coverage(*, value: bool):
         hypothesis.internal.observability.OBSERVABILITY_COLLECT_COVERAGE = (
             original_value
         )
-
-
-def _callbacks():
-    # respect changes from the restore_callbacks context manager by re-accessing
-    # its namespace, instead of keeping
-    # `from hypothesis.internal.observability import _callbacks` around
-    return hypothesis.internal.observability._callbacks
 
 
 @skipif_threading
@@ -649,23 +647,23 @@ def test_observability_callbacks():
         assert not observability_enabled()
 
         add_observability_callback(f)
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks == {thread_id: [f]}
         assert observability_enabled()
 
         add_observability_callback(g)
-        assert _callbacks() == {thread_id: [f, g]}
+        assert _callbacks == {thread_id: [f, g]}
         assert observability_enabled()
 
         remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks == {thread_id: [f]}
         assert observability_enabled()
 
         remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks == {thread_id: [f]}
         assert observability_enabled()
 
         remove_observability_callback(f)
-        assert _callbacks() == {}
+        assert _callbacks == {}
         assert not observability_enabled()
 
 
@@ -680,13 +678,13 @@ def test_observability_callbacks_all_threads():
         assert not observability_enabled()
 
         add_observability_callback(f, all_threads=True)
-        assert hypothesis.internal.observability._callbacks_all_threads == [f]
-        assert _callbacks() == {}
+        assert _callbacks_all_threads == [f]
+        assert _callbacks == {}
         assert observability_enabled()
 
         add_observability_callback(f)
-        assert hypothesis.internal.observability._callbacks_all_threads == [f]
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks_all_threads == [f]
+        assert _callbacks == {thread_id: [f]}
         assert observability_enabled()
 
         # remove_observability_callback removes it both from per-thread and
@@ -695,8 +693,8 @@ def test_observability_callbacks_all_threads():
         # somewhat undefined behavior, and recommending that users simply not
         # register a callback both normally and for all threads.
         remove_observability_callback(f)
-        assert hypothesis.internal.observability._callbacks_all_threads == []
-        assert _callbacks() == {}
+        assert _callbacks_all_threads == []
+        assert _callbacks == {}
         assert not observability_enabled()
 
 
@@ -732,19 +730,19 @@ def test_testcase_callbacks():
 
         assert not bool(TESTCASE_CALLBACKS)
         add_observability_callback(f)
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks == {thread_id: [f]}
 
         assert bool(TESTCASE_CALLBACKS)
         add_observability_callback(g)
-        assert _callbacks() == {thread_id: [f, g]}
+        assert _callbacks == {thread_id: [f, g]}
 
         assert bool(TESTCASE_CALLBACKS)
         remove_observability_callback(g)
-        assert _callbacks() == {thread_id: [f]}
+        assert _callbacks == {thread_id: [f]}
 
         assert bool(TESTCASE_CALLBACKS)
         remove_observability_callback(f)
-        assert _callbacks() == {}
+        assert _callbacks == {}
 
         assert not bool(TESTCASE_CALLBACKS)
 

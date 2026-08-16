@@ -42,7 +42,7 @@ certifi==2026.7.22
     # via requests
 cffi==2.1.1
     # via cryptography
-charset-normalizer==3.4.9
+charset-normalizer==3.5.1
     # via requests
 click==8.4.2
     # via
@@ -83,7 +83,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.32.2
+filelock==3.32.3
     # via
     #   python-discovery
     #   tox
@@ -152,7 +152,7 @@ more-itertools==11.1.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==2.3.0
+mypy==2.3.1
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -191,7 +191,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.6.1
     # via -r requirements/tools.in
-platformdirs==4.11.1
+platformdirs==4.11.3
     # via
     #   black
     #   tox
@@ -242,7 +242,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.5.1
+python-discovery==1.5.2
     # via
     #   tox
     #   virtualenv
@@ -275,7 +275,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.16.2
+ruff==0.16.3
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -322,7 +322,7 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sqlparse==0.5.5
+sqlparse==0.6.0
     # via django
 stack-data==0.6.3
     # via ipython
@@ -334,7 +334,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli-w==1.2.0
     # via tox
-tox==4.58.0
+tox==4.60.0
     # via
     #   -r requirements/tools.in
     #   tox-uv-bare
@@ -358,7 +358,7 @@ types-pytz==2026.3.1.20260727
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==83.0.0.20260807
+types-setuptools==84.0.0.20260812
     # via types-cffi
 typing-extensions==4.16.0
     # via
@@ -374,11 +374,11 @@ urllib3==2.7.0
     #   id
     #   requests
     #   twine
-uv==0.12.3
+uv==0.12.5
     # via tox-uv
-uvicorn==0.52.1
+uvicorn==0.52.3
     # via sphinx-autobuild
-virtualenv==21.7.3
+virtualenv==21.7.4
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -390,7 +390,7 @@ wcwidth==0.8.2
     # via prompt-toolkit
 websockets==17.0.1
     # via sphinx-autobuild
-wheel==0.47.0
+wheel==0.48.0
     # via pip-tools
 zizmor==1.29.0
     # via -r requirements/tools.in
