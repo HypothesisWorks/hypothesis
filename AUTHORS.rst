@@ -51,6 +51,7 @@ their individual contributions.
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
 * `Damon Francisco <https://github.com/dtfrancisco>`_ (damontfrancisco@yahoo.com)
+* `Daniel Gutson <https://github.com/dgutson>`_
 * `Daniel J. West <https://github.com/danieljwest>`_
 * `Daniel Knell <https://github.com/danielknell>`_ (contact@danielknell.co.uk)
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)

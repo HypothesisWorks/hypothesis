@@ -42,6 +42,7 @@ Here are some examples of typical properties:
 - Confluence: the order of function application doesn't matter (for example, in compiler optimization passes).
 - Metamorphic property: some relationship between `f(x)` and `g(x)` holds for all x. For example, `sin(π − x) = sin(x)`.
 - Single entry point. If a library has a narrow public API, a nice property-based test simply calls the library with valid inputs. Common in parsers.
+- Stateful property: a sequence of operations preserves an invariant, or agrees with a simpler model. The signal is a class whose methods mutate it — `push`/`pop`, `add`/`remove`, `open`/`close`, incremental update. These bugs depend on the *order* of calls, so no single-call property reaches them.
 
 While the following should generally not be tested:
 
@@ -72,10 +73,13 @@ When writing Hypothesis tests, follow these guidelines:
 
 - Each Hypothesis test should be both sound (tests only inputs the code can actually be called with) and complete (tests all inputs the code can actually be called with). Sometimes this is difficult. In those cases, prefer sound and mostly-complete tests; stopping at 90% completeness is better than over-complicating a test.
 - Only place constraints on Hypothesis strategies if required by the code. For example, prefer `st.lists(...)` (with no size bound) to `st.lists(..., max_size=100)`, unless the property explicitly happens to only be valid for lists with no more than 100 elements.
+- For a stateful property, write a `RuleBasedStateMachine` with `@rule`, `@invariant`, and `@precondition`, and expose it to the test runner as `TestFoo = FooMachine.TestCase`. Keep the model as simple as possible — usually a plain `list` or `dict`. A model that reimplements the logic under test is not an independent oracle, and will agree with the code even when the code is wrong.
 
 ## 4. Run the new Hypothesis tests, and reflect on the result.
 
 Run the new Hypothesis tests that you just added. If any fail, reflect on why. Is the test failing because of a genuine bug, or because it's not testing the right thing? Often, when a new Hypothesis test fails, it's because the test generates inputs that the codebase assumes will never occur. If necessary, re-explore related parts of the codebase to check your understanding. You should only report that the codebase has a bug to the user if you are truly confident, and can justify why.
+
+Once you have confirmed a genuine bug, add the minimal falsifying input to the property test as an `@example(...)`, so that the specific regression is checked on every run in addition to the generated inputs.
 
 # Hypothesis Reference
 
@@ -83,7 +87,7 @@ Documentation reference (fetch with the `WebFetch` tool if required):
 
 - **Strategies API reference**: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html
 - **Other API reference**: https://hypothesis.readthedocs.io/en/latest/reference/api.html
-  - Documents `@settings`, `@given`, etc.
+  - Documents `@settings`, `@given`, `@example`, and stateful testing (`RuleBasedStateMachine`, `@rule`, `@invariant`, `@precondition`), among others.
 
 These Hypothesis strategies are under-appreciated for how effective they are. Use them if they are a perfect or near-perfect fit for a property:
 
