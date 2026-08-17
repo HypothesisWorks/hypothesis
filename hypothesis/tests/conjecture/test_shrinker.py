@@ -16,8 +16,8 @@ import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.control import BuildContext
-from hypothesis.errors import CannotInvert
 from hypothesis.internal.compat import PYPY
+from hypothesis.internal.conjecture.choice import Impossible
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -952,7 +952,7 @@ def test_widening_keeps_improving_on_the_best_alternative():
 
         def _invert(self, value):
             if not isinstance(value, str):
-                raise CannotInvert(f"{value!r} is not a string")
+                return Impossible(f"{value!r} is not a string")
             return (value, 0)
 
     compound = st.builds(
