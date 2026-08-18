@@ -44,11 +44,7 @@ from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.provider_conformance import (
-    constraints_strategy,
-    float_constraints,
-    integer_constraints,
     run_conformance_test,
-    string_constraints,
 )
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
@@ -65,7 +61,13 @@ from tests.common.utils import (
     capture_observations,
     capture_out,
 )
-from tests.conjecture.common import nodes
+from tests.conjecture.common import (
+    constraints_strategy,
+    float_constraints,
+    integer_constraints,
+    nodes,
+    string_constraints,
+)
 
 
 class PrngProvider(PrimitiveProvider):
