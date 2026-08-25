@@ -16,7 +16,7 @@ pluggy==1.6.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pygments==2.20.0
+pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via
@@ -27,5 +27,5 @@ pytest-xdist==3.8.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis/pyproject.toml)
-syrupy==5.5.3
+syrupy==6.0.0
     # via -r requirements/test.in

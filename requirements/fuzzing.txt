@@ -30,7 +30,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.37.0
+fakeredis==2.37.1
     # via -r requirements/coverage.in
 h11==0.16.0
     # via
@@ -46,9 +46,9 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.165.9
+hypothesis[cli,watchdog]==6.165.10
     # via hypofuzz
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   trio
@@ -96,7 +96,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==25.0.1
     # via -r requirements/coverage.in
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   pytest
     #   rich
@@ -137,7 +137,7 @@ sortedcontainers==2.4.0
     #   trio
 starlette==1.6.0
     # via hypofuzz
-syrupy==5.5.3
+syrupy==6.0.0
     # via -r requirements/test.in
 trio==0.34.0
     # via hypofuzz

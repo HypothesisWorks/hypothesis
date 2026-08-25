@@ -20,7 +20,7 @@ asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via -r requirements/tools.in
-autoflake==2.3.3
+autoflake==2.4.0
     # via shed
 babel==2.18.0
     # via sphinx
@@ -94,7 +94,7 @@ h11==0.16.0
     # via uvicorn
 id==1.6.1
     # via twine
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   requests
@@ -275,7 +275,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.16.3
+ruff==0.16.4
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -328,7 +328,7 @@ stack-data==0.6.3
     # via ipython
 starlette==1.6.0
     # via sphinx-autobuild
-syrupy==5.5.3
+syrupy==6.0.0
     # via -r requirements/test.in
 tokenize-rt==6.2.0
     # via pyupgrade
@@ -376,7 +376,7 @@ urllib3==2.7.0
     #   twine
 uv==0.12.5
     # via tox-uv
-uvicorn==0.52.3
+uvicorn==0.52.4
     # via sphinx-autobuild
 virtualenv==21.7.4
     # via tox

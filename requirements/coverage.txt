@@ -18,7 +18,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.37.0
+fakeredis==2.37.1
     # via -r requirements/coverage.in
 iniconfig==2.3.0
     # via pytest
@@ -52,7 +52,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==25.0.1
     # via -r requirements/coverage.in
-pygments==2.20.0
+pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via
@@ -82,7 +82,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==5.5.3
+syrupy==6.0.0
     # via -r requirements/test.in
 typing-extensions==4.16.0
     # via -r requirements/coverage.in
