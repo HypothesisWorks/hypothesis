@@ -31,6 +31,7 @@ from tests.common.utils import skipif_time_unpatched
 from tests.conjecture.common import (
     SOME_LABEL,
     float_constr,
+    integer_constr,
     interesting_origin,
     nodes,
     nodes_inline,
@@ -638,6 +639,66 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
         pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001)
         == node1.value + node2.value
     )
+
+
+@pytest.mark.parametrize(
+    "node1_type, node2_type",
+    [
+        ("integer", "integer"),
+        ("integer", "float"),
+        ("float", "integer"),
+        ("float", "float"),
+    ],
+)
+@pytest.mark.parametrize(
+    "near_overflow",
+    [False, True],
+    ids=["normal", "near_max_precise_integer"],
+)
+def test_redistribute_numeric_pairs_type_combinations(node1_type, node2_type, near_overflow):
+    """Test redistribute_numeric_pairs with each combination of node types,
+    including cases where node2's value is near MAX_PRECISE_INTEGER to exercise
+    the float precision guard."""
+    if near_overflow:
+        # Place values near MAX_PRECISE_INTEGER so that increasing node2
+        # triggers the float precision guard (when node2 is a float).
+        big = float(MAX_PRECISE_INTEGER - 1)
+        if node1_type == "integer":
+            v1 = int(MAX_PRECISE_INTEGER - 1)
+        else:
+            v1 = big
+        if node2_type == "integer":
+            v2 = int(MAX_PRECISE_INTEGER - 1)
+        else:
+            v2 = big
+    else:
+        v1 = 100 if node1_type == "integer" else 100.0
+        v2 = 100 if node2_type == "integer" else 100.0
+
+    if node1_type == "integer":
+        c1 = integer_constr()
+    else:
+        c1 = float_constr()
+    if node2_type == "integer":
+        c2 = integer_constr()
+    else:
+        c2 = float_constr()
+
+    @shrinking_from([v1, v2])
+    def shrinker(data: ConjectureData):
+        val1 = getattr(data, f"draw_{node1_type}")(**c1)
+        val2 = getattr(data, f"draw_{node2_type}")(**c2)
+        if val1 + val2 > 0:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert len(shrinker.choices) == 2
+
+    shrink_towards = c1.get("shrink_towards", 0) if node1_type == "integer" else 0
+    # node1 should move towards shrink_towards (or stay the same)
+    assert abs(shrinker.choices[0] - shrink_towards) <= abs(v1 - shrink_towards)
+    # sum should be preserved (with float tolerance)
+    assert pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001) == v1 + v2
 
 
 @pytest.mark.parametrize(
