@@ -17,6 +17,7 @@ from collections.abc import Callable, Sequence
 from functools import lru_cache
 from random import shuffle
 from threading import RLock
+from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -51,12 +52,15 @@ from hypothesis.internal.conjecture.utils import (
     combine_labels,
 )
 from hypothesis.internal.coverage import check_function
+from hypothesis.internal.escalation import is_hypothesis_file
 from hypothesis.internal.reflection import (
+    function_location,
     get_pretty_function_description,
     is_identity_function,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
-from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if TYPE_CHECKING:
     Ex = TypeVar("Ex", covariant=True, default=Any)
@@ -81,6 +85,36 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 label_lock = RLock()
+
+# When hypothesis re-applies a filter condition internally - lazy strategy
+# resolution, replaying predicates in FilteredStrategy.do_validate - this
+# carries the location of the original .filter() call through to the
+# re-application, where walking the stack would find the wrong frame.
+_filter_location_override: DynamicVariable[Any] = DynamicVariable(not_set)
+
+
+def filter_call_site() -> str | None:
+    """The filename:lineno of the enclosing .filter() call - the nearest frame
+    outside hypothesis itself. Call this at .filter() call time and store the
+    result alongside the condition; reconstructing it later is ambiguous."""
+    if (location := _filter_location_override.value) is not not_set:
+        return location
+    frame: FrameType | None = sys._getframe(1)
+    while frame is not None and is_hypothesis_file(frame.f_code.co_filename):
+        frame = frame.f_back
+    if frame is None:  # pragma: no cover  # ran out of frames
+        return None
+    return f"{frame.f_code.co_filename}:{frame.f_lineno}"
+
+
+def rejection_location(data: ConjectureData) -> str | None:
+    """The location of the filter which most recently rejected a candidate
+    value: where its .filter() call was made, or failing that where the
+    predicate was defined, if known."""
+    if data._rejected_by_filter is None:
+        return None
+    condition, location = data._rejected_by_filter
+    return location or function_location(condition)
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -448,7 +482,9 @@ class SearchStrategy(Generic[Ex]):
                         return value
                 assume(False)
         """
-        return FilteredStrategy(self, conditions=(condition,))
+        return FilteredStrategy(
+            self, conditions=(condition,), condition_locations=(filter_call_site(),)
+        )
 
     @property
     def branches(self) -> Sequence["SearchStrategy[Ex]"]:
@@ -606,8 +642,9 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         *,
         force_repr: str | None = None,
         force_repr_braces: tuple[str, str] | None = None,
+        # (name, function, location of the .filter()/.map() call, if known)
         transformations: tuple[
-            tuple[Literal["filter", "map"], Callable[[Ex], Any]],
+            tuple[Literal["filter", "map"], Callable[[Ex], Any], str | None],
             ...,
         ] = (),
     ):
@@ -625,7 +662,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             self.elements,
             force_repr=self.force_repr,
             force_repr_braces=self.force_repr_braces,
-            transformations=(*self._transformations, ("map", pack)),
+            transformations=(*self._transformations, ("map", pack, None)),
         )
         # guaranteed by the ("map", pack) transformation
         return cast(SearchStrategy[T], s)
@@ -641,7 +678,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             self.elements,
             force_repr=self.force_repr,
             force_repr_braces=self.force_repr_braces,
-            transformations=(*self._transformations, ("filter", condition)),
+            transformations=(
+                *self._transformations,
+                ("filter", condition, filter_call_site()),
+            ),
         )
 
     def __repr__(self):
@@ -658,7 +698,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             )
             transforms_s = "".join(
                 f".{name}({get_pretty_function_description(f)})"
-                for name, f in self._transformations
+                for name, f, _ in self._transformations
             )
             repr_s = instance_s + transforms_s
             self._cached_repr = repr_s
@@ -731,9 +771,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # anywhere in the class so this is still type-safe. mypy is being more
         # conservative than necessary
         element: Ex,  # type: ignore
+        data: ConjectureData | None = None,
     ) -> Ex | UniqueIdentifier:
         # Used in UniqueSampledListStrategy
-        for name, f in self._transformations:
+        for name, f, location in self._transformations:
             if name == "map":
                 result = f(element)
                 if build_context := _current_build_context.value:
@@ -742,6 +783,8 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             else:
                 assert name == "filter"
                 if not f(element):
+                    if data is not None:
+                        data._rejected_by_filter = (f, location)
                     return filter_not_satisfied
         return element
 
@@ -758,12 +801,19 @@ class SampledFromStrategy(SearchStrategy[Ex]):
                 self.elements,
             )
         if result is filter_not_satisfied:
-            data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+            # do_filtered_draw recorded the filter which rejected the most
+            # recently tried element in data._rejected_by_filter.
+            data.mark_invalid(
+                f"Aborted test because unable to satisfy {self!r}",
+                location=rejection_location(data),
+            )
         assert not isinstance(result, UniqueIdentifier)
         return result
 
-    def get_element(self, i: int) -> Ex | UniqueIdentifier:
-        return self._transform(self.elements[i])
+    def get_element(
+        self, i: int, data: ConjectureData | None = None
+    ) -> Ex | UniqueIdentifier:
+        return self._transform(self.elements[i], data)
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # The smallest index whose (possibly transformed) element equals value.
@@ -784,7 +834,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         for _ in range(3):
             i = data.draw_integer(0, len(self.elements) - 1)
             if i not in known_bad_indices:
-                element = self.get_element(i)
+                element = self.get_element(i, data)
                 if element is not filter_not_satisfied:
                     return element
                 if not known_bad_indices:
@@ -812,7 +862,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         allowed: list[tuple[int, Ex]] = []
         for i in range(min(len(self.elements), self._MAX_FILTER_CALLS - 3)):
             if i not in known_bad_indices:
-                element = self.get_element(i)
+                element = self.get_element(i, data)
                 if element is not filter_not_satisfied:
                     assert not isinstance(element, UniqueIdentifier)
                     allowed.append((i, element))
@@ -1178,7 +1228,11 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
 
         # Apply a new outer filter even though we rewrote the inner strategy,
         # because some collections can change the list length (dict, set, etc).
-        return FilteredStrategy(type(self)(new, self.pack), conditions=(condition,))
+        return FilteredStrategy(
+            type(self)(new, self.pack),
+            conditions=(condition,),
+            condition_locations=(filter_call_site(),),
+        )
 
 
 @lru_cache
@@ -1223,17 +1277,29 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 class FilteredStrategy(SearchStrategy[Ex]):
     def __init__(
-        self, strategy: SearchStrategy[Ex], conditions: tuple[Callable[[Ex], Any], ...]
+        self,
+        strategy: SearchStrategy[Ex],
+        conditions: tuple[Callable[[Ex], Any], ...],
+        condition_locations: tuple[str | None, ...] | None = None,
     ):
         super().__init__()
+        # Where each condition's .filter() call was made, aligned with
+        # `conditions` - for reporting if we give up on satisfying one.
+        if condition_locations is None:
+            condition_locations = (None,) * len(conditions)
+        assert len(condition_locations) == len(conditions)
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple conditions.
             self.flat_conditions: tuple[Callable[[Ex], Any], ...] = (
                 strategy.flat_conditions + conditions
             )
+            self.condition_locations: tuple[str | None, ...] = (
+                strategy.condition_locations + condition_locations
+            )
             self.filtered_strategy: SearchStrategy[Ex] = strategy.filtered_strategy
         else:
             self.flat_conditions = conditions
+            self.condition_locations = condition_locations
             self.filtered_strategy = strategy
 
         assert isinstance(self.flat_conditions, tuple)
@@ -1267,13 +1333,19 @@ class FilteredStrategy(SearchStrategy[Ex]):
         # predicates in case some or all of them can be rewritten.  Note that this
         # replaces the `fresh` strategy too!
         fresh = self.filtered_strategy
-        for cond in self.flat_conditions:
-            fresh = fresh.filter(cond)
+        for cond, location in zip(
+            self.flat_conditions, self.condition_locations, strict=True
+        ):
+            with _filter_location_override.with_value(location):
+                fresh = fresh.filter(cond)
         if isinstance(fresh, FilteredStrategy):
             # In this case we have at least some non-rewritten filter predicates,
             # so we just re-initialize the strategy.
             FilteredStrategy.__init__(
-                self, fresh.filtered_strategy, fresh.flat_conditions
+                self,
+                fresh.filtered_strategy,
+                fresh.flat_conditions,
+                fresh.condition_locations,
             )
         else:
             # But if *all* the predicates were rewritten... well, do_validate() is
@@ -1296,10 +1368,12 @@ class FilteredStrategy(SearchStrategy[Ex]):
         # combine the conditions of each in our expected newest=last order.
         if isinstance(out, FilteredStrategy):
             return FilteredStrategy(
-                out.filtered_strategy, self.flat_conditions + out.flat_conditions
+                out.filtered_strategy,
+                self.flat_conditions + out.flat_conditions,
+                self.condition_locations + out.condition_locations,
             )
         # But if it *could* be rewritten, we can return the more efficient form!
-        return FilteredStrategy(out, self.flat_conditions)
+        return FilteredStrategy(out, self.flat_conditions, self.condition_locations)
 
     @property
     def condition(self) -> Callable[[Ex], Any]:
@@ -1325,16 +1399,34 @@ class FilteredStrategy(SearchStrategy[Ex]):
         if result is not filter_not_satisfied:
             return cast(Ex, result)
 
-        data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+        # do_filtered_draw recorded the condition which rejected the most
+        # recently drawn value in data._rejected_by_filter.
+        data.mark_invalid(
+            f"Aborted test because unable to satisfy {self!r}",
+            location=rejection_location(data),
+        )
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         for i in range(3):
             data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
-            if self.condition(value):
+            # Check the conditions individually rather than via self.condition,
+            # so that we know which one to blame if we end up giving up.
+            failing = next(
+                (
+                    (cond, location)
+                    for cond, location in zip(
+                        self.flat_conditions, self.condition_locations, strict=True
+                    )
+                    if not cond(value)
+                ),
+                None,
+            )
+            if failing is None:
                 data.stop_span()
                 return value
             else:
+                data._rejected_by_filter = failing
                 data.stop_span(discard=True)
                 if i == 0:
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
@@ -1351,7 +1443,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
     @property
     def branches(self) -> Sequence[SearchStrategy[Ex]]:
         return [
-            FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
+            FilteredStrategy(strategy, self.flat_conditions, self.condition_locations)
             for strategy in self.filtered_strategy.branches
         ]
 

@@ -14,7 +14,7 @@ import time
 import types
 import weakref
 from collections import defaultdict
-from collections.abc import Generator, Hashable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -718,6 +718,12 @@ class ConjectureData:
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, str | int | float] = {}
         self.interesting_origin: InterestingOrigin | None = None
+        # where an invalid test case was rejected; see make_testcase
+        self.invalid_location: str | None = None
+        # (predicate, location of its .filter() call) for the filter which most
+        # recently rejected a candidate value, so that if we give up we can
+        # report which filter was responsible
+        self._rejected_by_filter: tuple[Callable[[Any], Any], str | None] | None = None
         self.draw_times: dict[str, float] = {}
         self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth: int = 0
@@ -1481,9 +1487,12 @@ class ConjectureData:
     def mark_interesting(self, interesting_origin: InterestingOrigin) -> NoReturn:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self, why: str | None = None) -> NoReturn:
+    def mark_invalid(
+        self, why: str | None = None, *, location: str | None = None
+    ) -> NoReturn:
         if why is not None:
             self.events["invalid because"] = why
+        self.invalid_location = location
         self.conclude_test(Status.INVALID)
 
     def mark_overrun(self) -> NoReturn:

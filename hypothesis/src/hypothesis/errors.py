@@ -34,8 +34,12 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, reason: str | None = None) -> None:
+    def __init__(
+        self, reason: str | None = None, *, location: str | None = None
+    ) -> None:
         self.reason = reason
+        # "filename:lineno" of the failing assume() or reject() call, if known
+        self.location = location
 
 
 class NoSuchExample(HypothesisException):

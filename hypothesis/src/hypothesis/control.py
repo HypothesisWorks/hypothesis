@@ -39,6 +39,11 @@ def _calling_function_location(what: str, frame: Any) -> str:
     return f"{what}() in {where.f_code.co_name} (line {where.f_lineno})"
 
 
+def _calling_frame_location(frame: Any) -> str:
+    where = frame.f_back
+    return f"{where.f_code.co_filename}:{where.f_lineno}"
+
+
 def reject() -> NoReturn:
     if _current_build_context.value is None:
         note_deprecation(
@@ -46,11 +51,12 @@ def reject() -> NoReturn:
             since="2023-09-25",
             has_codemod=False,
         )
-    where = _calling_function_location("reject", inspect.currentframe())
+    frame = inspect.currentframe()
+    where = _calling_function_location("reject", frame)
     if currently_in_test_context():
         counts = current_build_context().data._observability_predicates[where]
         counts.update_count(condition=False)
-    raise UnsatisfiedAssumption(where)
+    raise UnsatisfiedAssumption(where, location=_calling_frame_location(frame))
 
 
 @overload
@@ -73,12 +79,16 @@ def assume(condition: object) -> Literal[True]:
             has_codemod=False,
         )
     if observability_enabled() or not condition:
-        where = _calling_function_location("assume", inspect.currentframe())
+        frame = inspect.currentframe()
+        where = _calling_function_location("assume", frame)
         if observability_enabled() and currently_in_test_context():
             counts = current_build_context().data._observability_predicates[where]
             counts.update_count(condition=bool(condition))
         if not condition:
-            raise UnsatisfiedAssumption(f"failed to satisfy {where}")
+            raise UnsatisfiedAssumption(
+                f"failed to satisfy {where}",
+                location=_calling_frame_location(frame),
+            )
     return True
 
 
