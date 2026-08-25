@@ -72,6 +72,15 @@
   Draw 2: 0  # or any other generated value
   '''
 # ---
+# name: test_explain_interactive_draws_in_exhaustible_tree
+  '''
+  Failing test case: inner(
+      data=data(...),
+  )
+  Draw 1: True
+  Draw 2: False  # or any other generated value
+  '''
+# ---
 # name: test_explain_mixed_args_and_interactive_draws
   '''
   Failing test case: inner(

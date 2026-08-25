@@ -119,6 +119,19 @@ def test_explain_interactive_draws(snapshot):
     assert run_test_for_failing_test_case(inner) == snapshot
 
 
+def test_explain_interactive_draws_in_exhaustible_tree(snapshot):
+    # Exhausting the choice tree used to exit the engine before the shrink
+    # phase, so these small failing examples never got explain comments.
+    @EXPLAIN_SETTINGS
+    @given(st.data())
+    def inner(data):
+        a = data.draw(st.booleans())
+        data.draw(st.booleans())
+        assert not a
+
+    assert run_test_for_failing_test_case(inner) == snapshot
+
+
 def test_explain_mixed_args_and_interactive_draws(snapshot):
     @EXPLAIN_SETTINGS
     @given(st.booleans(), st.booleans(), st.data())
