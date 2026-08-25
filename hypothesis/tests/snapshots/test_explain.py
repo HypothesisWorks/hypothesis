@@ -108,6 +108,28 @@ def test_explain_skip_subset_slices(snapshot):
     assert run_test_for_failing_test_case(inner) == snapshot
 
 
+def test_explain_interactive_draws(snapshot):
+    @EXPLAIN_SETTINGS
+    @given(st.data())
+    def inner(data):
+        n = data.draw(st.integers())
+        data.draw(st.integers())
+        assert n < 100
+
+    assert run_test_for_failing_test_case(inner) == snapshot
+
+
+def test_explain_mixed_args_and_interactive_draws(snapshot):
+    @EXPLAIN_SETTINGS
+    @given(st.booleans(), st.booleans(), st.data())
+    def inner(a, b, data):
+        data.draw(st.booleans())
+        d = data.draw(st.booleans())
+        assert not (b and d)
+
+    assert run_test_for_failing_test_case(inner) == snapshot
+
+
 def test_explain_duplicate_param_names(snapshot):
     @EXPLAIN_SETTINGS
     @given(

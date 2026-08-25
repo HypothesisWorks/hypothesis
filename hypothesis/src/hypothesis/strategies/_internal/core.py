@@ -2438,8 +2438,12 @@ class DataObject:
         check_strategy(strategy, "strategy")
         self.count += 1
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
+        # As in BuildContext.track_arg_label, record the span of this draw for
+        # the shrinker's explain phase to vary and comment on.
+        span_index = self.conjecture_data.next_span_index
         with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
             result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
+        self.conjecture_data.arg_spans.add(span_index)
 
         # optimization to avoid needless printer.pretty
         if should_note():
@@ -2449,6 +2453,8 @@ class DataObject:
                 printer.text("<symbolic>")
             else:
                 printer.pretty(result)
+            if comment := self.conjecture_data.span_comments.get(span_index):
+                printer.text(f"  # {comment}")
             note(printer.getvalue())
         return result
 

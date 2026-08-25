@@ -11,8 +11,12 @@
 import pytest
 from pytest import raises
 
-from hypothesis import find, given, settings, strategies as st
+from hypothesis import Phase, find, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
+
+# The explain phase may append comments to the Draw notes we assert
+# exact matches against below.
+no_explain = settings(phases=set(settings.default.phases) - {Phase.explain})
 
 
 @given(st.integers(), st.data())
@@ -22,6 +26,7 @@ def test_conditional_draw(x, data):
 
 
 def test_prints_on_failure():
+    @no_explain
     @given(st.data())
     def test(data):
         x = data.draw(st.lists(st.integers(0, 10), min_size=2))
@@ -37,6 +42,7 @@ def test_prints_on_failure():
 
 
 def test_prints_labels_if_given_on_failure():
+    @no_explain
     @given(st.data())
     def test(data):
         x = data.draw(st.lists(st.integers(0, 10), min_size=2), label="Some numbers")
@@ -52,6 +58,7 @@ def test_prints_labels_if_given_on_failure():
 
 
 def test_given_twice_is_same():
+    @no_explain
     @given(st.data(), st.data())
     def test(data1, data2):
         data1.draw(st.integers())
