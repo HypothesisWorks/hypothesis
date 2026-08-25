@@ -13,7 +13,7 @@ import operator as op
 import sys
 import warnings
 import zoneinfo
-from functools import cache, partial
+from functools import cache, lru_cache, partial
 from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, overload
@@ -250,6 +250,181 @@ def _shift_datetime(value, steps):
     return value + steps * _MICROSECOND
 
 
+# "Tricky" datetimes (https://github.com/HypothesisWorks/hypothesis/issues/69):
+# with some probability we generate wall times at small offsets from an
+# "interesting instant" - a moment at which the drawn timezone's
+# (utcoffset, dst, tzname) triple changes, or a UTC leap second.  Working in
+# the wall-clock frame means we hit imaginary times inside spring-forward
+# gaps, ambiguous times (under both folds) inside fall-back folds, and the
+# exact boundaries of each.
+
+_SCAN_LO = dt.datetime(1800, 1, 1)  # tzdata's earliest transitions are ~1847
+_SCAN_HI = dt.datetime(2050, 1, 1)  # beyond this, recurring rules just repeat
+# The shortest gap between state changes anywhere in tzdata is just under
+# seven days (Brazil moved the start of DST forward by a week in October
+# 2000), so scanning at six-day resolution never puts two transitions in one
+# window and therefore finds every transition of every zone; see the probing
+# docstring below for what it would take to hide one from a future tzdata.
+_PROBE_STEP = dt.timedelta(days=6)
+_SECOND = dt.timedelta(seconds=1)
+_FALLBACK_SCAN = dt.timedelta(days=4 * 366)  # covers any recurring annual rule
+# The probability that a draw targets a tricky value, and the half-widths of
+# the windows we draw them from: tight enough to hit the boundary
+# microseconds, wide enough to reach e.g. the far side of a DST gap.
+_TRICKY_P = 0.25
+_TRICKY_WIDTHS = (
+    dt.timedelta(seconds=1, microseconds=1),
+    dt.timedelta(hours=1, microseconds=1),
+    dt.timedelta(days=1),
+)
+
+
+# Naive datetimes for the UTC instant just after each change to TAI-UTC.
+# Python datetimes cannot represent a leap second itself, but adjacent times
+# are prime test cases for code which parses, formats, or smears them.
+# Checked against the vendored IERS leap-seconds.list by a whole-repo test.
+_LEAP_SECONDS = (
+    dt.datetime(1972, 1, 1),
+    dt.datetime(1972, 7, 1),
+    dt.datetime(1973, 1, 1),
+    dt.datetime(1974, 1, 1),
+    dt.datetime(1975, 1, 1),
+    dt.datetime(1976, 1, 1),
+    dt.datetime(1977, 1, 1),
+    dt.datetime(1978, 1, 1),
+    dt.datetime(1979, 1, 1),
+    dt.datetime(1980, 1, 1),
+    dt.datetime(1981, 7, 1),
+    dt.datetime(1982, 7, 1),
+    dt.datetime(1983, 7, 1),
+    dt.datetime(1985, 7, 1),
+    dt.datetime(1988, 1, 1),
+    dt.datetime(1990, 1, 1),
+    dt.datetime(1991, 1, 1),
+    dt.datetime(1992, 7, 1),
+    dt.datetime(1993, 7, 1),
+    dt.datetime(1994, 7, 1),
+    dt.datetime(1996, 1, 1),
+    dt.datetime(1997, 7, 1),
+    dt.datetime(1999, 1, 1),
+    dt.datetime(2006, 1, 1),
+    dt.datetime(2009, 1, 1),
+    dt.datetime(2012, 7, 1),
+    dt.datetime(2015, 7, 1),
+    dt.datetime(2017, 1, 1),
+)
+# Famous rollovers, as UTC instants: the Unix epoch, the millennium (also the
+# instant that examples shrink towards), and the first moment beyond a signed
+# 32-bit Unix timestamp.
+_ROLLOVERS = (
+    dt.datetime(1970, 1, 1),
+    dt.datetime(2000, 1, 1),
+    dt.datetime(2038, 1, 19, 3, 14, 8),
+)
+
+
+def _as_naive_datetime(value):
+    """Bounds may be datetime subclasses such as ``pandas.Timestamp``, whose
+    arithmetic can overflow its narrower representable range, and whose type
+    must not leak into one side of a draw_capped_multipart window."""
+    return dt.datetime(
+        value.year,
+        value.month,
+        value.day,
+        value.hour,
+        value.minute,
+        value.second,
+        value.microsecond,
+    )
+
+
+def _tz_state(instant, tz):
+    aware = instant.replace(tzinfo=dt.timezone.utc).astimezone(tz)
+    return (aware.utcoffset(), aware.dst(), aware.tzname())
+
+
+def _probe_transitions(tz, lo, hi):
+    """Naive UTC instants in (lo, hi] at which ``tz`` first reports a changed
+    (utcoffset, dst, tzname), found by scanning at _PROBE_STEP resolution and
+    bisecting each change down to the second - the granularity of tzdata,
+    though a tzinfo transitioning mid-second would be found within one.
+
+    Because we resume scanning from each boundary we find, several
+    transitions within a single step are all found; the only way to hide one
+    is a pair of transitions less than _PROBE_STEP apart which revert to the
+    exact prior state.  The closest real pair of transitions is just under
+    seven days apart, comfortably above our six-day step, so in practice we
+    find every transition of every zone (verified against the compiled
+    transition lists in tzdata, via pytz, over the whole scan range).
+    """
+    transitions = []
+    at, state = lo, _tz_state(lo, tz)
+    while at < hi:
+        try:
+            probe = min(at + _PROBE_STEP, hi)
+        except OverflowError:  # within _PROBE_STEP of datetime.max
+            probe = hi
+        probed = _tz_state(probe, tz)
+        if probed == state:
+            at, state = probe, probed
+            continue
+        low, high = at, probe
+        while high - low > _SECOND:
+            # Snap to whole seconds so that ``high`` converges to the exact
+            # transition instant rather than up to a second beyond it.
+            mid = (low + (high - low) / 2).replace(microsecond=0)
+            if mid <= low:  # a sub-second window straddling a whole second
+                mid = low + (high - low) / 2
+            if _tz_state(mid, tz) == state:
+                low = mid
+            else:
+                high = mid
+        transitions.append(high)
+        at, state = high, _tz_state(high, tz)
+    return tuple(transitions)
+
+
+@cache
+def _transitions(tz):
+    """All transitions of ``tz`` within [_SCAN_LO, _SCAN_HI], probed once per
+    zone - a few tens of milliseconds each, for the zones actually drawn."""
+    return _probe_transitions(tz, _SCAN_LO, _SCAN_HI)
+
+
+@lru_cache(maxsize=256)
+def _interesting_instants(tz, lo, hi):
+    """The interesting instants for ``tz`` within the window of UTC instants
+    [lo, hi], as a sorted tuple of naive datetimes, plus the index to shrink
+    towards (the instant nearest year 2000).  Returns ``((), 0)`` if there
+    are none, or if the tzinfo misbehaves when probed - inside this cached
+    function, so that the structure of tricky draws can never vary between
+    otherwise-identical calls.
+    """
+    try:
+        if tz is None:
+            transitions = ()
+        elif lo > _SCAN_HI or hi < _SCAN_LO:
+            # The window is wholly outside the usual scan range: probe a few
+            # years directly, enough to cover any recurring annual rule.
+            try:
+                cap = lo + _FALLBACK_SCAN
+            except OverflowError:  # within a few years of datetime.max
+                cap = hi
+            transitions = _probe_transitions(tz, lo, min(hi, cap))
+        else:
+            transitions = _transitions(tz)
+    except Exception:
+        return (), 0
+    instants = tuple(
+        t for t in sorted(transitions + _LEAP_SECONDS + _ROLLOVERS) if lo <= t <= hi
+    )
+    if not instants:
+        return (), 0
+    arbitrary = dt.datetime(2000, 1, 1)
+    nearest = min(range(len(instants)), key=lambda i: abs(instants[i] - arbitrary))
+    return instants, nearest
+
+
 class _UnrepresentableBound(Exception):
     """No wall time in the timezone lies within the strategy's bounds."""
 
@@ -288,31 +463,89 @@ class DatetimeStrategy(SearchStrategy):
         self.max_value = max_value
         self.tz_strat = timezones_strat
         self.allow_imaginary = allow_imaginary
+        # The window of UTC instants (as naive datetimes) within which
+        # draw_tricky_datetime looks for interesting instants.
+        if self.aware:
+            zero, whole = dt.timedelta(0), dt.datetime.max - dt.datetime.min
+            lo = dt.datetime.min + min(max(self.min_instant, zero), whole)
+            hi = dt.datetime.min + min(max(self.max_instant, zero), whole)
+        else:
+            slop = dt.timedelta(days=1)  # room for any UTC offset
+            lo = max(dt.datetime.min + slop, _as_naive_datetime(min_value)) - slop
+            hi = min(dt.datetime.max - slop, _as_naive_datetime(max_value)) + slop
+        self.instant_window = (lo, hi)
+        self.tricky_possible = any(
+            lo <= t <= hi for t in _LEAP_SECONDS + _ROLLOVERS
+        ) or (_timezones_kind(self.tz_strat) != "none")
 
     def do_draw(self, data):
-        # We start by drawing a timezone, and an initial datetime.
+        # We start by drawing a timezone, and then - with some probability -
+        # target a "tricky" value near a timezone transition, leap second, or
+        # famous rollover; see issue #69.
         tz = data.draw(self.tz_strat)
-        if self.aware:
-            if not isinstance(tz, dt.tzinfo):
-                raise InvalidArgument(
-                    f"Drew {tz!r} from the timezones strategy {self.tz_strat!r}, "
-                    "but with aware min_value/max_value bounds the timezones "
-                    "strategy must only generate tzinfo objects (not None)"
-                )
+        if self.aware and not isinstance(tz, dt.tzinfo):
+            raise InvalidArgument(
+                f"Drew {tz!r} from the timezones strategy {self.tz_strat!r}, "
+                "but with aware min_value/max_value bounds the timezones "
+                "strategy must only generate tzinfo objects (not None)"
+            )
+        if self.tricky_possible and data.draw_boolean(_TRICKY_P):
+            result = self.draw_tricky_datetime(data, tz)
+        elif self.aware:
             result = self.draw_aware_datetime(data, tz)
         else:
             result = self.draw_naive_datetime_and_combine(data, tz)
-
-        # TODO: with some probability, systematically search for one of
-        #   - an imaginary time (if allowed),
-        #   - a time within 24hrs of a leap second (if there any are within bounds),
-        #   - other subtle, little-known, or nasty issues as described in
-        #     https://github.com/HypothesisWorks/hypothesis/issues/69
 
         # If we happened to end up with a disallowed imaginary time, reject it.
         if (not self.allow_imaginary) and datetime_does_not_exist(result):
             data.mark_invalid(f"{result} does not exist (usually a DST transition)")
         return result
+
+    def draw_tricky_datetime(self, data, tz):
+        """Draw a wall time from a narrow window around one of the drawn
+        timezone's interesting instants, clamped to the strategy's bounds so
+        that the result satisfies them by construction.  If there is nothing
+        tricky to aim for, fall back to an ordinary, unbiased draw."""
+        try:
+            instants, nearest = _interesting_instants(tz, *self.instant_window)
+        except TypeError:  # an unhashable tzinfo, which raises on every call
+            instants, nearest = (), 0
+        if self.aware:
+            try:
+                window = self._wall_clock_window(tz)
+            except _UnrepresentableBound:
+                window = None
+            if window is None:  # draw_aware_datetime uses the UTC frame here
+                instants = ()
+        else:
+            window = (self.min_value, self.max_value)
+        if not instants:
+            if self.aware:
+                return self.draw_aware_datetime(data, tz)
+            return self.draw_naive_datetime_and_combine(data, tz)
+        instant = instants[
+            data.draw_integer(0, len(instants) - 1, shrink_towards=nearest)
+        ]
+        width = _TRICKY_WIDTHS[data.draw_integer(0, len(_TRICKY_WIDTHS) - 1)]
+        if tz is not None:
+            # This cannot overflow: transitions were converted to tz when we
+            # probed for them, and the fixed instants are all C20-C21.
+            instant = (
+                instant.replace(tzinfo=dt.timezone.utc)
+                .astimezone(tz)
+                .replace(tzinfo=None)
+            )
+        lo, hi = (_as_naive_datetime(b) for b in window)
+        center = min(max(instant, lo), hi)
+        low = center - width if center - lo >= width else lo
+        high = center + width if hi - center >= width else hi
+        result = draw_capped_multipart(data, low, high)
+        value = replace_tzinfo(dt.datetime(**result), timezone=tz)
+        if self.aware and not self.in_bounds(value):
+            # An ambiguous wall time next to a bound, with the out-of-bounds
+            # fold - just as in draw_aware_datetime.
+            data.mark_invalid(f"{value!r} is outside the bounds")
+        return value
 
     def in_bounds(self, value):
         return self.min_instant <= _instant(value) <= self.max_instant
@@ -388,6 +621,10 @@ class DatetimeStrategy(SearchStrategy):
             )
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        # do_draw draws the tricky-path selector after the timezone, when one
+        # is drawn at all; we always re-encode via the ordinary path, which
+        # can produce any value of the strategy.
+        selector = (False,) if self.tricky_possible else ()
         if self.aware:
             if type(value) is not dt.datetime or value.tzinfo is None:
                 raise CannotInvert(f"{value!r} is not an aware datetime")
@@ -406,6 +643,7 @@ class DatetimeStrategy(SearchStrategy):
                 )
             return (
                 *self.tz_strat._invert(value.tzinfo),
+                *selector,
                 *self._invert_aware_fields(value, value.tzinfo, imaginary=imaginary),
             )
         if type(value) is not dt.datetime:
@@ -423,6 +661,7 @@ class DatetimeStrategy(SearchStrategy):
         # drawn last, since it is ignored in datetime comparisons).
         return (
             *self.tz_strat._invert(value.tzinfo),
+            *selector,
             value.year,
             value.month,
             value.day,
@@ -618,6 +857,13 @@ def datetimes(
     which did not (or will not) occur due to daylight savings, leap seconds,
     timezone and calendar adjustments, etc.  Imaginary datetimes are allowed
     by default, because malformed timestamps are a common source of bugs.
+
+    Because times near a change to the UTC offset are also a common source of
+    bugs, this strategy deliberately generates values on or near the drawn
+    timezone's daylight-saving and other offset transitions - including
+    imaginary wall times, and ambiguous ones with each value of ``fold`` -
+    as well as times adjacent to leap seconds and to famous rollovers such as
+    the millennium and the end of the signed 32-bit Unix epoch.
 
     .. note::
 

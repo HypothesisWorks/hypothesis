@@ -18,7 +18,15 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies._internal.datetime import DatetimeStrategy, _instant
+from hypothesis.strategies._internal.datetime import (
+    DatetimeStrategy,
+    _ambiguous,
+    _instant,
+    _interesting_instants,
+    _probe_transitions,
+    _transitions,
+    datetime_does_not_exist,
+)
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.debug import (
@@ -222,3 +230,78 @@ def test_can_disallow_prefixes():
         st.timezone_keys(allow_prefix=False),
         lambda s: s.startswith(("posix/", "right/")),
     )
+
+
+def test_probed_transitions_include_known_dst_change():
+    # 2007-03-11 02:00 EST sprang forward to 03:00 EDT, i.e. 07:00 UTC
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    assert dt.datetime(2007, 3, 11, 7) in _transitions(tz)
+
+
+def test_interesting_instants_beyond_the_scan_range():
+    # Recurring DST rules continue indefinitely, so windows wholly beyond
+    # the usual scan range are probed directly instead.
+    lo, hi = dt.datetime(6000, 1, 1), dt.datetime(6002, 1, 1)
+    instants, nearest = _interesting_instants(
+        zoneinfo.ZoneInfo("America/New_York"), lo, hi
+    )
+    assert instants
+    assert all(lo <= t <= hi for t in instants)
+    assert nearest == 0
+
+
+def test_generates_imaginary_datetimes():
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    find_any(st.datetimes(timezones=st.just(tz)), datetime_does_not_exist)
+
+
+@pytest.mark.parametrize("fold", [0, 1])
+def test_generates_ambiguous_datetimes_in_both_folds(fold):
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    find_any(
+        st.datetimes(timezones=st.just(tz)),
+        lambda x: x.fold == fold and _ambiguous(x.replace(tzinfo=None), tz),
+    )
+
+
+def test_probing_finds_transitions_a_week_apart():
+    # Brazil moved the start of DST forward by one week in October 2000 - the
+    # closest pair of transitions anywhere in tzdata, and the reason that
+    # _PROBE_STEP must stay below seven days.
+    found = _probe_transitions(
+        zoneinfo.ZoneInfo("America/Noronha"),
+        dt.datetime(2000, 9, 1),
+        dt.datetime(2000, 11, 1),
+    )
+    assert found == (dt.datetime(2000, 10, 8, 2), dt.datetime(2000, 10, 15, 1))
+
+
+def test_probing_a_misaligned_window_still_finds_transitions():
+    # Windows whose endpoints are not whole seconds exercise the bisection
+    # guard for sub-second intervals straddling a whole second: a window of
+    # between one and two seconds around the transition, starting just after
+    # a whole second, forces it on the first bisection step.
+    transition = dt.datetime(2007, 3, 11, 7)  # 02:00 EST -> 03:00 EDT
+    lo = transition - dt.timedelta(seconds=1) + dt.timedelta(microseconds=1)
+    for hi in [
+        lo + dt.timedelta(seconds=1, microseconds=500000),
+        transition + dt.timedelta(hours=1),
+    ]:
+        found = _probe_transitions(zoneinfo.ZoneInfo("America/New_York"), lo, hi)
+        assert len(found) == 1
+        assert abs(found[0] - transition) <= dt.timedelta(seconds=1)
+
+
+def test_tricky_draw_falls_back_for_utc_frame_bounds():
+    # Bounds inside the same DST fold have no wall-clock drawing window, so a
+    # tricky draw falls back to the ordinary draw-in-UTC-and-convert path.
+    from hypothesis.internal.conjecture.data import ConjectureData
+
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    lo = dt.datetime(2020, 11, 1, 1, 59, tzinfo=tz, fold=0)
+    hi = dt.datetime(2020, 11, 1, 1, 1, tzinfo=tz, fold=1)
+    strategy = unwrap_strategies(st.datetimes(lo, hi, timezones=st.just(tz)))
+    # tricky selector, then the UTC wall time 2020-11-01 05:59:30 and fold
+    data = ConjectureData.for_choices((True, 2020, 11, 1, 5, 59, 30, 0, 0))
+    value = strategy.do_draw(data)
+    assert _instant(lo) <= _instant(value) <= _instant(hi)
