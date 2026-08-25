@@ -1287,7 +1287,11 @@ class ConjectureData:
             self._inverting = True
             try:
                 inverted = unwrapped._invert(hole.value)
-            except CannotInvert:
+            except Exception:
+                # Usually CannotInvert, but _invert may execute user code -
+                # e.g. a filter condition - whose exceptions must not escape
+                # into this replay: the resulting early stop would look like
+                # flaky data generation.  Either way the hole is unclaimed.
                 pass
             else:
                 self.prefix = (

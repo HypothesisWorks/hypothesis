@@ -768,10 +768,14 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # The smallest index whose (possibly transformed) element equals value.
         # _transform might depend on external state and give us a wrong answer
-        # here; that's fine, since _invert is allowed to be fallible.
-        for i, element in enumerate(self.elements):
-            if equal_values(self._transform(element), value):
-                return (i,)
+        # here; that's fine, since _invert is allowed to be fallible.  It runs
+        # user map/filter functions, whose exceptions must not escape.
+        try:
+            for i, element in enumerate(self.elements):
+                if equal_values(self._transform(element), value):
+                    return (i,)
+        except Exception:
+            raise CannotInvert(f"transforming elements of {self!r} errored") from None
         raise CannotInvert(f"{value!r} is not produced by {self!r}")
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
@@ -1343,8 +1347,14 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # If the condition accepts value, do_draw would have succeeded on its
-        # first try, drawing exactly the inner strategy's encoding.
-        if not self.condition(value):
+        # first try, drawing exactly the inner strategy's encoding.  The
+        # condition is user code and may raise - e.g. a comparison of naive
+        # and aware datetimes - which counts as not satisfying the filter.
+        try:
+            satisfied = self.condition(value)
+        except Exception:
+            raise CannotInvert(f"{value!r} errored in filter {self!r}") from None
+        if not satisfied:
             raise CannotInvert(f"{value!r} does not satisfy filter {self!r}")
         return self.filtered_strategy._invert(value)
 
