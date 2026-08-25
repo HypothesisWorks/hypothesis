@@ -655,7 +655,9 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     [False, True],
     ids=["normal", "near_max_precise_integer"],
 )
-def test_redistribute_numeric_pairs_type_combinations(node1_type, node2_type, near_overflow):
+def test_redistribute_numeric_pairs_type_combinations(
+    node1_type, node2_type, near_overflow
+):
     """Test redistribute_numeric_pairs with each combination of node types,
     including cases where node2's value is near MAX_PRECISE_INTEGER to exercise
     the float precision guard."""
@@ -698,7 +700,9 @@ def test_redistribute_numeric_pairs_type_combinations(node1_type, node2_type, ne
     # node1 should move towards shrink_towards (or stay the same)
     assert abs(shrinker.choices[0] - shrink_towards) <= abs(v1 - shrink_towards)
     # sum should be preserved (with float tolerance)
-    assert pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001) == v1 + v2
+    assert (
+        pytest.approx(shrinker.choices[0] + shrinker.choices[1], rel=0.001) == v1 + v2
+    )
 
 
 @pytest.mark.parametrize(
