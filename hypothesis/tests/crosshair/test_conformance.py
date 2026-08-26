@@ -25,6 +25,9 @@ def test_provider_conformance_crosshair():
     run_conformance_test(
         CrossHairPrimitiveProvider,
         context_manager_exceptions=(IgnoreAttempt, UnexploredPath, NotDeterministic),
+        # it's not yet clear whether searching over fresh instantiations is
+        # meaningful for a solver-backed provider; opt out for now.
+        check_findability=False,
         settings=settings(
             max_examples=5,
             stateful_step_count=10,
