@@ -282,6 +282,7 @@ def regex_strategy(
     fullmatch: bool,
     *,
     alphabet: SearchStrategy | None,
+    dialect: str = "python",
     _temp_jsonschema_hack_no_end_newline: bool = False,
 ) -> SearchStrategy:
     if not isinstance(regex, Pattern):
@@ -329,12 +330,12 @@ def regex_strategy(
             else:
                 right_pad = st.one_of(empty, newline)
 
-            # This will be removed when a regex-syntax-translation library exists.
-            # It's a pretty nasty hack, but means that we can match the semantics
-            # of JSONschema's compatible subset of ECMA regex, which is important
-            # for hypothesis-jsonschema and Schemathesis. See e.g.
+            # Under JSONschema's compatible subset of ECMA regex, ``$`` matches
+            # only at the very end of the string, rather than also just before a
+            # trailing newline as in Python. This matters for hypothesis-jsonschema
+            # and Schemathesis. See e.g.
             # https://github.com/schemathesis/schemathesis/issues/1241
-            if _temp_jsonschema_hack_no_end_newline:
+            if _temp_jsonschema_hack_no_end_newline or dialect == "jsonschema":
                 right_pad = empty
 
     if parsed[0][0] == sre.AT:

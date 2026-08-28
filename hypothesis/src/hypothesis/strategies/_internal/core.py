@@ -899,6 +899,7 @@ def from_regex(
     regex: bytes | Pattern[bytes],
     *,
     fullmatch: bool = False,
+    dialect: Literal["python", "jsonschema"] = "python",
 ) -> SearchStrategy[bytes]: ...
 
 
@@ -907,6 +908,7 @@ def from_regex(
     regex: str | Pattern[str],
     *,
     fullmatch: bool = False,
+    dialect: Literal["python", "jsonschema"] = "python",
     alphabet: Collection[str] | SearchStrategy[str] | None = characters(codec="utf-8"),
 ) -> SearchStrategy[str]: ...
 
@@ -917,6 +919,7 @@ def from_regex(
     regex: AnyStr | Pattern[AnyStr],
     *,
     fullmatch: bool = False,
+    dialect: Literal["python", "jsonschema"] = "python",
     alphabet: Collection[str] | SearchStrategy[str] | None = None,
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
@@ -943,6 +946,15 @@ def from_regex(
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
     string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
+    The ``dialect=`` argument selects the regular-expression dialect to emulate.
+    The default ``"python"`` follows :mod:`python:re` semantics, where ``$`` also
+    matches just before a trailing newline. Passing ``"jsonschema"`` instead
+    follows the `subset of ECMA-262 recommended by JSON Schema
+    <https://json-schema.org/understanding-json-schema/reference/regular_expressions>`__,
+    where ``$`` matches only at the very end of the string. This exposes the
+    behaviour previously used internally by :pypi:`hypothesis-jsonschema` and
+    :pypi:`schemathesis`.
+
     The ``alphabet=`` argument may be a collection of length one strings or a strategy
     generating such strings. ``alphabet`` constrains the characters in the generated
     string, as for :func:`text`, and is only supported for unicode strings. If a
@@ -955,6 +967,8 @@ def from_regex(
     """
     check_type((str, bytes, re.Pattern), regex, "regex")
     check_type(bool, fullmatch, "fullmatch")
+    if dialect not in ("python", "jsonschema"):
+        raise InvalidArgument(f"{dialect=} must be either 'python' or 'jsonschema'")
 
     pattern = regex.pattern if isinstance(regex, re.Pattern) else regex
     if alphabet is not None:
@@ -975,7 +989,7 @@ def from_regex(
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal.regex import regex_strategy
 
-    return regex_strategy(regex, fullmatch, alphabet=alphabet)
+    return regex_strategy(regex, fullmatch, alphabet=alphabet, dialect=dialect)
 
 
 @cacheable

@@ -505,6 +505,23 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
     )
 
 
+def test_from_regex_jsonschema_dialect_disables_trailing_newline():
+    pattern = "^abc$"
+    # The default "python" dialect lets ``$`` match before a trailing newline
+    find_any(st.from_regex(pattern), lambda s: s == "abc\n")
+    find_any(st.from_regex(pattern, dialect="python"), lambda s: s == "abc\n")
+    # The "jsonschema" dialect anchors ``$`` at the very end of the string
+    assert_all_examples(
+        st.from_regex(pattern, dialect="jsonschema"),
+        lambda s: s == "abc",
+    )
+
+
+def test_from_regex_rejects_unknown_dialect():
+    with pytest.raises(InvalidArgument):
+        st.from_regex("abc", dialect="javascript").validate()
+
+
 @given(st.from_regex(r"[^.].*", alphabet=st.sampled_from("abc") | st.just(".")))
 def test_can_pass_union_for_alphabet(_):
     pass

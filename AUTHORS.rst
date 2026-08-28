@@ -104,6 +104,7 @@ their individual contributions.
 * `Joseph Weston <https://github.com/jbweston>`_
 * `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonathan Gayvallet <https://github.com/Meallia>`_ (jonathan.gayvallet@orange.com)
+* `Jonnas Figueiredo <https://github.com/JonnasFigueiredo>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
 * `Joshua Munn <https://www.github.com/jams2>`_ (public@elysee-munn.family)
