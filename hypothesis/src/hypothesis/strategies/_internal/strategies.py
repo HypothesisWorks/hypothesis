@@ -1170,9 +1170,17 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                         result, self.pack, args=[x], kwargs={}
                     )
                     return result
-                except UnsatisfiedAssumption:
+                except UnsatisfiedAssumption as err:
+                    # we want to preserve the err.location of the actual exception here if we
+                    # re-throw it outside of the loop at the end. The alternative is a
+                    # bare `raise UnsatisfiedAssumption` outside of the loop, which would
+                    # drop the real err.location for observability.
+                    #
+                    # If we catch multiple exceptions here, we'll just report the location
+                    # of the last one, which is a reasonable tradeoff for a singleton field.
+                    failed_assumption = err
                     data.stop_span(discard=True)
-        raise UnsatisfiedAssumption
+        raise failed_assumption
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # map() is not invertible in general, but a dict-like pack - e.g. the

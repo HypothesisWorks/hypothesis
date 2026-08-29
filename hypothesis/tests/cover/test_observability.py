@@ -356,6 +356,15 @@ def test_filter_has_status_reason_location(make):
         assert gave_up.metadata.status_reason_location == expected
 
 
+def test_assume_in_map_has_status_reason_location():
+    def unsatisfiable(x):
+        assume(len(str(x)) < 0)
+
+    expected = line_of(2)
+    for gave_up in _get_filter_gave_ups(st.integers().map(unsatisfiable)):
+        assert gave_up.metadata.status_reason_location == expected
+
+
 def test_sampled_from_transform_without_data_records_nothing():
     # covers the data=None branch of SampledFromStrategy._transform
     s = st.sampled_from([1, 2]).filter(lambda x: x == 2)
