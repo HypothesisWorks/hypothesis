@@ -282,7 +282,7 @@ def test_assume_has_status_reason():
         assert int(lineno) > 0
 
 
-def _filter_gave_ups(strategy):
+def _get_filter_gave_ups(strategy):
     @settings(suppress_health_check=list(HealthCheck), max_examples=10)
     @given(strategy)
     def f(n):
@@ -352,7 +352,7 @@ def line_of(offset):
 )
 def test_filter_has_status_reason_location(make):
     strategy, expected = make()
-    for gave_up in _filter_gave_ups(strategy):
+    for gave_up in _get_filter_gave_ups(strategy):
         assert gave_up.metadata.status_reason_location == expected
 
 
