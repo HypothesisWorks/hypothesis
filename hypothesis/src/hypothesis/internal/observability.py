@@ -429,11 +429,11 @@ def make_testcase(
         status_reason = "exceeded size of current best test case"
     elif data.status == Status.OVERRUN:
         status_reason = (
-            str(data.events.pop("invalid because", ""))
+            str(data.events.pop("gave up because", ""))
             or "exceeded maximum test case size"
         )
     else:
-        status_reason = str(data.events.pop("invalid because", ""))
+        status_reason = str(data.events.pop("gave up because", ""))
 
     status_map: dict[Status, TestCaseStatus] = {
         Status.OVERRUN: "gave_up",

@@ -2358,7 +2358,7 @@ def given(
                     return None
                 except UnsatisfiedAssumption as e:
                     status = Status.INVALID
-                    data.events["invalid because"] = e.reason or ""
+                    data.events["gave up because"] = e.reason or ""
                     data.invalid_location = getattr(e, "location", None)
                     return None
                 except BaseException as e:

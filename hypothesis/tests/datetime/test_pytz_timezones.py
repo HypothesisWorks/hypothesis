@@ -154,7 +154,7 @@ def test_can_trigger_error_in_draw_near_boundary(bound):
         except StopTest:
             pass
         if "Failed to draw a datetime" in data.conjecture_data.events.get(
-            "invalid because", ""
+            "gave up because", ""
         ):
             nonlocal found
             found = True

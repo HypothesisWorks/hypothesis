@@ -82,7 +82,7 @@ def test_can_mark_invalid_with_why():
         d.mark_invalid("some reason")
     assert d.frozen
     assert d.status == Status.INVALID
-    assert d.events == {"invalid because": "some reason"}
+    assert d.events == {"gave up because": "some reason"}
 
 
 class BoomStrategy(SearchStrategy):

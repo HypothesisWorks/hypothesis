@@ -1491,7 +1491,7 @@ class ConjectureData:
         self, why: str | None = None, *, location: str | None = None
     ) -> NoReturn:
         if why is not None:
-            self.events["invalid because"] = why
+            self.events["gave up because"] = why
         self.invalid_location = location
         self.conclude_test(Status.INVALID)
 
