@@ -18,6 +18,23 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.166.0:
+
+--------------------
+6.166.0 - 2026-08-29
+--------------------
+
+The |Phase.explain| phase now also varies interactive draws from |st.data|,
+annotating each freely-variable ``Draw n: ...`` line with an
+``# or any other generated value`` comment, just like |@given| arguments
+(:issue:`4403`).
+
+This release also fixes two explain-phase bugs: failing test cases found just
+as the set of possible inputs was fully enumerated were reported without
+running the |Phase.shrink| and |Phase.explain| phases, and the
+explain phase could fail to report that the commented parts can be varied
+together if the failing example ended with an uncommented part.
+
 .. _v6.165.11:
 
 ---------------------
