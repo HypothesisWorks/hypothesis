@@ -681,7 +681,7 @@ class Bundle(SearchStrategy[Ex]):
     # apply within a single draw: the generic wrappers instead retry the whole
     # draw when a filter fails, consuming rejected values from consuming
     # bundles, and are opaque to the reference-drawing logic in Rule.
-    def __with_transform(self, name, f, location=None):
+    def __with_transform(self, name, f, *, location=None):
         return Bundle(
             self.name,
             consume=self.consume,
@@ -693,7 +693,9 @@ class Bundle(SearchStrategy[Ex]):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition, current_filter_call_site())
+        return self.__with_transform(
+            "filter", condition, location=current_filter_call_site()
+        )
 
     def _base_repr(self):
         consume = ", consume=True" if self.consume else ""

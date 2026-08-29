@@ -135,7 +135,7 @@ class LazyStrategy(SearchStrategy[Ex]):
         assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 
-    def __with_transform(self, method, fn, location=None):
+    def __with_transform(self, method, fn, *, location=None):
         repr_ = self.__representation
         if repr_:
             repr_ = f"{repr_}.{method}({get_pretty_function_description(fn)})"
@@ -151,7 +151,9 @@ class LazyStrategy(SearchStrategy[Ex]):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition, current_filter_call_site())
+        return self.__with_transform(
+            "filter", condition, location=current_filter_call_site()
+        )
 
     def do_validate(self) -> None:
         w = self.wrapped_strategy
