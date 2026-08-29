@@ -65,10 +65,7 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies._internal.strategies import (
-    FilteredStrategy,
-    rejection_location,
-)
+from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import (
@@ -384,10 +381,10 @@ def test_status_reason_location_without_traceback():
     assert observation.metadata.status_reason_location is None
 
 
-def test_rejection_location_fallbacks():
+def test_last_rejected_filter_location_fallbacks():
     data = ConjectureData(random=Random(0))
     # nothing was rejected on this data
-    assert rejection_location(data) is None
+    assert data.last_rejected_filter_location() is None
 
     def unsatisfiable(x):
         return len(str(x)) < 0

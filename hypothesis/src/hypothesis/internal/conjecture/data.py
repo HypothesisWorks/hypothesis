@@ -75,6 +75,7 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
+from hypothesis.internal.reflection import function_location
 from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.deprecation import note_deprecation
@@ -718,12 +719,6 @@ class ConjectureData:
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, str | int | float] = {}
         self.interesting_origin: InterestingOrigin | None = None
-        # where an invalid test case was rejected; see make_testcase
-        self.invalid_location: str | None = None
-        # (predicate, location of its .filter() call) for the filter which most
-        # recently rejected a candidate value, so that if we give up we can
-        # report which filter was responsible
-        self._rejected_by_filter: tuple[Callable[[Any], Any], str | None] | None = None
         self.draw_times: dict[str, float] = {}
         self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth: int = 0
@@ -761,6 +756,11 @@ class ConjectureData:
         self._observability_args: dict[str, Any] = {}
         self._observability_predicates: defaultdict[str, PredicateCounts] = defaultdict(
             PredicateCounts
+        )
+        self.invalid_location: str | None = None
+        # (predicate, location) of the most recent filter rejection
+        self._last_rejected_filter: tuple[Callable[[Any], Any], str | None] | None = (
+            None
         )
 
         self._sampled_from_all_strategies_elements_message: (
@@ -1497,6 +1497,14 @@ class ConjectureData:
 
     def mark_overrun(self) -> NoReturn:
         self.conclude_test(Status.OVERRUN)
+
+    def last_rejected_filter_location(self) -> str | None:
+        """The location of the most recently rejected filter."""
+        if self._last_rejected_filter is None:
+            return None
+        condition, location = self._last_rejected_filter
+        # fall back to where the predicate was defined if no location is known
+        return location or function_location(condition)
 
 
 def draw_choice(

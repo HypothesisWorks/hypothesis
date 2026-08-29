@@ -54,7 +54,6 @@ from hypothesis.internal.conjecture.utils import (
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.escalation import is_hypothesis_file
 from hypothesis.internal.reflection import (
-    function_location,
     get_pretty_function_description,
     is_identity_function,
 )
@@ -105,16 +104,6 @@ def filter_call_site() -> str | None:
     if frame is None:  # pragma: no cover  # ran out of frames
         return None
     return f"{frame.f_code.co_filename}:{frame.f_lineno}"
-
-
-def rejection_location(data: ConjectureData) -> str | None:
-    """The location of the filter which most recently rejected a candidate
-    value: where its .filter() call was made, or failing that where the
-    predicate was defined, if known."""
-    if data._rejected_by_filter is None:
-        return None
-    condition, location = data._rejected_by_filter
-    return location or function_location(condition)
 
 
 def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
@@ -784,7 +773,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
                 assert name == "filter"
                 if not f(element):
                     if data is not None:
-                        data._rejected_by_filter = (f, location)
+                        data._last_rejected_filter = (f, location)
                     return filter_not_satisfied
         return element
 
@@ -801,11 +790,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
                 self.elements,
             )
         if result is filter_not_satisfied:
-            # do_filtered_draw recorded the filter which rejected the most
-            # recently tried element in data._rejected_by_filter.
+            # do_filtered_draw records data._last_rejected_filter.
             data.mark_invalid(
                 f"Aborted test because unable to satisfy {self!r}",
-                location=rejection_location(data),
+                location=data.last_rejected_filter_location(),
             )
         assert not isinstance(result, UniqueIdentifier)
         return result
@@ -1283,8 +1271,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         condition_locations: tuple[str | None, ...] | None = None,
     ):
         super().__init__()
-        # Where each condition's .filter() call was made, aligned with
-        # `conditions` - for reporting if we give up on satisfying one.
+        # Where each condition's .filter() call was made, for observability
         if condition_locations is None:
             condition_locations = (None,) * len(conditions)
         assert len(condition_locations) == len(conditions)
@@ -1399,11 +1386,10 @@ class FilteredStrategy(SearchStrategy[Ex]):
         if result is not filter_not_satisfied:
             return cast(Ex, result)
 
-        # do_filtered_draw recorded the condition which rejected the most
-        # recently drawn value in data._rejected_by_filter.
+        # do_filtered_draw records data._last_rejected_filter.
         data.mark_invalid(
             f"Aborted test because unable to satisfy {self!r}",
-            location=rejection_location(data),
+            location=data.last_rejected_filter_location(),
         )
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
@@ -1411,7 +1397,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
             # Check the conditions individually rather than via self.condition,
-            # so that we know which one to blame if we end up giving up.
+            # so that we can set data._last_rejected_filter.
             failing = next(
                 (
                     (cond, location)
@@ -1426,7 +1412,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
                 data.stop_span()
                 return value
             else:
-                data._rejected_by_filter = failing
+                data._last_rejected_filter = failing
                 data.stop_span(discard=True)
                 if i == 0:
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""

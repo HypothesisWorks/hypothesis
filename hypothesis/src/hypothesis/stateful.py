@@ -59,7 +59,6 @@ from hypothesis.strategies._internal.strategies import (
     check_strategy,
     filter_call_site,
     filter_not_satisfied,
-    rejection_location,
 )
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
@@ -670,7 +669,7 @@ class Bundle(SearchStrategy[Ex]):
         if result is filter_not_satisfied:
             data.mark_invalid(
                 f"Aborted test because unable to satisfy {self!r}",
-                location=rejection_location(data),
+                location=data.last_rejected_filter_location(),
             )
         position, reference, value = result
         if self.consume:
