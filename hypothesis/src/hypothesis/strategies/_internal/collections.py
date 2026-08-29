@@ -77,7 +77,7 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
         arg_labels: ArgLabelsT = {}
         result = []
         for i, strategy in enumerate(self.element_strategies):
-            with context.track_arg_label(f"arg[{i}]") as arg_label:
+            with data.track_arg_label(f"arg[{i}]") as arg_label:
                 result.append(data.draw(strategy))
             arg_labels |= arg_label
 
@@ -520,7 +520,7 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
         pairs: list[tuple[Any, Any]] = []
 
         for key, strategy in self.mapping.items():
-            with context.track_arg_label(str(key)) as arg_label:
+            with data.track_arg_label(str(key)) as arg_label:
                 pairs.append((key, data.draw(strategy)))
             arg_labels |= arg_label
 
@@ -536,7 +536,7 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
                 j = data.draw_integer(0, len(remaining) - 1)
                 remaining[-1], remaining[j] = remaining[j], remaining[-1]
                 key = remaining.pop()
-                with context.track_arg_label(str(key)) as arg_label:
+                with data.track_arg_label(str(key)) as arg_label:
                     pairs.append((key, data.draw(self.optional[key])))
                 arg_labels |= arg_label
 

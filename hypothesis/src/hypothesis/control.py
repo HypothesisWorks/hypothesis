@@ -161,29 +161,6 @@ class BuildContext:
             defaultdict(list)
         )
 
-        # Track nested strategy calls for explain-phase label paths
-        self._label_path: list[str] = []
-
-    @contextmanager
-    def track_arg_label(self, label: str) -> Generator[ArgLabelsT, None, None]:
-        span_index = self.data.next_span_index
-        self._label_path.append(label)
-        arg_labels: ArgLabelsT = {}
-        try:
-            yield arg_labels
-        finally:
-            self._label_path.pop()
-
-        # The draw inside this block opened a span, whose index we knew in
-        # advance even though Span objects are only materialized after the
-        # test case is completed. Stash that index on our data object for
-        # the shrinker's explain phase to vary, and mutate the arg_labels
-        # dict so that the pretty-printer knows where to place the
-        # which-parts-matter comments later. (If the draw raised instead,
-        # we skip recording, along with the rest of the test case.)
-        arg_labels[label] = span_index
-        self.data.arg_spans.add(span_index)
-
     def record_call(
         self,
         obj: object,
@@ -213,7 +190,7 @@ class BuildContext:
 
         for k, s in kwarg_strategies.items():
             with (
-                self.track_arg_label(k) as arg_label,
+                self.data.track_arg_label(k) as arg_label,
                 deprecate_random_in_strategy("from {}={!r}", k, s),
             ):
                 kwargs[k] = self.data.draw(s, observe_as=f"generate:{k}")

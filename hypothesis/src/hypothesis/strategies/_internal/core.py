@@ -1098,13 +1098,13 @@ class BuildsStrategy(SearchStrategy[Ex]):
 
         args = []
         for i, s in enumerate(self.args):
-            with context.track_arg_label(f"arg[{i}]") as arg_label:
+            with data.track_arg_label(f"arg[{i}]") as arg_label:
                 args.append(data.draw(s))
             arg_labels |= arg_label
 
         kwargs = {}
         for k, v in self.kwargs.items():
-            with context.track_arg_label(k) as arg_label:
+            with data.track_arg_label(k) as arg_label:
                 kwargs[k] = data.draw(v)
             arg_labels |= arg_label
 
@@ -2438,12 +2438,11 @@ class DataObject:
         check_strategy(strategy, "strategy")
         self.count += 1
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
-        # As in BuildContext.track_arg_label, record the span of this draw for
-        # the shrinker's explain phase to vary and comment on.
-        span_index = self.conjecture_data.next_span_index
-        with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
+        with (
+            self.conjecture_data.track_arg_span() as span_index,
+            deprecate_random_in_strategy("{}from {!r}", desc, strategy),
+        ):
             result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
-        self.conjecture_data.arg_spans.add(span_index)
 
         # optimization to avoid needless printer.pretty
         if should_note():

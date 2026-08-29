@@ -14,8 +14,7 @@ from pytest import raises
 from hypothesis import Phase, find, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 
-# The explain phase may append comments to the Draw notes we assert
-# exact matches against below.
+# The explain phase may append comments to draw output, which we don't want in these tests
 no_explain = settings(phases=set(settings.default.phases) - {Phase.explain})
 
 
