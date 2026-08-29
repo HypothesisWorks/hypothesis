@@ -595,13 +595,15 @@ class _BundleSampler(SampledFromStrategy):
         )
         self.machine = machine
 
-    def _transform(self, element, data=None):
+    def _transform(self, element, *, data):
         # Filter and map transformations apply to the value, which we look up
         # lazily so that untested elements cost nothing; the position and
         # reference ride along so that Bundle.do_draw can consume the chosen
         # element and refer to it by name.
         position, reference = element
-        result = super()._transform(self.machine.names_to_values[reference.name], data)
+        result = super()._transform(
+            self.machine.names_to_values[reference.name], data=data
+        )
         if result is filter_not_satisfied:
             return filter_not_satisfied
         return (position, reference, result)

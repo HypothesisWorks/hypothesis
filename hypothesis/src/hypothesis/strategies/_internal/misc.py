@@ -64,10 +64,10 @@ class JustStrategy(SampledFromStrategy[Ex]):
         # The parent class's `do_draw` implementation delegates directly to
         # `do_filtered_draw`, which we can greatly simplify in this case since
         # we have exactly one value. (This also avoids drawing any data.)
-        return self._transform(self.value, data)
+        return self._transform(self.value, data=data)
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
-        if not equal_values(self._transform(self.value), value):
+        if not equal_values(self._transform(self.value, data=None), value):
             raise CannotInvert(f"{value!r} is not produced by {self!r}")
         return ()
 

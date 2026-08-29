@@ -763,7 +763,9 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # anywhere in the class so this is still type-safe. mypy is being more
         # conservative than necessary
         element: Ex,  # type: ignore
-        data: ConjectureData | None = None,
+        *,
+        # None for _invert, which has no ConjectureData
+        data: ConjectureData | None,
     ) -> Ex | UniqueIdentifier:
         # Used in UniqueSampledListStrategy
         for name, f, location in self._transformations:
@@ -801,17 +803,15 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         assert not isinstance(result, UniqueIdentifier)
         return result
 
-    def get_element(
-        self, i: int, data: ConjectureData | None = None
-    ) -> Ex | UniqueIdentifier:
-        return self._transform(self.elements[i], data)
+    def get_element(self, i: int, data: ConjectureData) -> Ex | UniqueIdentifier:
+        return self._transform(self.elements[i], data=data)
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         # The smallest index whose (possibly transformed) element equals value.
         # _transform might depend on external state and give us a wrong answer
         # here; that's fine, since _invert is allowed to be fallible.
         for i, element in enumerate(self.elements):
-            if equal_values(self._transform(element), value):
+            if equal_values(self._transform(element, data=None), value):
                 return (i,)
         raise CannotInvert(f"{value!r} is not produced by {self!r}")
 
