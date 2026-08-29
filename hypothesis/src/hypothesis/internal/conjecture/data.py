@@ -1270,7 +1270,7 @@ class ConjectureData:
         strategy.validate()
 
         if strategy.is_empty:
-            self.mark_invalid(f"empty strategy {self!r}")
+            self.mark_invalid(f"empty strategy {strategy!r}")
 
         if self.depth >= MAX_DEPTH:
             self.mark_invalid("max depth exceeded")
