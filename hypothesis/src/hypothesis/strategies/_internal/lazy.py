@@ -28,7 +28,7 @@ from hypothesis.strategies._internal.strategies import (
     RecurT,
     SearchStrategy,
     _filter_location_override,
-    filter_call_site,
+    current_filter_call_site,
 )
 from hypothesis.utils.threading import ThreadLocal
 
@@ -151,7 +151,7 @@ class LazyStrategy(SearchStrategy[Ex]):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition, filter_call_site())
+        return self.__with_transform("filter", condition, current_filter_call_site())
 
     def do_validate(self) -> None:
         w = self.wrapped_strategy

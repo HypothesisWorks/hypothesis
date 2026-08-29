@@ -29,7 +29,7 @@ from hypothesis.strategies._internal.strategies import (
     OneOfStrategy,
     SampledFromStrategy,
     SearchStrategy,
-    filter_call_site,
+    current_filter_call_site,
     one_of,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
@@ -547,7 +547,9 @@ class DatetimeStrategy(SearchStrategy):
                         min_value, max_value, self.tz_strat, self.allow_imaginary
                     )
                 if func in (op.lt, op.gt):
-                    return FilteredStrategy(result, (condition,), (filter_call_site(),))
+                    return FilteredStrategy(
+                        result, (condition,), (current_filter_call_site(),)
+                    )
                 return result
         return super().filter(condition)
 

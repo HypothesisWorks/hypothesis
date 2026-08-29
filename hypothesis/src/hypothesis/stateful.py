@@ -57,7 +57,7 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
     SearchStrategy,
     check_strategy,
-    filter_call_site,
+    current_filter_call_site,
     filter_not_satisfied,
 )
 from hypothesis.utils.deprecation import note_deprecation
@@ -693,7 +693,7 @@ class Bundle(SearchStrategy[Ex]):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition, filter_call_site())
+        return self.__with_transform("filter", condition, current_filter_call_site())
 
     def _base_repr(self):
         consume = ", consume=True" if self.consume else ""

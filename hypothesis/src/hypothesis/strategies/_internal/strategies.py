@@ -85,17 +85,18 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 
 label_lock = RLock()
 
-# When hypothesis re-applies a filter condition internally - lazy strategy
-# resolution, replaying predicates in FilteredStrategy.do_validate - this
-# carries the location of the original .filter() call through to the
-# re-application, where walking the stack would find the wrong frame.
+# When hypothesis re-applies a filter condition internally, eg in LazyStrategy, we override
+# stack walking with the correct original location here.
 _filter_location_override: DynamicVariable[Any] = DynamicVariable(not_set)
 
 
-def filter_call_site() -> str | None:
-    """The filename:lineno of the enclosing .filter() call - the nearest frame
-    outside hypothesis itself. Call this at .filter() call time and store the
-    result alongside the condition; reconstructing it later is ambiguous."""
+def current_filter_call_site() -> str | None:
+    """The filename:lineno of the nearest enclosing non-hypothesis .filter() call.
+
+    Callers are expected to only call this from within a .filter() implementation. This
+    function simply respects _filter_location_override or walks to the nearest non-hypothesis
+    frame.
+    """
     if (location := _filter_location_override.value) is not not_set:
         return location
     frame: FrameType | None = sys._getframe(1)
@@ -472,7 +473,9 @@ class SearchStrategy(Generic[Ex]):
                 assume(False)
         """
         return FilteredStrategy(
-            self, conditions=(condition,), condition_locations=(filter_call_site(),)
+            self,
+            conditions=(condition,),
+            condition_locations=(current_filter_call_site(),),
         )
 
     @property
@@ -669,7 +672,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             force_repr_braces=self.force_repr_braces,
             transformations=(
                 *self._transformations,
-                ("filter", condition, filter_call_site()),
+                ("filter", condition, current_filter_call_site()),
             ),
         )
 
@@ -1219,7 +1222,7 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
         return FilteredStrategy(
             type(self)(new, self.pack),
             conditions=(condition,),
-            condition_locations=(filter_call_site(),),
+            condition_locations=(current_filter_call_site(),),
         )
 
 
