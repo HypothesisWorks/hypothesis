@@ -1236,7 +1236,7 @@ class StateForActualGivenExecution:
             # An "assume" check failed, so instead we inform the engine that
             # this test run was invalid.
             try:
-                data.mark_invalid(e.reason, location=getattr(e, "location", None))
+                data.mark_invalid(e.reason, location=e.location)
             except FlakyReplay as err:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
@@ -2359,7 +2359,7 @@ def given(
                 except UnsatisfiedAssumption as e:
                     status = Status.INVALID
                     data.events["gave up because"] = e.reason or ""
-                    data.invalid_location = getattr(e, "location", None)
+                    data.invalid_location = e.location
                     return None
                 except BaseException as e:
                     # The engine sets data.interesting_origin in
