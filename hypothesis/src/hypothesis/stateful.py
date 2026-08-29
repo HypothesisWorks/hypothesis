@@ -643,7 +643,7 @@ class Bundle(SearchStrategy[Ex]):
         consume: bool = False,
         draw_references: bool = False,
         transformations: tuple[
-            tuple[Literal["filter", "map"], Callable[[Ex], Any]], ...
+            tuple[Literal["filter", "map"], Callable[[Ex], Any], str | None], ...
         ] = (),
     ) -> None:
         super().__init__()
