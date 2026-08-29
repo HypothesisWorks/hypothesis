@@ -44,6 +44,7 @@
 # name: test_explain_duplicate_param_names
   '''
   Failing test case: inner(
+      # The test always failed when commented parts were varied together.
       kw=0,  # or any other generated value
       b={
           'kw': '',  # or any other generated value
@@ -62,9 +63,40 @@
   )
   '''
 # ---
+# name: test_explain_interactive_draws
+  '''
+  Failing test case: inner(
+      data=data(...),
+  )
+  Draw 1: 100
+  Draw 2: 0  # or any other generated value
+  '''
+# ---
+# name: test_explain_interactive_draws_in_exhaustible_tree
+  '''
+  Failing test case: inner(
+      data=data(...),
+  )
+  Draw 1: True
+  Draw 2: False  # or any other generated value
+  '''
+# ---
+# name: test_explain_mixed_args_and_interactive_draws
+  '''
+  Failing test case: inner(
+      # The test always failed when commented parts were varied together.
+      a=False,  # or any other generated value
+      b=True,
+      data=data(...),
+  )
+  Draw 1: False  # or any other generated value
+  Draw 2: True
+  '''
+# ---
 # name: test_explain_multi_level_nesting
   '''
   Failing test case: inner(
+      # The test always failed when commented parts were varied together.
       bare=0,  # or any other generated value
       outer=Outer(
           inner=Inner(x=0),  # or any other generated value
@@ -94,6 +126,7 @@
 # name: test_explain_tuple_multiple_varying
   '''
   Failing test case: inner(
+      # The test always failed when commented parts were varied together.
       t=(
           0,  # or any other generated value
           '',  # or any other generated value

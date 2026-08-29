@@ -653,6 +653,7 @@ class Shrinker:
                 new_choices.extend(choices[prev_end:start])
                 new_choices.extend(self.random.choice(ls))
                 prev_end = end
+            new_choices.extend(choices[prev_end:])
 
             result = self.engine.cached_test_function(new_choices)
 

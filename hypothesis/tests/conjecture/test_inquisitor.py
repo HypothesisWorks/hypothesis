@@ -206,6 +206,7 @@ def test_inquisitor_fixeddict_subargs(d):
 
 @fails_with_output("""
 Failing test case: test_inquisitor_tuple_multiple_varying(
+    # The test always failed when commented parts were varied together.
     t=(
         0,  # or any other generated value
         '',  # or any other generated value
@@ -216,8 +217,7 @@ Failing test case: test_inquisitor_tuple_multiple_varying(
 @settings(print_blob=False, derandomize=True)
 @given(st.tuples(st.integers(), st.text(), st.booleans()))
 def test_inquisitor_tuple_multiple_varying(t):
-    # Multiple sub-arguments can vary, but the "together" comment only applies
-    # to top-level test arguments, not to sub-arguments within composites.
+    # Multiple sub-arguments can vary, and get a "together" comment too.
     assert not t[2]
 
 
@@ -240,6 +240,7 @@ def test_inquisitor_skip_subset_slices(obj):
 # Test for duplicate param names at different nesting levels
 @fails_with_output("""
 Failing test case: test_inquisitor_duplicate_param_names(
+    # The test always failed when commented parts were varied together.
     kw=0,  # or any other generated value
     b={
         'kw': '',  # or any other generated value
@@ -270,6 +271,7 @@ class Inner:
 
 @fails_with_output("""
 Failing test case: test_inquisitor_multi_level_nesting(
+    # The test always failed when commented parts were varied together.
     bare=0,  # or any other generated value
     outer=Outer(
         inner=Inner(x=0),  # or any other generated value

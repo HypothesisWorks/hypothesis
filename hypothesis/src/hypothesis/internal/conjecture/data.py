@@ -14,7 +14,8 @@ import time
 import types
 import weakref
 from collections import defaultdict
-from collections.abc import Hashable, Iterable, Iterator, Sequence
+from collections.abc import Generator, Hashable, Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import cached_property
@@ -78,6 +79,7 @@ from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.threading import ThreadLocal
+from hypothesis.vendor.pretty import ArgLabelsT
 
 if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
@@ -1342,6 +1344,30 @@ class ConjectureData:
         """The index that the next span to start will get. Spans are indexed
         in start order, so this also counts the spans started so far."""
         return self.__span_record.span_count
+
+    @contextmanager
+    def track_arg_span(self) -> Generator[int]:
+        # Record the span opened by the draw inside this block in ``arg_spans``,
+        # for the shrinker's explain phase to vary and comment on.
+        #
+        # Yields the span's index, which we know in advance even though Span
+        # objects are only materialized after the test case is completed. (If the
+        # draw raises instead, we skip recording, along with the rest of the test
+        # case.)
+        span_index = self.next_span_index
+        yield span_index
+        self.arg_spans.add(span_index)
+
+    @contextmanager
+    def track_arg_label(self, label: str) -> Generator[ArgLabelsT]:
+        arg_labels: ArgLabelsT = {}
+
+        with self.track_arg_span() as span_index:
+            yield arg_labels
+
+        # Mutate the arg_labels dict so that the pretty-printer knows where to
+        # place the which-parts-matter comments later.
+        arg_labels[label] = span_index
 
     def start_span(self, label: int) -> None:
         self.provider.span_start(label)

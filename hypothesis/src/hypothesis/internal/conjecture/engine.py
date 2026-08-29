@@ -792,7 +792,12 @@ class ConjectureRunner:
             ):
                 self.exit_with(ExitReason.max_iterations)
 
-        if self.__tree_is_exhausted():
+        # With interesting test cases that made at least one choice,
+        # ``should_generate_more`` instead ends the generation phase on an
+        # exhausted tree, so that we still shrink (and explain) them.
+        if self.__tree_is_exhausted() and not any(
+            tc.choices for tc in self.interesting_test_cases.values()
+        ):
             self.exit_with(ExitReason.finished)
 
         self.record_for_health_check(data)
@@ -1150,6 +1155,7 @@ class ConjectureRunner:
         if (
             self.valid_test_cases >= self.settings.max_examples
             or (self.invalid_test_cases + self.overrun_test_cases) > invalid_threshold
+            or self.__tree_is_exhausted()
         ):
             return False
 
