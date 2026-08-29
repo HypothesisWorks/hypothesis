@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.165.11:
+
+---------------------
+6.165.11 - 2026-08-29
+---------------------
+
+This patch fixes the ``redistribute_numeric_pairs`` shrink pass, which
+incorrectly checked ``node1.type`` instead of ``node2.type`` when guarding
+against float precision loss above ``MAX_PRECISE_INTEGER``.
+
 .. _v6.165.10:
 
 ---------------------
