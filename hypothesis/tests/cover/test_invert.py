@@ -23,7 +23,7 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ValueHole, choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
-from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import one_of
 
 pytestmark = pytest.mark.skipif(
@@ -231,7 +231,7 @@ def test_aware_datetimes_roundtrip_both_folds():
     # 2020-11-01 01:30 occurs twice in America/New_York
     for fold in (0, 1):
         value = dt.datetime(2020, 11, 1, 1, 30, tzinfo=_NY, fold=fold)
-        assert strategy._invert(value) == (2020, 11, 1, 1, 30, 0, 0, fold)
+        assert strategy._invert(value) == (False, 2020, 11, 1, 1, 30, 0, 0, fold)
         assert_roundtrip(strategy, value)
 
 
@@ -242,7 +242,7 @@ def test_aware_datetimes_utc_frame_encodes_utc_wall_time():
         timezones=st.just(_NY),
     )
     value = dt.datetime(2020, 11, 1, 1, 59, 30, tzinfo=_NY, fold=0)  # 05:59:30 UTC
-    assert strategy._invert(value) == (2020, 11, 1, 5, 59, 30, 0, 0)
+    assert strategy._invert(value) == (False, 2020, 11, 1, 5, 59, 30, 0, 0)
 
 
 def test_aware_datetimes_reproduce_imaginary_values_in_wall_clock_frame():
@@ -732,9 +732,10 @@ def test_produces_expected_choice_sequence(strategy, value, expected):
 
 def test_datetime_produces_expected_choice_sequence():
     # the timezone is drawn first (contributing no choices for just(None)),
+    # then the tricky-path selector (encoded as the ordinary path, False),
     # then year down to microsecond, then fold
     value = dt.datetime(2021, 6, 5, 4, 3, 2, 1, fold=1)
-    assert st.datetimes()._invert(value) == (2021, 6, 5, 4, 3, 2, 1, 1)
+    assert st.datetimes()._invert(value) == (False, 2021, 6, 5, 4, 3, 2, 1, 1)
     # times() draws fold before the timezone
     assert st.times()._invert(dt.time(1, 2, 3, 4)) == (1, 2, 3, 4, 0)
 
@@ -796,6 +797,41 @@ def test_lazy_strategy_delegates_invert():
     s = st.integers(123, 456)
     assert isinstance(s, LazyStrategy)
     assert s._invert(200) == (200,)
+
+
+def _boom(value):
+    raise ValueError("user code went wrong")
+
+
+def test_raising_filter_condition_cannot_invert():
+    # A raising condition counts as unsatisfied - the exception must not
+    # escape, e.g. into the replay which re-encodes a ValueHole.
+    strategy = unwrap_strategies(st.integers()).filter(_boom)
+    with pytest.raises(CannotInvert):
+        strategy._invert(1)
+
+
+def test_raising_sampled_from_transformation_cannot_invert():
+    strategy = unwrap_strategies(st.sampled_from([1, 2, 3]).map(_boom))
+    with pytest.raises(CannotInvert):
+        strategy._invert(1)
+
+
+def test_hole_claiming_survives_a_raising_filter_condition():
+    # As in test_transformations_which_draw_cannot_invert, but the filter
+    # raises for the hole's value rather than drawing: the hole is left
+    # unclaimed, and replay degrades to a misalignment instead of
+    # propagating the error.
+    def condition(value):
+        if value == 2:
+            _boom(value)
+        return True
+
+    data = ConjectureData.for_choices((ValueHole(2), True))
+    strategy = st.sampled_from([1, 2, 3]).filter(condition)
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(strategy) == 1
+    assert data.misaligned_at is not None
 
 
 def test_transformations_which_draw_cannot_invert():

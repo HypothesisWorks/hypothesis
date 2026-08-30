@@ -91,20 +91,43 @@ class GenericCache(Generic[K, V]):
             self._threadlocal.data = []
             return self._threadlocal.data
 
+    def _repair_if_interrupted(self) -> None:
+        """An exception raised partway through a mutation - most plausibly a
+        RecursionError below a deeply recursive strategy - can leave the heap
+        property or the key index broken.  We note the interruption and
+        rebuild both here, on the next operation, from the surviving entries
+        (a sorted list is heap-ordered), rather than attempting a repair at
+        the moment the stack overflowed.
+        """
+        if getattr(self._threadlocal, "interrupted", False):
+            self.data.sort(key=lambda e: e.sort_key)
+            self.keys_to_indices.clear()
+            for i, e in enumerate(self.data):
+                self.keys_to_indices[e.key] = i
+            self._threadlocal.interrupted = False
+
     def __len__(self) -> int:
+        self._repair_if_interrupted()
         assert len(self.keys_to_indices) == len(self.data)
         return len(self.data)
 
     def __contains__(self, key: K) -> bool:
+        self._repair_if_interrupted()
         return key in self.keys_to_indices
 
     def __getitem__(self, key: K) -> V:
+        self._repair_if_interrupted()
         i = self.keys_to_indices[key]
         result = self.data[i]
-        self.__entry_was_accessed(i)
+        try:
+            self.__entry_was_accessed(i)
+        except BaseException:
+            self._threadlocal.interrupted = True
+            raise
         return result.value
 
     def __setitem__(self, key: K, value: V) -> None:
+        self._repair_if_interrupted()
         evicted = None
         try:
             i = self.keys_to_indices[key]
@@ -122,13 +145,21 @@ class GenericCache(Generic[K, V]):
             else:
                 i = len(self.data)
                 self.data.append(entry)
-            self.keys_to_indices[key] = i
-            self.__balance(i)
+            try:
+                self.keys_to_indices[key] = i
+                self.__balance(i)
+            except BaseException:
+                self._threadlocal.interrupted = True
+                raise
         else:
             entry = self.data[i]
             assert entry.key == key
             entry.value = value
-            self.__entry_was_accessed(i)
+            try:
+                self.__entry_was_accessed(i)
+            except BaseException:
+                self._threadlocal.interrupted = True
+                raise
 
         if evicted is not None:
             if self.data[0] is not entry:
@@ -150,18 +181,27 @@ class GenericCache(Generic[K, V]):
         entry = self.data[i]
         entry.pins += 1
         if entry.pins == 1:
-            self.__balance(i)
+            try:
+                self.__balance(i)
+            except BaseException:
+                self._threadlocal.interrupted = True
+                raise
 
     def unpin(self, key: K) -> None:
         """Undo one previous call to ``pin(key)``. The value stays the same.
         Once all calls are undone this key may be evicted as normal."""
+        self._repair_if_interrupted()
         i = self.keys_to_indices[key]
         entry = self.data[i]
         if entry.pins == 0:
             raise ValueError(f"Key {key!r} has not been pinned")
         entry.pins -= 1
         if entry.pins == 0:
-            self.__balance(i)
+            try:
+                self.__balance(i)
+            except BaseException:
+                self._threadlocal.interrupted = True
+                raise
 
     def is_pinned(self, key: K) -> bool:
         """Returns True if the key is currently pinned."""

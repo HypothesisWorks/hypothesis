@@ -14,9 +14,11 @@ from calendar import monthrange
 import pytest
 
 from hypothesis import HealthCheck, example, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import InvalidArgument, StopTest, Unsatisfiable
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import dates, datetimes, timedeltas, times
 from hypothesis.strategies._internal.datetime import _instant, _num_days_in_month
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.debug import (
     assert_all_examples,
@@ -164,6 +166,122 @@ def test_can_generate_time_with_fold_1():
 @given(datetimes(allow_imaginary=False))
 def test_allow_imaginary_is_not_an_error_for_naive_datetimes(d):
     pass
+
+
+def test_generates_leap_second_adjacent_times():
+    # A fraction of draws target an interesting instant such as a leap
+    # second, so wall times just before one show up even without bounds.
+    find_any(datetimes(), lambda x: x.time() >= dt.time(23, 59, 58, 999999))
+
+
+def test_generates_unix_rollover_adjacent_times():
+    find_any(datetimes(), lambda x: x.date() == dt.date(2038, 1, 19))
+
+
+def test_tricky_datetimes_respect_bounds():
+    lo, hi = dt.datetime(2016, 12, 31, 23), dt.datetime(2017, 1, 1, 1)
+    assert_all_examples(datetimes(lo, hi), lambda x: lo <= x <= hi)
+
+
+class _DatetimeSubclass(dt.datetime):
+    pass
+
+
+def test_tricky_draws_with_datetime_subclass_bounds():
+    # Bounds like pandas.Timestamp - a datetime subclass with a narrower
+    # representable range - must not leak into the tricky window computation.
+    lo = _DatetimeSubclass(2016, 12, 31, 12)
+    hi = _DatetimeSubclass(2017, 1, 2, 12)
+    assert_all_examples(
+        datetimes(lo, hi), lambda x: lo <= x <= hi and type(x) is dt.datetime
+    )
+
+
+def test_tricky_windows_clamp_at_either_bound():
+    # Bounds closer to the 2017 leap second than the widest window, on each
+    # side in turn, so both clamping branches are always exercised.
+    leap = dt.datetime(2017, 1, 1)
+    for lo, hi in [
+        (leap - dt.timedelta(hours=12), leap + dt.timedelta(days=7)),
+        (leap - dt.timedelta(days=7), leap + dt.timedelta(hours=12)),
+    ]:
+        assert_all_examples(datetimes(lo, hi), lambda x, lo=lo, hi=hi: lo <= x <= hi)
+
+
+class _LateShiftTimezone(dt.tzinfo):
+    # A fixed rule with an offset change two days before datetime.max, in a
+    # window that the usual transition scan never reaches.
+    def utcoffset(self, value):
+        naive = value.replace(tzinfo=None)
+        return dt.timedelta(hours=2 * (naive >= dt.datetime(9999, 12, 29)))
+
+    def dst(self, value):
+        return dt.timedelta(0)
+
+    def tzname(self, value):
+        return "Late"
+
+
+def test_tricky_draws_near_datetime_max_stay_in_bounds():
+    # The sole interesting instant is two days before datetime.max, so the
+    # windows around it are clamped to the bounds rather than overflowing.
+    lo = dt.datetime(9999, 12, 1, tzinfo=UTC)
+    hi = dt.datetime(9999, 12, 31, 20, tzinfo=UTC)
+    assert_all_examples(
+        datetimes(lo, hi, timezones=st.just(_LateShiftTimezone())),
+        lambda x: _instant(lo) <= _instant(x) <= _instant(hi),
+    )
+
+
+class _BrokenTimezone(dt.tzinfo):
+    def utcoffset(self, value):
+        raise RuntimeError("broken tzinfo")
+
+    def dst(self, value):
+        return None
+
+    def tzname(self, value):
+        return "Broken"
+
+
+def test_tricky_draw_with_misbehaving_tzinfo_falls_back():
+    # Probing a tzinfo whose methods raise finds no interesting instants,
+    # so a tricky draw falls back to an ordinary one instead of erroring.
+    strategy = unwrap_strategies(datetimes(timezones=st.just(_BrokenTimezone())))
+    data = ConjectureData.for_choices((True, 2001, 2, 3, 4, 5, 6, 7, 0))
+    value = strategy.do_draw(data)
+    assert value.replace(tzinfo=None) == dt.datetime(2001, 2, 3, 4, 5, 6, 7)
+
+
+class _UnhashableTimezone(dt.tzinfo):
+    __hash__ = None
+
+    def utcoffset(self, value):
+        return dt.timedelta(0)
+
+    def dst(self, value):
+        return dt.timedelta(0)
+
+    def tzname(self, value):
+        return "Unhashable"
+
+
+def test_tricky_draw_with_unhashable_tzinfo_falls_back():
+    # The interesting-instants cache requires a hashable tzinfo; without one
+    # a tricky draw falls back to an ordinary draw.
+    strategy = unwrap_strategies(datetimes(timezones=st.just(_UnhashableTimezone())))
+    data = ConjectureData.for_choices((True, 2001, 2, 3, 4, 5, 6, 7, 0))
+    value = strategy.do_draw(data)
+    assert value.replace(tzinfo=None) == dt.datetime(2001, 2, 3, 4, 5, 6, 7)
+
+
+def test_tricky_path_is_skipped_when_provably_fruitless():
+    # No timezones to have transitions, and no leap seconds or rollovers
+    # within bounds, so the strategy never draws the tricky-path selector.
+    quiet = datetimes(dt.datetime(1500, 1, 1), dt.datetime(1600, 1, 1))
+    assert not unwrap_strategies(quiet).tricky_possible
+    assert unwrap_strategies(datetimes()).tricky_possible
+    check_can_generate_examples(quiet)
 
 
 UTC = dt.timezone.utc
@@ -319,3 +437,50 @@ def test_pathological_timezone_single_bound_near_extreme():
         datetimes(max_value=hi, timezones=st.just(tz)),
         lambda d: _instant(d) <= _instant(hi),
     )
+
+
+class _DoubleFallBackTimezone(dt.tzinfo):
+    # Falls back an hour at 2020-11-01 06:00 UTC and two further hours at
+    # 06:45 UTC, so wall times from 01:00 to 01:45 recur under three offsets;
+    # like PEP 495, fold=0 selects the earliest and fold=1 a later one.
+    transitions = (
+        (dt.datetime(2020, 11, 1, 6, 45), dt.timedelta(hours=-7)),
+        (dt.datetime(2020, 11, 1, 6), dt.timedelta(hours=-5)),
+        (dt.datetime.min, dt.timedelta(hours=-4)),
+    )
+
+    def _offset_at(self, instant):
+        return next(off for start, off in self.transitions if instant >= start)
+
+    def fromutc(self, value):
+        naive = value.replace(tzinfo=None)
+        return value + self._offset_at(naive)
+
+    def utcoffset(self, value):
+        naive = value.replace(tzinfo=None)
+        candidates = [
+            off
+            for start, off in self.transitions
+            if self._offset_at(naive - off) == off
+        ]
+        return candidates[0 if value.fold else -1]
+
+    def dst(self, value):
+        return dt.timedelta(0)
+
+    def tzname(self, value):
+        return "Fall"
+
+
+def test_tricky_draw_rejects_out_of_bounds_fold():
+    # The lower bound is a thrice-ambiguous wall time taken in a later fold,
+    # and the second fall-back is in bounds with its window clamped against
+    # that bound - so a drawn wall time with fold=0 takes the earliest
+    # offset, an instant before the bounds, and must be rejected.
+    tz = _DoubleFallBackTimezone()
+    lo = dt.datetime(2020, 11, 1, 1, 30, fold=1, tzinfo=tz)
+    hi = dt.datetime(2020, 11, 3, 12, tzinfo=tz)
+    strategy = unwrap_strategies(datetimes(lo, hi, timezones=st.just(tz)))
+    data = ConjectureData.for_choices((True, 0, 0, 2020, 11, 1, 1, 30, 0, 500000, 0))
+    with pytest.raises(StopTest):
+        strategy.do_draw(data)

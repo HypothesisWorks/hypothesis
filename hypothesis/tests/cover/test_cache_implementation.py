@@ -338,3 +338,56 @@ def test_cache_is_threadsafe_issue_2433_regression():
         worker.join()
 
     assert not errors
+
+
+class StaticScoreCache(GenericCache):
+    # on_access keeps the score, so only pin/unpin rebalance existing entries
+    def new_entry(self, key, value):
+        return key
+
+
+@pytest.mark.parametrize("op", ["evict", "getitem", "setitem", "pin", "unpin"])
+def test_cache_repairs_itself_after_an_interrupted_mutation(op):
+    # A mutation interrupted partway through rebalancing - most plausibly by
+    # RecursionError below a deeply recursive strategy - used to leave the
+    # heap invariants broken forever, failing an assertion on a later insert.
+    from hypothesis.internal.cache import Entry
+
+    cache = (StaticScoreCache if op in ("pin", "unpin") else LRUReusedCache)(8)
+    for i in range(8):
+        cache[i] = i
+    for i in [3, 5, 6, 7]:
+        cache[i]
+    if op == "unpin":
+        cache.pin(3, 3)
+
+    calls = 0
+    orig = Entry.sort_key.fget
+
+    def interrupted_sort_key(self):
+        nonlocal calls
+        calls += 1
+        # partway through rebalancing an eviction, or immediately otherwise
+        if calls == (3 if op == "evict" else 1):
+            raise RecursionError("stack exhausted mid-balance")
+        return orig(self)
+
+    Entry.sort_key = property(interrupted_sort_key)
+    try:
+        with pytest.raises(RecursionError):
+            if op == "evict":
+                cache[100] = 100
+            elif op == "getitem":
+                cache[3]
+            elif op == "setitem":
+                cache[3] = 99
+            elif op == "pin":
+                cache.pin(3, 3)
+            elif op == "unpin":
+                cache.unpin(3)
+    finally:
+        Entry.sort_key = property(orig)
+
+    for i in range(200, 260):
+        cache[i] = i
+    cache.check_valid()
