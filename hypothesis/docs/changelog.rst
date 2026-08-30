@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.167.1:
+
+--------------------
+6.167.1 - 2026-08-30
+--------------------
+
+This patch improves shrinking and generation for collection strategies which
+reject some drawn elements, such as :func:`~hypothesis.strategies.lists` with
+``unique=True``. Rejected elements are now marked as discarded, so the
+shrinker can delete them wholesale and generation avoids revisiting
+choices that would be rejected again.
+
 .. _v6.167.0:
 
 --------------------
