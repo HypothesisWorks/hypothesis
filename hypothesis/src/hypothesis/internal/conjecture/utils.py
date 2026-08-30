@@ -295,7 +295,7 @@ class many:
         self.rejected = False
         self.observe = observe
 
-    def stop_span(self, *, discard: bool = False):
+    def stop_span(self, *, discard: bool = False) -> None:
         if self.observe:
             self.data.stop_span(discard=discard)
 
