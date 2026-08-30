@@ -32,7 +32,7 @@ black==26.5.1
     # via shed
 blinker==1.9.0
     # via pelican
-build==1.5.0
+build==1.6.0
     # via
     #   -r requirements/tools.in
     #   pip-tools
@@ -44,7 +44,7 @@ cffi==2.1.1
     # via cryptography
 charset-normalizer==3.5.1
     # via requests
-click==8.4.2
+click==8.5.0
     # via
     #   black
     #   pip-tools
@@ -57,9 +57,9 @@ colorama==0.4.6
     #   tox
 com2ann==0.3.0
     # via shed
-coverage==7.15.4
+coverage==7.16.0
     # via -r requirements/tools.in
-cryptography==50.0.0
+cryptography==50.0.1
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -83,7 +83,7 @@ executing==2.2.1
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==3.32.3
+filelock==3.32.4
     # via
     #   python-discovery
     #   tox
@@ -98,15 +98,15 @@ idna==3.19
     # via
     #   anyio
     #   requests
-imagesize==2.0.0
+imagesize==2.0.1
     # via sphinx
 iniconfig==2.3.0
     # via pytest
-ipython==9.16.1
+ipython==9.17.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
-isort==8.0.1
+isort==9.0.1
     # via shed
 jaraco-classes==3.4.0
     # via keyring
@@ -144,7 +144,7 @@ markupsafe==3.0.3
     # via jinja2
 matplotlib-inline==0.2.2
     # via ipython
-maturin==1.14.1
+maturin==1.15.0
     # via -r requirements/tools.in
 mdurl==0.1.2
     # via markdown-it-py
@@ -157,8 +157,9 @@ mypy==2.3.1
 mypy-extensions==1.1.0
     # via
     #   black
+    #   isort
     #   mypy
-nh3==0.3.6
+nh3==0.3.7
     # via readme-renderer
 nodeenv==1.10.0
     # via pyright
@@ -191,7 +192,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.6.1
     # via -r requirements/tools.in
-platformdirs==4.11.3
+platformdirs==4.11.5
     # via
     #   black
     #   tox
@@ -242,7 +243,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.5.2
+python-discovery==1.6.0
     # via
     #   tox
     #   virtualenv
@@ -254,7 +255,7 @@ pyyaml==6.0.3
     # via
     #   libcst
     #   sphinx-jsonschema
-readme-renderer==45.0
+readme-renderer==46.0
     # via twine
 requests==2.34.2
     # via
@@ -275,7 +276,7 @@ rich==15.0.0
     #   twine
 roman-numerals==4.1.0
     # via sphinx
-ruff==0.16.4
+ruff==0.16.5
     # via -r requirements/tools.in
 secretstorage==3.5.0
     # via keyring
@@ -334,7 +335,7 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli-w==1.2.0
     # via tox
-tox==4.60.0
+tox==4.61.1
     # via
     #   -r requirements/tools.in
     #   tox-uv-bare
@@ -348,7 +349,7 @@ traitlets==5.16.1
     #   matplotlib-inline
 twine==7.0.0
     # via -r requirements/tools.in
-types-cffi==2.0.0.20260518
+types-cffi==2.1.0.20260827
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
@@ -374,11 +375,11 @@ urllib3==2.7.0
     #   id
     #   requests
     #   twine
-uv==0.12.5
+uv==0.12.7
     # via tox-uv
 uvicorn==0.52.4
     # via sphinx-autobuild
-virtualenv==21.7.4
+virtualenv==21.7.7
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -386,9 +387,9 @@ watchfiles==1.2.0
     # via
     #   pelican
     #   sphinx-autobuild
-wcwidth==0.8.2
+wcwidth==0.8.3
     # via prompt-toolkit
-websockets==17.0.1
+websockets==17.1
     # via sphinx-autobuild
 wheel==0.48.0
     # via pip-tools

@@ -17,12 +17,12 @@ black==26.5.1
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.4.2
+click==8.5.0
     # via
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.15.4
+coverage[toml]==7.16.0
     # via
     #   hypofuzz
     #   pytest-cov
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.165.10
+hypothesis[cli,watchdog]==6.166.0
     # via hypofuzz
 idna==3.19
     # via
@@ -82,7 +82,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.11.3
+platformdirs==4.11.5
     # via black
 pluggy==1.6.0
     # via
