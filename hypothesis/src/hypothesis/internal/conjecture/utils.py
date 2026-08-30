@@ -295,9 +295,9 @@ class many:
         self.rejected = False
         self.observe = observe
 
-    def stop_span(self):
+    def stop_span(self, *, discard: bool = False) -> None:
         if self.observe:
-            self.data.stop_span()
+            self.data.stop_span(discard=discard)
 
     def start_span(self, label):
         if self.observe:
@@ -306,7 +306,9 @@ class many:
     def more(self) -> bool:
         """Should I draw another element to add to the collection?"""
         if self.drawn:
-            self.stop_span()
+            # A rejected element does not contribute to the collection, so
+            # discard its span - the shrinker can then delete it wholesale.
+            self.stop_span(discard=self.rejected)
 
         self.drawn = True
         self.rejected = False

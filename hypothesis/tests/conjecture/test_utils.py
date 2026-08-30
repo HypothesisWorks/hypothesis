@@ -180,6 +180,22 @@ def test_rejection_eventually_terminates_many_invalid_for_min_size():
     assert data.status == Status.INVALID
 
 
+def test_rejected_element_span_is_discarded():
+    data = ConjectureData.for_choices([True, 0, True, 1, False])
+    many = cu.many(data, min_size=0, max_size=10, average_size=5)
+    while many.more():
+        if data.draw_integer(0, 10) == 0:
+            many.reject()
+    data.freeze()
+
+    discards = [
+        span.discarded for span in data.spans if span.label == cu.ONE_FROM_MANY_LABEL
+    ]
+    # the rejected first element is discarded; the second and the final
+    # stop-drawing span are not.
+    assert discards == [True, False, False]
+
+
 def test_many_with_min_size():
     many = cu.many(
         ConjectureData.for_choices((False,) * 5),
