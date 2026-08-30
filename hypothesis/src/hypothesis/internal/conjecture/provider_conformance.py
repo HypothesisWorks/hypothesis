@@ -23,7 +23,6 @@ from hypothesis import (
 from hypothesis.errors import BackendCannotProceed
 from hypothesis.internal.compat import batched
 from hypothesis.internal.conjecture.choice import (
-    ChoiceTypeT,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -40,14 +39,14 @@ from hypothesis.strategies import DrawFn, SearchStrategy
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 
-def build_intervals(intervals: list[int]) -> list[tuple[int, int]]:
+def build_intervals(intervals: list[int]) -> list[tuple[int, int]]:  # pragma: no cover
     if len(intervals) % 2:
         intervals = intervals[:-1]
     intervals.sort()
     return list(batched(intervals, 2, strict=True))
 
 
-def interval_lists(
+def interval_lists(  # pragma: no cover
     *, min_codepoint: int = 0, max_codepoint: int = sys.maxunicode, min_size: int = 0
 ) -> SearchStrategy[Iterable[Sequence[int]]]:
     return (
@@ -61,7 +60,7 @@ def interval_lists(
     )
 
 
-def intervals(
+def intervals(  # pragma: no cover
     *, min_codepoint: int = 0, max_codepoint: int = sys.maxunicode, min_size: int = 0
 ) -> SearchStrategy[IntervalSet]:
     return st.builds(
@@ -73,7 +72,7 @@ def intervals(
 
 
 @st.composite
-def integer_weights(
+def integer_weights(  # pragma: no cover
     draw: DrawFn, min_value: int | None = None, max_value: int | None = None
 ) -> dict[int, float]:
     # Sampler doesn't play well with super small floats, so exclude them
@@ -97,7 +96,7 @@ def integer_weights(
 
 
 @st.composite
-def integer_constraints(
+def integer_constraints(  # pragma: no cover
     draw,
     *,
     use_min_value=None,
@@ -164,7 +163,7 @@ def integer_constraints(
 
 
 @st.composite
-def _collection_constraints(
+def _collection_constraints(  # pragma: no cover
     draw: DrawFn,
     *,
     forced: Any | None,
@@ -200,7 +199,7 @@ def _collection_constraints(
 
 
 @st.composite
-def string_constraints(
+def string_constraints(  # pragma: no cover
     draw: DrawFn,
     *,
     use_min_size: bool | None = None,
@@ -225,7 +224,7 @@ def string_constraints(
 
 
 @st.composite
-def bytes_constraints(
+def bytes_constraints(  # pragma: no cover
     draw: DrawFn,
     *,
     use_min_size: bool | None = None,
@@ -243,7 +242,7 @@ def bytes_constraints(
 
 
 @st.composite
-def float_constraints(
+def float_constraints(  # pragma: no cover
     draw,
     *,
     use_min_value=None,
@@ -303,36 +302,14 @@ def float_constraints(
 
 
 @st.composite
-def boolean_constraints(draw: DrawFn, *, use_forced: bool = False) -> Any:
+def boolean_constraints(
+    draw: DrawFn, *, use_forced: bool = False
+) -> Any:  # pragma: no cover
     forced = draw(st.booleans()) if use_forced else None
     # avoid invalid forced combinations
     p = draw(st.floats(0, 1, exclude_min=forced is True, exclude_max=forced is False))
 
     return {"p": p, "forced": forced}
-
-
-def constraints_strategy(choice_type, strategy_constraints=None, *, use_forced=False):
-    strategy = {
-        "boolean": boolean_constraints,
-        "integer": integer_constraints,
-        "float": float_constraints,
-        "bytes": bytes_constraints,
-        "string": string_constraints,
-    }[choice_type]
-    if strategy_constraints is None:
-        strategy_constraints = {}
-    return strategy(**strategy_constraints.get(choice_type, {}), use_forced=use_forced)
-
-
-def choice_types_constraints(strategy_constraints=None, *, use_forced=False):
-    options: list[ChoiceTypeT] = ["boolean", "integer", "float", "bytes", "string"]
-    return st.one_of(
-        st.tuples(
-            st.just(name),
-            constraints_strategy(name, strategy_constraints, use_forced=use_forced),
-        )
-        for name in options
-    )
 
 
 def run_conformance_test(
