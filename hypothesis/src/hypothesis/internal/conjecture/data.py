@@ -14,7 +14,7 @@ import time
 import types
 import weakref
 from collections import defaultdict
-from collections.abc import Generator, Hashable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -75,6 +75,7 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import PredicateCounts
+from hypothesis.internal.reflection import function_location
 from hypothesis.reporting import debug_report
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.deprecation import note_deprecation
@@ -756,6 +757,11 @@ class ConjectureData:
         self._observability_predicates: defaultdict[str, PredicateCounts] = defaultdict(
             PredicateCounts
         )
+        self.invalid_location: str | None = None
+        # (predicate, location) of the most recent filter rejection
+        self._last_rejected_filter: tuple[Callable[[Any], Any], str | None] | None = (
+            None
+        )
 
         self._sampled_from_all_strategies_elements_message: (
             tuple[str, object] | None
@@ -1264,7 +1270,7 @@ class ConjectureData:
         strategy.validate()
 
         if strategy.is_empty:
-            self.mark_invalid(f"empty strategy {self!r}")
+            self.mark_invalid(f"empty strategy {strategy!r}")
 
         if self.depth >= MAX_DEPTH:
             self.mark_invalid("max depth exceeded")
@@ -1481,13 +1487,24 @@ class ConjectureData:
     def mark_interesting(self, interesting_origin: InterestingOrigin) -> NoReturn:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self, why: str | None = None) -> NoReturn:
+    def mark_invalid(
+        self, why: str | None = None, *, location: str | None = None
+    ) -> NoReturn:
         if why is not None:
-            self.events["invalid because"] = why
+            self.events["gave up because"] = why
+        self.invalid_location = location
         self.conclude_test(Status.INVALID)
 
     def mark_overrun(self) -> NoReturn:
         self.conclude_test(Status.OVERRUN)
+
+    def last_rejected_filter_location(self) -> str | None:
+        """The location of the most recently rejected filter."""
+        if self._last_rejected_filter is None:
+            return None
+        condition, location = self._last_rejected_filter
+        # fall back to where the predicate was defined if no location is known
+        return location or function_location(condition)
 
 
 def draw_choice(

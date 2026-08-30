@@ -82,7 +82,15 @@ def test_can_mark_invalid_with_why():
         d.mark_invalid("some reason")
     assert d.frozen
     assert d.status == Status.INVALID
-    assert d.events == {"invalid because": "some reason"}
+    assert d.events == {"gave up because": "some reason"}
+
+
+def test_drawing_from_empty_strategy_reports_the_strategy():
+    d = ConjectureData.for_choices([])
+    with pytest.raises(StopTest):
+        d.draw(st.nothing())
+    assert d.status == Status.INVALID
+    assert d.events == {"gave up because": f"empty strategy {st.nothing()!r}"}
 
 
 class BoomStrategy(SearchStrategy):

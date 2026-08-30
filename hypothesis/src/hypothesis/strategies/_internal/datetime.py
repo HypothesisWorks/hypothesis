@@ -29,6 +29,7 @@ from hypothesis.strategies._internal.strategies import (
     OneOfStrategy,
     SampledFromStrategy,
     SearchStrategy,
+    current_filter_call_site,
     one_of,
 )
 from hypothesis.strategies._internal.utils import defines_strategy
@@ -96,7 +97,7 @@ def _timezones_kind(strat):
     None, "aware" if only tzinfo instances, or "unknown" if we can't tell."""
     strat = unwrap_strategies(strat)
     if isinstance(strat, SampledFromStrategy) and all(
-        name == "filter" for name, _ in strat._transformations
+        name == "filter" for name, *_ in strat._transformations
     ):
         kinds = {
             "none" if e is None else "aware" if isinstance(e, dt.tzinfo) else "unknown"
@@ -546,7 +547,9 @@ class DatetimeStrategy(SearchStrategy):
                         min_value, max_value, self.tz_strat, self.allow_imaginary
                     )
                 if func in (op.lt, op.gt):
-                    return FilteredStrategy(result, (condition,))
+                    return FilteredStrategy(
+                        result, (condition,), (current_filter_call_site(),)
+                    )
                 return result
         return super().filter(condition)
 

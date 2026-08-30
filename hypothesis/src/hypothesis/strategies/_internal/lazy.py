@@ -23,7 +23,13 @@ from hypothesis.internal.reflection import (
     repr_call,
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
-from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    Ex,
+    RecurT,
+    SearchStrategy,
+    _filter_location_override,
+    current_filter_call_site,
+)
 from hypothesis.utils.threading import ThreadLocal
 
 threadlocal = ThreadLocal(unwrap_depth=int, unwrap_cache=WeakKeyDictionary)
@@ -77,7 +83,8 @@ class LazyStrategy(SearchStrategy[Ex]):
         args: Sequence[object],
         kwargs: dict[str, object],
         *,
-        transforms: tuple[tuple[str, Callable[..., Any]], ...] = (),
+        # (name, function, location of the .filter()/.map() call, if known)
+        transforms: tuple[tuple[str, Callable[..., Any], str | None], ...] = (),
         force_repr: str | None = None,
     ):
         super().__init__()
@@ -119,13 +126,16 @@ class LazyStrategy(SearchStrategy[Ex]):
                 _wrapped_strategy = base
             else:
                 _wrapped_strategy = self.function(*unwrapped_args, **unwrapped_kwargs)
-            for method, fn in self._transformations:
-                _wrapped_strategy = getattr(_wrapped_strategy, method)(fn)
+            for method, fn, location in self._transformations:
+                # Carry the location of the original .filter() call through to
+                # the underlying strategy's .filter(), for reporting.
+                with _filter_location_override.with_value(location):
+                    _wrapped_strategy = getattr(_wrapped_strategy, method)(fn)
             self.__wrapped_strategy = _wrapped_strategy
         assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 
-    def __with_transform(self, method, fn):
+    def __with_transform(self, method, fn, *, location=None):
         repr_ = self.__representation
         if repr_:
             repr_ = f"{repr_}.{method}({get_pretty_function_description(fn)})"
@@ -133,7 +143,7 @@ class LazyStrategy(SearchStrategy[Ex]):
             self.function,
             self.__args,
             self.__kwargs,
-            transforms=(*self._transformations, (method, fn)),
+            transforms=(*self._transformations, (method, fn, location)),
             force_repr=repr_,
         )
 
@@ -141,7 +151,9 @@ class LazyStrategy(SearchStrategy[Ex]):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition)
+        return self.__with_transform(
+            "filter", condition, location=current_filter_call_site()
+        )
 
     def do_validate(self) -> None:
         w = self.wrapped_strategy
@@ -169,7 +181,7 @@ class LazyStrategy(SearchStrategy[Ex]):
                 self.function, _args, kwargs_for_repr, reorder=False
             ) + "".join(
                 f".{method}({get_pretty_function_description(fn)})"
-                for method, fn in self._transformations
+                for method, fn, _ in self._transformations
             )
         return self.__representation
 

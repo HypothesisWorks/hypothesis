@@ -57,6 +57,7 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
     SearchStrategy,
     check_strategy,
+    current_filter_call_site,
     filter_not_satisfied,
 )
 from hypothesis.utils.deprecation import note_deprecation
@@ -535,7 +536,7 @@ class Rule:
                 # stored on the machine and we want to draw the transformed value
                 # directly instead of a reference.
                 draw_references = all(
-                    name == "filter" for name, _ in v._transformations
+                    name == "filter" for name, *_ in v._transformations
                 )
                 v = Bundle(
                     v.name,
@@ -594,13 +595,15 @@ class _BundleSampler(SampledFromStrategy):
         )
         self.machine = machine
 
-    def _transform(self, element):
+    def _transform(self, element, *, data):
         # Filter and map transformations apply to the value, which we look up
         # lazily so that untested elements cost nothing; the position and
         # reference ride along so that Bundle.do_draw can consume the chosen
         # element and refer to it by name.
         position, reference = element
-        result = super()._transform(self.machine.names_to_values[reference.name])
+        result = super()._transform(
+            self.machine.names_to_values[reference.name], data=data
+        )
         if result is filter_not_satisfied:
             return filter_not_satisfied
         return (position, reference, result)
@@ -640,7 +643,7 @@ class Bundle(SearchStrategy[Ex]):
         consume: bool = False,
         draw_references: bool = False,
         transformations: tuple[
-            tuple[Literal["filter", "map"], Callable[[Ex], Any]], ...
+            tuple[Literal["filter", "map"], Callable[[Ex], Any], str | None], ...
         ] = (),
     ) -> None:
         super().__init__()
@@ -666,7 +669,10 @@ class Bundle(SearchStrategy[Ex]):
         )
         result = sampler.do_filtered_draw(data)
         if result is filter_not_satisfied:
-            data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+            data.mark_invalid(
+                f"Aborted test because unable to satisfy {self!r}",
+                location=data.last_rejected_filter_location(),
+            )
         position, reference, value = result
         if self.consume:
             bundle.pop(position)  # pragma: no cover  # coverage is flaky here
@@ -677,19 +683,21 @@ class Bundle(SearchStrategy[Ex]):
     # apply within a single draw: the generic wrappers instead retry the whole
     # draw when a filter fails, consuming rejected values from consuming
     # bundles, and are opaque to the reference-drawing logic in Rule.
-    def __with_transform(self, name, f):
+    def __with_transform(self, name, f, *, location=None):
         return Bundle(
             self.name,
             consume=self.consume,
             draw_references=self.draw_references,
-            transformations=(*self._transformations, (name, f)),
+            transformations=(*self._transformations, (name, f, location)),
         )
 
     def map(self, pack):
         return self.__with_transform("map", pack)
 
     def filter(self, condition):
-        return self.__with_transform("filter", condition)
+        return self.__with_transform(
+            "filter", condition, location=current_filter_call_site()
+        )
 
     def _base_repr(self):
         consume = ", consume=True" if self.consume else ""
@@ -698,7 +706,7 @@ class Bundle(SearchStrategy[Ex]):
     def __repr__(self):
         transforms = "".join(
             f".{name}({get_pretty_function_description(f)})"
-            for name, f in self._transformations
+            for name, f, _ in self._transformations
         )
         return self._base_repr() + transforms
 

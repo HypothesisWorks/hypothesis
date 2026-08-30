@@ -268,6 +268,15 @@ def is_first_param_referenced_in_function(f: Any) -> bool:
     )
 
 
+def function_location(f: object) -> str | None:
+    """Return a ``filename:lineno`` string for where ``f`` was defined, if known."""
+    try:
+        code = f.__code__  # type: ignore[attr-defined]
+        return f"{code.co_filename}:{code.co_firstlineno}"
+    except AttributeError:
+        return None
+
+
 def get_pretty_function_description(f: object) -> str:
     # Anything which knows how to pretty-print itself knows better than we do -
     # e.g. the constant functions from st.functions(), which would otherwise

@@ -989,7 +989,7 @@ class ConjectureRunner:
             status = f"{status} ({data.interesting_origin!r})"
         elif data.status == Status.INVALID and isinstance(data, ConjectureData):
             assert isinstance(data, ConjectureData)  # mypy is silly
-            status = f"{status} ({data.events.get('invalid because', '?')})"
+            status = f"{status} ({data.events.get('gave up because', '?')})"
 
         self.debug(f"{len(data.choices)} choices -> {status}\n\t{data.choices}")
 
@@ -1361,9 +1361,9 @@ class ConjectureRunner:
             if (
                 data.status is Status.OVERRUN
                 and max_length is not None
-                and "invalid because" not in data.events
+                and "gave up because" not in data.events
             ):
-                data.events["invalid because"] = (
+                data.events["gave up because"] = (
                     "reduced max size for early test cases (avoids flaky health checks)"
                 )
 

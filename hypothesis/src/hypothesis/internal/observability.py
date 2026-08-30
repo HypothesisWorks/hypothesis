@@ -182,6 +182,7 @@ class ObservationMetadata:
     data_status: "Status"
     phase: str
     interesting_origin: InterestingOrigin | None
+    status_reason_location: str | None
     choice_nodes: tuple[ChoiceNode, ...] | None
     choice_spans: Optional["Spans"]
 
@@ -198,6 +199,7 @@ class ObservationMetadata:
             "data_status": self.data_status,
             "phase": self.phase,
             "interesting_origin": self.interesting_origin,
+            "status_reason_location": self.status_reason_location,
             "choice_nodes": (
                 None if self.choice_nodes is None else nodes_to_json(self.choice_nodes)
             ),
@@ -425,8 +427,13 @@ def make_testcase(
         status_reason = str(data.interesting_origin)
     elif phase == "shrink" and data.status == Status.OVERRUN:
         status_reason = "exceeded size of current best test case"
+    elif data.status == Status.OVERRUN:
+        status_reason = (
+            str(data.events.pop("gave up because", ""))
+            or "exceeded maximum test case size"
+        )
     else:
-        status_reason = str(data.events.pop("invalid because", ""))
+        status_reason = str(data.events.pop("gave up because", ""))
 
     status_map: dict[Status, TestCaseStatus] = {
         Status.OVERRUN: "gave_up",
@@ -439,6 +446,13 @@ def make_testcase(
         status = status_map[status]
     if status is None:
         status = status_map[data.status]
+
+    status_reason_location: str | None = None
+    if (origin := data.interesting_origin) is not None:
+        if origin.filename is not None:
+            status_reason_location = f"{origin.filename}:{origin.lineno}"
+    elif status != "failed":
+        status_reason_location = data.invalid_location
 
     return TestCaseObservation(
         type="test_case",
@@ -469,6 +483,7 @@ def make_testcase(
                 "data_status": data.status,
                 "phase": phase,
                 "interesting_origin": data.interesting_origin,
+                "status_reason_location": status_reason_location,
                 "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
                 "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
                 **_system_metadata(),

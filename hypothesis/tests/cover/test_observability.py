@@ -10,6 +10,7 @@
 
 import base64
 import contextlib
+import inspect
 import json
 import math
 import textwrap
@@ -17,11 +18,14 @@ import threading
 import warnings
 from collections import defaultdict
 from contextlib import nullcontext
+from functools import partial
+from random import Random
 
 import pytest
 
 import hypothesis.internal.observability
 from hypothesis import (
+    HealthCheck,
     assume,
     event,
     example,
@@ -33,10 +37,12 @@ from hypothesis import (
     target,
 )
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import StopTest, Unsatisfiable
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ChoiceNode, choices_key
-from hypothesis.internal.conjecture.data import Span
+from hypothesis.internal.conjecture.data import ConjectureData, Span
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import SIGNALING_NAN, float_to_int, int_to_float
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import (
@@ -47,6 +53,7 @@ from hypothesis.internal.observability import (
     _callbacks_all_threads,
     add_observability_callback,
     choices_to_json,
+    make_testcase,
     nodes_to_json,
     observability_enabled,
     remove_observability_callback,
@@ -58,6 +65,7 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
+from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.utils import (
@@ -266,8 +274,147 @@ def test_assume_has_status_reason():
         f()
 
     gave_ups = [t for t in ls if t.type == "test_case" and t.status == "gave_up"]
+    assert gave_ups
     for gave_up in gave_ups:
         assert gave_up.status_reason.startswith("failed to satisfy assume() in f")
+        filename, lineno = gave_up.metadata.status_reason_location.rsplit(":", 1)
+        assert filename == __file__
+        assert int(lineno) > 0
+
+
+def _get_filter_gave_ups(strategy):
+    @settings(suppress_health_check=list(HealthCheck), max_examples=10)
+    @given(strategy)
+    def f(n):
+        raise NotImplementedError("unreachable")
+
+    with capture_observations() as ls, pytest.raises(Unsatisfiable):
+        f()
+
+    gave_ups = [t for t in ls if t.type == "test_case" and t.status == "gave_up"]
+    assert gave_ups
+    return gave_ups
+
+
+# We report the location of the .filter() call, not of the predicate itself -
+# which might be e.g. the stdlib, or a widely-shared helper. Each maker below
+# builds a filtered strategy and returns it with the expected filename:lineno
+# of its unsatisfiable .filter() call.
+
+
+def make_filtered_integers():
+    def unsatisfiable(x):
+        return len(str(x)) < 0
+
+    return st.integers().filter(unsatisfiable), line_of(4)
+
+
+def make_twice_filtered_integers():
+    def satisfiable(x):
+        return len(str(x)) >= 0
+
+    def unsatisfiable(x):
+        return len(str(x)) < 0
+
+    s = st.integers().filter(satisfiable)
+    return s.filter(unsatisfiable), line_of(8)
+
+
+def make_partial_filtered_integers():
+    unsatisfiable = partial(lambda x, s: len(str(x)) < s, s=0)
+    return st.integers().filter(unsatisfiable), line_of(2)
+
+
+def make_filtered_sampled_from():
+    def unsatisfiable(x):
+        return len(str(x)) < 0
+
+    return st.sampled_from(range(10)).map(lambda x: x).filter(unsatisfiable), line_of(4)
+
+
+def line_of(offset):
+    # the line `offset` lines below the `def` statement of the calling function
+    frame = inspect.currentframe().f_back
+    return f"{__file__}:{frame.f_code.co_firstlineno + offset}"
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        make_filtered_integers,
+        # With several filter conditions, we blame the one which actually
+        # rejected the last drawn value - not just whichever came first.
+        make_twice_filtered_integers,
+        # Predicates without a __code__ object still get a call-site location.
+        make_partial_filtered_integers,
+        make_filtered_sampled_from,
+    ],
+)
+def test_filter_has_status_reason_location(make):
+    strategy, expected = make()
+    for gave_up in _get_filter_gave_ups(strategy):
+        assert gave_up.metadata.status_reason_location == expected
+
+
+def test_assume_in_map_has_status_reason_location():
+    def unsatisfiable(x):
+        assume(len(str(x)) < 0)
+
+    expected = line_of(2)
+    for gave_up in _get_filter_gave_ups(st.integers().map(unsatisfiable)):
+        assert gave_up.metadata.status_reason_location == expected
+
+
+def test_sampled_from_transform_without_data_records_nothing():
+    # covers the data=None branch of SampledFromStrategy._transform
+    s = st.sampled_from([1, 2]).filter(lambda x: x == 2)
+    assert s._invert(2) == (1,)
+
+
+def test_status_reason_location_without_traceback():
+    # An exception which was never raised has no traceback, so its origin has
+    # no filename - we report no location rather than a bogus "None:None".
+    data = ConjectureData(random=Random(0))
+    with contextlib.suppress(StopTest):
+        data.mark_interesting(InterestingOrigin.from_exception(AssertionError()))
+
+    observation = make_testcase(
+        run_start=0.0,
+        property="test_status_reason_location_without_traceback",
+        data=data,
+        how_generated="test",
+        timing={},
+    )
+    assert observation.status == "failed"
+    assert observation.status_reason == "AssertionError at None:None"
+    assert observation.metadata.status_reason_location is None
+
+
+def test_last_rejected_filter_location_fallbacks():
+    data = ConjectureData(random=Random(0))
+    # nothing was rejected on this data
+    assert data.last_rejected_filter_location() is None
+
+    def unsatisfiable(x):
+        return len(str(x)) < 0
+
+    # a FilteredStrategy built directly, rather than via .filter(), has no
+    # call-site location - so we fall back to the predicate's definition
+    strategy = FilteredStrategy(st.integers(), conditions=(unsatisfiable,))
+
+    @settings(suppress_health_check=list(HealthCheck), max_examples=10)
+    @given(strategy)
+    def f(n):
+        raise NotImplementedError("unreachable")
+
+    with capture_observations() as ls, pytest.raises(Unsatisfiable):
+        f()
+
+    gave_ups = [t for t in ls if t.type == "test_case" and t.status == "gave_up"]
+    assert gave_ups
+    expected = f"{__file__}:{unsatisfiable.__code__.co_firstlineno}"
+    for gave_up in gave_ups:
+        assert gave_up.metadata.status_reason_location == expected
 
 
 @pytest.mark.skipif(
@@ -415,6 +562,10 @@ def test_fuzz_one_input_sets_interesting_origin():
     assert origin is not None
     assert origin.exc_type is AssertionError
     assert observation.status_reason == str(origin)
+    assert (
+        observation.metadata.status_reason_location
+        == f"{origin.filename}:{origin.lineno}"
+    )
 
 
 def _decode_choice(value):
@@ -596,6 +747,7 @@ def test_metadata_to_json():
             "data_status",
             "phase",
             "interesting_origin",
+            "status_reason_location",
             "choice_nodes",
             "choice_spans",
         }

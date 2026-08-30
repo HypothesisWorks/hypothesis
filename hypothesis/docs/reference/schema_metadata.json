@@ -64,8 +64,12 @@
         "interesting_origin": {
             "type": ["string", "null"],
             "description": "The internal ``InterestingOrigin`` object for failing tests, if and only if ``status == \"failed\"``. The ``traceback`` string value is derived from this object."
+        },
+        "status_reason_location": {
+            "type": ["string", "null"],
+            "description": "A ``filename:lineno`` location for the ``status_reason`` of this test case, if known - for example the location of a failing |assume| call, the |.filter| call whose predicate rejected the last drawn value, or the exception for failing tests."
         }
     },
-    "required": ["traceback", "reproduction_decorator", "notes", "predicates", "backend", "sys.argv", "os.getpid()", "imported_at", "data_status", "interesting_origin"],
+    "required": ["traceback", "reproduction_decorator", "notes", "predicates", "backend", "sys.argv", "os.getpid()", "imported_at", "data_status", "interesting_origin", "status_reason_location"],
     "additionalProperties": false
 }

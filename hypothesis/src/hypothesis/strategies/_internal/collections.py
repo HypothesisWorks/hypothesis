@@ -435,7 +435,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
 
         while remaining and should_draw.more():
             j = data.draw_integer(0, len(remaining) - 1)
-            value = self.element_strategy._transform(remaining.pop(j))
+            value = self.element_strategy._transform(remaining.pop(j), data=data)
             if value is not filter_not_satisfied and all(
                 key(value) not in seen
                 for key, seen in zip(self.keys, seen_sets, strict=True)
@@ -470,7 +470,9 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         for i, (element, target) in enumerate(zip(value, targets, strict=True)):
             choices.extend(elements.more())
             for j, candidate in enumerate(remaining):
-                if equal_values(self.element_strategy._transform(candidate), target):
+                if equal_values(
+                    self.element_strategy._transform(candidate, data=None), target
+                ):
                     choices.append(j)
                     remaining.pop(j)
                     break

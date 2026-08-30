@@ -1236,7 +1236,7 @@ class StateForActualGivenExecution:
             # An "assume" check failed, so instead we inform the engine that
             # this test run was invalid.
             try:
-                data.mark_invalid(e.reason)
+                data.mark_invalid(e.reason, location=e.location)
             except FlakyReplay as err:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
@@ -1585,7 +1585,14 @@ class StateForActualGivenExecution:
                         coverage=None,  # Not recorded when we're replaying the MFE
                         status="passed" if sys.exc_info()[0] else "failed",
                         status_reason=str(origin or "unexpected/flaky pass"),
-                        metadata={"traceback": tb},
+                        metadata={
+                            "traceback": tb,
+                            "status_reason_location": (
+                                f"{origin.filename}:{origin.lineno}"
+                                if origin and origin.filename
+                                else None
+                            ),
+                        },
                     )
                     deliver_observation(tc)
 
@@ -2349,8 +2356,10 @@ def given(
                 except StopTest:
                     status = data.status
                     return None
-                except UnsatisfiedAssumption:
+                except UnsatisfiedAssumption as e:
                     status = Status.INVALID
+                    data.events["gave up because"] = e.reason or ""
+                    data.invalid_location = e.location
                     return None
                 except BaseException as e:
                     # The engine sets data.interesting_origin in
