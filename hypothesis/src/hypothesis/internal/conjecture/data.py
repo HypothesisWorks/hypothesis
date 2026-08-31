@@ -32,7 +32,6 @@ from typing import (
 )
 
 from hypothesis.errors import (
-    CannotInvert,
     CannotProceedScopeT,
     ChoiceTooLarge,
     FlakyStrategyDefinition,
@@ -43,6 +42,7 @@ from hypothesis.errors import (
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture.choice import (
+    HOLE_LIMIT,
     BooleanConstraints,
     BytesConstraints,
     ChoiceConstraintsT,
@@ -52,8 +52,11 @@ from hypothesis.internal.conjecture.choice import (
     ChoiceTypeT,
     FloatConstraints,
     IntegerConstraints,
+    InvertAborted,
+    InvertResultT,
     StringConstraints,
     ValueHole,
+    _hole_budget,
     choice_constraints_key,
     choice_from_index,
     choice_permitted,
@@ -863,8 +866,8 @@ class ConjectureData:
         if self._inverting:
             # A strategy tried to draw while re-encoding a ValueHole - e.g. a
             # filter predicate which draws, like stateful's rule filters.
-            # Inversions must be pure, so treat this as unencodable.
-            raise CannotInvert("cannot draw during _invert")
+            # Inversions must be pure, so abandon the claim.
+            raise InvertAborted
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
@@ -1283,9 +1286,10 @@ class ConjectureData:
             assert isinstance(label, int)
 
         # If the next prefix element is a ValueHole, we are the strategy being
-        # asked to re-encode its value: replace the hole with our inversion of
-        # it, and let do_draw consume those choices (under our own constraints)
-        # as usual. If we can't invert it, leave the hole for _pop_choice to
+        # asked to re-encode its value: if we can invert it completely, replace
+        # the hole with those choices and let do_draw consume them (under our
+        # own constraints) as usual. Otherwise - a partial or Impossible
+        # result, or an aborted inversion - leave the hole for _pop_choice to
         # treat as a misalignment.
         if (
             self.prefix is not None
@@ -1293,18 +1297,22 @@ class ConjectureData:
             and isinstance(hole := self.prefix[self.index], ValueHole)
         ):
             self._inverting = True
+            _hole_budget.remaining = HOLE_LIMIT
             try:
-                inverted = unwrapped._invert(hole.value)
-            except CannotInvert:
-                pass
-            else:
+                result: InvertResultT | None = unwrapped._invert(hole.value)
+            except InvertAborted:
+                result = None
+            finally:
+                _hole_budget.remaining = None
+                self._inverting = False
+            if isinstance(result, tuple) and not any(
+                isinstance(c, ValueHole) for c in result
+            ):
                 self.prefix = (
                     tuple(self.prefix[: self.index])
-                    + inverted
+                    + result
                     + tuple(self.prefix[self.index + 1 :])
                 )
-            finally:
-                self._inverting = False
 
         span_index = self.__span_record.span_count
         self.start_span(label=label)
