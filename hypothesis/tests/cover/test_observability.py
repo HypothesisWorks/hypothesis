@@ -265,6 +265,9 @@ def test_capture_named_arguments():
         ], test_case
 
 
+@pytest.mark.skipif(
+    settings().backend == "crosshair", reason="does not report an assume() location"
+)
 def test_assume_has_status_reason():
     @given(st.booleans())
     def f(b):
