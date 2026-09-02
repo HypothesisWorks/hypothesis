@@ -15,6 +15,7 @@ import sys
 import time
 import warnings
 from contextlib import contextmanager, nullcontext
+from decimal import Decimal
 from random import Random
 from threading import RLock
 
@@ -53,7 +54,7 @@ from hypothesis.internal.conjecture.provider_conformance import (
 from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
-    HypothesisProvider,
+    BytestringProvider,
     with_register_backend,
 )
 from hypothesis.internal.floats import SIGNALING_NAN, clamp
@@ -820,15 +821,22 @@ def test_on_observation_no_override():
     f()
 
 
-class ObservingHypothesisProvider(HypothesisProvider):
-    def observe_information_messages(self, *, lifetime):
-        yield {"type": "info", "title": "observing-provider", "content": {}}
+class AvoidRealizationPrngProvider(PrngProvider):
+    avoid_realization = True
 
 
 @pytest.mark.parametrize(
-    "provider", [HypothesisProvider, PrngProvider, ObservingHypothesisProvider]
+    "provider, provider_kw",
+    [
+        (BytestringProvider, {"bytestring": st.binary()}),
+        # PrngProvider has lifetime "test_function", covering the other half of
+        # the lifetime-dependent logic in run_conformance_test. The remaining
+        # providers are conformance-tested in tests/nocover/.
+        (PrngProvider, None),
+        (AvoidRealizationPrngProvider, None),
+    ],
 )
-def test_provider_conformance(provider):
+def test_provider_conformance(provider, provider_kw):
     with warnings.catch_warnings():
         # emitted by available_timezones() from st.timezone_keys() on 3.11+
         # with tzdata installed. see https://github.com/python/cpython/issues/137841.
@@ -836,8 +844,184 @@ def test_provider_conformance(provider):
         if sys.version_info >= (3, 11):
             warnings.simplefilter("ignore", EncodingWarning)
         run_conformance_test(
-            provider, settings=settings(max_examples=20, stateful_step_count=20)
+            provider,
+            provider_kw=provider_kw,
+            settings=settings(max_examples=20, stateful_step_count=20),
         )
+
+
+class ProviderException(Exception):
+    pass
+
+
+class SuppressedProviderException(ProviderException):
+    pass
+
+
+class DiscardedProviderException(ProviderException):
+    pass
+
+
+class ContextManagerExceptionProvider(PrngProvider):
+    # Occasionally raises internal exceptions from draws, which are handled by
+    # per_test_case_context_manager - as e.g. hypothesis-crosshair does.
+    def __init__(self, conjecturedata, /):
+        super().__init__(conjecturedata)
+        self._draw_count = 0
+
+    def draw_integer(self, *args, **kwargs):
+        self._draw_count += 1
+        if self._draw_count == 4:
+            raise BackendCannotProceed("discard_test_case")
+        if self._draw_count % 10 == 0:
+            raise SuppressedProviderException
+        if self._draw_count % 7 == 0:
+            raise DiscardedProviderException
+        return super().draw_integer(*args, **kwargs)
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        try:
+            yield
+        except SuppressedProviderException:
+            pass
+        except DiscardedProviderException:
+            raise BackendCannotProceed("discard_test_case") from None
+
+    def realize(self, value, *, for_failure=False):
+        # decline to realize very large odd integers, as e.g. a symbolic
+        # provider might for values its solver cannot concretize.
+        if isinstance(value, int) and abs(value) > 2**100 and value % 2:
+            raise BackendCannotProceed("discard_test_case")
+        return value
+
+    def observe_information_messages(self, *, lifetime):
+        yield {"type": "info", "title": "exception-provider", "content": {}}
+
+
+class ExhaustingProvider(PrngProvider):
+    # Declares itself unable to continue after a few test cases, as e.g. a
+    # symbolic provider does on exhausting its search space. Seeded per
+    # instance so that draws still explore values across instances.
+    _instances = itertools.count()
+
+    def __init__(self, conjecturedata, /):
+        super().__init__(conjecturedata)
+        self.prng = Random(next(self._instances))
+        self._case_count = 0
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        self._case_count += 1
+        if self._case_count > 3:
+            raise BackendCannotProceed("exhausted")
+        yield
+
+
+def test_provider_conformance_exhausting_provider():
+    run_conformance_test(
+        ExhaustingProvider, settings=settings(max_examples=10, stateful_step_count=30)
+    )
+
+
+def test_provider_conformance_context_manager_exceptions():
+    run_conformance_test(
+        ContextManagerExceptionProvider,
+        context_manager_exceptions=(ProviderException,),
+        settings=settings(max_examples=20, stateful_step_count=30),
+        # exercise the incomparable-value and cannot-realize paths
+        _realize_objects=st.sampled_from([Decimal("-sNaN"), 2**101 + 1, 0]),
+    )
+
+
+class BrokenInitProvider(PrngProvider):
+    def __init__(self, conjecturedata, /):
+        raise ValueError("unique identifier")
+
+
+def test_conformance_provider_init_failure():
+    # errors in provider instantiation propagate rather than crashing teardown
+    with pytest.raises(ValueError, match="unique identifier"):
+        run_conformance_test(
+            BrokenInitProvider,
+            settings=settings(max_examples=5, stateful_step_count=5),
+            check_findability=False,
+        )
+
+
+class CrashingProvider(PrngProvider):
+    # Raises an undeclared exception from every draw, and counts context
+    # manager entries and exits - which must balance regardless.
+    enters = 0
+    exits = 0
+
+    def _crash(self, *args, **kwargs):
+        raise RuntimeError("unique identifier")
+
+    draw_boolean = draw_integer = draw_float = draw_string = draw_bytes = _crash
+
+    @contextmanager
+    def per_test_case_context_manager(self):
+        type(self).enters += 1
+        try:
+            yield
+        finally:
+            type(self).exits += 1
+
+
+def test_conformance_exits_context_manager_on_unexpected_exception():
+    with pytest.raises(RuntimeError, match="unique identifier"):
+        run_conformance_test(
+            CrashingProvider,
+            settings=settings(max_examples=5, stateful_step_count=10),
+            check_findability=False,
+        )
+    assert CrashingProvider.enters == CrashingProvider.exits > 0
+
+
+class MisrealizingProvider(PrngProvider):
+    # draws conforming values, but realizes them to something else entirely
+    def realize(self, value, *, for_failure=False):
+        return "surprise" if isinstance(value, int) else value
+
+
+def test_conformance_checks_realized_draws():
+    # fails whichever of the two realization checks the engine reaches first
+    with pytest.raises(
+        AssertionError, match=r"draw to return a|must be returned as-is"
+    ):
+        run_conformance_test(
+            MisrealizingProvider,
+            settings=settings(
+                max_examples=5, stateful_step_count=10, report_multiple_bugs=False
+            ),
+            check_findability=False,
+        )
+
+
+class UnfindableBooleanProvider(PrngProvider):
+    # Sound - p is advisory away from 0 and 1 - but useless: it returns False
+    # for every undetermined boolean.
+    def draw_boolean(self, p: float = 0.5) -> bool:
+        return p >= 1
+
+
+def test_conformance_catches_unfindable_values():
+    with pytest.raises(AssertionError, match="could not generate"):
+        run_conformance_test(
+            UnfindableBooleanProvider,
+            settings=settings(max_examples=5, stateful_step_count=10),
+        )
+
+
+def test_conformance_findability_opt_out():
+    # symbolic or otherwise unusual providers can opt out of the findability
+    # checks, leaving just the interface conformance ones.
+    run_conformance_test(
+        UnfindableBooleanProvider,
+        settings=settings(max_examples=5, stateful_step_count=10),
+        check_findability=False,
+    )
 
 
 @pytest.mark.parametrize(
