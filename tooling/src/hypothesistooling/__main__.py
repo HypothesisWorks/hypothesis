@@ -257,6 +257,12 @@ def format(*, format_all=False):
     py_paths_to_format = [p for p in sorted(paths) if p.suffix == ".py"]
     rust_paths_to_format = [p for p in sorted(paths) if p.suffix == ".rs"]
 
+    if any(p.parts[0] == ".github" and p.suffix == ".yml" for p in paths):
+        # Autofix what we can in our workflows; `lint` reports whatever is left.
+        # Online audits are skipped so that formatting never needs the network -
+        # we pin actions ourselves, in the update-gha-pins task.
+        pip_tool("zizmor", "--fix", "--no-online-audits", "--no-exit-codes", ".github/")
+
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
 
@@ -704,9 +710,15 @@ def has_diff(file_or_directory):
 def upgrade_requirements():
     update_vendored_files()
     compile_requirements(upgrade=True)
+    update_python_versions()
+    update_pyodide_versions()
+    update_django_versions()
+    update_gha_pins()
     # Reformat every file, not just changed ones: upgrading the formatters in
     # tools.txt can change how they format files we didn't otherwise touch, and
     # we want those changes in this PR rather than leaking into a later one.
+    # Formatting comes after the updates above so that e.g. zizmor's autofixes
+    # apply to our newly-updated workflows.
     subprocess.call(
         ["./build.sh", "format"],
         cwd=ROOT,
@@ -716,10 +728,6 @@ def upgrade_requirements():
         msg = get_autoupdate_message(domainlist_changed=has_diff(DOMAINS_LIST))
         with open(RELEASE_FILE, mode="w", encoding="utf-8") as f:
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
-    update_python_versions()
-    update_pyodide_versions()
-    update_django_versions()
-    update_gha_pins()
     subprocess.call(["git", "add", "."], cwd=ROOT)
 
 
