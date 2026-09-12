@@ -44,7 +44,11 @@ def make_float_clamper(
     from hypothesis.internal.conjecture.choice import choice_permitted
 
     assert sign_aware_lte(min_value, max_value)
-    range_size = min(max_value - min_value, float_info.max)
+    # Use finite bounds for the resampling formula to avoid producing
+    # infinite values when min_value or max_value is infinite.
+    finite_min = min_value if math.isfinite(min_value) else -float_info.max
+    finite_max = max_value if math.isfinite(max_value) else float_info.max
+    finite_range = min(finite_max - finite_min, float_info.max)
 
     def float_clamper(f: float) -> float:
         if choice_permitted(
@@ -60,7 +64,7 @@ def make_float_clamper(
         # Outside bounds; pick a new value, sampled from the allowed range,
         # using the mantissa bits.
         mant = float_to_int(abs(f)) & mantissa_mask
-        f = min_value + range_size * (mant / mantissa_mask)
+        f = finite_min + finite_range * (mant / mantissa_mask)
 
         # if we resampled into the space disallowed by smallest_nonzero_magnitude,
         # default to smallest_nonzero_magnitude.

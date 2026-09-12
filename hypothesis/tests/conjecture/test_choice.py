@@ -46,7 +46,12 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import choice_count
 from hypothesis.internal.conjecture.provider_conformance import integer_constraints
-from hypothesis.internal.floats import SMALLEST_SUBNORMAL, float_to_int, next_down, next_up
+from hypothesis.internal.floats import (
+    SMALLEST_SUBNORMAL,
+    float_to_int,
+    next_down,
+    next_up,
+)
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
@@ -166,7 +171,9 @@ def test_compute_max_children_is_positive(choice_type_and_constraints):
         ),
         (
             "float",
-            float_constr(smallest_nonzero_magnitude=next_down(math.inf), allow_nan=False),
+            float_constr(
+                smallest_nonzero_magnitude=next_down(math.inf), allow_nan=False
+            ),
             6,
         ),
         (
@@ -222,7 +229,9 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
 @example(("float", float_constr(next_down(-0.0), next_up(0.0), allow_nan=False)))
 @example(("float", float_constr(0.0, next_up(0.0), allow_nan=False)))
 # using a smallest_nonzero_magnitude which happens to filter out everything
-@example(("float", float_constr(1.0, 2.0, smallest_nonzero_magnitude=3.0, allow_nan=False)))
+@example(
+    ("float", float_constr(1.0, 2.0, smallest_nonzero_magnitude=3.0, allow_nan=False))
+)
 @example(("integer", integer_constr(1, 2, weights={1: 0.2, 2: 0.4})))
 @given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
