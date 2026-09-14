@@ -14,7 +14,7 @@ Low-level API
 
     The ``hypothesis.lowlevel`` module contains low level APIs. ``hypothesis.lowlevel`` is intended for power uses of Hypothesis, and trades off ergonomics and safety for power and control.
 
-    ``hypothesis.lowlevel`` is stable, but is subject to a slightly weaker policy than our standard :ref:`our deprecation policy <deprecation-policy>`. ``hypothesis.lowevel`` is subject to the following stability policy:
+    ``hypothesis.lowlevel`` is stable, but is subject to a slightly weaker policy than :ref:`our standard deprecation policy <deprecation-policy>`. ``hypothesis.lowevel`` is subject to the following deprecation policy:
 
     * Breaking changes will be preceded by at least 3 months of a deprecation warning.
     * After the 3 month period, breaking changes may occur during any of a patch, minor, or major release.
