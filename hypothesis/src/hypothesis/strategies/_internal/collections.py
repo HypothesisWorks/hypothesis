@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-import math
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any, TypeGuard, overload
 
@@ -25,6 +24,7 @@ from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, equal_va
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.reflection import is_identity_function
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.strategies import (
     T3,
     T4,
@@ -180,16 +180,18 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int = 0,
-        max_size: float | int | None = math.inf,
+        max_size: int | None = None,
     ):
         super().__init__()
         self.min_size = min_size or 0
-        self.max_size = max_size if max_size is not None else math.inf
-        assert 0 <= self.min_size <= self.max_size
-        self.average_size = min(
-            max(self.min_size * 2, self.min_size + 5),
-            0.5 * (self.min_size + self.max_size),
-        )
+        self.max_size = max_size
+        assert 0 <= self.min_size
+        assert self.max_size is None or self.min_size <= self.max_size
+        self.average_size: float = max(self.min_size * 2, self.min_size + 5)
+        if self.max_size is not None:
+            self.average_size = min(
+                self.average_size, 0.5 * (self.min_size + self.max_size)
+            )
         self.element_strategy = elements
         if min_size > BUFFER_SIZE:
             raise InvalidArgument(
@@ -209,7 +211,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
                 "Cannot create non-empty lists with elements drawn from "
                 f"strategy {self.element_strategy!r} because it has no values."
             )
-        if self.element_strategy.is_empty and 0 < self.max_size < float("inf"):
+        if self.element_strategy.is_empty and self.max_size:
             raise InvalidArgument(
                 f"Cannot create a collection of max_size={self.max_size!r}, "
                 "because no elements can be drawn from the element strategy "
@@ -226,21 +228,21 @@ class ListStrategy(SearchStrategy[list[Ex]]):
             assert self.min_size == 0
             return []
 
-        elements = cu.many(
-            data,
-            min_size=self.min_size,
-            max_size=self.max_size,
-            average_size=self.average_size,
-        )
-        result = []
-        while elements.more():
-            result.append(data.draw(self.element_strategy))
-        return result
+        return [
+            data.draw(self.element_strategy)
+            for _ in many(
+                min_size=self.min_size,
+                max_size=self.max_size,
+                average_size=self.average_size,
+            )
+        ]
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, list):
             raise CannotInvert(f"{value!r} is not a list")
-        if not (self.min_size <= len(value) <= self.max_size):
+        if len(value) < self.min_size or (
+            self.max_size is not None and len(value) > self.max_size
+        ):
             raise CannotInvert(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
@@ -265,7 +267,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self.element_strategy!r}, "
-            f"min_size={self.min_size:_}, max_size={self.max_size:_})"
+            f"min_size={self.min_size:_}, max_size={self.max_size!r})"
         )
 
     @overload
@@ -278,7 +280,7 @@ class ListStrategy(SearchStrategy[list[Ex]]):
     ) -> "SearchStrategy[list[Ex]]": ...
     def filter(self, condition):
         if condition in self._nonempty_filters or is_identity_function(condition):
-            assert self.max_size >= 1, "Always-empty is special cased in st.lists()"
+            assert self.max_size != 0, "Always-empty is special cased in st.lists()"
             if self.min_size >= 1:
                 return self
             new = copy.copy(self)
@@ -293,17 +295,21 @@ class ListStrategy(SearchStrategy[list[Ex]]):
             new.min_size = max(
                 self.min_size, constraints.get("min_value", self.min_size)
             )
-            new.max_size = min(
-                self.max_size, constraints.get("max_value", self.max_size)
-            )
+            if "max_value" in constraints:
+                new.max_size = (
+                    constraints["max_value"]
+                    if self.max_size is None
+                    else min(self.max_size, constraints["max_value"])
+                )
             # Unsatisfiable filters are easiest to understand without rewriting.
-            if new.min_size > new.max_size:
+            if new.max_size is not None and new.min_size > new.max_size:
                 return SearchStrategy.filter(self, condition)
             # Recompute average size; this is cheaper than making it into a property.
-            new.average_size = min(
-                max(new.min_size * 2, new.min_size + 5),
-                0.5 * (new.min_size + new.max_size),
-            )
+            new.average_size = max(new.min_size * 2, new.min_size + 5)
+            if new.max_size is not None:
+                new.average_size = min(
+                    new.average_size, 0.5 * (new.min_size + new.max_size)
+                )
             if pred is None:
                 return new
             return SearchStrategy.filter(new, condition)
@@ -316,7 +322,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
         self,
         elements: SearchStrategy[Ex],
         min_size: int,
-        max_size: float | int | None,
+        max_size: int | None,
         # TODO: keys are guaranteed to be Hashable, not just Any, but this makes
         # other things harder to type
         keys: tuple[Callable[[Ex], Any], ...],
@@ -331,8 +337,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
             assert self.min_size == 0
             return []
 
-        elements = cu.many(
-            data,
+        elements = many(
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=self.average_size,
@@ -356,10 +361,10 @@ class UniqueListStrategy(ListStrategy[Ex]):
         filtered = FilteredStrategy(
             self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
-        while elements.more():
+        for reject in elements:
             value = filtered.do_filtered_draw(data)
             if value is filter_not_satisfied:
-                elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
+                reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
                 assert not isinstance(value, UniqueIdentifier)
                 for key, seen in zip(self.keys, seen_sets, strict=True):
@@ -367,7 +372,8 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))
                 result.append(value)
-        assert self.max_size >= len(result) >= self.min_size
+        assert len(result) >= self.min_size
+        assert self.max_size is None or len(result) <= self.max_size
         return result
 
     def _check_unique_keys(self, elements: list[Any]) -> None:
@@ -399,7 +405,9 @@ class UniqueListStrategy(ListStrategy[Ex]):
             self._check_unique_keys(value)
             return ListStrategy._invert(self, value)
         self._check_unique_keys(self._split_suffixed(value))
-        if not (self.min_size <= len(value) <= self.max_size):
+        if len(value) < self.min_size or (
+            self.max_size is not None and len(value) > self.max_size
+        ):
             raise CannotInvert(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
@@ -422,8 +430,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
     def do_draw(self, data: ConjectureData) -> list[Ex]:
         assert isinstance(self.element_strategy, SampledFromStrategy)
 
-        should_draw = cu.many(
-            data,
+        elements = many(
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=self.average_size,
@@ -433,7 +440,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
 
         remaining = LazySequenceCopy(self.element_strategy.elements)
 
-        while remaining and should_draw.more():
+        for reject in elements:
             j = data.draw_integer(0, len(remaining) - 1)
             value = self.element_strategy._transform(remaining.pop(j), data=data)
             if value is not filter_not_satisfied and all(
@@ -446,16 +453,21 @@ class UniqueSampledListStrategy(UniqueListStrategy):
                     value = (value, *data.draw(self.tuple_suffixes))
                 result.append(value)
             else:
-                should_draw.reject(
+                reject(
                     "UniqueSampledListStrategy filter not satisfied or value already seen"
                 )
-        assert self.max_size >= len(result) >= self.min_size
+            if not remaining:
+                elements.finish()
+        assert len(result) >= self.min_size
+        assert self.max_size is None or len(result) <= self.max_size
         return result
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, list):
             raise CannotInvert(f"{value!r} is not a list")
-        if not (self.min_size <= len(value) <= self.max_size):
+        if len(value) < self.min_size or (
+            self.max_size is not None and len(value) > self.max_size
+        ):
             raise CannotInvert(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
@@ -487,9 +499,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
                 except CannotInvert as exc:
                     add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
                     raise
-        if remaining:
-            # with an exhausted pool, do_draw stops without drawing a boolean
-            choices.extend(elements.done())
+        choices.extend(elements.done())
         return tuple(choices)
 
 
@@ -528,13 +538,9 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
 
         if self.optional is not None:
             remaining = [k for k, v in self.optional.items() if not v.is_empty]
-            should_draw = cu.many(
-                data,
-                min_size=0,
-                max_size=len(remaining),
-                average_size=len(remaining) / 2,
-            )
-            while should_draw.more():
+            for _ in many(
+                min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
+            ):
                 j = data.draw_integer(0, len(remaining) - 1)
                 remaining[-1], remaining[j] = remaining[j], remaining[-1]
                 key = remaining.pop()

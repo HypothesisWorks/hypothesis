@@ -22,7 +22,6 @@ from hypothesis import strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
 from hypothesis.internal.validation import (
     check_type,
@@ -30,6 +29,7 @@ from hypothesis.internal.validation import (
     check_valid_size,
     try_convert,
 )
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.strategies import Ex, check_strategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.deprecation import note_deprecation
@@ -244,19 +244,18 @@ class ValueIndexStrategy(st.SearchStrategy):
         result = []
         seen = set()
 
-        iterator = cu.many(
-            data,
+        elements = many(
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=(self.min_size + self.max_size) / 2,
         )
 
-        while iterator.more():
+        for reject_element in elements:
             elt = data.draw(self.elements)
 
             if self.unique:
                 if elt in seen:
-                    iterator.reject()
+                    reject_element()
                     continue
                 seen.add(elt)
             result.append(elt)
