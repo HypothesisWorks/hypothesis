@@ -39,3 +39,9 @@ correction. This meant that disallowed floats (e.g. NaN when
 ``allow_nan=False``, or subnormal floats below
 ``smallest_nonzero_magnitude``) were clamped to ``-inf`` instead of a valid
 in-bounds value.
+
+This patch also fixes a bug where the observability ``status_reason`` was
+empty for ``gave_up`` test cases when using the ``crosshair`` backend. The
+``"gave up because"`` event, which is always a concrete string, was lost
+when realization of other (potentially symbolic) events raised
+``BackendCannotProceed`` and cleared the entire events dict.
