@@ -19,11 +19,11 @@ if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
     from hypothesis.strategies import SearchStrategy
 
+    class _Reject(Protocol):
+        def __call__(self, why: str | None = None) -> None: ...
+
+
 _ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
-
-
-class _Reject(Protocol):
-    def __call__(self, why: str | None = None) -> None: ...
 
 
 def weighted_booleans(*, p: float) -> "SearchStrategy[bool]":
@@ -213,7 +213,7 @@ class many:
         """
         self._force_stop = True
 
-    def __next__(self) -> _Reject:
+    def __next__(self) -> "_Reject":
         if self._drawn:
             # A rejected element does not contribute to the collection, so
             # discard its span - the shrinker can then delete it wholesale.
