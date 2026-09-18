@@ -42,6 +42,7 @@ in-bounds value.
 
 This patch also fixes a bug where the observability ``status_reason`` was
 empty for ``gave_up`` test cases when using the ``crosshair`` backend. The
-``"gave up because"`` event, which is always a concrete string, was lost
-when realization of other (potentially symbolic) events raised
-``BackendCannotProceed`` and cleared the entire events dict.
+``reason`` on the ``UnsatisfiedAssumption`` raised by ``assume()`` could be
+corrupted to an empty string by crosshair's opcode tracing when the f-string
+was evaluated inline in the raising frame; it is now computed in a helper
+frame, like the other message components.
