@@ -13,6 +13,7 @@ from sys import float_info
 
 import pytest
 
+from hypothesis import HealthCheck, settings
 from hypothesis.internal.floats import width_smallest_normals
 from hypothesis.strategies import floats
 
@@ -53,4 +54,10 @@ def test_does_not_generate_subnormals_when_disallowed(width, min_value, max_valu
     )
     strat = strat.filter(lambda x: x != 0.0 and math.isfinite(x))
     smallest_normal = width_smallest_normals(width)
-    assert_all_examples(strat, lambda x: x <= -smallest_normal or x >= smallest_normal)
+    assert_all_examples(
+        strat,
+        lambda x: x <= -smallest_normal or x >= smallest_normal,
+        # most unbounded float64 draws downcast-overflow or are non-finite,
+        # so this test inherently filters most inputs.
+        settings=settings(suppress_health_check=[HealthCheck.filter_too_much]),
+    )
