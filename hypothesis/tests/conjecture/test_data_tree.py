@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 import textwrap
 from random import Random
 
@@ -23,7 +24,7 @@ from hypothesis.internal.conjecture.datatree import (
     compute_max_children,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.conjecture.floats import float_to_int, int_to_float
 from hypothesis.internal.conjecture.provider_conformance import (
     boolean_constraints,
     integer_constraints,
@@ -33,6 +34,7 @@ from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
     constraints_strategy,
+    float_constr,
     fresh_data,
     interesting_origin,
     nodes,
@@ -530,6 +532,26 @@ def test_can_generate_hard_floats():
         prefix = tree.generate_novel_prefix(Random())
         data = ConjectureData.for_choices(prefix)
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
+
+
+def test_draw_from_cache_falls_back_to_random_draw_when_cache_exhausted():
+    # all_children only enumerates the canonical NaN values, while
+    # compute_max_children counts every NaN bit pattern. A float branch with
+    # allow_nan=True can therefore exhaust its children cache without the
+    # branch being exhausted, in which case _draw_from_cache falls back to
+    # drawing at random.
+    tree = DataTree()
+    constraints = float_constr(0.0, 0.0, allow_nan=True)
+    key = 0
+
+    # exhaust the enumerated children cache (0.0 and the canonical NaNs)
+    generator, _, rejected = tree._get_children_cache("float", constraints, key=key)
+    for v in generator:
+        rejected.add(float_to_int(v))
+
+    value = tree._draw_from_cache("float", constraints, key=key, random=Random(0))
+    f = int_to_float(value)
+    assert math.isnan(f) or f == 0.0
 
 
 @given(boolean_constraints(), integer_constraints())
