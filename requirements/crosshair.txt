@@ -9,7 +9,7 @@ attrs==26.1.0
     #   cattrs
     #   lsprotocol
     #   pygls
-cattrs==26.1.0
+cattrs==26.2.0
     # via
     #   lsprotocol
     #   pygls
@@ -19,7 +19,7 @@ crosshair-tool==0.0.110
     #   hypothesis-crosshair
 execnet==2.1.2
     # via pytest-xdist
-hypothesis==6.167.1
+hypothesis==6.168.0
     # via hypothesis-crosshair
 hypothesis-crosshair==0.0.30
     # via -r requirements/crosshair.in
@@ -56,7 +56,7 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==6.0.0
+syrupy==6.1.1
     # via -r requirements/test.in
 typeshed-client==2.13.0
     # via crosshair-tool
