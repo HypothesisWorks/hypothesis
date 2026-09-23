@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.168.1:
+
+--------------------
+6.168.1 - 2026-09-23
+--------------------
+
+We now publish abi3 wheels for Linux s390x (manylinux) and Linux i686 (musllinux).
+
 .. _v6.168.0:
 
 --------------------
