@@ -46,7 +46,12 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import choice_count
 from hypothesis.internal.conjecture.provider_conformance import integer_constraints
-from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
+from hypothesis.internal.floats import (
+    SMALLEST_SUBNORMAL,
+    float_to_int,
+    next_down,
+    next_up,
+)
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
@@ -150,22 +155,45 @@ def test_compute_max_children_is_positive(choice_type_and_constraints):
         ("boolean", {"p": 0.5}, 2),
         ("boolean", {"p": 0.001}, 2),
         ("boolean", {"p": 0.999}, 2),
-        ("float", float_constr(0.0, 0.0), 1),
-        ("float", float_constr(-0.0, -0.0), 1),
-        ("float", float_constr(-0.0, 0.0), 2),
-        ("float", float_constr(next_down(-0.0), next_up(0.0)), 4),
+        ("float", float_constr(0.0, 0.0, allow_nan=False), 1),
+        ("float", float_constr(-0.0, -0.0, allow_nan=False), 1),
+        ("float", float_constr(-0.0, 0.0, allow_nan=False), 2),
+        ("float", float_constr(next_down(-0.0), next_up(0.0), allow_nan=False), 4),
         (
             "float",
             float_constr(
                 next_down(next_down(-0.0)),
                 next_up(next_up(0.0)),
                 smallest_nonzero_magnitude=next_up(SMALLEST_SUBNORMAL),
+                allow_nan=False,
             ),
             4,
         ),
-        ("float", float_constr(smallest_nonzero_magnitude=next_down(math.inf)), 6),
-        ("float", float_constr(1, 10, smallest_nonzero_magnitude=11.0), 0),
-        ("float", float_constr(-3, -2, smallest_nonzero_magnitude=4.0), 0),
+        (
+            "float",
+            float_constr(
+                smallest_nonzero_magnitude=next_down(math.inf), allow_nan=False
+            ),
+            6,
+        ),
+        (
+            "float",
+            float_constr(1, 10, smallest_nonzero_magnitude=11.0, allow_nan=False),
+            0,
+        ),
+        (
+            "float",
+            float_constr(-3, -2, smallest_nonzero_magnitude=4.0, allow_nan=False),
+            0,
+        ),
+        # allow_nan=True adds 2 * (2**52 - 1) NaN bit patterns to the count
+        ("float", float_constr(0.0, 0.0), 1 + 2 * (2**52 - 1)),
+        ("float", float_constr(-0.0, 0.0), 2 + 2 * (2**52 - 1)),
+        (
+            "float",
+            float_constr(1, 10, smallest_nonzero_magnitude=11.0),
+            0 + 2 * (2**52 - 1),
+        ),
     ],
 )
 def test_compute_max_children(choice_type, constraints, count_children):
@@ -197,11 +225,13 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     )
 )
 # all combinations of float signs
-@example(("float", float_constr(next_down(-0.0), -0.0)))
-@example(("float", float_constr(next_down(-0.0), next_up(0.0))))
-@example(("float", float_constr(0.0, next_up(0.0))))
+@example(("float", float_constr(next_down(-0.0), -0.0, allow_nan=False)))
+@example(("float", float_constr(next_down(-0.0), next_up(0.0), allow_nan=False)))
+@example(("float", float_constr(0.0, next_up(0.0), allow_nan=False)))
 # using a smallest_nonzero_magnitude which happens to filter out everything
-@example(("float", float_constr(1.0, 2.0, smallest_nonzero_magnitude=3.0)))
+@example(
+    ("float", float_constr(1.0, 2.0, smallest_nonzero_magnitude=3.0, allow_nan=False))
+)
 @example(("integer", integer_constr(1, 2, weights={1: 0.2, 2: 0.4})))
 @given(choice_types_constraints())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
@@ -398,6 +428,43 @@ def test_all_children_are_permitted_values(choice_type_and_constraints):
 
     # test that all_children -> choice_permitted (but not necessarily the converse.)
     for value in all_children(choice_type, constraints):
+        assert choice_permitted(value, constraints), value
+
+
+def test_compute_max_children_includes_nan():
+    """When allow_nan=True, compute_max_children must account for NaN bit patterns."""
+    constraints = float_constr(0.0, 0.0)  # allow_nan=True by default
+    count = compute_max_children("float", constraints)
+    # at least 0.0 + NaN bit patterns
+    assert count > 1
+
+    constraints_no_nan = float_constr(0.0, 0.0, allow_nan=False)
+    count_no_nan = compute_max_children("float", constraints_no_nan)
+    assert count == count_no_nan + 2 * (2**52 - 1)
+
+
+def test_all_children_yields_nan():
+    """When allow_nan=True, all_children must yield NaN values."""
+    constraints = float_constr(0.0, 0.0)
+    children = list(all_children("float", constraints))
+    nans = [c for c in children if math.isnan(c)]
+    # math.nan and -math.nan
+    assert len(nans) == 2
+    # verify the NaNs have distinct bit patterns
+    assert len({float_to_int(n) for n in nans}) == 2
+
+
+def test_all_children_no_nan_when_disallowed():
+    """When allow_nan=False, all_children must not yield NaN."""
+    constraints = float_constr(0.0, 0.0, allow_nan=False)
+    children = list(all_children("float", constraints))
+    assert not any(math.isnan(c) for c in children)
+
+
+def test_all_children_nan_are_permitted():
+    """NaN values yielded by all_children must be permitted by choice_permitted."""
+    constraints = float_constr(0.0, 0.0)
+    for value in all_children("float", constraints):
         assert choice_permitted(value, constraints), value
 
 

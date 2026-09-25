@@ -1334,7 +1334,14 @@ class StateForActualGivenExecution:
             try:
                 data.events = data.provider.realize(data.events)
             except BackendCannotProceed:
-                data.events = {}
+                # Preserve the "gave up because" event, which is always a concrete
+                # string (set by mark_invalid with a concrete reason), so that
+                # observability status_reason is not lost when realization of
+                # other (potentially symbolic) events fails.
+                gave_up_because = data.events.get("gave up because", "")
+                data.events = (
+                    {"gave up because": gave_up_because} if gave_up_because else {}
+                )
 
             if observability_enabled() and not backend_cannot_proceed:
                 if runner := getattr(self, "_runner", None):

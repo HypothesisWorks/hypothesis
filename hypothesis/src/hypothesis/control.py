@@ -44,6 +44,10 @@ def _calling_frame_location(frame: Any) -> str:
     return f"{where.f_code.co_filename}:{where.f_lineno}"
 
 
+def _failed_to_satisfy_reason(where: str) -> str:
+    return f"failed to satisfy {where}"
+
+
 def reject() -> NoReturn:
     if _current_build_context.value is None:
         note_deprecation(
@@ -86,7 +90,7 @@ def assume(condition: object) -> Literal[True]:
             counts.update_count(condition=bool(condition))
         if not condition:
             raise UnsatisfiedAssumption(
-                f"failed to satisfy {where}",
+                _failed_to_satisfy_reason(where),
                 location=_calling_frame_location(frame),
             )
     return True
