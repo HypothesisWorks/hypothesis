@@ -460,6 +460,7 @@ def decode_failure(blob: bytes) -> Sequence[ChoiceT]:
 def _invalid(message, *, exc=InvalidArgument, test, given_kwargs):
     @impersonate(test)
     def wrapped_test(*arguments, **kwargs):  # pragma: no cover  # coverage limitation
+        __tracebackhide__ = True
         raise exc(message)
 
     wrapped_test.is_hypothesis_test = True

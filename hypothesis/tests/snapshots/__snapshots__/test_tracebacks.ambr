@@ -1,0 +1,214 @@
+# serializer version: 1
+# name: test_traceback_as_pytest_renders_it[error_in_helper]
+  '''
+  _____________________________ test_error_in_helper _____________________________
+  
+  x = 0
+  
+      @settings(database=None, derandomize=True, print_blob=False)
+      @given(st.integers())
+      def test_error_in_helper(x):
+  >       helper(x)
+  
+  test_traceback_as_pytest_renders_it.py:9: 
+  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+  
+  x = 0
+  
+      def helper(x):
+  >       raise ValueError("boom")
+  E       ValueError: boom
+  E       Failing test case: test_error_in_helper(
+  E           x=0,  # or any other generated value
+  E       )
+  
+  test_traceback_as_pytest_renders_it.py:4: ValueError
+  '''
+# ---
+# name: test_traceback_as_pytest_renders_it[invalid_signature]
+  '''
+  ____________________________ test_invalid_signature ____________________________
+  
+  E   hypothesis.errors.InvalidArgument: Too many positional arguments for test_invalid_signature() were passed to @given - expected at most 0 arguments, but got 1 (none(),)
+  All traceback entries are hidden. Pass `--full-trace` to see hidden and internal frames.
+  '''
+# ---
+# name: test_traceback_as_pytest_renders_it[multiple_failures]
+  '''
+  ____________________________ test_multiple_failures ____________________________
+    | ExceptionGroup: Hypothesis found 2 distinct failures. (2 sub-exceptions)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "test_traceback_as_pytest_renders_it.py", line 9, in test_multiple_failures
+      |     raise RuntimeError("This number is too small!")
+      | RuntimeError: This number is too small!
+      | Failing test case: test_multiple_failures(
+      |     x=-101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing test cases:
+      |         test_traceback_as_pytest_renders_it.py:9
+      +---------------- 2 ----------------
+      | Traceback (most recent call last):
+      |   File "test_traceback_as_pytest_renders_it.py", line 7, in test_multiple_failures
+      |     raise ValueError("This number is too big!")
+      | ValueError: This number is too big!
+      | Failing test case: test_multiple_failures(
+      |     x=101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing test cases:
+      |         test_traceback_as_pytest_renders_it.py:7
+      +------------------------------------
+  All traceback entries are hidden. Pass `--full-trace` to see hidden and internal frames.
+  '''
+# ---
+# name: test_traceback_frames[error_in_drawn_strategy]
+  '''
+  _________________________ test_error_in_drawn_strategy _________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_error_in_drawn_strategy
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "test_traceback_frames.py", line 11, in test_error_in_drawn_strategy
+      data.draw(broken())
+    File "test_traceback_frames.py", line 6, in broken
+      raise ValueError("boom")
+  ValueError: boom
+  while generating 'Draw 1' from broken()
+  Failing test case: test_error_in_drawn_strategy(
+      data=data(...),
+  )
+  '''
+# ---
+# name: test_traceback_frames[error_in_helper]
+  '''
+  _____________________________ test_error_in_helper _____________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_error_in_helper
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "test_traceback_frames.py", line 9, in test_error_in_helper
+      helper(x)
+    File "test_traceback_frames.py", line 4, in helper
+      raise ValueError("boom")
+  ValueError: boom
+  Failing test case: test_error_in_helper(
+      x=0,  # or any other generated value
+  )
+  '''
+# ---
+# name: test_traceback_frames[error_in_strategy]
+  '''
+  ____________________________ test_error_in_strategy ____________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_error_in_strategy
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "test_traceback_frames.py", line 4, in <lambda>
+      @given(st.integers().map(lambda x: 1 / 0))
+  ZeroDivisionError: division by zero
+  while generating 'x' from integers().map(lambda x: 1 / 0)
+  '''
+# ---
+# name: test_traceback_frames[error_in_test]
+  '''
+  ______________________________ test_error_in_test ______________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_error_in_test
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "test_traceback_frames.py", line 6, in test_error_in_test
+      1 / 0
+  ZeroDivisionError: division by zero
+  Failing test case: test_error_in_test(
+      _=None,
+  )
+  '''
+# ---
+# name: test_traceback_frames[failed_health_check]
+  '''
+  ___________________________ test_failed_health_check ___________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_failed_health_check
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "hypothesis/internal/healthcheck.py", line NN, in fail_health_check
+      raise FailedHealthCheck(message)
+  hypothesis.errors.FailedHealthCheck: Input generation is slow: Hypothesis only generated N inputs after T.
+  
+        count | fraction |    slowest draws (seconds)
+    x | <timings>
+  
+  This could be for a few reasons:
+  1. This strategy could be generating too much data per input. Try decreasing the amount of data generated, for example by decreasing the minimum size of collection strategies like st.lists().
+  2. Some other expensive computation could be running during input generation. For example, if @st.composite or st.data() is interspersed with an expensive computation, HealthCheck.too_slow is likely to trigger. If this computation is unrelated to input generation, move it elsewhere. Otherwise, try making it more efficient, or disable this health check if that is not possible.
+  
+  If you expect input generation to take this long, you can disable this health check with @settings(suppress_health_check=[HealthCheck.too_slow]). See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck for details.
+  '''
+# ---
+# name: test_traceback_frames[invalid_signature]
+  '''
+  ____________________________ test_invalid_signature ____________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise exc(message)
+  hypothesis.errors.InvalidArgument: Too many positional arguments for test_invalid_signature() were passed to @given - expected at most 0 arguments, but got 1 (none(),)
+  '''
+# ---
+# name: test_traceback_frames[lambda_in_test]
+  '''
+  _____________________________ test_lambda_in_test ______________________________
+  Traceback (most recent call last):
+    <pytest internals>
+    File "<hypothesis>", line NN, in test_lambda_in_test
+    File "hypothesis/core.py", line NN, in wrapped_test
+      raise the_error_hypothesis_found
+    File "test_traceback_frames.py", line 7, in test_lambda_in_test
+      1 / 0
+  ZeroDivisionError: division by zero
+  Failing test case: test_lambda_in_test(
+      _=None,
+  )
+  '''
+# ---
+# name: test_traceback_frames[multiple_failures]
+  '''
+  ____________________________ test_multiple_failures ____________________________
+    + Exception Group Traceback (most recent call last):
+    |   <pytest internals>
+    |   File "<hypothesis>", line NN, in test_multiple_failures
+    |   File "hypothesis/core.py", line NN, in wrapped_test
+    |     raise the_error_hypothesis_found
+    | ExceptionGroup: Hypothesis found 2 distinct failures. (2 sub-exceptions)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "test_traceback_frames.py", line 9, in test_multiple_failures
+      |     raise RuntimeError("This number is too small!")
+      | RuntimeError: This number is too small!
+      | Failing test case: test_multiple_failures(
+      |     x=-101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing test cases:
+      |         test_traceback_frames.py:9
+      +---------------- 2 ----------------
+      | Traceback (most recent call last):
+      |   File "test_traceback_frames.py", line 7, in test_multiple_failures
+      |     raise ValueError("This number is too big!")
+      | ValueError: This number is too big!
+      | Failing test case: test_multiple_failures(
+      |     x=101,
+      | )
+      | Explanation:
+      |     These lines were always and only run by failing test cases:
+      |         test_traceback_frames.py:7
+      +------------------------------------
+  '''
+# ---

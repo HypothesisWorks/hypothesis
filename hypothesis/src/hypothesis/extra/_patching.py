@@ -196,8 +196,10 @@ def _get_patch_for(
     strip_via: tuple[str, ...] = (),
     namespace: dict[str, Any],
 ) -> tuple[str, str] | None:
+    # `func` may be an @impersonate'd wrapper, which has no source of its own.
+    source_func = getattr(func, "__wrapped_target", func)
     try:
-        before = inspect.getsource(func)
+        before = inspect.getsource(source_func)
     except Exception:  # pragma: no cover
         return None
 

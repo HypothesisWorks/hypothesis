@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from functools import partial
 from inspect import getfile, getsourcefile
 from pathlib import Path
-from types import ModuleType, TracebackType
+from types import FrameType, ModuleType, TracebackType
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -57,6 +57,15 @@ def belongs_to(package: ModuleType) -> Callable[[str], bool]:
 is_hypothesis_file = belongs_to(hypothesis)
 
 
+def _is_hypothesis_frame(frame: FrameType) -> bool:
+    # Frames from our files are ours; so are `@impersonate`d wrappers, which are
+    # compiled from a source string and so identified by an injected global.
+    return (
+        is_hypothesis_file(getsourcefile(frame) or getfile(frame))
+        or frame.f_globals.get("__hypothesistracebackhide__") is True
+    )
+
+
 def get_trimmed_traceback(
     exception: BaseException | None = None,
 ) -> TracebackType | None:
@@ -80,15 +89,19 @@ def get_trimmed_traceback(
         )
     ):
         return tb
-    while tb.tb_next is not None and (
-        # If the frame is from one of our files, it's been added by Hypothesis.
-        is_hypothesis_file(getsourcefile(tb.tb_frame) or getfile(tb.tb_frame))
-        # But our `@proxies` decorator overrides the source location,
-        # so we check for an attribute it injects into the frame too.
-        or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
-    ):
+    # Drop our frames from anywhere in the traceback, but always keep the
+    # innermost one - that's where the error was actually raised.
+    keep: list[TracebackType] = []
+    while tb is not None:
+        if tb.tb_next is None or not _is_hypothesis_frame(tb.tb_frame):
+            keep.append(tb)
         tb = tb.tb_next
-    return tb
+    # Build a new chain rather than reassigning `tb_next`, which would mutate a
+    # traceback that other code may still hold a reference to.
+    new_tb: TracebackType | None = None
+    for entry in reversed(keep):
+        new_tb = TracebackType(new_tb, entry.tb_frame, entry.tb_lasti, entry.tb_lineno)
+    return new_tb
 
 
 @dataclass(slots=True, frozen=True)
