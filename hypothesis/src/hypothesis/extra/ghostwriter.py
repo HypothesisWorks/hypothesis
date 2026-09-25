@@ -126,8 +126,7 @@ IMPORT_SECTION = """
 """
 
 TEMPLATE = """
-@given({given_args})
-def test_{test_kind}_{func_name}({arg_names}){return_annotation}:
+{given}def test_{test_kind}_{func_name}({arg_names}){return_annotation}:
 {test_body}
 """
 
@@ -862,6 +861,11 @@ def _make_test_body(
     if assertions:
         test_body = f"{test_body}\n{assertions}"
 
+    if not given_strategies:
+        # With no arguments there is nothing to generate, so we write a plain test
+        # which ends early on an allowed exception instead of rejecting the input.
+        test_body = re.sub(r"^( *)reject\(\)$", r"\1return", test_body, flags=re.M)
+
     # Indent our test code to form the body of a function or method.
     argnames = ["self"] if style == "unittest" else []
     if annotate:
@@ -870,7 +874,7 @@ def _make_test_body(
         argnames.extend(given_strategies)
 
     body = TEMPLATE.format(
-        given_args=given_args,
+        given=f"@given({given_args})\n" if given_strategies else "",
         test_kind=ghost,
         func_name="_".join(_get_qualname(f).replace(".", "_") for f in funcs),
         arg_names=", ".join(argnames),
@@ -1085,7 +1089,8 @@ def _make_test(imports: ImportSet, body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
-    imports |= {("hypothesis", "given"), ("hypothesis", "strategies as st")}
+    if "@given(" in body:
+        imports |= {("hypothesis", "given"), ("hypothesis", "strategies as st")}
     if "        reject()\n" in body:
         imports.add(("hypothesis", "reject"))
 
@@ -1578,10 +1583,9 @@ def _make_equiv_body(funcs, except_, style, annotate):
 
 EQUIV_FIRST_BLOCK = """
 try:
-{}
+{call}
     exc_type = None
-    target(1, label="input was valid")
-{}except Exception as exc:
+{target}{catch}except Exception as exc:
     exc_type = type(exc)
 """.strip()
 
@@ -1600,9 +1604,16 @@ def _make_equiv_errors_body(funcs, except_, style, annotate):
     first, *rest = funcs
     first_call = _write_call(first, assign=var_names[0], except_=except_)
     extra_imports, suppress = _exception_string(except_)
-    extra_imports.add(("hypothesis", "target"))
+    target = ""
+    if any(_get_params(f) for f in funcs):
+        extra_imports.add(("hypothesis", "target"))
+        target = '    target(1, label="input was valid")\n'
     catch = f"except {suppress}:\n    reject()\n" if suppress else ""
-    test_lines = [EQUIV_FIRST_BLOCK.format(indent(first_call, prefix="    "), catch)]
+    test_lines = [
+        EQUIV_FIRST_BLOCK.format(
+            call=indent(first_call, prefix="    "), target=target, catch=catch
+        )
+    ]
 
     for vname, f in zip(var_names[1:], rest, strict=True):
         if style == "pytest":

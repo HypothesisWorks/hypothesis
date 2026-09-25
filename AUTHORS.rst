@@ -58,6 +58,7 @@ their individual contributions.
 * `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
 * `David Mascharka <https://github.com/davidmascharka>`_
 * `Dawn E. Collett <https://github.com/lisushka>`_
+* `deepak7lal <https://github.com/deepak7lal>`_
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Dmitry Dygalo <https://www.github.com/Stranger6667>`_
