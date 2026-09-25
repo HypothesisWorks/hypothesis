@@ -40,7 +40,6 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.reflection import proxies
@@ -50,6 +49,7 @@ from hypothesis.internal.validation import (
     check_valid_integer,
     check_valid_interval,
 )
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
@@ -395,8 +395,7 @@ class ArrayStrategy(st.SearchStrategy):
             result_obj = [fill_val for _ in range(self.array_size)]
             fill_mask = [True for _ in range(self.array_size)]
 
-            elements = cu.many(
-                data,
+            elements = many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It
@@ -411,15 +410,15 @@ class ArrayStrategy(st.SearchStrategy):
             assigned = set()
             seen = set()
 
-            while elements.more():
+            for reject in elements:
                 i = data.draw_integer(0, self.array_size - 1)
                 if i in assigned:
-                    elements.reject("chose an array index we've already used")
+                    reject("chose an array index we've already used")
                     continue
                 val = data.draw(self.elements_strategy)
                 if self.unique:
                     if val in seen:
-                        elements.reject("chose an element we've already used")
+                        reject("chose an element we've already used")
                         continue
                     seen.add(val)
 

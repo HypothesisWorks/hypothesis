@@ -23,6 +23,7 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ValueHole, choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
+from hypothesis.lowlevel import weighted_booleans
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import one_of
 
@@ -61,6 +62,11 @@ def test_integers(data):
 @given(st.data())
 def test_booleans(data):
     check_roundtrip_many(st.booleans(), data)
+
+
+@given(st.data())
+def test_weighted_booleans(data):
+    check_roundtrip_many(weighted_booleans(p=data.draw(st.floats(0, 1))), data)
 
 
 @given(st.data())

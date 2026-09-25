@@ -46,10 +46,10 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import (
@@ -370,8 +370,7 @@ class ArrayStrategy(st.SearchStrategy):
             # value from our fill strategy and use that to populate the
             # remaining positions with that strategy.
 
-            elements = cu.many(
-                data,
+            elements = many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It
@@ -386,15 +385,15 @@ class ArrayStrategy(st.SearchStrategy):
             needs_fill = np.full(self.array_size, True)
             seen = set()
 
-            while elements.more():
+            for reject in elements:
                 i = data.draw_integer(0, self.array_size - 1)
                 if not needs_fill[i]:
-                    elements.reject()
+                    reject()
                     continue
                 self.set_element(data.draw(self.element_strategy), result, i)
                 if self.unique:
                     if result[i] in seen:
-                        elements.reject()
+                        reject()
                         continue
                     seen.add(result[i])
 

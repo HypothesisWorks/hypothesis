@@ -44,10 +44,7 @@ from hypothesis.internal.conjecture.choice import (
 )
 from hypothesis.internal.conjecture.floats import lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes
-from hypothesis.internal.conjecture.utils import (
-    Sampler,
-    many,
-)
+from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.constants_ast import (
     Constants,
     constants_from_module,
@@ -68,6 +65,7 @@ from hypothesis.internal.statistics import (
     PiecewiseDistribution,
     UniformDistribution,
 )
+from hypothesis.lowlevel import many
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
@@ -1042,13 +1040,13 @@ class HypothesisProvider(PrimitiveProvider):
 
         chars = []
         elements = many(
-            self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
-            observe=False,
+            _data=self._cd,
+            _observe=False,
         )
-        while elements.more():
+        for _ in elements:
             if len(intervals) > 256:
                 if self.draw_boolean(0.2):
                     i = self._random.randint(256, len(intervals) - 1)
@@ -1083,13 +1081,13 @@ class HypothesisProvider(PrimitiveProvider):
             0.5 * (min_size + max_size),
         )
         elements = many(
-            self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
-            observe=False,
+            _data=self._cd,
+            _observe=False,
         )
-        while elements.more():
+        for _ in elements:
             buf += self._random.randbytes(1)
 
         return bytes(buf)
@@ -1210,14 +1208,14 @@ class BytestringProvider(PrimitiveProvider):
             0.5 * (min_size + max_size),
         )
         elements = many(
-            self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
-            observe=False,
+            _data=self._cd,
+            _observe=False,
         )
         values = []
-        while elements.more():
+        for _ in elements:
             values.append(self.draw_integer(0, alphabet_size - 1))
         return values
 

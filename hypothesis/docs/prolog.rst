@@ -80,6 +80,9 @@
 
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
+.. |many| replace:: :class:`~hypothesis.lowlevel.many`
+.. |many.finish| replace:: :func:`many.finish() <hypothesis.lowlevel.many.finish>`
+.. |weighted_booleans| replace:: :func:`~hypothesis.lowlevel.weighted_booleans`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
 .. |st.booleans| replace:: :func:`~hypothesis.strategies.booleans`
@@ -218,6 +221,9 @@
 
 .. |observability| replace:: :ref:`observability <observability>`
 .. |Observability| replace:: :ref:`Observability <observability>`
+
+.. |lowlevel| replace:: :mod:`hypothesis.lowlevel`
+.. |hypothesis.lowlevel| replace:: :mod:`hypothesis.lowlevel`
 
 .. |test case| replace:: :term:`test case`
 .. |test cases| replace:: :term:`test cases <test case>`
