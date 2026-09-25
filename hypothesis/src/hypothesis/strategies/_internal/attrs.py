@@ -21,12 +21,10 @@ import attr
 
 # attr/validators.pyi does not expose types for these, even though they exist
 # in source.
-from attr.validators import (  # type: ignore
-    _AndValidator,
-    _InstanceOfValidator,
-    _InValidator,
-    _OptionalValidator,
-)
+from attr.validators import _AndValidator  # type: ignore
+from attr.validators import _InstanceOfValidator  # type: ignore
+from attr.validators import _InValidator  # type: ignore
+from attr.validators import _OptionalValidator  # type: ignore
 from attrs import Attribute, AttrsInstance, Factory
 
 from hypothesis import strategies as st

@@ -1400,6 +1400,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
 
     if thing == np.dtype:
         # Note: Parameterized dtypes and DTypeLike are not supported.
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             scalar_dtypes(),
             byte_string_dtypes(),
@@ -1420,6 +1421,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
         #     *scalars,
         #     _NestedSequence[Union[*scalars]]
         # ]
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             # *scalars
             base_strats,
@@ -1449,6 +1451,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
         # resolution of ArrayLike, above.
         assert len(args) <= 1
         base_strat = st.from_type(args[0]) if args else base_strats
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             st.lists(base_strat),
             st.recursive(st.tuples(), st.tuples),
