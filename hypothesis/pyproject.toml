@@ -203,3 +203,23 @@ exclude_lines = [
     "@overload",
     "if .*\\bnot .*provider.avoid_realization",
 ]
+
+[tool.pyrefly]
+project-includes = ["src"]
+python-version = "3.14.0"
+python-platform = "linux"
+ignore-missing-imports = [
+    "hypothesis._native",
+    "hypothesis._native.*",
+    "re._constants",  # typeshed only stubs the pre-3.11 names
+    "re._parser",
+    "grequests",
+]
+# django is typed but lacks py.typed
+replace-untyped-imports-with-any = ["django", "django.*"]
+# match mypy, which doesn't check unannotated function bodies
+check-unannotated-defs = false
+
+[tool.pyrefly.errors]
+implicit-any-parameter = "ignore"
+unannotated-return = "ignore"

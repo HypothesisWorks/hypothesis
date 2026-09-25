@@ -84,7 +84,6 @@ from hypothesis.errors import (
     SmallSearchSpaceWarning,
 )
 from hypothesis.internal.charmap import (
-    Categories,
     CategoryName,
     as_general_categories,
     categories as all_categories,
@@ -149,6 +148,7 @@ from hypothesis.strategies._internal.numbers import (
 from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
+    T1,
     Ex,
     SampledFromStrategy,
     T,
@@ -386,6 +386,7 @@ def lists(
             and elements.end is not None
             and (elements.end - elements.start) <= 255
         ):
+            # pyrefly: ignore [bad-assignment]
             elements = SampledFromStrategy(
                 sorted(range(elements.start, elements.end + 1), key=abs)
                 if elements.end < 0 or elements.start > 0
@@ -612,13 +613,13 @@ _get_first_item = operator.itemgetter(0)
 @cacheable
 @defines_strategy()
 def dictionaries(
-    keys: SearchStrategy[Ex],
+    keys: SearchStrategy[T1],
     values: SearchStrategy[T],
     *,
     dict_class: type = dict,
     min_size: int = 0,
     max_size: int | None = None,
-) -> SearchStrategy[dict[Ex, T]]:
+) -> SearchStrategy[dict[T1, T]]:
     # Describing the exact dict_class to Mypy drops the key and value types,
     # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
     """Generates dictionaries of type ``dict_class`` with keys drawn from the ``keys``
@@ -719,7 +720,6 @@ def characters(
     check_valid_size(min_codepoint, "min_codepoint")
     check_valid_size(max_codepoint, "max_codepoint")
     check_valid_interval(min_codepoint, max_codepoint, "min_codepoint", "max_codepoint")
-    categories = cast(Categories | None, categories)
     if categories is not None and exclude_categories is not None:
         raise InvalidArgument(
             f"Pass at most one of {categories=} and {exclude_categories=} - "
@@ -1253,6 +1253,7 @@ def builds(
 
             for kw, t in infer_for.items():
                 if t in _global_type_lookup:
+                    # pyrefly: ignore [bad-argument-type]
                     kwargs[kw] = from_type(t)
                 else:
                     # We defer resolution of these type annotations so that the obvious
@@ -1263,8 +1264,7 @@ def builds(
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
 
     # validated by handling all EllipsisType in the to_infer case
-    kwargs = cast(dict[str, SearchStrategy], kwargs)
-    return BuildsStrategy(target, args, kwargs)
+    return BuildsStrategy(target, args, cast(dict[str, SearchStrategy], kwargs))
 
 
 @cacheable
@@ -1420,6 +1420,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
+        # pyrefly: ignore [bad-argument-type]
         return _from_type(thing.__supertype__)
     if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
         if thing in types._global_type_lookup:
@@ -1462,6 +1463,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             # ForwardRef objects if they are valid Python identifiers.
             # See https://github.com/HypothesisWorks/hypothesis/issues/4542
             if thing.isidentifier():
+                # pyrefly: ignore [bad-argument-type]
                 return deferred(lambda thing=thing: from_type(typing.ForwardRef(thing)))
             raise InvalidArgument(
                 f"Got {thing!r} as a type annotation, but the forward-reference "
@@ -1647,6 +1649,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             hints = get_type_hints(thing)
             params: Mapping[str, Parameter] = get_signature(thing).parameters
         except Exception:
+            hints = {}
             params = {}
 
         posonly_args = []
@@ -1954,12 +1957,12 @@ def decimals(
 
 @defines_strategy(eager=True)
 def recursive(
-    base: SearchStrategy[Ex],
+    base: SearchStrategy[T1],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
     *,
     min_leaves: int | None = None,
     max_leaves: int = 100,
-) -> SearchStrategy[T | Ex]:
+) -> SearchStrategy[T | T1]:
     """base: A strategy to start from.
 
     extend: A function which takes a strategy and returns a new strategy.
@@ -2466,12 +2469,16 @@ class DataStrategy(SearchStrategy):
     def __repr__(self) -> str:
         return "data()"
 
+    # fixed by https://github.com/HypothesisWorks/hypothesis/pull/4892
+    # pyrefly: ignore [bad-override-param-name]
     def map(self, f):
         self.__not_a_first_class_strategy("map")
 
     def filter(self, condition: Callable[[Ex], Any]) -> NoReturn:
         self.__not_a_first_class_strategy("filter")
 
+    # fixed by https://github.com/HypothesisWorks/hypothesis/pull/4892
+    # pyrefly: ignore [bad-override-param-name]
     def flatmap(self, f):
         self.__not_a_first_class_strategy("flatmap")
 

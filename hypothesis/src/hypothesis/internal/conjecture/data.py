@@ -877,10 +877,11 @@ class ConjectureData:
 
         if observe and self.prefix is not None and self.index < len(self.prefix):
             value = self._pop_choice(choice_type, constraints, forced=forced)
+            if forced is not None:
+                value = forced
         elif forced is None:
             value = getattr(self.provider, f"draw_{choice_type}")(**constraints)
-
-        if forced is not None:
+        else:
             value = forced
 
         # nan values generated via int_to_float break list membership:
@@ -1130,8 +1131,6 @@ class ConjectureData:
             # node if the alternative is not "the entire data is an overrun".
             assert self.index == len(self.prefix) - 1
             if node.type == "simplest":
-                if forced is not None:
-                    choice = forced
                 try:
                     choice = choice_from_index(0, choice_type, constraints)
                 except ChoiceTooLarge:
@@ -1259,6 +1258,7 @@ class ConjectureData:
 
         at_top_level = self.depth == 0
         start_time = None
+        gc_start_time = None
         if at_top_level:
             # We start this timer early, because accessing attributes on a LazyStrategy
             # can be almost arbitrarily slow.  In cases like characters() and text()
@@ -1324,6 +1324,7 @@ class ConjectureData:
                     add_note(err, f"while drawing from {strategy!r}")
                     raise
             assert start_time is not None
+            assert gc_start_time is not None
             key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
             try:
                 try:

@@ -35,6 +35,7 @@ class HypothesisRandom(Random, abc.ABC):
         return self.__copy__()
 
     @abc.abstractmethod
+    # pyrefly: ignore [bad-override]
     def seed(self, seed):
         raise NotImplementedError
 

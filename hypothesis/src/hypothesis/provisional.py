@@ -49,12 +49,12 @@ def get_top_level_domains() -> tuple[str, ...]:
 
 @st.composite
 def _recase_randomly(draw: DrawFn, tld: str) -> str:
-    tld = list(tld)
-    changes = draw(st.tuples(*(st.booleans() for _ in range(len(tld)))))
+    chars = list(tld)
+    changes = draw(st.tuples(*(st.booleans() for _ in range(len(chars)))))
     for i, change_case in enumerate(changes):
         if change_case:
-            tld[i] = tld[i].lower() if tld[i].isupper() else tld[i].upper()
-    return "".join(tld)
+            chars[i] = chars[i].lower() if chars[i].isupper() else chars[i].upper()
+    return "".join(chars)
 
 
 class DomainNameStrategy(st.SearchStrategy[str]):

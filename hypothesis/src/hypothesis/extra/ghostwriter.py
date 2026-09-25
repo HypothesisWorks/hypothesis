@@ -1819,7 +1819,11 @@ def _make_binop_body(
             try:
                 identity = find(operands, lambda x: True, settings=_quietly_settings)
             except Exception:
-                identity = "identity element here"
+                identity_repr = repr("identity element here")
+            else:
+                identity_repr = repr(identity)
+        else:
+            identity_repr = repr(identity)
         # If the repr of this element is invalid Python, stringify it - this
         # can't be executed as-is, but at least makes it clear what should
         # happen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
@@ -1828,11 +1832,11 @@ def _make_binop_body(
             # to check that the repr is syntactically valid.  HOWEVER, we're
             # going to output that code string into test code which will be
             # executed; so you still shouldn't ghostwrite for hostile code.
-            compile(repr(identity), "<string>", "exec")
+            compile(identity_repr, "<string>", "exec")
         except SyntaxError:
-            identity = repr(identity)
+            identity_repr = repr(identity_repr)
         identity_parts = [
-            f"{identity = }",
+            f"identity = {identity_repr}",
             _assert_eq(
                 style,
                 "a",

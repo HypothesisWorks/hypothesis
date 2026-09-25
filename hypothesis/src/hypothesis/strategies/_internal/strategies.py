@@ -67,6 +67,7 @@ else:
     Ex = TypeVar("Ex", covariant=True)
 
 T = TypeVar("T")
+T1 = TypeVar("T1")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 T5 = TypeVar("T5")
@@ -181,17 +182,14 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     # a more careful fixed point calculation to get the exact
     # values. Hopefully our mapping is still pretty good and it
     # won't take a large number of updates to reach a fixed point.
-    if hit_recursion:
-        needs_update = set(mapping)
 
-        # We track which strategies use which in the course of
-        # calculating their property value. If A ever uses B in
-        # the course of calculating its value, then whenever the
-        # value of B changes we might need to update the value of
-        # A.
-        listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
-    else:
-        needs_update = None
+    # We track which strategies use which in the course of
+    # calculating their property value. If A ever uses B in
+    # the course of calculating its value, then whenever the
+    # value of B changes we might need to update the value of
+    # A.
+    listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
+    needs_update = set(mapping) if hit_recursion else None
 
     def recur2(strat: SearchStrategy) -> Any:
         def recur_inner(other: SearchStrategy) -> Any:
@@ -757,6 +755,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def calc_is_cacheable(self, recur: RecurT) -> bool:
         return is_hashable(self.elements)
 
+    # pyrefly: ignore [invalid-variance]
     def _transform(
         self,
         # https://github.com/python/mypy/issues/7049, we're not writing `element`
@@ -1045,33 +1044,33 @@ def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]: ...
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Ex | T]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T]
+) -> SearchStrategy[T1 | T]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Ex | T | T3]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
+) -> SearchStrategy[T1 | T | T3]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Ex | T | T3 | T4]: ...
+) -> SearchStrategy[T1 | T | T3 | T4]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Ex | T | T3 | T4 | T5]: ...
+) -> SearchStrategy[T1 | T | T3 | T4 | T5]: ...
 
 
 @overload
@@ -1124,8 +1123,7 @@ def one_of(
         )
     # we've handled the case where args is a one-element sequence [(s1, s2, ...)]
     # above, so we can assume it's an actual sequence of strategies.
-    args = cast(Sequence[SearchStrategy], args)
-    return OneOfStrategy(args)
+    return OneOfStrategy(cast(Sequence[SearchStrategy], args))
 
 
 class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
