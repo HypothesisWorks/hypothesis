@@ -22,7 +22,7 @@ click==8.5.0
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.16.0
+coverage[toml]==7.16.1
     # via
     #   hypofuzz
     #   pytest-cov
@@ -30,7 +30,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==2.1.2
     # via pytest-xdist
-fakeredis==2.37.1
+fakeredis==2.38.0
     # via -r requirements/coverage.in
 h11==0.16.0
     # via
@@ -46,9 +46,9 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.167.1
+hypothesis[cli,watchdog]==6.168.0
     # via hypofuzz
-idna==3.19
+idna==3.20
     # via
     #   anyio
     #   trio
@@ -66,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-numpy==2.5.2
+numpy==2.5.3
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -76,13 +76,13 @@ packaging==26.3
     # via
     #   black
     #   pytest
-pandas==3.0.5
+pandas==3.0.6
     # via -r requirements/coverage.in
 pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.11.7
+platformdirs==4.11.11
     # via black
 pluggy==1.6.0
     # via
@@ -137,7 +137,7 @@ sortedcontainers==2.4.0
     #   trio
 starlette==1.6.0
     # via hypofuzz
-syrupy==6.0.0
+syrupy==6.1.1
     # via -r requirements/test.in
 trio==0.34.0
     # via hypofuzz
