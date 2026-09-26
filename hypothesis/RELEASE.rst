@@ -1,6 +1,6 @@
 RELEASE_TYPE: patch
 
-The :doc:`Ghostwriter <ghostwriter>` now includes the imports needed for
+The :ref:`Ghostwriter <ghostwriter>` now includes the imports needed for
 ``functools.partial`` filters and :pypi:`annotated-types` metadata in generated
 tests (:issue:`4881`).
 
