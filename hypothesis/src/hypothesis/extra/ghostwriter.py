@@ -90,8 +90,8 @@ from string import ascii_lowercase
 from textwrap import dedent, indent
 from types import EllipsisType
 from typing import (
-    Any,
     Annotated,
+    Any,
     ForwardRef,
     NamedTuple,
     TypeVar,
