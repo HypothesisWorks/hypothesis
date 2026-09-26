@@ -402,6 +402,33 @@ def test_overlapping_args_use_union_of_strategies():
     assert "arg=st.one_of(st.integers(), st.floats())" in source_code
 
 
+@pytest.mark.parametrize("annotate", [True, False])
+def test_annotated_types_bounds_include_all_imports(tmp_path, monkeypatch, annotate):
+    pytest.importorskip("annotated_types")
+    module_name = f"ghostwriter_annotated_bounds_{annotate}"
+    (tmp_path / f"{module_name}.py").write_text(
+        dedent("""\
+            from typing import Annotated
+            from annotated_types import Ge, Le
+
+            def first(x: Annotated[int, Ge(1), Le(12)]) -> int:
+                return x
+
+            def second(x: Annotated[int, Ge(1), Le(12)]) -> int:
+                return x
+            """),
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = __import__(module_name)
+    source_code = ghostwriter.equivalent(module.first, module.second, annotate=annotate)
+    assert "import functools" in source_code
+    assert "from operator import ge, le" in source_code
+    if annotate:
+        assert "from annotated_types import Ge, Le" in source_code
+    get_test_function(source_code)()
+
+
 def test_module_with_mock_does_not_break():
     # Before we added an explicit check for unspec'd mocks, they would pass
     # through the initial validation and then fail when used in more detailed

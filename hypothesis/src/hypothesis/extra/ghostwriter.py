@@ -75,6 +75,7 @@ import ast
 import builtins
 import contextlib
 import enum
+import functools
 import inspect
 import os
 import re
@@ -89,6 +90,7 @@ from string import ascii_lowercase
 from textwrap import dedent, indent
 from types import EllipsisType
 from typing import (
+    Annotated,
     Any,
     ForwardRef,
     NamedTuple,
@@ -589,6 +591,8 @@ def _assert_eq(style: str, a: str, b: str) -> str:
 
 def _imports_for_object(obj):
     """Return the imports for `obj`, which may be empty for e.g. lambdas"""
+    if isinstance(obj, functools.partial):
+        return {"functools"} | _imports_for_object(obj.func)
     if type(obj) is getattr(types, "UnionType", object()):
         return {mod for mod, _ in set().union(*map(_imports_for_object, obj.__args__))}
     if isinstance(obj, (re.Pattern, re.Match)):
@@ -617,8 +621,13 @@ def _imports_for_object(obj):
 def _imports_for_strategy(strategy):
     # If we have a lazy from_type strategy, because unwrapping it gives us an
     # error or invalid syntax, import that type and we're done.
+    imports: ImportSet = set()
     if isinstance(strategy, LazyStrategy):
-        imports = {
+        # Lazy strategies retain transformations which may be rewritten away
+        # from their wrapped strategy, but are still present in their repr.
+        for _, func, _ in vars(strategy).get("_transformations", ()):
+            imports |= _imports_for_object(func)
+        imports |= {
             imp
             for arg in set(strategy._LazyStrategy__args)
             | set(strategy._LazyStrategy__kwargs.values())
@@ -630,7 +639,6 @@ def _imports_for_strategy(strategy):
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
             return {(module, strategy.function.__name__)} | imports
 
-    imports = set()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SmallSearchSpaceWarning)
         strategy = unwrap_strategies(strategy)
@@ -719,7 +727,11 @@ def _valid_syntax_repr(strategy):
         compile(r, "<string>", "eval")
         # Finally, try to work out the imports we need for builds(), .map(),
         # .filter(), and .flatmap() to work without NameError
-        imports = {i for i in _imports_for_strategy(strategy) if i[1] in r}
+        imports = {
+            i
+            for i in _imports_for_strategy(strategy)
+            if (i in r if isinstance(i, str) else i[1] in r)
+        }
         return imports, r
     except (SyntaxError, RecursionError, InvalidArgument):
         return set(), "nothing()"
@@ -916,7 +928,7 @@ def _annotate_args(
 
 class _AnnotationData(NamedTuple):
     type_name: str
-    imports: set[str]
+    imports: ImportSet
 
 
 def _parameters_to_annotation_name(
@@ -942,7 +954,7 @@ def _parameters_to_annotation_name(
 
 
 def _join_generics(
-    origin_type_data: tuple[str, set[str]] | None,
+    origin_type_data: tuple[str, ImportSet] | None,
     annotations: Iterable[_AnnotationData | None],
 ) -> _AnnotationData | None:
     if origin_type_data is None:
@@ -969,8 +981,8 @@ def _join_generics(
 
 def _join_argument_annotations(
     annotations: Iterable[_AnnotationData | None],
-) -> tuple[list[str], set[str]] | None:
-    imports: set[str] = set()
+) -> tuple[list[str], ImportSet] | None:
+    imports: ImportSet = set()
     arg_types: list[str] = []
 
     for annotation in annotations:
@@ -1047,6 +1059,11 @@ def _parameter_to_annotation(parameter: Any) -> _AnnotationData | None:
         return _AnnotationData(type_name, set(type_name.rsplit(".", maxsplit=1)[:-1]))
 
     arg_types = get_args(parameter)
+    metadata_imports: ImportSet = set()
+    if origin_type is Annotated:
+        for metadata in arg_types[1:]:
+            if type(metadata).__name__ in repr(metadata):
+                metadata_imports |= _imports_for_object(type(metadata))
     if {type(a) for a in arg_types} == {TypeVar}:
         arg_types = ()
 
@@ -1062,11 +1079,15 @@ def _parameter_to_annotation(parameter: Any) -> _AnnotationData | None:
         origin_annotation = _parameter_to_annotation(origin_type)
 
     if arg_types:
-        return _join_generics(
+        annotation = _join_generics(
             origin_annotation,
             (_parameter_to_annotation(arg_type) for arg_type in arg_types),
         )
-    return origin_annotation
+    else:
+        annotation = origin_annotation
+    if annotation is not None:
+        annotation.imports.update(metadata_imports)
+    return annotation
 
 
 def _are_annotations_used(*functions: Callable) -> bool:
