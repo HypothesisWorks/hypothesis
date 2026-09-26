@@ -21,7 +21,7 @@ from types import ModuleType
 import pytest
 
 from hypothesis import example, given, note, settings, strategies as st
-from hypothesis.configuration import storage_directory
+from hypothesis.configuration import set_hypothesis_home_dir, storage_directory
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.constants_ast import (
     Constants,
@@ -340,12 +340,17 @@ def test_cache_file_is_written_via_a_temporary_file(tmp_path, monkeypatch):
         return fd, path
 
     monkeypatch.setattr(tempfile, "mkstemp", recording_mkstemp)
-    assert constants_from_module(module) == Constants(integers={constant})
+    # use an empty storage directory, so the cache file can't already exist
+    previous_home_dir = storage_directory().path
+    set_hypothesis_home_dir(tmp_path / "hypothesis_home")
+    try:
+        assert constants_from_module(module) == Constants(integers={constant})
+        source_hash = hashlib.sha1(p.read_bytes()).hexdigest()[:16]
+        cache_p = storage_directory("constants").path / source_hash
+        cached = _constants_from_source(cache_p.read_bytes(), limit=True)
+    finally:
+        set_hypothesis_home_dir(previous_home_dir)
 
-    source_hash = hashlib.sha1(p.read_bytes()).hexdigest()[:16]
-    cache_p = storage_directory("constants").path / source_hash
-    assert _constants_from_source(cache_p.read_bytes(), limit=True) == Constants(
-        integers={constant}
-    )
+    assert cached == Constants(integers={constant})
     assert len(temp_paths) == 1
     assert not Path(temp_paths[0]).exists()
