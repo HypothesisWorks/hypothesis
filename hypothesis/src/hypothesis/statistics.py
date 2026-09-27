@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
 import math
 from collections import Counter
 from collections.abc import Iterable
@@ -108,7 +109,7 @@ def describe_statistics(stats_dict: "StatisticsDict") -> str:
         prev_failures = d["distinct-failures"]
         # Report events during the generate phase, if there were any
         if phase == "generate":
-            events = Counter(sum((t["events"] for t in cases), []))
+            events = Counter(itertools.chain.from_iterable(t["events"] for t in cases))
             if events:
                 lines.append("    - Events:")
                 lines += [
