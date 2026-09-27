@@ -12,7 +12,9 @@ import ast
 import hashlib
 import inspect
 import math
+import os
 import sys
+import tempfile
 from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
 from collections.abc import Iterator, MutableSet
 from functools import lru_cache
@@ -235,14 +237,19 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
 
     try:
         cache_dir.create_if_missing()
-        cache_p.write_text(
-            f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
-            # somewhat arbitrary sort order. The cache file doesn't *have* to be
-            # stable... but it is aesthetically pleasing, and means we could rely
-            # on it in the future!
-            + _constants_file_str(constants),
-            encoding="utf-8",
-        )
+        # Write atomically, so that a concurrent process (e.g. another
+        # pytest-xdist worker) never reads a partially written cache file.
+        # A truncated file still parses, and would silently drop constants.
+        fd, tmp_path = tempfile.mkstemp(dir=cache_dir.path, prefix=".tmp-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(
+                f"# file: {module_file}\n# hypothesis_version: {hypothesis.__version__}\n\n"
+                # somewhat arbitrary sort order. The cache file doesn't *have* to be
+                # stable... but it is aesthetically pleasing, and means we could rely
+                # on it in the future!
+                + _constants_file_str(constants)
+            )
+        os.replace(tmp_path, cache_p)
     except Exception:  # pragma: no cover
         pass
 
