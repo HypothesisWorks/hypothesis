@@ -124,7 +124,7 @@ def annotated_any(x: Any):
     pass
 
 
-space_in_name = type("a name", (type,), {"__init__": lambda self: None})
+space_in_name = type("a name", (type,), {"__init__": lambda self, x: None})
 
 
 class NotResolvable:
@@ -244,38 +244,22 @@ def test_ghostwriter_unittest_style(func, ex):
     assert issubclass(get_test_function(source_code), unittest.TestCase)
 
 
-def takes_no_arguments() -> int:
-    return 1
+def takes_no_arguments():
+    pass
 
 
-def raises_without_arguments() -> int:
-    """:raises ValueError: always"""
-    raise ValueError
-
-
-@varied_excepts
-@pytest.mark.parametrize("style", ["pytest", "unittest"])
 @pytest.mark.parametrize(
     "writer",
     [
         ghostwriter.fuzz,
-        lambda f, **kw: ghostwriter.equivalent(f, f, **kw),
-        lambda f, **kw: ghostwriter.equivalent(f, f, allow_same_errors=True, **kw),
+        lambda f: ghostwriter.equivalent(f, f),
+        lambda f: ghostwriter.equivalent(f, f, allow_same_errors=True),
     ],
     ids=["fuzz", "equivalent", "equivalent_errors"],
 )
-@pytest.mark.parametrize("func", [takes_no_arguments, raises_without_arguments])
-def test_ghostwriter_for_functions_without_arguments(func, writer, style, ex):
-    source_code = writer(func, except_=ex, style=style)
-    assert "given" not in source_code
-    assert "reject" not in source_code
-    assert "target" not in source_code
-    test = get_test_function(source_code)
-    if style == "unittest":
-        for name in unittest.defaultTestLoader.getTestCaseNames(test):
-            test(name).debug()
-    else:
-        test()
+def test_ghostwriter_rejects_functions_without_arguments(writer):
+    with pytest.raises(InvalidArgument, match="no arguments to generate"):
+        writer(takes_no_arguments)
 
 
 def no_annotations(foo=None, *, bar=False):
@@ -374,7 +358,7 @@ class MyError(UnicodeDecodeError):
 )
 def test_exception_deduplication(exceptions, output):
     _, body = ghostwriter._make_test_body(
-        lambda: None,
+        lambda x: None,
         ghost="",
         test_body="pass",
         except_=exceptions,
