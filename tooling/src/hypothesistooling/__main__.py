@@ -840,7 +840,8 @@ PYTHONS = {
     "3.14t": "3.14.7+freethreaded",
     "3.15": "3.15.0rc2",
     "3.15t": "3.15.0rc2+freethreaded",
-    "pypy3.11": "pypy3.11-3.11.15",
+    "pypy3.11": "pypy3.11-3.11.16",
+    "pypy3.12": "pypy3.12-3.12.14",
 }
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
@@ -848,7 +849,7 @@ ci_version_python = (
 
 # automatically updated by update_pyodide_versions()
 PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.0"
+PYODIDE_BUILD_VERSION = "0.39.1"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
