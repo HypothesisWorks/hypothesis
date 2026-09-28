@@ -254,17 +254,22 @@ def compute_max_children(
         min_point = max(min_value_f, -flt.next_down(smallest_nonzero_magnitude))
         max_point = min(max_value_f, flt.next_down(smallest_nonzero_magnitude))
 
-        if min_point > max_point:
-            # case: disjoint intervals.
-            return count
+        if min_point <= max_point:
+            count -= count_between_floats(min_point, max_point)
+            if sign_aware_lte(min_value_f, -0.0) and sign_aware_lte(-0.0, max_value_f):
+                # account for -0.0
+                count += 1
+            if sign_aware_lte(min_value_f, 0.0) and sign_aware_lte(0.0, max_value_f):
+                # account for 0.0
+                count += 1
 
-        count -= count_between_floats(min_point, max_point)
-        if sign_aware_lte(min_value_f, -0.0) and sign_aware_lte(-0.0, max_value_f):
-            # account for -0.0
-            count += 1
-        if sign_aware_lte(min_value_f, 0.0) and sign_aware_lte(0.0, max_value_f):
-            # account for 0.0
-            count += 1
+        if constraints["allow_nan"]:
+            # Account for all possible NaN bit patterns. There are
+            # 2**52 - 1 nonzero mantissas per sign bit, giving
+            # 2 * (2**52 - 1) total NaN values. This ensures branches with
+            # allow_nan=True are never incorrectly marked as exhausted.
+            count += 2 * (2**52 - 1)
+
         return count
 
     raise NotImplementedError(f"unhandled choice_type {choice_type}")
@@ -324,6 +329,14 @@ def all_children(
             # case: both positive.
             min_point = max(min_value, smallest_nonzero_magnitude)
             yield from _floats_between(min_point, max_value)
+
+        if constraints["allow_nan"]:
+            # Yield canonical NaN values so the cache-based drawing path
+            # (_draw_from_cache) can produce NaN. The full set of 2 * (2**52 - 1)
+            # NaN bit patterns is too large to enumerate, but these cover the
+            # most commonly drawn NaN values.
+            yield math.nan
+            yield -math.nan
 
 
 @dataclass(slots=True, frozen=False)
@@ -945,6 +958,12 @@ class DataTree:
                 if len(children) >= 100:
                     break
 
+        if not children:
+            # Cache exhausted but branch may not be exhausted (e.g. floats
+            # with allow_nan=True have many NaN bit patterns not enumerated
+            # by all_children). Fall back to random drawing to find a novel
+            # value outside the enumerated set.
+            return self._draw(choice_type, constraints, random=random)
         return random.choice(children)
 
     def _reject_child(
