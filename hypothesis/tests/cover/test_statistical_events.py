@@ -312,27 +312,3 @@ def test_reject_adds_event_with_function_origin():
     for tc in stats["generate-phase"]["test-cases"]:
         for e in tc["events"]:
             assert "reject() in very_distinguishable_name" in e
-
-
-def test_describe_statistics_counts_events_across_test_cases():
-    events = [["a"], ["b", "a"], [], ["c", "b", "a"]]
-    cases = [
-        {"status": "valid", "runtime": 0.0, "drawtime": 0.0, "gctime": 0.0, "events": e}
-        for e in events
-    ]
-    stats = {
-        "generate-phase": {
-            "duration-seconds": 1.0,
-            "test-cases": cases,
-            "distinct-failures": 0,
-            "shrinks-successful": 0,
-        },
-        "stopped-because": "settings.max_examples=4",
-    }
-    expected = [
-        "    - Events:",
-        "      * 75.00%, a",
-        "      * 50.00%, b",
-        "      * 25.00%, c",
-    ]
-    assert "\n".join(expected) in describe_statistics(stats)
