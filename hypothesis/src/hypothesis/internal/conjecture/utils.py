@@ -68,7 +68,6 @@ def combine_labels(*labels: int) -> int:
 
 
 SAMPLE_IN_SAMPLER_LABEL = calc_label_from_name("a sample() in Sampler")
-ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
 T = TypeVar("T")
@@ -259,115 +258,14 @@ class Sampler:
             return base
 
 
-class many:
-    """Utility class for collections. Bundles up the logic we use for "should I
-    keep drawing more values?" and handles starting and stopping spans in
-    the right place.
-
-    Intended usage is something like:
-
-    elements = many(data, ...)
-    while elements.more():
-        add_stuff_to_result()
-    """
-
-    def __init__(
-        self,
-        data: "ConjectureData",
-        min_size: int,
-        max_size: int | float,
-        average_size: int | float,
-        *,
-        forced: int | None = None,
-        observe: bool = True,
-    ) -> None:
-        assert 0 <= min_size <= average_size <= max_size
-        assert forced is None or min_size <= forced <= max_size
-        self.min_size = min_size
-        self.max_size = max_size
-        self.data = data
-        self.forced_size = forced
-        self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
-        self.count = 0
-        self.rejections = 0
-        self.drawn = False
-        self.force_stop = False
-        self.rejected = False
-        self.observe = observe
-
-    def stop_span(self, *, discard: bool = False) -> None:
-        if self.observe:
-            self.data.stop_span(discard=discard)
-
-    def start_span(self, label):
-        if self.observe:
-            self.data.start_span(label)
-
-    def more(self) -> bool:
-        """Should I draw another element to add to the collection?"""
-        if self.drawn:
-            # A rejected element does not contribute to the collection, so
-            # discard its span - the shrinker can then delete it wholesale.
-            self.stop_span(discard=self.rejected)
-
-        self.drawn = True
-        self.rejected = False
-
-        self.start_span(ONE_FROM_MANY_LABEL)
-        if self.min_size == self.max_size:
-            # if we have to hit an exact size, draw unconditionally until that
-            # point, and no further.
-            should_continue = self.count < self.min_size
-        else:
-            forced_result = None
-            if self.force_stop:
-                # if our size is forced, we can't reject in a way that would
-                # cause us to differ from the forced size.
-                assert self.forced_size is None or self.count == self.forced_size
-                forced_result = False
-            elif self.count < self.min_size:
-                forced_result = True
-            elif self.count >= self.max_size:
-                forced_result = False
-            elif self.forced_size is not None:
-                forced_result = self.count < self.forced_size
-            should_continue = self.data.draw_boolean(
-                self.p_continue,
-                forced=forced_result,
-                observe=self.observe,
-            )
-
-        if should_continue:
-            self.count += 1
-            return True
-        else:
-            self.stop_span()
-            return False
-
-    def reject(self, why: str | None = None) -> None:
-        """Reject the last element (i.e. don't count it towards our budget of
-        elements because it's not going to go in the final collection)."""
-        assert self.count > 0
-        self.count -= 1
-        self.rejections += 1
-        self.rejected = True
-        # We set a minimum number of rejections before we give up to avoid
-        # failing too fast when we reject the first draw.
-        if self.rejections > max(3, 2 * self.count):
-            if self.count < self.min_size:
-                self.data.mark_invalid(why)
-            else:
-                self.force_stop = True
-
-
 class invert_many:
-    """The inversion counterpart of ``many``: the boolean choices that
-    ``many`` would draw around each element. Fixed-size collections draw no
+    """The inversion counterpart of ``hypothesis.lowlevel.many``: the boolean
+    choices that ``many`` would draw around each element. Fixed-size collections draw no
     booleans at all; variable-size ones draw a continuation boolean before
     each element (forced while below min_size, but forced draws still consume
     a choice) and a final False to stop (forced at max_size)."""
 
-    def __init__(self, min_size: int, max_size: int | float) -> None:
+    def __init__(self, min_size: int, max_size: int | None) -> None:
         self._variable_size = min_size != max_size
 
     def more(self) -> tuple["ChoiceT", ...]:

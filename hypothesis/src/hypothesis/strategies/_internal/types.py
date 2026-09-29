@@ -44,9 +44,9 @@ from hypothesis.errors import (
     ResolutionFailed,
 )
 from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
-from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.ipaddress import (
     SPECIAL_IPv4_RANGES,
     SPECIAL_IPv6_RANGES,
@@ -1292,8 +1292,7 @@ class GeneratorStrategy(st.SearchStrategy):
         return f"<generators yields={self.yields!r} returns={self.returns!r}>"
 
     def do_draw(self, data):
-        elements = conjecture_utils_many(data, min_size=0, max_size=100, average_size=5)
-        while elements.more():
+        for _ in many(min_size=0, max_size=100, average_size=5):
             yield data.draw(self.yields)
         return data.draw(self.returns)
 

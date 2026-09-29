@@ -23,7 +23,7 @@ from hypothesis import (
 )
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 try:
@@ -133,88 +133,6 @@ def test_valid_list_sample():
 
 def test_choice():
     assert ConjectureData.for_choices([1]).choice([1, 2, 3]) == 2
-
-
-def test_fixed_size_draw_many():
-    many = cu.many(
-        ConjectureData.for_choices([]), min_size=3, max_size=3, average_size=3
-    )
-    assert many.more()
-    assert many.more()
-    assert many.more()
-    assert not many.more()
-
-
-def test_astronomically_unlikely_draw_many():
-    # Our internal helper doesn't underflow to zero or negative, but nor
-    # will we ever generate an element for such a low average size.
-    data = ConjectureData.for_choices((True,) * 1000)
-    many = cu.many(data, min_size=0, max_size=10, average_size=1e-5)
-    assert many.more()
-
-
-def test_rejection_eventually_terminates_many():
-    many = cu.many(
-        ConjectureData.for_choices((True,) * 1000),
-        min_size=0,
-        max_size=1000,
-        average_size=100,
-    )
-    count = 0
-
-    while many.more():
-        count += 1
-        many.reject()
-
-    assert count <= 100
-
-
-def test_rejection_eventually_terminates_many_invalid_for_min_size():
-    data = ConjectureData.for_choices((True,) * 1000)
-    many = cu.many(data, min_size=1, max_size=1000, average_size=100)
-
-    with pytest.raises(StopTest):
-        while many.more():
-            many.reject()
-
-    assert data.status == Status.INVALID
-
-
-def test_rejected_element_span_is_discarded():
-    data = ConjectureData.for_choices([True, 0, True, 1, False])
-    many = cu.many(data, min_size=0, max_size=10, average_size=5)
-    while many.more():
-        if data.draw_integer(0, 10) == 0:
-            many.reject()
-    data.freeze()
-
-    discards = [
-        span.discarded for span in data.spans if span.label == cu.ONE_FROM_MANY_LABEL
-    ]
-    # the rejected first element is discarded; the second and the final
-    # stop-drawing span are not.
-    assert discards == [True, False, False]
-
-
-def test_many_with_min_size():
-    many = cu.many(
-        ConjectureData.for_choices((False,) * 5),
-        min_size=2,
-        average_size=10,
-        max_size=1000,
-    )
-    assert many.more()
-    assert many.more()
-    assert not many.more()
-
-
-def test_many_with_max_size():
-    many = cu.many(
-        ConjectureData.for_choices((True,) * 5), min_size=0, average_size=1, max_size=2
-    )
-    assert many.more()
-    assert many.more()
-    assert not many.more()
 
 
 def test_invert_many_variable_size():

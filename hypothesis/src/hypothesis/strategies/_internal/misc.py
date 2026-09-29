@@ -149,3 +149,22 @@ class BooleansStrategy(SearchStrategy[bool]):
 
     def __repr__(self) -> str:
         return "booleans()"
+
+
+class WeightedBooleansStrategy(SearchStrategy[bool]):
+    def __init__(self, p: float) -> None:
+        super().__init__()
+        self.p = p
+
+    def do_draw(self, data: ConjectureData) -> bool:
+        return data.draw_boolean(self.p)
+
+    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+        if not isinstance(value, bool):
+            raise CannotInvert(f"{value!r} is not a bool")
+        if (value and self.p <= 0) or (not value and self.p >= 1):
+            raise CannotInvert(f"{value!r} cannot be drawn from {self!r}")
+        return (value,)
+
+    def __repr__(self) -> str:
+        return f"weighted_booleans(p={self.p!r})"
