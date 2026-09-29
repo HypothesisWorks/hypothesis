@@ -265,6 +265,10 @@ def test_capture_named_arguments():
         ], test_case
 
 
+# The status reason is formatted with an f-string, whose result CrossHair restores on the
+# next INSTRUCTION event; CPython drops that event after a LINE callback returns DISABLE.
+# Not strict, so that this starts XPASSing once the CPython fix is available.
+@xfail_on_crosshair(Why.cpython_sys_monitoring, strict=False)
 def test_assume_has_status_reason():
     @given(st.booleans())
     def f(b):

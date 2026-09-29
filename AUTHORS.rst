@@ -117,6 +117,7 @@ their individual contributions.
 * `Katrina Durance <https://github.com/kdurance>`_
 * `kbara <https://www.github.com/kbara>`_
 * `Keeri Tramm <keerilynn>`_
+* `kokokoXUY <https://www.github.com/kokokoXUY>`_ (13682395396@163.com)
 * `Kristian Glass <https://www.github.com/doismellburning>`_
 * `Krzysztof Przybyła <https://github.com/kprzybyla>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)

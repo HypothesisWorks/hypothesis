@@ -263,6 +263,7 @@ class Why(enum.Enum):
     symbolic_outside_context = "CrosshairInternal error (using value outside context)"
     nested_given = "nested @given decorators don't work with crosshair"
     undiscovered = "crosshair may not find the failing input"
+    cpython_sys_monitoring = "CPython sys.monitoring bug, see python/cpython#158121"
     other = "reasons not elsewhere categorized"
 
 
