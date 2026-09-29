@@ -85,5 +85,20 @@ def test_errors_when_normal_strategy_functions_are_used(f):
         getattr(st.data(), f)(lambda x: 1)
 
 
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        ("filter", {"condition": lambda x: True}),
+        ("map", {"pack": lambda x: x}),
+        ("flatmap", {"expand": lambda x: st.integers()}),
+    ],
+)
+def test_errors_when_normal_strategy_functions_are_used_by_keyword(func, kwargs):
+    # The arguments are passed by keyword, so a parameter name which doesn't match
+    # the base class would surface as a TypeError instead of the intended error.
+    with raises(InvalidArgument, match=f"Cannot call {func} on a DataStrategy"):
+        getattr(st.data(), func)(**kwargs)
+
+
 def test_nice_repr():
     assert repr(st.data()) == "data()"
