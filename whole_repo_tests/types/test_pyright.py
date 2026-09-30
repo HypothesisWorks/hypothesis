@@ -282,6 +282,24 @@ def test_pandas_column(tmp_path, val, expect):
     assert typ == f"column[{expect}]"
 
 
+def test_django_from_field(tmp_path):
+    f = tmp_path / "test.py"
+    f.write_text(
+        textwrap.dedent("""
+            from django import forms
+            from hypothesis.extra.django import from_field
+
+            x = from_field(forms.CharField())
+            reveal_type(x)
+            """),
+        encoding="utf-8",
+    )
+    _write_config(
+        tmp_path, {"typeCheckingMode": "strict", "reportMissingTypeStubs": "none"}
+    )
+    assert get_pyright_analysed_type(f) == "SearchStrategy[Any]"
+
+
 def test_pyright_tuples_pos_args_only(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
