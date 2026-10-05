@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 import zoneinfo
-from typing import Annotated, TypeVar
+from typing import Annotated, NotRequired, TypedDict, TypeVar
 
 import pytest
 
@@ -212,23 +212,17 @@ def test_flattens_grouped_metadata():
     assert constraints == [at.MinLen(1), at.MaxLen(5)]
 
 
-try:
-    # we can drop this ugly code when Python 3.10 reaches EOL
-    from typing import NotRequired, TypedDict
-except ImportError:
-    pass
-else:
+class TypedDictWithAnnotations(TypedDict):
+    x: Annotated[int, at.Ge(0)]
+    y: Annotated[NotRequired[int], at.Ge(0)]
+    z: NotRequired[Annotated[int, at.Ge(0)]]
 
-    class TypedDictWithAnnotations(TypedDict):
-        x: Annotated[int, at.Ge(0)]
-        y: Annotated[NotRequired[int], at.Ge(0)]
-        z: NotRequired[Annotated[int, at.Ge(0)]]
 
-    @given(st.from_type(TypedDictWithAnnotations))
-    def test_typeddict_with_annotated_constraints(value):
-        assert value["x"] >= 0
-        assert value.get("y", 0) >= 0
-        assert value.get("z", 0) >= 0
+@given(st.from_type(TypedDictWithAnnotations))
+def test_typeddict_with_annotated_constraints(value):
+    assert value["x"] >= 0
+    assert value.get("y", 0) >= 0
+    assert value.get("z", 0) >= 0
 
 
 def test_datetimes_annotations_use_timezone_metadata():

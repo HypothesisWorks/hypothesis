@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Callable, Collection, Sequence
-from typing import Concatenate, ParamSpec
+from typing import Concatenate, ParamSpec, TypeGuard
 
 import pytest
 
@@ -22,11 +22,6 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
-
-try:
-    from typing import TypeGuard  # new in 3.10
-except ImportError:
-    TypeGuard = None
 
 try:
     from typing import TypeIs  # new in 3.13

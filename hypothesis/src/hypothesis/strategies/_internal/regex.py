@@ -10,34 +10,21 @@
 
 import operator
 import re
+import re._constants as sre
+import re._parser as sre_parse
 from dataclasses import dataclass
 from re import Pattern
-
-from hypothesis.errors import InvalidArgument
-from hypothesis.internal import charmap
-from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.strategies._internal.lazy import unwrap_strategies
-from hypothesis.strategies._internal.strings import OneCharStringStrategy
-
-try:
-    import re._constants as sre
-    import re._parser as sre_parse
-
-    ATOMIC_GROUP = sre.ATOMIC_GROUP
-    POSSESSIVE_REPEAT = sre.POSSESSIVE_REPEAT
-except ImportError:  # Python < 3.11
-    import sre_constants as sre
-    import sre_parse
-
-    ATOMIC_GROUP = object()
-    POSSESSIVE_REPEAT = object()
-
 from typing import Any, AnyStr
 
 from hypothesis import reject, strategies as st
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal import charmap
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import add_note, int_to_byte
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies._internal.lazy import unwrap_strategies
+from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
 SPACE_CHARS = set(" \t\n\r\f\v")
 UNICODE_SPACE_CHARS = SPACE_CHARS | set("\x1c\x1d\x1e\x1f\x85")
@@ -596,7 +583,7 @@ def _strategy(
                 raise IncompatibleWithAlphabet("\n".join(errors))
             return st.one_of(branches)
 
-        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT, POSSESSIVE_REPEAT]:
+        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT, sre.POSSESSIVE_REPEAT]:
             # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
             # (repeaters)
             at_least, at_most, subregex = value
@@ -622,7 +609,7 @@ def _strategy(
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )
-        elif code == ATOMIC_GROUP:
+        elif code == sre.ATOMIC_GROUP:
             return _strategy(value, context, is_unicode, alphabet=alphabet)
 
         else:

@@ -295,13 +295,6 @@ def test_register_generic_typing_strats():
         assert_all_examples(from_type(list[int]), lambda ex: isinstance(ex, list))
 
 
-def if_available(name):
-    try:
-        return getattr(typing, name)
-    except AttributeError:
-        return pytest.param(name, marks=[pytest.mark.skip])
-
-
 @pytest.mark.parametrize(
     "typ",
     [
@@ -315,7 +308,7 @@ def if_available(name):
         typing.SupportsFloat,
         typing.SupportsInt,
         typing.SupportsRound,
-        if_available("SupportsIndex"),
+        typing.SupportsIndex,
     ],
     ids=get_pretty_function_description,
 )
