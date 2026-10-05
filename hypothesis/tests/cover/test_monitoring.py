@@ -15,6 +15,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import MONITORING_TOOL_ID
 
 
@@ -28,6 +29,7 @@ def using_tool_id(tool_id, tool_name):
 
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="new namespace")
+@pytest.mark.skipif(PYPY, reason="scrutineer is disabled on PyPy")
 def test_monitoring_warns_on_registered_tool_id(warns_or_raises):
 
     # scrutineer can't run if something has already registered its tool id.

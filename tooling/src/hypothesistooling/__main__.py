@@ -829,14 +829,15 @@ def run_tox(task, version, *args, profile="dev"):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.11": "3.11.16",
-    "3.12": "3.12.14",
-    "3.13": "3.13.15",
-    "3.14": "3.14.7",
-    "3.14t": "3.14.7+freethreaded",
-    "3.15": "3.15.0rc2",
-    "3.15t": "3.15.0rc2+freethreaded",
-    "pypy3.11": "pypy3.11-3.11.15",
+    "3.11": "3.11.17",
+    "3.12": "3.12.15",
+    "3.13": "3.13.16",
+    "3.14": "3.14.8",
+    "3.14t": "3.14.8+freethreaded",
+    "3.15": "3.15.0rc3",
+    "3.15t": "3.15.0rc3+freethreaded",
+    "pypy3.11": "pypy3.11-3.11.16",
+    "pypy3.12": "pypy3.12-3.12.14",
 }
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
@@ -844,7 +845,7 @@ ci_version_python = (
 
 # automatically updated by update_pyodide_versions()
 PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.0"
+PYODIDE_BUILD_VERSION = "0.39.1"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 

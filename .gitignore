@@ -31,7 +31,7 @@ CLAUDE.local.md
 .runtimes
 /hypothesis/branch-check*
 /pythonpython3.*
-/pythonpypy3.*
+/pythonpypy3*
 .pyodide-xbuildenv
 
 # rust
