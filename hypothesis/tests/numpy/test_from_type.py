@@ -72,8 +72,11 @@ def workaround(dtype):
 
 
 # https://numpy.org/devdocs/release/1.22.0-notes.html#ndarray-dtype-and-number-are-now-runtime-subscriptable
+# but subscripting with a single argument (eg np.ndarray[dtype]) needs numpy 1.23.3; see
+# https://github.com/numpy/numpy/issues/22185
 @pytest.mark.skipif(
-    tuple(int(x) for x in np.__version__.split(".")[:2]) < (1, 22), reason="see comment"
+    tuple(int(x) for x in np.__version__.split(".")[:3]) < (1, 23, 3),
+    reason="see comment",
 )
 @pytest.mark.parametrize("typ", [workaround(t) for t in STANDARD_TYPES_TYPE])
 def test_resolves_specified_ndarray_type(typ):

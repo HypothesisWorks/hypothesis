@@ -15,6 +15,13 @@ pip install .
 
 PYTEST="python -bb -X dev -m pytest -nauto --durations-min=1.0"
 
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 11))')" = "True" ] ; then
+  # Per SPEC-0, this is the last version to support Python 3.11
+  NUMPY="numpy==2.4.6"
+else
+  NUMPY="$(grep 'numpy==' ../requirements/coverage.txt)"
+fi
+
 # Run all the no-extra-dependency tests for this version (except slow nocover tests)
 $PYTEST tests/cover tests/pytest
 
@@ -49,19 +56,14 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/codemods/
   pip uninstall -y libcst click
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.10
-    pip install numpy==2.2.6
-  else
-    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
-  fi
+  pip install "$NUMPY"
 
   pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
 fi
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "False" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 11))')" = "False" ] ; then
   exit 0
 fi
 
@@ -83,7 +85,7 @@ case "$(python -c 'import platform; print(platform.python_implementation())')" i
     HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
     pip uninstall -y django pytz
 
-    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+    pip install "$NUMPY"
     $PYTEST tests/array_api
     $PYTEST tests/numpy
 
