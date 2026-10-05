@@ -43,7 +43,7 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
-from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.reflection import get_pretty_function_description

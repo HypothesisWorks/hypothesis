@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis.internal.compat import ExceptionGroup
-
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.choice import ChoiceConstraintsT
 else:
@@ -278,7 +276,6 @@ class Frozen(HypothesisException):
 
 def __getattr__(name: str) -> Any:
     if name == "MultipleFailures":
-        from hypothesis.internal.compat import BaseExceptionGroup
         from hypothesis.utils.deprecation import note_deprecation
 
         note_deprecation(

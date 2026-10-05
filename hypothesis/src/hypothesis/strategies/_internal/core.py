@@ -91,7 +91,6 @@ from hypothesis.internal.charmap import (
 )
 from hypothesis.internal.compat import (
     add_note,
-    bit_count,
     ceil,
     floor,
     get_type_hints,
@@ -237,7 +236,7 @@ def sampled_from(
         # are also nice values to shrink to.
         flags = sorted(
             set(elements.__members__.values()),
-            key=lambda v: (bit_count(v.value), v.value),
+            key=lambda v: (v.value.bit_count(), v.value),
         )
         # Finally, try to construct the empty state if it is not named. It's placed at the
         # end so that we shrink to named values.

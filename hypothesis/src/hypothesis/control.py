@@ -20,7 +20,6 @@ from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
-from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description

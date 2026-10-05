@@ -31,7 +31,6 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.stateful import RuleBasedStateMachine, rule

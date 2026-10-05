@@ -15,7 +15,6 @@ from collections.abc import Callable
 import pytest
 
 from hypothesis import errors, given, reject, strategies as st
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import DataObject
 
 # this file is not typechecked by mypy, which only runs py310

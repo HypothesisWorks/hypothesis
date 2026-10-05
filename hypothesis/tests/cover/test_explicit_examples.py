@@ -24,7 +24,6 @@ from hypothesis import (
     settings,
 )
 from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgument
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
 from tests.common.utils import (

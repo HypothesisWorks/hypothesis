@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from random import Random
-from typing import Literal, NoReturn, cast
+from typing import Literal, NoReturn, NotRequired, TypedDict, cast
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
@@ -33,7 +33,7 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import NotRequired, TypedDict, ceil, override
+from hypothesis.internal.compat import ceil, override
 from hypothesis.internal.conjecture.choice import (
     ChoiceConstraintsT,
     ChoiceKeyT,

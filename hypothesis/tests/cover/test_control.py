@@ -28,7 +28,6 @@ from hypothesis.errors import (
     InvalidArgument,
     UnsatisfiedAssumption,
 )
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
