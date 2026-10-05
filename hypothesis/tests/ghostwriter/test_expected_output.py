@@ -280,7 +280,7 @@ def various_numpy_annotations(
             ("magic_builtins", lambda: ghostwriter.magic(builtins)),
             marks=[
                 pytest.mark.skipif(
-                    sys.version_info[:2] != (3, 10),
+                    sys.version_info[:2] != (3, 11),
                     reason="often small changes",
                 )
             ],

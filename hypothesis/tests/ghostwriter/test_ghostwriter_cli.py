@@ -64,7 +64,7 @@ def run(cmd, *, cwd=None):
         pytest.param(
             "hypothesis.strategies",
             lambda: magic(st),
-            marks=pytest.mark.skipif(sys.version_info[:2] != (3, 10), reason="varies"),
+            marks=pytest.mark.skipif(sys.version_info[:2] != (3, 11), reason="varies"),
         ),
         # We can write tests for classes even without classmethods or staticmethods
         ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
