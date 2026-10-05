@@ -10,7 +10,6 @@
 
 import re
 import string
-import sys
 from functools import reduce
 
 import pytest
@@ -102,7 +101,6 @@ def test_fuzz_stuff(data):
     assert regex.search(ex)
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_atomic_group(data):
     pattern = "a(?>bc|b)c"
@@ -110,7 +108,6 @@ def test_regex_atomic_group(data):
     assert re.search(pattern, ex)
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_possessive(data):
     pattern = '"[^"]*+"'

@@ -285,12 +285,9 @@ def various_numpy_annotations(
                 )
             ],
         ),
-        pytest.param(
-            (
-                "magic_numpy",
-                lambda: ghostwriter.magic(various_numpy_annotations, annotate=False),
-            ),
-            marks=pytest.mark.skipif(various_numpy_annotations is add, reason="<=3.9"),
+        (
+            "magic_numpy",
+            lambda: ghostwriter.magic(various_numpy_annotations, annotate=False),
         ),
     ],
     ids=lambda x: x[0],

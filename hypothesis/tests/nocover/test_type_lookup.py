@@ -46,7 +46,6 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
         st.register_type_strategy(non_runtime_type, st.none())
 
 
-@pytest.mark.skipif(Concatenate is None, reason="requires python3.10 or higher")
 def test_callable_with_concatenate():
     P = ParamSpec("P")
     func_type = Callable[Concatenate[int, P], None]
@@ -61,7 +60,6 @@ def test_callable_with_concatenate():
         st.register_type_strategy(func_type, st.none())
 
 
-@pytest.mark.skipif(ParamSpec is None, reason="requires python3.10 or higher")
 def test_callable_with_paramspec():
     P = ParamSpec("P")
     func_type = Callable[P, None]
