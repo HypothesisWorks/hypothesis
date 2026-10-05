@@ -96,9 +96,6 @@ def test_resolves_specified_ndarray_type(typ):
     )
 
 
-@pytest.mark.skipif(
-    tuple(int(x) for x in np.__version__.split(".")[:2]) < (1, 22), reason="see comment"
-)
 def test_resolves_ndarray_with_typevar_dtype():
     T = typing.TypeVar("T", bound=np.generic)
     assert_simple_property(

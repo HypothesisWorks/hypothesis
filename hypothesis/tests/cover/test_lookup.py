@@ -1309,6 +1309,12 @@ def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
     assert x in (str, int)
 
 
+def test_native_unions():
+    s = st.from_type(int | list[str])
+    find_any(s, lambda x: isinstance(x, int))
+    find_any(s, lambda x: isinstance(x, list))
+
+
 @pytest.mark.parametrize(
     "type_",
     [
