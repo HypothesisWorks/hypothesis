@@ -53,13 +53,8 @@ FREE_THREADED_CPYTHON = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 def add_note(exc, note):
     try:
         exc.add_note(note)
-    except AttributeError:  # pragma: no cover
-        if not hasattr(exc, "__notes__"):
-            try:
-                exc.__notes__ = []
-            except AttributeError:
-                return  # give up, might be e.g. a frozen dataclass
-        exc.__notes__.append(note)
+    except AttributeError:
+        pass  # give up, might be e.g. a frozen dataclass
 
 
 def escape_unicode_characters(s: str) -> str:
