@@ -1149,7 +1149,7 @@ class BytestringProvider(PrimitiveProvider):
         size = 2**bits
         # always leave at least one value that can be true, even for very small
         # p.
-        falsey = max(1, math.floor(size * (1 - p)))
+        falsey = min(max(1, math.floor(size * (1 - p))), size - 1)
         n = self._draw_bits(bits)
         return n >= falsey
 
@@ -1180,9 +1180,9 @@ class BytestringProvider(PrimitiveProvider):
             return min_value
 
         bits = (max_value - min_value).bit_length()
-        value = self._draw_bits(bits)
+        value = self._draw_bits(bits) + min_value
         while not (min_value <= value <= max_value):
-            value = self._draw_bits(bits)
+            value = self._draw_bits(bits) + min_value
         return value
 
     def draw_float(
@@ -1228,6 +1228,8 @@ class BytestringProvider(PrimitiveProvider):
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> str:
+        if len(intervals) == 0:
+            return ""
         values = self._draw_collection(min_size, max_size, alphabet_size=len(intervals))
         return "".join(chr(intervals[v]) for v in values)
 
