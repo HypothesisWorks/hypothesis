@@ -317,7 +317,7 @@ def format(*, format_all=False):
         *doc_paths_to_format,
     )
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py310-plus", *py_paths_to_format, *doc_paths_to_format)
+    pip_tool("shed", "--py311-plus", *py_paths_to_format, *doc_paths_to_format)
     if rust_paths_to_format:
         cargo(ci_version_rust, ["fmt"], components=["rustfmt"])
 
