@@ -77,7 +77,7 @@ def test_callable_with_paramspec():
 @pytest.mark.parametrize("typ", [TypeGuard, TypeIs])
 def test_callable_return_typegard_type(typ):
     if typ is None:
-        pytest.skip("Requires modern typing")
+        pytest.skip("requires python3.13 or higher")
 
     strategy = st.from_type(Callable[[], typ[int]])
     with pytest.raises(

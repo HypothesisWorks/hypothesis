@@ -85,11 +85,7 @@ Bar.__signature__ = signature(Bar).replace(  # type: ignore
         Parameter(
             "x",
             Parameter.POSITIONAL_OR_KEYWORD,
-            # ruff reports a false-positive UP007 here, since int | ForwardRef("Bar")
-            # errors on 3.10. We can change this once we drop 3.10.
-            #
-            # see also https://github.com/astral-sh/ruff/issues/20883
-            annotation=Union[int, ForwardRef("Bar"), None],  # type: ignore  # noqa: UP007
+            annotation=int | ForwardRef("Bar") | None,
         )
     ]
 )

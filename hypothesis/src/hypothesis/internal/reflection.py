@@ -22,7 +22,6 @@ from collections.abc import Callable, Sequence
 from functools import partial, wraps
 from inspect import Parameter, Signature
 from io import StringIO
-from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, generate_tokens, untokenize
 from types import EllipsisType, ModuleType
@@ -116,18 +115,6 @@ def function_digest(function: Any) -> bytes:
     return hasher.digest()
 
 
-def check_signature(sig: Signature) -> None:  # pragma: no cover  # 3.10 only
-    # Backport from Python 3.11; see https://github.com/python/cpython/pull/92065
-    for p in sig.parameters.values():
-        if iskeyword(p.name) and p.kind is not p.POSITIONAL_ONLY:
-            raise ValueError(
-                f"Signature {sig!r} contains a parameter named {p.name!r}, "
-                f"but this is a SyntaxError because `{p.name}` is a keyword. "
-                "You, or a library you use, must have manually created an "
-                "invalid signature - this will be an error in Python 3.11+"
-            )
-
-
 def get_signature(
     target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
 ) -> Signature:
@@ -145,7 +132,6 @@ def get_signature(
     if isinstance(getattr(target, "__signature__", None), Signature):
         # This special case covers unusual codegen like Pydantic models
         sig = target.__signature__
-        check_signature(sig)
         # And *this* much more complicated block ignores the `self` argument
         # if that's been (incorrectly) included in the custom signature.
         if sig.parameters and (inspect.isclass(target) or inspect.ismethod(target)):
@@ -159,9 +145,7 @@ def get_signature(
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
-    sig = inspect.signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
-    check_signature(sig)
-    return sig
+    return inspect.signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
 
 
 def arg_is_required(param: Parameter) -> bool:

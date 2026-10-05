@@ -63,11 +63,7 @@ def test_invalid_annotated_type():
     ],
 )
 def test_unsupported_constraints(unsupported_constraints, message):
-    if sys.version_info >= (3, 11):
-        # This is the preferred format, but also a SyntaxError on Python <= 3.10
-        t = eval("Annotated[int, *unsupported_constraints]", globals(), locals())
-    else:
-        t = Annotated.__class_getitem__((int, *unsupported_constraints))
+    t = Annotated[int, *unsupported_constraints]
     with pytest.warns(HypothesisWarning, match=re.escape(message)):
         check_can_generate_examples(st.from_type(t))
 
