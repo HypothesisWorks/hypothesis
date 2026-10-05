@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.168.5:
+
+--------------------
+6.168.5 - 2026-10-05
+--------------------
+
+This patch fixes the type annotation of
+:func:`~hypothesis.extra.django.from_field`, which claimed to return a
+strategy for instances of the field type rather than for values of the field.
+
 .. _v6.168.4:
 
 --------------------
