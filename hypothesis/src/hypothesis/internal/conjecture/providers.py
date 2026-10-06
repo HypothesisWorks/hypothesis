@@ -1180,9 +1180,9 @@ class BytestringProvider(PrimitiveProvider):
             return min_value
 
         bits = (max_value - min_value).bit_length()
-        value = self._draw_bits(bits)
+        value = self._draw_bits(bits) + min_value
         while not (min_value <= value <= max_value):
-            value = self._draw_bits(bits)
+            value = self._draw_bits(bits) + min_value
         return value
 
     def draw_float(
