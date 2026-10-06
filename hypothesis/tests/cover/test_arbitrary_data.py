@@ -85,5 +85,13 @@ def test_errors_when_normal_strategy_functions_are_used(f):
         getattr(st.data(), f)(lambda x: 1)
 
 
+@pytest.mark.parametrize(
+    "f, kwarg", [("filter", "condition"), ("map", "pack"), ("flatmap", "expand")]
+)
+def test_errors_when_normal_strategy_functions_are_used_with_keyword(f, kwarg):
+    with raises(InvalidArgument):
+        getattr(st.data(), f)(**{kwarg: lambda x: 1})
+
+
 def test_nice_repr():
     assert repr(st.data()) == "data()"

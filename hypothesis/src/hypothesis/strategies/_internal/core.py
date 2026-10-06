@@ -2467,13 +2467,13 @@ class DataStrategy(SearchStrategy):
     def __repr__(self) -> str:
         return "data()"
 
-    def map(self, f):
+    def map(self, pack):
         self.__not_a_first_class_strategy("map")
 
     def filter(self, condition: Callable[[Ex], Any]) -> NoReturn:
         self.__not_a_first_class_strategy("filter")
 
-    def flatmap(self, f):
+    def flatmap(self, expand):
         self.__not_a_first_class_strategy("flatmap")
 
     def example(self) -> NoReturn:
