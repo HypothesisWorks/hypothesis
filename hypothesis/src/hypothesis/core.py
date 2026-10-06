@@ -1094,6 +1094,11 @@ class StateForActualGivenExecution:
                         avoid_realization=data.provider.avoid_realization,
                         known_safe_to_repr=self.known_safe_to_repr,
                     )
+                else:
+                    # print_given_args is only disabled for stateful tests,
+                    # whose steps are printed separately (and only on failure
+                    # or at Verbosity.debug) - so say why this line is bare.
+                    printer.text(" <state machine>")
                 report(printer.getvalue())
 
             if observability_enabled():
