@@ -843,6 +843,12 @@ def _make_test_body(
         given_strategies = given_strategies or _get_strategies(
             *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
         )
+        if not given_strategies:
+            names = ", ".join(_get_qualname(f, include_module=True) for f in funcs)
+            raise InvalidArgument(
+                f"Can't write a property-based test for {names}, "
+                "because there are no arguments to generate."
+            )
         reprs = [((k, *_valid_syntax_repr(v))) for k, v in given_strategies.items()]
         imports = imports.union(*(imp for _, imp, _ in reprs))
         given_args = ", ".join(f"{k}={v}" for k, _, v in reprs)

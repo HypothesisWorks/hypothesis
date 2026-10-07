@@ -124,7 +124,7 @@ def annotated_any(x: Any):
     pass
 
 
-space_in_name = type("a name", (type,), {"__init__": lambda self: None})
+space_in_name = type("a name", (type,), {"__init__": lambda self, x: None})
 
 
 class NotResolvable:
@@ -244,6 +244,24 @@ def test_ghostwriter_unittest_style(func, ex):
     assert issubclass(get_test_function(source_code), unittest.TestCase)
 
 
+def takes_no_arguments():
+    pass
+
+
+@pytest.mark.parametrize(
+    "writer",
+    [
+        ghostwriter.fuzz,
+        lambda f: ghostwriter.equivalent(f, f),
+        lambda f: ghostwriter.equivalent(f, f, allow_same_errors=True),
+    ],
+    ids=["fuzz", "equivalent", "equivalent_errors"],
+)
+def test_ghostwriter_rejects_functions_without_arguments(writer):
+    with pytest.raises(InvalidArgument, match="no arguments to generate"):
+        writer(takes_no_arguments)
+
+
 def no_annotations(foo=None, *, bar=False):
     pass
 
@@ -340,7 +358,7 @@ class MyError(UnicodeDecodeError):
 )
 def test_exception_deduplication(exceptions, output):
     _, body = ghostwriter._make_test_body(
-        lambda: None,
+        lambda x: None,
         ghost="",
         test_body="pass",
         except_=exceptions,
