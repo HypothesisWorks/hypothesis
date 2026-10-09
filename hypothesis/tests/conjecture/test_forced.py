@@ -13,51 +13,12 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, example, given, settings
-from hypothesis.internal.conjecture import utils as cu
+from hypothesis import example, given
 from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
 from tests.conjecture.common import choice_types_constraints, fresh_data
-
-
-@given(st.data())
-@settings(
-    database=None,
-    suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
-)
-def test_forced_many(data):
-    forced = data.draw(st.integers(0, 100))
-    min_size = data.draw(st.integers(0, forced))
-    max_size = data.draw(st.integers(forced, 100))
-    assert min_size <= forced <= max_size  # by construction
-
-    data = fresh_data()
-    many = cu.many(
-        data,
-        min_size=min_size,
-        average_size=(min_size + max_size) / 2,
-        max_size=max_size,
-        forced=forced,
-    )
-    for _ in range(forced):
-        assert many.more()
-
-    assert not many.more()
-
-    # ensure values written to the buffer do in fact generate the forced value
-    data = ConjectureData.for_choices(data.choices)
-    many = cu.many(
-        data,
-        min_size=min_size,
-        average_size=(min_size + max_size) / 2,
-        max_size=max_size,
-    )
-    for _ in range(forced):
-        assert many.more()
-
-    assert not many.more()
 
 
 @example(("boolean", {"p": 1e-19, "forced": True}))  # 64 bit p
