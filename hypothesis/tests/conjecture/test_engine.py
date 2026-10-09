@@ -31,7 +31,7 @@ from hypothesis.database import (
     choices_to_bytes,
 )
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
-from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
+from hypothesis.internal.compat import PYPY, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
@@ -1696,7 +1696,7 @@ def test_simulate_to_evicted_data(monkeypatch):
             st.sampled_from(
                 enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
             ),
-            lambda f: bit_count(f.value) > 1,
+            lambda f: f.value.bit_count() > 1,
         ),
     ],
 )

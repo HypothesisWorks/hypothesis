@@ -9,19 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import asyncio
-import sys
 from collections.abc import Callable
 
 import pytest
 
 from hypothesis import errors, given, reject, strategies as st
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import DataObject
-
-# this file is not typechecked by mypy, which only runs py310
-
-if sys.version_info < (3, 11):
-    pytest.skip("asyncio.TaskGroup not available on <py3.11", allow_module_level=True)
 
 
 def test_exceptiongroup_discard_frozen():

@@ -22,7 +22,6 @@ from types import ModuleType, TracebackType
 
 import hypothesis
 from hypothesis.errors import _Trimmable
-from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 FILE_CACHE: dict[ModuleType, dict[str, bool]] = {}

@@ -17,7 +17,6 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import bit_count
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
 from tests.common.debug import find_any, minimal
@@ -131,7 +130,7 @@ def test_flags_minimize_to_first_named_flag():
 
 def test_flags_minimizes_bit_count():
     assert (
-        minimal(st.sampled_from(LargeFlag), lambda f: bit_count(f.value) > 1)
+        minimal(st.sampled_from(LargeFlag), lambda f: f.value.bit_count() > 1)
         == LargeFlag.bit0 | LargeFlag.bit1
     )
 

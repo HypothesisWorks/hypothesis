@@ -13,7 +13,6 @@ import pytest
 from hypothesis import Phase, assume, given, settings, strategies as st, target
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FlakyFailure
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 
 from tests.common.utils import (

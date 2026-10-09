@@ -21,14 +21,11 @@ from enum import IntEnum
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import Self, TypeAlias
 
 from hypothesis._settings import Phase, Verbosity
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.escalation import is_hypothesis_file
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 Location: TypeAlias = tuple[str, int]
 Branch: TypeAlias = tuple[Location | None, Location]

@@ -12,7 +12,6 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import ExceptionGroup
 
 
 def test_does_not_shrink_on_replay():

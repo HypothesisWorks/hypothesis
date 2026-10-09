@@ -73,7 +73,6 @@ from hypothesis.errors import (
 from hypothesis.internal import observability
 from hypothesis.internal.compat import (
     PYPY,
-    BaseExceptionGroup,
     add_note,
     bad_django_TestCase,
     get_type_hints,

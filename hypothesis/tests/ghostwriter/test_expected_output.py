@@ -280,17 +280,14 @@ def various_numpy_annotations(
             ("magic_builtins", lambda: ghostwriter.magic(builtins)),
             marks=[
                 pytest.mark.skipif(
-                    sys.version_info[:2] != (3, 10),
+                    sys.version_info[:2] != (3, 11),
                     reason="often small changes",
                 )
             ],
         ),
-        pytest.param(
-            (
-                "magic_numpy",
-                lambda: ghostwriter.magic(various_numpy_annotations, annotate=False),
-            ),
-            marks=pytest.mark.skipif(various_numpy_annotations is add, reason="<=3.9"),
+        (
+            "magic_numpy",
+            lambda: ghostwriter.magic(various_numpy_annotations, annotate=False),
         ),
     ],
     ids=lambda x: x[0],

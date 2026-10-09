@@ -23,44 +23,14 @@ from typing import (
     Any,
     ForwardRef,
     Optional,
-    TypedDict as TypedDict,
     get_args,
 )
 
-if sys.version_info >= (3, 11):
-    BaseExceptionGroup = BaseExceptionGroup  # noqa: F821
-    ExceptionGroup = ExceptionGroup  # noqa: F821
-else:  # pragma: no cover
-    from exceptiongroup import (
-        BaseExceptionGroup as BaseExceptionGroup,
-        ExceptionGroup as ExceptionGroup,
-    )
 if TYPE_CHECKING:
-    from typing_extensions import (
-        NotRequired as NotRequired,
-        TypedDict as TypedDict,
-        override as override,
-    )
+    from typing_extensions import override as override
 
     from hypothesis.internal.conjecture.engine import ConjectureRunner
 else:
-    # In order to use NotRequired, we need the version of TypedDict included in Python 3.11+.
-    if sys.version_info[:2] >= (3, 11):
-        from typing import NotRequired as NotRequired, TypedDict as TypedDict
-    else:  # pragma: no cover
-        try:
-            from typing_extensions import (
-                NotRequired as NotRequired,
-                TypedDict as TypedDict,
-            )
-        except ImportError:
-            # We can use the old TypedDict from Python 3.8+ at runtime.
-            class NotRequired:
-                """A runtime placeholder for the NotRequired type, which is not available in Python <3.11."""
-
-                def __class_getitem__(cls, item):
-                    return cls
-
     try:
         from typing import (
             override as override,
@@ -83,13 +53,8 @@ FREE_THREADED_CPYTHON = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 def add_note(exc, note):
     try:
         exc.add_note(note)
-    except AttributeError:  # pragma: no cover
-        if not hasattr(exc, "__notes__"):
-            try:
-                exc.__notes__ = []
-            except AttributeError:
-                return  # give up, might be e.g. a frozen dataclass
-        exc.__notes__.append(note)
+    except AttributeError:
+        pass  # give up, might be e.g. a frozen dataclass
 
 
 def escape_unicode_characters(s: str) -> str:
@@ -227,13 +192,6 @@ def extract_bits(x: int, /, width: int | None = None) -> list[int]:
         result = (result + [0] * width)[:width]
     result.reverse()
     return result
-
-
-# int.bit_count was added in python 3.10
-try:
-    bit_count = int.bit_count
-except AttributeError:  # pragma: no cover
-    bit_count = lambda self: sum(extract_bits(abs(self)))
 
 
 def bad_django_TestCase(runner: Optional["ConjectureRunner"]) -> bool:

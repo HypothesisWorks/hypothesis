@@ -15,7 +15,6 @@ import pytest
 import hypothesis
 from hypothesis import errors
 from hypothesis.internal import escalation as esc
-from hypothesis.internal.compat import BaseExceptionGroup
 
 
 def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):

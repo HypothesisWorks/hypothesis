@@ -708,23 +708,6 @@ def test_issue_2495_regression(_):
     """See https://github.com/HypothesisWorks/hypothesis/issues/2495"""
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] >= (3, 11),
-    reason="handled upstream in https://github.com/python/cpython/pull/92065",
-)
-def test_error_on_keyword_parameter_name():
-    def f(source):
-        pass
-
-    f.__signature__ = Signature(
-        parameters=[Parameter("from", Parameter.KEYWORD_ONLY)],
-        return_annotation=Parameter.empty,
-    )
-
-    with pytest.raises(ValueError, match="SyntaxError because `from` is a keyword"):
-        get_signature(f)
-
-
 def test_param_is_called_within_func():
     def f(any_name):
         any_name()

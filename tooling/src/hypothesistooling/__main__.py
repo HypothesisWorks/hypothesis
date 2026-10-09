@@ -317,7 +317,7 @@ def format(*, format_all=False):
         *doc_paths_to_format,
     )
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", "--py310-plus", *py_paths_to_format, *doc_paths_to_format)
+    pip_tool("shed", "--py311-plus", *py_paths_to_format, *doc_paths_to_format)
     if rust_paths_to_format:
         cargo(ci_version_rust, ["fmt"], components=["rustfmt"])
 
@@ -459,9 +459,6 @@ def update_python_versions():
         else:
             assert impl == "pypy"
             key = f"pypy{major_minor}"
-            # pypy3.10 is eol upstream, see https://github.com/HypothesisWorks/hypothesis/pull/4776
-            if key == "pypy3.10":
-                continue
             candidate = f"pypy{major_minor}-{ver}"
         # `uv python list` sorts newest-first, so first hit wins.
         best.setdefault(key, candidate)
@@ -832,7 +829,6 @@ def run_tox(task, version, *args, profile="dev"):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.10": "3.10.22",
     "3.11": "3.11.17",
     "3.12": "3.12.15",
     "3.13": "3.13.16",
@@ -891,11 +887,6 @@ for key, version in PYTHONS.items():
         )
 
 
-@python_tests
-def check_py310_pyjion(*args):
-    run_tox("py310-pyjion", PYTHONS["3.10"], *args)
-
-
 @task()
 def tox(*args):
     if len(args) < 2:
@@ -922,10 +913,6 @@ for n in DJANGO_VERSIONS:
 standard_tox_task("django-nocontrib", py=dj_version)
 
 # test each pandas version with the latest python version they support
-standard_tox_task("py310-pandas11", py="3.10")
-standard_tox_task("py310-pandas12", py="3.10")
-standard_tox_task("py310-pandas13", py="3.10")
-standard_tox_task("py310-pandas14", py="3.10")
 standard_tox_task("py311-pandas15", py="3.11")
 standard_tox_task("py311-pandas20", py="3.11")
 standard_tox_task("py312-pandas21", py="3.12")
@@ -940,7 +927,7 @@ for kind in ("rest", "nocover"):
     standard_tox_task(f"alt-{kind}")
 
 standard_tox_task("threading")
-standard_tox_task("py310-oldestnumpy", py="3.10")
+standard_tox_task("py311-oldestnumpy", py="3.11")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")

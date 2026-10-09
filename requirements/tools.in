@@ -8,7 +8,7 @@ libcst
 maturin
 mypy
 # numpy >= 2.5 typing stubs use the `type` keyword, new in python 3.12.
-# this causes mypy errors when type checking on 3.10 and 3.11. We can
+# this causes mypy errors when type checking on 3.11. We can
 # drop this pin after we drop python 3.11.
 numpy<2.5
 pelican[markdown]

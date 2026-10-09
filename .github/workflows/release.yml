@@ -48,43 +48,43 @@ jobs:
               os: ubuntu-latest,
               target: x86_64,
               manylinux: auto,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
               target: x86_64,
               manylinux: musllinux_1_2,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t'
             }
           - {
               os: ubuntu-latest,
               target: aarch64,
               manylinux: auto,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,
               target: aarch64,
               manylinux: musllinux_1_2,
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t'
             }
           - {
               os: macos-latest,
               target: x86_64,
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: macos-latest,
               target: aarch64,
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: windows-latest,
               target: x64,
               manylinux: '',
-              interpreter: 'python3.10 python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
             }
           - {
               os: ubuntu-latest,

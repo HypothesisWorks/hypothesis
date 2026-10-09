@@ -15,7 +15,6 @@ from copy import copy
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
