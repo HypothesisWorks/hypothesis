@@ -10,16 +10,23 @@
 
 import collections
 from collections.abc import Callable
-from typing import Annotated, Concatenate, DefaultDict, NewType, TypeGuard, Union
+from typing import (
+    Annotated,
+    Concatenate,
+    DefaultDict,
+    LiteralString,
+    NewType,
+    NotRequired,
+    Required,
+    TypeGuard,
+    Union,
+)
 
 import pytest
 import typing_extensions
 from typing_extensions import (
-    LiteralString,
-    NotRequired,
     ParamSpec,
     ReadOnly,
-    Required,
     TypedDict,
     TypeIs,
 )

@@ -41,7 +41,7 @@ $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
 $PYTEST tests/typing_extensions/
-if [ "$HYPOTHESIS_PROFILE" != "crosshair" ] && [ "$(python -c 'import sys; print(sys.version_info[:2] > (3, 10))')" = "True" ]; then
+if [ "$HYPOTHESIS_PROFILE" != "crosshair" ]; then
   pip uninstall -y typing-extensions
 fi
 
@@ -60,10 +60,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.10
-    pip install numpy==2.2.6
-  elif [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 11))')" = "True" ] ; then
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 11))')" = "True" ] ; then
     # Per SPEC-0, this is the last version to support Python 3.11
     pip install numpy==2.4.6
   else

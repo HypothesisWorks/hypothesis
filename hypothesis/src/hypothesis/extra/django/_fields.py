@@ -14,7 +14,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
-from typing import Any, TypeAlias, TypeVar, Union
+from typing import Any, TypeAlias, Union
 
 import django
 from django import forms as df
@@ -36,7 +36,6 @@ from hypothesis.strategies import emails
 # Use old-style union to avoid hitting
 # https://github.com/sphinx-doc/sphinx/issues/11211
 AnyField: TypeAlias = Union[dm.Field, df.Field]  # noqa: UP007
-F = TypeVar("F", bound=AnyField)
 
 
 def numeric_bounds_from_validators(
@@ -360,7 +359,7 @@ def register_field_strategy(
     _global_field_lookup[field_type] = strategy
 
 
-def from_field(field: F) -> st.SearchStrategy[F | None]:
+def from_field(field: AnyField) -> st.SearchStrategy[Any]:
     """Return a strategy for values that fit the given field.
 
     This function is used by :func:`~hypothesis.extra.django.from_form` and

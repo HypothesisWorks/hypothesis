@@ -9,10 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Iterable, Iterator, Sequence
-from typing import TYPE_CHECKING, TypeAlias, cast, final
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Self, TypeAlias, cast, final
 
 IntervalsT: TypeAlias = tuple[tuple[int, int], ...]
 

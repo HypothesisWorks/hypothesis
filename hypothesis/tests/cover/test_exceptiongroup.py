@@ -14,7 +14,6 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import Flaky, FlakyBackendFailure, FlakyFailure, Frozen, StopTest
-from hypothesis.internal.compat import BaseExceptionGroup, ExceptionGroup
 from hypothesis.strategies import DataObject
 
 

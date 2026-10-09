@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis.internal.compat import ExceptionGroup
-
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.choice import ChoiceConstraintsT
 else:
@@ -278,12 +276,10 @@ class Frozen(HypothesisException):
 
 def __getattr__(name: str) -> Any:
     if name == "MultipleFailures":
-        from hypothesis.internal.compat import BaseExceptionGroup
         from hypothesis.utils.deprecation import note_deprecation
 
         note_deprecation(
-            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
-            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
+            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type instead",
             since="2022-08-02",
             has_codemod=False,  # This would be a great PR though!
             stacklevel=1,

@@ -15,12 +15,11 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, Optional, overload
+from typing import Any, Literal, NoReturn, Optional, Self, overload
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
-from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.observability import observability_enabled
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -29,9 +28,6 @@ from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.vendor.pretty import ArgLabelsT, IDKey, PrettyPrintFunction, pretty
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 def _calling_function_location(what: str, frame: Any) -> str:

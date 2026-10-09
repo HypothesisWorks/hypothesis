@@ -33,7 +33,7 @@ from collections.abc import Iterator
 from contextvars import ContextVar
 from functools import partial
 from pathlib import PurePath
-from types import FunctionType
+from types import FunctionType, GenericAlias, UnionType
 from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
 
 from hypothesis import strategies as st
@@ -43,7 +43,7 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
-from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.lowlevel import many
@@ -57,15 +57,6 @@ from hypothesis.strategies._internal.strategies import OneOfStrategy
 
 if TYPE_CHECKING:
     import annotated_types as at
-
-GenericAlias: typing.Any
-UnionType: typing.Any
-try:
-    # The type of PEP-604 unions (`int | str`), added in Python 3.10
-    from types import GenericAlias, UnionType
-except ImportError:
-    GenericAlias = ()
-    UnionType = ()
 
 try:
     import typing_extensions
@@ -90,41 +81,25 @@ try:
 except AttributeError:
     pass  # `typing_extensions` might not be installed
 
-ConcatenateTypes: tuple = ()
-try:
-    ConcatenateTypes += (typing.Concatenate,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.10`
+ConcatenateTypes: tuple = (typing.Concatenate,)
 try:
     ConcatenateTypes += (typing_extensions.Concatenate,)
 except AttributeError:
     pass  # `typing_extensions` might not be installed
 
-ParamSpecTypes: tuple = ()
-try:
-    ParamSpecTypes += (typing.ParamSpec,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.10`
+ParamSpecTypes: tuple = (typing.ParamSpec,)
 try:
     ParamSpecTypes += (typing_extensions.ParamSpec,)
 except AttributeError:
     pass  # `typing_extensions` might not be installed
 
-TypeVarTupleTypes: tuple = ()
-try:
-    TypeVarTupleTypes += (typing.TypeVarTuple,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
+TypeVarTupleTypes: tuple = (typing.TypeVarTuple,)
 try:
     TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
 except AttributeError:
     pass  # `typing_extensions` might not be installed
 
-TypeGuardTypes: tuple = ()
-try:
-    TypeGuardTypes += (typing.TypeGuard,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.10`
+TypeGuardTypes: tuple = (typing.TypeGuard,)
 try:
     TypeGuardTypes += (typing.TypeIs,)
 except AttributeError:  # pragma: no cover
@@ -135,22 +110,14 @@ except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
-RequiredTypes: tuple = ()
-try:
-    RequiredTypes += (typing.Required,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
+RequiredTypes: tuple = (typing.Required,)
 try:
     RequiredTypes += (typing_extensions.Required,)
 except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
-NotRequiredTypes: tuple = ()
-try:
-    NotRequiredTypes += (typing.NotRequired,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
+NotRequiredTypes: tuple = (typing.NotRequired,)
 try:
     NotRequiredTypes += (typing_extensions.NotRequired,)
 except AttributeError:
@@ -168,11 +135,7 @@ except AttributeError:
     pass  # `typing_extensions` might not be installed
 
 
-LiteralStringTypes: tuple = ()
-try:
-    LiteralStringTypes += (typing.LiteralString,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
+LiteralStringTypes: tuple = (typing.LiteralString,)
 try:
     LiteralStringTypes += (typing_extensions.LiteralString,)
 except AttributeError:
@@ -398,7 +361,7 @@ def is_a_type_alias_type(thing):
 
 
 def is_a_union(thing: object) -> bool:
-    """Return True if thing is a typing.Union or types.UnionType (in py310)."""
+    """Return True if thing is a typing.Union or types.UnionType."""
     return isinstance(thing, UnionType) or get_origin(thing) is typing.Union
 
 
@@ -1151,11 +1114,6 @@ def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
         return st.lists(st.from_type(elem_types[0])).map(tuple)
-    elif len(elem_types) == 1 and elem_types[0] == ():  # pragma: no cover
-        # Empty tuple; see issue #1583.
-        # Only possible on 3.10. `from typing import Tuple; Tuple[()].__args__`
-        # is ((),) on 3.10, and () on 3.11+.
-        return st.tuples()
     return st.tuples(*map(st.from_type, elem_types))
 
 

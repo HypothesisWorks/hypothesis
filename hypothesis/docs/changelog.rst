@@ -18,6 +18,52 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.168.5:
+
+--------------------
+6.168.5 - 2026-10-05
+--------------------
+
+This patch fixes the type annotation of
+:func:`~hypothesis.extra.django.from_field`, which claimed to return a
+strategy for instances of the field type rather than for values of the field.
+
+.. _v6.168.4:
+
+--------------------
+6.168.4 - 2026-10-05
+--------------------
+
+This patch adds support for PyPy 3.12.
+
+.. _v6.168.3:
+
+--------------------
+6.168.3 - 2026-09-28
+--------------------
+
+This patch fixes quadratic-time behaviour when summarising the statistics of a test run, which Hypothesis does for every test when running under :pypi:`pytest`. This avoids an apparent hang after the last test case with a high number of test cases (>100k).
+
+.. _v6.168.2:
+
+--------------------
+6.168.2 - 2026-09-27
+--------------------
+
+This patch makes writes to the cache of constants collected from local source
+files atomic. Previously, a concurrent process sharing the same ``.hypothesis``
+directory, such as another :pypi:`pytest-xdist` worker, could read a partially
+written cache file, which silently changed the data generated for a given
+:func:`@seed <hypothesis.seed>` (:issue:`4885`).
+
+.. _v6.168.1:
+
+--------------------
+6.168.1 - 2026-09-23
+--------------------
+
+We now publish abi3 wheels for Linux s390x (manylinux) and Linux i686 (musllinux).
+
 .. _v6.168.0:
 
 --------------------

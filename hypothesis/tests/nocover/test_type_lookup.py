@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Callable, Collection, Sequence
-from typing import Concatenate, ParamSpec
+from typing import Concatenate, ParamSpec, TypeGuard
 
 import pytest
 
@@ -22,11 +22,6 @@ from tests.common.debug import (
     check_can_generate_examples,
     find_any,
 )
-
-try:
-    from typing import TypeGuard  # new in 3.10
-except ImportError:
-    TypeGuard = None
 
 try:
     from typing import TypeIs  # new in 3.13
@@ -51,7 +46,6 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
         st.register_type_strategy(non_runtime_type, st.none())
 
 
-@pytest.mark.skipif(Concatenate is None, reason="requires python3.10 or higher")
 def test_callable_with_concatenate():
     P = ParamSpec("P")
     func_type = Callable[Concatenate[int, P], None]
@@ -66,7 +60,6 @@ def test_callable_with_concatenate():
         st.register_type_strategy(func_type, st.none())
 
 
-@pytest.mark.skipif(ParamSpec is None, reason="requires python3.10 or higher")
 def test_callable_with_paramspec():
     P = ParamSpec("P")
     func_type = Callable[P, None]
@@ -84,7 +77,7 @@ def test_callable_with_paramspec():
 @pytest.mark.parametrize("typ", [TypeGuard, TypeIs])
 def test_callable_return_typegard_type(typ):
     if typ is None:
-        pytest.skip("Requires modern typing")
+        pytest.skip("requires python3.13 or higher")
 
     strategy = st.from_type(Callable[[], typ[int]])
     with pytest.raises(

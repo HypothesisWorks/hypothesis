@@ -295,13 +295,6 @@ def test_register_generic_typing_strats():
         assert_all_examples(from_type(list[int]), lambda ex: isinstance(ex, list))
 
 
-def if_available(name):
-    try:
-        return getattr(typing, name)
-    except AttributeError:
-        return pytest.param(name, marks=[pytest.mark.skip])
-
-
 @pytest.mark.parametrize(
     "typ",
     [
@@ -315,7 +308,7 @@ def if_available(name):
         typing.SupportsFloat,
         typing.SupportsInt,
         typing.SupportsRound,
-        if_available("SupportsIndex"),
+        typing.SupportsIndex,
     ],
     ids=get_pretty_function_description,
 )
@@ -1192,11 +1185,8 @@ def test_compat_get_type_hints_aware_of_None_default():
     find_any(strategy, lambda x: x.a is None)
     find_any(strategy, lambda x: x.a is not None)
 
-    if sys.version_info[:2] >= (3, 11):
-        # https://docs.python.org/3.11/library/typing.html#typing.get_type_hints
-        assert typing.get_type_hints(constructor)["a"] == str
-    else:
-        assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
+    # https://docs.python.org/3.11/library/typing.html#typing.get_type_hints
+    assert typing.get_type_hints(constructor)["a"] == str
     assert inspect.signature(constructor).parameters["a"].annotation == str
 
 
@@ -1317,6 +1307,12 @@ def test_resolves_type_of_builtin_types(t):
 )
 def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
     assert x in (str, int)
+
+
+def test_native_unions():
+    s = st.from_type(int | list[str])
+    find_any(s, lambda x: isinstance(x, int))
+    find_any(s, lambda x: isinstance(x, list))
 
 
 @pytest.mark.parametrize(

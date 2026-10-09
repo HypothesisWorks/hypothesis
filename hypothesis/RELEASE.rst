@@ -12,3 +12,5 @@ To start, |lowlevel| contains the following new APIs:
 * Breaking changes will be preceded by at least 3 months of a deprecation warning.
 * After the 3 month period, breaking changes may occur during any of a patch, minor, or major release.
 * Breaking changes may be made during a major release without the 3 month deprecation notice.
+
+This release drops support for Python 3.10, `which reached end of life in October 2026 <https://devguide.python.org/versions/>`__.

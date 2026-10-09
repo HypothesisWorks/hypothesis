@@ -45,8 +45,8 @@ for minor_increment in range(10):
     if sys.version_info < (3, minor):
         collect_ignore_glob.append(f"cover/*py3{minor}*.py")
 
-if sys.version_info >= (3, 11):
-    collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
+# @asyncio.coroutine removed in 3.11
+collect_ignore_glob.append("cover/test_asyncio.py")
 
 
 in_shrinking_benchmark = False
@@ -98,25 +98,21 @@ except ImportError:
     pass
 
 
-if sys.version_info >= (3, 11):
-    # To detect if changes in code generation causes lambda test compilation
-    # to fail. Older versions (3.10 and earlier) have a few known false
-    # negatives which we ignore.
-    @pytest.fixture(scope="function", autouse=True)
-    def _make_unknown_lambdas_fail(monkeypatch):
+# To detect if changes in code generation causes lambda test compilation
+# to fail.
+@pytest.fixture(scope="function", autouse=True)
+def _make_unknown_lambdas_fail(monkeypatch):
 
-        def fail(candidate):
-            msg = (
-                f"Failed to find a matching source for {candidate}. "
-                "This could indicate changes in the Python code generator,\n"
-                "or just a previously unknown case. To quickly resolve this "
-                "problem, use the `allow_unknown_lambdas` fixture."
-            )
-            raise AssertionError(msg)
-
-        monkeypatch.setattr(
-            lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail
+    def fail(candidate):
+        msg = (
+            f"Failed to find a matching source for {candidate}. "
+            "This could indicate changes in the Python code generator,\n"
+            "or just a previously unknown case. To quickly resolve this "
+            "problem, use the `allow_unknown_lambdas` fixture."
         )
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(lambda_sources, "_check_unknown_perfectly_aligned_lambda", fail)
 
 
 @pytest.fixture(scope="function")

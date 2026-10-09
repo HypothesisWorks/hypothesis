@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, Never, NoReturn
 
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.conjecture.choice import ChoiceT
@@ -26,9 +26,6 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
-
-if TYPE_CHECKING:
-    from typing_extensions import Never
 
 
 class JustStrategy(SampledFromStrategy[Ex]):

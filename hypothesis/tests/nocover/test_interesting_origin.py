@@ -11,7 +11,6 @@
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.internal.compat import ExceptionGroup
 
 from tests.common.utils import flaky
 

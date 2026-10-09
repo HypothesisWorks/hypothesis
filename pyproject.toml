@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.per-file-target-version]
 "test_typealias_py312.py" = "py312"
@@ -78,6 +78,7 @@ ignore = [
     "SIM114",
     "SIM300",
     "SIM905",
+    "UP017",
 ]
 
 [tool.ruff.lint.per-file-ignores]

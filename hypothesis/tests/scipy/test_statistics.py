@@ -18,7 +18,7 @@ from hypothesis import given, strategies as st
 from hypothesis.internal.statistics import stdtr, stdtrit
 
 # Older scipy had a less accurate stdrit path. Our CI uses older scipy in some of our
-# older python jobs like python3.10. Just skip them and only test against newer scipy.
+# older python jobs. Just skip them and only test against newer scipy.
 SCIPY_VERSION = tuple(int(x) for x in scipy.__version__.split("."))
 
 
