@@ -473,7 +473,7 @@ def run_conformance_test(
                 # filter out nans and weirder things
                 try:
                     assume(value == value)
-                except Exception:
+                except Exception:  # pragma: no cover
                     # e.g. value = Decimal('-sNaN')
                     assume(False)
 
