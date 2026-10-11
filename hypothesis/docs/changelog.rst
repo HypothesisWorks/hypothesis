@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.169.0:
+
+--------------------
+6.169.0 - 2026-10-11
+--------------------
+
+This release drops support for Python 3.10, `which reached end of life in October 2026 <https://devguide.python.org/versions/>`__.
+
 .. _v6.168.5:
 
 --------------------
