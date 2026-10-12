@@ -641,6 +641,21 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     )
 
 
+def test_redistribute_numeric_pairs_to_large_integer():
+    # integers have no precision cliff at MAX_PRECISE_INTEGER, so redistributing
+    # from a float node into an integer node should be able to push the integer
+    # past it.
+    @shrinking_from((10.0, MAX_PRECISE_INTEGER - 5))
+    def shrinker(data: ConjectureData):
+        v1 = data.draw_float()
+        v2 = data.draw_integer()
+        if v1 + v2 >= MAX_PRECISE_INTEGER:
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.redistribute_numeric_pairs)])
+    assert shrinker.choices == (0.0, MAX_PRECISE_INTEGER + 5)
+
+
 @pytest.mark.parametrize(
     "node1_type, node2_type",
     [
