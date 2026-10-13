@@ -15,6 +15,7 @@ from copy import copy
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
@@ -180,6 +181,18 @@ def test_seeding_to_same_value_synchronizes(use_true_random, data, method_call):
     r1.seed(0)
     r2.seed(0)
     assert getattr(r1, method)(*args, **kwargs) == getattr(r2, method)(*args, **kwargs)
+
+
+@pytest.mark.parametrize("use_true_random", [False, True])
+@given(data=st.data())
+def test_seed_accepts_same_arguments_as_random_seed(use_true_random, data):
+    r1 = data.draw(st.randoms(use_true_random=use_true_random))
+    r2 = data.draw(st.randoms(use_true_random=use_true_random))
+    r1.seed(0)
+    r2.seed(a=0, version=2)
+    assert r1.random() == r2.random()
+    with pytest.raises(InvalidArgument):
+        r1.seed()
 
 
 @given(any_random, any_call())
