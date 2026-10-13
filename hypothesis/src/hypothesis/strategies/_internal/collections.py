@@ -26,6 +26,7 @@ from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.reflection import is_identity_function
 from hypothesis.strategies._internal.strategies import (
+    T1,
     T3,
     T4,
     T5,
@@ -118,33 +119,33 @@ def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[tuple[Ex]]: ...
 
 @overload
 def tuples(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[tuple[Ex, T]]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T]
+) -> SearchStrategy[tuple[T1, T]]: ...
 
 
 @overload
 def tuples(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[tuple[Ex, T, T3]]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
+) -> SearchStrategy[tuple[T1, T, T3]]: ...
 
 
 @overload
 def tuples(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[tuple[Ex, T, T3, T4]]: ...
+) -> SearchStrategy[tuple[T1, T, T3, T4]]: ...
 
 
 @overload
 def tuples(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[tuple[Ex, T, T3, T4, T5]]: ...
+) -> SearchStrategy[tuple[T1, T, T3, T4, T5]]: ...
 
 
 @overload
@@ -170,6 +171,7 @@ def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[tuple[Any, ...]]:
     return TupleStrategy(args)
 
 
+# pyrefly: ignore [invalid-variance]
 class ListStrategy(SearchStrategy[list[Ex]]):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""

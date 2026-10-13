@@ -61,7 +61,8 @@ _leading_space_re = re.compile("(^[ ]*)(?:[^ \n])", re.MULTILINE)
 def dedent(text: str) -> tuple[str, str]:
     # Simplified textwrap.dedent, for valid Python source code only
     text = _space_only_re.sub("", text)
-    prefix = min(_leading_space_re.findall(text), key=len)
+    # pyrefly false positive: https://github.com/facebook/pyrefly/issues/4886
+    prefix: str = min(_leading_space_re.findall(text), key=len)
     return re.sub(r"(?m)^" + prefix, "", text), prefix
 
 
@@ -145,7 +146,7 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
         return cst.Decorator(expr)
 
     def leave_FunctionDef(
-        self, _original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
         return updated_node.with_changes(
             # TODO: improve logic for where in the list to insert this decorator
@@ -157,6 +158,12 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
             )
             + self.fn_examples.get(updated_node.name.value, ())
         )
+
+
+def _only_call(module: Any) -> cst.Call:
+    call = module.body[0].body[0].value
+    assert isinstance(call, cst.Call), call
+    return call
 
 
 def get_patch_for(
@@ -218,9 +225,8 @@ def _get_patch_for(
         seen_examples.add((ex, via))
 
         with suppress(Exception):
-            node: Any = cst.parse_module(ex)
-            the_call = node.body[0].body[0].value
-            assert isinstance(the_call, cst.Call), the_call
+            module = cst.parse_module(ex)
+            the_call = _only_call(module)
             # Check for st.data(), which doesn't support explicit examples
             data = m.Arg(m.Call(m.Name("data"), args=[m.Arg(m.Ellipsis())]))
             if m.matches(the_call, m.Call(args=[m.ZeroOrMore(), data, m.ZeroOrMore()])):
@@ -247,21 +253,23 @@ def _get_patch_for(
             # which are treated as Load() context - but even if that's fixed later
             # we'll still want to support older versions.
             with suppress(Exception):
-                wrapper = cst.metadata.MetadataWrapper(node)
+                wrapper = cst.metadata.MetadataWrapper(module)
                 kwarg_names = {
                     node.keyword  # type: ignore
                     for node in m.findall(wrapper, m.Arg(keyword=m.Name()))
                 }
-                node = m.replace(
-                    wrapper,
-                    m.Name(value=m.MatchIfTrue(names.__contains__))
-                    & m.MatchMetadata(ExpressionContextProvider, ExpressionContext.LOAD)
-                    & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),  # type: ignore
-                    replacement=lambda node, _, ns=names: ns[node.value],  # type: ignore
+                the_call = _only_call(
+                    m.replace(
+                        wrapper,
+                        m.Name(value=m.MatchIfTrue(names.__contains__))
+                        & m.MatchMetadata(
+                            ExpressionContextProvider, ExpressionContext.LOAD
+                        )
+                        & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),  # type: ignore
+                        replacement=lambda node, _, ns=names: ns[node.value],  # type: ignore
+                    )
                 )
-            node = node.body[0].body[0].value
-            assert isinstance(node, cst.Call), node
-            call_nodes.append((node, via))
+            call_nodes.append((the_call, via))
 
     if not call_nodes:
         return None

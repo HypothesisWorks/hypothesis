@@ -911,8 +911,7 @@ class HypothesisProvider(PrimitiveProvider):
             cdf_max = max_value + 0.5
         except OverflowError:
             safe_bounds = False
-
-        if safe_bounds:
+        else:
             lo = dist.cdf(cdf_min)
             hi = dist.cdf(cdf_max)
 

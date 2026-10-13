@@ -157,7 +157,7 @@ def from_dtype(
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None and dtype.fields is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
-        subs = [from_dtype(dtype.fields[name][0], **kwargs) for name in dtype.names]
+        subs = [from_dtype(dtype[name], **kwargs) for name in dtype.names]
         return st.tuples(*subs)
 
     # Subarray datatypes, eg '(2, 3)i4'
@@ -1400,6 +1400,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
 
     if thing == np.dtype:
         # Note: Parameterized dtypes and DTypeLike are not supported.
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             scalar_dtypes(),
             byte_string_dtypes(),
@@ -1420,6 +1421,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
         #     *scalars,
         #     _NestedSequence[Union[*scalars]]
         # ]
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             # *scalars
             base_strats,
@@ -1449,6 +1451,7 @@ def _from_type(thing: type[Ex]) -> st.SearchStrategy[Ex] | None:
         # resolution of ArrayLike, above.
         assert len(args) <= 1
         base_strat = st.from_type(args[0]) if args else base_strats
+        # pyrefly: ignore [bad-return]
         return st.one_of(
             st.lists(base_strat),
             st.recursive(st.tuples(), st.tuples),

@@ -37,7 +37,7 @@ from hypothesis.utils.deprecation import note_deprecation
 try:
     from pandas.core.arrays.integer import IntegerDtype
 except ImportError:
-    IntegerDtype = ()
+    IntegerDtype = ()  # type: ignore[misc, assignment]
 
 PANDAS_GE_21 = tuple(int(x) for x in pandas.__version__.split(".")[:2]) >= (2, 1)
 
@@ -639,11 +639,10 @@ def data_frames(
       InvalidArgument being raised.
     """
     if index is None:
-        index = range_indexes()
+        index_strategy = range_indexes()
     else:
         check_strategy(index, "index")
-
-    index_strategy = index
+        index_strategy = index
 
     if columns is None:
         if rows is None:
@@ -674,7 +673,7 @@ def data_frames(
     cols = try_convert(tuple, columns, "columns")
 
     rewritten_columns = []
-    column_names: set[str] = set()
+    column_names: set[str | int] = set()
     # Maps the name of each timezone-aware datetime column to its timezone.  We
     # build such columns with the underlying naive dtype and attach the
     # timezone once the frame has been assembled (see attach_timezone).

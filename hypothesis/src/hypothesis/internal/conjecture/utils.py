@@ -120,6 +120,7 @@ def check_sample(
         # Pyright is unhappy with every way I've tried to type-annotate this
         # function, so fine, we'll just ignore the analysis error.
         return values  # type: ignore
+    # pyrefly: ignore [bad-return]
     return tuple(values)
 
 

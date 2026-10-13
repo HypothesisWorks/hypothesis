@@ -454,6 +454,25 @@ def make_testcase(
     elif status != "failed":
         status_reason_location = data.invalid_location
 
+    metadata_fields: dict[str, Any] = {
+        "traceback": data.expected_traceback,
+        "reproduction_decorator": (
+            reproduction_decorator(data.choices) if status == "failed" else None
+        ),
+        "notes": list(data.notes),
+        "predicates": dict(data._observability_predicates),
+        "backend": backend_metadata or {},
+        "data_status": data.status,
+        "phase": phase,
+        "interesting_origin": data.interesting_origin,
+        "status_reason_location": status_reason_location,
+        "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
+        "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
+        **_system_metadata(),
+        # unpack last so it takes precedence for duplicate keys
+        **(metadata or {}),
+    }
+
     return TestCaseObservation(
         type="test_case",
         status=status,
@@ -471,26 +490,7 @@ def make_testcase(
         },
         coverage=coverage,
         timing=timing,
-        metadata=ObservationMetadata(
-            **{
-                "traceback": data.expected_traceback,
-                "reproduction_decorator": (
-                    reproduction_decorator(data.choices) if status == "failed" else None
-                ),
-                "notes": list(data.notes),
-                "predicates": dict(data._observability_predicates),
-                "backend": backend_metadata or {},
-                "data_status": data.status,
-                "phase": phase,
-                "interesting_origin": data.interesting_origin,
-                "status_reason_location": status_reason_location,
-                "choice_nodes": data.nodes if OBSERVABILITY_CHOICES else None,
-                "choice_spans": data.spans if OBSERVABILITY_CHOICES else None,
-                **_system_metadata(),
-                # unpack last so it takes precedence for duplicate keys
-                **(metadata or {}),
-            }
-        ),
+        metadata=ObservationMetadata(**metadata_fields),
         run_start=run_start,
         property=property,
     )

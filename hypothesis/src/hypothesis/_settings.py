@@ -476,8 +476,8 @@ def _validate_stateful_step_count(stateful_step_count: int) -> int:
 
 
 def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, ...]:
-    suppressions = try_convert(tuple, suppressions, "suppress_health_check")
-    for health_check in suppressions:
+    converted = try_convert(tuple, suppressions, "suppress_health_check")
+    for health_check in converted:
         if health_check in (HealthCheck.return_value, HealthCheck.not_a_test_method):
             note_deprecation(
                 f"The {health_check.name} health check is deprecated, because this is always an error.",
@@ -487,7 +487,7 @@ def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, 
             )
     return tuple(
         _validate_enum_value(HealthCheck, health_check, name="suppress_health_check")
-        for health_check in suppressions
+        for health_check in converted
     )
 
 
@@ -1055,9 +1055,7 @@ class settings(metaclass=settingsMeta):
         # setting custom attributes on the decorated function or class.
         _test: Any = test
 
-        # Using the alias here avoids a mypy error (return-value) later when
-        # ``test`` is returned, because this check results in type refinement.
-        if not callable(_test):
+        if not callable(test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
                 f"but decorated {test=} is not callable."
