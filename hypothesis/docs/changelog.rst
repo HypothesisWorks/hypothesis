@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.169.2:
+
+--------------------
+6.169.2 - 2026-10-14
+--------------------
+
+:ref:`The Ghostwriter <ghostwriter>` now raises a helpful error for functions
+which take no arguments, instead of writing a test with an invalid empty
+``@given()`` decorator (:issue:`4882`).
+
+Thanks to deepak7lal for this fix!
+
 .. _v6.169.1:
 
 --------------------
