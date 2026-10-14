@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.169.1:
+
+--------------------
+6.169.1 - 2026-10-14
+--------------------
+
+Calling ``.map()`` or ``.flatmap()`` on :func:`~hypothesis.strategies.data`
+with a keyword argument now raises the intended error explaining that this is
+not supported, instead of a generic error about an unexpected keyword argument.
+
 .. _v6.169.0:
 
 --------------------
