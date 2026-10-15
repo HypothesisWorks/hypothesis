@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.169.3:
+
+--------------------
+6.169.3 - 2026-10-15
+--------------------
+
+The ``.seed()`` method of :func:`~hypothesis.strategies.randoms` now accepts
+the same arguments as :meth:`random.Random.seed`, such as ``a=`` and
+``version=``. Previously, it required exactly one positional argument.
+Calling ``.seed()`` without a seed now raises a clearer error.
+
 .. _v6.169.2:
 
 --------------------
