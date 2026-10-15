@@ -738,7 +738,7 @@ def test_invariant_failling_present_in_falsifying_example():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = BadInvariant()
 state.initialize_1()
 state.invariant_1()
@@ -780,7 +780,7 @@ def test_invariant_present_in_falsifying_example():
         run_state_machine_as_test(BadRuleWithGoodInvariants)
 
     expected = """
-Failing test case:
+Failing test case: <state machine>
 state = BadRuleWithGoodInvariants()
 state.invariant_1()
 state.initialize_1()
@@ -964,7 +964,7 @@ def test_initialize_rule_populate_bundle():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = WithInitializeBundleRules()
 a_0 = state.initialize_a(dep='dep')
 state.fail_fast(param=a_0)
@@ -1092,7 +1092,7 @@ def test_can_manually_call_initialize_rule():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = StateMachine()
 state.initialize()
 state.fail_eventually()
@@ -1112,7 +1112,7 @@ def test_steps_printed_despite_pytest_fail():
     with pytest.raises(Failed) as err:
         run_state_machine_as_test(RaisesProblem)
     assert "\n".join(err.value.__notes__).strip() == """
-Failing test case:
+Failing test case: <state machine>
 state = RaisesProblem()
 state.oops()
 state.teardown()""".strip()
@@ -1326,7 +1326,7 @@ def test_single_target_multiple():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 state.fail_fast(param=a_2)
@@ -1375,7 +1375,7 @@ def test_targets_repr(bundle_names, initial, repr_):
 
     result = "\n".join(err.value.__notes__)
     assert result == f"""
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 {repr_}
 state.fail_fast()
@@ -1409,7 +1409,7 @@ def test_multiple_targets():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 b_0, b_1, b_2 = a_0, a_1, a_2
@@ -1447,7 +1447,7 @@ def test_multiple_common_targets():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 a_0, a_1, a_2 = state.initialize()
 b_0, b_1, b_2 = a_0, a_1, a_2
@@ -1653,7 +1653,7 @@ def test_prints_variable_names_for_filtered_bundle_arguments():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 values_0, values_1, values_2 = state.fill()
 state.fail_fast(a1=values_0, a2=values_2, a3=values_2)
@@ -1683,7 +1683,7 @@ def test_prints_variable_names_for_consumed_filtered_bundle_arguments():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 values_0, values_1, values_2 = state.fill()
 state.fail_fast(v1=values_0, v2=values_2, v3=values_1)
@@ -1716,7 +1716,7 @@ def test_prints_mapped_bundle_values_directly():
 
     result = "\n".join(err.value.__notes__)
     assert result == """
-Failing test case:
+Failing test case: <state machine>
 state = Machine()
 values_0, values_1 = state.fill()
 state.fail_fast(v1=values_1, v2='ret2ret2', v3='ret2ret2', v4=values_0)
