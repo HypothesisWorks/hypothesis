@@ -15,6 +15,7 @@ import ast
 import hashlib
 import inspect
 import re
+import sys
 import textwrap
 import types
 import warnings
@@ -145,6 +146,14 @@ def get_signature(
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
+    if sys.version_info >= (3, 14) and not eval_str:
+        from annotationlib import Format
+
+        # Preserve resolved types without requiring TYPE_CHECKING-only names
+        # to be available when Python evaluates lazy annotations.
+        return inspect.signature(
+            target, follow_wrapped=follow_wrapped, annotation_format=Format.FORWARDREF
+        )
     return inspect.signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
 
 
@@ -193,7 +202,7 @@ def convert_keyword_arguments(
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
     """
-    sig = inspect.signature(function, follow_wrapped=False)
+    sig = get_signature(function, follow_wrapped=False)
     bound = sig.bind(*args, **kwargs)
     return bound.args, bound.kwargs
 
@@ -206,7 +215,7 @@ def convert_positional_arguments(
 
     new_args will only be non-empty if function has pos-only args or *args.
     """
-    sig = inspect.signature(function, follow_wrapped=False)
+    sig = get_signature(function, follow_wrapped=False)
     bound = sig.bind(*args, **kwargs)
     new_args = []
     new_kwargs = dict(bound.arguments)
