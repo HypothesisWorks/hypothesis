@@ -16,6 +16,7 @@ from random import Random
 from typing import Any
 
 from hypothesis.control import should_note
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
@@ -35,7 +36,7 @@ class HypothesisRandom(Random, abc.ABC):
         return self.__copy__()
 
     @abc.abstractmethod
-    def seed(self, seed):
+    def seed(self, a=None, version=2):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -164,6 +165,14 @@ def state_for_seed(data, seed):
         seeds_to_states[seed] = state
 
     return state
+
+
+def check_seed(a: object) -> None:
+    if a is None:
+        raise InvalidArgument(
+            "Hypothesis-generated Random instances do not support seed() "
+            "without an explicit seed"
+        )
 
 
 def normalize_zero(f: float) -> float:
@@ -330,8 +339,9 @@ class ArtificialRandom(HypothesisRandom):
 
         return self.__convert_result(method, kwargs, result)
 
-    def seed(self, seed):
-        self.__state = state_for_seed(self.__data, seed)
+    def seed(self, a=None, version=2):
+        check_seed(a)
+        self.__state = state_for_seed(self.__data, a)
 
     def getstate(self):
         if self.__state.state_id is not None:
@@ -414,9 +424,10 @@ class TrueRandom(HypothesisRandom):
     def __repr__(self) -> str:
         return f"Random({self.__seed!r})"
 
-    def seed(self, seed):
-        self.__random.seed(seed)
-        self.__seed = seed
+    def seed(self, a=None, version=2):
+        check_seed(a)
+        self.__random.seed(a, version)
+        self.__seed = a
 
     def getstate(self):
         return self.__random.getstate()
