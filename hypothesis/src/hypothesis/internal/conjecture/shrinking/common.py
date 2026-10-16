@@ -49,7 +49,7 @@ class Shrinker:
             self.current,
         )
 
-    def setup(self, **kwargs):
+    def setup(self, *args, **kwargs):
         """Runs initial setup code.
 
         Convenience function for children that doesn't require messing
