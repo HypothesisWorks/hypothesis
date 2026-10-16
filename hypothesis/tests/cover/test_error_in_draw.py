@@ -31,6 +31,19 @@ def test_error_is_in_finally():
     assert "[0, 1, -1]" in "\n".join(err.value.__notes__)
 
 
+def test_error_after_freeze_is_not_swallowed():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4132 -
+    # freezing the data and then raising used to replace the user's exception
+    # with a StopTest, so the test silently passed.
+    @given(st.data())
+    def test(d):
+        d.conjecture_data.freeze()
+        raise TypeError("oops")
+
+    with pytest.raises(TypeError):
+        test()
+
+
 @given(st.data())
 def test_warns_on_bool_strategy(data):
     with pytest.warns(

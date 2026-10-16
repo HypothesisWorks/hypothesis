@@ -792,6 +792,32 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
+def _iter_exception_chain(
+    exception: BaseException,
+) -> Generator[BaseException, None, None]:
+    """Yield ``exception`` and each exception it implicitly suppressed via ``__context__``."""
+    seen: set[int] = set()
+    while exception is not None and id(exception) not in seen:
+        seen.add(id(exception))
+        yield exception
+        exception = exception.__context__
+
+
+def _only_contains_frozen(exception: BaseException) -> bool:
+    """Return True if ``exception`` is a ``Frozen``, or a group whose every leaf is.
+
+    Such an exception means "discard this run" rather than a user failure,
+    even when frozen data makes it surface as a raised exception.
+    """
+    if isinstance(exception, Frozen):
+        return True
+    if isinstance(exception, BaseExceptionGroup):
+        return bool(exception.exceptions) and all(
+            _only_contains_frozen(exc) for exc in exception.exceptions
+        )
+    return False
+
+
 def failure_exceptions_to_catch() -> tuple[type[BaseException], ...]:
     """Return a tuple of exceptions meaning 'this test has failed', to catch.
 
@@ -1300,10 +1326,20 @@ class StateForActualGivenExecution:
                 raise
 
             if data.frozen:
-                # This can happen if an error occurred in a finally
-                # block somewhere, suppressing our original StopTest.
-                # We raise a new one here to resume normal operation.
-                raise StopTest(data.testcounter) from e
+                if any(
+                    isinstance(exc, StopTest) for exc in _iter_exception_chain(e)
+                ) or _only_contains_frozen(e):
+                    # This can happen if an error occurred in a finally
+                    # block somewhere, suppressing our original StopTest.
+                    # We raise a new one here to resume normal operation.
+                    # A (group of) Frozen raised while the data is frozen is
+                    # likewise not a user failure, so discard the run too.
+                    raise StopTest(data.testcounter) from e
+                # The data was frozen but no StopTest was suppressed, so this
+                # is a genuine user exception that the frozen data can no
+                # longer record - let it propagate instead of silently
+                # passing the test.  See #4132.
+                raise
             else:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
