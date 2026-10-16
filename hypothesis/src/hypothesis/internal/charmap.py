@@ -18,7 +18,7 @@ import unicodedata
 from collections.abc import Collection, Iterable
 from functools import cache
 from pathlib import Path
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
@@ -93,7 +93,7 @@ def charmap() -> dict[CategoryName, IntervalsT]:
         f = charmap_file()
         try:
             with gzip.GzipFile(f, "rb") as d:
-                tmp_charmap = dict(json.load(d))
+                tmp_charmap: dict[Any, Any] = dict(json.load(d))
 
         except Exception:
             # This loop is reduced to using only local variables for performance;
@@ -194,10 +194,10 @@ def intervals_from_codec(
     return res, non_roundtrip
 
 
-_categories: Categories | None = None
+_categories: CategoriesTuple | None = None
 
 
-def categories() -> Categories:
+def categories() -> CategoriesTuple:
     """Return a tuple of Unicode categories in a normalised order.
 
     >>> categories() # doctest: +ELLIPSIS
