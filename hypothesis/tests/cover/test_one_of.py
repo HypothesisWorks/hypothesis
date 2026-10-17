@@ -9,11 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+import string
 from collections.abc import Sequence
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import assert_no_examples
@@ -62,3 +63,44 @@ def test_one_of_without_strategies_suggests_sampled_from():
 )
 def test_one_of_unwrapping(strategy, count):
     assert repr(strategy).count("one_of(") == count
+
+
+def test_shrinking_mixed_alphabet_one_of_does_not_crash():
+    # If a shrinking pass proposes a string value outside the intervals of the
+    # one_of branch it is copied onto, cached_test_function used to compute
+    # sort_key(nodes) - which indexes every character in its node's interval
+    # set - before discarding the invalid attempt, raising
+    # "ValueError: <n> is not in list" from intervalsets.index instead of
+    # reporting the shrunk failure (issue #4905).
+    @st.composite
+    def lines(draw):
+        parts = draw(
+            st.lists(
+                st.one_of(
+                    st.text("-=_*~ ", min_size=1, max_size=40),
+                    st.text(" \t", max_size=3),
+                    st.text(
+                        string.ascii_letters
+                        + string.digits
+                        + string.punctuation
+                        + " \t\xa0",
+                        max_size=50,
+                    ),
+                ),
+                max_size=6,
+            )
+        )
+        return "\n".join(parts)
+
+    @settings(database=None, derandomize=True, max_examples=100)
+    @given(lines())
+    def test(t):
+        for w in t.split():
+            letters = "".join(c for c in w if c.isalpha())
+            if len(letters) >= 4:
+                assert letters in t
+                break
+
+    # before the fix this raised ValueError from the shrinker instead
+    with pytest.raises(AssertionError):
+        test()
