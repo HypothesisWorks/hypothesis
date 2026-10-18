@@ -615,9 +615,13 @@ class PrimitiveProvider(abc.ABC):
 
     def replay_choices(self, choices: tuple[ChoiceT, ...]) -> None:
         """
-        Called when Hypothesis has discovered a |choice sequence| which the provider
+        Called when Hypothesis has a |choice sequence| which the provider
         may wish to enqueue to replay under its own instrumentation when we next
         ask to generate a |test case|, rather than generating one from scratch.
+
+        The choice sequence may not correspond to the draws made by the current
+        test, for example if it comes from a stale corpus, so providers must
+        tolerate arbitrary choices of any type, in any order.
 
         This is used to e.g. warm-start :pypi:`hypothesis-crosshair` with a corpus
         of high-code-coverage inputs discovered by
@@ -1178,9 +1182,9 @@ class BytestringProvider(PrimitiveProvider):
             return min_value
 
         bits = (max_value - min_value).bit_length()
-        value = self._draw_bits(bits)
-        while not (min_value <= value <= max_value):
-            value = self._draw_bits(bits)
+        value = min_value + self._draw_bits(bits)
+        while value > max_value:
+            value = min_value + self._draw_bits(bits)
         return value
 
     def draw_float(
@@ -1203,6 +1207,9 @@ class BytestringProvider(PrimitiveProvider):
         return clamper(f)
 
     def _draw_collection(self, min_size, max_size, *, alphabet_size):
+        if alphabet_size == 0:
+            # the only valid value is the empty collection - don't draw for it.
+            return []
         average_size = min(
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),

@@ -18,7 +18,7 @@ from hypothesis.errors import CannotInvert, InvalidArgument
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.data import UNIQUE_COLLECTION_LABEL, ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, equal_values
 from hypothesis.internal.conjecture.utils import combine_labels
@@ -361,8 +361,19 @@ class UniqueListStrategy(ListStrategy[Ex]):
         filtered = FilteredStrategy(
             self.element_strategy, conditions=(not_yet_in_unique_list,)
         )
+        data.start_span(UNIQUE_COLLECTION_LABEL)
+        if data.unique_element_depth == 0:
+            # Reset the enumeration of "simplest" template draws for each
+            # top-level unique collection, so that probes are canonical.  A
+            # collection nested inside another unique collection keeps
+            # counting, so that sibling elements remain distinct.
+            data.simplest_index = 0
         for reject in elements:
-            value = filtered.do_filtered_draw(data)
+            data.unique_element_depth += 1
+            try:
+                value = filtered.do_filtered_draw(data)
+            finally:
+                data.unique_element_depth -= 1
             if value is filter_not_satisfied:
                 reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
@@ -372,6 +383,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
                 if self.tuple_suffixes is not None:
                     value = (value, *data.draw(self.tuple_suffixes))
                 result.append(value)
+        data.stop_span()
         assert len(result) >= self.min_size
         assert self.max_size is None or len(result) <= self.max_size
         return result

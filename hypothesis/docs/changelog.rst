@@ -18,6 +18,99 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.1:
+
+--------------------
+6.170.1 - 2026-10-16
+--------------------
+
+This patch makes generating unique collections, such as |st.sets| or
+|st.lists| with ``unique=True``, considerably more efficient (:issue:`4458`).
+Hypothesis no longer mutates test cases by copying one element of a unique
+collection over another element of the same collection, and no longer probes
+for minimal examples by drawing every element at its simplest value - both of
+which were certain to be rejected, and could waste several times as many
+draws from the element strategy as were actually returned.
+
+.. _v6.170.0:
+
+--------------------
+6.170.0 - 2026-10-15
+--------------------
+
+This release substantially strengthens
+:func:`~hypothesis.internal.conjecture.provider_conformance.run_conformance_test`,
+which authors of :ref:`alternative backends <alternative-backends>` can use to
+test their provider. It can now test providers with required constructor
+arguments, runs many test cases against each provider, treats running out of
+entropy as expected control flow, and checks that providers are able to
+generate a representative range of values.
+
+These new checks catch two bugs in the provider underlying
+:ref:`fuzz_one_input <fuzz_one_input>`, which this release also fixes: integer
+draws could never generate negative values, and string draws from an empty
+alphabet consumed the whole buffer instead of returning the empty string.
+
+Verbose output for :ref:`stateful tests <stateful>` now reads
+``Test case: <state machine>`` rather than trailing off after the colon.
+
+Thanks to @reachsridhard for reporting the integers bug and prototyping
+these improvements.
+
+.. _v6.169.4:
+
+--------------------
+6.169.4 - 2026-10-15
+--------------------
+
+This release fixes an error when applying :func:`@given <hypothesis.given>`
+on Python 3.14 to functions with annotations referring to types that are only
+available during type checking, when explicit strategies are supplied
+(:issue:`4897`).
+
+Thanks to Arjun Aravind for this fix!
+
+.. _v6.169.3:
+
+--------------------
+6.169.3 - 2026-10-15
+--------------------
+
+The ``.seed()`` method of :func:`~hypothesis.strategies.randoms` now accepts
+the same arguments as :meth:`random.Random.seed`, such as ``a=`` and
+``version=``. Previously, it required exactly one positional argument.
+Calling ``.seed()`` without a seed now raises a clearer error.
+
+.. _v6.169.2:
+
+--------------------
+6.169.2 - 2026-10-14
+--------------------
+
+:ref:`The Ghostwriter <ghostwriter>` now raises a helpful error for functions
+which take no arguments, instead of writing a test with an invalid empty
+``@given()`` decorator (:issue:`4882`).
+
+Thanks to deepak7lal for this fix!
+
+.. _v6.169.1:
+
+--------------------
+6.169.1 - 2026-10-14
+--------------------
+
+Calling ``.map()`` or ``.flatmap()`` on :func:`~hypothesis.strategies.data`
+with a keyword argument now raises the intended error explaining that this is
+not supported, instead of a generic error about an unexpected keyword argument.
+
+.. _v6.169.0:
+
+--------------------
+6.169.0 - 2026-10-11
+--------------------
+
+This release drops support for Python 3.10, `which reached end of life in October 2026 <https://devguide.python.org/versions/>`__.
+
 .. _v6.168.5:
 
 --------------------

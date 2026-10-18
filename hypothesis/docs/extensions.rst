@@ -27,6 +27,7 @@ Some packages provide strategies directly:
 * :pypi:`hypothesis-rdkit` - strategies to generate RDKit molecules and representations such as SMILES and mol blocks
 * :pypi:`hypothesmith` - strategy to generate syntatically-valid Python code.
 * :pypi:`hypothesis-torch` - strategy to generate various `Pytorch <https://pytorch.org/>`_ structures (including tensors and modules).
+* :pypi:`hypothesis-awkward` - strategies to generate arrays, types, and other objects in `Awkward Array <https://awkward-array.org/>`_.
 
 Others provide a function to infer a strategy from some other schema:
 

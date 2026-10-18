@@ -8,16 +8,70 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 from inspect import Parameter as P, signature
+from typing import TYPE_CHECKING
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.internal.reflection import (
+    convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
     get_pretty_function_description,
 )
+
+if TYPE_CHECKING:
+
+    class OnlyAvailableToTypeCheckers:
+        pass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="requires lazy annotations")
+@pytest.mark.parametrize("positional", [False, True])
+def test_given_with_unresolved_annotations(positional):
+    sentinel = object()
+    seen = []
+
+    def inner(
+        unresolved: OnlyAvailableToTypeCheckers, known: int, value: int
+    ) -> OnlyAvailableToTypeCheckers:
+        assert unresolved is sentinel
+        assert known == 42
+        assert isinstance(value, int)
+        seen.append(value)
+
+    if positional:
+        inner = given(st.integers())(inner)
+    else:
+        inner = given(value=st.integers())(inner)
+    assert signature(inner).parameters["known"].annotation is int
+    inner(sentinel, 42)
+    assert seen
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="requires lazy annotations")
+def test_given_preserves_failure_with_unresolved_annotations():
+    @given(value=st.just(0))
+    def inner(unresolved: OnlyAvailableToTypeCheckers, value: int):
+        raise AssertionError("original failure")
+
+    with pytest.raises(AssertionError, match="original failure"):
+        inner(object())
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="requires lazy annotations")
+@pytest.mark.parametrize(
+    "converter", [convert_keyword_arguments, convert_positional_arguments]
+)
+def test_converters_with_unresolved_annotations(converter):
+    def inner(unresolved: OnlyAvailableToTypeCheckers, value: int):
+        return unresolved, value
+
+    sentinel = object()
+    args, kwargs = converter(inner, (sentinel,), {"value": 42})
+    assert inner(*args, **kwargs) == (sentinel, 42)
 
 
 @given(st.integers())
