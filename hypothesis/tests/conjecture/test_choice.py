@@ -27,6 +27,7 @@ from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.choice import (
     ChoiceNode,
     ChoiceTemplate,
+    choice_constraints_equal,
     choice_equal,
     choice_from_index,
     choice_permitted,
@@ -301,6 +302,36 @@ def test_choice_node_equality(node):
     assert node == node
     # for coverage on our NotImplemented return, more than anything.
     assert node != 42
+
+
+def test_choice_constraints_equal_weighted_integers():
+    # check two things:
+    # * the same constraints dict, constructed twice, is equal
+    # * the same constraints dict, reordered, is equal
+    constraints = [
+        {
+            "min_value": 0,
+            "max_value": 2,
+            "weights": {0: 0.25, 1: 0.5},
+            "shrink_towards": 0,
+        },
+        {
+            "min_value": 0,
+            "max_value": 2,
+            "weights": {1: 0.5, 0: 0.25},
+            "shrink_towards": 0,
+        },
+        {
+            "shrink_towards": 0,
+            "weights": {0: 0.25, 1: 0.5},
+            "max_value": 2,
+            "min_value": 0,
+        },
+    ]
+    for c1 in constraints:
+        for c2 in constraints:
+            assert c1 == c2
+            assert choice_constraints_equal("integer", c1, c2)
 
 
 @given(nodes(was_forced=True))
