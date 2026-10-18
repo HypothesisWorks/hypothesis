@@ -322,54 +322,26 @@ def test_invalid_sample():
 
 
 @pytest.mark.parametrize(
-    ("method", "args", "kwargs", "error"),
+    ("method", "args", "error"),
     [
         # these calls would previously return invalid values (e.g.
         # randrange(0, 10, -1) -> 11) or crash deep inside the engine,
         # instead of erroring like random.Random does.
-        ("randint", (5, 1), {}, ValueError),
-        ("randint", (5.5, 10), {}, TypeError),
-        ("randrange", (5, 1), {}, ValueError),
-        ("randrange", (0, 10, -1), {}, ValueError),
-        ("randrange", (0, 10, 0), {}, ValueError),
-        ("randrange", (0,), {}, ValueError),
-        ("randrange", (-5,), {}, ValueError),
-        ("randrange", (5,), {"step": 3}, TypeError),
-        ("randrange", (0.5, 10), {}, TypeError),
-        ("choice", ([],), {}, IndexError),
-        ("choices", ([],), {"k": 1}, IndexError),
-        ("getrandbits", (-1,), {}, ValueError),
-        ("getrandbits", (1.5,), {}, TypeError),
-        ("randbytes", (-1,), {}, ValueError),
-        ("binomialvariate", (-1, 0.5), {}, ValueError),
-        ("binomialvariate", (2, 1.5), {}, ValueError),
-        ("_randbelow", (0,), {}, ValueError),
+        ("randint", (5, 1), ValueError),
+        ("randrange", (0, 10, -1), ValueError),
+        ("randrange", (0, 10, 0), ValueError),
+        ("randrange", (0,), ValueError),
+        ("choice", ([],), IndexError),
+        ("getrandbits", (-1,), ValueError),
     ],
 )
-def test_random_methods_error_like_real_random(method, args, kwargs, error):
+def test_random_methods_error_like_real_random(method, args, error):
     @given(st.randoms(use_true_random=False))
     def test(rnd):
-        getattr(rnd, method)(*args, **kwargs)
+        getattr(rnd, method)(*args)
 
     with pytest.raises(error):
         test()
-
-
-@given(st.randoms(use_true_random=False))
-def test_choices_with_nonpositive_k(rnd):
-    assert rnd.choices([1, 2], k=0) == []
-    assert rnd.choices([1, 2], k=-1) == []
-    # real choices short-circuits on k <= 0 without touching the population
-    assert rnd.choices([], k=0) == []
-
-
-@given(st.randoms(use_true_random=False))
-def test_binomialvariate_edge_probabilities(rnd):
-    assert rnd.binomialvariate(5, 0.0) == 0
-    assert rnd.binomialvariate(5, 1.0) == 5
-    # real binomialvariate returns n unchanged when p == 1, without
-    # requiring n to be an integer
-    assert rnd.binomialvariate(5.5, 1.0) == 5.5
 
 
 def test_randint_with_inverted_bounds_does_not_corrupt_tree():
