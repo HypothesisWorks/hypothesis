@@ -960,3 +960,34 @@ def test_node_template_overrun():
     except StopTest:
         pass
     assert cd.status is Status.OVERRUN
+
+
+def test_choice_constraints_key_integer_weights_distinguished():
+    from hypothesis.internal.conjecture.choice import (
+        choice_constraints_equal,
+        choice_constraints_key,
+    )
+
+    base = {"min_value": 0, "max_value": 2, "shrink_towards": 0}
+    w1 = {**base, "weights": {0: 0.98, 1: 0.01}}
+    w2 = {**base, "weights": {0: 0.01, 1: 0.98}}
+    w1_reordered = {**base, "weights": {1: 0.01, 0: 0.98}}
+
+    # Different weights over identical keys must yield distinct constraint keys
+    assert choice_constraints_key("integer", w1) != choice_constraints_key(
+        "integer", w2
+    )
+    assert not choice_constraints_equal("integer", w1, w2)
+
+    # Same weights in different insertion order must produce equal constraint keys
+    assert choice_constraints_key("integer", w1) == choice_constraints_key(
+        "integer", w1_reordered
+    )
+    assert choice_constraints_equal("integer", w1, w1_reordered)
+
+    # Pooling constraints in ConjectureData must preserve distinct weights
+    cd = ConjectureData(random=None)
+    pooled1 = cd._pooled_constraints("integer", w1)
+    pooled2 = cd._pooled_constraints("integer", w2)
+    assert pooled1["weights"] == {0: 0.98, 1: 0.01}
+    assert pooled2["weights"] == {0: 0.01, 1: 0.98}
