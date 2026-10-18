@@ -172,6 +172,10 @@ jobs:
           # 3.15 niche is waiting on scipy and lark to support 3.15
           # - check-py315-niche
           # - check-py315t-niche
+          - check-py316-cover
+          - check-py316-nocover
+          - check-py316t-cover
+          - check-py316t-nocover
           - check-django52
           ## `-cover` is too slow under crosshair; use a custom split
           - check-crosshair-custom-cover/test_[a-d]*
