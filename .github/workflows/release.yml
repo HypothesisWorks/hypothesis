@@ -200,7 +200,7 @@ jobs:
         # container's python instead
         args: --release --out dist --features abi3t --interpreter ${{ matrix.manylinux && 'python3.15' || steps.abi3t-python.outputs.python-path }}
         working-directory: hypothesis
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-wheels-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.manylinux }}
         path: hypothesis/dist/*.whl
@@ -225,7 +225,7 @@ jobs:
         command: sdist
         args: --out dist
         working-directory: hypothesis
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-sdist
         path: hypothesis/dist/*.tar.gz
@@ -258,7 +258,7 @@ jobs:
       run: python tooling/scripts/write-cargo-version.py "$NEW_VERSION"
     - name: Build Pyodide wheel
       run: pyodide build hypothesis --outdir hypothesis/dist/
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-pyodide
         path: hypothesis/dist/*.whl
@@ -279,7 +279,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         path: hypothesis/dist
         pattern: dist-*

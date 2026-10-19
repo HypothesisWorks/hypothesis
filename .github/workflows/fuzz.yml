@@ -81,7 +81,7 @@ jobs:
             --ignore=hypothesis/tests/ghostwriter/
 
     - name: Upload patch files with covering and failing `@example()`s
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: always()
       with:
         name: explicit-example-patches
@@ -91,7 +91,7 @@ jobs:
     # Note that we can also pull it down to use locally via
     # https://hypothesis.readthedocs.io/en/latest/database.html#hypothesis.database.GitHubArtifactDatabase
     - name: Upload example database
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: always()
       with:
         name: hypothesis-example-db
