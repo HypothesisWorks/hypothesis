@@ -18,7 +18,7 @@ import contextlib
 import datetime
 import inspect
 import os
-from collections.abc import Collection, Generator, Sequence
+from collections.abc import Collection, Generator, Iterator, Sequence
 from enum import Enum, EnumMeta, unique
 from functools import total_ordering
 from typing import (
@@ -204,9 +204,9 @@ class Phase(Enum):
 
 
 class HealthCheckMeta(EnumMeta):
-    def __iter__(self):
+    def __iter__(self: type[T]) -> Iterator[T]:
         deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
-        return iter(x for x in super().__iter__() if x not in deprecated)
+        return iter(x for x in super().__iter__() if x not in deprecated)  # type: ignore[misc]
 
 
 @unique
@@ -457,7 +457,7 @@ def _validate_database(
     )
 
 
-def _validate_phases(phases: Collection[Phase]) -> Sequence[Phase]:
+def _validate_phases(phases: Collection[Phase]) -> tuple[Phase, ...]:
     phases = try_convert(tuple, phases, "phases")
     phases = tuple(
         _validate_enum_value(Phase, phase, name="phases") for phase in phases
@@ -657,6 +657,9 @@ class settings(metaclass=settingsMeta):
     _profiles: ClassVar[dict[str, "settings"]] = {}
     _current_profile: ClassVar[str | None] = None
 
+    _database: "ExampleDatabase | Any | None"
+    _cached_database: "ExampleDatabase | None"
+
     def __init__(
         self,
         parent: Optional["settings"] = None,
@@ -752,7 +755,7 @@ class settings(metaclass=settingsMeta):
         self._in_definition = False
 
     @property
-    def max_examples(self):
+    def max_examples(self) -> int:
         """
         Once this many satisfying |test cases| have been considered without finding
         any failing test case, Hypothesis will stop looking.
@@ -794,7 +797,7 @@ class settings(metaclass=settingsMeta):
         return self._max_examples
 
     @property
-    def derandomize(self):
+    def derandomize(self) -> bool:
         """
         If True, seed Hypothesis' random number generator using a hash of the test
         function, so that every run will test the same set of test cases until you
@@ -811,7 +814,7 @@ class settings(metaclass=settingsMeta):
         return self._derandomize
 
     @property
-    def database(self):
+    def database(self) -> "ExampleDatabase | None":
         """
         An instance of |ExampleDatabase| in which we will save failing |test cases|,
         and from which we will load previous failing test cases.
@@ -849,7 +852,7 @@ class settings(metaclass=settingsMeta):
         return self._cached_database
 
     @property
-    def verbosity(self):
+    def verbosity(self) -> Verbosity:
         """
         Control the verbosity level of Hypothesis messages.
 
@@ -896,7 +899,7 @@ class settings(metaclass=settingsMeta):
         return self._verbosity
 
     @property
-    def phases(self):
+    def phases(self) -> tuple[Phase, ...]:
         """
         Control which phases should be run.
 
@@ -956,7 +959,7 @@ class settings(metaclass=settingsMeta):
         return self._phases
 
     @property
-    def stateful_step_count(self):
+    def stateful_step_count(self) -> int:
         """
         The maximum number of times to call an additional |@rule| method in
         :ref:`stateful testing <stateful>` before we give up on finding a bug.
@@ -969,7 +972,7 @@ class settings(metaclass=settingsMeta):
         return self._stateful_step_count
 
     @property
-    def report_multiple_bugs(self):
+    def report_multiple_bugs(self) -> bool:
         """
         Because Hypothesis runs the test many times, it can sometimes find multiple
         bugs in a single run.  Reporting all of them at once is usually very useful,
@@ -982,7 +985,7 @@ class settings(metaclass=settingsMeta):
         return self._report_multiple_bugs
 
     @property
-    def suppress_health_check(self):
+    def suppress_health_check(self) -> tuple[HealthCheck, ...]:
         """
         Suppress the given |HealthCheck| exceptions. Those health checks will not
         be raised by Hypothesis. To suppress all health checks, you can pass
@@ -1009,7 +1012,7 @@ class settings(metaclass=settingsMeta):
         return self._suppress_health_check
 
     @property
-    def deadline(self):
+    def deadline(self) -> duration | None:
         """
         The maximum allowed duration of an individual |test case|, in milliseconds.
         You can pass an integer, float, or timedelta. If ``None``, the deadline
@@ -1024,7 +1027,7 @@ class settings(metaclass=settingsMeta):
         return self._deadline
 
     @property
-    def print_blob(self):
+    def print_blob(self) -> bool:
         """
         If set to ``True``, Hypothesis will print code for |failing test cases| that
         can be used with |@reproduce_failure| to reproduce the failing test case.
@@ -1034,7 +1037,7 @@ class settings(metaclass=settingsMeta):
         return self._print_blob
 
     @property
-    def backend(self):
+    def backend(self) -> str:
         """
         .. warning::
 
