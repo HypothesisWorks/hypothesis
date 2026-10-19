@@ -803,7 +803,10 @@ class ConjectureRunner:
         self.record_for_health_check(data)
 
     def on_pareto_evict(self, data: ConjectureResult) -> None:
-        self.settings.database.delete(self.pareto_key, choices_to_bytes(data.choices))
+        db = self.settings.database
+        assert db is not None
+
+        db.delete(self.pareto_key, choices_to_bytes(data.choices))
 
     def generate_novel_prefix(self) -> tuple[ChoiceT, ...]:
         """Uses the tree to proactively generate a starting choice sequence
@@ -965,12 +968,16 @@ class ConjectureRunner:
         return b".".join((self.database_key, sub_key))
 
     @property
-    def secondary_key(self) -> bytes | None:
-        return self.sub_key(b"secondary")
+    def secondary_key(self) -> bytes:
+        key = self.sub_key(b"secondary")
+        assert key is not None
+        return key
 
     @property
-    def pareto_key(self) -> bytes | None:
-        return self.sub_key(b"pareto")
+    def pareto_key(self) -> bytes:
+        key = self.sub_key(b"pareto")
+        assert key is not None
+        return key
 
     def debug(self, message: str) -> None:
         if self.settings.verbosity >= Verbosity.debug:
@@ -1060,15 +1067,19 @@ class ConjectureRunner:
             # interesting test cases, but there are a lot of them, so we down
             # sample the secondary corpus to a more manageable size.
 
-            corpus = sorted(
-                self.settings.database.fetch(self.database_key), key=shortlex
-            )
+            db = self.settings.database
+            assert db is not None
+
+            db_key = self.database_key
+            assert db_key is not None
+
+            corpus = sorted(db.fetch(db_key), key=shortlex)
             factor = 0.1 if (Phase.generate in self.settings.phases) else 1
             desired_size = max(2, ceil(factor * self.settings.max_examples))
             primary_corpus_size = len(corpus)
 
             if len(corpus) < desired_size:
-                extra_corpus = list(self.settings.database.fetch(self.secondary_key))
+                extra_corpus = list(db.fetch(self.secondary_key))
 
                 shortfall = desired_size - len(corpus)
 
@@ -1090,12 +1101,12 @@ class ConjectureRunner:
                 choices = choices_from_bytes(existing)
                 if choices is None:
                     # clear out any keys which fail deserialization
-                    self.settings.database.delete(self.database_key, existing)
+                    db.delete(db_key, existing)
                     continue
                 data = self.cached_test_function(choices, extend="full")
                 if data.status != Status.INTERESTING:
-                    self.settings.database.delete(self.database_key, existing)
-                    self.settings.database.delete(self.secondary_key, existing)
+                    db.delete(db_key, existing)
+                    db.delete(self.secondary_key, existing)
                 else:
                     if i < primary_corpus_size:
                         found_interesting_in_primary = True
@@ -1117,7 +1128,7 @@ class ConjectureRunner:
             # the pareto front from the last run.
             if len(corpus) < desired_size and not self.interesting_test_cases:
                 desired_extra = desired_size - len(corpus)
-                pareto_corpus = list(self.settings.database.fetch(self.pareto_key))
+                pareto_corpus = list(db.fetch(self.pareto_key))
                 if len(pareto_corpus) > desired_extra:
                     pareto_corpus = self.random.sample(pareto_corpus, desired_extra)
                 pareto_corpus.sort(key=shortlex)
@@ -1125,11 +1136,11 @@ class ConjectureRunner:
                 for existing in pareto_corpus:
                     choices = choices_from_bytes(existing)
                     if choices is None:
-                        self.settings.database.delete(self.pareto_key, existing)
+                        db.delete(self.pareto_key, existing)
                         continue
                     data = self.cached_test_function(choices, extend="full")
                     if data not in self.pareto_front:
-                        self.settings.database.delete(self.pareto_key, existing)
+                        db.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
                         break
 
@@ -1739,15 +1750,16 @@ class ConjectureRunner:
             # probably won't, but it's worth a shot and gives us a good
             # opportunity to clear out the database.
 
+            db = self.settings.database
+            assert db is not None
+
             # It's not worth trying the primary corpus because we already
             # tried all of those in the initial phase.
-            corpus = sorted(
-                self.settings.database.fetch(self.secondary_key), key=shortlex
-            )
+            corpus = sorted(db.fetch(self.secondary_key), key=shortlex)
             for c in corpus:
                 choices = choices_from_bytes(c)
                 if choices is None:
-                    self.settings.database.delete(self.secondary_key, c)
+                    db.delete(self.secondary_key, c)
                     continue
                 primary = {
                     choices_to_bytes(v.choices)
@@ -1760,7 +1772,7 @@ class ConjectureRunner:
                 # We unconditionally remove c from the secondary key as it
                 # is either now primary or worse than our primary test case
                 # for this reason for interestingness.
-                self.settings.database.delete(self.secondary_key, c)
+                db.delete(self.secondary_key, c)
 
     def shrink(
         self,
