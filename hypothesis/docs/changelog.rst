@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.4:
+
+--------------------
+6.170.4 - 2026-10-19
+--------------------
+
+This fills in the missing type annotations for public-facing attributes of |settings|,
+such as |settings.max_examples| and |settings.database|.
+
 .. _v6.170.3:
 
 --------------------
