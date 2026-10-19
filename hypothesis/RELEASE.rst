@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-This patch fixes an internal error when the shrinker tried certain invalid values, for example when shrinking |st.one_of| between text strategies with different alphabets (:issue:`4905`).
+``import hypothesis`` now also makes all of Hypothesis's public submodules available without needing to explicitly import them, including ``hypothesis.stateful``, ``hypothesis.provisional``, ``hypothesis.extra`` (:issue:`4917`).

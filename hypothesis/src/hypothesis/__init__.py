@@ -33,6 +33,19 @@ from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
+# avoid import cycle
+# isort: off
+from hypothesis import (
+    database,
+    errors,
+    extra,
+    provisional,
+    stateful,
+    strategies,
+)
+
+# isort: on
+
 __all__ = [
     "HealthCheck",
     "Phase",
@@ -41,18 +54,24 @@ __all__ = [
     "__version_info__",
     "assume",
     "currently_in_test_context",
+    "database",
+    "errors",
     "event",
     "example",
+    "extra",
     "find",
     "given",
     "infer",
     "is_hypothesis_test",
     "note",
+    "provisional",
     "register_random",
     "reject",
     "reproduce_failure",
     "seed",
     "settings",
+    "stateful",
+    "strategies",
     "target",
 ]
 
