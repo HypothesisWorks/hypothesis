@@ -574,7 +574,7 @@ class Rule:
         return self._cached_hash
 
 
-self_strategy = st.runner()
+self_strategy = st.runner()  # type: ignore  # weird mypy semantics with circular imports
 
 
 class _BundleSampler(SampledFromStrategy):
