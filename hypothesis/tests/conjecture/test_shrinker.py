@@ -25,6 +25,7 @@ from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, StopSh
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.utils import skipif_time_unpatched
@@ -932,6 +933,18 @@ def test_normalize_unicode_chars_respects_intervals():
 
     shrinker.fixate_shrink_passes([ShrinkPass(shrinker.normalize_unicode_chars)])
     assert shrinker.choices == ("À",)
+
+
+def test_discards_string_outside_its_intervals():
+    intervals = IntervalSet.from_string("ab")
+
+    @shrinking_from(["b"])
+    def shrinker(data: ConjectureData):
+        data.draw_string(intervals, min_size=1)
+        data.mark_interesting(interesting_origin())
+
+    invalid = shrinker.nodes[0].copy(with_value="z")
+    assert shrinker.cached_test_function([invalid]) == (False, None)
 
 
 def test_normalize_unicode_chars_skips_when_no_simplification():

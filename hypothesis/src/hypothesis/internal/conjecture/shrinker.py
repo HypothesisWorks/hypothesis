@@ -399,12 +399,14 @@ class Shrinker:
         if startswith(nodes, self.nodes):
             return (True, None)
 
-        if sort_key(self.nodes) < sort_key(nodes):
-            return (False, None)
-
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
         if any(not choice_permitted(node.value, node.constraints) for node in nodes):
+            return (False, None)
+
+        # note that sort_key can raise on invalid nodes, so we need to check
+        # choice_permitted first
+        if sort_key(self.nodes) < sort_key(nodes):
             return (False, None)
 
         result = self.engine.cached_test_function(
