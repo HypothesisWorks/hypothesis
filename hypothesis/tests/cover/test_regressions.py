@@ -186,6 +186,7 @@ def test_shrinking_mixed_alphabet_one_of_does_not_crash():
         )
         return "\n".join(parts)
 
+    @settings(max_examples=1000)
     @given(lines())
     def test(t):
         for w in t.split():
