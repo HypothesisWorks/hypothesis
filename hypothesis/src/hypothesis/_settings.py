@@ -811,7 +811,7 @@ class settings(metaclass=settingsMeta):
         return self._derandomize
 
     @property
-    def database(self) -> ExampleDatabase | None:
+    def database(self) -> "ExampleDatabase | None":
         """
         An instance of |ExampleDatabase| in which we will save failing |test cases|,
         and from which we will load previous failing test cases.
