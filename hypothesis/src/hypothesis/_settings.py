@@ -704,7 +704,7 @@ class settings(metaclass=settingsMeta):
         )
         if database is not not_set:  # type: ignore
             database = _validate_database(database)
-        self._database = database
+        self._database: Any = database
         self._cached_database: ExampleDatabase | None = None
         self._verbosity = (
             self._fallback.verbosity  # type: ignore
