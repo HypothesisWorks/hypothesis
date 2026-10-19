@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.2:
+
+--------------------
+6.170.2 - 2026-10-19
+--------------------
+
+Add support for Python 3.16, which is still in alpha.
+
 .. _v6.170.1:
 
 --------------------
