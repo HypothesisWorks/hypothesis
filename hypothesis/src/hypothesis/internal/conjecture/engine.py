@@ -949,35 +949,27 @@ class ConjectureRunner:
     def save_choices(
         self, choices: Sequence[ChoiceT], sub_key: bytes | None = None
     ) -> None:
-        if self.settings.database is not None:
-            key = self.sub_key(sub_key)
-            if key is None:
-                return
-            self.settings.database.save(key, choices_to_bytes(choices))
+        if self.database is not None:
+            self.database.save(self.sub_key(sub_key), choices_to_bytes(choices))
 
     def downgrade_choices(self, choices: Sequence[ChoiceT]) -> None:
         buffer = choices_to_bytes(choices)
         if self.settings.database is not None and self.database_key is not None:
             self.settings.database.move(self.database_key, self.secondary_key, buffer)
 
-    def sub_key(self, sub_key: bytes | None) -> bytes | None:
-        if self.database_key is None:
-            return None
+    def sub_key(self, sub_key: bytes | None) -> bytes:
+        assert self.database_key is not None
         if sub_key is None:
             return self.database_key
         return b".".join((self.database_key, sub_key))
 
     @property
     def secondary_key(self) -> bytes:
-        key = self.sub_key(b"secondary")
-        assert key is not None
-        return key
+        return self.sub_key(b"secondary")
 
     @property
     def pareto_key(self) -> bytes:
-        key = self.sub_key(b"pareto")
-        assert key is not None
-        return key
+        return self.sub_key(b"pareto")
 
     def debug(self, message: str) -> None:
         if self.settings.verbosity >= Verbosity.debug:
@@ -1068,9 +1060,8 @@ class ConjectureRunner:
             # sample the secondary corpus to a more manageable size.
 
             db = self.settings.database
-            assert db is not None
-
             db_key = self.database_key
+            assert db is not None
             assert db_key is not None
 
             corpus = sorted(db.fetch(db_key), key=shortlex)

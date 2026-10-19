@@ -18,7 +18,7 @@ import contextlib
 import datetime
 import inspect
 import os
-from collections.abc import Collection, Generator, Iterator, Sequence
+from collections.abc import Collection, Generator, Sequence
 from enum import Enum, EnumMeta, unique
 from functools import total_ordering
 from typing import (
@@ -204,9 +204,9 @@ class Phase(Enum):
 
 
 class HealthCheckMeta(EnumMeta):
-    def __iter__(self: type[T]) -> Iterator[T]:
+    def __iter__(self):
         deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
-        return iter(x for x in super().__iter__() if x not in deprecated)  # type: ignore[misc]
+        return iter(x for x in super().__iter__() if x not in deprecated)
 
 
 @unique
@@ -657,9 +657,6 @@ class settings(metaclass=settingsMeta):
     _profiles: ClassVar[dict[str, "settings"]] = {}
     _current_profile: ClassVar[str | None] = None
 
-    _database: "ExampleDatabase | Any | None"
-    _cached_database: "ExampleDatabase | None"
-
     def __init__(
         self,
         parent: Optional["settings"] = None,
@@ -708,7 +705,7 @@ class settings(metaclass=settingsMeta):
         if database is not not_set:  # type: ignore
             database = _validate_database(database)
         self._database = database
-        self._cached_database = None
+        self._cached_database: ExampleDatabase | None = None
         self._verbosity = (
             self._fallback.verbosity  # type: ignore
             if verbosity is not_set  # type: ignore
@@ -814,7 +811,7 @@ class settings(metaclass=settingsMeta):
         return self._derandomize
 
     @property
-    def database(self) -> "ExampleDatabase | None":
+    def database(self) -> ExampleDatabase | None:
         """
         An instance of |ExampleDatabase| in which we will save failing |test cases|,
         and from which we will load previous failing test cases.
@@ -899,7 +896,7 @@ class settings(metaclass=settingsMeta):
         return self._verbosity
 
     @property
-    def phases(self) -> tuple[Phase, ...]:
+    def phases(self) -> Collection[Phase]:
         """
         Control which phases should be run.
 
@@ -985,7 +982,7 @@ class settings(metaclass=settingsMeta):
         return self._report_multiple_bugs
 
     @property
-    def suppress_health_check(self) -> tuple[HealthCheck, ...]:
+    def suppress_health_check(self) -> Collection[HealthCheck]:
         """
         Suppress the given |HealthCheck| exceptions. Those health checks will not
         be raised by Hypothesis. To suppress all health checks, you can pass
@@ -1012,7 +1009,7 @@ class settings(metaclass=settingsMeta):
         return self._suppress_health_check
 
     @property
-    def deadline(self) -> duration | None:
+    def deadline(self) -> datetime.timedelta | None:
         """
         The maximum allowed duration of an individual |test case|, in milliseconds.
         You can pass an integer, float, or timedelta. If ``None``, the deadline
