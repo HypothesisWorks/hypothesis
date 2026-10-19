@@ -1153,7 +1153,7 @@ class BytestringProvider(PrimitiveProvider):
         size = 2**bits
         # always leave at least one value that can be true, even for very small
         # p.
-        falsey = max(1, math.floor(size * (1 - p)))
+        falsey = clamp(1, math.floor(size * (1 - p)), size - 1)
         n = self._draw_bits(bits)
         return n >= falsey
 
