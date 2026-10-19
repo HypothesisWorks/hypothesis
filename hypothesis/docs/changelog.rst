@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.3:
+
+--------------------
+6.170.3 - 2026-10-19
+--------------------
+
+This patch fixes an internal error when the shrinker tried certain invalid values, for example when shrinking |st.one_of| between text strategies with different alphabets (:issue:`4905`).
+
 .. _v6.170.2:
 
 --------------------
