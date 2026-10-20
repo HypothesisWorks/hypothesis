@@ -591,3 +591,17 @@ def test_simplest_template_unique_collections_are_canonical():
 def test_simplest_template_still_simplest_without_uniqueness():
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
     assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
+
+
+def test_simplest_template_does_not_loop_on_nested_collections():
+    # Regression test for #4918: a global simplest-index counter made the
+    # "draw another?" booleans inside nested collections always true.
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    result = data.draw(
+        st.lists(
+            st.lists(st.booleans(), min_size=1),
+            unique_by=tuple,
+            min_size=1,
+        )
+    )
+    assert result == [[False]]

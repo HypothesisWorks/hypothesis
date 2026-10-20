@@ -17,6 +17,7 @@ their individual contributions.
 * `Afonso Silva <https://github.com/ajcerejeira>`_ (ajcerejeira@gmail.com)
 * `Agriya Khetarpal <https://github.com/agriyakhetarpal>`_
 * `Agustín Covarrubias <https://github.com/agucova>`_ (gh@agucova.dev)
+* `agustin18 <https://github.com/agustin18>`_
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
 * `Alex Stapleton <https://www.github.com/public>`_

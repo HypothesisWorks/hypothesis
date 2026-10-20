@@ -740,10 +740,11 @@ class ConjectureData:
         self.max_depth: int = 0
         self.has_discards: bool = False
         # While positive, we are drawing an element of a unique collection, so
-        # a "simplest" ChoiceTemplate enumerates progressively larger choices
-        # (via the shared counter) instead of repeating guaranteed-duplicates.
+        # a "simplest" ChoiceTemplate enumerates distinct choices (via a counter
+        # per choice type and constraints) instead of repeating
+        # guaranteed-duplicates.
         self.unique_element_depth: int = 0
-        self.simplest_index: int = 0
+        self.simplest_indexes: dict[tuple[Hashable, ...], int] = {}
 
         self.provider: PrimitiveProvider = (
             provider(self, **provider_kw) if isinstance(provider, type) else provider
@@ -1158,10 +1159,13 @@ class ConjectureData:
                         compute_max_children,
                     )
 
-                    index = self.simplest_index % compute_max_children(
-                        choice_type, constraints
+                    key = (
+                        choice_type,
+                        *choice_constraints_key(choice_type, constraints),
                     )
-                    self.simplest_index += 1
+                    count = self.simplest_indexes.get(key, 0)
+                    index = count % compute_max_children(choice_type, constraints)
+                    self.simplest_indexes[key] = count + 1
                 try:
                     choice = choice_from_index(index, choice_type, constraints)
                 except ChoiceTooLarge:

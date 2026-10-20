@@ -94,6 +94,17 @@ def test_suppressing_filtering_health_check():
         test2()
 
 
+def test_large_base_example_for_unique_collections_of_nonempty_collections():
+    # Regression test for #4918: the zero-data probe could generate an
+    # unbounded base example for a unique collection of non-empty collections.
+    @given(st.sets(st.frozensets(st.integers(), min_size=1), min_size=1))
+    @settings(max_examples=1, database=None, suppress_health_check=())
+    def test(x):
+        pass
+
+    test()
+
+
 def test_filtering_everything_fails_a_health_check():
     @given(st.integers().filter(lambda x: False))
     @settings(database=None, suppress_health_check=())

@@ -362,7 +362,7 @@ class UniqueListStrategy(ListStrategy[Ex]):
             # top-level unique collection, so that probes are canonical.  A
             # collection nested inside another unique collection keeps
             # counting, so that sibling elements remain distinct.
-            data.simplest_index = 0
+            data.simplest_indexes.clear()
         while elements.more():
             data.unique_element_depth += 1
             try:
