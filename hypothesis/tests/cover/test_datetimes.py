@@ -31,6 +31,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 @example(1900)
@@ -346,6 +347,8 @@ def test_aware_bounds_with_none_from_timezones_strategy_is_invalid():
         check_can_generate_examples(datetimes(min_value=lo, timezones=st.none()))
 
 
+# occasional IndexError in draw_tricky_datetime
+@xfail_on_crosshair(Why.other, strict=False)
 @given(
     st.data(),
     datetimes(timezones=st.just(UTC)),
