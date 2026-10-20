@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.5:
+
+--------------------
+6.170.5 - 2026-10-20
+--------------------
+
+This patch fixes a bug for users of our |PrimitiveProvider| interface, where ``draw_integer`` could incorrectly reuse weights from an earlier draw (:issue:`4908`).
+
 .. _v6.170.4:
 
 --------------------
