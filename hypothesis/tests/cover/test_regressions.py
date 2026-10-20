@@ -164,6 +164,10 @@ def test_no_missed_custom_init_exceptions():
     assert not untested_errors_with_custom_init
 
 
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes 20 minutes, and crosshair may not find the failing input",
+)
 def test_shrinking_mixed_alphabet_one_of_does_not_crash():
     # See https://github.com/HypothesisWorks/hypothesis/issues/4905
     @st.composite
