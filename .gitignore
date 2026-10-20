@@ -12,6 +12,7 @@
 .hypothesis
 .vscode/
 CLAUDE.local.md
+uv.lock
 
 # whitelist .claude files, rather than blacklist. Some local claude files
 # (skills, agents) have to live in .claude - as opposed to eg CLAUDE.local.md,

@@ -265,6 +265,8 @@ def test_capture_named_arguments():
         ], test_case
 
 
+# see https://github.com/HypothesisWorks/hypothesis/issues/4880
+@xfail_on_crosshair(Why.other)
 def test_assume_has_status_reason():
     @given(st.booleans())
     def f(b):

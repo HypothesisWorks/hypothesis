@@ -10,6 +10,7 @@
 
 import pickle
 import random
+import string
 from datetime import timedelta
 from unittest.mock import Mock
 
@@ -161,3 +162,38 @@ def test_no_missed_custom_init_exceptions():
     } - {type(exc) for exc in exc_instances}
     print(untested_errors_with_custom_init)
     assert not untested_errors_with_custom_init
+
+
+def test_shrinking_mixed_alphabet_one_of_does_not_crash():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/4905
+    @st.composite
+    def lines(draw):
+        parts = draw(
+            st.lists(
+                st.one_of(
+                    st.text("-=_*~ ", min_size=1, max_size=40),
+                    st.text(" \t", max_size=3),
+                    st.text(
+                        string.ascii_letters
+                        + string.digits
+                        + string.punctuation
+                        + " \t\xa0",
+                        max_size=50,
+                    ),
+                ),
+                max_size=6,
+            )
+        )
+        return "\n".join(parts)
+
+    @settings(max_examples=1000)
+    @given(lines())
+    def test(t):
+        for w in t.split():
+            letters = "".join(c for c in w if c.isalpha())
+            if len(letters) >= 4:
+                assert letters in t
+                break
+
+    with pytest.raises(AssertionError):
+        test()

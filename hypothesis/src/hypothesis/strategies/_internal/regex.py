@@ -485,6 +485,11 @@ def _strategy(
             else:
                 return binary_char.filter(lambda c: c not in blacklist)
 
+        elif code == sre.CATEGORY:  # pragma: no cover  # python 3.16+
+            # For single-element category regexes like '\w' or '[\w]', python 3.16+
+            # emits sre.CATEGORY directly. Previously it was always wrapped in sre.IN.
+            return recurse((sre.IN, [(sre.CATEGORY, value)]))
+
         elif code == sre.IN:
             # Regex '[abc0-9]' (set of characters)
             negate = value[0][0] == sre.NEGATE

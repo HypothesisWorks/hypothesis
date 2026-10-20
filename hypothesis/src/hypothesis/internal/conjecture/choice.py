@@ -625,7 +625,11 @@ def choice_constraints_key(
         return (
             constraints["min_value"],
             constraints["max_value"],
-            None if constraints["weights"] is None else tuple(constraints["weights"]),
+            (
+                None
+                if constraints["weights"] is None
+                else tuple(sorted(constraints["weights"].items()))
+            ),
             constraints["shrink_towards"],
         )
     return tuple(constraints[key] for key in sorted(constraints))  # type: ignore
