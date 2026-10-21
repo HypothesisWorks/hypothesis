@@ -838,8 +838,8 @@ PYTHONS = {
     "3.15t": "3.15.0+freethreaded",
     "3.16": "3.16.0a1",
     "3.16t": "3.16.0a1+freethreaded",
-    "pypy3.11": "pypy3.11-3.11.16",
-    "pypy3.12": "pypy3.12-3.12.14",
+    "pypy3.11": "pypy3.11-3.11.17",
+    "pypy3.12": "pypy3.12-3.12.15",
 }
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
