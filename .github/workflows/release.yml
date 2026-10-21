@@ -188,8 +188,6 @@ jobs:
         # abi3t is only available from 3.15+. If we don't specify this, maturin
         # builds a version-specific wheel instead.
         python-version: '3.15'
-        # can drop once 3.15 is out
-        allow-prereleases: true
         architecture: ${{ matrix.python-architecture }}
     - name: Build abi3t wheel
       uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
