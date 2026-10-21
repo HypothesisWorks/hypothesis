@@ -26,17 +26,6 @@ runs:
     run: |
       rustup target add i686-pc-windows-msvc
       echo "CARGO_BUILD_TARGET=i686-pc-windows-msvc" >> "$GITHUB_ENV"
-  - name: Install dotnet6 for Pyjion
-    if: ${{ endsWith(inputs.task, '-pyjion') }}
-    shell: bash
-    run: |
-      wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-      sudo dpkg -i packages-microsoft-prod.deb
-      rm packages-microsoft-prod.deb
-      sudo apt-get update
-      sudo apt-get install -y apt-transport-https && \
-        sudo apt-get update && \
-        sudo apt-get install -y dotnet-sdk-6.0
   - name: Restore cache
     uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
     with:
