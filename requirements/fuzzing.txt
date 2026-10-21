@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.170.1
+hypothesis[cli,watchdog]==6.170.5
     # via hypofuzz
 idna==3.20
     # via
@@ -82,7 +82,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.13.4
+platformdirs==4.13.5
     # via black
 pluggy==1.7.0
     # via
@@ -135,7 +135,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis/pyproject.toml)
     #   trio
-starlette==1.8.0
+starlette==1.9.0
     # via hypofuzz
 syrupy==6.1.1
     # via -r requirements/test.in
