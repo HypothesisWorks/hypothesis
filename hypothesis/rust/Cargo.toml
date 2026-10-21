@@ -9,7 +9,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.29.3"
+pyo3 = "0.30.1"
 
 [features]
 abi3 = ["pyo3/abi3-py311"]
