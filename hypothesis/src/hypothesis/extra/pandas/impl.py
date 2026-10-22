@@ -244,22 +244,20 @@ class ValueIndexStrategy(st.SearchStrategy):
         result = []
         seen = set()
 
-        iterator = cu.many(
+        with cu.many(
             data,
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=(self.min_size + self.max_size) / 2,
-        )
-
-        while iterator.more():
-            elt = data.draw(self.elements)
-
-            if self.unique:
-                if elt in seen:
-                    iterator.reject()
-                    continue
-                seen.add(elt)
-            result.append(elt)
+        ) as elements:
+            for _ in elements:
+                elt = data.draw(self.elements)
+                if self.unique:
+                    if elt in seen:
+                        elements.reject()
+                        continue
+                    seen.add(elt)
+                result.append(elt)
 
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw

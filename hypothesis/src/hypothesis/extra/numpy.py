@@ -370,7 +370,9 @@ class ArrayStrategy(st.SearchStrategy):
             # value from our fill strategy and use that to populate the
             # remaining positions with that strategy.
 
-            elements = cu.many(
+            needs_fill = np.full(self.array_size, True)
+            seen = set()
+            with cu.many(
                 data,
                 min_size=0,
                 max_size=self.array_size,
@@ -381,24 +383,20 @@ class ArrayStrategy(st.SearchStrategy):
                     0.9 * self.array_size,  # ensure small arrays sometimes use fill
                     max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
                 ),
-            )
-
-            needs_fill = np.full(self.array_size, True)
-            seen = set()
-
-            while elements.more():
-                i = data.draw_integer(0, self.array_size - 1)
-                if not needs_fill[i]:
-                    elements.reject()
-                    continue
-                self.set_element(data.draw(self.element_strategy), result, i)
-                if self.unique:
-                    if result[i] in seen:
+            ) as elements:
+                for _ in elements:
+                    i = data.draw_integer(0, self.array_size - 1)
+                    if not needs_fill[i]:
                         elements.reject()
                         continue
-                    seen.add(result[i])
+                    self.set_element(data.draw(self.element_strategy), result, i)
+                    if self.unique:
+                        if result[i] in seen:
+                            elements.reject()
+                            continue
+                        seen.add(result[i])
 
-                needs_fill[i] = False
+                    needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
                 # put a fill value into the rest.

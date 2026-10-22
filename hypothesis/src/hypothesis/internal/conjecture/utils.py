@@ -14,7 +14,7 @@ import heapq
 import math
 import sys
 from collections import OrderedDict, abc
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from functools import lru_cache
 from types import FunctionType
 from typing import TYPE_CHECKING, TypeVar
@@ -266,9 +266,13 @@ class many:
 
     Intended usage is something like:
 
-    elements = many(data, ...)
-    while elements.more():
-        add_stuff_to_result()
+    with many(data, ...) as elements:
+        for _ in elements:
+            if not add_stuff_to_result():
+                elements.reject()
+
+    Leaving the loop early with ``break``, ``return``, or an exception is
+    supported, and keeps both the span tree and the choice sequence well-formed.
     """
 
     def __init__(
@@ -290,30 +294,89 @@ class many:
         self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
         self.count = 0
         self.rejections = 0
-        self.drawn = False
         self.force_stop = False
-        self.rejected = False
         self.observe = observe
+        self._entered = False
+        self._iterated = False
+        self._closed = False
+        self._done = False
+        self._in_element = False
+        self._rejected = False
 
-    def stop_span(self, *, discard: bool = False) -> None:
+    def __enter__(self) -> "many":
+        if self._entered:
+            raise InvalidArgument("Cannot reuse a many() object.")
+        self._entered = True
+        return self
+
+    def __exit__(self, exc_type: type | None, *_: object) -> None:
+        self._closed = True
+        if self.data.frozen:
+            return
+        self._finish_element()
+        if exc_type is None and not self._done:
+            # We exited the loop early, so draw a (forced) stop decision.  This
+            # makes our choice sequence look like a natural stop.
+            self.force_stop = True
+            self._decide()
+
+    def __iter__(self) -> Iterator[None]:
+        if not self._entered or self._closed:
+            raise InvalidArgument(
+                "many() must be used as `with many(...) as elements:` "
+                "followed by `for _ in elements:`, inside the with-block."
+            )
+        if self._iterated:
+            raise InvalidArgument("Cannot iterate over a many() more than once.")
+        self._iterated = True
+        return self._iterate()
+
+    def _iterate(self) -> Iterator[None]:
+        while True:
+            if self._closed:
+                raise InvalidArgument("Cannot iterate over many() after exiting it.")
+            if self._in_element:
+                self._finish_element()
+            if not self._decide():
+                return
+            self.count += 1
+            self._in_element = True
+            self._rejected = False
+            yield
+
+    def reject(self, why: str | None = None) -> None:
+        """Reject the current element (i.e. don't count it towards our budget
+        of elements because it's not going to go in the final collection)."""
+        if not self._in_element or self._rejected:
+            raise InvalidArgument(
+                "reject() can only be called once per element, inside the loop."
+            )
+        self.count -= 1
+        self.rejections += 1
+        self._rejected = True
+        # We set a minimum number of rejections before we give up to avoid
+        # failing too fast when we reject the first draw.
+        if self.rejections > max(3, 2 * self.count):
+            if self.count < self.min_size:
+                self.data.mark_invalid(why)
+            else:
+                self.force_stop = True
+
+    def _finish_element(self) -> None:
+        if self._in_element:
+            self._in_element = False
+            if self.observe:
+                # A rejected element does not contribute to the collection, so
+                # discard its span - the shrinker can then delete it wholesale.
+                self.data.stop_span(discard=self._rejected)
+
+    def _decide(self) -> bool:
+        if self.force_stop and self.count < self.min_size:
+            self.data.mark_invalid(
+                f"stopped with {self.count} elements, below min_size={self.min_size}"
+            )
         if self.observe:
-            self.data.stop_span(discard=discard)
-
-    def start_span(self, label):
-        if self.observe:
-            self.data.start_span(label)
-
-    def more(self) -> bool:
-        """Should I draw another element to add to the collection?"""
-        if self.drawn:
-            # A rejected element does not contribute to the collection, so
-            # discard its span - the shrinker can then delete it wholesale.
-            self.stop_span(discard=self.rejected)
-
-        self.drawn = True
-        self.rejected = False
-
-        self.start_span(ONE_FROM_MANY_LABEL)
+            self.data.start_span(ONE_FROM_MANY_LABEL)
         if self.min_size == self.max_size:
             # if we have to hit an exact size, draw unconditionally until that
             # point, and no further.
@@ -321,7 +384,7 @@ class many:
         else:
             forced_result = None
             if self.force_stop:
-                # if our size is forced, we can't reject in a way that would
+                # if our size is forced, we can't stop in a way that would
                 # cause us to differ from the forced size.
                 assert self.forced_size is None or self.count == self.forced_size
                 forced_result = False
@@ -340,28 +403,11 @@ class many:
                 observe=self.observe,
             )
             self.data.unique_element_depth = depth
-
-        if should_continue:
-            self.count += 1
-            return True
-        else:
-            self.stop_span()
-            return False
-
-    def reject(self, why: str | None = None) -> None:
-        """Reject the last element (i.e. don't count it towards our budget of
-        elements because it's not going to go in the final collection)."""
-        assert self.count > 0
-        self.count -= 1
-        self.rejections += 1
-        self.rejected = True
-        # We set a minimum number of rejections before we give up to avoid
-        # failing too fast when we reject the first draw.
-        if self.rejections > max(3, 2 * self.count):
-            if self.count < self.min_size:
-                self.data.mark_invalid(why)
-            else:
-                self.force_stop = True
+        if not should_continue:
+            self._done = True
+            if self.observe:
+                self.data.stop_span()
+        return should_continue
 
 
 class invert_many:

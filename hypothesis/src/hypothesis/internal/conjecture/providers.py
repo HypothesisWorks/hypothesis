@@ -1044,23 +1044,23 @@ class HypothesisProvider(PrimitiveProvider):
         )
 
         chars = []
-        elements = many(
+        with many(
             self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
             observe=False,
-        )
-        while elements.more():
-            if len(intervals) > 256:
-                if self.draw_boolean(0.2):
-                    i = self._random.randint(256, len(intervals) - 1)
+        ) as elements:
+            for _ in elements:
+                if len(intervals) > 256:
+                    if self.draw_boolean(0.2):
+                        i = self._random.randint(256, len(intervals) - 1)
+                    else:
+                        i = self._random.randint(0, 255)
                 else:
-                    i = self._random.randint(0, 255)
-            else:
-                i = self._random.randint(0, len(intervals) - 1)
+                    i = self._random.randint(0, len(intervals) - 1)
 
-            chars.append(intervals.char_in_shrink_order(i))
+                chars.append(intervals.char_in_shrink_order(i))
 
         return "".join(chars)
 
@@ -1085,15 +1085,15 @@ class HypothesisProvider(PrimitiveProvider):
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),
         )
-        elements = many(
+        with many(
             self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
             observe=False,
-        )
-        while elements.more():
-            buf += self._random.randbytes(1)
+        ) as elements:
+            for _ in elements:
+                buf += self._random.randbytes(1)
 
         return bytes(buf)
 
@@ -1215,17 +1215,14 @@ class BytestringProvider(PrimitiveProvider):
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),
         )
-        elements = many(
+        with many(
             self._cd,
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
             observe=False,
-        )
-        values = []
-        while elements.more():
-            values.append(self.draw_integer(0, alphabet_size - 1))
-        return values
+        ) as elements:
+            return [self.draw_integer(0, alphabet_size - 1) for _ in elements]
 
     def draw_string(
         self,

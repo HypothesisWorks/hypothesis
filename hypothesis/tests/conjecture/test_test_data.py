@@ -628,6 +628,8 @@ def _raises(_):
     [
         st.integers().map(_raises),
         st.integers().filter(_raises),
+        st.lists(st.integers().map(_raises), min_size=1),
+        st.lists(st.integers().map(_raises), min_size=1, unique=True),
     ],
     ids=repr,
 )
