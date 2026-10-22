@@ -12,7 +12,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Literal, Self
 
-
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.choice import ChoiceConstraintsT
     from hypothesis.internal.escalation import InterestingOrigin
