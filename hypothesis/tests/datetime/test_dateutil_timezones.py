@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
-import sys
 import warnings
 
 import pytest
@@ -22,10 +21,9 @@ from hypothesis.strategies._internal.datetime import _instant, datetime_does_not
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
-with warnings.catch_warnings():
-    if sys.version_info[:2] >= (3, 12):
-        # Prior to https://github.com/dateutil/dateutil/pull/1285/
-        warnings.simplefilter("ignore", DeprecationWarning)
+# Prior to https://github.com/dateutil/dateutil/pull/1285/ on Python 3.12+,
+# and dateutil>=3.0 deprecates the `dateutil.zoneinfo` module.
+with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
     from dateutil import tz, zoneinfo
 
 from hypothesis.extra.dateutil import timezones
