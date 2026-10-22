@@ -730,7 +730,7 @@ class ConjectureRunner:
                         f"Raised {type(initial_exception).__name__} on "
                         f"backend={self.settings.backend!r}, but "
                         f"{desc_new_status} under backend='hypothesis'.",
-                        [initial_exception],
+                        [initial_exception] if initial_exception is not None else [],
                     )
 
                 self._cache(data)
