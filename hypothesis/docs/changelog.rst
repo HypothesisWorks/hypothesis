@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.7:
+
+--------------------
+6.170.7 - 2026-10-22
+--------------------
+
+This improves type coverage of :ref:`stateful testing <stateful>`.
+
 .. _v6.170.6:
 
 --------------------
