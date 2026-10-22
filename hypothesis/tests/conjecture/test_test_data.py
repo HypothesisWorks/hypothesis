@@ -588,6 +588,27 @@ def test_simplest_template_unique_collections_are_canonical():
     assert len({tuple(inner) for inner in result}) == 2
 
 
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.sets(st.frozensets(st.integers(), min_size=1), min_size=3),
+        st.lists(st.lists(st.integers(), min_size=1), unique_by=tuple, min_size=3),
+        st.sets(st.from_regex(r"[a-z]+", fullmatch=True), min_size=3),
+        st.sets(
+            st.frozensets(st.frozensets(st.integers(), min_size=1), min_size=2),
+            min_size=3,
+        ),
+    ],
+)
+def test_simplest_template_unique_collections_of_collections(strategy):
+    # Regression test for an infinite loop, where each "continue" draw of an
+    # inner collection was enumerated to True.
+    data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
+    with BuildContext(data, wrapped_test=None):
+        assert len(data.draw(strategy)) == 3
+    assert len(data.choices) < 50
+
+
 def test_simplest_template_still_simplest_without_uniqueness():
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
     assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
