@@ -40,16 +40,16 @@ class RedisExampleDatabase(ExampleDatabase):
         expire_after: timedelta = timedelta(days=8),
         key_prefix: bytes = b"hypothesis-example:",
         listener_channel: str = "hypothesis-changes",
-    ):
+    ) -> None:
         super().__init__()
         check_type(Redis, redis, "redis")
         check_type(timedelta, expire_after, "expire_after")
         check_type(bytes, key_prefix, "key_prefix")
         check_type(str, listener_channel, "listener_channel")
-        self.redis = redis
+        self.redis: Redis = redis
         self._expire_after = expire_after
         self._prefix = key_prefix
-        self.listener_channel = listener_channel
+        self.listener_channel: str = listener_channel
         self._pubsub: Any = None
 
     def __repr__(self) -> str:
