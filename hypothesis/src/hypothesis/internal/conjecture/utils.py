@@ -259,6 +259,12 @@ class Sampler:
             return base
 
 
+_INTERLEAVED_MANY_MSG = (
+    "Iteration over many() is interleaved with other draws.  Are you iterating "
+    "over several many() objects at once, e.g. with zip()?"
+)
+
+
 class many:
     """Utility class for collections. Bundles up the logic we use for "should I
     keep drawing more values?" and handles starting and stopping spans in
@@ -296,7 +302,7 @@ class many:
         self.rejections = 0
         self.force_stop = False
         self.observe = observe
-        self._entered = False
+        self._depth: int | None = None
         self._iterated = False
         self._closed = False
         self._done = False
@@ -304,14 +310,18 @@ class many:
         self._rejected = False
 
     def __enter__(self) -> "many":
-        if self._entered:
+        if self._depth is not None:
             raise InvalidArgument("Cannot reuse a many() object.")
-        self._entered = True
+        self._depth = self.data.depth
         return self
 
     def __exit__(self, exc_type: type | None, *_: object) -> None:
         self._closed = True
         if self.data.frozen:
+            return
+        if self.data.depth != self._expected_depth():
+            if exc_type is None:
+                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
             return
         self._finish_element()
         if exc_type is None and not self._done:
@@ -321,7 +331,7 @@ class many:
             self._decide()
 
     def __iter__(self) -> Iterator[None]:
-        if not self._entered or self._closed:
+        if self._depth is None or self._closed:
             raise InvalidArgument(
                 "many() must be used as `with many(...) as elements:` "
                 "followed by `for _ in elements:`, inside the with-block."
@@ -332,9 +342,12 @@ class many:
         return self._iterate()
 
     def _iterate(self) -> Iterator[None]:
+        data = self.data
         while True:
             if self._closed:
                 raise InvalidArgument("Cannot iterate over many() after exiting it.")
+            if data.depth != self._expected_depth():
+                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
             if self._in_element:
                 self._finish_element()
             if not self._decide():
@@ -361,6 +374,10 @@ class many:
                 self.data.mark_invalid(why)
             else:
                 self.force_stop = True
+
+    def _expected_depth(self) -> int:
+        assert self._depth is not None
+        return self._depth + (self._in_element and self.observe)
 
     def _finish_element(self) -> None:
         if self._in_element:

@@ -268,6 +268,12 @@ def test_many_cannot_resume_iteration_after_exit():
         next(it)
 
 
+def test_many_detects_unbalanced_spans_on_exit():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with pytest.raises(InvalidArgument, match="interleaved"), new_many(data):
+        data.start_span(1)
+
+
 def test_many_cannot_be_iterated_twice():
     with new_many() as elements:
         for _ in elements:
@@ -283,6 +289,17 @@ def test_many_cannot_be_entered_twice():
         pass
     with pytest.raises(InvalidArgument), m:
         pass
+
+
+def test_many_detects_interleaved_iteration():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with (
+        pytest.raises(InvalidArgument, match="interleaved"),
+        new_many(data) as a,
+        new_many(data) as b,
+    ):
+        for _ in zip(a, b, strict=True):
+            pass
 
 
 @pytest.mark.parametrize("when", ["before", "twice", "after"])
