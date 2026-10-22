@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.8:
+
+--------------------
+6.170.8 - 2026-10-22
+--------------------
+
+This patch fixes a regression in :ref:`version 6.170.1 <v6.170.1>`, where
+unique collections of non-empty collections, such as
+``st.sets(st.frozensets(st.integers(), min_size=1), min_size=1)``, could fail
+the |HealthCheck.large_base_example| health check (:issue:`4918`).
+
 .. _v6.170.7:
 
 --------------------
