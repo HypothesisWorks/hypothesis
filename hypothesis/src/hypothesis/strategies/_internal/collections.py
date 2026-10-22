@@ -364,22 +364,26 @@ class UniqueListStrategy(ListStrategy[Ex]):
             # collection nested inside another unique collection keeps
             # counting, so that sibling elements remain distinct.
             data.simplest_index = 0
-        while elements.more():
-            data.unique_element_depth += 1
-            try:
-                value = filtered.do_filtered_draw(data)
-            finally:
-                data.unique_element_depth -= 1
-            if value is filter_not_satisfied:
-                elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
-            else:
-                assert not isinstance(value, UniqueIdentifier)
-                for key, seen in zip(self.keys, seen_sets, strict=True):
-                    seen.add(key(value))
-                if self.tuple_suffixes is not None:
-                    value = (value, *data.draw(self.tuple_suffixes))
-                result.append(value)
-        data.stop_span()
+        try:
+            while elements.more():
+                data.unique_element_depth += 1
+                try:
+                    value = filtered.do_filtered_draw(data)
+                finally:
+                    data.unique_element_depth -= 1
+                if value is filter_not_satisfied:
+                    elements.reject(
+                        f"Aborted test because unable to satisfy {filtered!r}"
+                    )
+                else:
+                    assert not isinstance(value, UniqueIdentifier)
+                    for key, seen in zip(self.keys, seen_sets, strict=True):
+                        seen.add(key(value))
+                    if self.tuple_suffixes is not None:
+                        value = (value, *data.draw(self.tuple_suffixes))
+                    result.append(value)
+        finally:
+            data.stop_span()
         assert self.max_size >= len(result) >= self.min_size
         return result
 

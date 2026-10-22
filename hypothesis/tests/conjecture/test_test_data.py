@@ -10,6 +10,7 @@
 
 import gc
 import itertools
+from random import Random
 
 import pytest
 
@@ -29,7 +30,11 @@ from hypothesis.internal.conjecture.data import (
 )
 from hypothesis.strategies import SearchStrategy
 
-from tests.conjecture.common import buffer_size_limit, interesting_origin
+from tests.conjecture.common import (
+    buffer_size_limit,
+    fresh_data,
+    interesting_origin,
+)
 
 
 def test_cannot_draw_after_freeze():
@@ -612,3 +617,23 @@ def test_simplest_template_unique_collections_of_collections(strategy):
 def test_simplest_template_still_simplest_without_uniqueness():
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
     assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
+
+
+def _raises(_):
+    raise ValueError
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.integers().map(_raises),
+        st.integers().filter(_raises),
+    ],
+    ids=repr,
+)
+def test_exception_from_draw_closes_all_spans(strategy):
+    data = fresh_data(random=Random(0))
+    depth = data.depth
+    with pytest.raises(ValueError):
+        data.draw(strategy)
+    assert data.depth == depth
