@@ -1057,8 +1057,8 @@ def nested_dtypes(
 
 
 @proxies(_valid_tuple_axes)
-def valid_tuple_axes(*args, **kwargs):
-    return _valid_tuple_axes(*args, **kwargs)
+def valid_tuple_axes(ndim: int, **kwargs: Any) -> st.SearchStrategy[tuple[int, ...]]:
+    return _valid_tuple_axes(ndim, **kwargs)
 
 
 valid_tuple_axes.__doc__ = f"""
@@ -1072,8 +1072,10 @@ valid_tuple_axes.__doc__ = f"""
 
 
 @proxies(_mutually_broadcastable_shapes)
-def mutually_broadcastable_shapes(*args, **kwargs):
-    return _mutually_broadcastable_shapes(*args, **kwargs)
+def mutually_broadcastable_shapes(
+    **kwargs: Any,
+) -> st.SearchStrategy[BroadcastableShapes]:
+    return _mutually_broadcastable_shapes(**kwargs)
 
 
 mutually_broadcastable_shapes.__doc__ = f"""
