@@ -51,6 +51,7 @@ from hypothesis.internal.conjecture.choice import (
     ChoiceTemplate,
     ChoiceTypeT,
     FloatConstraints,
+    ImpureInversion,
     IntegerConstraints,
     InvertAborted,
     InvertResultT,
@@ -887,8 +888,7 @@ class ConjectureData:
         if self._inverting:
             # A strategy tried to draw while re-encoding a ValueHole - e.g. a
             # filter predicate which draws, like stateful's rule filters.
-            # Inversions must be pure, so abandon the claim.
-            raise InvertAborted
+            raise ImpureInversion
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
@@ -1332,11 +1332,11 @@ class ConjectureData:
             _hole_budget.remaining = HOLE_LIMIT
             try:
                 result: InvertResultT | None = unwrapped._invert(hole.value)
-            except Exception:
-                # Usually InvertAborted, but _invert may execute user code -
-                # e.g. a filter condition - whose exceptions must not escape
-                # into this replay: the resulting early stop would look like
-                # flaky data generation.  Either way the hole is unclaimed.
+            except (InvertAborted, Exception):
+                # _invert may execute user code - e.g. a filter condition -
+                # whose exceptions must not escape into this replay: the
+                # resulting early stop would look like flaky data generation.
+                # Either way the hole is unclaimed.
                 result = None
             finally:
                 _hole_budget.remaining = None
