@@ -560,11 +560,16 @@ def test_simplest_template_enumerates_unique_collection_elements():
     # an all-simplest draw would duplicate elements and never satisfy the
     # uniqueness constraint, so the template enumerates instead.
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
-    result = data.draw(st.lists(st.integers(), unique=True, min_size=3, max_size=3))
+    with BuildContext(data, wrapped_test=lambda: None):
+        result = data.draw(st.lists(st.integers(), unique=True, min_size=3, max_size=3))
     assert len(set(result)) == 3
 
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
-    assert data.draw(st.lists(st.booleans(), unique=True, min_size=2)) == [False, True]
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(st.lists(st.booleans(), unique=True, min_size=2)) == [
+            False,
+            True,
+        ]
 
 
 def test_simplest_template_unique_collections_are_canonical():
@@ -572,19 +577,21 @@ def test_simplest_template_unique_collections_are_canonical():
     # do not depend on what was drawn earlier in the test case...
     strategy = st.lists(st.integers(), unique=True, min_size=3, max_size=3)
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
-    assert data.draw(strategy) == data.draw(strategy)
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(strategy) == data.draw(strategy)
 
     # ...but nested unique collections keep counting, so that the sibling
     # elements of their parent collection remain distinct.
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
-    result = data.draw(
-        st.lists(
-            st.lists(st.integers(), min_size=2, max_size=2),
-            unique_by=tuple,
-            min_size=2,
-            max_size=2,
+    with BuildContext(data, wrapped_test=lambda: None):
+        result = data.draw(
+            st.lists(
+                st.lists(st.integers(), min_size=2, max_size=2),
+                unique_by=tuple,
+                min_size=2,
+                max_size=2,
+            )
         )
-    )
     assert len({tuple(inner) for inner in result}) == 2
 
 
@@ -611,4 +618,5 @@ def test_simplest_template_unique_collections_of_collections(strategy):
 
 def test_simplest_template_still_simplest_without_uniqueness():
     data = ConjectureData(prefix=[ChoiceTemplate("simplest", count=None)], random=None)
-    assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(st.lists(st.integers(), min_size=3, max_size=3)) == [0, 0, 0]
