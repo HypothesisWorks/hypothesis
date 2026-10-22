@@ -16,14 +16,20 @@ because `combining contracts and property-based testing works really well
 It requires ``dpcontracts >= 0.4``.
 """
 
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
+
 from dpcontracts import PreconditionError
 
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import proxies
 
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
 
-def fulfill(contract_func):
+
+def fulfill(contract_func: Callable[_P, _T]) -> Callable[_P, _T]:
     """Decorate ``contract_func`` to reject calls which violate preconditions,
     and retry them with different arguments.
 
@@ -40,7 +46,7 @@ def fulfill(contract_func):
         )
 
     @proxies(contract_func)
-    def inner(*args, **kwargs):
+    def inner(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         try:
             return contract_func(*args, **kwargs)
         except PreconditionError:
