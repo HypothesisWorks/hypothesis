@@ -34,7 +34,7 @@ from contextvars import ContextVar
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType, GenericAlias, UnionType
-from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NewType, cast, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import (
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 try:
     import typing_extensions
 except ImportError:
-    typing_extensions = None  # type: ignore
+    typing_extensions = cast(Any, None)
 
 try:
     from typing import _AnnotatedAlias  # type: ignore

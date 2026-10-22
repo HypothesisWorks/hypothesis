@@ -340,6 +340,10 @@ def line_of(offset):
     return f"{__file__}:{frame.f_code.co_firstlineno + offset}"
 
 
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair",
+    reason="takes ~10 minutes each",
+)
 @pytest.mark.parametrize(
     "make",
     [
@@ -358,11 +362,14 @@ def test_filter_has_status_reason_location(make):
         assert gave_up.metadata.status_reason_location == expected
 
 
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="takes ~10 minutes"
+)
 def test_assume_in_map_has_status_reason_location():
     def unsatisfiable(x):
         assume(len(str(x)) < 0)
 
-    expected = line_of(2)
+    expected = line_of(5)
     for gave_up in _get_filter_gave_ups(st.integers().map(unsatisfiable)):
         assert gave_up.metadata.status_reason_location == expected
 
@@ -392,6 +399,9 @@ def test_status_reason_location_without_traceback():
     assert observation.metadata.status_reason_location is None
 
 
+@pytest.mark.skipif(
+    settings.get_current_profile_name() == "crosshair", reason="takes ~10 minutes"
+)
 def test_last_rejected_filter_location_fallbacks():
     data = ConjectureData(random=Random(0))
     # nothing was rejected on this data

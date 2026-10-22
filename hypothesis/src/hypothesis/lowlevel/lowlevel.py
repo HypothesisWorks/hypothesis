@@ -234,9 +234,13 @@ class many:
                 forced = True
             elif self._count >= self._max_size:
                 forced = False
+            # Don't enumerate "simplest" choices for this draw, so that probes
+            # of collections inside unique collections stop at min_size.
+            depth, self._data.unique_element_depth = self._data.unique_element_depth, 0
             should_continue = self._data.draw_boolean(
                 self._p_continue, forced=forced, observe=self._observe
             )
+            self._data.unique_element_depth = depth
 
         if should_continue:
             self._count += 1

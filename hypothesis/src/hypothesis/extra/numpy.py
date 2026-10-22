@@ -157,7 +157,7 @@ def from_dtype(
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None and dtype.fields is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
-        subs = [from_dtype(dtype.fields[name][0], **kwargs) for name in dtype.names]
+        subs = [from_dtype(dtype[name], **kwargs) for name in dtype.names]
         return st.tuples(*subs)
 
     # Subarray datatypes, eg '(2, 3)i4'

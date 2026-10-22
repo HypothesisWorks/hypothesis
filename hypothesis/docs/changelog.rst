@@ -18,6 +18,24 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.7:
+
+--------------------
+6.170.7 - 2026-10-22
+--------------------
+
+This improves type coverage of :ref:`stateful testing <stateful>`.
+
+.. _v6.170.6:
+
+--------------------
+6.170.6 - 2026-10-22
+--------------------
+
+This patch adds PyPy 3.12 wheels to releases (:issue:`4921`).
+
+Thanks to @moreati for this contribution!
+
 .. _v6.170.5:
 
 --------------------

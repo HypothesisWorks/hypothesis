@@ -116,7 +116,10 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    pip_tool("zizmor", ".github/")
+    # zizmor's online audits need GitHub API access, which isn't available
+    # in Claude Code remote sessions.
+    if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+        pip_tool("zizmor", ".github/")
     vendored_data = ("tlds-alpha-by-domain.txt", "leap-seconds.txt")
     codespell(*(p for p in all_files() if p.name not in vendored_data))
 
@@ -260,7 +263,8 @@ def format(*, format_all=False):
 
     if any(p.parts[0] == ".github" and p.suffix == ".yml" for p in paths):
         # Autofix what we can in our workflows; `lint` reports whatever is left.
-        pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
+        if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+            pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
 
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
@@ -826,8 +830,10 @@ def run_tox(task, version, *args, profile="dev"):
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
-# When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
+# When a version is added or removed, manually update
+#  - env lists in tox.ini
+#  - `release-build-wheels` job in <ROOT>/github/workflows/release.yml
+#  - `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
     "3.11": "3.11.17",
     "3.12": "3.12.15",
@@ -838,8 +844,8 @@ PYTHONS = {
     "3.15t": "3.15.0+freethreaded",
     "3.16": "3.16.0a1",
     "3.16t": "3.16.0a1+freethreaded",
-    "pypy3.11": "pypy3.11-3.11.16",
-    "pypy3.12": "pypy3.12-3.12.14",
+    "pypy3.11": "pypy3.11-3.11.17",
+    "pypy3.12": "pypy3.12-3.12.15",
 }
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
