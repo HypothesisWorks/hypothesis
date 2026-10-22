@@ -116,7 +116,10 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    pip_tool("zizmor", ".github/")
+    # zizmor's online audits need GitHub API access, which isn't available
+    # in Claude Code remote sessions.
+    if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+        pip_tool("zizmor", ".github/")
     vendored_data = ("tlds-alpha-by-domain.txt", "leap-seconds.txt")
     codespell(*(p for p in all_files() if p.name not in vendored_data))
 
@@ -260,7 +263,8 @@ def format(*, format_all=False):
 
     if any(p.parts[0] == ".github" and p.suffix == ".yml" for p in paths):
         # Autofix what we can in our workflows; `lint` reports whatever is left.
-        pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
+        if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+            pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
 
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
