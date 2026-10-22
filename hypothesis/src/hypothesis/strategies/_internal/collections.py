@@ -20,6 +20,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import (
     ChoiceT,
     Impossible,
+    ImpureInversion,
     InvertResultT,
     ValueHole,
 )
@@ -508,14 +509,27 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         choices: list[ChoiceT | ValueHole] = []
         for i, (element, target) in enumerate(zip(value, targets, strict=True)):
             choices.extend(elements.more())
+            unknown = False
             for j, candidate in enumerate(remaining):
-                if equal_values(
-                    self.element_strategy._transform(candidate, data=None), target
-                ):
+                try:
+                    result, impure = self.element_strategy._invert_transform(candidate)
+                    matches = equal_values(result, target)
+                except (ImpureInversion, Exception):
+                    # as for sampled_from, user code which draws or errors
+                    # tells us nothing about whether this candidate matches
+                    unknown = True
+                    continue
+                if matches and not impure:
                     choices.append(j)
                     remaining.pop(j)
                     break
+                unknown |= matches
             else:
+                if unknown:
+                    # a hole here would desynchronize the later pool indices
+                    return self._hole(
+                        value, f"cannot tell whether {self!r} produces it"
+                    )
                 return Impossible(
                     f"at index {i} of {value!r}: {target!r} is not among the "
                     f"remaining elements of {self!r}"

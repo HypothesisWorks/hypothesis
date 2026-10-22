@@ -109,9 +109,16 @@ HOLE_LIMIT = 10_000
 _hole_budget = threading.local()
 
 
-class InvertAborted(Exception):
-    """Internal: abandon an in-progress inversion - the hole budget was
-    breached, or a strategy tried to draw."""
+class InvertAborted(BaseException):
+    """Internal: abandon an in-progress inversion, because the hole budget was
+    breached.  A BaseException, like StopTest, so that guards around user code
+    during inversion cannot swallow it."""
+
+
+class ImpureInversion(InvertAborted):
+    """Internal: a strategy tried to draw while inverting.  Code which runs
+    user functions during inversion may convert this to a hole; otherwise it
+    abandons the inversion."""
 
 
 @dataclass(slots=True, frozen=True)

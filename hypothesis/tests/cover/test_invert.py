@@ -8,20 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import contextlib
 import dataclasses
 import datetime as dt
 import math
 import zoneinfo
 from collections import OrderedDict
+from random import Random
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.control import BuildContext
+from hypothesis.errors import StopTest
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import (
     HOLE_LIMIT,
     Impossible,
+    ImpureInversion,
     InvertAborted,
     ValueHole,
     _hole_budget,
@@ -841,13 +845,17 @@ def test_raising_filter_condition_leaves_a_hole():
     assert _is_single_hole(strategy._invert(1))
 
 
-def test_raising_sampled_from_transformation_leaves_a_hole():
-    strategy = unwrap_strategies(st.sampled_from([1, 2, 3]).map(_boom))
-    assert _is_single_hole(strategy._invert(1))
+@pytest.mark.parametrize(
+    "strategy",
+    [st.sampled_from([1, 2, 3]).map(_boom), st.just(1).map(_boom)],
+    ids=["sampled_from", "just"],
+)
+def test_raising_transformation_leaves_a_hole(strategy):
+    assert _is_single_hole(unwrap_strategies(strategy)._invert(1))
 
 
 def test_hole_claiming_survives_a_raising_filter_condition():
-    # As in test_transformations_which_draw_leave_holes_unclaimed, but the
+    # As in test_impure_claims_leave_holes_unclaimed, but the
     # filter raises for the hole's value rather than drawing: the hole is left
     # unclaimed, and replay degrades to a misalignment instead of propagating
     # the error.
@@ -863,15 +871,256 @@ def test_hole_claiming_survives_a_raising_filter_condition():
     assert data.misaligned_at is not None
 
 
-def test_transformations_which_draw_leave_holes_unclaimed():
-    # e.g. stateful rule filters draw feature flags; a hole cannot be claimed
-    # by executing such draws, and degrades to a misalignment instead of
-    # corrupting the choice stream.
+@contextlib.contextmanager
+def _inverting(data):
+    data._inverting = True
+    try:
+        yield
+    finally:
+        data._inverting = False
+
+
+# Impure strategies draw while transforming a value - e.g. stateful's rule
+# filters, which draw feature flags.  We can't encode those draws, so impurity
+# leaves a hole - but a filter can only reject values, so we can still tell
+# when a value is Impossible.
+
+
+def test_impure_filter_leaves_a_hole():
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(st.integers().filter(lambda x: data.draw_boolean()))
+    with _inverting(data):
+        result = strategy._invert(2)
+    assert result == (
+        ValueHole(2, strategy=strategy, cause=f"filter {strategy!r} draws"),
+    )
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda d: st.sampled_from([1, 2, 3]).filter(lambda x: d.draw_boolean()),
+        lambda d: st.just(2).filter(lambda x: d.draw_boolean()),
+    ],
+    ids=["sampled_from", "just"],
+)
+def test_impure_sampled_filter_leaves_a_hole(make):
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(make(data))
+    with _inverting(data):
+        result = strategy._invert(2)
+    assert result == (
+        ValueHole(
+            2, strategy=strategy, cause=f"cannot tell whether {strategy!r} produces it"
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda d: st.integers(0, 1).filter(lambda x: d.draw_boolean()),
+        lambda d: st.sampled_from([1, 3]).filter(lambda x: d.draw_boolean()),
+    ],
+    ids=["filter", "sampled_from"],
+)
+def test_impure_filter_cannot_make_an_impossible_value_possible(make):
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(make(data))
+    with _inverting(data):
+        assert isinstance(strategy._invert(2), Impossible)
+
+
+def test_sampled_from_prefers_a_certain_match_to_an_impure_one():
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(
+        st.sampled_from([(2, False), (2, True)])
+        .filter(lambda t: t[1] or data.draw_boolean())
+        .map(lambda t: t[0])
+    )
+    with _inverting(data):
+        assert strategy._invert(2) == (1,)
+
+
+class _DrawsOnEq:
+    # compares unequal to everything but itself, drawing to decide
+    def __init__(self, data):
+        self.data = data
+
+    def __eq__(self, other):
+        return self is other or self.data.draw_boolean()
+
+    __hash__ = object.__hash__
+
+
+@pytest.mark.parametrize(
+    "unknown",
+    [
+        lambda d, x: x + d.draw_integer(0, 0),
+        lambda d, x: _boom(x),
+        lambda d, x: _DrawsOnEq(d),
+    ],
+    ids=["impure_map", "raising_map", "impure_eq"],
+)
+def test_sampled_from_finds_a_certain_match_past_unknown_elements(unknown):
+    data = ConjectureData.for_choices(())
+    target = _DrawsOnEq(data)
+    strategy = unwrap_strategies(
+        st.sampled_from([0, 1]).map(lambda x: target if x else unknown(data, x))
+    )
+    with _inverting(data):
+        assert strategy._invert(target) == (1,)
+
+
+@pytest.mark.parametrize(
+    "unknown",
+    [
+        lambda d, x: x + d.draw_integer(0, 0),
+        lambda d, x: _boom(x),
+        lambda d, x: _DrawsOnEq(d),
+    ],
+    ids=["impure_map", "raising_map", "impure_eq"],
+)
+def test_unique_sampled_lists_find_a_certain_match_past_unknown_elements(unknown):
+    data = ConjectureData.for_choices(())
+    target = _DrawsOnEq(data)
+    elements = st.sampled_from([0, 1]).map(lambda x: target if x else unknown(data, x))
+    strategy = unwrap_strategies(st.lists(elements, unique=True))
+    with _inverting(data):
+        assert strategy._invert([target]) == (True, 1, False)
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda d: st.sampled_from([1, 2]).map(_boom),
+        lambda d: st.sampled_from([1, 2]).filter(lambda x: d.draw_boolean()),
+    ],
+    ids=["raising_map", "impure_filter"],
+)
+def test_unique_sampled_lists_leave_a_hole_when_unsure(make):
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(st.lists(make(data), unique=True))
+    with _inverting(data):
+        result = strategy._invert([2])
+    assert result == (
+        ValueHole(
+            [2],
+            strategy=strategy,
+            cause=f"cannot tell whether {strategy!r} produces it",
+        ),
+    )
+
+
+def test_impure_filter_cannot_make_a_unique_sampled_list_possible():
+    data = ConjectureData.for_choices(())
+    elements = st.sampled_from([1, 2]).filter(lambda x: data.draw_boolean())
+    strategy = unwrap_strategies(st.lists(elements, unique=True))
+    with _inverting(data):
+        assert isinstance(strategy._invert([3]), Impossible)
+
+
+def test_impure_sampled_map_leaves_a_hole():
+    data = ConjectureData.for_choices(())
+    strategy = unwrap_strategies(
+        st.sampled_from([1, 2]).map(lambda x: x + data.draw_integer(0, 0))
+    )
+    with _inverting(data):
+        result = strategy._invert(2)
+    hole = ValueHole(
+        2, strategy=strategy, cause=f"cannot tell whether {strategy!r} produces it"
+    )
+    assert result == (hole,)
+
+
+def test_impure_union_branch_defers_to_a_pure_branch():
+    data = ConjectureData.for_choices(())
+    strategy = st.integers().filter(lambda x: data.draw_boolean()) | st.integers()
+    with _inverting(data):
+        assert strategy._invert(2) == (1, 2)
+
+
+def test_hole_budget_aborts_through_impure_filters():
+    data = ConjectureData.for_choices(())
+    strategy = st.integers().filter(lambda x: data.draw_boolean())
+    _hole_budget.remaining = 0
+    try:
+        with _inverting(data), pytest.raises(InvertAborted) as excinfo:
+            strategy._invert(2)
+    finally:
+        _hole_budget.remaining = None
+    assert not isinstance(excinfo.value, ImpureInversion)
+
+
+_IMPURE = {
+    "sampled_from.filter": lambda d: (
+        st.sampled_from([1, 2, 3]).filter(lambda x: d.draw_boolean())
+    ),
+    "sampled_from.map": lambda d: (
+        st.sampled_from([1, 2]).map(lambda x: x + d.draw_integer(0, 0))
+    ),
+    "just.filter": lambda d: st.just(2).filter(lambda x: d.draw_boolean()),
+    "integers.filter": lambda d: st.integers().filter(lambda x: d.draw_boolean()),
+    "one_of": lambda d: (
+        st.integers().filter(lambda x: d.draw_boolean()) | st.integers()
+    ),
+}
+
+
+@pytest.mark.parametrize("make", _IMPURE.values(), ids=_IMPURE)
+def test_impure_claims_clean_up(make):
+    # However the hole is resolved, the claim must reset the inversion state
+    # so that the strategy's own draws can proceed.
+    data = ConjectureData(prefix=(ValueHole(2), True), random=Random(0))
+    with BuildContext(data, wrapped_test=lambda: None), contextlib.suppress(StopTest):
+        data.draw(make(data))
+    assert not data._inverting
+    assert getattr(_hole_budget, "remaining", None) is None
+
+
+def test_unhandled_impurity_abandons_the_claim():
+    # Impurity in user code we don't specifically handle - here a unique_by
+    # key function - abandons the whole inversion, leaving the hole unclaimed.
+    data = ConjectureData(prefix=(ValueHole([2]),), random=Random(0))
+    strategy = st.lists(st.integers(), unique_by=lambda x: data.draw_boolean())
+    with _inverting(data), pytest.raises(ImpureInversion):
+        strategy._invert([2])
+    with BuildContext(data, wrapped_test=lambda: None):
+        data.draw(strategy)
+    assert data.misaligned_at is not None
+    assert not data._inverting
+    assert getattr(_hole_budget, "remaining", None) is None
+
+
+def test_impure_claims_leave_holes_unclaimed():
+    # A hole cannot be claimed by executing such draws, and degrades to a
+    # misalignment instead of corrupting the choice stream.
     data = ConjectureData.for_choices((ValueHole(2), True))
     strategy = st.sampled_from([1, 2, 3]).filter(lambda x: data.draw_boolean())
     with BuildContext(data, wrapped_test=lambda: None):
         assert data.draw(strategy) == 1
     assert data.misaligned_at is not None
+
+
+def test_impure_filter_defers_to_its_pure_inner_strategy():
+    # The filtered strategy cannot claim the hole without running its
+    # predicate, but the inner strategy it draws from can - and then the
+    # predicate runs, and draws, as part of the ordinary draw.
+    data = ConjectureData.for_choices((ValueHole(2), True))
+    strategy = st.integers().filter(lambda x: data.draw_boolean())
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(strategy) == 2
+    assert data.misaligned_at is None
+    assert data.choices == (2, True)
+
+
+def test_impure_union_claims_through_a_pure_branch():
+    data = ConjectureData.for_choices((ValueHole(2),))
+    strategy = st.integers().filter(lambda x: data.draw_boolean()) | st.integers()
+    with BuildContext(data, wrapped_test=lambda: None):
+        assert data.draw(strategy) == 2
+    assert data.misaligned_at is None
+    assert data.choices == (1, 2)
 
 
 def _hole_for(strategy, value):

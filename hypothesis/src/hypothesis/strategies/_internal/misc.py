@@ -11,9 +11,8 @@
 from collections.abc import Callable
 from typing import Any, Never, NoReturn
 
-from hypothesis.internal.conjecture.choice import Impossible, InvertResultT
+from hypothesis.internal.conjecture.choice import Impossible, InvertResultT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.junkdrawer import equal_values
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -63,9 +62,11 @@ class JustStrategy(SampledFromStrategy[Ex]):
         return self._transform(self.value, data=data)
 
     def _invert(self, value: Any) -> InvertResultT:
-        if not equal_values(self._transform(self.value, data=None), value):
-            return Impossible(f"{value!r} is not produced by {self!r}")
-        return ()
+        result = super()._invert(value)
+        if isinstance(result, tuple) and not isinstance(result[0], ValueHole):
+            # unlike sampled_from, we draw no index before transforming
+            return result[1:]
+        return result
 
 
 @defines_strategy(eager=True)

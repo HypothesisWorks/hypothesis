@@ -44,6 +44,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.choice import (
     ChoiceT,
     Impossible,
+    ImpureInversion,
     InvertResultT,
     ValueHole,
 )
@@ -784,8 +785,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # conservative than necessary
         element: Ex,  # type: ignore
         *,
-        # None for _invert, which has no ConjectureData
-        data: ConjectureData | None,
+        data: ConjectureData,
     ) -> Ex | UniqueIdentifier:
         # Used in UniqueSampledListStrategy
         for name, f, location in self._transformations:
@@ -797,8 +797,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             else:
                 assert name == "filter"
                 if not f(element):
-                    if data is not None:
-                        data._last_rejected_filter = (f, location)
+                    data._last_rejected_filter = (f, location)
                     return filter_not_satisfied
         return element
 
@@ -827,18 +826,45 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         return self._transform(self.elements[i], data=data)
 
     def _invert(self, value: Any) -> InvertResultT:
-        # The smallest index whose (possibly transformed) element equals value.
-        # _transform might depend on external state and give us a wrong answer
-        # here; that's fine, since inversion is allowed to be fallible.
-        try:
-            for i, element in enumerate(self.elements):
-                if equal_values(self._transform(element, data=None), value):
+        # The smallest index whose (possibly transformed) element certainly
+        # equals value.  Our transformations might depend on external state and
+        # give us a wrong answer here; that's fine, since inversion is allowed
+        # to be fallible.
+        unknown = False
+        for i, element in enumerate(self.elements):
+            try:
+                result, impure = self._invert_transform(element)
+                matches = equal_values(result, value)
+            except (ImpureInversion, Exception):
+                # user code - our map/filter functions, or __eq__ - which draws
+                # or errors tells us nothing about whether this element matches
+                unknown = True
+                continue
+            if matches:
+                if not impure:
                     return (i,)
-        except Exception:
-            # `self._transform` may include arbitrary user code (map/filter
-            # functions), and an error proves nothing about the value
-            return self._hole(value, f"transforming elements of {self!r} errored")
+                # we can't encode the impure filters' draws
+                unknown = True
+        if unknown:
+            return self._hole(value, f"cannot tell whether {self!r} produces it")
         return Impossible(f"{value!r} is not produced by {self!r}")
+
+    def _invert_transform(self, element: Any) -> tuple[Any, bool]:
+        # Like _transform, but a filter which draws is assumed to accept the
+        # element unchanged, and reported - so the caller knows whether a
+        # match is certain, and that no match at all is still Impossible.
+        # There's no such assumption for a map which draws.
+        impure = False
+        for name, f, _ in self._transformations:
+            if name == "map":
+                element = f(element)
+            else:
+                try:
+                    if not f(element):
+                        return filter_not_satisfied, impure
+                except ImpureInversion:
+                    impure = True
+        return element, impure
 
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         # Set of indices that have been tried so far, so that we never test
@@ -1532,6 +1558,13 @@ class FilteredStrategy(SearchStrategy[Ex]):
         # first try, drawing exactly the inner strategy's encoding.
         try:
             ok = self.condition(value)
+        except ImpureInversion:
+            # We can't encode what the predicate draws, but it can only reject
+            # values: if the inner strategy can't produce this one, nothing can.
+            inner = self.filtered_strategy._invert(value)
+            if isinstance(inner, Impossible):
+                return inner
+            return self._hole(value, f"filter {self!r} draws")
         except Exception:
             # a raising predicate is not evidence the value cannot be generated
             return self._hole(value, f"filter {self!r} raised on {value!r}")
