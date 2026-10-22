@@ -826,8 +826,10 @@ def run_tox(task, version, *args, profile="dev"):
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
-# When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
+# When a version is added or removed, manually update
+#  - env lists in tox.ini
+#  - `release-build-wheels` job in <ROOT>/github/workflows/release.yml
+#  - `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
     "3.11": "3.11.17",
     "3.12": "3.12.15",
