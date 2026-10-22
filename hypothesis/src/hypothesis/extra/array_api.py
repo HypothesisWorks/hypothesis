@@ -19,6 +19,7 @@ from typing import (
     NamedTuple,
     TypeAlias,
     TypeVar,
+    cast,
     get_args,
 )
 from warnings import warn
@@ -237,7 +238,7 @@ def _from_dtype(
         return st.integers(min_value=min_value, max_value=max_value)
     elif builtin is float:
         finfo = xp.finfo(dtype)
-        kw = {}
+        kw: dict[str, Any] = {}
 
         # Whilst we know the boundary values of float dtypes from finfo, we do
         # not assign them to the floats() strategy by default - passing min/max
@@ -890,7 +891,7 @@ def make_strategies_namespace(
             f"{xp.__array_api_version__=}, but it must "
             f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
-        api_version = xp.__array_api_version__
+        api_version = cast(NominalVersion, xp.__array_api_version__)
         inferred_version = True
     else:
         check_argument(

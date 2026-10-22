@@ -136,9 +136,9 @@ class Optimiser:
                         return False
                     if k == -1:
                         new_choice = False
-                    if k == 1:
+                    elif k == 1:
                         new_choice = True
-                    if k == 0:  # pragma: no cover
+                    else:  # pragma: no cover
                         new_choice = node.value
                 else:
                     assert node.type == "bytes"

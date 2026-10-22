@@ -302,7 +302,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
 
 def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
-    constraints, predicate = get_numeric_predicate_bounds(predicate)
+    constraints, new_predicate = get_numeric_predicate_bounds(predicate)
 
     if "min_value" in constraints:
         if constraints["min_value"] == -math.inf:
@@ -326,11 +326,11 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
     kw_categories = {"min_value", "max_value", "len"}
     constraints = {k: v for k, v in constraints.items() if k in kw_categories}
-    return ConstructivePredicate(constraints, predicate)
+    return ConstructivePredicate(constraints, new_predicate)
 
 
 def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
-    constraints, predicate = get_numeric_predicate_bounds(predicate)
+    constraints, new_predicate = get_numeric_predicate_bounds(predicate)
 
     if "min_value" in constraints:
         min_value = constraints["min_value"]
@@ -353,7 +353,7 @@ def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     constraints = {
         k: v for k, v in constraints.items() if k in {"min_value", "max_value"}
     }
-    return ConstructivePredicate(constraints, predicate)
+    return ConstructivePredicate(constraints, new_predicate)
 
 
 def max_len(size: int, element: Collection[object]) -> bool:
