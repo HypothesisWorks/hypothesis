@@ -442,7 +442,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path: StrPathT) -> None:
         super().__init__()
-        self.path = Path(path)
+        self.path: Path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
         self._observer: BaseObserver | None = None
         self._ensure_directory_exists_called = False
@@ -888,18 +888,19 @@ class GitHubArtifactDatabase(ExampleDatabase):
         artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
         path: StrPathT | None = None,
-    ):
+    ) -> None:
         super().__init__()
-        self.owner = owner
-        self.repo = repo
-        self.artifact_name = artifact_name
-        self.cache_timeout = cache_timeout
+        self.owner: str = owner
+        self.repo: str = repo
+        self.artifact_name: str = artifact_name
+        self.cache_timeout: timedelta = cache_timeout
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
         self.token: str | None = getenv("GITHUB_TOKEN")
 
         self._storage_dir: StorageDirectory | None = None
+        self.path: Path
         if path is None:
             self._storage_dir = storage_directory(
                 f"github-artifacts/{self.artifact_name}/"
