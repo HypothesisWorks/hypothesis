@@ -129,6 +129,7 @@ their individual contributions.
 * `Libor Martínek <https://github.com/bibajz>`_
 * `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
+* `Lucas Meyer <https://github.com/lucasmeyer-dev>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `Lundy Bernard <https://github.com/lundybernard>`_
 * `Marco Ricci <https://github.com/the-13th-letter>`_

@@ -64,7 +64,10 @@ def test_datetimes_stay_within_aware_bounds(data, lo, hi):
 
 
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
-    all_timezones = zoneinfo.get_zonefile_instance().zones
+    if hasattr(tz, "available_iana_timezones"):
+        all_timezones = tz.available_iana_timezones()
+    else:
+        all_timezones = zoneinfo.get_zonefile_instance().zones
     with pytest.raises(InvalidArgument):
         datetimes(timezones=all_timezones).validate()
 
