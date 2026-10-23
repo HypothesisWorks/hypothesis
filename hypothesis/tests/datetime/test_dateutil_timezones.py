@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+import sys
 import warnings
 
 import pytest
@@ -21,10 +22,12 @@ from hypothesis.strategies._internal.datetime import _instant, datetime_does_not
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
-# Prior to https://github.com/dateutil/dateutil/pull/1285/ on Python 3.12+,
-# and dateutil>=3.0 deprecates the `dateutil.zoneinfo` module.
-with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
-    from dateutil import tz, zoneinfo
+# Before https://github.com/dateutil/dateutil/pull/1285/ `import datetime.tz`
+# calls `datetime.utcfromtimestamp` which is deprecated on Python 3.12+.
+with warnings.catch_warnings():
+    if sys.version_info[:2] >= (3, 12):
+        warnings.simplefilter("ignore", DeprecationWarning)
+    from dateutil import tz
 
 from hypothesis.extra.dateutil import timezones
 
@@ -64,9 +67,15 @@ def test_datetimes_stay_within_aware_bounds(data, lo, hi):
 
 
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
-    all_timezones = zoneinfo.get_zonefile_instance().zones
+    timezone_names = [
+        "America/Port_of_Spain",
+        "Asia/Tomsk",
+        "Atlantic/Bermuda",
+        "Australia/West",
+        "Etc/GMT-11",
+    ]
     with pytest.raises(InvalidArgument):
-        datetimes(timezones=all_timezones).validate()
+        datetimes(timezones=timezone_names).validate()
 
 
 @given(times(timezones=timezones()))

@@ -21,7 +21,19 @@ and :func:`~hypothesis.strategies.times` produce timezone-aware values.
 
 import datetime as dt
 
-from dateutil import tz, zoneinfo
+from dateutil import tz
+
+try:
+    # dateutil >= 3.0.0: dateutil.zoneinfo is deprecated, timezone data is
+    # no longer bundled. Data is read from the system and tzdata package.
+    _available_iana_timezone_names = tz.available_iana_timezones
+except AttributeError:
+    # dateutil < 3.0.0: dt.zoneinfo reads from bundled timezone data.
+    from dateutil import zoneinfo
+
+    def _available_iana_timezone_names():
+        return zoneinfo.get_zonefile_instance().zones.keys()
+
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
@@ -53,7 +65,7 @@ def timezones() -> st.SearchStrategy[dt.tzinfo]:
     information.
     """
     all_timezones = sorted(
-        (tz.gettz(t) for t in zoneinfo.get_zonefile_instance().zones),
+        (tz.gettz(t) for t in _available_iana_timezone_names()),
         key=__zone_sort_key,
     )
     all_timezones.insert(0, tz.UTC)
