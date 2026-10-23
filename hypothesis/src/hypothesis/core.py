@@ -51,7 +51,11 @@ from hypothesis._settings import (
     local_settings,
     settings as Settings,
 )
-from hypothesis.control import BuildContext, currently_in_test_context
+from hypothesis.control import (
+    BuildContext,
+    current_build_context,
+    currently_in_test_context,
+)
 from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -957,6 +961,7 @@ class StateForActualGivenExecution:
         )
         self._start_timestamp = time.time()
         self._string_repr = ""
+        self._proxied_tests: dict[bool, Callable] = {}
         self._timing_features: dict[str, float] = {}
 
         self._runner: ConjectureRunner | None = None
@@ -980,31 +985,15 @@ class StateForActualGivenExecution:
         )
         return _trace_obs or _trace_failure
 
-    def execute_once(
-        self,
-        data,
-        *,
-        print_test_case=False,
-        is_final=False,
-        expected_failure=None,
-        example_kwargs=None,
-    ):
-        """Run the test function once, using ``data`` as input.
-
-        If the test raises an exception, it will propagate through to the
-        caller of this method. Depending on its type, this could represent
-        an ordinary test failure, or a fatal error, or a control exception.
-
-        If this method returns normally, the test might have passed, or
-        it might have placed ``data`` in an unsuccessful state and then
-        swallowed the corresponding control exception.
-        """
-
-        self.ever_executed = True
-
-        self._string_repr = ""
-        text_repr = None
-        if self.settings.deadline is None and not observability_enabled():
+    def _proxied_test(self, *, timed: bool) -> Callable:
+        # Building a signature-preserving proxy is expensive, so we do it once
+        # per test rather than once per example.  Per-example state is read
+        # from the current build context.
+        try:
+            return self._proxied_tests[timed]
+        except KeyError:
+            pass
+        if not timed:
 
             @proxies(self.test)
             def test(*args, **kwargs):
@@ -1015,6 +1004,8 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
+                context = current_build_context()
+                data, is_final = context.data, context.is_final
                 arg_drawtime = math.fsum(data.draw_times.values())
                 arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
@@ -1050,6 +1041,37 @@ class StateForActualGivenExecution:
                             datetime.timedelta(seconds=runtime), self.settings.deadline
                         )
                 return result
+
+        self._proxied_tests[timed] = test
+        return test
+
+    def execute_once(
+        self,
+        data,
+        *,
+        print_test_case=False,
+        is_final=False,
+        expected_failure=None,
+        example_kwargs=None,
+    ):
+        """Run the test function once, using ``data`` as input.
+
+        If the test raises an exception, it will propagate through to the
+        caller of this method. Depending on its type, this could represent
+        an ordinary test failure, or a fatal error, or a control exception.
+
+        If this method returns normally, the test might have passed, or
+        it might have placed ``data`` in an unsuccessful state and then
+        swallowed the corresponding control exception.
+        """
+
+        self.ever_executed = True
+
+        self._string_repr = ""
+        text_repr = None
+        test = self._proxied_test(
+            timed=self.settings.deadline is not None or observability_enabled()
+        )
 
         def run(data: ConjectureData) -> None:
             # Set up dynamic context needed by a single test run.
