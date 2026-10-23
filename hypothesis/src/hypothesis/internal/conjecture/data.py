@@ -57,7 +57,7 @@ from hypothesis.internal.conjecture.choice import (
     choice_constraints_key,
     choice_from_index,
     choice_permitted,
-    choices_size,
+    choice_size,
 )
 from hypothesis.internal.conjecture.junkdrawer import IntList, gc_cumulative_time
 from hypothesis.internal.conjecture.providers import (
@@ -935,7 +935,7 @@ class ConjectureData:
             getattr(self.observer, f"draw_{choice_type}")(
                 value, constraints=constraints, was_forced=was_forced
             )
-            size = 0 if self.provider.avoid_realization else choices_size([value])
+            size = 0 if self.provider.avoid_realization else choice_size(value)
             if self.length + size > self.max_length:
                 debug_report(
                     f"overrun because {self.length=} + {size=} > {self.max_length=}"
