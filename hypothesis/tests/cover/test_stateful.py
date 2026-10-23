@@ -1813,3 +1813,21 @@ def test_precondition_cannot_be_used_without_rule():
         ),
     ):
         BadStateMachine.TestCase().runTest()
+
+
+def test_one_of_bundle_and_other_strategy_draws_from_either():
+    seen = set()
+
+    class Machine(RuleBasedStateMachine):
+        things = Bundle("things")
+
+        @rule(target=things)
+        def add(self):
+            return "from bundle"
+
+        @rule(x=things | just("alternative"))
+        def use(self, x):
+            seen.add(x)
+
+    run_state_machine_as_test(Machine, settings=Settings(max_examples=50))
+    assert seen == {"from bundle", "alternative"}

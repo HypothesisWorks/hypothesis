@@ -894,6 +894,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         self.original_strategies = tuple(strategies)
         self.__element_strategies: Sequence[SearchStrategy[Ex]] | None = None
         self.__in_branches = False
+        self.__branch_sampler: SampledFromStrategy | Literal[False] | None = None
         self._branches_lock = RLock()
 
     def calc_is_empty(self, recur: RecurT) -> bool:
@@ -946,6 +947,21 @@ class OneOfStrategy(SearchStrategy[Ex]):
             # optimization: skip constructing SampledFromStrategy if we only have one
             # strategy. This can happen for eg `st.integers() | st.nothing()`.
             return data.draw(strategies[0])
+
+        if self.__branch_sampler is None:
+            # Only strategies which override is_currently_empty (e.g. stateful
+            # Bundles) can become empty dynamically - otherwise element_strategies
+            # has already excluded every empty branch, so we can skip the filter
+            # and reuse a single sampler rather than building one per draw.
+            if any(
+                type(s).is_currently_empty is not SearchStrategy.is_currently_empty
+                for s in strategies
+            ):
+                self.__branch_sampler = False
+            else:
+                self.__branch_sampler = SampledFromStrategy(strategies)
+        if self.__branch_sampler is not False:
+            return data.draw(data.draw(self.__branch_sampler))
 
         strategy = data.draw(
             SampledFromStrategy(strategies).filter(
