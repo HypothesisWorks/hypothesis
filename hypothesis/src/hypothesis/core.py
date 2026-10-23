@@ -97,7 +97,7 @@ from hypothesis.internal.conjecture.providers import (
     PrimitiveProvider,
 )
 from hypothesis.internal.conjecture.shrinker import sort_key
-from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.entropy import PRNGSession, deterministic_PRNG
 from hypothesis.internal.escalation import (
     InterestingOrigin,
     _last_frame_location,
@@ -962,6 +962,7 @@ class StateForActualGivenExecution:
         self._start_timestamp = time.time()
         self._string_repr = ""
         self._proxied_tests: dict[bool, Callable] = {}
+        self._prng_session: PRNGSession | None = None
         self._timing_features: dict[str, float] = {}
 
         self._runner: ConjectureRunner | None = None
@@ -1171,9 +1172,15 @@ class StateForActualGivenExecution:
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
+        if self._prng_session is not None:
+            # The session saved the PRNG states, and will restore them at the end
+            self._prng_session.reseed()
+            prng_context: contextlib.AbstractContextManager = contextlib.nullcontext()
+        else:
+            prng_context = deterministic_PRNG()
         with (
             local_settings(self.settings),
-            deterministic_PRNG(),
+            prng_context,
             BuildContext(
                 data, is_final=is_final, wrapped_test=self.wrapped_test
             ) as context,
@@ -1454,7 +1461,12 @@ class StateForActualGivenExecution:
         self._runner = runner
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
-        runner.run()
+        with PRNGSession() as session:
+            self._prng_session = session
+            try:
+                runner.run()
+            finally:
+                self._prng_session = None
         note_statistics(runner.statistics)
         if observability_enabled():
             self._deliver_information_message(

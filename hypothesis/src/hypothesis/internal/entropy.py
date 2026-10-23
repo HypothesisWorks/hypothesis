@@ -17,6 +17,7 @@ from collections.abc import Callable, Generator, Hashable
 from functools import lru_cache
 from itertools import count
 from random import Random
+from types import TracebackType
 from typing import TYPE_CHECKING, Any
 from weakref import WeakValueDictionary
 
@@ -193,7 +194,8 @@ def get_seeder_and_restorer(
             NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
     def seed_all() -> None:
-        assert not states
+        # seed_all may be called repeatedly (see PRNGSession), but we only save
+        # the original state of each PRNG the first time we seed it.
         # access .data.copy().items() instead of .items() to avoid a "dictionary
         # changed size during iteration" error under multithreading.
         #
@@ -214,7 +216,8 @@ def get_seeder_and_restorer(
             if r is None:
                 # ie the random instance has been gc'd
                 continue  # pragma: no cover
-            states[k] = r.getstate()
+            if k not in states:
+                states[k] = r.getstate()
             if k == _global_random_rkey:
                 # r.seed sets the random's state. We want to add that state to
                 # _known_random_states before calling r.seed, in case a thread
@@ -242,6 +245,12 @@ def get_seeder_and_restorer(
     return seed_all, restore_all
 
 
+def _ensure_hypothesis_global_random() -> None:
+    if hypothesis.core.threadlocal._hypothesis_global_random is None:
+        hypothesis.core.threadlocal._hypothesis_global_random = Random()
+        register_random(hypothesis.core.threadlocal._hypothesis_global_random)
+
+
 @contextlib.contextmanager
 def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     """Context manager that handles random.seed without polluting global state.
@@ -251,10 +260,7 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core.threadlocal._hypothesis_global_random is None:
-        hypothesis.core.threadlocal._hypothesis_global_random = Random()
-        register_random(hypothesis.core.threadlocal._hypothesis_global_random)
-
+    _ensure_hypothesis_global_random()
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
     try:
@@ -265,3 +271,28 @@ def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
         # active deterministic_PRNG contexts remain, to free memory (see similar
         # logic in StackframeLimiter). But it's a bit annoying to get right, and
         # likely not a big deal.
+
+
+class PRNGSession:
+    """Like deterministic_PRNG, for a sequence of test cases.
+
+    ``reseed()`` seeds all registered PRNGs at the start of each test case, but
+    we only save their original states once, and restore them when the session
+    exits.  This avoids saving and restoring every PRNG for every test case.
+    """
+
+    def __init__(self, seed: int = 0) -> None:
+        self.seed = seed
+
+    def __enter__(self) -> "PRNGSession":
+        _ensure_hypothesis_global_random()
+        self.reseed, self._restore_all = get_seeder_and_restorer(self.seed)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self._restore_all()
