@@ -459,26 +459,28 @@ def _findability_cases() -> Iterable[tuple[ChoiceTypeT, dict, str, Callable]]:
         )
 
     string_constr = {"intervals": IntervalSet.from_string("ab"), **_collection_constr()}
-    cases += [
-        ("string", string_constr, "the empty string", lambda v: v == ""),
-        ("string", string_constr, 'a string containing "a"', lambda v: "a" in v),
-        ("string", string_constr, 'a string containing "b"', lambda v: "b" in v),
-        ("string", string_constr, "a string of length >= 2", lambda v: len(v) >= 2),
-        (
-            "string",
-            {"intervals": IntervalSet(()), **_collection_constr()},
-            "the empty string (from an empty alphabet)",
-            lambda v: v == "",
-        ),
-        ("bytes", _collection_constr(), "empty bytes", lambda v: v == b""),
-        ("bytes", _collection_constr(), "nonempty bytes", lambda v: v != b""),
-        (
-            "bytes",
-            _collection_constr(),
-            "a byte >= 128",
-            lambda v: any(b >= 128 for b in v),
-        ),
-    ]
+    cases.extend(
+        [
+            ("string", string_constr, "the empty string", lambda v: v == ""),
+            ("string", string_constr, 'a string containing "a"', lambda v: "a" in v),
+            ("string", string_constr, 'a string containing "b"', lambda v: "b" in v),
+            ("string", string_constr, "a string of length >= 2", lambda v: len(v) >= 2),
+            (
+                "string",
+                {"intervals": IntervalSet(()), **_collection_constr()},
+                "the empty string (from an empty alphabet)",
+                lambda v: v == "",
+            ),
+            ("bytes", _collection_constr(), "empty bytes", lambda v: v == b""),
+            ("bytes", _collection_constr(), "nonempty bytes", lambda v: v != b""),
+            (
+                "bytes",
+                _collection_constr(),
+                "a byte >= 128",
+                lambda v: any(b >= 128 for b in v),
+            ),
+        ]
+    )
     return cases
 
 
