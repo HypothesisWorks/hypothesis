@@ -30,6 +30,7 @@ from hypothesis.internal.conjecture.choice import (
     choice_constraints_equal,
     choice_equal,
     choice_from_index,
+    choice_key,
     choice_permitted,
     choice_size,
     choice_to_index,
@@ -980,6 +981,12 @@ def test_draw_directly_explicit():
 )
 def test_choices_key_distinguishes_weird_cases(choices1, choices2):
     assert choices_key(choices1) != choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_choices_key_is_tuple_of_choice_keys(nodes):
+    choices = [node.value for node in nodes]
+    assert choices_key(choices) == tuple(choice_key(choice) for choice in choices)
 
 
 def test_node_template_overrun():

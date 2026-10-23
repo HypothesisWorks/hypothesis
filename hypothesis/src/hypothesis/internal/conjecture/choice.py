@@ -580,7 +580,20 @@ def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
 
 
 def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
-    return tuple(choice_key(choice) for choice in choices)
+    # ints, strings, and bytes are their own keys; skip the call for them.
+    return tuple(
+        [
+            (
+                cast(ChoiceKeyT, choice)
+                if type(choice) in _SELF_KEYED_TYPES
+                else choice_key(choice)
+            )
+            for choice in choices
+        ]
+    )
+
+
+_SELF_KEYED_TYPES = frozenset({int, str, bytes})
 
 
 def choice_key(choice: ChoiceT) -> ChoiceKeyT:
@@ -632,6 +645,8 @@ def choice_constraints_key(
             ),
             constraints["shrink_towards"],
         )
+    if choice_type == "boolean":
+        return (constraints["p"],)  # type: ignore
     return tuple(constraints[key] for key in sorted(constraints))  # type: ignore
 
 
