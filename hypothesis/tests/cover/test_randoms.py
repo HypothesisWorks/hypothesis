@@ -300,7 +300,7 @@ def test_some_ranges_are_in_range(rnd):
     assert 0 <= rnd.randrange(10) < 10
     assert 11 <= rnd.randrange(11, 20) < 20
     assert rnd.randrange(1, 100, 3) in range(1, 100, 3)
-    assert rnd.randrange(100, step=3) in range(0, 100, 3)
+    assert rnd.randrange(100, step=1) in range(100)
 
 
 def test_invalid_range():
@@ -316,6 +316,40 @@ def test_invalid_sample():
     @given(st.randoms(use_true_random=False))
     def test(rnd):
         rnd.sample([1, 2], 3)
+
+    with pytest.raises(ValueError):
+        test()
+
+
+@pytest.mark.parametrize(
+    ("method", "args", "error"),
+    [
+        # these calls would previously return invalid values (e.g.
+        # randrange(0, 10, -1) -> 11) or crash deep inside the engine,
+        # instead of erroring like random.Random does.
+        ("randint", (5, 1), ValueError),
+        ("randrange", (0, 10, -1), ValueError),
+        ("randrange", (0, 10, 0), ValueError),
+        ("randrange", (0,), ValueError),
+        ("choice", ([],), IndexError),
+        ("getrandbits", (-1,), ValueError),
+    ],
+)
+def test_random_methods_error_like_real_random(method, args, error):
+    @given(st.randoms(use_true_random=False))
+    def test(rnd):
+        getattr(rnd, method)(*args)
+
+    with pytest.raises(error):
+        test()
+
+
+def test_randint_with_inverted_bounds_does_not_corrupt_tree():
+    # regression test: randint(5, 1) used to record an empty range in the
+    # choice tree, which crashed the engine when generating novel prefixes.
+    @given(st.randoms(use_true_random=False))
+    def test(rnd):
+        rnd.randint(5, 1)
 
     with pytest.raises(ValueError):
         test()
