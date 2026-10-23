@@ -1556,8 +1556,18 @@ class ConjectureData:
         return location or function_location(condition)
 
 
+# The provider only uses its ConjectureData for unobserved draws, which leave it
+# unchanged, so we can reuse one per Random rather than constructing a new (and
+# relatively expensive) ConjectureData for every call to draw_choice.
+_DRAW_CHOICE_DATA: "weakref.WeakKeyDictionary[Random, ConjectureData]" = (
+    weakref.WeakKeyDictionary()
+)
+
+
 def draw_choice(
     choice_type: ChoiceTypeT, constraints: ChoiceConstraintsT, *, random: Random
 ) -> ChoiceT:
-    cd = ConjectureData(random=random)
+    cd = _DRAW_CHOICE_DATA.get(random)
+    if cd is None or cd.frozen:
+        cd = _DRAW_CHOICE_DATA[random] = ConjectureData(random=random)
     return cast(ChoiceT, getattr(cd.provider, f"draw_{choice_type}")(**constraints))
