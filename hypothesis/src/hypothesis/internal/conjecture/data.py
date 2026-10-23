@@ -14,7 +14,7 @@ import time
 import types
 import weakref
 from collections import defaultdict
-from collections.abc import Callable, Generator, Hashable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -302,16 +302,19 @@ class SpanProperty:
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
+        stop_span_discard = int(TrailType.STOP_SPAN_DISCARD)
+        stop_span_no_discard = int(TrailType.STOP_SPAN_NO_DISCARD)
+        choice = int(TrailType.CHOICE)
         for record in self.spans.trail:
-            if record == TrailType.STOP_SPAN_DISCARD:
+            if record == stop_span_discard:
                 self.__pop(discarded=True)
-            elif record == TrailType.STOP_SPAN_NO_DISCARD:
+            elif record == stop_span_no_discard:
                 self.__pop(discarded=False)
-            elif record == TrailType.CHOICE:
+            elif record == choice:
                 self.choice_count += 1
             else:
                 # everything after TrailType.CHOICE is the label of a span start.
-                self.__push(record - TrailType.CHOICE - 1)
+                self.__push(record - choice - 1)
 
         return self.finish()
 
@@ -477,6 +480,8 @@ class _mutator_groups(SpanProperty):
         super().__init__(spans)
         self.groups: dict[int, set[tuple[int, int]]] = defaultdict(set)
         self._unique_stack: list[int] = []
+        self._starts = spans.starts
+        self._ends = spans.ends
 
     def start_span(self, i: int, label_index: int) -> None:
         # TODO should we discard start == end cases? occurs for eg st.data()
@@ -488,8 +493,7 @@ class _mutator_groups(SpanProperty):
         # filter and be discarded.  The collection's own span is still added,
         # so duplicating a collection as a whole remains possible.
         if not self._unique_stack:
-            key = (self.spans[i].start, self.spans[i].end)
-            self.groups[label_index].add(key)
+            self.groups[label_index].add((self._starts[i], self._ends[i]))
         if self.spans.labels[label_index] == UNIQUE_COLLECTION_LABEL:
             self._unique_stack.append(i)
 
@@ -497,10 +501,11 @@ class _mutator_groups(SpanProperty):
         if self._unique_stack and self._unique_stack[-1] == i:
             self._unique_stack.pop()
 
-    def finish(self) -> Iterable[set[tuple[int, int]]]:
+    def finish(self) -> list[list[tuple[int, int]]]:
         # Discard groups with only one span, since the mutator can't
-        # do anything useful with them.
-        return [g for g in self.groups.values() if len(g) >= 2]
+        # do anything useful with them.  We sort each group once here, rather
+        # than every time the mutator samples from it.
+        return [sorted(g) for g in self.groups.values() if len(g) >= 2]
 
 
 class Spans:
@@ -552,7 +557,7 @@ class Spans:
         return _label_indices(self).run()
 
     @cached_property
-    def mutator_groups(self) -> list[set[tuple[int, int]]]:
+    def mutator_groups(self) -> list[list[tuple[int, int]]]:
         return _mutator_groups(self).run()
 
     @property
