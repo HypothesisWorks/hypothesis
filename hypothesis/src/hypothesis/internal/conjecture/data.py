@@ -799,7 +799,10 @@ class ConjectureData:
 
         self.prefix = prefix
         self._inverting = False
-        self.nodes: tuple[ChoiceNode, ...] = ()
+        # Appending to a tuple is O(n), so we accumulate nodes in a list and
+        # expose them as a (cached) tuple.
+        self._nodes: list[ChoiceNode] = []
+        self._nodes_tuple: tuple[ChoiceNode, ...] = ()
         self.misaligned_at: MisalignedAt | None = None
         self.cannot_proceed_scope: CannotProceedScopeT | None = None
         self.start_span(TOP_LABEL)
@@ -811,8 +814,14 @@ class ConjectureData:
         )
 
     @property
+    def nodes(self) -> tuple[ChoiceNode, ...]:
+        if len(self._nodes_tuple) != len(self._nodes):
+            self._nodes_tuple = tuple(self._nodes)
+        return self._nodes_tuple
+
+    @property
     def choices(self) -> tuple[ChoiceT, ...]:
-        return tuple(node.value for node in self.nodes)
+        return tuple(node.value for node in self._nodes)
 
     # draw_* functions might be called in one of two contexts: either "above" or
     # "below" the choice sequence. For instance, draw_string calls draw_boolean
@@ -892,7 +901,7 @@ class ConjectureData:
         if self.length == self.max_length:
             debug_report(f"overrun because hit {self.max_length=}")
             self.mark_overrun()
-        if len(self.nodes) == self.max_choices:
+        if len(self._nodes) == self.max_choices:
             debug_report(f"overrun because hit {self.max_choices=}")
             self.mark_overrun()
 
@@ -947,10 +956,10 @@ class ConjectureData:
                 value=value,
                 constraints=constraints,
                 was_forced=was_forced,
-                index=len(self.nodes),
+                index=len(self._nodes),
             )
             self.__span_record.record_choice()
-            self.nodes += (node,)
+            self._nodes.append(node)
             self.length += size
 
         return value
