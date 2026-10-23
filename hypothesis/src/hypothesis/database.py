@@ -33,8 +33,6 @@ from typing import (
     TypeAlias,
     cast,
 )
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import StorageDirectory, storage_directory
@@ -1045,6 +1043,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self._prepare_for_io()
 
     def _get_bytes(self, url: str) -> bytes | None:  # pragma: no cover
+        from urllib.error import HTTPError, URLError
+        from urllib.request import Request, urlopen
+
         request = Request(
             url,
             headers={
