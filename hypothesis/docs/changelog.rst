@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.9:
+
+--------------------
+6.170.9 - 2026-10-23
+--------------------
+
+This release fixes a :py:exc:`DeprecationWarning` when importing
+:mod:`hypothesis.extra.dateutil` with :pypi:`dateutil` 3.0 or higher
+(:issue:`4934`).
+
 .. _v6.170.8:
 
 --------------------
