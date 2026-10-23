@@ -639,3 +639,26 @@ def choices_size(choices: Iterable[ChoiceT]) -> int:
     from hypothesis.database import choices_to_bytes
 
     return len(choices_to_bytes(choices))
+
+
+def choice_size(choice: ChoiceT) -> int:
+    """Equivalent to ``choices_size([choice])``, without serializing ``choice``."""
+    if isinstance(choice, bool):
+        return 1
+    if isinstance(choice, float):
+        size = 8
+    elif isinstance(choice, int):
+        size = 1 + choice.bit_length() // 8
+    elif isinstance(choice, bytes):
+        size = len(choice)
+    else:
+        assert isinstance(choice, str)
+        size = (
+            len(choice)
+            if choice.isascii()
+            else len(choice.encode(errors="surrogatepass"))
+        )
+    if size < 0b11111:
+        return 1 + size
+    # metadata byte, uleb128-encoded size, payload
+    return 1 + max(1, -(-size.bit_length() // 7)) + size

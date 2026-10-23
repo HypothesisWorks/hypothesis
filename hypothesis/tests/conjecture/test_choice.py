@@ -31,14 +31,15 @@ from hypothesis.internal.conjecture.choice import (
     choice_equal,
     choice_from_index,
     choice_permitted,
+    choice_size,
     choice_to_index,
     choices_key,
+    choices_size,
 )
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     Status,
-    choices_size,
 )
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -758,6 +759,11 @@ def test_choice_node_is_hashable(node):
 @given(st.lists(nodes()))
 def test_choices_size_positive(nodes):
     assert choices_size([n.value for n in nodes]) >= 0
+
+
+@given(nodes())
+def test_choice_size_matches_choices_size(node):
+    assert choice_size(node.value) == choices_size([node.value])
 
 
 @given(st.integers(min_value=1))
