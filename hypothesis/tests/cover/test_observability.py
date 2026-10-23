@@ -77,6 +77,7 @@ from tests.common.utils import (
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
+    skipif_emscripten,
     skipif_threading,
     xfail_on_crosshair,
 )
@@ -1045,6 +1046,7 @@ class _LockWithReleaseHook:
         self._lock.release()
 
 
+@skipif_emscripten
 def test_deliver_to_file_writes_observations_enqueued_while_finishing(
     observed_dir, monkeypatch
 ):
