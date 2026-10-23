@@ -140,6 +140,13 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     force_key = "force_" + name
 
     def forced_or_cached_value(target: SearchStrategy) -> Any:
+        # Fast path: check the instance dict directly, which avoids raising and
+        # catching an AttributeError for the (usually absent) force_key.
+        d = target.__dict__
+        if force_key in d:
+            return d[force_key]
+        if cache_key in d:
+            return d[cache_key]
         try:
             return getattr(target, force_key)
         except AttributeError:
@@ -290,6 +297,9 @@ class SearchStrategy(Generic[Ex]):
         # The fact that this returns False does not guarantee that a valid value
         # can be drawn - this is not intended to be perfect, and is primarily
         # intended to be an optimisation for some cases.
+        d = self.__dict__
+        if "cached_is_empty" in d and "force_is_empty" not in d:
+            return d["cached_is_empty"]
         return recursive_property(self, "is_empty", True)
 
     # Returns True if values from this strategy can safely be reused without
