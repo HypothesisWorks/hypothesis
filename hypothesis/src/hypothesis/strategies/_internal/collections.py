@@ -171,6 +171,7 @@ def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[tuple[Any, ...]]:
     return TupleStrategy(args)
 
 
+# pyrefly: ignore [invalid-variance]
 class ListStrategy(SearchStrategy[list[Ex]]):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""

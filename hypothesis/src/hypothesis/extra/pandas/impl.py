@@ -37,7 +37,7 @@ from hypothesis.utils.deprecation import note_deprecation
 try:
     from pandas.core.arrays.integer import IntegerDtype
 except ImportError:
-    IntegerDtype = ()
+    IntegerDtype = ()  # type: ignore[misc, assignment]
 
 PANDAS_GE_21 = tuple(int(x) for x in pandas.__version__.split(".")[:2]) >= (2, 1)
 

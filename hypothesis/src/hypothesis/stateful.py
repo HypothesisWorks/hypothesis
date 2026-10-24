@@ -949,6 +949,7 @@ def rule(
 
 
 @overload
+# pyrefly: ignore [inconsistent-overload-default]
 def rule(
     *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex]: ...
@@ -1041,6 +1042,7 @@ def initialize(
 
 
 @overload
+# pyrefly: ignore [inconsistent-overload-default]
 def initialize(
     *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex]: ...
