@@ -135,86 +135,183 @@ def test_choice():
     assert ConjectureData.for_choices([1]).choice([1, 2, 3]) == 2
 
 
+def count_many(*args, **kwargs):
+    with cu.many(*args, **kwargs) as elements:
+        return sum(1 for _ in elements)
+
+
 def test_fixed_size_draw_many():
-    many = cu.many(
-        ConjectureData.for_choices([]), min_size=3, max_size=3, average_size=3
-    )
-    assert many.more()
-    assert many.more()
-    assert many.more()
-    assert not many.more()
+    data = ConjectureData.for_choices([])
+    assert count_many(data, min_size=3, max_size=3, average_size=3) == 3
 
 
 def test_astronomically_unlikely_draw_many():
     # Our internal helper doesn't underflow to zero or negative, but nor
     # will we ever generate an element for such a low average size.
     data = ConjectureData.for_choices((True,) * 1000)
-    many = cu.many(data, min_size=0, max_size=10, average_size=1e-5)
-    assert many.more()
+    with cu.many(data, min_size=0, max_size=10, average_size=1e-5) as elements:
+        assert next(iter(elements)) is None
 
 
 def test_rejection_eventually_terminates_many():
-    many = cu.many(
-        ConjectureData.for_choices((True,) * 1000),
-        min_size=0,
-        max_size=1000,
-        average_size=100,
-    )
+    data = ConjectureData.for_choices((True,) * 1000)
     count = 0
-
-    while many.more():
-        count += 1
-        many.reject()
-
+    with cu.many(data, min_size=0, max_size=1000, average_size=100) as elements:
+        for _ in elements:
+            count += 1
+            elements.reject()
     assert count <= 100
 
 
 def test_rejection_eventually_terminates_many_invalid_for_min_size():
     data = ConjectureData.for_choices((True,) * 1000)
-    many = cu.many(data, min_size=1, max_size=1000, average_size=100)
-
-    with pytest.raises(StopTest):
-        while many.more():
-            many.reject()
-
+    with (
+        pytest.raises(StopTest),
+        cu.many(data, min_size=1, max_size=1000, average_size=100) as elements,
+    ):
+        for _ in elements:
+            elements.reject()
     assert data.status == Status.INVALID
+
+
+def many_span_discards(data):
+    data.freeze()
+    return [s.discarded for s in data.spans if s.label == cu.ONE_FROM_MANY_LABEL]
 
 
 def test_rejected_element_span_is_discarded():
     data = ConjectureData.for_choices([True, 0, True, 1, False])
-    many = cu.many(data, min_size=0, max_size=10, average_size=5)
-    while many.more():
-        if data.draw_integer(0, 10) == 0:
-            many.reject()
-    data.freeze()
-
-    discards = [
-        span.discarded for span in data.spans if span.label == cu.ONE_FROM_MANY_LABEL
-    ]
+    with cu.many(data, min_size=0, max_size=10, average_size=5) as elements:
+        for _ in elements:
+            if data.draw_integer(0, 10) == 0:
+                elements.reject()
     # the rejected first element is discarded; the second and the final
     # stop-drawing span are not.
-    assert discards == [True, False, False]
+    assert many_span_discards(data) == [True, False, False]
 
 
 def test_many_with_min_size():
-    many = cu.many(
-        ConjectureData.for_choices((False,) * 5),
-        min_size=2,
-        average_size=10,
-        max_size=1000,
-    )
-    assert many.more()
-    assert many.more()
-    assert not many.more()
+    data = ConjectureData.for_choices((False,) * 5)
+    assert count_many(data, min_size=2, average_size=10, max_size=1000) == 2
 
 
 def test_many_with_max_size():
-    many = cu.many(
-        ConjectureData.for_choices((True,) * 5), min_size=0, average_size=1, max_size=2
-    )
-    assert many.more()
-    assert many.more()
-    assert not many.more()
+    data = ConjectureData.for_choices((True,) * 5)
+    assert count_many(data, min_size=0, average_size=1, max_size=2) == 2
+
+
+@pytest.mark.parametrize("reject", [False, True])
+def test_break_from_many_draws_forced_stop(reject):
+    data = ConjectureData.for_choices([True, 0, True, 1, True, 2, False])
+    depth = data.depth
+    with cu.many(data, min_size=0, max_size=10, average_size=5) as elements:
+        for _ in elements:
+            if data.draw_integer(0, 10) == 1:
+                if reject:
+                    elements.reject()
+                break
+    assert data.depth == depth
+    assert data.choices == (True, 0, True, 1, False)
+    assert data.nodes[-1].was_forced
+    assert many_span_discards(data) == [False, reject, False]
+
+
+def test_exception_in_many_closes_spans():
+    data = ConjectureData.for_choices([True, 0, True, 1, False])
+    depth = data.depth
+    with (
+        pytest.raises(ZeroDivisionError),
+        cu.many(data, min_size=0, max_size=10, average_size=5) as elements,
+    ):
+        for _ in elements:
+            data.draw_integer(0, 10)
+            1 / 0
+    assert data.depth == depth
+    assert data.choices == (True, 0)
+
+
+def test_break_from_many_below_min_size_is_invalid():
+    data = ConjectureData.for_choices([True, 0, True, 1, False])
+    with (
+        pytest.raises(StopTest),
+        cu.many(data, min_size=2, max_size=10, average_size=5) as elements,
+    ):
+        for _ in elements:
+            break
+    assert data.status == Status.INVALID
+
+
+def new_many(data=None):
+    data = data or ConjectureData.for_choices((True,) * 10 + (False,))
+    return cu.many(data, min_size=0, max_size=10, average_size=5)
+
+
+def test_many_must_be_used_as_context_manager():
+    with pytest.raises(InvalidArgument):
+        for _ in new_many():
+            pass
+
+
+def test_many_cannot_be_iterated_after_exit():
+    with new_many() as elements:
+        pass
+    with pytest.raises(InvalidArgument):
+        for _ in elements:
+            pass
+
+
+def test_many_cannot_resume_iteration_after_exit():
+    with new_many() as elements:
+        it = iter(elements)
+        next(it)
+    with pytest.raises(InvalidArgument):
+        next(it)
+
+
+def test_many_detects_unbalanced_spans_on_exit():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with pytest.raises(InvalidArgument, match="interleaved"), new_many(data):
+        data.start_span(1)
+
+
+def test_many_cannot_be_iterated_twice():
+    with new_many() as elements:
+        for _ in elements:
+            break
+        with pytest.raises(InvalidArgument):
+            for _ in elements:
+                pass
+
+
+def test_many_cannot_be_entered_twice():
+    m = new_many()
+    with m:
+        pass
+    with pytest.raises(InvalidArgument), m:
+        pass
+
+
+def test_many_detects_interleaved_iteration():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with (
+        pytest.raises(InvalidArgument, match="interleaved"),
+        new_many(data) as a,
+        new_many(data) as b,
+    ):
+        for _ in zip(a, b, strict=True):
+            pass
+
+
+@pytest.mark.parametrize("when", ["before", "twice", "after"])
+def test_many_reject_outside_element_is_an_error(when):
+    with pytest.raises(InvalidArgument), new_many() as elements:
+        if when == "before":
+            elements.reject()
+        for _ in elements:
+            if when == "twice":
+                elements.reject()
+                elements.reject()
+        elements.reject()
 
 
 def test_invert_many_variable_size():
