@@ -216,7 +216,7 @@ def test_binary_op_also_handles_frozensets():
     exec(source_code, {})
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(slots=True, frozen=True)
 class Bound:
     gt: float
 
