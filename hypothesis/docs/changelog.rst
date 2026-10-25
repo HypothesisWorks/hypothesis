@@ -18,6 +18,21 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.10:
+
+---------------------
+6.170.10 - 2026-10-25
+---------------------
+
+This patch fixes an internal error from |st.lists| with ``unique=True``, when
+the elements are a filtered |st.sampled_from| with too few allowed values to
+reach ``min_size``.  It also ensures that |st.domains| always generates at
+least one subdomain, even with a small ``max_length``.
+
+We also fixed some internal bookkeeping that could go wrong when an exception
+was raised and caught during generation, for example by |st.recursive|, which
+could make shrinking less effective.
+
 .. _v6.170.9:
 
 --------------------
