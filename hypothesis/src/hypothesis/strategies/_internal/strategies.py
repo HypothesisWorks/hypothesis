@@ -1162,15 +1162,11 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
             ):
                 warnings.simplefilter("ignore", BytesWarning)
             for _ in range(3):
+                data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                discard = False
                 try:
-                    data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
-                    data.stop_span()
-                    current_build_context().record_call(
-                        result, self.pack, args=[x], kwargs={}
-                    )
-                    return result
                 except UnsatisfiedAssumption as err:
                     # we want to preserve the err.location of the actual exception here if we
                     # re-throw it outside of the loop at the end. The alternative is a
@@ -1180,7 +1176,14 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     # If we catch multiple exceptions here, we'll just report the location
                     # of the last one, which is a reasonable tradeoff for a singleton field.
                     failed_assumption = err
-                    data.stop_span(discard=True)
+                    discard = True
+                    continue
+                finally:
+                    data.stop_span(discard=discard)
+                current_build_context().record_call(
+                    result, self.pack, args=[x], kwargs={}
+                )
+                return result
         raise failed_assumption
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
@@ -1407,27 +1410,28 @@ class FilteredStrategy(SearchStrategy[Ex]):
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         for i in range(3):
             data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-            value = data.draw(self.filtered_strategy)
-            # Check the conditions individually rather than via self.condition,
-            # so that we can set data._last_rejected_filter.
-            failing = next(
-                (
-                    (cond, location)
-                    for cond, location in zip(
-                        self.flat_conditions, self.condition_locations, strict=True
-                    )
-                    if not cond(value)
-                ),
-                None,
-            )
+            failing = None
+            try:
+                value = data.draw(self.filtered_strategy)
+                # Check the conditions individually rather than via self.condition,
+                # so that we can set data._last_rejected_filter.
+                failing = next(
+                    (
+                        (cond, location)
+                        for cond, location in zip(
+                            self.flat_conditions, self.condition_locations, strict=True
+                        )
+                        if not cond(value)
+                    ),
+                    None,
+                )
+            finally:
+                data.stop_span(discard=failing is not None)
             if failing is None:
-                data.stop_span()
                 return value
-            else:
-                data._last_rejected_filter = failing
-                data.stop_span(discard=True)
-                if i == 0:
-                    data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
+            data._last_rejected_filter = failing
+            if i == 0:
+                data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 
         return filter_not_satisfied
 

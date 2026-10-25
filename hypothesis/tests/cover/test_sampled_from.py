@@ -31,6 +31,7 @@ from hypothesis.strategies._internal.strategies import (
 
 from tests.common.debug import (
     assert_all_examples,
+    assert_no_examples,
     assert_simple_property,
     check_can_generate_examples,
 )
@@ -178,6 +179,11 @@ def test_max_size_is_respected_with_unique_sampled_from(ls):
 @given(st.lists(st.sampled_from([0, 0.0]), unique=True, min_size=1))
 def test_issue_2247_regression(ls):
     assert len(ls) == 1
+
+
+def test_unique_sampled_from_exhausted_below_min_size():
+    elems = st.sampled_from([1, 2, 3]).filter(lambda x: x != 1)
+    assert_no_examples(st.lists(elems, unique=True, min_size=3))
 
 
 @given(st.data())
