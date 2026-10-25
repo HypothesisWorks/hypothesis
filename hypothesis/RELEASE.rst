@@ -1,6 +1,6 @@
 RELEASE_TYPE: patch
 
-This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
+This patch improves import-detection in :ref:`the Ghostwriter <ghostwriter>`
 (:issue:`4943`). Ghostwritten tests now import the :func:`functools.partial`
 filters that :pypi:`annotated-types` bounds give, including those of a
 :func:`~hypothesis.strategies.floats` strategy whose bounds absorb the filter,
