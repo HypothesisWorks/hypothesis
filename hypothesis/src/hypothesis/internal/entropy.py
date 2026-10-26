@@ -14,6 +14,7 @@ import random
 import sys
 import warnings
 from collections.abc import Callable, Generator, Hashable
+from functools import lru_cache
 from itertools import count
 from random import Random
 from typing import TYPE_CHECKING, Any
@@ -162,6 +163,12 @@ def register_random(r: RandomLike) -> None:
 _known_random_state_hashes: set[Any] = set()
 
 
+@lru_cache(maxsize=64)
+def _seeded_state(seed: int) -> tuple[Any, int]:
+    state = Random(seed).getstate()
+    return state, hash(state)
+
+
 def get_seeder_and_restorer(
     seed: Hashable = 0,
 ) -> tuple[Callable[[], None], Callable[[], None]]:
@@ -177,6 +184,7 @@ def get_seeder_and_restorer(
     assert isinstance(seed, int)
     assert 0 <= seed < 2**32
     states: dict[int, object] = {}
+    seeded_state, seeded_hash = _seeded_state(seed)
 
     if "numpy" in sys.modules:
         global NP_RANDOM
@@ -210,20 +218,13 @@ def get_seeder_and_restorer(
             if k == _global_random_rkey:
                 # r.seed sets the random's state. We want to add that state to
                 # _known_random_states before calling r.seed, in case a thread
-                # switch occurs between the two. To figure out the seed -> state
-                # mapping, set the seed on a dummy random and add that state to
-                # _known_random_state.
-                #
-                # we could use a global dummy random here, but then we'd have to
-                # put a lock around it, and it's not clear to me if that's more
-                # efficient than constructing a new instance each time.
-                dummy_random = Random()
-                dummy_random.seed(seed)
-                _known_random_state_hashes.add(hash(dummy_random.getstate()))
-                # we expect `assert r.getstate() == dummy_random.getstate()` to
-                # hold here, but thread switches means it might not.
+                # switch occurs between the two.
+                _known_random_state_hashes.add(seeded_hash)
 
-            r.seed(seed)
+            if type(r) is Random:
+                r.setstate(seeded_state)
+            else:
+                r.seed(seed)
 
     def restore_all() -> None:
         for k, state in states.items():

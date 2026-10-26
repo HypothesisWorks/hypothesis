@@ -116,16 +116,7 @@ class Verbosity(Enum):
 
     @staticmethod
     def _int_value(value: "Verbosity") -> int:
-        # we would just map Verbosity keys, except it's not hashable
-        mapping = {
-            Verbosity.quiet.name: 0,
-            Verbosity.normal.name: 1,
-            Verbosity.verbose.name: 2,
-            Verbosity.debug.name: 3,
-        }
-        # make sure we don't forget any new verbosity members
-        assert list(mapping.keys()) == [verbosity.name for verbosity in Verbosity]
-        return mapping[value.name]
+        return _VERBOSITY_INT_VALUES[value.name]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Verbosity):
@@ -136,6 +127,17 @@ class Verbosity(Enum):
         value1 = Verbosity._int_value(self)
         value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
         return value1 > value2
+
+    def __ge__(self, other: Any) -> bool:
+        value1 = Verbosity._int_value(self)
+        value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
+        return value1 >= value2
+
+
+# we would just map Verbosity keys, except it's not hashable
+_VERBOSITY_INT_VALUES = {"quiet": 0, "normal": 1, "verbose": 2, "debug": 3}
+# make sure we don't forget any new verbosity members
+assert list(_VERBOSITY_INT_VALUES) == [verbosity.name for verbosity in Verbosity]
 
 
 @unique
