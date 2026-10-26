@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.internal import entropy
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.utils import to_jsonable
@@ -99,11 +100,20 @@ def test_flatmap_with_invalid_expand():
 _bad_random_strategy = st.lists(st.integers(), min_size=1).map(random.choice)
 
 
+@pytest.fixture
+def no_known_random_states(monkeypatch):
+    # We don't warn about use of the global random if its new state is one we've
+    # set before, which earlier tests may have done - so start from a clean slate.
+    monkeypatch.setattr(entropy, "_known_random_state_hashes", set())
+
+
+@pytest.mark.usefixtures("no_known_random_states")
 @checks_deprecated_behaviour
 def test_use_of_global_random_is_deprecated_in_given():
     check_can_generate_examples(_bad_random_strategy)
 
 
+@pytest.mark.usefixtures("no_known_random_states")
 @checks_deprecated_behaviour
 def test_use_of_global_random_is_deprecated_in_interactive_draws():
     @given(st.data())
