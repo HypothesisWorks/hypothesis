@@ -90,8 +90,10 @@ from textwrap import dedent, indent
 from types import EllipsisType
 from typing import (
     Any,
+    Final,
     ForwardRef,
     NamedTuple,
+    TypeAlias,
     TypeVar,
     get_args,
     get_origin,
@@ -118,28 +120,28 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
 
-IMPORT_SECTION = """
+IMPORT_SECTION: Final = """
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
 {imports}
 """
 
-TEMPLATE = """
+TEMPLATE: Final = """
 @given({given_args})
 def test_{test_kind}_{func_name}({arg_names}){return_annotation}:
 {test_body}
 """
 
-SUPPRESS_BLOCK = """
+SUPPRESS_BLOCK: Final = """
 try:
 {test_body}
 except {exceptions}:
     reject()
 """.strip()
 
-Except = type[Exception] | tuple[type[Exception], ...]
-ImportSet = set[str | tuple[str, str]]
+Except: TypeAlias = type[Exception] | tuple[type[Exception], ...]
+ImportSet: TypeAlias = set[str | tuple[str, str]]
 _quietly_settings = settings(
     database=None,
     deadline=None,
@@ -1582,7 +1584,7 @@ def _make_equiv_body(funcs, except_, style, annotate):
     )
 
 
-EQUIV_FIRST_BLOCK = """
+EQUIV_FIRST_BLOCK: Final = """
 try:
 {}
     exc_type = None
@@ -1591,7 +1593,7 @@ try:
     exc_type = type(exc)
 """.strip()
 
-EQUIV_CHECK_BLOCK = """
+EQUIV_CHECK_BLOCK: Final = """
 if exc_type:
     with {ctx}(exc_type):
 {check_raises}
