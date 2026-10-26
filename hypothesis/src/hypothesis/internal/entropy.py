@@ -221,7 +221,8 @@ def get_seeder_and_restorer(
                 # switch occurs between the two.
                 _known_random_state_hashes.add(seeded_hash)
 
-            if type(r) is Random:
+            # The global PRNG is registered as the random module itself.
+            if type(r) is Random or r is random:
                 r.setstate(seeded_state)
             else:
                 r.seed(seed)
