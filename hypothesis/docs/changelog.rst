@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.12:
+
+---------------------
+6.170.12 - 2026-10-26
+---------------------
+
+This patch reduces Hypothesis' overhead for each test case. For simple
+properties and strategies, generating test cases takes up to a third less time
+and shrinking failing examples is up to twice as fast; most tests will see a
+smaller improvement. ``import hypothesis`` is also about 20% faster.
+
 .. _v6.170.11:
 
 ---------------------
