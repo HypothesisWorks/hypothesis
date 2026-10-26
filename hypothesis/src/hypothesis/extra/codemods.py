@@ -42,7 +42,7 @@ at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
 import functools
 import importlib
 from inspect import Parameter, signature
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import libcst as cst
 import libcst.matchers as m
@@ -70,7 +70,7 @@ def refactor(code: str) -> str:
     return mod.code
 
 
-def match_qualname(name):
+def match_qualname(name: str) -> m.MatchMetadataIfTrue:
     # We use the metadata to get qualname instead of matching directly on function
     # name, because this handles some scope and "from x import y as z" issues.
     return m.MatchMetadataIfTrue(
@@ -97,7 +97,7 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
     @m.call_if_inside(
         m.Call(metadata=match_qualname("hypothesis.strategies.complex_numbers"))
     )
-    def leave_Arg(self, original_node, updated_node):
+    def leave_Arg(self, original_node: cst.Arg, updated_node: cst.Arg) -> cst.Arg:
         if m.matches(
             updated_node, m.Arg(keyword=m.Name("min_magnitude"), value=m.Name("None"))
         ):
@@ -106,7 +106,7 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
 
 
 @functools.lru_cache
-def get_fn(import_path):
+def get_fn(import_path: str) -> Any:
     mod, fn = import_path.rsplit(".", 1)
     return getattr(importlib.import_module(mod), fn)
 
@@ -171,7 +171,7 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         "hypothesis.strategies.times",
     )
 
-    def leave_Call(self, original_node, updated_node):
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Convert positional to keyword arguments."""
         metadata = self.get_metadata(cst.metadata.QualifiedNameProvider, original_node)
         qualnames = {qn.name for qn in metadata}
@@ -228,7 +228,9 @@ class HypothesisFixHealthCheckAll(VisitorBasedCodemodCommand):
     DESCRIPTION = "Replace HealthCheck.all() with list(HealthCheck)"
 
     @m.leave(m.Call(func=m.Attribute(m.Name("HealthCheck"), m.Name("all")), args=[]))
-    def replace_healthcheck(self, original_node, updated_node):
+    def replace_healthcheck(
+        self, original_node: cst.Call, updated_node: cst.Call
+    ) -> cst.Call:
         return updated_node.with_changes(
             func=cst.Name("list"),
             args=[cst.Arg(value=cst.Name("HealthCheck"))],
@@ -267,7 +269,7 @@ class HypothesisFixCharactersArguments(VisitorBasedCodemodCommand):
             ],
         ),
     )
-    def fn(self, original_node, updated_node):
+    def fn(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         # Update to the new names
         newargs = []
         for arg in updated_node.args:
