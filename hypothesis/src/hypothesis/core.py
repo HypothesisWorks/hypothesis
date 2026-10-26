@@ -21,7 +21,6 @@ import os
 import sys
 import threading
 import time
-import traceback
 import types
 import unittest
 import warnings
@@ -51,7 +50,11 @@ from hypothesis._settings import (
     local_settings,
     settings as Settings,
 )
-from hypothesis.control import BuildContext, currently_in_test_context
+from hypothesis.control import (
+    BuildContext,
+    current_build_context,
+    currently_in_test_context,
+)
 from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -97,6 +100,7 @@ from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     InterestingOrigin,
+    _last_frame_location,
     current_pytest_item,
     format_exception,
     get_trimmed_traceback,
@@ -957,6 +961,7 @@ class StateForActualGivenExecution:
         )
         self._start_timestamp = time.time()
         self._string_repr = ""
+        self._proxied_tests: dict[bool, Callable] = {}
         self._timing_features: dict[str, float] = {}
 
         self._runner: ConjectureRunner | None = None
@@ -980,31 +985,15 @@ class StateForActualGivenExecution:
         )
         return _trace_obs or _trace_failure
 
-    def execute_once(
-        self,
-        data,
-        *,
-        print_test_case=False,
-        is_final=False,
-        expected_failure=None,
-        example_kwargs=None,
-    ):
-        """Run the test function once, using ``data`` as input.
-
-        If the test raises an exception, it will propagate through to the
-        caller of this method. Depending on its type, this could represent
-        an ordinary test failure, or a fatal error, or a control exception.
-
-        If this method returns normally, the test might have passed, or
-        it might have placed ``data`` in an unsuccessful state and then
-        swallowed the corresponding control exception.
-        """
-
-        self.ever_executed = True
-
-        self._string_repr = ""
-        text_repr = None
-        if self.settings.deadline is None and not observability_enabled():
+    def _proxied_test(self, *, timed: bool) -> Callable:
+        # Building a signature-preserving proxy is expensive, so we do it once
+        # per test rather than once per example.  Per-example state is read
+        # from the current build context.
+        try:
+            return self._proxied_tests[timed]
+        except KeyError:
+            pass
+        if not timed:
 
             @proxies(self.test)
             def test(*args, **kwargs):
@@ -1015,6 +1004,8 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
+                context = current_build_context()
+                data, is_final = context.data, context.is_final
                 arg_drawtime = math.fsum(data.draw_times.values())
                 arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
@@ -1050,6 +1041,37 @@ class StateForActualGivenExecution:
                             datetime.timedelta(seconds=runtime), self.settings.deadline
                         )
                 return result
+
+        self._proxied_tests[timed] = test
+        return test
+
+    def execute_once(
+        self,
+        data,
+        *,
+        print_test_case=False,
+        is_final=False,
+        expected_failure=None,
+        example_kwargs=None,
+    ):
+        """Run the test function once, using ``data`` as input.
+
+        If the test raises an exception, it will propagate through to the
+        caller of this method. Depending on its type, this could represent
+        an ordinary test failure, or a fatal error, or a control exception.
+
+        If this method returns normally, the test might have passed, or
+        it might have placed ``data`` in an unsuccessful state and then
+        swallowed the corresponding control exception.
+        """
+
+        self.ever_executed = True
+
+        self._string_repr = ""
+        text_repr = None
+        test = self._proxied_test(
+            timed=self.settings.deadline is not None or observability_enabled()
+        )
 
         def run(data: ConjectureData) -> None:
             # Set up dynamic context needed by a single test run.
@@ -1285,7 +1307,8 @@ class StateForActualGivenExecution:
                 tb = e.exceptions[0].__traceback__ or e.__traceback__
             else:
                 tb = e.__traceback__
-            filepath = traceback.extract_tb(tb)[-1][0]
+            assert tb is not None
+            filepath = _last_frame_location(tb)[0]
             if (
                 is_hypothesis_file(filepath)
                 and not isinstance(e, HypothesisException)
@@ -1308,11 +1331,15 @@ class StateForActualGivenExecution:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
                 # path for test runs that fail.
-                tb = get_trimmed_traceback()
-                data.expected_traceback = format_exception(e, tb)
                 data.expected_exception = e
-                assert data.expected_traceback is not None  # for mypy
-                verbose_report(data.expected_traceback)
+                # Formatting tracebacks is expensive, and we usually only need the
+                # traceback for the final reported failure - so defer it unless
+                # we're about to print it or record it for observability.
+                if current_verbosity() >= Verbosity.verbose or observability_enabled():
+                    data.expected_traceback = format_exception(
+                        e, get_trimmed_traceback()
+                    )
+                    verbose_report(data.expected_traceback)
 
                 self.failed_normally = True
 
@@ -1528,7 +1555,11 @@ class StateForActualGivenExecution:
             tb = None
             origin = None
             assert falsifying_test_case.expected_exception is not None
-            assert falsifying_test_case.expected_traceback is not None
+            expected_traceback = falsifying_test_case.expected_traceback
+            if expected_traceback is None:
+                exc = falsifying_test_case.expected_exception
+                assert exc is not None
+                expected_traceback = format_exception(exc, get_trimmed_traceback(exc))
             try:
                 with with_reporter(fragments.append):
                     self.execute_once(
@@ -1537,7 +1568,7 @@ class StateForActualGivenExecution:
                         is_final=True,
                         expected_failure=(
                             falsifying_test_case.expected_exception,
-                            falsifying_test_case.expected_traceback,
+                            expected_traceback,
                         ),
                     )
             except StopTest as e:

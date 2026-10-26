@@ -30,15 +30,17 @@ from hypothesis.internal.conjecture.choice import (
     choice_constraints_equal,
     choice_equal,
     choice_from_index,
+    choice_key,
     choice_permitted,
+    choice_size,
     choice_to_index,
     choices_key,
+    choices_size,
 )
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     Status,
-    choices_size,
 )
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -760,6 +762,11 @@ def test_choices_size_positive(nodes):
     assert choices_size([n.value for n in nodes]) >= 0
 
 
+@given(nodes())
+def test_choice_size_matches_choices_size(node):
+    assert choice_size(node.value) == choices_size([node.value])
+
+
 @given(st.integers(min_value=1))
 def test_node_template_count(n):
     node = ChoiceTemplate(type="simplest", count=n)
@@ -974,6 +981,12 @@ def test_draw_directly_explicit():
 )
 def test_choices_key_distinguishes_weird_cases(choices1, choices2):
     assert choices_key(choices1) != choices_key(choices2)
+
+
+@given(st.lists(nodes()))
+def test_choices_key_is_tuple_of_choice_keys(nodes):
+    choices = [node.value for node in nodes]
+    assert choices_key(choices) == tuple(choice_key(choice) for choice in choices)
 
 
 def test_node_template_overrun():
