@@ -16,8 +16,9 @@ import math
 import textwrap
 import threading
 import warnings
-from collections import defaultdict
+from collections import defaultdict, deque
 from contextlib import nullcontext
+from datetime import date, timedelta
 from functools import partial
 from random import Random
 
@@ -27,6 +28,7 @@ import hypothesis.internal.observability
 from hypothesis import (
     HealthCheck,
     assume,
+    configuration,
     event,
     example,
     given,
@@ -51,6 +53,8 @@ from hypothesis.internal.observability import (
     TestCaseObservation,
     _callbacks,
     _callbacks_all_threads,
+    _deliver_to_file,
+    _evict_old_observations,
     add_observability_callback,
     choices_to_json,
     make_testcase,
@@ -73,6 +77,7 @@ from tests.common.utils import (
     capture_observations,
     checks_deprecated_behaviour,
     run_concurrently,
+    skipif_emscripten,
     skipif_threading,
     xfail_on_crosshair,
 )
@@ -973,3 +978,107 @@ def test_all_threads_callback():
 
     assert len(calls) == n_threads
     assert all(count == (settings().max_examples + 1) for count in calls.values())
+
+
+@pytest.fixture
+def observed_dir(tmp_path, monkeypatch):
+    previous_home_dir = configuration.storage_directory().path
+    configuration.set_hypothesis_home_dir(tmp_path)
+    # don't report our temporary files at the end of the test session
+    monkeypatch.setattr(hypothesis.internal.observability, "_WROTE_TO", set())
+    try:
+        yield tmp_path / "observed"
+    finally:
+        configuration.set_hypothesis_home_dir(previous_home_dir)
+
+
+def _info_observation(title):
+    return InfoObservation(
+        type="info",
+        property="test_deliver_to_file",
+        run_start=0.0,
+        title=title,
+        content="x" * 1000,
+    )
+
+
+def _delivered_titles(observed_dir):
+    lines = []
+    for p in observed_dir.glob("*_info.jsonl"):
+        lines.extend(p.read_text(encoding="utf-8").splitlines())
+    return [json.loads(line)["title"] for line in lines]
+
+
+def test_deliver_to_file_from_many_threads(observed_dir):
+    n_threads = 8
+    n_observations = 200
+
+    def deliver():
+        thread_id = threading.get_ident()
+        for i in range(n_observations):
+            _deliver_to_file(_info_observation(f"{thread_id}-{i}"), thread_id)
+
+    run_concurrently(deliver, n=n_threads)
+
+    titles = _delivered_titles(observed_dir)
+    assert len(titles) == len(set(titles)) == n_threads * n_observations
+
+    # observations from each thread are written in the order they were delivered
+    by_thread = defaultdict(list)
+    for title in titles:
+        thread_id, i = title.split("-")
+        by_thread[thread_id].append(int(i))
+    assert all(ns == sorted(ns) for ns in by_thread.values())
+
+
+class _LockWithReleaseHook:
+    def __init__(self, on_release):
+        self._lock = threading.Lock()
+        self._on_release = on_release
+
+    def acquire(self, *, blocking):
+        return self._lock.acquire(blocking=blocking)
+
+    def release(self):
+        on_release, self._on_release = self._on_release, None
+        if on_release is not None:
+            on_release()
+        self._lock.release()
+
+
+@skipif_emscripten
+def test_deliver_to_file_writes_observations_enqueued_while_finishing(
+    observed_dir, monkeypatch
+):
+    # Another thread delivers an observation after the writer has emptied the
+    # queue, but before it releases the lock.  That thread can't take the lock,
+    # so the writer must notice the new observation and write it too.
+    def deliver_from_another_thread():
+        t = threading.Thread(
+            target=_deliver_to_file, args=(_info_observation("second"), 0)
+        )
+        t.start()
+        t.join()
+
+    path = observed_dir / f"{date.today().isoformat()}_info.jsonl"
+    monkeypatch.setattr(
+        hypothesis.internal.observability,
+        "_deliver_to_file_queues",
+        {path: (_LockWithReleaseHook(deliver_from_another_thread), deque())},
+    )
+
+    _deliver_to_file(_info_observation("first"), 0)
+
+    assert _delivered_titles(observed_dir) == ["first", "second"]
+
+
+def test_evicts_only_old_observations(tmp_path):
+    old = tmp_path / f"{date.today() - timedelta(days=9)}_testcases.jsonl"
+    recent = tmp_path / f"{date.today() - timedelta(days=7)}_testcases.jsonl"
+    for p in (old, recent):
+        p.touch()
+
+    _evict_old_observations(tmp_path)
+
+    assert not old.exists()
+    assert recent.exists()

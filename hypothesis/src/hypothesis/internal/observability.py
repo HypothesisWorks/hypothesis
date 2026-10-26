@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import warnings
+from collections import deque
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -497,32 +498,57 @@ def make_testcase(
 
 
 _WROTE_TO: set[Path] = set()
-_deliver_to_file_lock = Lock()
+_deliver_to_file_queues: dict[Path, tuple[Lock, deque[bytes]]] = {}
+_deliver_to_file_queues_lock = Lock()
+_evicted_old_observations = False
+
+
+def _evict_old_observations(observed_dir: Path) -> None:
+    # Remove files more than a week old, to cap the size on disk
+    max_age = (date.today() - timedelta(days=8)).isoformat()
+    for p in observed_dir.glob("*.jsonl"):
+        if p.stem < max_age:
+            p.unlink(missing_ok=True)
 
 
 def _deliver_to_file(
     observation: Observation, thread_id: int
 ) -> None:  # pragma: no cover
+    global _evicted_old_observations
     from hypothesis.strategies._internal.utils import to_jsonable
 
     kind = "testcases" if observation.type == "test_case" else "info"
     observed_dir = storage_directory("observed")
+    if not _evicted_old_observations:
+        _evicted_old_observations = True
+        _evict_old_observations(observed_dir.path)
     observed_dir.create_if_missing()
     observation_p = observed_dir.path / f"{date.today().isoformat()}_{kind}.jsonl"
+    _WROTE_TO.add(observation_p)
 
     observation_bytes = (
         json.dumps(to_jsonable(observation, avoid_realization=False)) + "\n"
-    )
-    # only allow one conccurent file write to avoid write races. This is likely to make
-    # HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY quite slow under threading. A queue
-    # would be an improvement, but that requires a background thread, and I
-    # would prefer to avoid a thread in the single-threaded case. We could
-    # switch over to a queue if we detect multithreading, but it's tricky to get
-    # right.
-    with _deliver_to_file_lock:
-        _WROTE_TO.add(observation_p)
-        with observation_p.open(mode="a") as f:
-            f.write(observation_bytes)
+    ).encode()
+
+    if (state := _deliver_to_file_queues.get(observation_p)) is None:
+        with _deliver_to_file_queues_lock:
+            state = _deliver_to_file_queues.setdefault(observation_p, (Lock(), deque()))
+    lock, queue = state
+
+    # We want this to be cheap in both single-threaded and contended
+    # multithreaded setups, without a dedicated writer thread. So each caller
+    # enqueues its observation, and then writes out the queue if nobody else is
+    # currently doing so. Re-checking the queue after releasing the lock means
+    # that an observation enqueued just as the previous writer finished is
+    # never left behind.
+    queue.append(observation_bytes)
+    while queue and lock.acquire(blocking=False):
+        try:
+            with observation_p.open(mode="ab") as f:
+                while queue:
+                    f.write(queue.popleft())
+        finally:
+            lock.release()
 
 
 _imported_at = time.time()
@@ -575,9 +601,3 @@ if (
     or OBSERVABILITY_COLLECT_COVERAGE is False
 ):  # pragma: no cover
     add_observability_callback(_deliver_to_file, all_threads=True)
-
-    # Remove files more than a week old, to cap the size on disk
-    max_age = (date.today() - timedelta(days=8)).isoformat()
-    for p in storage_directory("observed", intent_to_write=False).path.glob("*.jsonl"):
-        if p.stem < max_age:  # pragma: no branch
-            p.unlink(missing_ok=True)
