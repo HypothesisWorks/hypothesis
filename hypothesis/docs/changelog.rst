@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.11:
+
+---------------------
+6.170.11 - 2026-10-26
+---------------------
+
+This patch makes writing :ref:`observability <observability>` data to
+``.hypothesis/observed`` cheaper when tests run in multiple threads, and
+defers cleaning up old observation files from import time until
+observations are first written.
+
 .. _v6.170.10:
 
 ---------------------
