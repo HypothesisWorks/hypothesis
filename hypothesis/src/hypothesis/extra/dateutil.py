@@ -27,7 +27,7 @@ try:
     # dateutil >= 3.0.0: dateutil.zoneinfo is deprecated, timezone data is
     # no longer bundled. Data is read from the system and tzdata package.
     _available_iana_timezone_names = tz.available_iana_timezones
-except AttributeError:
+except AttributeError:  # pragma: no cover
     # dateutil < 3.0.0: dt.zoneinfo reads from bundled timezone data.
     from dateutil import zoneinfo
 
