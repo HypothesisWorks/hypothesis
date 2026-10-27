@@ -835,13 +835,13 @@ def run_tox(task, version, *args, profile="dev"):
 #  - `release-build-wheels` job in <ROOT>/github/workflows/release.yml
 #  - `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.11": "3.11.17",
-    "3.12": "3.12.15",
-    "3.13": "3.13.16",
-    "3.14": "3.14.8",
-    "3.14t": "3.14.8+freethreaded",
-    "3.15": "3.15.0",
-    "3.15t": "3.15.0+freethreaded",
+    "3.11": "3.11.18",
+    "3.12": "3.12.16",
+    "3.13": "3.13.18",
+    "3.14": "3.14.10",
+    "3.14t": "3.14.10+freethreaded",
+    "3.15": "3.15.2",
+    "3.15t": "3.15.2+freethreaded",
     "3.16": "3.16.0a1",
     "3.16t": "3.16.0a1+freethreaded",
     "pypy3.11": "pypy3.11-3.11.17",
@@ -853,7 +853,7 @@ ci_version_python = (
 
 # automatically updated by update_pyodide_versions()
 PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.1"
+PYODIDE_BUILD_VERSION = "0.39.2"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
