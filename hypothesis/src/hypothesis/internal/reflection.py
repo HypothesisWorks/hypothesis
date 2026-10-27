@@ -30,7 +30,12 @@ from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import lambda_sources
-from hypothesis.internal.compat import is_typed_named_tuple
+from hypothesis.internal.compat import (
+    _AnnotationOrigin,
+    _get_annotation_copy_globals,
+    _get_annotation_globals,
+    is_typed_named_tuple,
+)
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -530,15 +535,45 @@ def impersonate(target):
     return accept
 
 
+def _can_impersonate(target):
+    # Preserve the original metadata path for every target that supplied what
+    # impersonate() uses, including objects that are not Python functions.
+    code = getattr(target, "__code__", None)
+    return (
+        hasattr(code, "co_filename")
+        and hasattr(code, "co_firstlineno")
+        and all(hasattr(target, name) for name in ("__name__", "__module__", "__doc__"))
+    )
+
+
 def proxies(target: T) -> Callable[[Callable], T]:
+    name = getattr(target, "__name__", type(target).__name__)
     replace_sig = define_function_signature(
-        target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
+        name.replace("<lambda>", "_lambda_"),
         target.__doc__,
         get_signature(target, follow_wrapped=False),
     )
 
     def accept(proxy):
-        return impersonate(target)(wraps(target)(replace_sig(proxy)))
+        if _can_impersonate(target):
+            wrapped = impersonate(target)(wraps(target)(replace_sig(proxy)))
+            globalns = _get_annotation_globals(target)
+        else:
+            wrapped = replace_sig(proxy)
+            # A class's own annotations may differ from its constructor's signature.
+            annotations = wrapped.__annotations__
+            wraps(target)(wrapped)
+            wrapped.__annotations__ = annotations
+            globalns = _get_annotation_copy_globals(target)
+        if globalns is not None:
+            # Keep copied annotations in their live interpretation context without
+            # evaluating them or changing separately authored wrapper annotations.
+            wrapped._hypothesis_internal_annotation_origin = _AnnotationOrigin(
+                wrapped,
+                wrapped.__annotations__,
+                globalns,
+            )
+        return wrapped
 
     return accept
 

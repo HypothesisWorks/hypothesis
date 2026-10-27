@@ -92,6 +92,95 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
+class _AnnotationOrigin(typing.NamedTuple):
+    source: Any
+    annotations: dict[str, Any]
+    globalns: dict[str, Any]
+
+
+def _get_annotation_globals(thing):
+    # Methods expose their function's attributes; do not invoke arbitrary
+    # descriptors or __getattr__ while looking for our own copied record.
+    target = thing.__func__ if inspect.ismethod(thing) else thing
+    origin = inspect.getattr_static(
+        target, "_hypothesis_internal_annotation_origin", None
+    )
+    if type(origin) is _AnnotationOrigin:
+        source, annotations, globalns = origin
+        own_annotations = getattr(thing, "__annotations__", None)
+        if (
+            thing is source
+            or own_annotations is annotations
+            or own_annotations is source.__annotations__
+        ):
+            return globalns
+    return None
+
+
+def _get_annotation_copy_globals(thing):
+    # A custom signature does not identify the namespace of its annotations.
+    if getattr(thing, "__signature__", None) is not None:
+        return None
+    if inspect.ismethod(thing):
+        return _get_annotation_copy_globals(thing.__func__)
+    functionlike = (
+        inspect.isfunction(thing)
+        or inspect.ismethod(thing)
+        or inspect._signature_is_functionlike(thing)
+    )
+    if isinstance(thing, partial):
+        # inspect's precedence for objects satisfying both protocols changed
+        # between Python versions.  Do not guess an origin for this overlap.
+        if functionlike:
+            return None
+        return _get_annotation_copy_globals(thing.func)
+    if functionlike:
+        globalns = _get_annotation_globals(thing)
+        if globalns is not None:
+            return globalns
+        # Preserve typing's namespace policy, including functionlike objects
+        # and partials of user-written wrappers whose annotations are copied.
+        return getattr(inspect.unwrap(thing), "__globals__", {})
+
+    # Match the special method selected by inspect with follow_wrapped=False.
+    # Filter raw descriptors before unwrapping: staticmethod(builtin) is itself
+    # user-defined, unlike an inherited builtin special method.
+    candidate = inspect.getattr_static(type(thing), "__call__", None)
+    if isinstance(candidate, inspect._NonUserDefinedCallables):
+        candidate = None
+    if candidate is None and inspect.isclass(thing):
+        # inspect binds __new__ before excluding builtins, unlike __init__ and
+        # __call__. In particular, staticmethod(object.__new__) is excluded.
+        methods = {
+            "__new__": getattr(thing, "__new__", None),
+            "__init__": inspect.getattr_static(thing, "__init__", None),
+        }
+        for base in thing.__mro__:
+            for name, method in methods.items():
+                # Use the effective methods: a builtin override must not revive
+                # an ancestor's shadowed Python constructor.
+                if (
+                    name in vars(base)
+                    and method is not None
+                    and not isinstance(method, inspect._NonUserDefinedCallables)
+                ):
+                    candidate = method
+                    break
+            if candidate is not None:
+                break
+    if isinstance(candidate, (staticmethod, classmethod)):
+        candidate = candidate.__func__
+    if (
+        inspect.isfunction(candidate)
+        or inspect.ismethod(candidate)
+        or isinstance(candidate, partial)
+    ):
+        return _get_annotation_copy_globals(candidate)
+    # Unknown provenance on the selected callable does not license borrowing
+    # the namespace of an unrelated constructor.
+    return None
+
+
 def get_type_hints(thing: object) -> dict[str, Any]:
     """Like the typing version, but tries harder and never errors.
 
@@ -114,7 +203,11 @@ def get_type_hints(thing: object) -> dict[str, Any]:
         return {k: v for k, v in get_type_hints(thing.func).items() if k not in bound}
 
     try:
-        hints = typing.get_type_hints(thing, include_extras=True)
+        globalns = _get_annotation_globals(thing)
+        if globalns is None:
+            hints = typing.get_type_hints(thing, include_extras=True)
+        else:
+            hints = typing.get_type_hints(thing, globalns=globalns, include_extras=True)
     except (AttributeError, TypeError, NameError):
         hints = {}
 
