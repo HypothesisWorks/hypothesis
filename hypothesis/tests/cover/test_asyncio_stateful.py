@@ -26,9 +26,12 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
+from tests.common.utils import skipif_emscripten
+
 VAR = contextvars.ContextVar("VAR")
 
 
+@skipif_emscripten
 def test_runs_async_and_sync_methods_on_one_loop_per_test_case():
     loops_per_case = []
 
@@ -80,6 +83,7 @@ def test_runs_async_and_sync_methods_on_one_loop_per_test_case():
     }
 
 
+@skipif_emscripten
 def test_closes_the_loop_and_cancels_leftover_tasks_when_a_rule_fails():
     tasks = []
 
@@ -96,6 +100,7 @@ def test_closes_the_loop_and_cancels_leftover_tasks_when_a_rule_fails():
     assert all(task.cancelled() for task in tasks)
 
 
+@skipif_emscripten
 def test_reports_the_failing_async_steps():
     @settings(max_examples=50, print_blob=False)
     class Machine(AsyncioRuleBasedStateMachine):

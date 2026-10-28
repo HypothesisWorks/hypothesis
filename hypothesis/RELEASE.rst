@@ -7,9 +7,8 @@ event loop, so objects such as connections and queues can be created in one
 rule and used in later rules.
 
 A :class:`~hypothesis.stateful.RuleBasedStateMachine` with an ``async def``
-rule, invariant, or teardown now raises
-:class:`~hypothesis.errors.InvalidDefinition`.  Previously these methods were
-never awaited, so their bodies did not run and the test could pass without
-checking anything.
+rule, invariant, or teardown now raises an error explaining how to fix it.
+Previously these methods were never awaited, so their bodies did not run and
+the test could pass without checking anything.
 
 Thanks to Jyotheeswara Reddy Gottam for this feature!
