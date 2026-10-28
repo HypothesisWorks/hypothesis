@@ -157,7 +157,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.13'
         architecture: ${{ matrix.python-architecture }}
@@ -182,7 +182,7 @@ jobs:
         manylinux: ${{ matrix.manylinux }}
         args: --release --out dist --features abi3
         working-directory: hypothesis
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       id: abi3t-python
       with:
         # abi3t is only available from 3.15+. If we don't specify this, maturin
@@ -211,7 +211,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.13'
     - name: Stamp release version into Cargo.toml
@@ -235,13 +235,13 @@ jobs:
     env:
       # automatically updated by update_pyodide_versions()
       PYODIDE_VERSION: 314.0.7
-      PYODIDE_BUILD_VERSION: 0.39.1
+      PYODIDE_BUILD_VERSION: 0.39.2
       PYODIDE_PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ env.PYODIDE_PYTHON_VERSION }}
     - name: Install pyodide-build and Pyodide cross-build environment
