@@ -160,6 +160,16 @@ class TestFixCharactersArguments(CodemodTest):
             """
             self.assertCodemod(before=before, after=before.replace(in_, out))
 
+    def test_substitution_with_star_kwargs(self) -> None:
+        before = """
+            import hypothesis.strategies as st
+            st.characters(**kwargs, whitelist_categories=...)
+        """
+        self.assertCodemod(
+            before=before,
+            after=before.replace("whitelist_categories", "categories"),
+        )
+
     def test_remove_redundant_exclude_categories(self) -> None:
         args = "blacklist_categories=OUT, whitelist_categories=IN"
         before = f"""

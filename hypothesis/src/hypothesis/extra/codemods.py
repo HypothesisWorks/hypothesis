@@ -271,8 +271,10 @@ class HypothesisFixCharactersArguments(VisitorBasedCodemodCommand):
         # Update to the new names
         newargs = []
         for arg in updated_node.args:
-            kw = self._replacements.get(arg.keyword.value, arg.keyword.value)
-            newargs.append(arg.with_changes(keyword=cst.Name(kw)))
+            if arg.keyword is not None:
+                kw = self._replacements.get(arg.keyword.value, arg.keyword.value)
+                arg = arg.with_changes(keyword=cst.Name(kw))
+            newargs.append(arg)
         # Drop redundant exclude_categories, which is now an error
         if any(m.matches(arg, m.Arg(keyword=m.Name("categories"))) for arg in newargs):
             ex = m.Arg(keyword=m.Name("exclude_categories"))
