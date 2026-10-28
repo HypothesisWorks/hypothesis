@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import inspect
+import runpy
 import sys
 import types
 import typing
@@ -18,6 +19,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.internal import compat
 from hypothesis.internal.compat import get_type_hints
 
 RUN = settings(max_examples=3, derandomize=True, database=None, deadline=None)
@@ -644,3 +646,38 @@ def test_bound_partial_constructor_keeps_annotation_namespace(shape, consumer, d
     assert first(TOKEN) == TOKEN
     check_value(inferred_from_generated(data, first, consumer))
     assert owner.calls == []
+
+
+@pytest.mark.parametrize("has_wrapper_option", [False, True])
+def test_signature_method_supports_both_runtime_interfaces(
+    monkeypatch, has_wrapper_option
+):
+    selected_method = compat._get_signature_method
+
+    class Prototype:
+        def __call__(self, item):
+            return item
+
+    expected = selected_method(Prototype, "__call__")
+    calls = []
+
+    def legacy(cls, name):
+        calls.append((cls, name))
+        return selected_method(cls, name)
+
+    def modern(cls, name, *, follow_wrapper_chains=True):
+        assert follow_wrapper_chains is False
+        return legacy(cls, name)
+
+    monkeypatch.setattr(
+        inspect,
+        "_signature_get_user_defined_method",
+        modern if has_wrapper_option else legacy,
+    )
+    # Load a separate module namespace so the import-time compatibility decision
+    # is exercised without replacing the live annotation-origin record type.
+    namespace = runpy.run_path(compat.__file__)
+
+    method = namespace["_get_signature_method"](Prototype, "__call__")
+    assert method == expected
+    assert calls == [(Prototype, "__call__")]
