@@ -113,6 +113,7 @@ their individual contributions.
 * `jmhsi <https://www.github.com/jmhsi>`_
 * `Justus Magin <https://github.com/keewis>`_
 * `jwg4 <https://www.github.com/jwg4>`_
+* `Jyotheeswara Reddy Gottam <https://www.github.com/gjreddy>`_ (gjreddy1@gmail.com)
 * `Kai Chen <https://www.github.com/kx-chen>`_ (kaichen120@gmail.com)
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
 * `Katelyn Gigante <https://github.com/silasary>`_
