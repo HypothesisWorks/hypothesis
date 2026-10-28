@@ -92,6 +92,15 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
+# Use the runtime's special-method selection without following wrappers,
+# matching get_signature(..., follow_wrapped=False).
+_get_signature_method = (
+    inspect._signature_get_user_defined_method  # type: ignore[attr-defined]
+)
+if "follow_wrapper_chains" in inspect.signature(_get_signature_method).parameters:
+    _get_signature_method = partial(_get_signature_method, follow_wrapper_chains=False)
+
+
 class _AnnotationOrigin(typing.NamedTuple):
     source: Any
     annotations: dict[str, Any]
@@ -142,32 +151,26 @@ def _get_annotation_copy_globals(thing):
         # and partials of user-written wrappers whose annotations are copied.
         return getattr(inspect.unwrap(thing), "__globals__", {})
 
-    # Match the special method selected by inspect with follow_wrapped=False.
-    # Filter raw descriptors before unwrapping: staticmethod(builtin) is itself
-    # user-defined, unlike an inherited builtin special method.
-    candidate = inspect.getattr_static(type(thing), "__call__", None)
-    if isinstance(candidate, inspect._NonUserDefinedCallables):
-        candidate = None
-    if candidate is None and inspect.isclass(thing):
-        # inspect binds __new__ before excluding builtins, unlike __init__ and
-        # __call__. In particular, staticmethod(object.__new__) is excluded.
-        methods = {
-            "__new__": getattr(thing, "__new__", None),
-            "__init__": inspect.getattr_static(thing, "__init__", None),
-        }
-        for base in thing.__mro__:
-            for name, method in methods.items():
-                # Use the effective methods: a builtin override must not revive
-                # an ancestor's shadowed Python constructor.
-                if (
-                    name in vars(base)
-                    and method is not None
-                    and not isinstance(method, inspect._NonUserDefinedCallables)
-                ):
-                    candidate = method
+    if inspect.isclass(thing):
+        candidate = _get_signature_method(type(thing), "__call__")
+        if candidate is None:
+            methods = {
+                "__new__": _get_signature_method(thing, "__new__"),
+                "__init__": _get_signature_method(thing, "__init__"),
+            }
+            for base in thing.__mro__:
+                for name, method in methods.items():
+                    # Use the effective methods: a builtin override must not revive
+                    # an ancestor's shadowed Python constructor.
+                    if name in vars(base) and method is not None:
+                        candidate = method
+                        break
+                if candidate is not None:
                     break
-            if candidate is not None:
-                break
+    else:
+        # An arbitrary descriptor may return different functions when bound to
+        # the class or the instance; do not guess its annotation provenance.
+        candidate = inspect.getattr_static(type(thing), "__call__", None)
     if isinstance(candidate, (staticmethod, classmethod)):
         candidate = candidate.__func__
     if (

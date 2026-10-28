@@ -152,8 +152,14 @@ def test_ambiguous_annotation_context_keeps_concrete_signature(
             setattr(target, name, getattr(overridden, name))
         target.__globals__ = overridden.__globals__
         inner = target
-        target = partial(inner)
-        assert target.func is inner
+
+        # Keep the overlapping metadata on the selected callable. Nested
+        # partials can be flattened, depending on the Python implementation.
+        class Prototype:
+            __call__ = staticmethod(inner)
+
+        target = Prototype()
+        assert target.__call__ is inner
 
     signature = inspect.signature(target, follow_wrapped=False)
     annotation = signature.return_annotation

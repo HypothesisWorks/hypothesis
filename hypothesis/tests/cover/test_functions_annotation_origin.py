@@ -534,6 +534,73 @@ def test_selected_builtin_staticmethod_does_not_borrow_initializer_namespace(dat
 
 @RUN
 @given(data=st.data())
+def test_selected_wrapper_of_builtin_keeps_its_annotation_policy(data):
+    owner = module(
+        "annotation_origin_wrapped_builtin",
+        "bytes = tuple[int, str]\n"
+        "def callback(cls, item: bytes) -> bytes:\n"
+        "    raise AssertionError('selected prototype body ran')\n",
+    )
+    foreign = module(
+        "annotation_origin_wrapped_builtin_init",
+        "bytes = list[int]\n"
+        "def initializer(self, item: bytes) -> None:\n"
+        "    raise AssertionError('unselected initializer ran')\n",
+    )
+
+    class Meta(type):
+        __call__ = wraps(len, assigned=())(owner.callback)
+
+    class Prototype(metaclass=Meta):
+        __init__ = foreign.initializer
+
+    expected = inspect.signature(owner.callback, follow_wrapped=False)
+    expected = expected.replace(parameters=list(expected.parameters.values())[1:])
+    assert inspect.signature(Prototype, follow_wrapped=False) == expected
+    assert typing.get_type_hints(owner.callback)["return"] is bytes
+    assert typing.get_type_hints(foreign.initializer)["item"] == list[int]
+    first = data.draw(st.functions(like=Prototype, returns=st.just(TOKEN)))
+    assert first(b"argument") == TOKEN
+    second = data.draw(st.functions(like=first))
+    assert type(second(b"argument")) is bytes
+
+
+@RUN
+@given(data=st.data())
+def test_call_descriptor_does_not_borrow_another_receivers_namespace(data):
+    owner = module(
+        "annotation_origin_instance_descriptor",
+        "def callback(item: bytes) -> bytes:\n"
+        "    raise AssertionError('selected prototype body ran')\n",
+    )
+    foreign = module(
+        "annotation_origin_class_descriptor",
+        "bytes = tuple[int, str]\n"
+        "def callback(item: bytes) -> bytes:\n"
+        "    raise AssertionError('unselected prototype body ran')\n",
+    )
+
+    class CallDescriptor:
+        def __get__(self, instance, cls):
+            return foreign.callback if isinstance(instance, type) else owner.callback
+
+    class Prototype:
+        __call__ = CallDescriptor()
+
+    target = Prototype()
+    assert inspect.signature(target, follow_wrapped=False) == inspect.signature(
+        owner.callback
+    )
+    assert typing.get_type_hints(target.__call__)["return"] is bytes
+    assert typing.get_type_hints(foreign.callback)["return"] == tuple[int, str]
+    first = data.draw(st.functions(like=target, returns=st.just(TOKEN)))
+    assert first(b"argument") == TOKEN
+    second = data.draw(st.functions(like=first))
+    assert type(second(b"argument")) is bytes
+
+
+@RUN
+@given(data=st.data())
 def test_callable_without_annotations_needs_no_interpretation_context(data):
     class Prototype:
         pass
