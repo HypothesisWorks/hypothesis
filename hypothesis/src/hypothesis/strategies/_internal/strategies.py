@@ -765,6 +765,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
     def calc_is_cacheable(self, recur: RecurT) -> bool:
         return is_hashable(self.elements)
 
+    # pyrefly: ignore [invalid-variance]
     def _transform(
         self,
         # https://github.com/python/mypy/issues/7049, we're not writing `element`

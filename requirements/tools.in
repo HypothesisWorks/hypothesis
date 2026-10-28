@@ -13,6 +13,7 @@ mypy
 numpy<2.5
 pelican[markdown]
 pip-tools
+pyrefly
 pyright
 python-dateutil
 requests
@@ -37,4 +38,6 @@ build
 zizmor
 sortedcontainers-stubs # for typing
 attrs # for typing
+annotated-types # for typing
+pandas-stubs # for typing
 -r test.in
