@@ -1,4 +1,4 @@
 RELEASE_TYPE: patch
 
-This patch skips coverage.py requirements for code in
-:mod:`hypothesis.extra.dateutil` supporting  :pypi:`dateutil` 2.x.
+This patch adjusts coverage settings for new dependencies; there is no
+user-visible change.
