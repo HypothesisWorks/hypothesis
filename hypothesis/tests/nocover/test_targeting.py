@@ -39,6 +39,9 @@ def test_reports_target_results(testdir, multiple):
     assert result.ret != 0
 
 
+# The crosshair backend does not support targeting yet; see
+# https://github.com/pschanely/hypothesis-crosshair/issues/3
+@xfail_on_crosshair(Why.undiscovered)
 def test_targeting_increases_max_length():
     strat = st.lists(st.booleans())
 
