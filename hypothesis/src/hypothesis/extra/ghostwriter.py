@@ -75,6 +75,7 @@ import ast
 import builtins
 import contextlib
 import enum
+import functools
 import inspect
 import os
 import re
@@ -597,6 +598,14 @@ def _imports_for_object(obj):
         return _imports_for_strategy(obj)
     if isinstance(obj, getattr(sys.modules.get("numpy"), "dtype", ())):
         return {("numpy", "dtype")}
+    if isinstance(obj, functools.partial):
+        # e.g. the functools.partial(operator.lt, 0) filters of annotated-types
+        # bounds, which have no __name__ of their own
+        return {"functools"}.union(
+            _imports_for_object(obj.func),
+            *map(_imports_for_object, obj.args),
+            *map(_imports_for_object, obj.keywords.values()),
+        )
     try:
         if is_generic_type(obj):
             if isinstance(obj, TypeVar):  # pragma: no cover
@@ -615,10 +624,18 @@ def _imports_for_object(obj):
 
 
 def _imports_for_strategy(strategy):
+    # The repr of a lazy strategy writes each of its .map() and .filter() calls,
+    # which unwrapping can fold away, e.g. the bound of an annotated-types filter
+    # on floats, so their functions need imports whatever the unwrapped strategy.
+    transforms = set()
+    if isinstance(strategy, LazyStrategy):
+        transforms = set().union(
+            *(_imports_for_object(fn) for _, fn, _ in strategy._transformations)
+        )
     # If we have a lazy from_type strategy, because unwrapping it gives us an
     # error or invalid syntax, import that type and we're done.
     if isinstance(strategy, LazyStrategy):
-        imports = {
+        imports = transforms | {
             imp
             for arg in set(strategy._LazyStrategy__args)
             | set(strategy._LazyStrategy__kwargs.values())
@@ -630,7 +647,7 @@ def _imports_for_strategy(strategy):
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
             return {(module, strategy.function.__name__)} | imports
 
-    imports = set()
+    imports = set(transforms)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SmallSearchSpaceWarning)
         strategy = unwrap_strategies(strategy)
@@ -1042,6 +1059,14 @@ def _parameter_to_annotation(parameter: Any) -> _AnnotationData | None:
             type_name = _get_qualname(parameter, include_module=True)
         else:
             type_name = str(parameter)
+            # an instance such as the annotated_types.Gt(gt=0) metadata of an
+            # Annotated type, whose repr calls its class by the bare name
+            cls = type(parameter)
+            if cls.__module__ != "builtins" and type_name.startswith(
+                f"{cls.__qualname__}("
+            ):
+                module = _get_module(cls)
+                return _AnnotationData(f"{module}.{type_name}", {module})
 
     if type_name.startswith("hypothesis.strategies."):
         return _AnnotationData(type_name.replace("hypothesis.strategies", "st"), set())
