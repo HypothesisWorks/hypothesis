@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.14:
+
+---------------------
+6.170.14 - 2026-10-30
+---------------------
+
+This patch adjusts coverage settings for new dependencies; there is no
+user-visible change.
+
 .. _v6.170.13:
 
 ---------------------
