@@ -58,6 +58,11 @@ def _recase_randomly(draw: DrawFn, tld: str) -> str:
 
 
 class DomainNameStrategy(st.SearchStrategy[str]):
+    max_length: int
+    max_element_length: int
+    domain_strategy: st.SearchStrategy[str]
+    elem_strategy: st.SearchStrategy[str]
+
     @staticmethod
     def clean_inputs(
         minimum: int, maximum: int, value: int | None, variable_name: str

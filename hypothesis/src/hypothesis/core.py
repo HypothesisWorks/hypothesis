@@ -1229,7 +1229,11 @@ class StateForActualGivenExecution:
             for origin in err._interesting_origins
             if origin in self._runner.interesting_test_cases
         ]
-        exceptions = [result.expected_exception for result in interesting_test_cases]
+        exceptions = [
+            result.expected_exception
+            for result in interesting_test_cases
+            if result.expected_exception is not None
+        ]
         exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 
