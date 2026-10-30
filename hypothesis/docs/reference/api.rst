@@ -202,6 +202,7 @@ Stateful tests
 --------------
 
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine
+.. autoclass:: hypothesis.stateful.AsyncioRuleBasedStateMachine
 
 Rules
 ~~~~~
