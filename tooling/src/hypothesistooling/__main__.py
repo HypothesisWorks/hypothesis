@@ -679,6 +679,10 @@ def update_gha_pins():
         )
 
 
+def update_uv():
+    subprocess.run(["uv", "self", "update"], check=True)
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -729,6 +733,7 @@ def upgrade_requirements():
         )
     update_vendored_files()
     compile_requirements(upgrade=True)
+    update_uv()
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
