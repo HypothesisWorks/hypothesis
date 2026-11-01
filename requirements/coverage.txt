@@ -42,7 +42,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.13.6
+platformdirs==4.14.2
     # via black
 pluggy==1.7.0
     # via
@@ -54,7 +54,7 @@ pyarrow==26.0.0
     # via -r requirements/coverage.in
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -70,7 +70,7 @@ python-dateutil==3.0.0
     #   pandas
 pytokens==0.4.1
     # via black
-pytz==2026.5
+pytz==2026.6
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
@@ -86,7 +86,7 @@ syrupy==6.1.1
     # via -r requirements/test.in
 typing-extensions==4.16.0
     # via -r requirements/coverage.in
-tzdata==2026.5
+tzdata==2026.6
     # via python-dateutil
-watchdog==6.0.0
+watchdog==7.0.0
     # via -r requirements/coverage.in
