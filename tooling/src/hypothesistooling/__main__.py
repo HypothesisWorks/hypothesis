@@ -11,6 +11,7 @@
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -721,6 +722,11 @@ def has_diff(file_or_directory):
 
 @task()
 def upgrade_requirements():
+    if platform.system() != "Linux":
+        raise SystemExit(
+            "The upgrade-requirements task must be run on Linux, so transitive "
+            "dependencies in lock files will be reproducible.",
+        )
     update_vendored_files()
     compile_requirements(upgrade=True)
     update_python_versions()
