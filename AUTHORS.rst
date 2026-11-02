@@ -27,6 +27,7 @@ their individual contributions.
 * `Anne Archibald <https://www.github.com/td-anne>`_
 * `Arjoonn Sharma <https://github.com/thesage21>`_
 * `Arjun Aravind <https://github.com/Arjun-Aravind>`_
+* Behzad Motaghi
 * `Ben Anhalt <https://github.com/benanhalt>`_
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)
