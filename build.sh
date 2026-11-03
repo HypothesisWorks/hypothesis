@@ -21,10 +21,7 @@ source "$SCRIPTS/common.sh"
 
 PYTHON_VERSION="3.14.10"
 
-"$SCRIPTS/ensure-uv.sh"
-if ! command -v uv >/dev/null 2>&1 ; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+ensure-uv
 
 if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] || [ -n "${CLAUDECODE-}" ] ; then
     # We're on GitHub Actions, Codespaces, or Claude Code and already have a suitable Python

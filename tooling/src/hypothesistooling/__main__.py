@@ -11,6 +11,7 @@
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -678,6 +679,10 @@ def update_gha_pins():
         )
 
 
+def update_uv():
+    subprocess.run(["uv", "self", "update"], check=True)
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -721,8 +726,14 @@ def has_diff(file_or_directory):
 
 @task()
 def upgrade_requirements():
+    if platform.system() != "Linux":
+        raise SystemExit(
+            "The upgrade-requirements task must be run on Linux, so transitive "
+            "dependencies in lock files will be reproducible.",
+        )
     update_vendored_files()
     compile_requirements(upgrade=True)
+    update_uv()
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
