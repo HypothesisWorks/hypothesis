@@ -8,9 +8,21 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesistooling.release import PYTHON_SRC
+import sys
+
+from hypothesistooling.release import HYPOTHESIS, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool
 
 
 def test_mypy_passes_on_hypothesis():
     pip_tool("mypy", str(PYTHON_SRC))
+
+
+def test_pyrefly_passes_on_hypothesis():
+    pip_tool(
+        "pyrefly",
+        "check",
+        "--python-interpreter-path",
+        sys.executable,
+        cwd=HYPOTHESIS,
+    )

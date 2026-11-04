@@ -386,6 +386,7 @@ def lists(
             and elements.end is not None
             and (elements.end - elements.start) <= 255
         ):
+            # pyrefly: ignore [bad-assignment]
             elements = SampledFromStrategy(
                 sorted(range(elements.start, elements.end + 1), key=abs)
                 if elements.end < 0 or elements.start > 0
@@ -1252,6 +1253,7 @@ def builds(
 
             for kw, t in infer_for.items():
                 if t in _global_type_lookup:
+                    # pyrefly: ignore [bad-argument-type]
                     kwargs[kw] = from_type(t)
                 else:
                     # We defer resolution of these type annotations so that the obvious
@@ -1418,6 +1420,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
+        # pyrefly: ignore [bad-argument-type]
         return _from_type(thing.__supertype__)
     if types.is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
         if thing in types._global_type_lookup:
@@ -1460,6 +1463,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             # ForwardRef objects if they are valid Python identifiers.
             # See https://github.com/HypothesisWorks/hypothesis/issues/4542
             if thing.isidentifier():
+                # pyrefly: ignore [bad-argument-type]
                 return deferred(lambda thing=thing: from_type(typing.ForwardRef(thing)))
             raise InvalidArgument(
                 f"Got {thing!r} as a type annotation, but the forward-reference "

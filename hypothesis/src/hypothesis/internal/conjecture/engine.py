@@ -415,6 +415,7 @@ class ConjectureRunner:
             elapsed = time.perf_counter() - start_time
             # A phase can be entered more than once (the explain phase runs once
             # per shrinking target), so accumulate into any existing bucket.
+            # pyrefly: ignore [no-matching-overload]
             stats = self.statistics.setdefault(
                 phase + "-phase",  # type: ignore
                 {"duration-seconds": 0.0, "test-cases": []},
@@ -730,6 +731,7 @@ class ConjectureRunner:
                         f"Raised {type(initial_exception).__name__} on "
                         f"backend={self.settings.backend!r}, but "
                         f"{desc_new_status} under backend='hypothesis'.",
+                        # pyrefly: ignore [bad-argument-type]
                         [initial_exception],
                     )
 

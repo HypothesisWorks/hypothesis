@@ -61,6 +61,7 @@ _leading_space_re = re.compile("(^[ ]*)(?:[^ \n])", re.MULTILINE)
 def dedent(text: str) -> tuple[str, str]:
     # Simplified textwrap.dedent, for valid Python source code only
     text = _space_only_re.sub("", text)
+    # pyrefly false alarm: https://github.com/facebook/pyrefly/issues/4886
     prefix: str = min(_leading_space_re.findall(text), key=len)
     return re.sub(r"(?m)^" + prefix, "", text), prefix
 
@@ -257,14 +258,18 @@ def _get_patch_for(
                     node.keyword  # type: ignore
                     for node in m.findall(wrapper, m.Arg(keyword=m.Name()))
                 }
-                module = m.replace(
-                    wrapper,
-                    m.Name(value=m.MatchIfTrue(names.__contains__))
-                    & m.MatchMetadata(ExpressionContextProvider, ExpressionContext.LOAD)
-                    & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),  # type: ignore
-                    replacement=lambda node, _, ns=names: ns[node.value],  # type: ignore
+                the_call = _only_call(
+                    m.replace(
+                        wrapper,
+                        m.Name(value=m.MatchIfTrue(names.__contains__))
+                        & m.MatchMetadata(
+                            ExpressionContextProvider, ExpressionContext.LOAD
+                        )
+                        & m.MatchIfTrue(lambda n, k=kwarg_names: n not in k),  # type: ignore
+                        replacement=lambda node, _, ns=names: ns[node.value],  # type: ignore
+                    )
                 )
-            call_nodes.append((_only_call(module), via))
+            call_nodes.append((the_call, via))
 
     if not call_nodes:
         return None
