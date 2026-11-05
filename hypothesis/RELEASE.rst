@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-This improves type coverage of the public API to 100%.
+Hypothesis now has 100% type coverage of our public API, as checked by :pypi:`pyrefly`.
