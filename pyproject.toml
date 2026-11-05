@@ -113,6 +113,26 @@ warn_redundant_casts = true
 
 disable_error_code = "annotation-unchecked"
 
+[tool.pyrefly]
+search-path = ["hypothesis/src"]
+
+[tool.pyrefly.coverage]
+includes = ["hypothesis/src/hypothesis"]
+# undocumented modules not part of the public API
+excludes = [
+    "hypothesis/src/hypothesis/configuration.py",
+    "hypothesis/src/hypothesis/control.py",
+    "hypothesis/src/hypothesis/core.py",
+    "hypothesis/src/hypothesis/entry_points.py",
+    "hypothesis/src/hypothesis/extra/cli.py",
+    "hypothesis/src/hypothesis/extra/pandas/impl.py",
+    "hypothesis/src/hypothesis/internal/**",
+    "hypothesis/src/hypothesis/reporting.py",
+    "hypothesis/src/hypothesis/statistics.py",
+    "hypothesis/src/hypothesis/utils/**",
+    "hypothesis/src/hypothesis/vendor/**",
+]
+
 # pytest 9 added support for [tool.pytest], which we should move to when pytest 9
 # is the oldest one we support.
 [tool.pytest.ini_options]

@@ -1169,6 +1169,17 @@ def check_types_hypothesis(*args):
 
 
 @task()
+def check_type_coverage():
+    pip_tool(
+        "pyrefly",
+        "coverage",
+        "check",
+        "--public-only",
+        f"--python-interpreter-path={sys.executable}",
+    )
+
+
+@task()
 def shell():
     import IPython
 

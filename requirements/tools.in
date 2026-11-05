@@ -13,6 +13,7 @@ mypy
 numpy<2.5
 pelican[markdown]
 pip-tools
+pyrefly
 pyright
 python-dateutil
 requests
