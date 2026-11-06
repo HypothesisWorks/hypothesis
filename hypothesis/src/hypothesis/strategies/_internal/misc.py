@@ -11,10 +11,8 @@
 from collections.abc import Callable
 from typing import Any, Never, NoReturn
 
-from hypothesis.errors import CannotInvert
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import Impossible, InvertResultT, ValueHole
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.junkdrawer import equal_values
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -63,10 +61,12 @@ class JustStrategy(SampledFromStrategy[Ex]):
         # we have exactly one value. (This also avoids drawing any data.)
         return self._transform(self.value, data=data)
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
-        if not equal_values(self._transform(self.value, data=None), value):
-            raise CannotInvert(f"{value!r} is not produced by {self!r}")
-        return ()
+    def _invert(self, value: Any) -> InvertResultT:
+        result = super()._invert(value)
+        if isinstance(result, tuple) and not isinstance(result[0], ValueHole):
+            # unlike sampled_from, we draw no index before transforming
+            return result[1:]
+        return result
 
 
 @defines_strategy(eager=True)
@@ -109,6 +109,9 @@ class Nothing(SearchStrategy["Never"]):
     def __repr__(self) -> str:
         return "nothing()"
 
+    def _invert(self, value: Any) -> InvertResultT:
+        return Impossible(f"{self!r} produces no values")
+
     def map(self, pack: Callable[[Any], Any]) -> SearchStrategy["Never"]:
         return self
 
@@ -139,9 +142,9 @@ class BooleansStrategy(SearchStrategy[bool]):
     def do_draw(self, data: ConjectureData) -> bool:
         return data.draw_boolean()
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if not isinstance(value, bool):
-            raise CannotInvert(f"{value!r} is not a bool")
+            return Impossible(f"{value!r} is not a bool")
         return (value,)
 
     def __repr__(self) -> str:

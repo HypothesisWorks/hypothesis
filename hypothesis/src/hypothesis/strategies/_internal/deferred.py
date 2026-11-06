@@ -14,7 +14,7 @@ from typing import Any
 
 from hypothesis.configuration import check_sideeffect_during_initialization
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import InvertResultT
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
@@ -94,5 +94,5 @@ class DeferredStrategy(SearchStrategy[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         return self.wrapped_strategy._invert(value)

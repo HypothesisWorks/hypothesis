@@ -15,10 +15,15 @@ from typing import Any, TypeGuard, overload
 
 from hypothesis import strategies as st
 from hypothesis.control import current_build_context
-from hypothesis.errors import CannotInvert, InvalidArgument
-from hypothesis.internal.compat import add_note
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.choice import ChoiceT
+from hypothesis.internal.conjecture.choice import (
+    ChoiceT,
+    Impossible,
+    ImpureInversion,
+    InvertResultT,
+    ValueHole,
+)
 from hypothesis.internal.conjecture.data import UNIQUE_COLLECTION_LABEL, ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, equal_values
@@ -89,20 +94,19 @@ class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
             )
         return result
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if not isinstance(value, tuple) or len(value) != len(self.element_strategies):
-            raise CannotInvert(
+            return Impossible(
                 f"{value!r} is not a tuple of length {len(self.element_strategies)}"
             )
-        choices: list[ChoiceT] = []
+        choices: list[ChoiceT | ValueHole] = []
         for i, (strategy, element) in enumerate(
             zip(self.element_strategies, value, strict=True)
         ):
-            try:
-                choices.extend(strategy._invert(element))
-            except CannotInvert as exc:
-                add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
-                raise
+            sub = strategy._invert(element)
+            if isinstance(sub, Impossible):
+                return sub.with_note(f"at index {i} of {value!r}, strategy={self!r}")
+            choices.extend(sub)
         return tuple(choices)
 
     def calc_is_empty(self, recur: RecurT) -> bool:
@@ -235,28 +239,27 @@ class ListStrategy(SearchStrategy[list[Ex]]):
         ) as elements:
             return [data.draw(self.element_strategy) for _ in elements]
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if not isinstance(value, list):
-            raise CannotInvert(f"{value!r} is not a list")
+            return Impossible(f"{value!r} is not a list")
         if not (self.min_size <= len(value) <= self.max_size):
-            raise CannotInvert(
+            return Impossible(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
             )
         if self.element_strategy.is_empty:
             # do_draw returns [] without drawing anything
             if value:
-                raise CannotInvert(f"elements of {self!r} are empty")
+                return Impossible(f"elements of {self!r} are empty")
             return ()
         elements = cu.invert_many(self.min_size, self.max_size)
-        choices: list[ChoiceT] = []
+        choices: list[ChoiceT | ValueHole] = []
         for i, element in enumerate(value):
             choices.extend(elements.more())
-            try:
-                choices.extend(self.element_strategy._invert(element))
-            except CannotInvert as exc:
-                add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
-                raise
+            sub = self.element_strategy._invert(element)
+            if isinstance(sub, Impossible):
+                return sub.with_note(f"at index {i} of {value!r}, strategy={self!r}")
+            choices.extend(sub)
         choices.extend(elements.done())
         return tuple(choices)
 
@@ -384,50 +387,64 @@ class UniqueListStrategy(ListStrategy[Ex]):
         assert self.max_size >= len(result) >= self.min_size
         return result
 
-    def _check_unique_keys(self, elements: list[Any]) -> None:
+    def _unique_keys_issue(
+        self, value: Any, targets: list[Any]
+    ) -> InvertResultT | None:
         for keyfunc in self.keys:
             try:
-                keys = list(map(keyfunc, elements))
+                keys = list(map(keyfunc, targets))
                 unique = len(set(keys)) == len(keys)
             except Exception:
-                raise CannotInvert(
-                    f"could not compute uniqueness keys for {self!r}"
-                ) from None
+                # a raising key function is not evidence either way
+                return self._hole(
+                    value, f"could not compute uniqueness keys for {self!r}"
+                )
             if not unique:
-                raise CannotInvert(f"{elements!r} has duplicate keys for {self!r}")
+                return Impossible(f"{targets!r} has duplicate keys for {self!r}")
+        return None
 
-    def _split_suffixed(self, value: Any) -> list[Any]:
+    def _split_suffixed(self, value: list[Any]) -> "list[Any] | Impossible":
         # With tuple_suffixes, each element is (key, *suffix): the key drawn
         # from element_strategy, then the suffix from tuple_suffixes.
         # Uniqueness applies to the key alone.
-        if not isinstance(value, list):
-            raise CannotInvert(f"{value!r} is not a list")
         if not all(isinstance(e, tuple) and e for e in value):
-            raise CannotInvert(f"{value!r} is not a list of nonempty tuples")
+            return Impossible(f"{value!r} is not a list of nonempty tuples")
         return [e[0] for e in value]
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
+        if not isinstance(value, list):
+            return Impossible(f"{value!r} is not a list")
+        if self.tuple_suffixes is None:
+            targets = value
+        else:
+            split = self._split_suffixed(value)
+            if isinstance(split, Impossible):
+                return split
+            targets = split
+        if (issue := self._unique_keys_issue(value, targets)) is not None:
+            return issue
         if self.tuple_suffixes is None:
             # A valid unique list draws exactly like a ListStrategy, since
             # every element passes the uniqueness filter on its first draw.
-            self._check_unique_keys(value)
             return ListStrategy._invert(self, value)
-        self._check_unique_keys(self._split_suffixed(value))
         if not (self.min_size <= len(value) <= self.max_size):
-            raise CannotInvert(
+            return Impossible(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
             )
         elements = cu.invert_many(self.min_size, self.max_size)
-        choices: list[ChoiceT] = []
+        choices: list[ChoiceT | ValueHole] = []
         for i, element in enumerate(value):
             choices.extend(elements.more())
-            try:
-                choices.extend(self.element_strategy._invert(element[0]))
-                choices.extend(self.tuple_suffixes._invert(tuple(element[1:])))
-            except CannotInvert as exc:
-                add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
-                raise
+            for sub in (
+                self.element_strategy._invert(element[0]),
+                self.tuple_suffixes._invert(tuple(element[1:])),
+            ):
+                if isinstance(sub, Impossible):
+                    return sub.with_note(
+                        f"at index {i} of {value!r}, strategy={self!r}"
+                    )
+                choices.extend(sub)
         choices.extend(elements.done())
         return tuple(choices)
 
@@ -469,41 +486,61 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         assert self.max_size >= len(result) >= self.min_size
         return result
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if not isinstance(value, list):
-            raise CannotInvert(f"{value!r} is not a list")
+            return Impossible(f"{value!r} is not a list")
         if not (self.min_size <= len(value) <= self.max_size):
-            raise CannotInvert(
+            return Impossible(
                 f"len={len(value)} outside "
                 f"[{self.min_size}, {self.max_size!r}] for {self!r}"
             )
-        targets = value if self.tuple_suffixes is None else self._split_suffixed(value)
+        if self.tuple_suffixes is None:
+            targets = value
+        else:
+            split = self._split_suffixed(value)
+            if isinstance(split, Impossible):
+                return split
+            targets = split
         # do_draw indexes into the pool of not-yet-drawn elements, so each
         # index is relative to what remains, not to the original elements.
         assert isinstance(self.element_strategy, SampledFromStrategy)
         remaining = list(self.element_strategy.elements)
         elements = cu.invert_many(self.min_size, self.max_size)
-        choices: list[ChoiceT] = []
+        choices: list[ChoiceT | ValueHole] = []
         for i, (element, target) in enumerate(zip(value, targets, strict=True)):
             choices.extend(elements.more())
+            unknown = False
             for j, candidate in enumerate(remaining):
-                if equal_values(
-                    self.element_strategy._transform(candidate, data=None), target
-                ):
+                try:
+                    result, impure = self.element_strategy._invert_transform(candidate)
+                    matches = equal_values(result, target)
+                except (ImpureInversion, Exception):
+                    # as for sampled_from, user code which draws or errors
+                    # tells us nothing about whether this candidate matches
+                    unknown = True
+                    continue
+                if matches and not impure:
                     choices.append(j)
                     remaining.pop(j)
                     break
+                unknown |= matches
             else:
-                raise CannotInvert(
+                if unknown:
+                    # a hole here would desynchronize the later pool indices
+                    return self._hole(
+                        value, f"cannot tell whether {self!r} produces it"
+                    )
+                return Impossible(
                     f"at index {i} of {value!r}: {target!r} is not among the "
                     f"remaining elements of {self!r}"
                 )
             if self.tuple_suffixes is not None:
-                try:
-                    choices.extend(self.tuple_suffixes._invert(tuple(element[1:])))
-                except CannotInvert as exc:
-                    add_note(exc, f"at index {i} of {value!r}, strategy={self!r}")
-                    raise
+                sub = self.tuple_suffixes._invert(tuple(element[1:]))
+                if isinstance(sub, Impossible):
+                    return sub.with_note(
+                        f"at index {i} of {value!r}, strategy={self!r}"
+                    )
+                choices.extend(sub)
         choices.extend(elements.done())
         return tuple(choices)
 
@@ -568,23 +605,22 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
             )
         return value
 
-    def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
+    def _invert(self, value: Any) -> InvertResultT:
         if not isinstance(value, Mapping):
-            raise CannotInvert(f"{value!r} is not a mapping")
+            return Impossible(f"{value!r} is not a mapping")
         optional = self.optional or {}
         if any(k not in value for k in self.mapping) or any(
             k not in self.mapping and k not in optional for k in value
         ):
-            raise CannotInvert(f"{value!r} has the wrong keys for {self!r}")
+            return Impossible(f"{value!r} has the wrong keys for {self!r}")
 
-        choices: list[ChoiceT] = []
+        choices: list[ChoiceT | ValueHole] = []
         npairs = len(self.mapping)
         for key, strategy in self.mapping.items():
-            try:
-                choices.extend(strategy._invert(value[key]))
-            except CannotInvert as exc:
-                add_note(exc, f"at key {key!r} of {value!r}, strategy={self!r}")
-                raise
+            sub = strategy._invert(value[key])
+            if isinstance(sub, Impossible):
+                return sub.with_note(f"at key {key!r} of {value!r}, strategy={self!r}")
+            choices.extend(sub)
 
         if self.optional is not None:
             # do_draw selects each present optional key by its index in the
@@ -593,7 +629,7 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
             present = [k for k in remaining if k in value and k not in self.mapping]
             if npairs + len(present) != len(value):
                 # a present optional key whose strategy is empty
-                raise CannotInvert(f"{value!r} has the wrong keys for {self!r}")
+                return Impossible(f"{value!r} has the wrong keys for {self!r}")
             selector = cu.invert_many(0, len(remaining))
             for key in present:
                 choices.extend(selector.more())
@@ -601,11 +637,12 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
                 choices.append(j)
                 remaining[-1], remaining[j] = remaining[j], remaining[-1]
                 remaining.pop()
-                try:
-                    choices.extend(self.optional[key]._invert(value[key]))
-                except CannotInvert as exc:
-                    add_note(exc, f"at key {key!r} of {value!r}, strategy={self!r}")
-                    raise
+                sub = self.optional[key]._invert(value[key])
+                if isinstance(sub, Impossible):
+                    return sub.with_note(
+                        f"at key {key!r} of {value!r}, strategy={self!r}"
+                    )
+                choices.extend(sub)
             choices.extend(selector.done())
             npairs += len(present)
 

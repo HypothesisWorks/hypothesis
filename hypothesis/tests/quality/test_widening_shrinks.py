@@ -167,6 +167,22 @@ def test_widen_dates_with_compound_branch():
     ) == dt.date(2021, 6, 10)
 
 
+def test_widen_format_mapped_text_with_mapped_sampled_from():
+    # The wide branch is itself a .map, so re-encoding the specific branch's
+    # value there requires recovering the format template's preimage.
+    strat = text().map("id-{}".format) | sampled_from(["dragon", "wyvern"]).map(
+        "id-{}".format
+    )
+    val = minimal(strat, lambda s: "dragon" in s)
+    assert val == "id-dragon"
+
+
+def test_widen_concat_mapped_text_with_sampled_from():
+    strat = text().map(lambda s: s + "!") | sampled_from(["abcxyz!", "zyxabc!"])
+    val = minimal(strat, lambda s: "abc" in s)
+    assert val == "abc!"
+
+
 def test_just_does_not_widen():
     # Accepted limitation: a just() span has no choices to re-encode.
     strat = text() | just("xyzzy-plover")
