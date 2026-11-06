@@ -2422,6 +2422,9 @@ class DataObject:
     # Note that "only exists" here really means "is only exported to users",
     # but we want to treat it as "semi-stable", not document it as "public API".
 
+    count: int
+    conjecture_data: ConjectureData
+
     def __init__(self, data: ConjectureData) -> None:
         self.count = 0
         self.conjecture_data = data

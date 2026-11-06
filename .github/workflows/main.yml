@@ -32,6 +32,7 @@ jobs:
           - tox-rest
           - check-whole-repo-tests
           - check-types-hypothesis
+          - check-type-coverage
           - lint
           - check-format
       fail-fast: false

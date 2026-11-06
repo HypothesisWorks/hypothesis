@@ -231,6 +231,8 @@ pyproject-hooks==1.3.3
     # via
     #   build
     #   pip-tools
+pyrefly==1.4.1
+    # via -r requirements/tools.in
 pyright==1.1.414
     # via -r requirements/tools.in
 pytest==9.1.1

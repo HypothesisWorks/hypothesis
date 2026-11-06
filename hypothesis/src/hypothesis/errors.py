@@ -8,12 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.choice import ChoiceConstraintsT
+    from hypothesis.internal.escalation import InterestingOrigin
 else:
     ChoiceConstraintsT = Mapping
 
@@ -31,6 +32,9 @@ class UnsatisfiedAssumption(HypothesisException):
 
     If you're seeing this error something has gone wrong.
     """
+
+    reason: str | None
+    location: str | None
 
     def __init__(
         self, reason: str | None = None, *, location: str | None = None
@@ -93,7 +97,14 @@ class FlakyReplay(Flaky):
     a FlakyFailure exception group for final presentation.
     """
 
-    def __init__(self, reason, interesting_origins=None):
+    reason: str
+    _interesting_origins: Sequence["InterestingOrigin | None"]
+
+    def __init__(
+        self,
+        reason: str,
+        interesting_origins: Sequence["InterestingOrigin | None"] = (),
+    ) -> None:
         super().__init__(reason)
         self.reason = reason
         self._interesting_origins = interesting_origins
@@ -179,7 +190,7 @@ class FlakyFailure(ExceptionGroup, Flaky):
         See also the :doc:`flaky failures tutorial </tutorial/flaky>`.
     """
 
-    def __new__(cls, msg, group):
+    def __new__(cls, msg: str, group: Iterable[BaseException]) -> Self:
         # The Exception mixin forces this an ExceptionGroup (only accepting
         # Exceptions, not BaseException). Usually BaseException is raised
         # directly and will hence not be part of a FlakyFailure, but I'm not
@@ -190,12 +201,12 @@ class FlakyFailure(ExceptionGroup, Flaky):
                 err = _WrappedBaseException()
                 err.__cause__ = err.__context__ = exc
                 group[i] = err
-        return ExceptionGroup.__new__(cls, msg, group)
+        return ExceptionGroup.__new__(cls, msg, group)  # type: ignore[type-var]
 
     # defining `derive` is required for `split` to return an instance of FlakyFailure
     # instead of ExceptionGroup. See https://github.com/python/cpython/issues/119287
     # and https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive
-    def derive(self, excs):
+    def derive(self, excs: Sequence[Exception]) -> Self:  # type: ignore[override]
         return type(self)(self.message, excs)
 
 
@@ -295,6 +306,9 @@ class DeadlineExceeded(_Trimmable):
     setting.
     """
 
+    runtime: timedelta
+    deadline: timedelta
+
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
             f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
@@ -305,9 +319,7 @@ class DeadlineExceeded(_Trimmable):
         self.runtime = runtime
         self.deadline = deadline
 
-    def __reduce__(
-        self,
-    ) -> tuple[type["DeadlineExceeded"], tuple[timedelta, timedelta]]:
+    def __reduce__(self) -> tuple[type["Self"], tuple[timedelta, timedelta]]:
         return (type(self), (self.runtime, self.deadline))
 
 
@@ -315,6 +327,8 @@ class StopTest(BaseException):
     """Raised when a test should stop running and return control to
     the Hypothesis engine, which should then continue normally.
     """
+
+    testcounter: int
 
     def __init__(self, testcounter: int) -> None:
         super().__init__(repr(testcounter))
@@ -331,6 +345,8 @@ class Found(HypothesisException):
 
 class RewindRecursive(Exception):
     """Signal that the type inference should be rewound due to recursive types. Internal use only."""
+
+    target: object
 
     def __init__(self, target: object) -> None:
         self.target = target
@@ -378,6 +394,8 @@ class BackendCannotProceed(HypothesisException):
             skip any further processing and continue with another test case from
             this backend.
     """
+
+    scope: CannotProceedScopeT
 
     def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
         if scope not in _valid_cannot_proceed_scopes:

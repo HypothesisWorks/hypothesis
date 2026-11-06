@@ -10,4 +10,4 @@
 
 from hypothesis._native import __version__ as __version__
 
-__version_info__ = tuple(int(p) for p in __version__.split("."))
+__version_info__: tuple[int, ...] = tuple(int(p) for p in __version__.split("."))
