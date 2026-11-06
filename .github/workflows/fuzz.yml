@@ -55,7 +55,7 @@ jobs:
     # we want to multiplex across and that would be annoying to manage.
     # TODO: revisit this later; a redis-like service would be so much nicer.
     - name: Download example database
-      uses: dawidd6/action-download-artifact@eab87c9830c39eff17e5a6eadb20bfb4bc880477 # v27
+      uses: dawidd6/action-download-artifact@a92c7ae74cf1df8810783758581e485ac3aaa309 # v28
       with:
         name: hypothesis-example-db
         path: .hypothesis/examples

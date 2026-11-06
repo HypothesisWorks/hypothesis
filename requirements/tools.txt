@@ -36,7 +36,7 @@ build==1.6.1
     # via
     #   -r requirements/tools.in
     #   pip-tools
-cachetools==7.2.6
+cachetools==7.2.8
     # via tox
 certifi==2026.10.23
     # via requests
@@ -83,7 +83,7 @@ executing==2.3.0
     # via stack-data
 feedgenerator==2.2.1
     # via pelican
-filelock==4.2.4
+filelock==4.2.6
     # via
     #   python-discovery
     #   tox
@@ -102,7 +102,7 @@ imagesize==2.0.1
     # via sphinx
 iniconfig==2.3.1
     # via pytest
-ipython==9.17.1
+ipython==9.18.0
     # via -r requirements/tools.in
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -144,7 +144,7 @@ markupsafe==3.0.4
     # via jinja2
 matplotlib-inline==0.2.2
     # via ipython
-maturin==1.15.0
+maturin==1.16.0
     # via -r requirements/tools.in
 mdurl==0.1.2
     # via markdown-it-py
@@ -152,7 +152,7 @@ more-itertools==11.2.1
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==2.4.0
+mypy==2.4.1
     # via -r requirements/tools.in
 mypy-extensions==1.1.0
     # via
@@ -161,7 +161,7 @@ mypy-extensions==1.1.0
     #   mypy
 nh3==0.3.7
     # via readme-renderer
-nodeenv==1.11.0
+nodeenv==1.12.0
     # via pyright
 numpy==2.4.6
     # via -r requirements/tools.in
@@ -193,7 +193,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.6.2
     # via -r requirements/tools.in
-platformdirs==4.13.6
+platformdirs==4.14.2
     # via
     #   black
     #   tox
@@ -212,7 +212,7 @@ pure-eval==0.2.4
     # via stack-data
 pycparser==3.12
     # via cffi
-pyflakes==4.0.3
+pyflakes==4.1.0
     # via autoflake
 pygments==2.19.2
     # via
@@ -225,7 +225,7 @@ pygments==2.19.2
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.12.1
+pyproject-api==1.12.2
     # via tox
 pyproject-hooks==1.3.3
     # via
@@ -235,7 +235,7 @@ pyrefly==1.4.1
     # via -r requirements/tools.in
 pyright==1.1.414
     # via -r requirements/tools.in
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/test.in
     #   pytest-xdist
@@ -246,7 +246,7 @@ python-dateutil==3.0.0
     # via
     #   -r requirements/tools.in
     #   pelican
-python-discovery==1.6.5
+python-discovery==1.9.0
     # via
     #   tox
     #   virtualenv
@@ -338,13 +338,13 @@ tokenize-rt==6.2.0
     # via pyupgrade
 tomli-w==1.2.0
     # via tox
-tox==4.67.2
+tox==4.67.5
     # via
     #   -r requirements/tools.in
     #   tox-uv-bare
-tox-uv==1.37.1
+tox-uv==1.37.3
     # via -r requirements/tools.in
-tox-uv-bare==1.37.1
+tox-uv-bare==1.37.3
     # via tox-uv
 traitlets==5.16.1
     # via
@@ -358,7 +358,7 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2026.5.0.20261006
+types-pytz==2026.6.0.20261031
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
@@ -372,7 +372,7 @@ typing-extensions==4.16.0
     #   mypy
     #   pyright
     #   sortedcontainers-stubs
-tzdata==2026.5
+tzdata==2026.6
     # via python-dateutil
 unidecode==1.4.0
     # via pelican
@@ -385,9 +385,9 @@ uv==0.13.6
     # via tox-uv
 uvicorn==0.54.0
     # via sphinx-autobuild
-virtualenv==21.15.0
+virtualenv==21.15.2
     # via tox
-watchdog==6.0.0
+watchdog==7.0.0
     # via -r requirements/tools.in
 watchfiles==1.3.0
     # via
@@ -395,7 +395,7 @@ watchfiles==1.3.0
     #   sphinx-autobuild
 wcwidth==0.9.4
     # via prompt-toolkit
-websockets==17.3
+websockets==17.4
     # via sphinx-autobuild
 wheel==0.48.0
     # via pip-tools
