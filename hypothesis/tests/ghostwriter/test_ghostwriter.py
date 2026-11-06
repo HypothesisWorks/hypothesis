@@ -10,9 +10,12 @@
 
 import ast
 import builtins
+import dataclasses
 import enum
+import functools
 import inspect
 import json
+import operator
 import re
 import socket
 import subprocess
@@ -25,7 +28,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, ModuleType
-from typing import Any, ForwardRef, TypeVar
+from typing import Annotated, Any, ForwardRef, TypeVar
 
 import attr
 import click
@@ -34,7 +37,7 @@ import pytest
 from hypothesis import HealthCheck, assume, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
-from hypothesis.strategies import builds, from_type, just, lists
+from hypothesis.strategies import builds, floats, from_type, just, lists
 from hypothesis.strategies._internal.core import from_regex
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
@@ -211,6 +214,23 @@ def test_binary_op_also_handles_frozensets():
     # `st.frozenst.sets()` instead of `st.frozensets()`; fixed with re.sub.
     source_code = ghostwriter.binary_operation(takes_frozensets)
     exec(source_code, {})
+
+
+@dataclasses.dataclass(slots=True, frozen=True)
+class Bound:
+    gt: float
+
+
+def annotated_with_instance(x: Annotated[float, Bound(gt=0)]) -> float:
+    return x
+
+
+def test_fuzz_annotated_metadata_instance_includes_imports():
+    # Regression test for issue #4943: the metadata of an Annotated parameter is
+    # written with its module, and imported, as annotated-types bounds need
+    source_code = ghostwriter.fuzz(annotated_with_instance)
+    assert "test_ghostwriter.Bound(gt=0)" in source_code
+    get_test_function(source_code)
 
 
 def test_binary_op_with_numpy_arrays_includes_imports():
@@ -458,6 +478,18 @@ def test_unrepr_identity_elem():
         (
             builds(enum.Enum).filter(Decimal).filter(re.compile),
             {("enum", "Enum"), ("decimal", "Decimal"), ("re", "compile")},
+        ),
+        # a functools.partial filter, as annotated-types bounds give, needs functools
+        # and the imports of the wrapped function and its arguments
+        (
+            builds(Decimal).filter(functools.partial(operator.lt, 0)),
+            {("decimal", "Decimal"), "functools", ("operator", "lt")},
+        ),
+        # including on a lazy strategy, whose repr keeps a filter that unwrapping
+        # folds into the bounds of floats()
+        (
+            floats().filter(functools.partial(operator.lt, 0)),
+            {"functools", ("operator", "lt")},
         ),
         # one_of() strategies recurse into all the branches
         (
