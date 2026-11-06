@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.15:
+
+---------------------
+6.170.15 - 2026-11-06
+---------------------
+
+Hypothesis now has 100% type coverage of our public API, as checked by :pypi:`pyrefly`.
+
 .. _v6.170.14:
 
 ---------------------
