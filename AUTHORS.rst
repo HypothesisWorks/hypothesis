@@ -111,6 +111,7 @@ their individual contributions.
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
 * `Joshua Munn <https://www.github.com/jams2>`_ (public@elysee-munn.family)
 * `jmhsi <https://www.github.com/jmhsi>`_
+* `Justin Guida <https://github.com/jguida941>`_
 * `Justus Magin <https://github.com/keewis>`_
 * `jwg4 <https://www.github.com/jwg4>`_
 * `Kai Chen <https://www.github.com/kx-chen>`_ (kaichen120@gmail.com)
