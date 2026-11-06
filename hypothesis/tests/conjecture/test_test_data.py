@@ -16,7 +16,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.control import BuildContext
-from hypothesis.errors import Frozen
+from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.conjecture.choice import ChoiceTemplate, ValueHole
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
@@ -43,6 +43,14 @@ def test_cannot_draw_after_freeze():
     d.freeze()
     with pytest.raises(Frozen):
         d.draw_boolean()
+
+
+def test_draw_integer_rejects_inverted_bounds():
+    # otherwise the empty range is recorded in the choice tree, and crashes
+    # the engine when it later tries to generate novel prefixes from it.
+    d = ConjectureData.for_choices([])
+    with pytest.raises(InvalidArgument):
+        d.draw_integer(5, 1)
 
 
 def test_can_double_freeze():
