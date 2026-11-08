@@ -6,7 +6,7 @@
 #
 annotated-types==0.8.0
     # via -r requirements/coverage.in
-anyio==4.15.1
+anyio==4.16.0
     # via starlette
 attrs==26.1.0
     # via
@@ -17,12 +17,12 @@ black==26.10.1
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-click==8.5.0
+click==8.5.1
     # via
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.17.0
+coverage[toml]==7.17.2
     # via
     #   hypofuzz
     #   pytest-cov
@@ -46,7 +46,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.11.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.170.12
+hypothesis[cli,watchdog]==6.170.15
     # via hypofuzz
 idna==3.20
     # via
@@ -64,7 +64,7 @@ markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy-extensions==1.1.0
+mypy-extensions==1.2.0
     # via black
 numpy==2.5.4
     # via
@@ -76,13 +76,13 @@ packaging==26.3
     # via
     #   black
     #   pytest
-pandas==3.1.0
+pandas==3.1.1
     # via -r requirements/coverage.in
 pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.13.6
+platformdirs==4.14.5
     # via black
 pluggy==1.7.0
     # via
@@ -94,13 +94,13 @@ psutil==7.2.2
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==26.0.0
+pyarrow==26.0.1
     # via -r requirements/coverage.in
 pygments==2.21.0
     # via
     #   pytest
     #   rich
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/test.in
     #   hypofuzz
@@ -111,13 +111,13 @@ pytest-cov==7.1.0
     # via -r requirements/coverage.in
 pytest-xdist==3.8.0
     # via -r requirements/test.in
-python-dateutil==3.0.0
+python-dateutil==4.0.0
     # via
     #   -r requirements/coverage.in
     #   pandas
 pytokens==0.4.1
     # via black
-pytz==2026.5
+pytz==2026.6
     # via -r requirements/coverage.in
 pyyaml==6.0.3
     # via libcst
@@ -125,8 +125,6 @@ redis==8.1.0
     # via fakeredis
 rich==15.0.0
     # via hypothesis
-six==1.17.0
-    # via python-dateutil
 sniffio==1.3.1
     # via trio
 sortedcontainers==2.4.0
@@ -139,15 +137,15 @@ starlette==1.10.0
     # via hypofuzz
 syrupy==6.1.1
     # via -r requirements/test.in
-trio==0.34.0
+trio==0.35.0
     # via hypofuzz
 typing-extensions==4.16.0
     # via
     #   -r requirements/coverage.in
     #   anyio
-tzdata==2026.5
+tzdata==2026.6
     # via python-dateutil
-watchdog==6.0.0
+watchdog==7.1.0
     # via
     #   -r requirements/coverage.in
     #   hypothesis
