@@ -628,6 +628,35 @@ def is_hashable(value: object) -> bool:
     return _is_hashable(value)[0]
 
 
+def _contains_strategy(value: object) -> bool:
+    # SearchStrategy hashes by identity, including when it is nested inside a
+    # hashable container. Detect that so calc_label can use .label instead.
+    if isinstance(value, SearchStrategy):
+        return True
+    if isinstance(value, tuple):
+        return any(_contains_strategy(item) for item in value)
+    if isinstance(value, frozenset):
+        return any(_contains_strategy(item) for item in value)
+    return False
+
+
+def _label_for_hashable(value: object) -> int:
+    if isinstance(value, SearchStrategy):
+        return value.label
+    if isinstance(value, tuple):
+        return combine_labels(
+            calc_label_from_name("tuple"),
+            *(_label_for_hashable(item) for item in value),
+        )
+    if isinstance(value, frozenset):
+        # Iteration order is not part of frozenset equality.
+        return combine_labels(
+            calc_label_from_name("frozenset"),
+            *sorted(_label_for_hashable(item) for item in value),
+        )
+    return calc_label_from_hash(value)
+
+
 class SampledFromStrategy(SearchStrategy[Ex]):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
@@ -718,14 +747,16 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # (see also test cases in test_labels.py).
         #
         # We therefore use the labels of any component strategies when calculating
-        # our label, and only use the hash if it is not a strategy.
+        # our label, and only use the hash if it is not a strategy. The same
+        # applies to strategies nested inside tuples or frozensets: hashing the
+        # container would fold in id(strategy).
         #
         # That's the ideal, anyway. In reality the logic is more complicated than
         # necessary in order to be efficient in the presence of (very) large sequences:
         # * add an unabashed special case for range, to avoid iteration over an
         #   enormous range when we know it is entirely integers.
-        # * if there is at least one strategy in self.elements, use strategy label,
-        #   and the element hash otherwise.
+        # * if any element is a strategy, or a tuple/frozenset containing one,
+        #   label each element from its strategy labels and hashes.
         # * if there are no strategies in self.elements, take the hash of the
         #   entire sequence. This prevents worst-case performance of hashing each
         #   element when a hash of the entire sequence would have sufficed.
@@ -736,7 +767,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         elements_is_hashable, hash_value = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
             elements_is_hashable
-            and not any(isinstance(e, SearchStrategy) for e in self.elements)
+            and not any(_contains_strategy(e) for e in self.elements)
         ):
             return combine_labels(
                 self.class_label, calc_label_from_name(str(hash_value))
@@ -746,12 +777,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         for element in self.elements:
             if not is_hashable(element):
                 continue
-
-            labels.append(
-                element.label
-                if isinstance(element, SearchStrategy)
-                else calc_label_from_hash(element)
-            )
+            labels.append(_label_for_hashable(element))
 
         return combine_labels(*labels)
 

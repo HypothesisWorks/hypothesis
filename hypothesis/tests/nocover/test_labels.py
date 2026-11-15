@@ -77,6 +77,35 @@ def test_sampled_from_label_with_strategies_does_not_change(strategy):
     assert s1.label == s2.label
 
 
+def test_sampled_from_label_stable_for_tuples_containing_strategies():
+    # A strategy hashes by identity, so a tuple or frozenset that contains one
+    # must be labeled from the strategy's .label or two identical sampled_from
+    # strategies get different labels.
+    def elements():
+        return [("a", st.integers().map(abs)), ("b", st.booleans())]
+
+    s1 = st.sampled_from(elements())
+    s2 = st.sampled_from(elements())
+    assert s1.label == s2.label
+
+    def nested():
+        return [(("a", st.integers().map(abs)),), frozenset([st.booleans()])]
+
+    assert st.sampled_from(nested()).label == st.sampled_from(nested()).label
+    # Frozenset order is not part of equality, so it must not affect the label.
+    forwards = st.sampled_from(
+        [frozenset([("a", st.integers().map(abs)), ("b", st.booleans())])]
+    )
+    backwards = st.sampled_from(
+        [frozenset([("b", st.booleans()), ("a", st.integers().map(abs))])]
+    )
+    assert forwards.label == backwards.label
+    assert (
+        st.sampled_from([("a", st.integers().map(abs))]).label
+        != st.sampled_from([("b", st.integers().map(abs))]).label
+    )
+
+
 def test_label_of_enormous_sampled_range():
     # this should not take forever.
     st.sampled_from(range(2**30)).label

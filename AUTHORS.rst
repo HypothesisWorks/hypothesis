@@ -171,6 +171,7 @@ their individual contributions.
 * `Robert Howlett <https://github.com/jebob>`_
 * `Robert Knight <https://github.com/robertknight>`_ (robertknight@gmail.com)
 * `Rodrigo Girão Serrão <https://github.com/rodrigogiraoserrao>`_ (rodrigo@mathspp.com)
+* `rome-xi <https://www.github.com/rome-xi>`_ (2685138823@qq.com)
 * `Rónán Carrigan <https://www.github.com/rcarriga>`_ (rcarriga@tcd.ie)
 * `Ruben Opdebeeck <https://github.com/ROpdebee>`_
 * `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
