@@ -468,9 +468,11 @@ def _strategy(
                 # We therefore have to chain .swapcase() calls until a fixpoint.
                 stack = [c.swapcase()]
                 while stack:
-                    for char in stack.pop():
+                    swapped = stack.pop()
+                    # slice rather than iterate, so bytes stay bytes instead of ints
+                    for char in (swapped[i : i + 1] for i in range(len(swapped))):
                         blacklist.add(char)
-                        stack.extend(set(char.swapcase()) - blacklist)
+                        stack.extend({char.swapcase()} - blacklist)
 
             if is_unicode:
                 return _intervals_to_strategy(
