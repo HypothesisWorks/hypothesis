@@ -520,7 +520,8 @@ def find_annotated_strategy(annotated_type):
     at = sys.modules.get("annotated_types")
     base_type = annotated_type.__origin__
     timezones_strategy = None
-    for constraint in _get_constraints(metadata):
+    constraints = list(_get_constraints(metadata))
+    for constraint in constraints:
         if isinstance(constraint, st.SearchStrategy):
             return constraint
         if convert := constraints_map.get(type(constraint)):
@@ -545,6 +546,14 @@ def find_annotated_strategy(annotated_type):
         base_strategy = fn(timezones=timezones_strategy)
     else:
         base_strategy = st.from_type(base_type)
+    if (
+        at
+        and base_type is decimal.Decimal
+        and any(isinstance(c, (at.Gt, at.Ge, at.Lt, at.Le)) for c in constraints)
+    ):
+        # NaN never satisfies a bound, and comparing a Decimal NaN raises
+        # InvalidOperation instead of returning False like float NaN does.
+        base_strategy = base_strategy.filter(lambda x: not x.is_nan())
     for filter_condition in filter_conditions:
         base_strategy = base_strategy.filter(filter_condition)
 

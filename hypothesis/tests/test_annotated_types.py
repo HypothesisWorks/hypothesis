@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import zoneinfo
+from decimal import Decimal
 from typing import Annotated, NotRequired, TypedDict, TypeVar
 
 import pytest
@@ -29,6 +30,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
+from tests.common.utils import temp_registered
 
 try:
     import annotated_types as at
@@ -144,6 +146,21 @@ def test_annotated_datetime_bounds_are_rewritten():
     assert strategy.max_value == hi - dt.timedelta(microseconds=1)
     # and contradictory constraints give a visibly-empty strategy
     assert st.from_type(Annotated[dt.datetime, at.Gt(hi), at.Lt(lo)]).is_empty
+
+
+@pytest.mark.parametrize(
+    "constraint", [at.Gt(1), at.Ge(1), at.Lt(1), at.Le(1), at.Interval(ge=0, le=10)]
+)
+def test_annotated_decimal_bounds_skip_nan(constraint):
+    # comparing Decimal("NaN") raises InvalidOperation rather than returning False
+    check_can_generate_examples(st.from_type(Annotated[Decimal, constraint]))
+
+
+def test_annotated_decimal_respects_registered_strategy():
+    with temp_registered(Decimal, st.just(Decimal(7))):
+        assert_simple_property(
+            st.from_type(Annotated[Decimal, at.Gt(1)]), lambda x: x == 7
+        )
 
 
 def test_predicate_constraint():
