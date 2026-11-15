@@ -170,6 +170,8 @@ class ChoiceNode:
             return False
 
     def __eq__(self, other: object) -> bool:
+        if self is other:
+            return True
         if not isinstance(other, ChoiceNode):
             return NotImplemented
 
