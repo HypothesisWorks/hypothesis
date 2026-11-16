@@ -140,6 +140,7 @@ class Tracer:
         if self._tried_and_failed_to_trace:
             return  # pragma: no cover  # only true after the race in __enter__ above
 
+        sys.monitoring.set_events(MONITORING_TOOL_ID, 0)
         sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
         for event in MONITORING_EVENTS:
             sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None)

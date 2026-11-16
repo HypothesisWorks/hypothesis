@@ -25,6 +25,7 @@ their individual contributions.
 * `Andrea Reina <https://www.github.com/andreareina>`_
 * `Andrew Sansom <https://www.github.com/qthequartermasterman>`_
 * `Anne Archibald <https://www.github.com/td-anne>`_
+* `Anubhav Lal <https://github.com/anubhavlal07>`_
 * `Arjoonn Sharma <https://github.com/thesage21>`_
 * `Arjun Aravind <https://github.com/Arjun-Aravind>`_
 * `Ben Anhalt <https://github.com/benanhalt>`_

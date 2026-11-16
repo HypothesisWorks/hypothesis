@@ -16,7 +16,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.scrutineer import MONITORING_TOOL_ID
+from hypothesis.internal.scrutineer import MONITORING_TOOL_ID, Tracer
 
 
 @contextmanager
@@ -44,3 +44,16 @@ def test_monitoring_warns_on_registered_tool_id(warns_or_raises):
 
         with pytest.raises(AssertionError):
             f()
+
+
+@pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="new namespace")
+@pytest.mark.skipif(PYPY, reason="scrutineer is disabled on PyPy")
+def test_tracer_clears_monitoring_events_on_exit():
+    if sys.monitoring.get_tool(MONITORING_TOOL_ID) is not None:
+        pytest.skip("monitoring tool id is already in use")
+
+    with Tracer(should_trace=True):
+        assert sys.monitoring.get_events(MONITORING_TOOL_ID) != 0
+
+    assert sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
+    assert sys.monitoring.get_events(MONITORING_TOOL_ID) == 0
