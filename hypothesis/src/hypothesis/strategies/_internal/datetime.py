@@ -337,7 +337,8 @@ def _as_naive_datetime(value):
 
 
 def _tz_state(instant, tz):
-    aware = instant.replace(tzinfo=dt.timezone.utc).astimezone(tz)
+    # same as .replace(tzinfo=utc).astimezone(tz), minus the conversion via utc
+    aware = tz.fromutc(instant.replace(tzinfo=tz))
     return (aware.utcoffset(), aware.dst(), aware.tzname())
 
 
