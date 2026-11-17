@@ -94,6 +94,21 @@ def sort_key(nodes: Sequence[ChoiceNode]) -> tuple[int, tuple[int, ...]]:
     )
 
 
+def sort_key_lt(nodes1: Sequence[ChoiceNode], nodes2: Sequence[ChoiceNode]) -> bool:
+    """``sort_key(nodes1) < sort_key(nodes2)``, without computing the index of
+    every node. Candidates mostly share their nodes with the shrink target."""
+    if len(nodes1) != len(nodes2):
+        return len(nodes1) < len(nodes2)
+    for n1, n2 in zip(nodes1, nodes2, strict=True):
+        if n1 is n2:
+            continue
+        i1 = choice_to_index(n1.value, n1.constraints)
+        i2 = choice_to_index(n2.value, n2.constraints)
+        if i1 != i2:
+            return i1 < i2
+    return False
+
+
 @lru_cache(maxsize=4096)
 def _natural_simpler_chars(c, intervals):
     """Return single-char replacements for ``c`` derived from natural text
@@ -406,7 +421,7 @@ class Shrinker:
 
         # note that sort_key can raise on invalid nodes, so we need to check
         # choice_permitted first
-        if sort_key(self.nodes) < sort_key(nodes):
+        if sort_key_lt(self.nodes, nodes):
             return (False, None)
 
         result = self.engine.cached_test_function(
@@ -427,7 +442,7 @@ class Shrinker:
             return
         if (
             self.__predicate(data)
-            and sort_key(data.nodes) < sort_key(self.shrink_target.nodes)
+            and sort_key_lt(data.nodes, self.shrink_target.nodes)
             and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
@@ -1142,7 +1157,7 @@ class Shrinker:
         assert prev_target is not new_target
         prev_nodes = prev_target.nodes
         new_nodes = new_target.nodes
-        assert sort_key(new_target.nodes) < sort_key(prev_target.nodes)
+        assert sort_key_lt(new_target.nodes, prev_target.nodes)
 
         if len(prev_nodes) != len(new_nodes) or any(
             n1.type != n2.type for n1, n2 in zip(prev_nodes, new_nodes, strict=True)
