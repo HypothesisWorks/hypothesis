@@ -17,7 +17,14 @@ import pytest
 from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, StopTest
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
-from hypothesis.strategies._internal.datetime import _instant, datetime_does_not_exist
+from hypothesis.strategies._internal.datetime import (
+    _SCAN_HI,
+    _SCAN_LO,
+    _instant,
+    _probe_transitions,
+    _tz_state,
+    datetime_does_not_exist,
+)
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, xfail_on_crosshair
@@ -206,3 +213,22 @@ def test_really_weird_tzinfo_case():
     assert x.tzinfo is not x.astimezone(dt.timezone.utc).astimezone(x.tzinfo)
     # And that weird case exercises the rare branch in our helper:
     assert datetime_does_not_exist(x)
+
+
+def _tz_state_via_utc(instant, tzinfo):
+    aware = instant.replace(tzinfo=dt.timezone.utc).astimezone(tzinfo)
+    return (aware.utcoffset(), aware.dst(), aware.tzname())
+
+
+@given(datetimes(min_value=_SCAN_LO, max_value=_SCAN_HI), timezones())
+def test_tz_state_matches_astimezone(instant, tzinfo):
+    assert _tz_state(instant, tzinfo) == _tz_state_via_utc(instant, tzinfo)
+
+
+def test_tz_state_matches_astimezone_at_dublin_transitions():
+    # Europe/Dublin has a negative DST offset since 1971
+    tzinfo = pytz.timezone("Europe/Dublin")
+    for transition in _probe_transitions(tzinfo, _SCAN_LO, _SCAN_HI):
+        for seconds in (-1, 0, 1):
+            instant = transition + dt.timedelta(seconds=seconds)
+            assert _tz_state(instant, tzinfo) == _tz_state_via_utc(instant, tzinfo)
