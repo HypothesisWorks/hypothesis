@@ -170,6 +170,8 @@ class ChoiceNode:
             return False
 
     def __eq__(self, other: object) -> bool:
+        if self is other:
+            return True
         if not isinstance(other, ChoiceNode):
             return NotImplemented
 
@@ -580,7 +582,20 @@ def choice_permitted(choice: ChoiceT, constraints: ChoiceConstraintsT) -> bool:
 
 
 def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
-    return tuple(choice_key(choice) for choice in choices)
+    # ints, strings, and bytes are their own keys; skip the call for them.
+    return tuple(
+        [
+            (
+                cast(ChoiceKeyT, choice)
+                if type(choice) in _SELF_KEYED_TYPES
+                else choice_key(choice)
+            )
+            for choice in choices
+        ]
+    )
+
+
+_SELF_KEYED_TYPES = frozenset({int, str, bytes})
 
 
 def choice_key(choice: ChoiceT) -> ChoiceKeyT:
@@ -625,9 +640,15 @@ def choice_constraints_key(
         return (
             constraints["min_value"],
             constraints["max_value"],
-            None if constraints["weights"] is None else tuple(constraints["weights"]),
+            (
+                None
+                if constraints["weights"] is None
+                else tuple(sorted(constraints["weights"].items()))
+            ),
             constraints["shrink_towards"],
         )
+    if choice_type == "boolean":
+        return (constraints["p"],)  # type: ignore
     return tuple(constraints[key] for key in sorted(constraints))  # type: ignore
 
 
@@ -635,3 +656,26 @@ def choices_size(choices: Iterable[ChoiceT]) -> int:
     from hypothesis.database import choices_to_bytes
 
     return len(choices_to_bytes(choices))
+
+
+def choice_size(choice: ChoiceT) -> int:
+    """Equivalent to ``choices_size([choice])``, without serializing ``choice``."""
+    if isinstance(choice, bool):
+        return 1
+    if isinstance(choice, float):
+        size = 8
+    elif isinstance(choice, int):
+        size = 1 + choice.bit_length() // 8
+    elif isinstance(choice, bytes):
+        size = len(choice)
+    else:
+        assert isinstance(choice, str)
+        size = (
+            len(choice)
+            if choice.isascii()
+            else len(choice.encode(errors="surrogatepass"))
+        )
+    if size < 0b11111:
+        return 1 + size
+    # metadata byte, uleb128-encoded size, payload
+    return 1 + max(1, -(-size.bit_length() // 7)) + size

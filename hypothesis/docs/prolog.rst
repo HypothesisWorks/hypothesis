@@ -50,6 +50,7 @@
 .. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
 .. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture <hypothesis.HealthCheck.function_scoped_fixture>`
 .. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors <hypothesis.HealthCheck.differing_executors>`
+.. |HealthCheck.large_base_example| replace:: :obj:`HealthCheck.large_base_example <hypothesis.HealthCheck.large_base_example>`
 .. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
 
 .. |Phase| replace:: :obj:`Phase <hypothesis.Phase>`

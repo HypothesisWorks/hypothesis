@@ -50,7 +50,6 @@ from types import EllipsisType, FunctionType, GenericAlias
 from typing import (
     Annotated,
     Any,
-    AnyStr,
     Concatenate,
     Literal,
     NewType,
@@ -84,7 +83,6 @@ from hypothesis.errors import (
     SmallSearchSpaceWarning,
 )
 from hypothesis.internal.charmap import (
-    Categories,
     CategoryName,
     as_general_categories,
     categories as all_categories,
@@ -149,6 +147,7 @@ from hypothesis.strategies._internal.numbers import (
 from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
+    T1,
     Ex,
     SampledFromStrategy,
     T,
@@ -612,13 +611,13 @@ _get_first_item = operator.itemgetter(0)
 @cacheable
 @defines_strategy()
 def dictionaries(
-    keys: SearchStrategy[Ex],
+    keys: SearchStrategy[T1],
     values: SearchStrategy[T],
     *,
     dict_class: type = dict,
     min_size: int = 0,
     max_size: int | None = None,
-) -> SearchStrategy[dict[Ex, T]]:
+) -> SearchStrategy[dict[T1, T]]:
     # Describing the exact dict_class to Mypy drops the key and value types,
     # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
     """Generates dictionaries of type ``dict_class`` with keys drawn from the ``keys``
@@ -719,7 +718,6 @@ def characters(
     check_valid_size(min_codepoint, "min_codepoint")
     check_valid_size(max_codepoint, "max_codepoint")
     check_valid_interval(min_codepoint, max_codepoint, "min_codepoint", "max_codepoint")
-    categories = cast(Categories | None, categories)
     if categories is not None and exclude_categories is not None:
         raise InvalidArgument(
             f"Pass at most one of {categories=} and {exclude_categories=} - "
@@ -891,6 +889,10 @@ def text(
     # setting Ex = str. Mypy is correct to complain because we have an LSP violation
     # here in the TextStrategy.do_draw override. Would need refactoring to resolve.
     return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)  # type: ignore
+
+
+# typing.AnyStr is deprecated as of Python 3.16
+AnyStr = TypeVar("AnyStr", str, bytes)
 
 
 @overload
@@ -1263,8 +1265,7 @@ def builds(
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
 
     # validated by handling all EllipsisType in the to_infer case
-    kwargs = cast(dict[str, SearchStrategy], kwargs)
-    return BuildsStrategy(target, args, kwargs)
+    return BuildsStrategy(target, args, cast(dict[str, SearchStrategy], kwargs))
 
 
 @cacheable
@@ -1647,6 +1648,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             hints = get_type_hints(thing)
             params: Mapping[str, Parameter] = get_signature(thing).parameters
         except Exception:
+            hints = {}
             params = {}
 
         posonly_args = []
@@ -1954,12 +1956,12 @@ def decimals(
 
 @defines_strategy(eager=True)
 def recursive(
-    base: SearchStrategy[Ex],
+    base: SearchStrategy[T1],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
     *,
     min_leaves: int | None = None,
     max_leaves: int = 100,
-) -> SearchStrategy[T | Ex]:
+) -> SearchStrategy[T | T1]:
     """base: A strategy to start from.
 
     extend: A function which takes a strategy and returns a new strategy.
@@ -2422,6 +2424,9 @@ class DataObject:
 
     # Note that "only exists" here really means "is only exported to users",
     # but we want to treat it as "semi-stable", not document it as "public API".
+
+    count: int
+    conjecture_data: ConjectureData
 
     def __init__(self, data: ConjectureData) -> None:
         self.count = 0

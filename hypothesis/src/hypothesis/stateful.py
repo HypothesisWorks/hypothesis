@@ -19,13 +19,24 @@ execution to date.
 import collections
 import dataclasses
 import inspect
-from collections.abc import Callable, Iterable, Sequence
+import unittest
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, ClassVar, Literal, TypeVar, overload
-from unittest import TestCase
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Final,
+    Literal,
+    Never,
+    TypeGuard,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from hypothesis import strategies as st
 from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
@@ -41,7 +52,7 @@ from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.observability import observability_enabled
+from hypothesis.internal.observability import PredicateCounts, observability_enabled
 from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
@@ -63,8 +74,20 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.utils.deprecation import note_deprecation
 from hypothesis.vendor.pretty import RepresentationPrinter
 
+if TYPE_CHECKING:
+    from collections import defaultdict
+
+    from hypothesis.internal.conjecture.data import ConjectureData
+
+    # closure type returned by `RuleBasedStateMachine._to_test_case`
+    class _StateMachineTestCase(unittest.TestCase):
+        settings: ClassVar[Settings]
+
+        def runTest(self) -> None: ...
+
+
 T = TypeVar("T")
-STATE_MACHINE_RUN_LABEL = calc_label_from_name("another state machine step")
+STATE_MACHINE_RUN_LABEL: Final[int] = calc_label_from_name("another state machine step")
 
 
 def _is_singleton(obj: object) -> bool:
@@ -87,21 +110,30 @@ class _OmittedArgument:
 
 
 class TestCaseProperty:  # pragma: no cover
-    def __get__(self, obj, typ=None):
+    def __get__(
+        self,
+        obj: "RuleBasedStateMachine | None",
+        typ: type["RuleBasedStateMachine"] | None = None,
+    ) -> type["_StateMachineTestCase"]:
         if obj is not None:
             typ = type(obj)
+        assert typ is not None
         return typ._to_test_case()
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: Never, value: Never) -> Never:
         raise AttributeError("Cannot set TestCase")
 
-    def __delete__(self, obj):
+    def __delete__(self, obj: Never) -> Never:
         raise AttributeError("Cannot delete TestCase")
 
 
 def get_state_machine_test(
-    state_machine_factory, *, settings=None, _min_steps=0, _flaky_state=None
-):
+    state_machine_factory: type["RuleBasedStateMachine"],
+    *,
+    settings: Settings | None = None,
+    _min_steps: int = 0,
+    _flaky_state: dict[str, bool] | None = None,
+) -> Callable[..., None]:
     # This function is split out from run_state_machine_as_test so that
     # HypoFuzz can get and call the test function directly.
     if settings is None:
@@ -238,21 +270,26 @@ def get_state_machine_test(
             machine.teardown()
 
     # Use a machine digest to identify stateful tests in the example database
-    run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = (
+    run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = (  # type: ignore[attr-defined]
         function_digest(state_machine_factory)
     )
     # Copy some attributes so @seed and @reproduce_failure "just work"
-    run_state_machine._hypothesis_internal_use_seed = getattr(
+    run_state_machine._hypothesis_internal_use_seed = getattr(  # type: ignore[attr-defined]
         state_machine_factory, "_hypothesis_internal_use_seed", None
     )
-    run_state_machine._hypothesis_internal_use_reproduce_failure = getattr(
+    run_state_machine._hypothesis_internal_use_reproduce_failure = getattr(  # type: ignore[attr-defined]
         state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
     )
-    run_state_machine._hypothesis_internal_print_given_args = False
+    run_state_machine._hypothesis_internal_print_given_args = False  # type: ignore[attr-defined]
     return run_state_machine
 
 
-def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_steps=0):
+def run_state_machine_as_test(
+    state_machine_factory: type["RuleBasedStateMachine"],
+    *,
+    settings: Settings | None = None,
+    _min_steps: int = 0,
+) -> None:
     """Run a state machine definition as a test, either silently doing nothing
     or printing a minimal breaking program and raising an exception.
 
@@ -280,7 +317,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
 
 
 class StateMachineMeta(type):
-    def __setattr__(cls, name, value):
+    def __setattr__(cls, name: str, value: Any) -> None:
         if name == "settings" and isinstance(value, Settings):
             descr = f"settings({value.show_changed()})"
             raise AttributeError(
@@ -311,6 +348,15 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     _setup_state_per_class: ClassVar[dict[type, _SetupState]] = {}
 
+    rules: list["Rule"]
+    invariants: list["Invariant"]
+    bundles: dict[str, list["VarReference"]]
+    names_counters: collections.Counter[str]
+    names_list: list[str]
+    names_to_values: dict[str, Any]
+
+    _observability_predicates: "defaultdict[str, PredicateCounts]"
+
     def __init__(self) -> None:
         setup_state = self.setup_state()
         if not setup_state.rules:
@@ -332,10 +378,10 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         # copy since we pop from this as we run initialize rules.
         self._initialize_rules_to_run = setup_state.initializers.copy()
 
-        self.bundles: dict[str, list] = {}
-        self.names_counters: collections.Counter = collections.Counter()
-        self.names_list: list[str] = []
-        self.names_to_values: dict[str, Any] = {}
+        self.bundles = {}
+        self.names_counters = collections.Counter()
+        self.names_list = []
+        self.names_to_values = {}
         self.__stream = StringIO()
         self.__printer = RepresentationPrinter(
             self.__stream, context=_current_build_context.value
@@ -358,7 +404,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         self.__printer.flush()
         return self.__stream.getvalue()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}({nicerepr(self.bundles)})"
 
     def _new_name(self, target):
@@ -372,11 +418,11 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         assert len_ >= n
         return self.names_list[len_ - n :]
 
-    def bundle(self, name):
+    def bundle(self, name: str) -> list["VarReference"]:
         return self.bundles.setdefault(name, [])
 
     @classmethod
-    def setup_state(cls):
+    def setup_state(cls) -> _SetupState:
         try:
             return cls._setup_state_per_class[cls]
         except KeyError:
@@ -463,7 +509,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 self.names_to_values[name] = result
                 self.bundles.setdefault(target, []).append(VarReference(name))
 
-    def check_invariants(self, settings, output, runtimes):
+    def check_invariants(
+        self,
+        settings: Settings,
+        output: Callable[[str], object],
+        runtimes: dict[str, float],
+    ) -> None:
         for invar in self.invariants:
             if self._initialize_rules_to_run and not invar.check_during_init:
                 continue
@@ -488,7 +539,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                     HealthCheck.return_value,
                 )
 
-    def teardown(self):
+    def teardown(self) -> None:
         """Called after a run has finished executing to clean up any necessary
         state.
 
@@ -499,19 +550,19 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     @classmethod
     @lru_cache
-    def _to_test_case(cls):
-        class StateMachineTestCase(TestCase):
+    def _to_test_case(cls) -> type["_StateMachineTestCase"]:
+        class StateMachineTestCase(unittest.TestCase):
             settings = Settings(deadline=None, suppress_health_check=list(HealthCheck))
 
             def runTest(self):
                 run_state_machine_as_test(cls, settings=self.settings)
 
-            runTest.is_hypothesis_test = True
-            runTest._hypothesis_state_machine_class = cls
+            runTest.is_hypothesis_test = True  # type: ignore[attr-defined]
+            runTest._hypothesis_state_machine_class = cls  # type: ignore[attr-defined]
 
         StateMachineTestCase.__name__ = cls.__name__ + ".TestCase"
         StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
-        return StateMachineTestCase
+        return cast("type[_StateMachineTestCase]", StateMachineTestCase)
 
 
 @dataclass(slots=True, frozen=False)
@@ -574,7 +625,7 @@ class Rule:
         return self._cached_hash
 
 
-self_strategy = st.runner()
+self_strategy: Final[SearchStrategy[Any]] = st.runner()
 
 
 class _BundleSampler(SampledFromStrategy):
@@ -636,6 +687,32 @@ class Bundle(SearchStrategy[Ex]):
     are equivalent, and only ever consume the value which was actually drawn.
     """
 
+    name: str
+    consume: bool
+    draw_references: bool
+
+    @overload
+    def __init__(
+        self: "Bundle[VarReference]",
+        name: str,
+        *,
+        consume: bool = False,
+        draw_references: Literal[True],
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Any], Any], str | None], ...
+        ] = (),
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        draw_references: Literal[False] = False,
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Ex], Any], str | None], ...
+        ] = (),
+    ) -> None: ...
     def __init__(
         self,
         name: str,
@@ -643,7 +720,7 @@ class Bundle(SearchStrategy[Ex]):
         consume: bool = False,
         draw_references: bool = False,
         transformations: tuple[
-            tuple[Literal["filter", "map"], Callable[[Ex], Any], str | None], ...
+            tuple[Literal["filter", "map"], Callable[[Any], Any], str | None], ...
         ] = (),
     ) -> None:
         super().__init__()
@@ -652,7 +729,7 @@ class Bundle(SearchStrategy[Ex]):
         self.draw_references = draw_references
         self._transformations = transformations
 
-    def do_draw(self, data):
+    def do_draw(self, data: "ConjectureData") -> Ex:
         machine = data.draw(self_strategy)
         bundle = machine.bundle(self.name)
         if not bundle:
@@ -673,10 +750,10 @@ class Bundle(SearchStrategy[Ex]):
                 f"Aborted test because unable to satisfy {self!r}",
                 location=data.last_rejected_filter_location(),
             )
-        position, reference, value = result
+        position, reference, value = cast("tuple[int, VarReference, Any]", result)
         if self.consume:
             bundle.pop(position)  # pragma: no cover  # coverage is flaky here
-        return reference if self.draw_references else value
+        return cast("Ex", reference) if self.draw_references else value
 
     # We intercept .filter and .map, rather than relying on the generic
     # FilteredStrategy and MappedStrategy wrappers, so that transformations
@@ -691,10 +768,24 @@ class Bundle(SearchStrategy[Ex]):
             transformations=(*self._transformations, (name, f, location)),
         )
 
-    def map(self, pack):
+    @overload
+    def map(
+        self: "Bundle[VarReference]", pack: Callable[[Any], Any]
+    ) -> "Bundle[VarReference]": ...
+    @overload
+    def map(self, pack: Callable[[Ex], T]) -> "Bundle[T]": ...
+    def map(self, pack: Callable[[Any], Any]) -> "Bundle[Any]":
         return self.__with_transform("map", pack)
 
-    def filter(self, condition):
+    @overload
+    def filter(
+        self: "Bundle[VarReference]", condition: Callable[[Any], Any]
+    ) -> "Bundle[VarReference]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], TypeGuard[T]]) -> "Bundle[T]": ...
+    @overload
+    def filter(self, condition: Callable[[Ex], Any]) -> "Bundle[Ex]": ...
+    def filter(self, condition: Callable[[Ex], Any]) -> "Bundle[Any]":
         return self.__with_transform(
             "filter", condition, location=current_filter_call_site()
         )
@@ -703,25 +794,25 @@ class Bundle(SearchStrategy[Ex]):
         consume = ", consume=True" if self.consume else ""
         return f"Bundle(name={self.name!r}{consume})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         transforms = "".join(
             f".{name}({get_pretty_function_description(f)})"
             for name, f, _ in self._transformations
         )
         return self._base_repr() + transforms
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: Callable[[Any], bool]) -> Literal[False]:
         # We assume that a bundle will grow over time
         return False
 
-    def is_currently_empty(self, data):
+    def is_currently_empty(self, data: "ConjectureData") -> bool:
         # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
         # Hence drawing from it only returns the current state machine without
         # modifying the underlying choice sequence.
         machine = data.draw(self_strategy)
         return not bool(machine.bundle(self.name))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         # Making this hashable means we hit the fast path of "everything is
         # hashable" in st.sampled_from label calculation when sampling which rule
         # to invoke next.
@@ -752,7 +843,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
 class MultipleResults(Iterable[Ex]):
     values: tuple[Ex, ...]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Ex]:
         return iter(self.values)
 
 
@@ -1160,6 +1251,12 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
 
 
 class RuleStrategy(SearchStrategy):
+    machine: RuleBasedStateMachine
+    rules: list["Rule"]
+    rule_names: frozenset[str]
+    rules_strategy: SearchStrategy[Rule]
+    enabled_rules_strategy: SearchStrategy[FeatureFlags]
+
     def __init__(self, machine: RuleBasedStateMachine) -> None:
         super().__init__()
         self.machine = machine
@@ -1181,7 +1278,7 @@ class RuleStrategy(SearchStrategy):
     @lru_cache
     def _setup_for(
         cls, machine_type: type[RuleBasedStateMachine]
-    ) -> tuple[list["Rule"], frozenset[str], SearchStrategy]:
+    ) -> tuple[list["Rule"], frozenset[str], SearchStrategy[Rule]]:
         # Cache (per machine class) the work of sorting the rules and building
         # the sampled_from strategy, which is O(number of rules) and would
         # otherwise be repeated every time the machine is instantiated; see
@@ -1204,7 +1301,7 @@ class RuleStrategy(SearchStrategy):
         rule_names = frozenset(r.function.__name__ for r in rules)
         return (rules, rule_names, st.sampled_from(rules))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
 
     def _rule_is_enabled(self, r):
@@ -1217,7 +1314,7 @@ class RuleStrategy(SearchStrategy):
         assert self._feature_flags is not None
         return self.is_valid(r) and self._feature_flags.is_enabled(r.function.__name__)
 
-    def do_draw(self, data):
+    def do_draw(self, data: "ConjectureData") -> tuple[Rule, dict[Any, Any]]:
         if not any(self.is_valid(rule) for rule in self.rules):
             rules = ", ".join([rule.function.__name__ for rule in self.rules])
             msg = (
@@ -1239,7 +1336,7 @@ class RuleStrategy(SearchStrategy):
                 raise
         return (rule, arguments)
 
-    def is_valid(self, rule):
+    def is_valid(self, rule: Rule) -> bool:
         for b in rule.bundles:
             if not self.machine.bundle(b.name):
                 return False

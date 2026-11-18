@@ -18,6 +18,142 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.15:
+
+---------------------
+6.170.15 - 2026-11-06
+---------------------
+
+Hypothesis now has 100% type coverage of our public API, as checked by :pypi:`pyrefly`.
+
+.. _v6.170.14:
+
+---------------------
+6.170.14 - 2026-10-30
+---------------------
+
+This patch adjusts coverage settings for new dependencies; there is no
+user-visible change.
+
+.. _v6.170.13:
+
+---------------------
+6.170.13 - 2026-10-28
+---------------------
+
+This patch fixes the :ref:`codemod <codemods>` for deprecated
+:func:`~hypothesis.strategies.characters` arguments, which previously raised
+an error when ``**kwargs`` were also passed.
+
+.. _v6.170.12:
+
+---------------------
+6.170.12 - 2026-10-26
+---------------------
+
+This patch reduces Hypothesis' overhead for each test case. For simple
+properties and strategies, generating test cases takes up to a third less time
+and shrinking failing examples is up to twice as fast; most tests will see a
+smaller improvement. ``import hypothesis`` is also about 20% faster.
+
+.. _v6.170.11:
+
+---------------------
+6.170.11 - 2026-10-26
+---------------------
+
+This patch makes writing :ref:`observability <observability>` data to
+``.hypothesis/observed`` cheaper when tests run in multiple threads, and
+defers cleaning up old observation files from import time until
+observations are first written.
+
+.. _v6.170.10:
+
+---------------------
+6.170.10 - 2026-10-25
+---------------------
+
+This patch fixes an internal error from |st.lists| with ``unique=True``, when
+the elements are a filtered |st.sampled_from| with too few allowed values to
+reach ``min_size``.  It also ensures that |st.domains| always generates at
+least one subdomain, even with a small ``max_length``.
+
+We also fixed some internal bookkeeping that could go wrong when an exception
+was raised and caught during generation, for example by |st.recursive|, which
+could make shrinking less effective.
+
+.. _v6.170.9:
+
+--------------------
+6.170.9 - 2026-10-23
+--------------------
+
+This release fixes a :py:exc:`DeprecationWarning` when importing
+:mod:`hypothesis.extra.dateutil` with :pypi:`dateutil` 3.0 or higher
+(:issue:`4934`).
+
+.. _v6.170.8:
+
+--------------------
+6.170.8 - 2026-10-22
+--------------------
+
+This patch fixes a regression in :ref:`version 6.170.1 <v6.170.1>`, where
+unique collections of non-empty collections, such as
+``st.sets(st.frozensets(st.integers(), min_size=1), min_size=1)``, could fail
+the |HealthCheck.large_base_example| health check (:issue:`4918`).
+
+.. _v6.170.7:
+
+--------------------
+6.170.7 - 2026-10-22
+--------------------
+
+This improves type coverage of :ref:`stateful testing <stateful>`.
+
+.. _v6.170.6:
+
+--------------------
+6.170.6 - 2026-10-22
+--------------------
+
+This patch adds PyPy 3.12 wheels to releases (:issue:`4921`).
+
+Thanks to @moreati for this contribution!
+
+.. _v6.170.5:
+
+--------------------
+6.170.5 - 2026-10-20
+--------------------
+
+This patch fixes a bug for users of our |PrimitiveProvider| interface, where ``draw_integer`` could incorrectly reuse weights from an earlier draw (:issue:`4908`).
+
+.. _v6.170.4:
+
+--------------------
+6.170.4 - 2026-10-19
+--------------------
+
+This fills in the missing type annotations for public-facing attributes of |settings|,
+such as |settings.max_examples| and |settings.database|.
+
+.. _v6.170.3:
+
+--------------------
+6.170.3 - 2026-10-19
+--------------------
+
+This patch fixes an internal error when the shrinker tried certain invalid values, for example when shrinking |st.one_of| between text strategies with different alphabets (:issue:`4905`).
+
+.. _v6.170.2:
+
+--------------------
+6.170.2 - 2026-10-19
+--------------------
+
+Add support for Python 3.16, which is still in alpha.
+
 .. _v6.170.1:
 
 --------------------

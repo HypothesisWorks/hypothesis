@@ -116,16 +116,7 @@ class Verbosity(Enum):
 
     @staticmethod
     def _int_value(value: "Verbosity") -> int:
-        # we would just map Verbosity keys, except it's not hashable
-        mapping = {
-            Verbosity.quiet.name: 0,
-            Verbosity.normal.name: 1,
-            Verbosity.verbose.name: 2,
-            Verbosity.debug.name: 3,
-        }
-        # make sure we don't forget any new verbosity members
-        assert list(mapping.keys()) == [verbosity.name for verbosity in Verbosity]
-        return mapping[value.name]
+        return _VERBOSITY_INT_VALUES[value.name]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Verbosity):
@@ -136,6 +127,17 @@ class Verbosity(Enum):
         value1 = Verbosity._int_value(self)
         value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
         return value1 > value2
+
+    def __ge__(self, other: Any) -> bool:
+        value1 = Verbosity._int_value(self)
+        value2 = Verbosity._int_value(other) if isinstance(other, Verbosity) else other
+        return value1 >= value2
+
+
+# we would just map Verbosity keys, except it's not hashable
+_VERBOSITY_INT_VALUES = {"quiet": 0, "normal": 1, "verbose": 2, "debug": 3}
+# make sure we don't forget any new verbosity members
+assert list(_VERBOSITY_INT_VALUES) == [verbosity.name for verbosity in Verbosity]
 
 
 @unique
@@ -457,7 +459,7 @@ def _validate_database(
     )
 
 
-def _validate_phases(phases: Collection[Phase]) -> Sequence[Phase]:
+def _validate_phases(phases: Collection[Phase]) -> tuple[Phase, ...]:
     phases = try_convert(tuple, phases, "phases")
     phases = tuple(
         _validate_enum_value(Phase, phase, name="phases") for phase in phases
@@ -476,8 +478,8 @@ def _validate_stateful_step_count(stateful_step_count: int) -> int:
 
 
 def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, ...]:
-    suppressions = try_convert(tuple, suppressions, "suppress_health_check")
-    for health_check in suppressions:
+    converted = try_convert(tuple, suppressions, "suppress_health_check")
+    for health_check in converted:
         if health_check in (HealthCheck.return_value, HealthCheck.not_a_test_method):
             note_deprecation(
                 f"The {health_check.name} health check is deprecated, because this is always an error.",
@@ -487,7 +489,7 @@ def _validate_suppress_health_check(suppressions: object) -> tuple[HealthCheck, 
             )
     return tuple(
         _validate_enum_value(HealthCheck, health_check, name="suppress_health_check")
-        for health_check in suppressions
+        for health_check in converted
     )
 
 
@@ -704,8 +706,8 @@ class settings(metaclass=settingsMeta):
         )
         if database is not not_set:  # type: ignore
             database = _validate_database(database)
-        self._database = database
-        self._cached_database = None
+        self._database: Any = database
+        self._cached_database: ExampleDatabase | None = None
         self._verbosity = (
             self._fallback.verbosity  # type: ignore
             if verbosity is not_set  # type: ignore
@@ -752,7 +754,7 @@ class settings(metaclass=settingsMeta):
         self._in_definition = False
 
     @property
-    def max_examples(self):
+    def max_examples(self) -> int:
         """
         Once this many satisfying |test cases| have been considered without finding
         any failing test case, Hypothesis will stop looking.
@@ -794,7 +796,7 @@ class settings(metaclass=settingsMeta):
         return self._max_examples
 
     @property
-    def derandomize(self):
+    def derandomize(self) -> bool:
         """
         If True, seed Hypothesis' random number generator using a hash of the test
         function, so that every run will test the same set of test cases until you
@@ -811,7 +813,7 @@ class settings(metaclass=settingsMeta):
         return self._derandomize
 
     @property
-    def database(self):
+    def database(self) -> "ExampleDatabase | None":
         """
         An instance of |ExampleDatabase| in which we will save failing |test cases|,
         and from which we will load previous failing test cases.
@@ -849,7 +851,7 @@ class settings(metaclass=settingsMeta):
         return self._cached_database
 
     @property
-    def verbosity(self):
+    def verbosity(self) -> Verbosity:
         """
         Control the verbosity level of Hypothesis messages.
 
@@ -896,7 +898,7 @@ class settings(metaclass=settingsMeta):
         return self._verbosity
 
     @property
-    def phases(self):
+    def phases(self) -> Collection[Phase]:
         """
         Control which phases should be run.
 
@@ -956,7 +958,7 @@ class settings(metaclass=settingsMeta):
         return self._phases
 
     @property
-    def stateful_step_count(self):
+    def stateful_step_count(self) -> int:
         """
         The maximum number of times to call an additional |@rule| method in
         :ref:`stateful testing <stateful>` before we give up on finding a bug.
@@ -969,7 +971,7 @@ class settings(metaclass=settingsMeta):
         return self._stateful_step_count
 
     @property
-    def report_multiple_bugs(self):
+    def report_multiple_bugs(self) -> bool:
         """
         Because Hypothesis runs the test many times, it can sometimes find multiple
         bugs in a single run.  Reporting all of them at once is usually very useful,
@@ -982,7 +984,7 @@ class settings(metaclass=settingsMeta):
         return self._report_multiple_bugs
 
     @property
-    def suppress_health_check(self):
+    def suppress_health_check(self) -> Collection[HealthCheck]:
         """
         Suppress the given |HealthCheck| exceptions. Those health checks will not
         be raised by Hypothesis. To suppress all health checks, you can pass
@@ -1009,7 +1011,7 @@ class settings(metaclass=settingsMeta):
         return self._suppress_health_check
 
     @property
-    def deadline(self):
+    def deadline(self) -> datetime.timedelta | None:
         """
         The maximum allowed duration of an individual |test case|, in milliseconds.
         You can pass an integer, float, or timedelta. If ``None``, the deadline
@@ -1024,7 +1026,7 @@ class settings(metaclass=settingsMeta):
         return self._deadline
 
     @property
-    def print_blob(self):
+    def print_blob(self) -> bool:
         """
         If set to ``True``, Hypothesis will print code for |failing test cases| that
         can be used with |@reproduce_failure| to reproduce the failing test case.
@@ -1034,7 +1036,7 @@ class settings(metaclass=settingsMeta):
         return self._print_blob
 
     @property
-    def backend(self):
+    def backend(self) -> str:
         """
         .. warning::
 
@@ -1055,9 +1057,7 @@ class settings(metaclass=settingsMeta):
         # setting custom attributes on the decorated function or class.
         _test: Any = test
 
-        # Using the alias here avoids a mypy error (return-value) later when
-        # ``test`` is returned, because this check results in type refinement.
-        if not callable(_test):
+        if not callable(test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
                 f"but decorated {test=} is not callable."

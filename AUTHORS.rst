@@ -154,6 +154,7 @@ their individual contributions.
 * `Nicolas Erni <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
 * `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
+* `patrick-immometrica <https://github.com/patrick-immometrica>`_
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
 * `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_

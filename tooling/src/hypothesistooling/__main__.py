@@ -11,6 +11,7 @@
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -116,7 +117,10 @@ def codespell(*files):
 @task()
 def lint():
     pip_tool("ruff", "check", ".")
-    pip_tool("zizmor", ".github/")
+    # zizmor's online audits need GitHub API access, which isn't available
+    # in Claude Code remote sessions.
+    if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+        pip_tool("zizmor", ".github/")
     vendored_data = ("tlds-alpha-by-domain.txt", "leap-seconds.txt")
     codespell(*(p for p in all_files() if p.name not in vendored_data))
 
@@ -260,7 +264,8 @@ def format(*, format_all=False):
 
     if any(p.parts[0] == ".github" and p.suffix == ".yml" for p in paths):
         # Autofix what we can in our workflows; `lint` reports whatever is left.
-        pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
+        if os.getenv("CLAUDE_CODE_REMOTE") != "true":
+            pip_tool("zizmor", "--fix", "--no-exit-codes", ".github/")
 
     if not (py_paths_to_format or rust_paths_to_format or doc_paths_to_format):
         return
@@ -486,9 +491,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.17",
-    "6.0": "6.0.8",
-    "6.1": "6.1.1",
+    "5.2": "5.2.19",
+    "6.0": "6.0.10",
+    "6.1": "6.1.3",
 }
 
 
@@ -674,6 +679,10 @@ def update_gha_pins():
         )
 
 
+def update_uv():
+    subprocess.run(["uv", "self", "update"], check=True)
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -717,8 +726,14 @@ def has_diff(file_or_directory):
 
 @task()
 def upgrade_requirements():
+    if platform.system() != "Linux":
+        raise SystemExit(
+            "The upgrade-requirements task must be run on Linux, so transitive "
+            "dependencies in lock files will be reproducible.",
+        )
     update_vendored_files()
     compile_requirements(upgrade=True)
+    update_uv()
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
@@ -826,26 +841,30 @@ def run_tox(task, version, *args, profile="dev"):
 
 
 # update_python_versions(), above, keeps the contents of this dict up to date.
-# When a version is added or removed, manually update the env lists in tox.ini and
-# workflows/main.yml, and the `Programming Language ::` specifiers in pyproject.toml
+# When a version is added or removed, manually update
+#  - env lists in tox.ini
+#  - `release-build-wheels` job in <ROOT>/github/workflows/release.yml
+#  - `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.11": "3.11.17",
-    "3.12": "3.12.15",
-    "3.13": "3.13.16",
-    "3.14": "3.14.8",
-    "3.14t": "3.14.8+freethreaded",
-    "3.15": "3.15.0rc3",
-    "3.15t": "3.15.0rc3+freethreaded",
-    "pypy3.11": "pypy3.11-3.11.16",
-    "pypy3.12": "pypy3.12-3.12.14",
+    "3.11": "3.11.18",
+    "3.12": "3.12.16",
+    "3.13": "3.13.18",
+    "3.14": "3.14.10",
+    "3.14t": "3.14.10+freethreaded",
+    "3.15": "3.15.2",
+    "3.15t": "3.15.2+freethreaded",
+    "3.16": "3.16.0a2",
+    "3.16t": "3.16.0a2+freethreaded",
+    "pypy3.11": "pypy3.11-3.11.17",
+    "pypy3.12": "pypy3.12-3.12.15",
 }
 ci_version_python = (
     "3.14"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 )
 
 # automatically updated by update_pyodide_versions()
-PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.1"
+PYODIDE_VERSION = "314.0.8"
+PYODIDE_BUILD_VERSION = "0.39.3"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
@@ -1147,6 +1166,17 @@ def check_types_hypothesis(*args):
         testcase = "types/test_hypothesis.py"
         args = ["-n", "auto", REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_type_coverage():
+    pip_tool(
+        "pyrefly",
+        "coverage",
+        "check",
+        "--public-only",
+        f"--python-interpreter-path={sys.executable}",
+    )
 
 
 @task()

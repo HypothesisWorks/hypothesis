@@ -16,7 +16,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import assert_no_examples
+from tests.common.debug import assert_no_examples, minimal
 
 
 def test_one_of_empty():
@@ -62,3 +62,10 @@ def test_one_of_without_strategies_suggests_sampled_from():
 )
 def test_one_of_unwrapping(strategy, count):
     assert repr(strategy).count("one_of(") == count
+
+
+def test_shrinks_across_branches_with_different_alphabets():
+    s = minimal(
+        st.one_of(st.text("a", max_size=1), st.text("b")), lambda s: len(s) >= 2
+    )
+    assert s == "bb"

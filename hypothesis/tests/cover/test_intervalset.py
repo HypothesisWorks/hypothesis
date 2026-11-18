@@ -17,6 +17,8 @@ from hypothesis.internal.conjecture.provider_conformance import (
 )
 from hypothesis.internal.intervalsets import IntervalSet
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 # various tests in this file impose a max_codepoint restriction on intervals,
 # for performance. There may be possibilities for performance improvements in
 # IntervalSet itself as well.
@@ -73,6 +75,7 @@ def intervals_to_set(ints):
     return set(IntervalSet(ints))
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # sometimes Unsatisfiable
 @settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 @example(x=[(0, 1), (3, 3)], y=[(1, 3)])
 @example(x=[(0, 1)], y=[(0, 0), (1, 1)])

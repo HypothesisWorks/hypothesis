@@ -27,7 +27,6 @@ from random import _inst as global_random_instance
 from tokenize import COMMENT, generate_tokens, untokenize
 from types import EllipsisType, ModuleType
 from typing import TYPE_CHECKING, Any, TypeVar, Union
-from unittest.mock import _patch as PatchType
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import lambda_sources
@@ -121,8 +120,13 @@ def get_signature(
 ) -> Signature:
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
+    # (unittest.mock is slow to import, and can't have been used if not imported)
     patches = getattr(target, "patchings", None)
-    if isinstance(patches, list) and all(isinstance(p, PatchType) for p in patches):
+    if (
+        isinstance(patches, list)
+        and (mock := sys.modules.get("unittest.mock")) is not None
+        and all(isinstance(p, mock._patch) for p in patches)
+    ):
         return Signature(
             [
                 Parameter("args", Parameter.VAR_POSITIONAL),

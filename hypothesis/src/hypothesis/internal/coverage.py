@@ -11,6 +11,7 @@
 import json
 import os
 import sys
+import threading
 from collections.abc import Callable
 from contextlib import contextmanager
 from typing import TypeVar
@@ -49,7 +50,17 @@ def pretty_file_name(f: str) -> str:
 
 
 IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
-description_stack: list[str] = []
+# Thread-local, so that tests which run Hypothesis in several threads at once
+# don't interleave their descriptions into nonsensical branch names.
+_description_stack = threading.local()
+
+
+def _get_description_stack() -> list[str]:
+    try:
+        return _description_stack.value
+    except AttributeError:
+        _description_stack.value = []
+        return _description_stack.value
 
 
 if IN_COVERAGE_TESTS:
@@ -74,6 +85,7 @@ if IN_COVERAGE_TESTS:
         caller = sys._getframe(depth + 2)
         fname = pretty_file_name(caller.f_code.co_filename)
         local_description = f"{name} at {fname}:{caller.f_lineno}"
+        description_stack = _get_description_stack()
         try:
             description_stack.append(local_description)
             description = " in ".join(reversed(description_stack)) + " passed"

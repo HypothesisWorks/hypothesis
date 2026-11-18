@@ -48,7 +48,7 @@ jobs:
               os: ubuntu-latest,
               target: x86_64,
               manylinux: auto,
-              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
               os: ubuntu-latest,
@@ -60,7 +60,7 @@ jobs:
               os: ubuntu-latest,
               target: aarch64,
               manylinux: auto,
-              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
               os: ubuntu-latest,
@@ -72,19 +72,19 @@ jobs:
               os: macos-latest,
               target: x86_64,
               manylinux: '',
-              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
               os: macos-latest,
               target: aarch64,
               manylinux: '',
-              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
               os: windows-latest,
               target: x64,
               manylinux: '',
-              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11'
+              interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
               os: ubuntu-latest,
@@ -157,7 +157,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.13'
         architecture: ${{ matrix.python-architecture }}
@@ -182,14 +182,12 @@ jobs:
         manylinux: ${{ matrix.manylinux }}
         args: --release --out dist --features abi3
         working-directory: hypothesis
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       id: abi3t-python
       with:
         # abi3t is only available from 3.15+. If we don't specify this, maturin
         # builds a version-specific wheel instead.
         python-version: '3.15'
-        # can drop once 3.15 is out
-        allow-prereleases: true
         architecture: ${{ matrix.python-architecture }}
     - name: Build abi3t wheel
       uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
@@ -200,7 +198,7 @@ jobs:
         # container's python instead
         args: --release --out dist --features abi3t --interpreter ${{ matrix.manylinux && 'python3.15' || steps.abi3t-python.outputs.python-path }}
         working-directory: hypothesis
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-wheels-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.manylinux }}
         path: hypothesis/dist/*.whl
@@ -213,7 +211,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.13'
     - name: Stamp release version into Cargo.toml
@@ -225,7 +223,7 @@ jobs:
         command: sdist
         args: --out dist
         working-directory: hypothesis
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-sdist
         path: hypothesis/dist/*.tar.gz
@@ -233,17 +231,19 @@ jobs:
   release-build-pyodide:
     needs: [prepare-release]
     if: needs.prepare-release.outputs.new_version != ''
-    runs-on: ubuntu-latest
+    # actions/setup-python has no builds of older patch versions (which pyodide
+    # pins) for ubuntu-26.04, which ubuntu-latest now resolves to.
+    runs-on: ubuntu-24.04
     env:
       # automatically updated by update_pyodide_versions()
-      PYODIDE_VERSION: 314.0.7
-      PYODIDE_BUILD_VERSION: 0.39.1
+      PYODIDE_VERSION: 314.0.8
+      PYODIDE_BUILD_VERSION: 0.39.3
       PYODIDE_PYTHON_VERSION: 3.14.2
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ env.PYODIDE_PYTHON_VERSION }}
     - name: Install pyodide-build and Pyodide cross-build environment
@@ -258,7 +258,7 @@ jobs:
       run: python tooling/scripts/write-cargo-version.py "$NEW_VERSION"
     - name: Build Pyodide wheel
       run: pyodide build hypothesis --outdir hypothesis/dist/
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: dist-pyodide
         path: hypothesis/dist/*.whl
@@ -279,7 +279,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         path: hypothesis/dist
         pattern: dist-*

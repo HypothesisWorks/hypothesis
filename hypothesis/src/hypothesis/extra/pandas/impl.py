@@ -244,22 +244,20 @@ class ValueIndexStrategy(st.SearchStrategy):
         result = []
         seen = set()
 
-        iterator = cu.many(
+        with cu.many(
             data,
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=(self.min_size + self.max_size) / 2,
-        )
-
-        while iterator.more():
-            elt = data.draw(self.elements)
-
-            if self.unique:
-                if elt in seen:
-                    iterator.reject()
-                    continue
-                seen.add(elt)
-            result.append(elt)
+        ) as elements:
+            for _ in elements:
+                elt = data.draw(self.elements)
+                if self.unique:
+                    if elt in seen:
+                        elements.reject()
+                        continue
+                    seen.add(elt)
+                result.append(elt)
 
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
@@ -639,11 +637,10 @@ def data_frames(
       InvalidArgument being raised.
     """
     if index is None:
-        index = range_indexes()
+        index_strategy = range_indexes()
     else:
         check_strategy(index, "index")
-
-    index_strategy = index
+        index_strategy = index
 
     if columns is None:
         if rows is None:
@@ -674,7 +671,7 @@ def data_frames(
     cols = try_convert(tuple, columns, "columns")
 
     rewritten_columns = []
-    column_names: set[str] = set()
+    column_names: set[str | int] = set()
     # Maps the name of each timezone-aware datetime column to its timezone.  We
     # build such columns with the underlying naive dtype and attach the
     # timezone once the frame has been assembled (see attach_timezone).

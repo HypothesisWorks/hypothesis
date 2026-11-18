@@ -21,10 +21,17 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, StopShrinking
+from hypothesis.internal.conjecture.shrinker import (
+    Shrinker,
+    ShrinkPass,
+    StopShrinking,
+    sort_key,
+    sort_key_lt,
+)
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.utils import skipif_time_unpatched
@@ -934,6 +941,18 @@ def test_normalize_unicode_chars_respects_intervals():
     assert shrinker.choices == ("À",)
 
 
+def test_discards_string_outside_its_intervals():
+    intervals = IntervalSet.from_string("ab")
+
+    @shrinking_from(["b"])
+    def shrinker(data: ConjectureData):
+        data.draw_string(intervals, min_size=1)
+        data.mark_interesting(interesting_origin())
+
+    invalid = shrinker.nodes[0].copy(with_value="z")
+    assert shrinker.cached_test_function([invalid]) == (False, None)
+
+
 def test_normalize_unicode_chars_skips_when_no_simplification():
     # Plain ascii 'A' has no natural simplification (it is already a base
     # uppercase letter), so the pass should leave it untouched.
@@ -1159,3 +1178,11 @@ def test_ephemeral_objects_are_not_widened():
         [ShrinkPass(shrinker.widen_to_span_with_recorded_value)]
     )
     assert shrinker.choices == (1, 0)
+
+
+@given(st.lists(nodes(), max_size=4), st.data())
+def test_sort_key_lt_matches_sort_key(a, data):
+    shared = st.sampled_from(a) if a else st.nothing()
+    b = data.draw(st.lists(nodes() | shared, max_size=4))
+    assert sort_key_lt(a, b) == (sort_key(a) < sort_key(b))
+    assert not sort_key_lt(a, list(a))

@@ -262,12 +262,12 @@ class ModuleLocation(IntEnum):
     @classmethod
     @lru_cache(1024)
     def from_path(cls, path: str) -> "ModuleLocation":
-        path = Path(path).resolve()
+        resolved = Path(path).resolve()
         # site-packages may be a subdir of stdlib or platlib, so it's important to
         # check is_relative_to for this before the stdlib.
-        if any(path.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
+        if any(resolved.is_relative_to(p) for p in SITE_PACKAGES_DIRS):
             return cls.SITE_PACKAGES
-        if any(path.is_relative_to(p) for p in STDLIB_DIRS):
+        if any(resolved.is_relative_to(p) for p in STDLIB_DIRS):
             return cls.STDLIB
         return cls.LOCAL
 
