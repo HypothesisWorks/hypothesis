@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import TYPE_CHECKING, Protocol
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import _calc_p_continue, calc_label_from_name
@@ -19,11 +20,12 @@ if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
     from hypothesis.strategies import SearchStrategy
 
-    class _Reject(Protocol):
-        def __call__(self, why: str | None = None) -> None: ...
-
 
 _ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
+_INTERLEAVED_MANY_MSG = (
+    "Iteration over many() is interleaved with other draws.  Are you iterating "
+    "over several many() objects at once, e.g. with zip()?"
+)
 
 
 def weighted_booleans(*, p: float) -> "SearchStrategy[bool]":
@@ -52,19 +54,20 @@ class many:
     """
     |many| provides low-level control over collection sizing. |many| is an abstract way
     to ask for some action to be done some random number of times, while giving some
-    over the distribution of that number.
+    control over the distribution of that number.
 
-    |many| returns an iterator, which iterates the same number of times as the size it
-    determines. One typical way to use |many| is by iterating over it, drawing an
-    element each time:
+    |many| is a context manager, which returns an iterator that iterates the same
+    number of times as the size it determines. One typical way to use |many| is by
+    iterating over it, drawing an element each time:
 
     .. code-block:: python
 
         @st.composite
         def custom_int_list(draw):
             lst = []
-            for _ in many(min_size=20):
-                lst.append(draw(st.integers()))
+            with many(min_size=20) as elements:
+                for _ in elements:
+                    lst.append(draw(st.integers()))
             return lst
 
     The ``min_size``, ``max_size``, and ``average_size`` parameters control the
@@ -79,72 +82,39 @@ class many:
 
         @st.composite
         def large_lists(draw):
-            return [draw(st.integers()) for _ in many(average_size=20)]
+            with many(average_size=20) as elements:
+                return [draw(st.integers()) for _ in elements]
 
     which will return many length-20 lists, some length-15 and length-25 lists, fewer
     length-10 and length-30 lists, and so on.
 
-    ``reject()`` function
-    ---------------------
+    Each |many| can be entered once and iterated once, inside its ``with`` block.
+    Iterating over several |many| objects at the same time, for example with
+    ``zip``, is an error.
 
-    Each iteration of |many| yields a ``reject`` function:
+    Rejecting elements
+    ------------------
 
-    .. code-block:: python
+    Calling |many.reject| inside the loop marks any choices made during this iteration
+    of |many| as not relevant to the |test case|. See |many.reject| for details.
 
-        for reject in many(...): ...
+    Stopping early
+    --------------
 
-    Calling this function marks any choices made during this iteration of |many| as not
-    relevant to the |test case|. In other words, the Hypothesis engine should be able to
-    pretend this iteration did not happen and get equivalent observable results to if it
-    did happen.
-
-    This often occurs when requiring some condition on the drawn element before adding
-    it to the collection:
-
-    .. code-block:: python
-
-        ret = set()
-        for reject in many():
-            val = draw(st.integers())
-            if val in ret:
-                reject()
-                continue
-            ret.add(val)
-
-    Note that ``reject`` is only a performance optimization for the Hypothesis engine.
-    The above example would still work correctly if ``reject()`` were removed.
-
-    If used incorrectly, because the rejected iteration did make an observable difference
-    to the generated test case, ``reject`` may actually degrade performance of the engine.
-    Use with care!
-
-    ``reject`` has the following signature:
+    Leaving the loop early with ``break``, ``return``, or an exception is supported.
+    This is useful to forcefully end a |many|, for example if the maximum size depends
+    on the drawn elements and cannot be determined ahead of time:
 
     .. code-block:: python
 
-        def __call__(self, why: str | None = None) -> None: ...
-
-    If passed, the ``why`` parameter is used as the rejection reason for
-    |observability| output.
-
-    .. warning::
-
-        Do not early-exit out of a |many| iteration, for example by using ``break``. Doing
-        so is an invalid use of the |many| API and prevents Hypothesis from performing
-        the necessary bookkeeping.
-
-        For example, the following code is *invalid*:
-
-        .. code-block:: python
-
-            for _ in many():
+        with many() as elements:
+            for _ in elements:
                 n = draw(st.integers())
                 if n == 0:
-                    break  # BAD!
+                    break
 
-        If you need to forcefully end a |many|, for example because the maximum size
-        depends on the drawn elements and cannot be determined ahead of time, see
-        |many.finish|.
+    Stopping early with fewer than ``min_size`` elements marks the test case as
+    invalid, just like a failed |assume|.
     """
 
     def __init__(
@@ -184,48 +154,141 @@ class many:
         self._p_continue = _calc_p_continue(
             average_size - min_size, max_size - min_size
         )
+        self._observe = _observe
         self._count = 0
         self._rejections = 0
-        self._drawn = False
         self._force_stop = False
+        self._depth: int | None = None
+        self._iterated = False
+        self._closed = False
+        self._done = False
+        self._in_element = False
         self._rejected = False
-        self._observe = _observe
 
-    def __iter__(self) -> "many":
+    def __enter__(self) -> "many":
+        if self._depth is not None:
+            raise InvalidArgument("Cannot reuse a many() object.")
+        self._depth = self._data.depth
         return self
 
-    def finish(self) -> None:
-        """
-        End this |many|, exiting on the next iteration.
+    def __exit__(self, exc_type: type | None, *_: object) -> None:
+        self._closed = True
+        if self._data.frozen:
+            return
+        if self._data.depth != self._expected_depth():
+            if exc_type is None:
+                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
+            return
+        self._finish_element()
+        if exc_type is None and not self._done:
+            # We exited the loop early, so draw a (forced) stop decision.  This
+            # makes our choice sequence look like a natural stop.
+            self._force_stop = True
+            self._decide()
 
-        |many.finish| is useful to forcefully end a |many|, for example if the maximum
-        size depends on the drawn elements and cannot be determined ahead of time:
+    def __iter__(self) -> Iterator[None]:
+        if self._depth is None or self._closed:
+            raise InvalidArgument(
+                "many() must be used as `with many(...) as elements:` "
+                "followed by `for _ in elements:`, inside the with-block."
+            )
+        if self._iterated:
+            raise InvalidArgument("Cannot iterate over a many() more than once.")
+        self._iterated = True
+        return self._iterate()
+
+    def _iterate(self) -> Iterator[None]:
+        while True:
+            if self._closed:
+                raise InvalidArgument("Cannot iterate over many() after exiting it.")
+            if self._data.depth != self._expected_depth():
+                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
+            if self._in_element:
+                self._finish_element()
+            if not self._decide():
+                return
+            self._count += 1
+            self._in_element = True
+            self._rejected = False
+            yield
+
+    def reject(self, why: str | None = None) -> None:
+        """
+        Reject the current element of this |many|.
+
+        Calling |many.reject| marks any choices made during this iteration of |many| as
+        not relevant to the |test case|. In other words, the Hypothesis engine should
+        be able to pretend this iteration did not happen and get equivalent observable
+        results to if it did happen.
+
+        This often occurs when requiring some condition on the drawn element before
+        adding it to the collection:
 
         .. code-block:: python
 
-            elements = many()
-            for _ in elements:
-                n = draw(st.integers())
-                if n == 0:
-                    elements.finish()
+            ret = set()
+            with many() as elements:
+                for _ in elements:
+                    val = draw(st.integers())
+                    if val in ret:
+                        elements.reject()
+                        continue
+                    ret.add(val)
 
-        A |many| which has had its |many.finish| called will exit on the next iteration.
+        A rejected element does not count towards the size of the |many|. If too many
+        elements are rejected, |many| gives up: it stops iterating, or marks the test
+        case as invalid if it has not reached ``min_size``.
+
+        Note that |many.reject| is only a performance optimization for the Hypothesis
+        engine, as long as the rejected element is not added to your collection. If
+        used incorrectly, because the rejected iteration did make an observable
+        difference to the generated test case, |many.reject| may actually degrade
+        performance of the engine. Use with care!
+
+        If passed, the ``why`` parameter is used as the rejection reason for
+        |observability| output.
+
+        |many.reject| can only be called inside the loop, and at most once per
+        element.
         """
-        self._force_stop = True
+        if not self._in_element or self._rejected:
+            raise InvalidArgument(
+                "reject() can only be called once per element, inside the loop."
+            )
+        self._count -= 1
+        self._rejections += 1
+        self._rejected = True
+        # We set a minimum number of rejections before we give up to avoid
+        # failing too fast when we reject the first draw.
+        if self._rejections > max(3, 2 * self._count):
+            if self._count < self._min_size:
+                self._data.mark_invalid(why)
+            else:
+                self._force_stop = True
 
-    def __next__(self) -> "_Reject":
-        if self._drawn:
-            # A rejected element does not contribute to the collection, so
-            # discard its span - the shrinker can then delete it wholesale.
-            self._stop_span(discard=self._rejected)
-        self._drawn = True
-        self._rejected = False
+    def _expected_depth(self) -> int:
+        assert self._depth is not None
+        return self._depth + (self._in_element and self._observe)
 
-        self._start_span(_ONE_FROM_MANY_LABEL)
+    def _finish_element(self) -> None:
+        if self._in_element:
+            self._in_element = False
+            if self._observe:
+                # A rejected element does not contribute to the collection, so
+                # discard its span - the shrinker can then delete it wholesale.
+                self._data.stop_span(discard=self._rejected)
+
+    def _decide(self) -> bool:
+        if self._force_stop and self._count < self._min_size:
+            self._data.mark_invalid(
+                f"stopped with {self._count} elements, below min_size={self._min_size}"
+            )
+        if self._observe:
+            self._data.start_span(_ONE_FROM_MANY_LABEL)
         if self._min_size == self._max_size:
             # if we have to hit an exact size, draw unconditionally until that
             # point, and no further.
-            should_continue = self._count < self._min_size and not self._force_stop
+            should_continue = self._count < self._min_size
         else:
             forced = None
             if self._force_stop:
@@ -241,31 +304,8 @@ class many:
                 self._p_continue, forced=forced, observe=self._observe
             )
             self._data.unique_element_depth = depth
-
-        if should_continue:
-            self._count += 1
-            return self._reject
-        else:
-            self._stop_span()
-            raise StopIteration
-
-    def _reject(self, why: str | None = None) -> None:
-        assert self._count > 0
-        self._rejected = True
-        self._count -= 1
-        self._rejections += 1
-        # We set a minimum number of rejections before we give up to avoid
-        # failing too fast when we reject the first draw.
-        if self._rejections > max(3, 2 * self._count):
-            if self._count < self._min_size:
-                self._data.mark_invalid(why)
-            else:
-                self._force_stop = True
-
-    def _start_span(self, label: int) -> None:
-        if self._observe:
-            self._data.start_span(label)
-
-    def _stop_span(self, *, discard: bool = False) -> None:
-        if self._observe:
-            self._data.stop_span(discard=discard)
+        if not should_continue:
+            self._done = True
+            if self._observe:
+                self._data.stop_span()
+        return should_continue

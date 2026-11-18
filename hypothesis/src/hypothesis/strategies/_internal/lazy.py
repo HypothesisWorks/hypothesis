@@ -40,6 +40,11 @@ def unwrap_strategies(s):
     if not isinstance(s, (LazyStrategy, DeferredStrategy)):
         return s
 
+    # A fully-unwrapped LazyStrategy never changes, so we memoize that on the
+    # instance; the threadlocal cache below only handles cycles mid-unwrap.
+    if (result := s.__dict__.get("_unwrapped")) is not None:
+        return result
+
     try:
         return threadlocal.unwrap_cache[s]
     except KeyError:
@@ -62,6 +67,8 @@ def unwrap_strategies(s):
         except AttributeError:
             pass
 
+        if threadlocal.unwrap_depth == 1 and isinstance(s, LazyStrategy):
+            s._unwrapped = result
         return result
     finally:
         threadlocal.unwrap_depth -= 1

@@ -82,7 +82,7 @@
 
 .. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
 .. |many| replace:: :class:`~hypothesis.lowlevel.many`
-.. |many.finish| replace:: :func:`many.finish() <hypothesis.lowlevel.many.finish>`
+.. |many.reject| replace:: :func:`many.reject() <hypothesis.lowlevel.many.reject>`
 .. |weighted_booleans| replace:: :func:`~hypothesis.lowlevel.weighted_booleans`
 .. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
 .. |st.floats| replace:: :func:`~hypothesis.strategies.floats`

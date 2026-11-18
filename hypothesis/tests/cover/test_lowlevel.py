@@ -71,9 +71,10 @@ def test_weighted_booleans_inverts_only_bools():
 @given(st.data())
 def test_many_at_test_level(data):
     count = 0
-    for _ in many(max_size=5):
-        data.draw(st.integers())
-        count += 1
+    with many(max_size=5) as elements:
+        for _ in elements:
+            data.draw(st.integers())
+            count += 1
     assert count <= 5
 
 
@@ -108,8 +109,19 @@ def test_many_default_average_size_is_valid():
 
 def run_many(choices, **kwargs):
     data = ConjectureData.for_choices(choices)
-    count = sum(1 for _ in many(_data=data, **kwargs))
+    with many(_data=data, **kwargs) as elements:
+        count = sum(1 for _ in elements)
     return count, data
+
+
+def new_many(data=None):
+    data = data or ConjectureData.for_choices((True,) * 10 + (False,))
+    return many(min_size=0, max_size=10, average_size=5, _data=data)
+
+
+def many_span_discards(data):
+    data.freeze()
+    return [s.discarded for s in data.spans if s.label == _ONE_FROM_MANY_LABEL]
 
 
 def test_many_fixed_size_draws_no_booleans():
@@ -138,115 +150,196 @@ def test_many_with_max_size():
 def test_rejection_eventually_terminates_many():
     data = ConjectureData.for_choices((True,) * 1000)
     count = 0
-    for reject in many(min_size=0, max_size=1000, average_size=100, _data=data):
-        count += 1
-        reject()
+    with many(min_size=0, max_size=1000, average_size=100, _data=data) as elements:
+        for _ in elements:
+            count += 1
+            elements.reject()
     assert count <= 100
 
 
 def test_rejection_below_min_size_abandons_the_test_case():
     data = ConjectureData.for_choices((True,) * 1000)
-    with pytest.raises(StopTest):
-        for reject in many(min_size=1, max_size=1000, _data=data):
-            reject("no good")
+    with (
+        pytest.raises(StopTest),
+        many(min_size=1, max_size=1000, _data=data) as elements,
+    ):
+        for _ in elements:
+            elements.reject("no good")
     assert data.status == Status.INVALID
     assert data.events["gave up because"] == "no good"
 
 
 def test_rejected_element_span_is_discarded():
     data = ConjectureData.for_choices([True, 0, True, 1, False])
-    for reject in many(min_size=0, max_size=10, average_size=5, _data=data):
-        if data.draw_integer(0, 10) == 0:
-            reject()
-
-    data.freeze()
-    discards = [
-        span.discarded for span in data.spans if span.label == _ONE_FROM_MANY_LABEL
-    ]
+    with new_many(data) as elements:
+        for _ in elements:
+            if data.draw_integer(0, 10) == 0:
+                elements.reject()
     # the rejected first element is discarded; the second and the final
     # stop-drawing span are not.
-    assert discards == [True, False, False]
+    assert many_span_discards(data) == [True, False, False]
 
 
-def test_many_finish():
-    data = ConjectureData.for_choices((True,) * 10)
-    elements = many(min_size=0, max_size=10, _data=data)
-    for _ in elements:
-        elements.finish()
-    assert data.choices == (True, False)
+@pytest.mark.parametrize("reject", [False, True])
+def test_break_from_many_draws_forced_stop(reject):
+    data = ConjectureData.for_choices([True, 0, True, 1, True, 2, False])
+    depth = data.depth
+    with new_many(data) as elements:
+        for _ in elements:
+            if data.draw_integer(0, 10) == 1:
+                if reject:
+                    elements.reject()
+                break
+    assert data.depth == depth
+    assert data.choices == (True, 0, True, 1, False)
+    assert data.nodes[-1].was_forced
+    assert many_span_discards(data) == [False, reject, False]
 
 
-def test_finish_overrides_min_size():
-    data = ConjectureData.for_choices(())
-    count = 0
-    elements = many(min_size=3, max_size=3, _data=data)
-    for _ in elements:
-        count += 1
-        elements.finish()
-    assert count == 1
+def test_exception_in_many_closes_spans():
+    data = ConjectureData.for_choices([True, 0, True, 1, False])
+    depth = data.depth
+    with pytest.raises(ZeroDivisionError), new_many(data) as elements:
+        for _ in elements:
+            data.draw_integer(0, 10)
+            1 / 0
+    assert data.depth == depth
+    assert data.choices == (True, 0)
+
+
+@pytest.mark.parametrize("max_size", [3, 10])
+def test_break_from_many_below_min_size_is_invalid(max_size):
+    data = ConjectureData.for_choices([True, 0, True, 1, False])
+    with (
+        pytest.raises(StopTest),
+        many(min_size=3, max_size=max_size, _data=data) as elements,
+    ):
+        for _ in elements:
+            break
+    assert data.status == Status.INVALID
+
+
+def test_many_must_be_used_as_context_manager():
+    with pytest.raises(InvalidArgument):
+        for _ in new_many():
+            pass
+
+
+def test_many_cannot_be_iterated_after_exit():
+    with new_many() as elements:
+        pass
+    with pytest.raises(InvalidArgument):
+        for _ in elements:
+            pass
+
+
+def test_many_cannot_resume_iteration_after_exit():
+    with new_many() as elements:
+        it = iter(elements)
+        next(it)
+    with pytest.raises(InvalidArgument):
+        next(it)
+
+
+def test_many_detects_unbalanced_spans_on_exit():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with pytest.raises(InvalidArgument, match="interleaved"), new_many(data):
+        data.start_span(1)
+
+
+def test_many_cannot_be_iterated_twice():
+    with new_many() as elements:
+        for _ in elements:
+            break
+        with pytest.raises(InvalidArgument):
+            for _ in elements:
+                pass
+
+
+def test_many_cannot_be_entered_twice():
+    m = new_many()
+    with m:
+        pass
+    with pytest.raises(InvalidArgument), m:
+        pass
+
+
+def test_many_detects_interleaved_iteration():
+    data = ConjectureData.for_choices((True,) * 10 + (False,))
+    with (
+        pytest.raises(InvalidArgument, match="interleaved"),
+        new_many(data) as a,
+        new_many(data) as b,
+    ):
+        for _ in zip(a, b, strict=True):
+            pass
+
+
+@pytest.mark.parametrize("when", ["before", "twice", "after"])
+def test_many_reject_outside_element_is_an_error(when):
+    with pytest.raises(InvalidArgument), new_many() as elements:
+        if when == "before":
+            elements.reject()
+        for _ in elements:
+            if when == "twice":
+                elements.reject()
+                elements.reject()
+        elements.reject()
 
 
 def test_many_unobserved_records_nothing():
     data = ConjectureData(random=Random(0))
-    count = sum(1 for _ in many(min_size=1, max_size=10, _data=data, _observe=False))
+    with many(min_size=1, max_size=10, _data=data, _observe=False) as elements:
+        count = sum(1 for _ in elements)
     assert count >= 1
     assert data.choices == ()
+
+
+@st.composite
+def many_sizes(draw):
+    min_size = draw(st.integers(0, 5))
+    max_size = draw(st.none() | st.integers(min_size, 10))
+    hi = 10 if max_size is None else max_size
+    average_size = draw(
+        st.none()
+        | st.floats(
+            min_size, hi, exclude_min=min_size != hi, exclude_max=min_size != hi
+        )
+    )
+    return {"min_size": min_size, "max_size": max_size, "average_size": average_size}
 
 
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 @given(st.data())
 def test_many_public_api(data):
     # exercise all the bits of the many() public api, like a user would
-    min_size = data.draw(st.integers(0, 5))
-    max_size = data.draw(st.none() | st.integers(min_size, 10))
-    hi = 10 if max_size is None else max_size
-    average_size = data.draw(
-        st.none()
-        | st.floats(
-            min_size, hi, exclude_min=min_size != hi, exclude_max=min_size != hi
-        )
-    )
-    elements = many(min_size=min_size, max_size=max_size, average_size=average_size)
-    if data.draw(st.booleans()):
-        elements.finish()
-    for reject in elements:
-        for _ in range(data.draw(st.integers(0, 2))):
-            data.draw(st.integers(0, 100))
-        if data.draw(st.booleans()):
-            reject()
-        if data.draw(st.booleans()):
-            elements.finish()
+    with many(**data.draw(many_sizes())) as elements:
+        for _ in elements:
+            for _ in range(data.draw(st.integers(0, 2))):
+                data.draw(st.integers(0, 100))
+            if data.draw(st.booleans()):
+                elements.reject()
+            if data.draw(st.booleans()):
+                break
 
 
 @given(st.data())
 def test_many_choices_always_have_the_same_shape(data):
     # similar to test_many_public_api but also checks the shape of the resulting choice
     # sequence from many() is what we expect
-    min_size = data.draw(st.integers(0, 5))
-    max_size = data.draw(st.none() | st.integers(min_size, 10))
-    hi = 10 if max_size is None else max_size
-    average_size = data.draw(
-        st.none()
-        | st.floats(
-            min_size, hi, exclude_min=min_size != hi, exclude_max=min_size != hi
-        )
-    )
+    sizes = data.draw(many_sizes())
     cd = ConjectureData(random=data.draw(st.randoms(use_true_random=True)))
-    elements = many(
-        min_size=min_size, max_size=max_size, average_size=average_size, _data=cd
-    )
-    if data.draw(st.booleans()):
-        elements.finish()
 
     interrupted = False
     try:
-        for reject in elements:
-            for _ in range(data.draw(st.integers(0, 2))):
-                cd.draw_integer(0, 100)
-            if data.draw(st.booleans()):
-                reject()
-            if data.draw(st.booleans()):
-                elements.finish()
+        with many(**sizes, _data=cd) as elements:
+            for _ in elements:
+                for _ in range(data.draw(st.integers(0, 2))):
+                    cd.draw_integer(0, 100)
+                if data.draw(st.booleans()):
+                    elements.reject()
+                if data.draw(st.booleans()):
+                    break
     except StopTest:
         assert cd.status == Status.INVALID
         interrupted = True
@@ -259,7 +352,7 @@ def test_many_choices_always_have_the_same_shape(data):
     # it to a string, but since it's very natural to express our assertion as a regular
     # expression, this is actually pretty clean.
     shape = "".join(("T" if c else "F") if type(c) is bool else "x" for c in cd.choices)
-    if min_size == max_size:
+    if sizes["min_size"] == sizes["max_size"]:
         assert "T" not in shape
         assert "F" not in shape
     else:

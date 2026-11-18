@@ -58,6 +58,11 @@ def _recase_randomly(draw: DrawFn, tld: str) -> str:
 
 
 class DomainNameStrategy(st.SearchStrategy[str]):
+    max_length: int
+    max_element_length: int
+    domain_strategy: st.SearchStrategy[str]
+    elem_strategy: st.SearchStrategy[str]
+
     @staticmethod
     def clean_inputs(
         minimum: int, maximum: int, value: int | None, variable_name: str
@@ -139,15 +144,14 @@ class DomainNameStrategy(st.SearchStrategy[str]):
         # with a max of 255, that leaves 3 characters for a TLD.
         # Allowing any more subdomains would not leave enough
         # characters for even the shortest possible TLDs.
-        elements = many(min_size=1, average_size=3, max_size=126)
-        for reject in elements:
-            # Generate a new valid subdomain using the regex strategy.
-            sub_domain = data.draw(self.elem_strategy)
-            if len(domain) + len(sub_domain) >= self.max_length:
-                reject()
-                elements.finish()
-                continue
-            domain = sub_domain + "." + domain
+        with many(min_size=1, average_size=3, max_size=126) as elements:
+            for _ in elements:
+                # Generate a new valid subdomain using the regex strategy.
+                sub_domain = data.draw(self.elem_strategy)
+                if len(domain) + len(sub_domain) >= self.max_length:
+                    elements.reject("subdomain would make the domain too long")
+                    continue
+                domain = sub_domain + "." + domain
         return domain
 
 

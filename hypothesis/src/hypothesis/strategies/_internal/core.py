@@ -50,7 +50,6 @@ from types import EllipsisType, FunctionType, GenericAlias
 from typing import (
     Annotated,
     Any,
-    AnyStr,
     Concatenate,
     Literal,
     NewType,
@@ -890,6 +889,10 @@ def text(
     # setting Ex = str. Mypy is correct to complain because we have an LSP violation
     # here in the TextStrategy.do_draw override. Would need refactoring to resolve.
     return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)  # type: ignore
+
+
+# typing.AnyStr is deprecated as of Python 3.16
+AnyStr = TypeVar("AnyStr", str, bytes)
 
 
 @overload
@@ -2421,6 +2424,9 @@ class DataObject:
 
     # Note that "only exists" here really means "is only exported to users",
     # but we want to treat it as "semi-stable", not document it as "public API".
+
+    count: int
+    conjecture_data: ConjectureData
 
     def __init__(self, data: ConjectureData) -> None:
         self.count = 0

@@ -370,7 +370,9 @@ class ArrayStrategy(st.SearchStrategy):
             # value from our fill strategy and use that to populate the
             # remaining positions with that strategy.
 
-            elements = many(
+            needs_fill = np.full(self.array_size, True)
+            seen = set()
+            with many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It
@@ -380,24 +382,20 @@ class ArrayStrategy(st.SearchStrategy):
                     0.9 * self.array_size,  # ensure small arrays sometimes use fill
                     max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
                 ),
-            )
-
-            needs_fill = np.full(self.array_size, True)
-            seen = set()
-
-            for reject in elements:
-                i = data.draw_integer(0, self.array_size - 1)
-                if not needs_fill[i]:
-                    reject()
-                    continue
-                self.set_element(data.draw(self.element_strategy), result, i)
-                if self.unique:
-                    if result[i] in seen:
-                        reject()
+            ) as elements:
+                for _ in elements:
+                    i = data.draw_integer(0, self.array_size - 1)
+                    if not needs_fill[i]:
+                        elements.reject()
                         continue
-                    seen.add(result[i])
+                    self.set_element(data.draw(self.element_strategy), result, i)
+                    if self.unique:
+                        if result[i] in seen:
+                            elements.reject()
+                            continue
+                        seen.add(result[i])
 
-                needs_fill[i] = False
+                    needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
                 # put a fill value into the rest.
@@ -1058,8 +1056,8 @@ def nested_dtypes(
 
 
 @proxies(_valid_tuple_axes)
-def valid_tuple_axes(*args, **kwargs):
-    return _valid_tuple_axes(*args, **kwargs)
+def valid_tuple_axes(ndim: int, **kwargs: Any) -> st.SearchStrategy[tuple[int, ...]]:
+    return _valid_tuple_axes(ndim, **kwargs)
 
 
 valid_tuple_axes.__doc__ = f"""
@@ -1073,8 +1071,10 @@ valid_tuple_axes.__doc__ = f"""
 
 
 @proxies(_mutually_broadcastable_shapes)
-def mutually_broadcastable_shapes(*args, **kwargs):
-    return _mutually_broadcastable_shapes(*args, **kwargs)
+def mutually_broadcastable_shapes(
+    **kwargs: Any,
+) -> st.SearchStrategy[BroadcastableShapes]:
+    return _mutually_broadcastable_shapes(**kwargs)
 
 
 mutually_broadcastable_shapes.__doc__ = f"""

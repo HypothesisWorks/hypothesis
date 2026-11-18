@@ -11,6 +11,7 @@
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -490,9 +491,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.18",
-    "6.0": "6.0.9",
-    "6.1": "6.1.2",
+    "5.2": "5.2.19",
+    "6.0": "6.0.10",
+    "6.1": "6.1.3",
 }
 
 
@@ -678,6 +679,10 @@ def update_gha_pins():
         )
 
 
+def update_uv():
+    subprocess.run(["uv", "self", "update"], check=True)
+
+
 def update_vendored_files():
     vendor = pathlib.Path(PYTHON_SRC) / "hypothesis" / "vendor"
 
@@ -721,8 +726,14 @@ def has_diff(file_or_directory):
 
 @task()
 def upgrade_requirements():
+    if platform.system() != "Linux":
+        raise SystemExit(
+            "The upgrade-requirements task must be run on Linux, so transitive "
+            "dependencies in lock files will be reproducible.",
+        )
     update_vendored_files()
     compile_requirements(upgrade=True)
+    update_uv()
     update_python_versions()
     update_pyodide_versions()
     update_django_versions()
@@ -835,15 +846,15 @@ def run_tox(task, version, *args, profile="dev"):
 #  - `release-build-wheels` job in <ROOT>/github/workflows/release.yml
 #  - `Programming Language ::` specifiers in pyproject.toml
 PYTHONS = {
-    "3.11": "3.11.17",
-    "3.12": "3.12.15",
-    "3.13": "3.13.16",
-    "3.14": "3.14.8",
-    "3.14t": "3.14.8+freethreaded",
-    "3.15": "3.15.0",
-    "3.15t": "3.15.0+freethreaded",
-    "3.16": "3.16.0a1",
-    "3.16t": "3.16.0a1+freethreaded",
+    "3.11": "3.11.18",
+    "3.12": "3.12.16",
+    "3.13": "3.13.18",
+    "3.14": "3.14.10",
+    "3.14t": "3.14.10+freethreaded",
+    "3.15": "3.15.2",
+    "3.15t": "3.15.2+freethreaded",
+    "3.16": "3.16.0a2",
+    "3.16t": "3.16.0a2+freethreaded",
     "pypy3.11": "pypy3.11-3.11.17",
     "pypy3.12": "pypy3.12-3.12.15",
 }
@@ -852,8 +863,8 @@ ci_version_python = (
 )
 
 # automatically updated by update_pyodide_versions()
-PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.1"
+PYODIDE_VERSION = "314.0.8"
+PYODIDE_BUILD_VERSION = "0.39.3"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
@@ -1155,6 +1166,17 @@ def check_types_hypothesis(*args):
         testcase = "types/test_hypothesis.py"
         args = ["-n", "auto", REPO_TESTS / testcase]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
+
+
+@task()
+def check_type_coverage():
+    pip_tool(
+        "pyrefly",
+        "coverage",
+        "check",
+        "--public-only",
+        f"--python-interpreter-path={sys.executable}",
+    )
 
 
 @task()

@@ -229,14 +229,12 @@ class ListStrategy(SearchStrategy[list[Ex]]):
             assert self.min_size == 0
             return []
 
-        return [
-            data.draw(self.element_strategy)
-            for _ in many(
-                min_size=self.min_size,
-                max_size=self.max_size,
-                average_size=self.average_size,
-            )
-        ]
+        with many(
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=self.average_size,
+        ) as elements:
+            return [data.draw(self.element_strategy) for _ in elements]
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
         if not isinstance(value, list):
@@ -338,11 +336,6 @@ class UniqueListStrategy(ListStrategy[Ex]):
             assert self.min_size == 0
             return []
 
-        elements = many(
-            min_size=self.min_size,
-            max_size=self.max_size,
-            average_size=self.average_size,
-        )
         seen_sets: tuple[set[Ex], ...] = tuple(set() for _ in self.keys)
         # actually list[Ex], but if self.tuple_suffixes is present then Ex is a
         # tuple[T, ...] because self.element_strategy is a TuplesStrategy, and
@@ -369,22 +362,31 @@ class UniqueListStrategy(ListStrategy[Ex]):
             # collection nested inside another unique collection keeps
             # counting, so that sibling elements remain distinct.
             data.simplest_index = 0
-        for reject in elements:
-            data.unique_element_depth += 1
-            try:
-                value = filtered.do_filtered_draw(data)
-            finally:
-                data.unique_element_depth -= 1
-            if value is filter_not_satisfied:
-                reject(f"Aborted test because unable to satisfy {filtered!r}")
-            else:
-                assert not isinstance(value, UniqueIdentifier)
-                for key, seen in zip(self.keys, seen_sets, strict=True):
-                    seen.add(key(value))
-                if self.tuple_suffixes is not None:
-                    value = (value, *data.draw(self.tuple_suffixes))
-                result.append(value)
-        data.stop_span()
+        try:
+            with many(
+                min_size=self.min_size,
+                max_size=self.max_size,
+                average_size=self.average_size,
+            ) as elements:
+                for _ in elements:
+                    data.unique_element_depth += 1
+                    try:
+                        value = filtered.do_filtered_draw(data)
+                    finally:
+                        data.unique_element_depth -= 1
+                    if value is filter_not_satisfied:
+                        elements.reject(
+                            f"Aborted test because unable to satisfy {filtered!r}"
+                        )
+                    else:
+                        assert not isinstance(value, UniqueIdentifier)
+                        for key, seen in zip(self.keys, seen_sets, strict=True):
+                            seen.add(key(value))
+                        if self.tuple_suffixes is not None:
+                            value = (value, *data.draw(self.tuple_suffixes))
+                        result.append(value)
+        finally:
+            data.stop_span()
         assert len(result) >= self.min_size
         assert self.max_size is None or len(result) <= self.max_size
         return result
@@ -443,34 +445,35 @@ class UniqueSampledListStrategy(UniqueListStrategy):
     def do_draw(self, data: ConjectureData) -> list[Ex]:
         assert isinstance(self.element_strategy, SampledFromStrategy)
 
-        elements = many(
-            min_size=self.min_size,
-            max_size=self.max_size,
-            average_size=self.average_size,
-        )
         seen_sets: tuple[set[Ex], ...] = tuple(set() for _ in self.keys)
         result: list[Any] = []
 
         remaining = LazySequenceCopy(self.element_strategy.elements)
 
-        for reject in elements:
-            j = data.draw_integer(0, len(remaining) - 1)
-            value = self.element_strategy._transform(remaining.pop(j), data=data)
-            if value is not filter_not_satisfied and all(
-                key(value) not in seen
-                for key, seen in zip(self.keys, seen_sets, strict=True)
-            ):
-                for key, seen in zip(self.keys, seen_sets, strict=True):
-                    seen.add(key(value))
-                if self.tuple_suffixes is not None:
-                    value = (value, *data.draw(self.tuple_suffixes))
-                result.append(value)
-            else:
-                reject(
-                    "UniqueSampledListStrategy filter not satisfied or value already seen"
-                )
-            if not remaining:
-                elements.finish()
+        with many(
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=self.average_size,
+        ) as elements:
+            for _ in elements:
+                j = data.draw_integer(0, len(remaining) - 1)
+                value = self.element_strategy._transform(remaining.pop(j), data=data)
+                if value is not filter_not_satisfied and all(
+                    key(value) not in seen
+                    for key, seen in zip(self.keys, seen_sets, strict=True)
+                ):
+                    for key, seen in zip(self.keys, seen_sets, strict=True):
+                        seen.add(key(value))
+                    if self.tuple_suffixes is not None:
+                        value = (value, *data.draw(self.tuple_suffixes))
+                    result.append(value)
+                else:
+                    elements.reject(
+                        "UniqueSampledListStrategy filter not satisfied or "
+                        "value already seen"
+                    )
+                if not remaining:
+                    break
         assert len(result) >= self.min_size
         assert self.max_size is None or len(result) <= self.max_size
         return result
@@ -551,15 +554,18 @@ class FixedDictStrategy(SearchStrategy[Mapping[Any, Any]]):
 
         if self.optional is not None:
             remaining = [k for k, v in self.optional.items() if not v.is_empty]
-            for _ in many(
-                min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
-            ):
-                j = data.draw_integer(0, len(remaining) - 1)
-                remaining[-1], remaining[j] = remaining[j], remaining[-1]
-                key = remaining.pop()
-                with data.track_arg_label(str(key)) as arg_label:
-                    pairs.append((key, data.draw(self.optional[key])))
-                arg_labels |= arg_label
+            with many(
+                min_size=0,
+                max_size=len(remaining),
+                average_size=len(remaining) / 2,
+            ) as elements:
+                for _ in elements:
+                    j = data.draw_integer(0, len(remaining) - 1)
+                    remaining[-1], remaining[j] = remaining[j], remaining[-1]
+                    key = remaining.pop()
+                    with data.track_arg_label(str(key)) as arg_label:
+                        pairs.append((key, data.draw(self.optional[key])))
+                    arg_labels |= arg_label
 
         # Vary the dict's iteration order (#3906).  We shuffle after choosing
         # the optional keys, so only order varies, not the set of keys.

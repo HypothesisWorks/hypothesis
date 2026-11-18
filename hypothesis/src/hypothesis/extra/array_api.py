@@ -395,8 +395,10 @@ class ArrayStrategy(st.SearchStrategy):
             fill_val = data.draw(self.fill)
             result_obj = [fill_val for _ in range(self.array_size)]
             fill_mask = [True for _ in range(self.array_size)]
+            assigned = set()
+            seen = set()
 
-            elements = many(
+            with many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It
@@ -406,26 +408,22 @@ class ArrayStrategy(st.SearchStrategy):
                     0.9 * self.array_size,  # ensure small arrays sometimes use fill
                     max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
                 ),
-            )
-
-            assigned = set()
-            seen = set()
-
-            for reject in elements:
-                i = data.draw_integer(0, self.array_size - 1)
-                if i in assigned:
-                    reject("chose an array index we've already used")
-                    continue
-                val = data.draw(self.elements_strategy)
-                if self.unique:
-                    if val in seen:
-                        reject("chose an element we've already used")
+            ) as elements:
+                for _ in elements:
+                    i = data.draw_integer(0, self.array_size - 1)
+                    if i in assigned:
+                        elements.reject("chose an array index we've already used")
                         continue
-                    seen.add(val)
+                    val = data.draw(self.elements_strategy)
+                    if self.unique:
+                        if val in seen:
+                            elements.reject("chose an element we've already used")
+                            continue
+                        seen.add(val)
 
-                result_obj[i] = val
-                assigned.add(i)
-                fill_mask[i] = False
+                    result_obj[i] = val
+                    assigned.add(i)
+                    fill_mask[i] = False
 
             try:
                 result = self.xp.asarray(result_obj, dtype=self.dtype)
