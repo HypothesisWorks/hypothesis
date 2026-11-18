@@ -231,7 +231,9 @@ jobs:
   release-build-pyodide:
     needs: [prepare-release]
     if: needs.prepare-release.outputs.new_version != ''
-    runs-on: ubuntu-latest
+    # actions/setup-python has no builds of older patch versions (which pyodide
+    # pins) for ubuntu-26.04, which ubuntu-latest now resolves to.
+    runs-on: ubuntu-24.04
     env:
       # automatically updated by update_pyodide_versions()
       PYODIDE_VERSION: 314.0.8
