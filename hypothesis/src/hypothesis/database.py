@@ -667,9 +667,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self._observer = Observer()
         self._observer.schedule(
             Handler(),
-            # remove type: ignore when released
-            # https://github.com/gorakhargosh/watchdog/pull/1096
-            self.path,  # type: ignore
+            self.path,
             recursive=True,
             event_filter=[FileCreatedEvent, FileDeletedEvent, FileMovedEvent],
         )
