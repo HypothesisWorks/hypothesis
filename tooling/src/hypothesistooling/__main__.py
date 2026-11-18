@@ -491,9 +491,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "5.2": "5.2.18",
-    "6.0": "6.0.9",
-    "6.1": "6.1.2",
+    "5.2": "5.2.19",
+    "6.0": "6.0.10",
+    "6.1": "6.1.3",
 }
 
 
@@ -853,8 +853,8 @@ PYTHONS = {
     "3.14t": "3.14.10+freethreaded",
     "3.15": "3.15.2",
     "3.15t": "3.15.2+freethreaded",
-    "3.16": "3.16.0a1",
-    "3.16t": "3.16.0a1+freethreaded",
+    "3.16": "3.16.0a2",
+    "3.16t": "3.16.0a2+freethreaded",
     "pypy3.11": "pypy3.11-3.11.17",
     "pypy3.12": "pypy3.12-3.12.15",
 }
@@ -863,8 +863,8 @@ ci_version_python = (
 )
 
 # automatically updated by update_pyodide_versions()
-PYODIDE_VERSION = "314.0.7"
-PYODIDE_BUILD_VERSION = "0.39.2"
+PYODIDE_VERSION = "314.0.8"
+PYODIDE_BUILD_VERSION = "0.39.3"
 PYODIDE_PYTHON_VERSION = "3.14.2"
 
 
