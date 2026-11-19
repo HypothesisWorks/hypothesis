@@ -14,7 +14,7 @@ import heapq
 import math
 import sys
 from collections import OrderedDict, abc
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 from types import FunctionType
 from typing import TYPE_CHECKING, TypeVar
@@ -68,7 +68,6 @@ def combine_labels(*labels: int) -> int:
 
 
 SAMPLE_IN_SAMPLER_LABEL = calc_label_from_name("a sample() in Sampler")
-ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
 T = TypeVar("T")
@@ -259,182 +258,14 @@ class Sampler:
             return base
 
 
-_INTERLEAVED_MANY_MSG = (
-    "Iteration over many() is interleaved with other draws.  Are you iterating "
-    "over several many() objects at once, e.g. with zip()?"
-)
-
-
-class many:
-    """Utility class for collections. Bundles up the logic we use for "should I
-    keep drawing more values?" and handles starting and stopping spans in
-    the right place.
-
-    Intended usage is something like:
-
-    with many(data, ...) as elements:
-        for _ in elements:
-            if not add_stuff_to_result():
-                elements.reject()
-
-    Leaving the loop early with ``break``, ``return``, or an exception is
-    supported, and keeps both the span tree and the choice sequence well-formed.
-    """
-
-    def __init__(
-        self,
-        data: "ConjectureData",
-        min_size: int,
-        max_size: int | float,
-        average_size: int | float,
-        *,
-        forced: int | None = None,
-        observe: bool = True,
-    ) -> None:
-        assert 0 <= min_size <= average_size <= max_size
-        assert forced is None or min_size <= forced <= max_size
-        self.min_size = min_size
-        self.max_size = max_size
-        self.data = data
-        self.forced_size = forced
-        self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
-        self.count = 0
-        self.rejections = 0
-        self.force_stop = False
-        self.observe = observe
-        self._depth: int | None = None
-        self._iterated = False
-        self._closed = False
-        self._done = False
-        self._in_element = False
-        self._rejected = False
-
-    def __enter__(self) -> "many":
-        if self._depth is not None:
-            raise InvalidArgument("Cannot reuse a many() object.")
-        self._depth = self.data.depth
-        return self
-
-    def __exit__(self, exc_type: type | None, *_: object) -> None:
-        self._closed = True
-        if self.data.frozen:
-            return
-        if self.data.depth != self._expected_depth():
-            if exc_type is None:
-                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
-            return
-        self._finish_element()
-        if exc_type is None and not self._done:
-            # We exited the loop early, so draw a (forced) stop decision.  This
-            # makes our choice sequence look like a natural stop.
-            self.force_stop = True
-            self._decide()
-
-    def __iter__(self) -> Iterator[None]:
-        if self._depth is None or self._closed:
-            raise InvalidArgument(
-                "many() must be used as `with many(...) as elements:` "
-                "followed by `for _ in elements:`, inside the with-block."
-            )
-        if self._iterated:
-            raise InvalidArgument("Cannot iterate over a many() more than once.")
-        self._iterated = True
-        return self._iterate()
-
-    def _iterate(self) -> Iterator[None]:
-        data = self.data
-        while True:
-            if self._closed:
-                raise InvalidArgument("Cannot iterate over many() after exiting it.")
-            if data.depth != self._expected_depth():
-                raise InvalidArgument(_INTERLEAVED_MANY_MSG)
-            if self._in_element:
-                self._finish_element()
-            if not self._decide():
-                return
-            self.count += 1
-            self._in_element = True
-            self._rejected = False
-            yield
-
-    def reject(self, why: str | None = None) -> None:
-        """Reject the current element (i.e. don't count it towards our budget
-        of elements because it's not going to go in the final collection)."""
-        if not self._in_element or self._rejected:
-            raise InvalidArgument(
-                "reject() can only be called once per element, inside the loop."
-            )
-        self.count -= 1
-        self.rejections += 1
-        self._rejected = True
-        # We set a minimum number of rejections before we give up to avoid
-        # failing too fast when we reject the first draw.
-        if self.rejections > max(3, 2 * self.count):
-            if self.count < self.min_size:
-                self.data.mark_invalid(why)
-            else:
-                self.force_stop = True
-
-    def _expected_depth(self) -> int:
-        assert self._depth is not None
-        return self._depth + (self._in_element and self.observe)
-
-    def _finish_element(self) -> None:
-        if self._in_element:
-            self._in_element = False
-            if self.observe:
-                # A rejected element does not contribute to the collection, so
-                # discard its span - the shrinker can then delete it wholesale.
-                self.data.stop_span(discard=self._rejected)
-
-    def _decide(self) -> bool:
-        if self.force_stop and self.count < self.min_size:
-            self.data.mark_invalid(
-                f"stopped with {self.count} elements, below min_size={self.min_size}"
-            )
-        if self.observe:
-            self.data.start_span(ONE_FROM_MANY_LABEL)
-        if self.min_size == self.max_size:
-            # if we have to hit an exact size, draw unconditionally until that
-            # point, and no further.
-            should_continue = self.count < self.min_size
-        else:
-            forced_result = None
-            if self.force_stop:
-                # if our size is forced, we can't stop in a way that would
-                # cause us to differ from the forced size.
-                assert self.forced_size is None or self.count == self.forced_size
-                forced_result = False
-            elif self.count < self.min_size:
-                forced_result = True
-            elif self.count >= self.max_size:
-                forced_result = False
-            elif self.forced_size is not None:
-                forced_result = self.count < self.forced_size
-            # Don't enumerate "simplest" choices for this draw, so that probes
-            # of collections inside unique collections stop at min_size.
-            depth, self.data.unique_element_depth = self.data.unique_element_depth, 0
-            should_continue = self.data.draw_boolean(
-                self.p_continue,
-                forced=forced_result,
-                observe=self.observe,
-            )
-            self.data.unique_element_depth = depth
-        if not should_continue:
-            self._done = True
-            if self.observe:
-                self.data.stop_span()
-        return should_continue
-
-
 class invert_many:
-    """The inversion counterpart of ``many``: the boolean choices that
-    ``many`` would draw around each element. Fixed-size collections draw no
+    """The inversion counterpart of ``hypothesis.lowlevel.many``: the boolean
+    choices that ``many`` would draw around each element. Fixed-size collections draw no
     booleans at all; variable-size ones draw a continuation boolean before
     each element (forced while below min_size, but forced draws still consume
     a choice) and a final False to stop (forced at max_size)."""
 
-    def __init__(self, min_size: int, max_size: int | float) -> None:
+    def __init__(self, min_size: int, max_size: int | None) -> None:
         self._variable_size = min_size != max_size
 
     def more(self) -> tuple["ChoiceT", ...]:

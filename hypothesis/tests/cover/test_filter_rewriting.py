@@ -410,12 +410,12 @@ def test_filter_floats_can_skip_subnormals(op, attr, value, expected):
         (st.text(min_size=1, max_size=5), partial(min_len, 3), 3, 5),
         (st.text(min_size=1, max_size=5), partial(max_len, 3), 1, 3),
         # text with only one bound
-        (st.text(min_size=1), partial(min_len, 3), 3, math.inf),
+        (st.text(min_size=1), partial(min_len, 3), 3, None),
         (st.text(min_size=1), partial(max_len, 3), 1, 3),
         (st.text(max_size=5), partial(min_len, 3), 3, 5),
         (st.text(max_size=5), partial(max_len, 3), 0, 3),
         # Unbounded text
-        (st.text(), partial(min_len, 3), 3, math.inf),
+        (st.text(), partial(min_len, 3), 3, None),
         (st.text(), partial(max_len, 3), 0, 3),
     ],
     ids=get_pretty_function_description,
@@ -459,21 +459,21 @@ def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
         (lambda x: len(x) < 3, 0, 2),
         (lambda x: len(x) <= 3, 0, 3),
         (lambda x: len(x) == 3, 3, 3),
-        (lambda x: len(x) >= 3, 3, math.inf),
-        (lambda x: len(x) > 3, 4, math.inf),
+        (lambda x: len(x) >= 3, 3, None),
+        (lambda x: len(x) > 3, 4, None),
         # Simple lambdas, reverse comparison
         (lambda x: 3 > len(x), 0, 2),
         (lambda x: 3 >= len(x), 0, 3),
         (lambda x: 3 == len(x), 3, 3),
-        (lambda x: 3 <= len(x), 3, math.inf),
-        (lambda x: 3 < len(x), 4, math.inf),
+        (lambda x: 3 <= len(x), 3, None),
+        (lambda x: 3 < len(x), 4, None),
         # More complicated lambdas
         (lambda x: 0 < len(x) < 5, 1, 4),
-        (lambda x: 0 < len(x) >= 1, 1, math.inf),
+        (lambda x: 0 < len(x) >= 1, 1, None),
         (lambda x: 1 > len(x) <= 0, 0, 0),
-        (lambda x: len(x) > 0 and len(x) > 0, 1, math.inf),
+        (lambda x: len(x) > 0 and len(x) > 0, 1, None),
         (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
-        (lambda x: len(x) > 1 and len(x) > 0, 2, math.inf),
+        (lambda x: len(x) > 1 and len(x) > 0, 2, None),
         (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
     ],
     ids=get_pretty_function_description,
@@ -515,7 +515,7 @@ def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end)
         unwrapped = unwrapped.filtered_strategy.mapped_strategy
 
     # binary() has a finite-but-effectively-infinite cap instead.
-    if isinstance(unwrapped_nofilter, BytesStrategy) and end == math.inf:
+    if isinstance(unwrapped_nofilter, BytesStrategy) and end is None:
         end = COLLECTION_DEFAULT_MAX_SIZE
 
     assert unwrapped.filtered_strategy.min_size == start

@@ -46,10 +46,10 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import (
@@ -372,8 +372,7 @@ class ArrayStrategy(st.SearchStrategy):
 
             needs_fill = np.full(self.array_size, True)
             seen = set()
-            with cu.many(
-                data,
+            with many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It

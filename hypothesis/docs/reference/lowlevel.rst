@@ -1,11 +1,30 @@
-Hypothesis internals
-====================
+Low-level Reference
+===================
 
 .. warning::
 
-    This page documents internal Hypothesis interfaces. Some are fairly stable, while others are still experimental. In either case, they are not subject to our standard :ref:`deprecation policy <deprecation-policy>`, and we might make breaking changes in minor or patch releases.
+    This page documents various low level Hypothesis interfaces. Some are fairly stable, while others are still experimental. In either case, they are not subject to our standard :ref:`deprecation policy <deprecation-policy>`, and we might make breaking changes in minor or patch releases.
 
-    This page is intended for people building tools, libraries, or research on top of Hypothesis. If that includes you, please get in touch! We'd love to hear what you're doing, or explore more stable ways to support your use-case.
+    This page is intended for power users, and people building tools, libraries, or research on top of Hypothesis. If that includes you, please get in touch! We'd love to hear what you're doing, or explore more stable ways to support your use-case.
+
+Low-level API
+-------------
+
+.. note::
+
+    The ``hypothesis.lowlevel`` module contains low level APIs. ``hypothesis.lowlevel`` is intended for power uses of Hypothesis, and trades off ergonomics and safety for power and control.
+
+    ``hypothesis.lowlevel`` is stable, but is subject to a slightly weaker policy than :ref:`our standard deprecation policy <deprecation-policy>`. ``hypothesis.lowevel`` is subject to the following deprecation policy:
+
+    * Breaking changes will be preceded by at least 3 months of a deprecation warning.
+    * After the 3 month period, breaking changes may occur during any of a patch, minor, or major release.
+    * Breaking changes may be made during a major release without the 3 month deprecation notice.
+
+.. automodule:: hypothesis.lowlevel
+
+.. autofunction:: hypothesis.lowlevel.weighted_booleans
+.. autoclass:: hypothesis.lowlevel.many
+    :members:
 
 .. _alternative-backends-internals:
 

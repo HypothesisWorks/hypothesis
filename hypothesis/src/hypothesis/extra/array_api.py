@@ -41,7 +41,6 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.reflection import proxies
@@ -51,6 +50,7 @@ from hypothesis.internal.validation import (
     check_valid_integer,
     check_valid_interval,
 )
+from hypothesis.lowlevel import many
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
@@ -398,8 +398,7 @@ class ArrayStrategy(st.SearchStrategy):
             assigned = set()
             seen = set()
 
-            with cu.many(
-                data,
+            with many(
                 min_size=0,
                 max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It

@@ -248,7 +248,7 @@ class TextStrategy(ListStrategy[str]):
                 min_size=self.min_size,
                 max_size=(
                     COLLECTION_DEFAULT_MAX_SIZE
-                    if self.max_size == float("inf")
+                    if self.max_size is None
                     else self.max_size
                 ),
             )
@@ -262,9 +262,7 @@ class TextStrategy(ListStrategy[str]):
             # a non-standard element strategy is drawn one character at a time
             return ListStrategy._invert(self, list(value))
         effective_max = (
-            COLLECTION_DEFAULT_MAX_SIZE
-            if self.max_size == float("inf")
-            else self.max_size
+            COLLECTION_DEFAULT_MAX_SIZE if self.max_size is None else self.max_size
         )
         if not (self.min_size <= len(value) <= effective_max):
             raise CannotInvert(
@@ -281,7 +279,7 @@ class TextStrategy(ListStrategy[str]):
             args.append(repr(self.element_strategy))
         if self.min_size:
             args.append(f"min_size={self.min_size}")
-        if self.max_size < float("inf"):
+        if self.max_size is not None:
             args.append(f"max_size={self.max_size}")
         return f"text({', '.join(args)})"
 
@@ -304,7 +302,7 @@ class TextStrategy(ListStrategy[str]):
         elems = unwrap_strategies(self.element_strategy)
         if (
             condition is str.isidentifier
-            and self.max_size >= 1
+            and self.max_size != 0
             and isinstance(elems, OneCharStringStrategy)
         ):
             from hypothesis.strategies import builds, nothing
@@ -318,7 +316,7 @@ class TextStrategy(ListStrategy[str]):
                 TextStrategy(
                     OneCharStringStrategy(elems.intervals & id_continue),
                     min_size=max(0, self.min_size - 1),
-                    max_size=self.max_size - 1,
+                    max_size=None if self.max_size is None else self.max_size - 1,
                 ),
                 # Filter to ensure that NFKC normalization keeps working in future
             ).filter(str.isidentifier)
@@ -363,7 +361,7 @@ def _string_filter_rewrite(self, kind, condition):
             )
             if self.min_size > 0:
                 s = s.filter(partial(min_len, self.min_size))
-            if self.max_size < 1e999:
+            if self.max_size is not None:
                 s = s.filter(partial(max_len, self.max_size))
             return s
         elif condition.__name__ in ("finditer", "scanner"):
@@ -387,7 +385,7 @@ def _string_filter_rewrite(self, kind, condition):
     # We use ListStrategy filter logic for the conditions that *only* imply
     # the string is nonempty.  Here, we increment the min_size but still apply
     # the filter for conditions that imply nonempty *and specific contents*.
-    if condition in self._nonempty_and_content_filters and self.max_size >= 1:
+    if condition in self._nonempty_and_content_filters and self.max_size != 0:
         self = copy.copy(self)
         self.min_size = max(1, self.min_size)
         return ListStrategy.filter(self, condition)
