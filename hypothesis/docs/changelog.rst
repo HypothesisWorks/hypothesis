@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.16:
+
+---------------------
+6.170.16 - 2026-11-19
+---------------------
+
+This patch speeds up shrinking by comparing a candidate against the current
+shrink target lazily, instead of computing the sort key of every choice on
+each attempt.
+
+It also avoids a deprecation warning on import under Python 3.16.
+
 .. _v6.170.15:
 
 ---------------------
