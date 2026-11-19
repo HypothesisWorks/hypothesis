@@ -3,6 +3,7 @@ name: Release
 # The release pipeline is:
 # * prepare-release
 # * release-build-{wheels, sdist, pyodide}   (run in parallel)
+#   wheels marked `optional` in the matrix may fail without blocking the release
 # * publish                                  (twine + commit + tag + GH release)
 
 on:
@@ -40,6 +41,7 @@ jobs:
     if: needs.prepare-release.outputs.new_version != ''
     name: wheels (${{ matrix.os }} / ${{ matrix.target }} / ${{ matrix.manylinux }})
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -90,7 +92,10 @@ jobs:
               os: ubuntu-latest,
               target: i686,
               manylinux: auto,
-              abi3-only: true
+              abi3-only: true,
+              # manylinux2014 has to fetch packages from the CentOS 7 vault,
+              # which often fails to resolve from GitHub's runners.
+              optional: true
             }
           - {
               os: ubuntu-latest,
