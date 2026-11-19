@@ -3,7 +3,6 @@ name: Release
 # The release pipeline is:
 # * prepare-release
 # * release-build-{wheels, sdist, pyodide}   (run in parallel)
-#   wheels marked `optional` in the matrix may fail without blocking the release
 # * publish                                  (twine + commit + tag + GH release)
 
 on:
@@ -41,7 +40,6 @@ jobs:
     if: needs.prepare-release.outputs.new_version != ''
     name: wheels (${{ matrix.os }} / ${{ matrix.target }} / ${{ matrix.manylinux }})
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.optional == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -89,13 +87,12 @@ jobs:
               interpreter: 'python3.11 python3.12 python3.13 python3.14 python3.14t pypy3.11 pypy3.12'
             }
           - {
-              os: ubuntu-latest,
+              # Docker on ubuntu-26.04 breaks DNS in 32-bit glibc containers, see
+              # https://github.com/PyO3/maturin-action/issues/484
+              os: ubuntu-24.04,
               target: i686,
               manylinux: auto,
-              abi3-only: true,
-              # manylinux2014 has to fetch packages from the CentOS 7 vault,
-              # which often fails to resolve from GitHub's runners.
-              optional: true
+              abi3-only: true
             }
           - {
               os: ubuntu-latest,

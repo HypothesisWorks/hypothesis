@@ -33,7 +33,6 @@ Python versions
 
 Hypothesis is supported and tested on CPython and PyPy 3.11+, i.e. all Python versions `that are still supported <https://devguide.python.org/versions/>`_.
 32-bit builds of CPython also work, though we only test them on Windows.
-Some releases may not include a wheel for 32-bit glibc Linux (``manylinux_i686``), in which case installing Hypothesis there will build it from source, which requires a `Rust toolchain <https://rust-lang.org/tools/install/>`_.
 
 Hypothesis does not officially support anything except the latest patch release of each supported Python version. We will fix bugs in earlier patch releases if reported, but they're not tested in CI and no guarantees are made.
 
