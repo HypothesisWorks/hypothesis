@@ -11,7 +11,6 @@
 import abc
 import inspect
 import math
-import operator
 from dataclasses import dataclass, field
 from random import Random
 from typing import Any
@@ -124,13 +123,6 @@ def sig_of(name):
     return result
 
 
-# The sentinel object which random.Random.randrange uses for the step
-# parameter's default value. randrange(start, step=...) without a stop
-# argument is only allowed when step is this exact object (so step=1 is ok,
-# but step=1.0 or step=True are TypeErrors).
-_RANDRANGE_STEP_DEFAULT = sig_of("randrange").parameters["step"].default
-
-
 def define_copy_method(name):
     target = getattr(Random, name)
 
@@ -241,7 +233,7 @@ class ArtificialRandom(HypothesisRandom):
             return self.__convert_result(method, kwargs, result)
 
         if method == "_randbelow":
-            n = operator.index(kwargs["n"])
+            n = kwargs["n"]
             if n <= 0:
                 # the real _randbelow loops forever here; raise instead.
                 raise ValueError(f"_randbelow requires n > 0, got {n}")
@@ -266,18 +258,18 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "vonmisesvariate":
             result = self.__data.draw(floats(0, 2 * math.pi))
         elif method == "randrange":
-            # As in the standard library: randrange(start) is only allowed
-            # with the default step, and empty or zero-step ranges raise.
-            start = operator.index(kwargs["start"])
+            # randrange(start) is only allowed with the default step, and empty or
+            # zero-step ranges raise, to match the stdlib.
+            start = kwargs["start"]
+            step = kwargs["step"]
             if kwargs["stop"] is None:
-                if kwargs["step"] is not _RANDRANGE_STEP_DEFAULT:
+                if step != 1:
                     raise TypeError("Missing a non-None stop argument")
                 if start <= 0:
                     raise ValueError("empty range for randrange()")
                 result = self.__data.draw_integer(0, start - 1)
             else:
-                stop = operator.index(kwargs["stop"])
-                step = operator.index(kwargs["step"])
+                stop = kwargs["stop"]
                 width = stop - start
                 if step == 1:
                     if width <= 0:
@@ -286,7 +278,6 @@ class ArtificialRandom(HypothesisRandom):
                 elif step == 0:
                     raise ValueError("zero step for randrange()")
                 else:
-                    # The number of elements in range(start, stop, step).
                     if step > 0:
                         n = (width + step - 1) // step
                     else:
@@ -298,12 +289,10 @@ class ArtificialRandom(HypothesisRandom):
                     i = self.__data.draw_integer(0, n - 1)
                     result = start + i * step
         elif method == "randint":
-            a = operator.index(kwargs["a"])
-            b = operator.index(kwargs["b"])
-            # real randint delegates to randrange(a, b + 1), including
-            # its error for empty ranges.
+            a = kwargs["a"]
+            b = kwargs["b"]
             if a > b:
-                raise ValueError(f"empty range in randrange({a}, {b + 1})")
+                raise ValueError(f"empty range for randint({a}, {b})")
             result = self.__data.draw_integer(a, b)
         elif method == "binomialvariate":
             n = kwargs["n"]
@@ -317,14 +306,14 @@ class ArtificialRandom(HypothesisRandom):
             elif not 0.0 < p < 1.0:
                 raise ValueError("p must be in the range 0.0 <= p <= 1.0")
             else:
-                result = self.__data.draw_integer(0, operator.index(n))
+                result = self.__data.draw_integer(0, n)
         elif method == "choice":
             seq = kwargs["seq"]
-            if not seq:
+            if len(seq) == 0:
                 raise IndexError("Cannot choose from an empty sequence")
             result = self.__data.draw_integer(0, len(seq) - 1)
         elif method == "choices":
-            k = operator.index(kwargs["k"])
+            k = kwargs["k"]
             if k <= 0:
                 result = []
             else:
@@ -360,7 +349,7 @@ class ArtificialRandom(HypothesisRandom):
                 )
 
         elif method == "getrandbits":
-            n = operator.index(kwargs["n"])
+            n = kwargs["n"]
             if n < 0:
                 raise ValueError("number of bits must be non-negative")
             result = self.__data.draw_integer(0, 2**n - 1)
@@ -379,9 +368,9 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "shuffle":
             result = self.__data.draw(permutations(range(len(kwargs["x"]))))
         elif method == "randbytes":
-            n = operator.index(kwargs["n"])
+            n = int(kwargs["n"])
             if n < 0:
-                raise ValueError("number of bits must be non-negative")
+                raise ValueError("number of bytes must be non-negative")
             result = self.__data.draw_bytes(min_size=n, max_size=n)
         else:
             raise NotImplementedError(method)

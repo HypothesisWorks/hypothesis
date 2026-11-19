@@ -11,7 +11,7 @@
 import numpy as np
 
 from hypothesis import given
-from hypothesis.strategies import none
+from hypothesis.strategies import none, randoms
 
 
 def test_numpy_prng_is_seeded():
@@ -30,3 +30,10 @@ def test_numpy_prng_is_seeded():
     np.testing.assert_array_equal(
         np.random.get_state()[1], prng_state[1], "State was not restored."
     )
+
+
+@given(randoms(use_true_random=False))
+def test_randoms_can_choose_from_array(rnd):
+    # make sure our random impl doesn't check bool(arr), which is an error for numpy
+    arrays
+    assert rnd.choice(np.array([1, 2, 3])) in (1, 2, 3)
