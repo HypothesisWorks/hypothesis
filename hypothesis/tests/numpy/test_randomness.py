@@ -35,5 +35,5 @@ def test_numpy_prng_is_seeded():
 @given(randoms(use_true_random=False))
 def test_randoms_can_choose_from_array(rnd):
     # make sure our random impl doesn't check bool(arr), which is an error for numpy
-    arrays
+    # arrays
     assert rnd.choice(np.array([1, 2, 3])) in (1, 2, 3)
