@@ -15,8 +15,9 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal import scrutineer
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.scrutineer import MONITORING_EVENTS, MONITORING_TOOL_ID, Tracer
+from hypothesis.internal.scrutineer import MONITORING_TOOL_ID, Tracer
 
 
 @contextmanager
@@ -57,5 +58,5 @@ def test_tracer_clears_monitoring_state_on_exit():
 
     assert sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
     assert sys.monitoring.get_events(MONITORING_TOOL_ID) == 0
-    for event in MONITORING_EVENTS:
+    for event in scrutineer.MONITORING_EVENTS:
         assert sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None) is None
