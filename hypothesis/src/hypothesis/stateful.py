@@ -16,6 +16,7 @@ Notably, the set of steps available at any point may depend on the
 execution to date.
 """
 
+import asyncio
 import collections
 import dataclasses
 import inspect
@@ -241,7 +242,7 @@ def get_state_machine_test(
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
                     start_gc = gc_cumulative_time()
-                    result = rule.function(machine, **data)
+                    result = machine._call(rule.function, machine, **data)
                     in_gctime = gc_cumulative_time() - start_gc
                     cd._stateful_run_times[label] += perf_counter() - start - in_gctime
 
@@ -267,7 +268,10 @@ def get_state_machine_test(
                 cd.stop_span()
         finally:
             output("state.teardown()")
-            machine.teardown()
+            try:
+                machine._call(machine.teardown)
+            finally:
+                machine._close()
 
     # Use a machine digest to identify stateful tests in the example database
     run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = (  # type: ignore[attr-defined]
@@ -347,6 +351,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     """
 
     _setup_state_per_class: ClassVar[dict[type, _SetupState]] = {}
+    _supports_async: ClassVar[bool] = False
 
     rules: list["Rule"]
     invariants: list["Invariant"]
@@ -455,6 +460,22 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                     "since it has no effect alone."
                 )
 
+        if not cls._supports_async:
+            for f in [
+                *(r.function for r in rules),
+                *(r.function for r in initializers),
+                *(i.function for i in invariants),
+                cls.teardown,
+            ]:
+                if inspect.iscoroutinefunction(f):
+                    raise InvalidDefinition(
+                        f"{_rule_qualname(f)} is an async function, which "
+                        f"{cls.__name__} cannot run. Subclass "
+                        "AsyncioRuleBasedStateMachine instead of "
+                        "RuleBasedStateMachine to define async rules, invariants, "
+                        "and teardown."
+                    )
+
         state = _SetupState(
             rules=rules, initializers=initializers, invariants=invariants
         )
@@ -528,7 +549,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             ):
                 output(f"state.{name}()")
             start = perf_counter()
-            result = invar.function(self)
+            result = self._call(invar.function, self)
             runtimes[f"execute:invariant:{name}"] += perf_counter() - start
             if result is not None:
                 fail_health_check(
@@ -545,6 +566,15 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
         Does nothing by default.
         """
+
+    def _call(self, function: Callable[..., Any], /, *args: Any, **kwargs: Any) -> Any:
+        # Every rule, initialize rule, invariant, and teardown runs through here,
+        # so that subclasses can run async methods on their event loop.
+        return function(*args, **kwargs)
+
+    def _close(self) -> None:
+        # Called once after teardown, even if the test case failed.
+        pass
 
     TestCase = TestCaseProperty()
 
@@ -563,6 +593,35 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         StateMachineTestCase.__name__ = cls.__name__ + ".TestCase"
         StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
         return cast("type[_StateMachineTestCase]", StateMachineTestCase)
+
+
+class AsyncioRuleBasedStateMachine(RuleBasedStateMachine):
+    """A :class:`~hypothesis.stateful.RuleBasedStateMachine` whose rules,
+    initialize rules, invariants, and teardown may be ``async def`` functions.
+
+    Each test case gets a new :mod:`asyncio` event loop, which is closed after
+    teardown. Every method runs to completion on that loop before the next one
+    starts, so objects bound to the loop, such as connections, queues, and
+    context variables, can be created in one rule and used in later rules.
+    Tasks which are still running after teardown are cancelled.
+
+    Synchronous methods are called directly, as in
+    :class:`~hypothesis.stateful.RuleBasedStateMachine`.
+    """
+
+    _supports_async = True
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.__runner = asyncio.Runner()
+
+    def _call(self, function: Callable[..., Any], /, *args: Any, **kwargs: Any) -> Any:
+        if inspect.iscoroutinefunction(function):
+            return self.__runner.run(function(*args, **kwargs))
+        return function(*args, **kwargs)
+
+    def _close(self) -> None:
+        self.__runner.close()
 
 
 @dataclass(slots=True, frozen=False)
