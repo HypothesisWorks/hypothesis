@@ -29,7 +29,11 @@ jobs:
         python-version: "3.14"
         task: prepare-release
     - id: compute
+      env:
+        ALLOWED_MAJOR_VERSION: ${{ vars.ALLOWED_MAJOR_VERSION }}
       run: |
+        # fail on e.g. invalid ALLOWED_MAJOR_VERSION release
+        set -o pipefail
         # build.sh writes ::group:: markers to stdout,
         # so print-next-version emits its result as JSON, which we pick out by key.
         NEW=$(./build.sh print-next-version | grep new_version | jq -r '.new_version // empty')
@@ -293,4 +297,5 @@ jobs:
     - name: Publish
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        ALLOWED_MAJOR_VERSION: ${{ vars.ALLOWED_MAJOR_VERSION }}
       run: ./build.sh publish
