@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.17:
+
+---------------------
+6.170.17 - 2026-11-20
+---------------------
+
+This patch fixes a performance regression on Python 3.12 and 3.13, where the ``sys.monitoring`` line events for |Phase.explain| were left enabled even after the test had completed (:issue:`4964`).
+
+Thanks to Anubhav Lal for this fix!
+
 .. _v6.170.16:
 
 ---------------------
