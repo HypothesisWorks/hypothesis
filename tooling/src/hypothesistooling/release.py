@@ -71,9 +71,21 @@ def has_release_sample():
 
 
 def parse_release_file():
-    return parse_release_file_contents(
+    release_type, release_contents = parse_release_file_contents(
         RELEASE_FILE.read_text(encoding="utf-8"), RELEASE_FILE
     )
+    if release_type == "major":
+        check_major_release_allowed(__version_info__[0] + 1)
+    return release_type, release_contents
+
+
+def check_major_release_allowed(new_major):
+    allowed = os.environ.get("ALLOWED_MAJOR_VERSION", "")
+    if allowed.strip() != str(new_major):
+        raise ValueError(
+            f"RELEASE.rst is marked as a major release to {new_major}.0.0 but "
+            f"does not match ALLOWED_MAJOR_VERSION={allowed!r}"
+        )
 
 
 def parse_release_file_contents(release_contents, filename):
