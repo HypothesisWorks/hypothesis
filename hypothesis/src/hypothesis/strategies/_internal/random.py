@@ -233,7 +233,11 @@ class ArtificialRandom(HypothesisRandom):
             return self.__convert_result(method, kwargs, result)
 
         if method == "_randbelow":
-            result = self.__data.draw_integer(0, kwargs["n"] - 1)
+            n = kwargs["n"]
+            if n <= 0:
+                # the real _randbelow loops forever here; raise instead.
+                raise ValueError(f"_randbelow requires n > 0, got {n}")
+            result = self.__data.draw_integer(0, n - 1)
         elif method == "random":
             # See https://github.com/HypothesisWorks/hypothesis/issues/4297
             # for numerics/bounds of "random" and "betavariate"
@@ -254,42 +258,75 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "vonmisesvariate":
             result = self.__data.draw(floats(0, 2 * math.pi))
         elif method == "randrange":
-            if kwargs["stop"] is None:
-                stop = kwargs["start"]
-                start = 0
-            else:
-                start = kwargs["start"]
-                stop = kwargs["stop"]
-
+            # randrange(start) is only allowed with the default step, and empty or
+            # zero-step ranges raise, to match the stdlib.
+            start = kwargs["start"]
             step = kwargs["step"]
-            if start == stop:
-                raise ValueError(f"empty range for randrange({start}, {stop}, {step})")
-
-            if step != 1:
-                endpoint = (stop - start) // step
-                if (start - stop) % step == 0:
-                    endpoint -= 1
-
-                i = self.__data.draw_integer(0, endpoint)
-                result = start + i * step
+            if kwargs["stop"] is None:
+                if step != 1:
+                    raise TypeError("Missing a non-None stop argument")
+                if start <= 0:
+                    raise ValueError("empty range for randrange()")
+                result = self.__data.draw_integer(0, start - 1)
             else:
-                result = self.__data.draw_integer(start, stop - 1)
+                stop = kwargs["stop"]
+                width = stop - start
+                if step == 1:
+                    if width <= 0:
+                        raise ValueError(f"empty range in randrange({start}, {stop})")
+                    result = self.__data.draw_integer(start, stop - 1)
+                elif step == 0:
+                    raise ValueError("zero step for randrange()")
+                else:
+                    if step > 0:
+                        n = (width + step - 1) // step
+                    else:
+                        n = (width + step + 1) // step
+                    if n <= 0:
+                        raise ValueError(
+                            f"empty range in randrange({start}, {stop}, {step})"
+                        )
+                    i = self.__data.draw_integer(0, n - 1)
+                    result = start + i * step
         elif method == "randint":
-            result = self.__data.draw_integer(kwargs["a"], kwargs["b"])
+            a = kwargs["a"]
+            b = kwargs["b"]
+            if a > b:
+                raise ValueError(f"empty range for randint({a}, {b})")
+            result = self.__data.draw_integer(a, b)
         elif method == "binomialvariate":
-            result = self.__data.draw_integer(0, kwargs["n"])
+            n = kwargs["n"]
+            p = kwargs["p"]
+            if n < 0:
+                raise ValueError("n must be non-negative")
+            if p == 0.0:
+                result = 0
+            elif p == 1.0:
+                result = n
+            elif not 0.0 < p < 1.0:
+                raise ValueError("p must be in the range 0.0 <= p <= 1.0")
+            else:
+                result = self.__data.draw_integer(0, n)
         elif method == "choice":
             seq = kwargs["seq"]
+            if len(seq) == 0:
+                raise IndexError("Cannot choose from an empty sequence")
             result = self.__data.draw_integer(0, len(seq) - 1)
         elif method == "choices":
             k = kwargs["k"]
-            result = self.__data.draw(
-                lists(
-                    integers(0, len(kwargs["population"]) - 1),
-                    min_size=k,
-                    max_size=k,
+            if k <= 0:
+                result = []
+            else:
+                population = kwargs["population"]
+                if len(population) == 0:
+                    raise IndexError("Cannot choose from an empty sequence")
+                result = self.__data.draw(
+                    lists(
+                        integers(0, len(population) - 1),
+                        min_size=k,
+                        max_size=k,
+                    )
                 )
-            )
         elif method == "sample":
             k = kwargs["k"]
             seq = kwargs["population"]
@@ -312,7 +349,10 @@ class ArtificialRandom(HypothesisRandom):
                 )
 
         elif method == "getrandbits":
-            result = self.__data.draw_integer(0, 2 ** kwargs["n"] - 1)
+            n = kwargs["n"]
+            if n < 0:
+                raise ValueError("number of bits must be non-negative")
+            result = self.__data.draw_integer(0, 2**n - 1)
         elif method == "triangular":
             low = normalize_zero(kwargs["low"])
             high = normalize_zero(kwargs["high"])
@@ -329,6 +369,8 @@ class ArtificialRandom(HypothesisRandom):
             result = self.__data.draw(permutations(range(len(kwargs["x"]))))
         elif method == "randbytes":
             n = int(kwargs["n"])
+            if n < 0:
+                raise ValueError("number of bytes must be non-negative")
             result = self.__data.draw_bytes(min_size=n, max_size=n)
         else:
             raise NotImplementedError(method)

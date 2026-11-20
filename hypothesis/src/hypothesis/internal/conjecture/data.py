@@ -987,6 +987,8 @@ class ConjectureData:
             # we'll want to drop this restriction eventually.
             assert all(w != 0 for w in weights.values())
 
+        if min_value is not None and max_value is not None:
+            assert min_value <= max_value
         if forced is not None and min_value is not None:
             assert min_value <= forced
         if forced is not None and max_value is not None:
