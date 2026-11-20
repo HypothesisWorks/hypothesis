@@ -140,10 +140,14 @@ class Tracer:
         if self._tried_and_failed_to_trace:
             return  # pragma: no cover  # only true after the race in __enter__ above
 
+        # work around free_tool_id not clearing events and callbacks on 3.12 and 3.13.
+        # These set_events and register_callback lines can be removed when we drop support
+        # for 3.13. See https://github.com/python/cpython/issues/111963.
         sys.monitoring.set_events(MONITORING_TOOL_ID, 0)
-        sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
         for event in MONITORING_EVENTS:
             sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None)
+
+        sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
 
 
 UNHELPFUL_LOCATIONS = (
