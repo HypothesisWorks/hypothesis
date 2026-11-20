@@ -33,8 +33,6 @@ from typing import (
     TypeAlias,
     cast,
 )
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import StorageDirectory, storage_directory
@@ -444,7 +442,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path: StrPathT) -> None:
         super().__init__()
-        self.path = Path(path)
+        self.path: Path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
         self._observer: BaseObserver | None = None
         self._ensure_directory_exists_called = False
@@ -669,9 +667,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self._observer = Observer()
         self._observer.schedule(
             Handler(),
-            # remove type: ignore when released
-            # https://github.com/gorakhargosh/watchdog/pull/1096
-            self.path,  # type: ignore
+            self.path,
             recursive=True,
             event_filter=[FileCreatedEvent, FileDeletedEvent, FileMovedEvent],
         )
@@ -890,18 +886,19 @@ class GitHubArtifactDatabase(ExampleDatabase):
         artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
         path: StrPathT | None = None,
-    ):
+    ) -> None:
         super().__init__()
-        self.owner = owner
-        self.repo = repo
-        self.artifact_name = artifact_name
-        self.cache_timeout = cache_timeout
+        self.owner: str = owner
+        self.repo: str = repo
+        self.artifact_name: str = artifact_name
+        self.cache_timeout: timedelta = cache_timeout
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
         self.token: str | None = getenv("GITHUB_TOKEN")
 
         self._storage_dir: StorageDirectory | None = None
+        self.path: Path
         if path is None:
             self._storage_dir = storage_directory(
                 f"github-artifacts/{self.artifact_name}/"
@@ -1045,6 +1042,12 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self._prepare_for_io()
 
     def _get_bytes(self, url: str) -> bytes | None:  # pragma: no cover
+        # Deferred imports: urllib.request pulls in http, email, and ssl, which
+        # is a noticeable fraction of `import hypothesis`, and only this rarely
+        # used database needs them.
+        from urllib.error import HTTPError, URLError
+        from urllib.request import Request, urlopen
+
         request = Request(
             url,
             headers={

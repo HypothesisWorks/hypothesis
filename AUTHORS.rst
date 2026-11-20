@@ -25,6 +25,7 @@ their individual contributions.
 * `Andrea Reina <https://www.github.com/andreareina>`_
 * `Andrew Sansom <https://www.github.com/qthequartermasterman>`_
 * `Anne Archibald <https://www.github.com/td-anne>`_
+* `Anubhav Lal <https://github.com/anubhavlal07>`_
 * `Arjoonn Sharma <https://github.com/thesage21>`_
 * `Arjun Aravind <https://github.com/Arjun-Aravind>`_
 * `Ben Anhalt <https://github.com/benanhalt>`_
@@ -154,6 +155,7 @@ their individual contributions.
 * `Nicolas Erni <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
 * `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
+* `patrick-immometrica <https://github.com/patrick-immometrica>`_
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
 * `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_

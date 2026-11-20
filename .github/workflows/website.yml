@@ -38,6 +38,10 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
       - name: Build website
         run: ./build.sh website
       # Serve this with e.g. `python -m http.server` instead of opening the

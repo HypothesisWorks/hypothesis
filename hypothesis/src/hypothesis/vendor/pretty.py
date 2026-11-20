@@ -736,7 +736,7 @@ def _seq_pprinter_factory(start: str, end: str, basetype: type) -> PrettyPrintFu
             and typ.__repr__ != basetype.__repr__  # type: ignore[comparison-overlap]
         ):
             # If the subclass provides its own repr, use it instead.
-            return p.text(typ.__repr__(obj))
+            return p.text(repr(obj))
 
         if cycle:
             return p.text(start + "..." + end)
@@ -778,7 +778,7 @@ def _set_pprinter_factory(
             and typ.__repr__ != basetype.__repr__
         ):
             # If the subclass provides its own repr, use it instead.
-            return p.text(typ.__repr__(obj))
+            return p.text(repr(obj))
 
         if cycle:
             return p.text(start + "..." + end)

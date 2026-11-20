@@ -26,6 +26,7 @@ from hypothesis import (
     Verbosity,
     assume,
     errors,
+    example,
     given,
     settings,
     strategies as st,
@@ -57,7 +58,7 @@ from hypothesis.internal.conjecture.providers import (
     BytestringProvider,
     with_register_backend,
 )
-from hypothesis.internal.floats import SIGNALING_NAN, clamp
+from hypothesis.internal.floats import SIGNALING_NAN, clamp, next_down
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.observability import Observation, _callbacks
 
@@ -1124,3 +1125,19 @@ def test_backend_deadline_exceeded_raised_as_flaky_backend_failure():
 def test_backend_cannot_proceed_raises_on_invalid_scope():
     with pytest.raises(InvalidArgument):
         BackendCannotProceed("not a valid scope")
+
+
+# even for extremely small probabilities, BytestringProvider always leaves one
+# bit open for True/False
+@example(1e-99)
+@example(next_down(1.0))
+@given(st.floats(0, 1, exclude_min=True, exclude_max=True))
+def test_bytestring_draw_boolean_can_return_either_value(p):
+    for bytestring, expected in [(b"\xff", True), (b"\x00", False)]:
+        data = ConjectureData(
+            random=None,
+            observer=None,
+            provider=BytestringProvider,
+            provider_kw={"bytestring": bytestring},
+        )
+        assert data.draw_boolean(p) is expected

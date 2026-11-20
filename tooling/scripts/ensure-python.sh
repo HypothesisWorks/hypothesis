@@ -43,10 +43,7 @@ while true; do
 done
 trap 'rm -rf $LOCKFILE' EXIT
 
-"$HERE/ensure-uv.sh"
-if ! command -v uv >/dev/null 2>&1 ; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+ensure-uv
 
 # Translate our version strings into uv's request format.
 # - 3.14.4 stays as 3.14.4

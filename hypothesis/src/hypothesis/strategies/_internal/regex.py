@@ -14,7 +14,7 @@ import re._constants as sre
 import re._parser as sre_parse
 from dataclasses import dataclass
 from re import Pattern
-from typing import Any, AnyStr
+from typing import Any
 
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -23,6 +23,7 @@ from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import add_note, int_to_byte
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies._internal.core import AnyStr
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
@@ -38,6 +39,7 @@ BYTES_ALL = {int_to_byte(i) for i in range(256)}
 BYTES_DIGIT = {b for b in BYTES_ALL if re.match(b"\\d", b)}
 BYTES_SPACE = {b for b in BYTES_ALL if re.match(b"\\s", b)}
 BYTES_WORD = {b for b in BYTES_ALL if re.match(b"\\w", b)}
+BINARY_CHAR = st.binary(min_size=1, max_size=1)
 BYTES_LOOKUP = {
     sre.CATEGORY_DIGIT: BYTES_DIGIT,
     sre.CATEGORY_SPACE: BYTES_SPACE,
@@ -377,13 +379,8 @@ def _strategy(
     def recurse(codes):
         return _strategy(codes, context, is_unicode, alphabet=alphabet)
 
-    if is_unicode:
-        empty: Any = ""
-        to_char: Any = chr
-    else:
-        empty = b""
-        to_char = int_to_byte
-        binary_char = st.binary(min_size=1, max_size=1)
+    empty: Any = "" if is_unicode else b""
+    to_char: Any = chr if is_unicode else int_to_byte
 
     if not isinstance(codes, tuple):
         # List of codes
@@ -483,7 +480,7 @@ def _strategy(
                     description=f"The negated literal {c!r}",
                 )
             else:
-                return binary_char.filter(lambda c: c not in blacklist)
+                return BINARY_CHAR.filter(lambda c: c not in blacklist)
 
         elif code == sre.CATEGORY:  # pragma: no cover  # python 3.16+
             # For single-element category regexes like '\w' or '[\w]', python 3.16+
@@ -540,8 +537,8 @@ def _strategy(
                 )
             else:
                 if context.flags & re.DOTALL:
-                    return binary_char
-                return binary_char.filter(lambda c: c != b"\n")
+                    return BINARY_CHAR
+                return BINARY_CHAR.filter(lambda c: c != b"\n")
 
         elif code == sre.AT:
             # Regexes like '^...', '...$', '\bfoo', '\Bfoo'

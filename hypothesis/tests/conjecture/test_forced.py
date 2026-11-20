@@ -34,30 +34,24 @@ def test_forced_many(data):
     assert min_size <= forced <= max_size  # by construction
 
     data = fresh_data()
-    many = cu.many(
+    with cu.many(
         data,
         min_size=min_size,
         average_size=(min_size + max_size) / 2,
         max_size=max_size,
         forced=forced,
-    )
-    for _ in range(forced):
-        assert many.more()
-
-    assert not many.more()
+    ) as elements:
+        assert sum(1 for _ in elements) == forced
 
     # ensure values written to the buffer do in fact generate the forced value
     data = ConjectureData.for_choices(data.choices)
-    many = cu.many(
+    with cu.many(
         data,
         min_size=min_size,
         average_size=(min_size + max_size) / 2,
         max_size=max_size,
-    )
-    for _ in range(forced):
-        assert many.more()
-
-    assert not many.more()
+    ) as elements:
+        assert sum(1 for _ in elements) == forced
 
 
 @example(("boolean", {"p": 1e-19, "forced": True}))  # 64 bit p

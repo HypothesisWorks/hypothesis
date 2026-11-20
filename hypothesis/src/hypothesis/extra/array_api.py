@@ -19,6 +19,7 @@ from typing import (
     NamedTuple,
     TypeAlias,
     TypeVar,
+    cast,
     get_args,
 )
 from warnings import warn
@@ -237,7 +238,7 @@ def _from_dtype(
         return st.integers(min_value=min_value, max_value=max_value)
     elif builtin is float:
         finfo = xp.finfo(dtype)
-        kw = {}
+        kw: dict[str, Any] = {}
 
         # Whilst we know the boundary values of float dtypes from finfo, we do
         # not assign them to the floats() strategy by default - passing min/max
@@ -394,8 +395,10 @@ class ArrayStrategy(st.SearchStrategy):
             fill_val = data.draw(self.fill)
             result_obj = [fill_val for _ in range(self.array_size)]
             fill_mask = [True for _ in range(self.array_size)]
+            assigned = set()
+            seen = set()
 
-            elements = cu.many(
+            with cu.many(
                 data,
                 min_size=0,
                 max_size=self.array_size,
@@ -406,26 +409,22 @@ class ArrayStrategy(st.SearchStrategy):
                     0.9 * self.array_size,  # ensure small arrays sometimes use fill
                     max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
                 ),
-            )
-
-            assigned = set()
-            seen = set()
-
-            while elements.more():
-                i = data.draw_integer(0, self.array_size - 1)
-                if i in assigned:
-                    elements.reject("chose an array index we've already used")
-                    continue
-                val = data.draw(self.elements_strategy)
-                if self.unique:
-                    if val in seen:
-                        elements.reject("chose an element we've already used")
+            ) as elements:
+                for _ in elements:
+                    i = data.draw_integer(0, self.array_size - 1)
+                    if i in assigned:
+                        elements.reject("chose an array index we've already used")
                         continue
-                    seen.add(val)
+                    val = data.draw(self.elements_strategy)
+                    if self.unique:
+                        if val in seen:
+                            elements.reject("chose an element we've already used")
+                            continue
+                        seen.add(val)
 
-                result_obj[i] = val
-                assigned.add(i)
-                fill_mask[i] = False
+                    result_obj[i] = val
+                    assigned.add(i)
+                    fill_mask[i] = False
 
             try:
                 result = self.xp.asarray(result_obj, dtype=self.dtype)
@@ -890,7 +889,7 @@ def make_strategies_namespace(
             f"{xp.__array_api_version__=}, but it must "
             f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
-        api_version = xp.__array_api_version__
+        api_version = cast(NominalVersion, xp.__array_api_version__)
         inferred_version = True
     else:
         check_argument(

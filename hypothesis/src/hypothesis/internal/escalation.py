@@ -56,6 +56,14 @@ def belongs_to(package: ModuleType) -> Callable[[str], bool]:
 is_hypothesis_file = belongs_to(hypothesis)
 
 
+def _last_frame_location(tb: TracebackType) -> tuple[str, int | None]:
+    # Equivalent to ``traceback.extract_tb(tb)[-1][:2]``, but much cheaper because
+    # we don't compute positions or look up source lines for every frame.
+    while tb.tb_next is not None:
+        tb = tb.tb_next
+    return tb.tb_frame.f_code.co_filename, tb.tb_lineno
+
+
 def get_trimmed_traceback(
     exception: BaseException | None = None,
 ) -> TracebackType | None:
@@ -74,7 +82,7 @@ def get_trimmed_traceback(
         or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM")
         or hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug
         or (
-            is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
+            is_hypothesis_file(_last_frame_location(tb)[0])
             and not isinstance(exception, _Trimmable)
         )
     ):
@@ -120,7 +128,7 @@ class InterestingOrigin:
     ) -> "InterestingOrigin":
         filename, lineno = None, None
         if tb := get_trimmed_traceback(exception):
-            filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+            filename, lineno = _last_frame_location(tb)
         seen = (*seen, exception)
         make = partial(cls.from_exception, seen=seen)
         context: InterestingOrigin | tuple[()] = ()

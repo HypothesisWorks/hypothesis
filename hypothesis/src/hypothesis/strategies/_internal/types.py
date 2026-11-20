@@ -34,7 +34,7 @@ from contextvars import ContextVar
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType, GenericAlias, UnionType
-from typing import TYPE_CHECKING, Any, NewType, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NewType, cast, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import (
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 try:
     import typing_extensions
 except ImportError:
-    typing_extensions = None  # type: ignore
+    typing_extensions = cast(Any, None)
 
 try:
     from typing import _AnnotatedAlias  # type: ignore
@@ -1250,9 +1250,11 @@ class GeneratorStrategy(st.SearchStrategy):
         return f"<generators yields={self.yields!r} returns={self.returns!r}>"
 
     def do_draw(self, data):
-        elements = conjecture_utils_many(data, min_size=0, max_size=100, average_size=5)
-        while elements.more():
-            yield data.draw(self.yields)
+        with conjecture_utils_many(
+            data, min_size=0, max_size=100, average_size=5
+        ) as elements:
+            for _ in elements:
+                yield data.draw(self.yields)
         return data.draw(self.returns)
 
 

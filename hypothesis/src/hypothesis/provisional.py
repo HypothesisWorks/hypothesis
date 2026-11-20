@@ -49,15 +49,20 @@ def get_top_level_domains() -> tuple[str, ...]:
 
 @st.composite
 def _recase_randomly(draw: DrawFn, tld: str) -> str:
-    tld = list(tld)
-    changes = draw(st.tuples(*(st.booleans() for _ in range(len(tld)))))
+    chars = list(tld)
+    changes = draw(st.tuples(*(st.booleans() for _ in range(len(chars)))))
     for i, change_case in enumerate(changes):
         if change_case:
-            tld[i] = tld[i].lower() if tld[i].isupper() else tld[i].upper()
-    return "".join(tld)
+            chars[i] = chars[i].lower() if chars[i].isupper() else chars[i].upper()
+    return "".join(chars)
 
 
 class DomainNameStrategy(st.SearchStrategy[str]):
+    max_length: int
+    max_element_length: int
+    domain_strategy: st.SearchStrategy[str]
+    elem_strategy: st.SearchStrategy[str]
+
     @staticmethod
     def clean_inputs(
         minimum: int, maximum: int, value: int | None, variable_name: str
@@ -139,14 +144,14 @@ class DomainNameStrategy(st.SearchStrategy[str]):
         # with a max of 255, that leaves 3 characters for a TLD.
         # Allowing any more subdomains would not leave enough
         # characters for even the shortest possible TLDs.
-        elements = cu.many(data, min_size=1, average_size=3, max_size=126)
-        while elements.more():
-            # Generate a new valid subdomain using the regex strategy.
-            sub_domain = data.draw(self.elem_strategy)
-            if len(domain) + len(sub_domain) >= self.max_length:
-                data.stop_span(discard=True)
-                break
-            domain = sub_domain + "." + domain
+        with cu.many(data, min_size=1, average_size=3, max_size=126) as elements:
+            for _ in elements:
+                # Generate a new valid subdomain using the regex strategy.
+                sub_domain = data.draw(self.elem_strategy)
+                if len(domain) + len(sub_domain) >= self.max_length:
+                    elements.reject("subdomain would make the domain too long")
+                    continue
+                domain = sub_domain + "." + domain
         return domain
 
 

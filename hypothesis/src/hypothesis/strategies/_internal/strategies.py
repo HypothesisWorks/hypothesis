@@ -67,6 +67,7 @@ else:
     Ex = TypeVar("Ex", covariant=True)
 
 T = TypeVar("T")
+T1 = TypeVar("T1")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 T5 = TypeVar("T5")
@@ -139,6 +140,13 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     force_key = "force_" + name
 
     def forced_or_cached_value(target: SearchStrategy) -> Any:
+        # Fast path: check the instance dict directly, which avoids raising and
+        # catching an AttributeError for the (usually absent) force_key.
+        d = target.__dict__
+        if force_key in d:
+            return d[force_key]
+        if cache_key in d:
+            return d[cache_key]
         try:
             return getattr(target, force_key)
         except AttributeError:
@@ -181,17 +189,14 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     # a more careful fixed point calculation to get the exact
     # values. Hopefully our mapping is still pretty good and it
     # won't take a large number of updates to reach a fixed point.
-    if hit_recursion:
-        needs_update = set(mapping)
 
-        # We track which strategies use which in the course of
-        # calculating their property value. If A ever uses B in
-        # the course of calculating its value, then whenever the
-        # value of B changes we might need to update the value of
-        # A.
-        listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
-    else:
-        needs_update = None
+    # We track which strategies use which in the course of
+    # calculating their property value. If A ever uses B in
+    # the course of calculating its value, then whenever the
+    # value of B changes we might need to update the value of
+    # A.
+    listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
+    needs_update = set(mapping) if hit_recursion else None
 
     def recur2(strat: SearchStrategy) -> Any:
         def recur_inner(other: SearchStrategy) -> Any:
@@ -292,6 +297,9 @@ class SearchStrategy(Generic[Ex]):
         # The fact that this returns False does not guarantee that a valid value
         # can be drawn - this is not intended to be perfect, and is primarily
         # intended to be an optimisation for some cases.
+        d = self.__dict__
+        if "cached_is_empty" in d and "force_is_empty" not in d:
+            return d["cached_is_empty"]
         return recursive_property(self, "is_empty", True)
 
     # Returns True if values from this strategy can safely be reused without
@@ -896,6 +904,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         self.original_strategies = tuple(strategies)
         self.__element_strategies: Sequence[SearchStrategy[Ex]] | None = None
         self.__in_branches = False
+        self.__branch_sampler: SampledFromStrategy | Literal[False] | None = None
         self._branches_lock = RLock()
 
     def calc_is_empty(self, recur: RecurT) -> bool:
@@ -948,6 +957,21 @@ class OneOfStrategy(SearchStrategy[Ex]):
             # optimization: skip constructing SampledFromStrategy if we only have one
             # strategy. This can happen for eg `st.integers() | st.nothing()`.
             return data.draw(strategies[0])
+
+        if self.__branch_sampler is None:
+            # Only strategies which override is_currently_empty (e.g. stateful
+            # Bundles) can become empty dynamically - otherwise element_strategies
+            # has already excluded every empty branch, so we can skip the filter
+            # and reuse a single sampler rather than building one per draw.
+            if any(
+                type(s).is_currently_empty is not SearchStrategy.is_currently_empty
+                for s in strategies
+            ):
+                self.__branch_sampler = False
+            else:
+                self.__branch_sampler = SampledFromStrategy(strategies)
+        if self.__branch_sampler is not False:
+            return data.draw(data.draw(self.__branch_sampler))
 
         strategy = data.draw(
             SampledFromStrategy(strategies).filter(
@@ -1045,33 +1069,33 @@ def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]: ...
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Ex | T]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T]
+) -> SearchStrategy[T1 | T]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Ex | T | T3]: ...
+    __a1: SearchStrategy[T1], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
+) -> SearchStrategy[T1 | T | T3]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Ex | T | T3 | T4]: ...
+) -> SearchStrategy[T1 | T | T3 | T4]: ...
 
 
 @overload
 def one_of(
-    __a1: SearchStrategy[Ex],
+    __a1: SearchStrategy[T1],
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Ex | T | T3 | T4 | T5]: ...
+) -> SearchStrategy[T1 | T | T3 | T4 | T5]: ...
 
 
 @overload
@@ -1124,8 +1148,7 @@ def one_of(
         )
     # we've handled the case where args is a one-element sequence [(s1, s2, ...)]
     # above, so we can assume it's an actual sequence of strategies.
-    args = cast(Sequence[SearchStrategy], args)
-    return OneOfStrategy(args)
+    return OneOfStrategy(cast(Sequence[SearchStrategy], args))
 
 
 class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
@@ -1165,15 +1188,11 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
             ):
                 warnings.simplefilter("ignore", BytesWarning)
             for _ in range(3):
+                data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                discard = False
                 try:
-                    data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
-                    data.stop_span()
-                    current_build_context().record_call(
-                        result, self.pack, args=[x], kwargs={}
-                    )
-                    return result
                 except UnsatisfiedAssumption as err:
                     # we want to preserve the err.location of the actual exception here if we
                     # re-throw it outside of the loop at the end. The alternative is a
@@ -1183,7 +1202,14 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                     # If we catch multiple exceptions here, we'll just report the location
                     # of the last one, which is a reasonable tradeoff for a singleton field.
                     failed_assumption = err
-                    data.stop_span(discard=True)
+                    discard = True
+                    continue
+                finally:
+                    data.stop_span(discard=discard)
+                current_build_context().record_call(
+                    result, self.pack, args=[x], kwargs={}
+                )
+                return result
         raise failed_assumption
 
     def _invert(self, value: Any) -> tuple[ChoiceT, ...]:
@@ -1410,27 +1436,28 @@ class FilteredStrategy(SearchStrategy[Ex]):
     def do_filtered_draw(self, data: ConjectureData) -> Ex | UniqueIdentifier:
         for i in range(3):
             data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-            value = data.draw(self.filtered_strategy)
-            # Check the conditions individually rather than via self.condition,
-            # so that we can set data._last_rejected_filter.
-            failing = next(
-                (
-                    (cond, location)
-                    for cond, location in zip(
-                        self.flat_conditions, self.condition_locations, strict=True
-                    )
-                    if not cond(value)
-                ),
-                None,
-            )
+            failing = None
+            try:
+                value = data.draw(self.filtered_strategy)
+                # Check the conditions individually rather than via self.condition,
+                # so that we can set data._last_rejected_filter.
+                failing = next(
+                    (
+                        (cond, location)
+                        for cond, location in zip(
+                            self.flat_conditions, self.condition_locations, strict=True
+                        )
+                        if not cond(value)
+                    ),
+                    None,
+                )
+            finally:
+                data.stop_span(discard=failing is not None)
             if failing is None:
-                data.stop_span()
                 return value
-            else:
-                data._last_rejected_filter = failing
-                data.stop_span(discard=True)
-                if i == 0:
-                    data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
+            data._last_rejected_filter = failing
+            if i == 0:
+                data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 
         return filter_not_satisfied
 

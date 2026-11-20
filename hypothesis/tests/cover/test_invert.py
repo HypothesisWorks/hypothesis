@@ -23,6 +23,7 @@ from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.choice import ValueHole, choice_equal
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.junkdrawer import equal_values
+from hypothesis.internal.floats import sign_aware_lte
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import one_of
 
@@ -67,7 +68,11 @@ def test_booleans(data):
 def test_floats(data):
     min_value = data.draw(st.none() | st.floats(allow_nan=False))
     max_value = data.draw(st.none() | st.floats(allow_nan=False))
-    if min_value is not None and max_value is not None and min_value > max_value:
+    if (
+        min_value is not None
+        and max_value is not None
+        and not sign_aware_lte(min_value, max_value)
+    ):
         min_value, max_value = max_value, min_value
     bounded = min_value is not None or max_value is not None
     allow_nan = False if bounded else data.draw(st.booleans())

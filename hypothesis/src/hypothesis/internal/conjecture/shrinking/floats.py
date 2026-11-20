@@ -47,12 +47,12 @@ class Float(Shrinker):
     def setup(self):
         self.debugging_enabled = True
 
-    def make_canonical(self, f):
-        if math.isnan(f):
+    def make_canonical(self, value):
+        if math.isnan(value):
             # Distinguish different NaN bit patterns, while making each equal to itself.
             # Wrap in tuple to avoid potential collision with (huge) finite floats.
-            return ("nan", float_to_int(f))
-        return f
+            return ("nan", float_to_int(value))
+        return value
 
     def check_invariants(self, value):
         # We only handle positive floats (including NaN) because we encode the sign
