@@ -42,9 +42,7 @@ def test_public_submodule_available_after_import_hypothesis(name):
 @skipif_emscripten
 @pytest.mark.parametrize("name", _LAZY_SUBMODULES)
 def test_lazy_submodule_is_not_imported_by_import_hypothesis(name):
-    run_python(
-        f"import sys, hypothesis\nassert 'hypothesis.{name}' not in sys.modules"
-    )
+    run_python(f"import sys, hypothesis\nassert 'hypothesis.{name}' not in sys.modules")
 
 
 def test_unknown_attribute_raises_attribute_error():
