@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
@@ -75,6 +75,68 @@ def test_sampled_from_label_with_strategies_does_not_change(strategy):
     s1 = st.sampled_from(strategy())
     s2 = st.sampled_from(strategy())
     assert s1.label == s2.label
+
+
+def test_sampled_from_label_stable_for_tuples_containing_strategies():
+    # Regression test for issue #4958: a strategy hashes by identity, so a
+    # tuple or frozenset containing one must be labelled from the strategy's
+    # own .label. Otherwise two identically built sampled_from strategies
+    # get different labels, and derandomize=True can draw different examples
+    # on each run.
+    def elements():
+        return [("a", st.integers().map(abs)), ("b", st.booleans())]
+
+    s1 = st.sampled_from(elements())
+    s2 = st.sampled_from(elements())
+    assert s1.label == s2.label
+
+    # The same holds for strategies nested deeper, in tuples or frozensets.
+    def nested():
+        return [(("a", st.integers().map(abs)),), frozenset([st.booleans()])]
+
+    assert st.sampled_from(nested()).label == st.sampled_from(nested()).label
+
+    # Frozenset iteration order is not part of equality, so it must not
+    # affect the label either.
+    forwards = st.sampled_from(
+        [frozenset([("a", st.integers().map(abs)), ("b", st.booleans())])]
+    )
+    backwards = st.sampled_from(
+        [frozenset([("b", st.booleans()), ("a", st.integers().map(abs))])]
+    )
+    assert forwards.label == backwards.label
+
+    # ... while genuinely different contents still get different labels.
+    assert st.sampled_from([("a", st.integers().map(abs))]).label != (
+        st.sampled_from([("b", st.integers().map(abs))]).label
+    )
+
+
+def test_derandomize_stable_for_sampled_tuples_containing_strategies():
+    # End-to-end regression test for issue #4958, using its reproducer:
+    # a composite which builds a fresh strategy on every pass and samples
+    # a (name, strategy) tuple from it. With derandomize=True every run
+    # must draw the same examples.
+    @st.composite
+    def pairs(draw):
+        out = []
+        for _ in range(draw(st.integers(0, 4))):
+            a = st.integers().map(abs)  # a new strategy on every pass...
+            a.cycle = a  # ...that only the cyclic garbage collector frees
+            options = [("a", a), ("b", st.booleans())]
+            name, strategy = draw(st.sampled_from(options))
+            out.append((name, draw(strategy)))
+        return out
+
+    def examples():
+        seen = []
+        test = given(pairs())(lambda value: seen.append(value))
+        settings(derandomize=True, database=None, max_examples=200)(test)()
+        return seen
+
+    first = examples()
+    for _ in range(3):
+        assert examples() == first
 
 
 def test_label_of_enormous_sampled_range():

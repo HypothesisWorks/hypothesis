@@ -628,6 +628,51 @@ def is_hashable(value: object) -> bool:
     return _is_hashable(value)[0]
 
 
+# Labels identifying the container type when labelling a sampled_from element
+# which is itself a container (see _label_for_sampled_element). Computed once:
+# calc_label_from_name hashes on every call, and .label is only cached per
+# strategy instance, not per element.
+_TUPLE_LABEL = calc_label_from_cls(tuple)
+_FROZENSET_LABEL = calc_label_from_cls(frozenset)
+
+
+def _label_for_sampled_element(element: object) -> int:
+    """A stable label for one element of a ``sampled_from`` strategy.
+
+    Strategies use their own ``.label`` instead of their ``id``-based hash,
+    and hashable containers are labelled by recursing into them, so that two
+    structurally identical elements get the same label even when they were
+    built separately. In particular, a tuple such as ``("a", st.integers())``
+    must not be labelled via ``hash`` of the tuple, because that hash includes
+    the strategy's ``id``-based hash and so changes whenever the strategy is
+    rebuilt at a different address (see issue #4958).
+    """
+    if isinstance(element, SearchStrategy):
+        return element.label
+    if isinstance(element, tuple):
+        return combine_labels(
+            _TUPLE_LABEL,
+            *(_label_for_sampled_element(item) for item in element),
+        )
+    if isinstance(element, frozenset):
+        # Frozenset iteration order is not part of equality, so sort the
+        # item labels to make the label order-independent.
+        return combine_labels(
+            _FROZENSET_LABEL,
+            *sorted(_label_for_sampled_element(item) for item in element),
+        )
+    return calc_label_from_hash(element)
+
+
+def _sampled_element_contains_strategy(element: object) -> bool:
+    """Whether ``element`` is, or hashably contains, a strategy."""
+    if isinstance(element, SearchStrategy):
+        return True
+    if isinstance(element, (tuple, frozenset)):
+        return any(_sampled_element_contains_strategy(item) for item in element)
+    return False
+
+
 class SampledFromStrategy(SearchStrategy[Ex]):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
@@ -730,13 +775,21 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         #   entire sequence. This prevents worst-case performance of hashing each
         #   element when a hash of the entire sequence would have sufficed.
         #
+        # Note that a strategy may also be nested inside a hashable container
+        # element, such as a tuple: ("a", st.integers()). Hashing such an
+        # element would include the strategy's id-based hash, so the label
+        # would change whenever the strategy is rebuilt at a different
+        # address. Such elements are therefore labelled by recursing into
+        # the container (see _label_for_sampled_element), and the fast path
+        # below is only taken when no element contains a strategy at any depth.
+        #
         # The worst case performance of this scheme is
         # itertools.chain(range(2**100), [st.none()]), where it degrades to
         # hashing every int in the range.
         elements_is_hashable, hash_value = _is_hashable(self.elements)
         if isinstance(self.elements, range) or (
             elements_is_hashable
-            and not any(isinstance(e, SearchStrategy) for e in self.elements)
+            and not any(_sampled_element_contains_strategy(e) for e in self.elements)
         ):
             return combine_labels(
                 self.class_label, calc_label_from_name(str(hash_value))
@@ -747,11 +800,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             if not is_hashable(element):
                 continue
 
-            labels.append(
-                element.label
-                if isinstance(element, SearchStrategy)
-                else calc_label_from_hash(element)
-            )
+            labels.append(_label_for_sampled_element(element))
 
         return combine_labels(*labels)
 
