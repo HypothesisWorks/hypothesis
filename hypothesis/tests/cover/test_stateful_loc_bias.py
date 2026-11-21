@@ -24,6 +24,16 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
+from tests.common.utils import skipif_emscripten
+from tests.conjecture.test_provider import PrngProvider, temp_register_backend
+
+# The LOC tests measure our own random backend; when the whole suite runs
+# under another backend (e.g. crosshair), LOC weighting is off by design.
+pytestmark = pytest.mark.skipif(
+    settings().backend != "hypothesis",
+    reason="LOC weighting applies only to the default backend",
+)
+
 TRACERS = [False] + ([True] if hasattr(sys, "monitoring") else [])
 
 
@@ -204,6 +214,23 @@ def test_no_probe_without_room_to_generate(fresh, s):
     assert Machine not in locbias._PROFILES
 
 
+def test_no_probe_for_other_backends(fresh):
+    class Machine(RuleBasedStateMachine):
+        @rule()
+        def a(self):
+            big(0)
+
+        @rule()
+        def b(self):
+            small(0)
+
+    with temp_register_backend("loc-test-prng", PrngProvider):
+        run_state_machine_as_test(
+            Machine, settings=settings(max_examples=60, backend="loc-test-prng")
+        )
+    assert Machine not in locbias._PROFILES
+
+
 def test_can_be_disabled(fresh, monkeypatch):
     monkeypatch.setattr(locbias, "ENABLED", False)
     Machine = make_machine({"big": 0, "small": 0})
@@ -313,11 +340,10 @@ def background_small():
     small(0)
 
 
-def test_generators_exceptions_and_threads_are_measured_alike(fresh):
+def test_generators_and_exceptions_are_measured(fresh):
     # Every way of entering and leaving a frame: a generator suspended and
-    # resumed, one closed early (GeneratorExit thrown in), an exception
-    # unwinding a frame, and code running at the same time on another thread,
-    # which must not count.
+    # resumed, one closed early (GeneratorExit thrown in), and an exception
+    # unwinding a frame.
     class Machine(RuleBasedStateMachine):
         @rule()
         def iterates(self):
@@ -334,6 +360,17 @@ def test_generators_exceptions_and_threads_are_measured_alike(fresh):
         def handles(self):
             catches()
 
+    run_state_machine_as_test(Machine, settings=settings(max_examples=60))
+    loc = locbias._PROFILES[Machine].mean_loc()
+    assert loc["iterates"] == 6
+    assert loc["abandons"] == 6 + 2
+    assert loc["handles"] == 6 + 2 + 2
+
+
+@skipif_emscripten
+def test_other_threads_are_not_measured(fresh):
+    # Code running at the same time on another thread must not count.
+    class Machine(RuleBasedStateMachine):
         @rule()
         def thread_big(self):
             t = threading.Thread(target=background_big)
@@ -348,9 +385,10 @@ def test_generators_exceptions_and_threads_are_measured_alike(fresh):
 
     run_state_machine_as_test(Machine, settings=settings(max_examples=60))
     loc = locbias._PROFILES[Machine].mean_loc()
-    assert loc["iterates"] == 6
-    assert loc["abandons"] == 6 + 2
-    assert loc["handles"] == 6 + 2 + 2
     # The threading module's own code counts, as library code always does,
-    # but nothing that runs on the other thread does.
-    assert loc["thread_big"] == loc["thread_small"] > 0
+    # but nothing that runs on the other thread does: if it did, thread_big
+    # would come out about 19 lines (big minus small) above thread_small.
+    # Which paths start() and join() take depends on timing, so allow a
+    # little noise (on PyPy the threading module is several hundred lines).
+    assert loc["thread_small"] > 0
+    assert abs(loc["thread_big"] - loc["thread_small"]) < 5

@@ -310,6 +310,10 @@ def run_state_machine_as_test(
     settings = _resolve_settings(state_machine_factory, settings)
     if (
         Phase.generate in settings.phases
+        # LOC weighting is a heuristic for random generation.  Other backends
+        # (e.g. symbolic execution with crosshair) choose values themselves,
+        # and may trace the code under test themselves.
+        and settings.backend == "hypothesis"
         and not getattr(
             state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
         )
