@@ -39,7 +39,7 @@ from typing import (
 )
 
 from hypothesis import strategies as st
-from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
+from hypothesis._settings import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import (
@@ -47,6 +47,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidDefinition,
 )
+from hypothesis.internal import locbias
 from hypothesis.internal.compat import add_note, batched
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
@@ -61,6 +62,7 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
+from hypothesis.statistics import collector
 from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -136,13 +138,7 @@ def get_state_machine_test(
 ) -> Callable[..., None]:
     # This function is split out from run_state_machine_as_test so that
     # HypoFuzz can get and call the test function directly.
-    if settings is None:
-        try:
-            settings = state_machine_factory.TestCase.settings
-            check_type(Settings, settings, "state_machine_factory.TestCase.settings")
-        except AttributeError:
-            settings = Settings(deadline=None, suppress_health_check=list(HealthCheck))
-    check_type(Settings, settings, "settings")
+    settings = _resolve_settings(state_machine_factory, settings)
     check_type(int, _min_steps, "_min_steps")
     if _min_steps < 0:
         # Because settings can vary via e.g. profiles, settings.stateful_step_count
@@ -158,6 +154,9 @@ def get_state_machine_test(
         check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         cd.hypothesis_runner = machine
         machine._observability_predicates = cd._observability_predicates  # alias
+        loc_probe = locbias.probing()
+        if loc_probe is not None:
+            loc_probe.machine_type = type(machine)
 
         print_steps = (
             current_build_context().is_final or current_verbosity() >= Verbosity.debug
@@ -241,7 +240,18 @@ def get_state_machine_test(
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
                     start_gc = gc_cumulative_time()
-                    result = rule.function(machine, **data)
+                    if loc_probe is None:
+                        result = rule.function(machine, **data)
+                    else:
+                        loc_probe.start()
+                        try:
+                            result = rule.function(machine, **data)
+                        except BaseException:
+                            # A rule that raised (most often a failed assume())
+                            # tells us nothing about its size.
+                            loc_probe.abort()
+                            raise
+                        loc_probe.stop(rule.function.__name__)
                     in_gctime = gc_cumulative_time() - start_gc
                     cd._stateful_run_times[label] += perf_counter() - start - in_gctime
 
@@ -297,6 +307,15 @@ def run_state_machine_as_test(
     RuleBasedStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
+    settings = _resolve_settings(state_machine_factory, settings)
+    if (
+        Phase.generate in settings.phases
+        and not getattr(
+            state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
+        )
+        and locbias.needs_probe(state_machine_factory, settings.max_examples)
+    ):
+        _run_loc_probe(state_machine_factory, settings)
     flaky_state = {"selecting_rule": False}
     state_machine_test = get_state_machine_test(
         state_machine_factory,
@@ -314,6 +333,51 @@ def run_state_machine_as_test(
                 "a flaky precondition, or a bundle that was unexpectedly empty.",
             )
         raise
+
+
+def _resolve_settings(
+    state_machine_factory: type["RuleBasedStateMachine"], settings: Settings | None
+) -> Settings:
+    if settings is None:
+        try:
+            settings = state_machine_factory.TestCase.settings
+            check_type(Settings, settings, "state_machine_factory.TestCase.settings")
+        except AttributeError:
+            settings = Settings(deadline=None, suppress_health_check=list(HealthCheck))
+    check_type(Settings, settings, "settings")
+    return settings
+
+
+def _run_loc_probe(
+    state_machine_factory: type["RuleBasedStateMachine"], settings: Settings
+) -> None:
+    # See hypothesis.internal.locbias.  Run a few examples with the usual
+    # uniform rule selection while measuring the code under each rule.
+    # Nothing the probe finds is reported: any failure will be found again,
+    # or not, by the real run on its own merits.
+    probe_settings = Settings(
+        settings,
+        max_examples=locbias.PROBE_EXAMPLES,
+        database=None,
+        phases=(Phase.generate,),
+        deadline=None,
+        verbosity=Verbosity.quiet,
+        suppress_health_check=list(HealthCheck),
+        print_blob=False,
+    )
+    locbias.begin_probe(state_machine_factory)
+    try:
+        # The probe is not the user's test run: keep it out of statistics.
+        with collector.with_value(None):
+            get_state_machine_test(state_machine_factory, settings=probe_settings)()
+    except (KeyboardInterrupt, SystemExit):  # pragma: no cover
+        raise
+    except BaseException:
+        # Including e.g. pytest.fail() and pytest.skip(), which deliberately
+        # do not derive from Exception.
+        pass
+    finally:
+        locbias.end_probe()
 
 
 class StateMachineMeta(type):
@@ -1250,6 +1314,9 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
     return accept
 
 
+LOC_WEIGHTED_RULE_LABEL = calc_label_from_name("LOC-weighted rule selection")
+
+
 class RuleStrategy(SearchStrategy):
     machine: RuleBasedStateMachine
     rules: list["Rule"]
@@ -1273,6 +1340,13 @@ class RuleStrategy(SearchStrategy):
         # the feature flags set by do_draw on each step.
         self._feature_flags: FeatureFlags | None = None
         self._enabled_rules_strategy = self.rules_strategy.filter(self._rule_is_enabled)
+
+        # Weights for selecting rules by relative lines of code, if measured;
+        # see hypothesis.internal.locbias.  They are frozen before the first
+        # example of the real run, so the DataTree stays consistent.
+        self._loc_weights = locbias.weights_for(
+            type(machine), tuple(r.function.__name__ for r in self.rules)
+        )
 
     @classmethod
     @lru_cache
@@ -1314,6 +1388,43 @@ class RuleStrategy(SearchStrategy):
         assert self._feature_flags is not None
         return self.is_valid(r) and self._feature_flags.is_enabled(r.function.__name__)
 
+    def _draw_loc_weighted_rule(self, data: "ConjectureData") -> Rule:
+        # Mirrors SampledFromStrategy.do_filtered_draw: rejection sampling on
+        # the index into the full rule list (so that an index means the same
+        # rule in every state, which helps shrinking), then an explicit choice
+        # among the rules that are known to be allowed.
+        weights = self._loc_weights
+        assert weights is not None
+        n = len(self.rules)
+        bad: set[int] = set()
+        for _ in range(3):
+            data.start_span(LOC_WEIGHTED_RULE_LABEL)
+            i = data.draw_integer(0, n - 1, weights=weights)
+            ok = i not in bad and self._rule_is_enabled(self.rules[i])
+            data.stop_span(discard=not ok)
+            if ok:
+                return self.rules[i]
+            bad.add(i)
+        allowed = [
+            i for i in range(n) if i not in bad and self._rule_is_enabled(self.rules[i])
+        ]
+        if not allowed:
+            data.mark_invalid("No enabled rule (LOC-weighted selection)")
+        if len(allowed) == 1:
+            return self.rules[allowed[0]]
+        # Stay weighted here too: this path is taken most often when swarm
+        # testing has disabled the heaviest rules.  The allowed set is a
+        # deterministic function of the choices so far, so these derived
+        # weights are as stable as the frozen ones.
+        total = sum(weights[i] for i in allowed)
+        scale = (1.0 - locbias.UNIFORM_MIX) / total
+        j = data.draw_integer(
+            0,
+            len(allowed) - 1,
+            weights={j: weights[i] * scale for j, i in enumerate(allowed)},
+        )
+        return self.rules[allowed[j]]
+
     def do_draw(self, data: "ConjectureData") -> tuple[Rule, dict[Any, Any]]:
         if not any(self.is_valid(rule) for rule in self.rules):
             rules = ", ".join([rule.function.__name__ for rule in self.rules])
@@ -1324,7 +1435,10 @@ class RuleStrategy(SearchStrategy):
             raise InvalidDefinition(msg) from None
 
         self._feature_flags = data.draw(self.enabled_rules_strategy)
-        rule = data.draw(self._enabled_rules_strategy)
+        if self._loc_weights is None:
+            rule = data.draw(self._enabled_rules_strategy)
+        else:
+            rule = self._draw_loc_weighted_rule(data)
 
         arguments = {}
         for k, strat in rule.arguments_strategies.items():
