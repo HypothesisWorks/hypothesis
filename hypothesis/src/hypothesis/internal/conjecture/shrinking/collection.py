@@ -89,3 +89,21 @@ class Collection(Shrinker):
                     self.current[:i] + (self.from_order(v),) + self.current[i + 1 :]
                 ),
             )
+
+        # finally, try lowering each element while simplifying everything after
+        # it. Some predicates only permit an element to shrink if a later element
+        # shrinks at the same time - "this collection is not sorted", say, where
+        # lowering an element sorts the collection unless something after it drops
+        # too. Every pass above moves one element at a time, so none of them can
+        # get there.
+        zero = self.from_order(0)
+        for i, val in enumerate(self.current):
+            order = self.to_order(val)
+            if order == 0:
+                continue
+            suffix = (zero,) * (len(self.current) - i - 1)
+            for candidate in (0,) if order == 1 else (0, order - 1):
+                if self.consider(
+                    self.current[:i] + (self.from_order(candidate),) + suffix
+                ):
+                    break
