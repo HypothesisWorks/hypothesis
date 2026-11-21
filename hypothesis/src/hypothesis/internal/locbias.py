@@ -41,6 +41,7 @@ import gc
 import os
 import sys
 import threading
+from collections.abc import Callable
 from types import CodeType
 
 # Set to False to select stateful rules uniformly, as before.
@@ -105,7 +106,9 @@ class LOCProfile:
         self._gc_was_enabled = False
         self._weights: dict[tuple[str, ...], dict[int, float] | None] = {}
 
-    def _make_tracker(self, seen: set[CodeType]):
+    def _make_tracker(
+        self, seen: set[CodeType]
+    ) -> tuple[Callable[[CodeType], None], Callable[[], None]]:
         """Return (enter, leave) callbacks that add to ``seen`` the code under
         the rule body.  Shared by both tracers, so they measure the same thing.
         """
@@ -179,7 +182,9 @@ class LOCProfile:
         if self._gc_was_enabled:  # pragma: no branch
             gc.enable()
 
-    def _start_monitoring(self, enter, leave) -> bool:
+    def _start_monitoring(
+        self, enter: Callable[[CodeType], None], leave: Callable[[], None]
+    ) -> bool:
         mon = sys.monitoring
         try:
             mon.use_tool_id(MONITORING_TOOL_ID, "hypothesis-locbias")

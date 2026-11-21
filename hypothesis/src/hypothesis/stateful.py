@@ -1314,7 +1314,7 @@ def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFu
     return accept
 
 
-LOC_WEIGHTED_RULE_LABEL = calc_label_from_name("LOC-weighted rule selection")
+_LOC_WEIGHTED_RULE_LABEL: int = calc_label_from_name("LOC-weighted rule selection")
 
 
 class RuleStrategy(SearchStrategy):
@@ -1398,7 +1398,7 @@ class RuleStrategy(SearchStrategy):
         n = len(self.rules)
         bad: set[int] = set()
         for _ in range(3):
-            data.start_span(LOC_WEIGHTED_RULE_LABEL)
+            data.start_span(_LOC_WEIGHTED_RULE_LABEL)
             i = data.draw_integer(0, n - 1, weights=weights)
             ok = i not in bad and self._rule_is_enabled(self.rules[i])
             data.stop_span(discard=not ok)
