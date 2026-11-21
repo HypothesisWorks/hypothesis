@@ -1416,7 +1416,7 @@ class ConjectureRunner:
                     break
 
                 group = self.random.choice(groups)
-                (start1, end1), (start2, end2) = self.random.sample(sorted(group), 2)
+                (start1, end1), (start2, end2) = self.random.sample(group, 2)
                 if start1 > start2:
                     (start1, end1), (start2, end2) = (start2, end2), (start1, end1)
 
