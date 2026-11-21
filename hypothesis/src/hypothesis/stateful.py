@@ -1274,6 +1274,13 @@ class RuleStrategy(SearchStrategy):
         self._feature_flags: FeatureFlags | None = None
         self._enabled_rules_strategy = self.rules_strategy.filter(self._rule_is_enabled)
 
+        # Swarm testing that respects bundle dependencies: for each rule that
+        # produces into a bundle, the rules that consume from it.
+        self._needed_by = self._swarm_dependencies_for(type(machine))
+        # Flags looked up on behalf of another rule, cached per test case.
+        self._dep_flags: FeatureFlags | None = None
+        self._dep_cache: dict[str, bool] = {}
+
     @classmethod
     @lru_cache
     def _setup_for(
@@ -1301,6 +1308,31 @@ class RuleStrategy(SearchStrategy):
         rule_names = frozenset(r.function.__name__ for r in rules)
         return (rules, rule_names, st.sampled_from(rules))
 
+    @classmethod
+    @lru_cache
+    def _swarm_dependencies_for(
+        cls, machine_type: type[RuleBasedStateMachine]
+    ) -> dict[str, tuple["Rule", ...]]:
+        # Swarm testing disables a random subset of rules in each test case.
+        # Disabling a rule that is the only way to fill a bundle also silently
+        # disables every rule that takes arguments from that bundle, so swarm
+        # testing explores much less than it appears to.  As in TSTL, we close
+        # the enabled set over these dependencies: a rule that produces into a
+        # bundle is enabled whenever an enabled rule consumes from it.  This is
+        # static, so only bundles passed directly as rule arguments count.
+        rules = cls._setup_for(machine_type)[0]
+        needed_by = {}
+        for producer in rules:
+            consumers = tuple(
+                c
+                for c in rules
+                if c is not producer
+                and any(b.name in producer.targets for b in c.bundles)
+            )
+            if consumers:
+                needed_by[producer.function.__name__] = consumers
+        return needed_by
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
 
@@ -1312,7 +1344,41 @@ class RuleStrategy(SearchStrategy):
         # are enabled before we ask if they are valid, so our test cases would
         # be artificially large.
         assert self._feature_flags is not None
-        return self.is_valid(r) and self._feature_flags.is_enabled(r.function.__name__)
+        if not self.is_valid(r):
+            return False
+        name = r.function.__name__
+        # The rule's own flag is queried exactly as it would be without
+        # dependencies, so a machine with no bundles makes the same choices.
+        if self._feature_flags.is_enabled(name):
+            return True
+        return name in self._needed_by and self._needed(name, frozenset())
+
+    def _swarm_enabled(self, name: str, visiting: frozenset[str]) -> bool:
+        # Whether swarm testing enables this rule in the current test case,
+        # counting dependencies.  FeatureFlags makes a (forced) choice on every
+        # query, so flags looked up on another rule's behalf are cached for the
+        # test case: the closure adds at most one choice per rule.
+        flags = self._feature_flags
+        assert flags is not None
+        if flags is not self._dep_flags:
+            self._dep_flags = flags
+            self._dep_cache = {}
+        if name not in self._dep_cache:
+            self._dep_cache[name] = flags.is_enabled(name)
+        if self._dep_cache[name]:
+            return True
+        return name in self._needed_by and self._needed(name, visiting)
+
+    def _needed(self, name: str, visiting: frozenset[str]) -> bool:
+        # Is some enabled rule consuming from a bundle that this rule produces
+        # into?  Transitively: a consumer may itself be enabled only because
+        # something downstream needs it.  ``visiting`` cuts cycles.
+        visiting = visiting | {name}
+        return any(
+            self._swarm_enabled(c.function.__name__, visiting)
+            for c in self._needed_by[name]
+            if c.function.__name__ not in visiting
+        )
 
     def do_draw(self, data: "ConjectureData") -> tuple[Rule, dict[Any, Any]]:
         if not any(self.is_valid(rule) for rule in self.rules):
