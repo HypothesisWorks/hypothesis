@@ -10,4 +10,4 @@ tests that could not run:
 - Tests for collections of values which cannot be hashed, such as
   ``Iterable[tuple[list[int]]]``, no longer raise an error.
 
-Thanks to <contributor> for this fix!
+Thanks to ZacKienzle2 for this fix!
