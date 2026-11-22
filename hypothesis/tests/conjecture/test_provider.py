@@ -996,7 +996,7 @@ def test_conformance_exits_context_manager_on_unexpected_exception(provider):
     with pytest.raises(RuntimeError, match="unique identifier"):
         run_conformance_test(
             provider,
-            settings=settings(max_examples=5, stateful_step_count=10),
+            settings=settings(max_examples=15, stateful_step_count=10),
             check_findability=False,
         )
     assert provider.enters == provider.exits > 0

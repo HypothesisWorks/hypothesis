@@ -214,6 +214,14 @@ def test_array_dtypes_may_have_field_titles():
     find_any(nps.array_dtypes(), lambda dt: len(dt.fields) > len(dt.names))
 
 
+@settings(max_examples=200)
+@given(nps.array_dtypes(min_size=20, max_size=20))
+def test_array_dtypes_with_many_fields(dt):
+    # covering test for _no_title_is_name_of_a_titled_field
+    titles = {dt.fields[name][2] for name in dt.names if len(dt.fields[name]) == 3}
+    assert titles.isdisjoint(dt.names)
+
+
 @pytest.mark.parametrize("byteorder", ["<", ">"])
 @given(data=st.data())
 def test_can_restrict_endianness(data, byteorder):
