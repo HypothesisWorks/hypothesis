@@ -713,7 +713,7 @@ def _valid_syntax_repr(strategy):
         # String-replace to hide the special case in from_type() for Decimal('snan')
         r = (
             repr(strategy)
-            .replace(".filter(_can_hash)", "")
+            .replace("decimals().filter(_can_hash)", "decimals()")
             .replace("hypothesis.strategies.", "")
         )
         # Replace <unknown> with ... in confusing lambdas
