@@ -1,6 +1,6 @@
 RELEASE_TYPE: patch
 
-This patch fixes three cases where :doc:`the Ghostwriter <ghostwriter>` wrote
+This patch fixes three cases where :ref:`the Ghostwriter <ghostwriter>` wrote
 tests that could not run:
 
 - On Python 3.14, the repr of :func:`~hypothesis.strategies.from_type` for a
