@@ -291,9 +291,11 @@ def get_pretty_function_description(f: object) -> str:
         return lambda_sources.lambda_description(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
         self = f.__self__
+        if inspect.isclass(self):
+            return f"{self.__qualname__}.{name}"
         # Some objects, like `builtins.abs` are of BuiltinMethodType but have
         # their module as __self__.  This might include c-extensions generally?
-        if not (self is None or inspect.isclass(self) or inspect.ismodule(self)):
+        if not (self is None or inspect.ismodule(self)):
             if self is global_random_instance:
                 return f"random.{name}"
             return f"{self!r}.{name}"

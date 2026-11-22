@@ -186,8 +186,8 @@ class Foo:
         return "SoNotFoo()"
 
 
-def test_class_names_are_not_included_in_class_method_prettiness():
-    assert get_pretty_function_description(Foo.bar) == "bar"
+def test_class_names_are_included_in_class_method_prettiness():
+    assert get_pretty_function_description(Foo.bar) == "Foo.bar"
 
 
 def test_repr_is_included_in_bound_method_prettiness():
