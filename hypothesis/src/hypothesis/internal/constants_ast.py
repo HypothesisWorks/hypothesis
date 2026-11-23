@@ -13,7 +13,6 @@ import hashlib
 import inspect
 import math
 import os
-import sys
 import tempfile
 from ast import Constant, Expr, NodeVisitor, UnaryOp, USub
 from collections.abc import Iterator, MutableSet
@@ -260,20 +259,12 @@ def constants_from_module(module: ModuleType, *, limit: bool = True) -> Constant
 def is_local_module_file(path: str) -> bool:
     from hypothesis.internal.scrutineer import ModuleLocation
 
+    # The cheap string checks come first, so that we only pay for the path
+    # resolution in ModuleLocation.from_path and is_hypothesis_file when needed.
     return (
-        # Skip expensive path lookup for stdlib modules.
-        # This will cause false negatives if a user names their module the
-        # same as a stdlib module.
-        path not in sys.stdlib_module_names
         # A path containing site-packages is extremely likely to be
         # ModuleLocation.SITE_PACKAGES. Skip the expensive path lookup here.
-        and "/site-packages/" not in path
-        and ModuleLocation.from_path(path) is ModuleLocation.LOCAL
-        # normally, hypothesis is a third-party library and is not returned
-        # by local_modules. However, if it is installed as an editable package
-        # with pip install -e, then we will pick up on it. Just hardcode an
-        # ignore here.
-        and not is_hypothesis_file(path)
+        "/site-packages/" not in path
         # avoid collecting constants from test files
         and not (
             "test" in (p := Path(path)).parts
@@ -281,4 +272,10 @@ def is_local_module_file(path: str) -> bool:
             or p.stem.startswith("test_")
             or p.stem.endswith("_test")
         )
+        and ModuleLocation.from_path(path) is ModuleLocation.LOCAL
+        # normally, hypothesis is a third-party library and is not returned
+        # by local_modules. However, if it is installed as an editable package
+        # with pip install -e, then we will pick up on it. Just hardcode an
+        # ignore here.
+        and not is_hypothesis_file(path)
     )
