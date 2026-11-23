@@ -14,7 +14,7 @@ import re._constants as sre
 import re._parser as sre_parse
 from dataclasses import dataclass
 from re import Pattern
-from typing import Any, AnyStr
+from typing import Any
 
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -23,6 +23,7 @@ from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import add_note, int_to_byte
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies._internal.core import AnyStr
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
