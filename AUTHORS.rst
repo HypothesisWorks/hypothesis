@@ -115,6 +115,7 @@ their individual contributions.
 * `Justus Magin <https://github.com/keewis>`_
 * `jwg4 <https://www.github.com/jwg4>`_
 * `Kai Chen <https://www.github.com/kx-chen>`_ (kaichen120@gmail.com)
+* `Kamil Braun <https://github.com/kbr->`_
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
 * `Katelyn Gigante <https://github.com/silasary>`_
 * `Katrina Durance <https://github.com/kdurance>`_
