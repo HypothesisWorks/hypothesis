@@ -106,7 +106,7 @@ def test_still_minimizes_on_non_assertion_failures():
 @given(integers())
 def test_integer_division_shrinks_positive_integers(n):
     assume(n > 0)
-    assert n / 2 < n
+    assert n // 2 < n
 
 
 class TestCases:
