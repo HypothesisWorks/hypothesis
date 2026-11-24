@@ -18,7 +18,7 @@ from hypothesis import HealthCheck, assume, example, given, settings, strategies
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
+from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
@@ -81,6 +81,39 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
         data.mark_interesting(interesting_origin())
 
     assert tuple(n.value for n in nodes) == (b"\0",) * 10
+
+
+def test_reduce_each_alternative_with_shorter_random_attempt(monkeypatch):
+    """A re-randomised attempt can have fewer spans than the shrink target.
+
+    The span indices in ``spans_starting_at`` are computed for the shrink
+    target, but each random attempt is a fresh draw of the same test function
+    from a prefix: re-randomising may choose different branches and produce a
+    differently shaped test case with fewer spans, so indexing the attempt's
+    spans with the target's indices must not raise. See #4977.
+    """
+    chain = st.integers(0, 10)
+    for _ in range(5):
+        chain = chain.filter(lambda v: True)
+
+    @shrinking_from((1, 2))
+    def shrinker(data: ConjectureData):
+        if data.draw_integer(0, 1) == 0:
+            return
+        if data.draw(chain) == 2:
+            data.mark_interesting(interesting_origin())
+
+    # A genuine engine-produced result for the short branch of the same test
+    # function: one node, only the top-level span.
+    short = shrinker.engine.cached_test_function((0,))
+    assert short.status >= Status.VALID
+    assert len(short.spans) < len(shrinker.shrink_target.spans)
+    monkeypatch.setattr(
+        shrinker.engine, "cached_test_function", lambda choices, **kwargs: short
+    )
+
+    shrinker.reduce_each_alternative()
+    assert shrinker.choices == (1, 2)
 
 
 def test_duplicate_nodes_that_go_away():
