@@ -162,6 +162,36 @@ def test_given_does_not_pollute_state():
 
 
 @skipif_threading  # modifying global random state
+def test_each_example_starts_from_the_same_global_random_state():
+    expected = random.Random(0).random()
+    state = random.getstate()
+
+    @given(st.integers())
+    def inner(x):
+        assert random.random() == expected
+
+    inner()
+    assert random.getstate() == state
+
+
+@skipif_threading  # modifying global random state
+def test_nested_given_does_not_disturb_outer_random_state():
+    @given(st.integers())
+    def inner(x):
+        random.random()
+
+    @given(st.integers())
+    @settings(max_examples=5)
+    def outer(x):
+        random.random()
+        state = random.getstate()
+        inner()
+        assert random.getstate() == state
+
+    outer()
+
+
+@skipif_threading  # modifying global random state
 def test_find_does_not_pollute_state():
     with deterministic_PRNG():
         find(st.random_module(), lambda r: True)
