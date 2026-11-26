@@ -42,6 +42,7 @@ jobs:
       # costs us very little.  Tasks which don't use tox just won't measure any.
       COVERAGE_PROCESS_START: ${{ github.workspace }}/hypothesis/pyproject.toml
       COVERAGE_FILE: ${{ github.workspace }}/hypothesis/.coverage
+      ALLOWED_MAJOR_VERSION: ${{ vars.ALLOWED_MAJOR_VERSION }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
