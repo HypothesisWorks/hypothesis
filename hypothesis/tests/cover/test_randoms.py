@@ -10,6 +10,7 @@
 
 import inspect
 import math
+import sys
 from copy import copy
 
 import pytest
@@ -300,7 +301,7 @@ def test_some_ranges_are_in_range(rnd):
     assert 0 <= rnd.randrange(10) < 10
     assert 11 <= rnd.randrange(11, 20) < 20
     assert rnd.randrange(1, 100, 3) in range(1, 100, 3)
-    assert rnd.randrange(100, step=3) in range(0, 100, 3)
+    assert rnd.randrange(0, 100, step=3) in range(0, 100, 3)
 
 
 def test_invalid_range():
@@ -319,6 +320,77 @@ def test_invalid_sample():
 
     with pytest.raises(ValueError):
         test()
+
+
+requires_binomialvariate = pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="random.Random.binomialvariate was added in Python 3.12",
+)
+
+
+@pytest.mark.parametrize(
+    ("call", "error"),
+    [
+        (lambda r: r.randint(5, 1), ValueError),
+        (lambda r: r.randrange(0), ValueError),
+        (lambda r: r.randrange(-5), ValueError),
+        (lambda r: r.randrange(5, 1), ValueError),
+        (lambda r: r.randrange(0, 10, -1), ValueError),
+        (lambda r: r.randrange(10, 0, 3), ValueError),
+        (lambda r: r.randrange(0, 10, 0), ValueError),
+        (lambda r: r.randrange(100, step=3), TypeError),
+        (lambda r: r._randbelow(0), ValueError),
+        (lambda r: r.getrandbits(-1), ValueError),
+        (lambda r: r.randbytes(-1), ValueError),
+        (lambda r: r.choice([]), IndexError),
+        (lambda r: r.choices([], k=1), IndexError),
+        pytest.param(
+            lambda r: r.binomialvariate(-1, 0.5),
+            ValueError,
+            marks=requires_binomialvariate,
+        ),
+        pytest.param(
+            lambda r: r.binomialvariate(10, 1.5),
+            ValueError,
+            marks=requires_binomialvariate,
+        ),
+        pytest.param(
+            lambda r: r.binomialvariate(10, -0.5),
+            ValueError,
+            marks=requires_binomialvariate,
+        ),
+    ],
+)
+def test_invalid_calls_error_like_real_random(call, error):
+    @given(st.randoms(use_true_random=False))
+    def test(rnd):
+        call(rnd)
+
+    with pytest.raises(error):
+        test()
+
+
+@pytest.mark.parametrize(
+    ("call", "expected"),
+    [
+        (lambda r: r.choices([1, 2, 3], k=0), []),
+        (lambda r: r.choices([1, 2, 3], k=-1), []),
+        (lambda r: r.choices([], k=0), []),
+        (lambda r: r.choices([], k=-1), []),
+        pytest.param(
+            lambda r: r.binomialvariate(10, 0.0), 0, marks=requires_binomialvariate
+        ),
+        pytest.param(
+            lambda r: r.binomialvariate(10, 1.0), 10, marks=requires_binomialvariate
+        ),
+    ],
+)
+def test_degenerate_calls_return_like_real_random(call, expected):
+    @given(st.randoms(use_true_random=False))
+    def test(rnd):
+        assert call(rnd) == expected
+
+    test()
 
 
 def test_triangular_modes():
