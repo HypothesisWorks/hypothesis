@@ -17,7 +17,14 @@ import pytest
 from hypothesis import assume, given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
-from hypothesis.strategies._internal.datetime import _instant, datetime_does_not_exist
+from hypothesis.strategies._internal.datetime import (
+    _SCAN_HI,
+    _SCAN_LO,
+    _instant,
+    _probe_transitions,
+    _tz_state,
+    datetime_does_not_exist,
+)
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import Why, fails_with, xfail_on_crosshair
@@ -148,3 +155,22 @@ def test_non_imaginary_datetimes_at_boundary(val):
     # This is expected to fail because Australia/Sydney is UTC+10,
     # and the filter logic overflows when checking for round-trips.
     raise AssertionError
+
+
+def _tz_state_via_utc(instant, tzinfo):
+    aware = instant.replace(tzinfo=dt.timezone.utc).astimezone(tzinfo)
+    return (aware.utcoffset(), aware.dst(), aware.tzname())
+
+
+@given(datetimes(min_value=_SCAN_LO, max_value=_SCAN_HI), timezones())
+def test_tz_state_matches_astimezone(instant, tzinfo):
+    assert _tz_state(instant, tzinfo) == _tz_state_via_utc(instant, tzinfo)
+
+
+def test_tz_state_matches_astimezone_at_dublin_transitions():
+    # Europe/Dublin has a negative DST offset since 1971
+    tzinfo = tz.gettz("Europe/Dublin")
+    for transition in _probe_transitions(tzinfo, _SCAN_LO, _SCAN_HI):
+        for seconds in (-1, 0, 1):
+            instant = transition + dt.timedelta(seconds=seconds)
+            assert _tz_state(instant, tzinfo) == _tz_state_via_utc(instant, tzinfo)
