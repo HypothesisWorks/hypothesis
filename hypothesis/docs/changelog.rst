@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.20:
+
+---------------------
+6.170.20 - 2026-11-27
+---------------------
+
+This patch makes collecting constants from local modules faster when many
+test modules are imported, by recognising test files from their path before
+resolving it on disk (:issue:`4978`).
+
 .. _v6.170.19:
 
 ---------------------
