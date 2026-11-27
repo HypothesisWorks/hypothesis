@@ -15,6 +15,10 @@ It verifies your code against a wide range of input and minimizes any
 failing test cases it finds.
 """
 
+import importlib
+from types import ModuleType
+from typing import TYPE_CHECKING
+
 import _hypothesis_globals
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
@@ -33,6 +37,15 @@ from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
+# avoid import cycle
+# isort: off
+from hypothesis import database, errors, strategies
+
+# isort: on
+
+if TYPE_CHECKING:
+    from hypothesis import extra, provisional, stateful
+
 __all__ = [
     "HealthCheck",
     "Phase",
@@ -41,20 +54,37 @@ __all__ = [
     "__version_info__",
     "assume",
     "currently_in_test_context",
+    "database",
+    "errors",
     "event",
     "example",
+    "extra",
     "find",
     "given",
     "infer",
     "is_hypothesis_test",
     "note",
+    "provisional",
     "register_random",
     "reject",
     "reproduce_failure",
     "seed",
     "settings",
+    "stateful",
+    "strategies",
     "target",
 ]
+
+_LAZY_SUBMODULES = ["extra", "provisional", "stateful"]
+
+
+if not TYPE_CHECKING:
+    # hidden from type checkers, which would otherwise accept any attribute
+    def __getattr__(name: str) -> ModuleType:
+        if name in _LAZY_SUBMODULES:
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 run()
 del run
