@@ -359,6 +359,10 @@ def _get_local_constants() -> Constants:
             for module in list(sys.modules.values())
             if id(module) not in _seen_modules
         ]
+        # Scan in a different order in each process, so that concurrent processes
+        # starting from a cold on-disk cache (e.g. pytest-xdist workers in CI)
+        # mostly read each others' results instead of all scanning each module.
+        Random().shuffle(new_modules)
         # Repeated SortedSet unions are expensive. Do the initial unions on a
         # set(), then do a one-time union with _local_constants after.
         new_constants = Constants()
