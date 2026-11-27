@@ -836,6 +836,13 @@ class Shrinker:
                 continue
             self.incorporate_test_data(random_attempt)
             for j in spans:
+                if j >= len(random_attempt.spans):
+                    # The re-randomised attempt may have drawn a
+                    # differently shaped test case, with fewer spans than
+                    # the shrink target these indices were computed for.
+                    # Such a span says nothing about this attempt, so
+                    # skip it rather than indexing out of range.
+                    continue
                 initial_span = initial.spans[j]
                 attempt_span = random_attempt.spans[j]
                 contents = random_attempt.nodes[attempt_span.start : attempt_span.end]

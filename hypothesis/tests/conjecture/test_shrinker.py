@@ -18,7 +18,7 @@ from hypothesis import HealthCheck, assume, example, given, settings, strategies
 from hypothesis.control import BuildContext
 from hypothesis.errors import CannotInvert
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
+from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
@@ -1186,3 +1186,32 @@ def test_sort_key_lt_matches_sort_key(a, data):
     b = data.draw(st.lists(nodes() | shared, max_size=4))
     assert sort_key_lt(a, b) == (sort_key(a) < sort_key(b))
     assert not sort_key_lt(a, list(a))
+
+
+def test_try_lower_node_as_alternative_with_fewer_spans(monkeypatch):
+    # Regression test for #4977: re-randomising the prefix may produce an
+    # attempt with fewer spans than the shrink target, so span indices
+    # computed for the target must not be used unchecked against it.
+    @shrinking_from((1, 1, 1))
+    def shrinker(data: ConjectureData):
+        a = data.draw(st.integers(0, 2))
+        if a == 0:
+            return
+        b = data.draw(st.integers(0, 2))
+        c = data.draw(st.integers(0, 2))
+        if a and b and c:
+            data.mark_interesting(interesting_origin())
+
+    i = 1
+    spans = shrinker.spans_starting_at[i]
+    assert spans
+
+    short = shrinker.engine.cached_test_function((0,))
+    assert short.status >= Status.VALID
+    assert len(short.spans) <= max(spans)
+
+    monkeypatch.setattr(
+        shrinker.engine, "cached_test_function", lambda values, extend=None: short
+    )
+    # Must not raise IndexError; no shrink is found from the short attempt.
+    assert shrinker.try_lower_node_as_alternative(i, 0) is False
