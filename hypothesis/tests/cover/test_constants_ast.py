@@ -32,6 +32,7 @@ from hypothesis.internal.constants_ast import (
     constants_from_module,
     is_local_module_file,
 )
+from hypothesis.internal.scrutineer import ModuleLocation
 
 from tests.common.utils import skipif_emscripten, skipif_threading
 
@@ -240,8 +241,13 @@ def test_constants_from_bad_module():
         "/a/file_test.py",
     ],
 )
-def test_local_modules_ignores_test_modules(path):
-    assert not is_local_module_file(path)
+def test_local_modules_ignores_test_modules(path, monkeypatch):
+    # test files are rejected by their path alone, before the expensive lookup
+    def from_path(path):
+        raise AssertionError("resolved a test file's path")
+
+    monkeypatch.setattr(ModuleLocation, "from_path", from_path)
+    assert not is_local_module_file.__wrapped__(path)
 
 
 @skipif_threading
