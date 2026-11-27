@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.19:
+
+---------------------
+6.170.19 - 2026-11-27
+---------------------
+
+This patch makes finding timezone transitions for
+:func:`~hypothesis.strategies.datetimes` about 30% faster, by calling
+``tz.fromutc()`` directly instead of converting through UTC first.
+
 .. _v6.170.18:
 
 ---------------------
