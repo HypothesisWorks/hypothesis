@@ -18,7 +18,11 @@ from typing import Any
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    InvalidArgument,
+    Unsatisfiable,
+)
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.utils import to_jsonable
@@ -102,6 +106,16 @@ _bad_random_strategy = st.lists(st.integers(), min_size=1).map(random.choice)
 @checks_deprecated_behaviour
 def test_use_of_global_random_is_deprecated_in_given():
     check_can_generate_examples(_bad_random_strategy)
+
+
+def test_use_of_global_random_is_attributed_to_the_right_argument():
+    @given(a=st.integers(), b=_bad_random_strategy, c=st.integers())
+    def inner(a, b, c):
+        pass
+
+    with pytest.warns(HypothesisDeprecationWarning) as record:
+        inner()
+    assert all("from b=" in str(w.message) for w in record)
 
 
 @checks_deprecated_behaviour

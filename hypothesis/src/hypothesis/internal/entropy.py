@@ -221,7 +221,9 @@ def get_seeder_and_restorer(
                 # switch occurs between the two.
                 _known_random_state_hashes.add(seeded_hash)
 
-            if type(r) is Random:
+            # The global random module is backed by a plain Random instance,
+            # and setstate is much cheaper than seed.
+            if k == _global_random_rkey or type(r) is Random:
                 r.setstate(seeded_state)
             else:
                 r.seed(seed)
