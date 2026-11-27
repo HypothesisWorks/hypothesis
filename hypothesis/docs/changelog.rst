@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.170.22:
+
+---------------------
+6.170.22 - 2026-11-27
+---------------------
+
+This patch speeds up startup for concurrent processes which do not yet have a :ref:`constants cache <v6.131.1>`, such as :pypi:`pytest-xdist` workers in CI.  Each process now scans local modules in a different order, so that they mostly share work instead of repeating it (:issue:`4978`).
+
 .. _v6.170.21:
 
 ---------------------
