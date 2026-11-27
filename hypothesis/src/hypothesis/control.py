@@ -109,13 +109,11 @@ def current_build_context() -> "BuildContext":
     return context
 
 
-@contextmanager
-def deprecate_random_in_strategy(fmt: str, *args: Any) -> Generator[None, None, None]:
+def _note_random_in_strategy(
+    state_before: object, state_after: object, fmt: str, *args: Any
+) -> None:
     from hypothesis.internal import entropy
 
-    state_before = random.getstate()
-    yield
-    state_after = random.getstate()
     if (
         # there is a threading race condition here with deterministic_PRNG. Say
         # we have two threads 1 and 2. We start in global random state A, and
@@ -145,6 +143,13 @@ def deprecate_random_in_strategy(fmt: str, *args: Any) -> Generator[None, None, 
             has_codemod=False,
             stacklevel=1,
         )
+
+
+@contextmanager
+def deprecate_random_in_strategy(fmt: str, *args: Any) -> Generator[None, None, None]:
+    state_before = random.getstate()
+    yield
+    _note_random_in_strategy(state_before, random.getstate(), fmt, *args)
 
 
 class BuildContext:
@@ -194,13 +199,16 @@ class BuildContext:
         arg_labels: ArgLabelsT = {}
         kwargs: dict[str, Any] = {}
 
+        # Like deprecate_random_in_strategy, but each draw's final state is the
+        # next draw's initial state, saving a costly getstate() per argument.
+        state = random.getstate()
         for k, s in kwarg_strategies.items():
-            with (
-                self.data.track_arg_label(k) as arg_label,
-                deprecate_random_in_strategy("from {}={!r}", k, s),
-            ):
+            with self.data.track_arg_label(k) as arg_label:
                 kwargs[k] = self.data.draw(s, observe_as=f"generate:{k}")
             arg_labels |= arg_label
+            new_state = random.getstate()
+            _note_random_in_strategy(state, new_state, "from {}={!r}", k, s)
+            state = new_state
 
         return kwargs, arg_labels
 

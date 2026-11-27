@@ -76,6 +76,7 @@ their individual contributions.
 * `follower <https://www.github.com/follower>`_
 * `Francesc Elies <https://www.github.com/FrancescElies>`_
 * `Gabe Joseph <https://github.com/gjoseph92>`_
+* `Gabriele N. Tornetta <https://github.com/p403n1x87>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
 * `Genevieve Mendoza <https://www.github.com/genevieve-me>`_
 * `George Macon <https://www.github.com/gmacon>`_

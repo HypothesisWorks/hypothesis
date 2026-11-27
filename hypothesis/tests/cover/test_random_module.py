@@ -96,8 +96,14 @@ def test_registering_a_Random_is_idempotent():
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered
 
 
-def test_manages_registered_Random_instance():
-    r = random.Random()
+class RandomSubclass(random.Random):
+    pass
+
+
+# Subclasses are seeded with r.seed() rather than restored to a cached state.
+@pytest.mark.parametrize("cls", [random.Random, RandomSubclass])
+def test_manages_registered_Random_instance(cls):
+    r = cls()
     register_random(r)
     state = r.getstate()
     result = []
