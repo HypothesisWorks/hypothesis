@@ -12,7 +12,7 @@ click==8.5.1
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.17.3
+coverage[toml]==7.17.4
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -42,7 +42,7 @@ pathspec==1.1.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.14.7
+platformdirs==4.14.8
     # via black
 pluggy==1.7.0
     # via
@@ -72,7 +72,7 @@ pytokens==0.4.1
     # via black
 pytz==2026.6
     # via -r requirements/coverage.in
-pyyaml==6.0.3
+pyyaml==6.0.4
     # via libcst
 redis==8.1.0
     # via fakeredis
@@ -80,11 +80,11 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis/pyproject.toml)
-syrupy==7.0.2
+syrupy==7.0.3
     # via -r requirements/test.in
 typing-extensions==4.16.0
     # via -r requirements/coverage.in
 tzdata==2026.6
     # via python-dateutil
-watchdog==7.1.0
+watchdog==7.1.1
     # via -r requirements/coverage.in
