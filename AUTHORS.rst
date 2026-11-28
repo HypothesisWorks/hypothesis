@@ -19,6 +19,7 @@ their individual contributions.
 * `Agustín Covarrubias <https://github.com/agucova>`_ (gh@agucova.dev)
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
+* `Alex Groce <https://github.com/agroce>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Andrea Pierré <https://www.github.com/kir0ul>`_
