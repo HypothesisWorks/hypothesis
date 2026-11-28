@@ -52,6 +52,7 @@ their individual contributions.
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
+* `CYJienn <https://github.com/CYJienn>`_
 * `Damon Francisco <https://github.com/dtfrancisco>`_ (damontfrancisco@yahoo.com)
 * `Daniel Gutson <https://github.com/dgutson>`_
 * `Daniel J. West <https://github.com/danieljwest>`_

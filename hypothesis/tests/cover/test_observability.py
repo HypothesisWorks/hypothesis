@@ -13,6 +13,7 @@ import contextlib
 import inspect
 import json
 import math
+import sys
 import textwrap
 import threading
 import warnings
@@ -270,8 +271,12 @@ def test_capture_named_arguments():
         ], test_case
 
 
-# see https://github.com/HypothesisWorks/hypothesis/issues/4880
-@xfail_on_crosshair(Why.other, strict=False)
+# The monitoring bug in issue #4880 was fixed in CPython 3.14.9 and 3.15.1.
+@xfail_on_crosshair(
+    Why.other,
+    strict=False,
+    condition=sys.version_info[:3] < (3, 14, 9) or sys.version_info[:3] == (3, 15, 0),
+)
 def test_assume_has_status_reason():
     @given(st.booleans())
     def f(b):

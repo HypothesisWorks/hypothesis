@@ -266,12 +266,12 @@ class Why(enum.Enum):
     other = "reasons not elsewhere categorized"
 
 
-def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
+def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False, condition=True):
     # run `pytest -m xf_crosshair` to select these tests!
     mark = pytest.mark.xfail(
         strict=strict and why != Why.undiscovered,
         reason=f"Expected failure due to: {why.value}",
-        condition=settings().backend == "crosshair",
+        condition=condition and settings().backend == "crosshair",
     )
     if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
         return (pytest.mark.xf_crosshair, mark)
