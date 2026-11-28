@@ -520,6 +520,51 @@ def test_can_simultaneously_lower_non_duplicated_nearby_integers(n_gap):
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
+@pytest.mark.parametrize(
+    "min_value, max_value, shrink_towards, start, predicate, expected",
+    [
+        (
+            1000,
+            2000,
+            1000,
+            (1500, 1501),
+            lambda x, y: y == x + 1 and x >= 1005,
+            (1005, 1006),
+        ),
+        (
+            1000,
+            2000,
+            2000,
+            (1500, 1501),
+            lambda x, y: y == x + 1 and x <= 1995,
+            (1995, 1996),
+        ),
+        (
+            -1000,
+            -500,
+            -500,
+            (-900, -899),
+            lambda x, y: y == x + 1 and x <= -505,
+            (-505, -504),
+        ),
+        (0, 2000, 1000, (1500, 1501), lambda x, y: y == x + 1, (1000, 1001)),
+        (0, 2000, 1000, (500, 501), lambda x, y: y == x + 1, (1000, 1001)),
+    ],
+)
+def test_lower_integers_together_with_shrink_towards(
+    min_value, max_value, shrink_towards, start, predicate, expected
+):
+    @shrinking_from(start)
+    def shrinker(data: ConjectureData):
+        x = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
+        y = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
+        if predicate(x, y):
+            data.mark_interesting(interesting_origin())
+
+    shrinker.fixate_shrink_passes([ShrinkPass(shrinker.lower_integers_together)])
+    assert shrinker.choices == expected
+
+
 def test_redistribute_with_forced_node_integer():
     @shrinking_from((15, 10))
     def shrinker(data: ConjectureData):
