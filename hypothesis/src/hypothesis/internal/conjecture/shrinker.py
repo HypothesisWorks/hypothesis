@@ -1543,18 +1543,20 @@ class Shrinker:
         # from trivial to nontrivial, because the shrink ordering is dominated by
         # the complexity of the earlier node1. What matters is minimizing node1.
         shrink_towards = node1.constraints["shrink_towards"]
+        direction = 1 if node1.value > shrink_towards else -1
 
         def consider(n):
+            if n > abs(node1.value - shrink_towards):
+                return False
             return self.consider_new_nodes(
                 self.nodes[: node1.index]
-                + (node1.copy(with_value=node1.value - n),)
+                + (node1.copy(with_value=node1.value - direction * n),)
                 + self.nodes[node1.index + 1 : node2.index]
-                + (node2.copy(with_value=node2.value - n),)
+                + (node2.copy(with_value=node2.value - direction * n),)
                 + self.nodes[node2.index + 1 :]
             )
 
-        find_integer(lambda n: consider(shrink_towards - n))
-        find_integer(lambda n: consider(n - shrink_towards))
+        find_integer(consider)
 
     def lower_duplicated_characters(self, chooser):
         """
