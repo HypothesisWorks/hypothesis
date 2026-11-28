@@ -1334,9 +1334,13 @@ def _from_type_deferred(thing: type[Ex]) -> SearchStrategy[Ex]:
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
     # "deferred(...)" for recursive types or invalid arguments.
+    from hypothesis.strategies._internal.types import is_a_union
+
     try:
         thing_repr = nicerepr(thing)
-        if hasattr(thing, "__module__"):
+        # On Python 3.14+, unions have __module__ == "typing" but already
+        # qualify each member in their repr.
+        if hasattr(thing, "__module__") and not is_a_union(thing):
             module_prefix = f"{thing.__module__}."
             if not thing_repr.startswith(module_prefix):
                 thing_repr = module_prefix + thing_repr

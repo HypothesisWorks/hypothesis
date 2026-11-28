@@ -20,7 +20,7 @@ import sys
 import time
 import unittest
 import unittest.mock
-from collections.abc import KeysView, Sequence, Sized, ValuesView
+from collections.abc import Iterable, KeysView, Sequence, Sized, ValuesView
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
@@ -283,6 +283,15 @@ def test_no_hashability_filter():
     source_code = ghostwriter.fuzz(hopefully_hashable)
     assert "@given(foo=st.sets(st.decimals()))" in source_code
     assert "_can_hash" not in source_code
+
+
+def takes_unhashable_elements(foo: Iterable[tuple[list[int]]]):
+    pass
+
+
+def test_keeps_hashability_filter_for_other_types():
+    source_code = ghostwriter.fuzz(takes_unhashable_elements)
+    get_test_function(source_code)()
 
 
 @pytest.mark.parametrize(

@@ -1149,6 +1149,7 @@ class _EmptyClass:
             st.SearchStrategy[str],
             "from_type(hypothesis.strategies.SearchStrategy[str])",
         ),
+        (_EmptyClass | None, "from_type(tests.cover.test_lookup._EmptyClass | None)"),
     ],
 )
 def test_repr_passthrough(typ, repr_):
