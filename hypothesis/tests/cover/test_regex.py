@@ -505,6 +505,21 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
     )
 
 
+def test_jsonschema_dialect_disables_newline_after_dollar():
+    # `$` matches only at the very end of the string in the jsonschema dialect,
+    # as in the ECMA-262 subset recommended by JSON Schema - see issue #4089.
+    find_any(st.from_regex("^abc$"), lambda s: s == "abc\n")
+    assert_all_examples(
+        st.from_regex("^abc$", dialect="jsonschema"), lambda s: s == "abc"
+    )
+
+
+@pytest.mark.parametrize("dialect", ["", "Python", "jsonschemas", "ecma", None])
+def test_from_regex_rejects_unknown_dialect(dialect):
+    with pytest.raises(InvalidArgument, match="dialect"):
+        st.from_regex("^abc$", dialect=dialect).validate()
+
+
 @given(st.from_regex(r"[^.].*", alphabet=st.sampled_from("abc") | st.just(".")))
 def test_can_pass_union_for_alphabet(_):
     pass

@@ -14,7 +14,7 @@ import re._constants as sre
 import re._parser as sre_parse
 from dataclasses import dataclass
 from re import Pattern
-from typing import Any
+from typing import Any, Literal
 
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -271,10 +271,16 @@ def regex_strategy(
     fullmatch: bool,
     *,
     alphabet: SearchStrategy | None,
+    dialect: Literal["python", "jsonschema"] = "python",
+    # Deprecated alias for dialect="jsonschema", kept so that hypothesis-jsonschema
+    # keeps working until it migrates to the public from_regex(dialect=...) API.
     _temp_jsonschema_hack_no_end_newline: bool = False,
 ) -> SearchStrategy:
     if not isinstance(regex, Pattern):
         regex = re.compile(regex)
+
+    if _temp_jsonschema_hack_no_end_newline:
+        dialect = "jsonschema"
 
     is_unicode = isinstance(regex.pattern, str)
 
@@ -323,7 +329,7 @@ def regex_strategy(
             # of JSONschema's compatible subset of ECMA regex, which is important
             # for hypothesis-jsonschema and Schemathesis. See e.g.
             # https://github.com/schemathesis/schemathesis/issues/1241
-            if _temp_jsonschema_hack_no_end_newline:
+            if dialect == "jsonschema":
                 right_pad = empty
 
     if parsed[0][0] == sre.AT:

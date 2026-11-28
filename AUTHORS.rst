@@ -190,6 +190,7 @@ their individual contributions.
 * `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Sogata Ray <https://github.com/rayardinanda>`_ (rayardinanda@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
+* `Su Ru <https://github.com/Surri757>`_
 * `SuperStormer <https://github.com/SuperStormer>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)

@@ -900,6 +900,7 @@ def from_regex(
     regex: bytes | Pattern[bytes],
     *,
     fullmatch: bool = False,
+    dialect: Literal["python", "jsonschema"] = "python",
 ) -> SearchStrategy[bytes]: ...
 
 
@@ -909,6 +910,7 @@ def from_regex(
     *,
     fullmatch: bool = False,
     alphabet: Collection[str] | SearchStrategy[str] | None = characters(codec="utf-8"),
+    dialect: Literal["python", "jsonschema"] = "python",
 ) -> SearchStrategy[str]: ...
 
 
@@ -919,6 +921,7 @@ def from_regex(
     *,
     fullmatch: bool = False,
     alphabet: Collection[str] | SearchStrategy[str] | None = None,
+    dialect: Literal["python", "jsonschema"] = "python",
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
@@ -930,6 +933,13 @@ def from_regex(
     You can use regex flags such as :obj:`python:re.IGNORECASE` or
     :obj:`python:re.DOTALL` to control generation. Flags can be passed either
     in compiled regex or inside the pattern with a ``(?iLmsux)`` group.
+
+    The ``dialect=`` argument selects which flavour of regex semantics the
+    generated strings follow: ``"python"`` (the default) uses :mod:`python:re`
+    semantics, while ``"jsonschema"`` uses the `ECMA-262 subset recommended by
+    JSON Schema <https://json-schema.org/understanding-json-schema/reference/regular_expressions>`__,
+    where ``$`` matches only at the end of the string instead of also matching
+    just before a trailing newline.
 
     Some regular expressions are only partly supported - the underlying
     strategy checks local matching and relies on filtering to resolve
@@ -956,6 +966,8 @@ def from_regex(
     """
     check_type((str, bytes, re.Pattern), regex, "regex")
     check_type(bool, fullmatch, "fullmatch")
+    if dialect not in ("python", "jsonschema"):
+        raise InvalidArgument(f"{dialect=} must be 'python' or 'jsonschema'")
 
     pattern = regex.pattern if isinstance(regex, re.Pattern) else regex
     if alphabet is not None:
@@ -976,7 +988,7 @@ def from_regex(
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal.regex import regex_strategy
 
-    return regex_strategy(regex, fullmatch, alphabet=alphabet)
+    return regex_strategy(regex, fullmatch, alphabet=alphabet, dialect=dialect)
 
 
 @cacheable
