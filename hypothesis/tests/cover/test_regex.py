@@ -189,6 +189,13 @@ def test_not_literal_with_ignorecase(pattern):
     )
 
 
+def test_bytes_not_literal_with_ignorecase():
+    assert_all_examples(
+        st.from_regex(re.compile(b"\\A[^a][^B]\\Z", re.IGNORECASE)),
+        lambda s: s[:1] not in (b"a", b"A") and s[1:] not in (b"b", b"B"),
+    )
+
+
 def test_any_doesnt_generate_newline():
     assert_all_examples(st.from_regex("\\A.\\Z"), lambda s: s != "\n")
 
